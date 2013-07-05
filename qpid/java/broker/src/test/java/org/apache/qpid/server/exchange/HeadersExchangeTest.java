@@ -68,7 +68,7 @@ public class HeadersExchangeTest extends TestCase
         when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), any(AMQShortString.class))).thenReturn(true);
         when(securityManager.authoriseUnbind(any(Exchange.class), any(AMQShortString.class), any(AMQQueue.class))).thenReturn(true);
 
-        _exchange.initialise(UUID.randomUUID(), _virtualHost, AMQShortString.valueOf("test"), false, 0, false);
+        _exchange.initialise(UUID.randomUUID(), _virtualHost, AMQShortString.valueOf("test"), false, false);
 
     }
 

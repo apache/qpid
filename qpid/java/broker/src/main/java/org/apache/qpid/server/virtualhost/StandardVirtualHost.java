@@ -96,7 +96,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
         _durableConfigurationStore = initialiseConfigurationStore(virtualHost);
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
+        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getExchangeRegistry(), getExchangeFactory());
 
         _durableConfigurationStore.configureConfigStore(getName(), recoveryHandler, virtualHost);
 

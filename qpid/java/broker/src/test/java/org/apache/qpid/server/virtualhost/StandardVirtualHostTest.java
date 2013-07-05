@@ -200,7 +200,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         File config = writeConfigFile(vhostName, queueName, exchangeName, false, new String[]{"ping","pong"}, bindingArguments);
         VirtualHost vhost = createVirtualHost(vhostName, config);
 
-        Exchange exch = vhost.getExchangeRegistry().getExchange(getName() +".direct");
+        Exchange exch = vhost.getExchange(getName() +".direct");
         Collection<Binding> bindings = exch.getBindings();
         assertNotNull("Bindings cannot be null", bindings);
         assertEquals("Unexpected number of bindings", 3, bindings.size());
@@ -245,10 +245,10 @@ public class StandardVirtualHostTest extends QpidTestCase
         AMQQueue queue = vhost.getQueueRegistry().getQueue(queueName);
         assertNotNull("queue should exist", queue);
 
-        Exchange defaultExch = vhost.getExchangeRegistry().getDefaultExchange();
+        Exchange defaultExch = vhost.getDefaultExchange();
         assertTrue("queue should have been bound to default exchange with its name", defaultExch.isBound(queueName, queue));
 
-        Exchange exch = vhost.getExchangeRegistry().getExchange(exchangeName);
+        Exchange exch = vhost.getExchange(exchangeName);
         assertTrue("queue should have been bound to " + exchangeName + " with its name", exch.isBound(queueName, queue));
 
         for(String key: routingKeys)

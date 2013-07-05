@@ -63,7 +63,6 @@ public abstract class AbstractExchange implements Exchange
     private Exchange _alternateExchange;
 
     private boolean _durable;
-    private int _ticket;
 
     private VirtualHost _virtualHost;
 
@@ -109,14 +108,17 @@ public abstract class AbstractExchange implements Exchange
         return _type.getName();
     }
 
-    public void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    public void initialise(UUID id,
+                           VirtualHost host,
+                           AMQShortString name,
+                           boolean durable,
+                           boolean autoDelete)
             throws AMQException
     {
         _virtualHost = host;
         _name = name;
         _durable = durable;
         _autoDelete = autoDelete;
-        _ticket = ticket;
 
         _id = id;
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
@@ -133,11 +135,6 @@ public abstract class AbstractExchange implements Exchange
     public boolean isAutoDelete()
     {
         return _autoDelete;
-    }
-
-    public int getTicket()
-    {
-        return _ticket;
     }
 
     public void close() throws AMQException

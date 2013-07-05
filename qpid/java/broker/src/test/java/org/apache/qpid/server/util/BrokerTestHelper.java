@@ -190,7 +190,7 @@ public class BrokerTestHelper
         when(info.getExchange()).thenReturn(exchangeNameAsShortString);
         when(info.getRoutingKey()).thenReturn(rouningKey);
 
-        Exchange exchange = channel.getVirtualHost().getExchangeRegistry().getExchange(exchangeName);
+        Exchange exchange = channel.getVirtualHost().getExchange(exchangeName);
         for (int count = 0; count < numberOfMessages; count++)
         {
             channel.setPublishFrame(info, exchange);

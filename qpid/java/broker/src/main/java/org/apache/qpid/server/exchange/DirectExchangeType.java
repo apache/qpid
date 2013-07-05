@@ -36,13 +36,12 @@ public class DirectExchangeType implements ExchangeType<DirectExchange>
     }
 
     public DirectExchange newInstance(UUID id, VirtualHost host,
-                                        AMQShortString name,
-                                        boolean durable,
-                                        int ticket,
-                                        boolean autoDelete) throws AMQException
+                                      AMQShortString name,
+                                      boolean durable,
+                                      boolean autoDelete) throws AMQException
     {
         DirectExchange exch = new DirectExchange();
-        exch.initialise(id, host,name,durable,ticket,autoDelete);
+        exch.initialise(id, host,name,durable, autoDelete);
         return exch;
     }
 

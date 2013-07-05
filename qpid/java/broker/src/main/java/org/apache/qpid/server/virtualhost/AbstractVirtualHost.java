@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -42,10 +43,12 @@ import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
@@ -56,6 +59,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
@@ -259,7 +263,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     {
         _logger.debug("Loading configuration for virtualhost: " + config.getName());
 
-        _exchangeRegistry.initialise();
+        _exchangeRegistry.initialise(_exchangeFactory);
 
         List<String> exchangeNames = config.getExchanges();
 
@@ -279,25 +283,18 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     private void configureExchange(ExchangeConfiguration exchangeConfiguration) throws AMQException
     {
-        AMQShortString exchangeName = new AMQShortString(exchangeConfiguration.getName());
-
-        Exchange exchange;
-        exchange = _exchangeRegistry.getExchange(exchangeName);
-        if (exchange == null)
+        boolean durable = exchangeConfiguration.getDurable();
+        boolean autodelete = exchangeConfiguration.getAutoDelete();
+        try
         {
-
-            AMQShortString type = new AMQShortString(exchangeConfiguration.getType());
-            boolean durable = exchangeConfiguration.getDurable();
-            boolean autodelete = exchangeConfiguration.getAutoDelete();
-
-            Exchange newExchange = _exchangeFactory.createExchange(exchangeName, type, durable, autodelete, 0);
-            _exchangeRegistry.registerExchange(newExchange);
-
-            if (newExchange.isDurable())
-            {
-                DurableConfigurationStoreHelper.createExchange(getDurableConfigurationStore(), newExchange);
-            }
+            Exchange newExchange = createExchange(null, exchangeConfiguration.getName(), exchangeConfiguration.getType(), durable, autodelete,
+                    null);
         }
+        catch(ExchangeExistsException e)
+        {
+            _logger.info("Exchange " + exchangeConfiguration.getName() + " already defined. Configuration in XML file ignored");
+        }
+
     }
 
     private void configureQueue(QueueConfiguration queueConfiguration) throws AMQException, ConfigurationException
@@ -374,14 +371,160 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         return _queueRegistry;
     }
 
-    public ExchangeRegistry getExchangeRegistry()
+    protected ExchangeRegistry getExchangeRegistry()
     {
         return _exchangeRegistry;
     }
 
-    public ExchangeFactory getExchangeFactory()
+    protected ExchangeFactory getExchangeFactory()
     {
         return _exchangeFactory;
+    }
+
+    @Override
+    public void addVirtualHostListener(final VirtualHostListener listener)
+    {
+        _exchangeRegistry.addRegistryChangeListener(new ExchangeRegistry.RegistryChangeListener()
+        {
+            @Override
+            public void exchangeRegistered(Exchange exchange)
+            {
+                listener.exchangeRegistered(exchange);
+            }
+
+            @Override
+            public void exchangeUnregistered(Exchange exchange)
+            {
+                listener.exchangeUnregistered(exchange);
+            }
+        });
+        _queueRegistry.addRegistryChangeListener(new QueueRegistry.RegistryChangeListener()
+        {
+            @Override
+            public void queueRegistered(AMQQueue queue)
+            {
+                listener.queueRegistered(queue);
+            }
+
+            @Override
+            public void queueUnregistered(AMQQueue queue)
+            {
+                listener.queueUnregistered(queue);
+            }
+        });
+        _connectionRegistry.addRegistryChangeListener(new IConnectionRegistry.RegistryChangeListener()
+        {
+            @Override
+            public void connectionRegistered(AMQConnectionModel connection)
+            {
+                listener.connectionRegistered(connection);
+            }
+
+            @Override
+            public void connectionUnregistered(AMQConnectionModel connection)
+            {
+                listener.connectionUnregistered(connection);
+            }
+        });
+    }
+
+    @Override
+    public Exchange getExchange(String name)
+    {
+        return _exchangeRegistry.getExchange(name);
+    }
+
+    @Override
+    public Exchange getDefaultExchange()
+    {
+        return _exchangeRegistry.getDefaultExchange();
+    }
+
+    @Override
+    public Collection<Exchange> getExchanges()
+    {
+        return Collections.unmodifiableCollection(_exchangeRegistry.getExchanges());
+    }
+
+    @Override
+    public Collection<ExchangeType<? extends Exchange>> getExchangeTypes()
+    {
+        return _exchangeFactory.getRegisteredTypes();
+    }
+
+    @Override
+    public Exchange createExchange(UUID id,
+                                   String name,
+                                   String type,
+                                   boolean durable,
+                                   boolean autoDelete,
+                                   String alternateExchangeName)
+            throws AMQException
+    {
+
+        if(_exchangeRegistry.isReservedExchangeName(name))
+        {
+            throw new ReservedExchangeNameException(name);
+        }
+        synchronized (_exchangeRegistry)
+        {
+            Exchange existing;
+            if((existing = _exchangeRegistry.getExchange(name)) !=null)
+            {
+                throw new ExchangeExistsException(name,existing);
+            }
+            Exchange alternateExchange;
+
+            if(alternateExchangeName != null)
+            {
+                alternateExchange = _exchangeRegistry.getExchange(alternateExchangeName);
+                if(alternateExchange == null)
+                {
+                    throw new UnknownExchangeException(alternateExchangeName);
+                }
+            }
+            else
+            {
+                alternateExchange = null;
+            }
+
+            if(id == null)
+            {
+                id = UUIDGenerator.generateExchangeUUID(name, getName());
+            }
+
+            Exchange exchange = _exchangeFactory.createExchange(id, name, type, durable, autoDelete);
+            exchange.setAlternateExchange(alternateExchange);
+            _exchangeRegistry.registerExchange(exchange);
+            if(durable)
+            {
+                DurableConfigurationStoreHelper.createExchange(getDurableConfigurationStore(), exchange);
+            }
+            return exchange;
+        }
+    }
+
+    @Override
+    public void removeExchange(Exchange exchange, boolean force) throws AMQException
+    {
+        if(exchange.hasReferrers())
+        {
+            throw new ExchangeIsAlternateException(exchange.getName());
+        }
+
+        for(ExchangeType type : getExchangeTypes())
+        {
+            if(type.getDefaultExchangeName().toString().equals( exchange.getName() ))
+            {
+                throw new RequiredExchangeException(exchange.getName());
+            }
+        }
+        _exchangeRegistry.unregisterExchange(exchange.getName(), !force);
+        if (exchange.isDurable() && !exchange.isAutoDelete())
+        {
+            DurableConfigurationStoreHelper.removeExchange(getDurableConfigurationStore(), exchange);
+        }
+
     }
 
     public SecurityManager getSecurityManager()

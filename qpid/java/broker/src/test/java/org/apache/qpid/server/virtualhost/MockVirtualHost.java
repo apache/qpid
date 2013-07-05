@@ -20,12 +20,16 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Collection;
 import java.util.concurrent.ScheduledFuture;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.AbstractExchange;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
@@ -77,16 +81,6 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
-    public ExchangeFactory getExchangeFactory()
-    {
-        return null;
-    }
-
-    public ExchangeRegistry getExchangeRegistry()
-    {
-        return null;
-    }
-
     public int getHouseKeepingActiveCount()
     {
         return 0;
@@ -127,9 +121,54 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
+    @Override
+    public Exchange createExchange(UUID id,
+                                   String exchange,
+                                   String type,
+                                   boolean durable,
+                                   boolean autoDelete,
+                                   String alternateExchange) throws AMQException
+    {
+        return null;
+    }
+
+    @Override
+    public void removeExchange(Exchange exchange, boolean force) throws AMQException
+    {
+    }
+
+    @Override
+    public Exchange getExchange(String name)
+    {
+        return null;
+    }
+
+    @Override
+    public Exchange getDefaultExchange()
+    {
+        return null;
+    }
+
+    @Override
+    public Collection<Exchange> getExchanges()
+    {
+        return null;
+    }
+
+    @Override
+    public Collection<ExchangeType<? extends Exchange>> getExchangeTypes()
+    {
+        return null;
+    }
+
     public SecurityManager getSecurityManager()
     {
         return null;
+    }
+
+    @Override
+    public void addVirtualHostListener(VirtualHostListener listener)
+    {
     }
 
     public LinkRegistry getLinkRegistry(String remoteContainerId)

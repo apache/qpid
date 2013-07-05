@@ -38,6 +38,7 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class AMQQueueFactory
@@ -300,25 +301,22 @@ public class AMQQueueFactory
             final String dlExchangeName = getDeadLetterExchangeName(queueName);
             final String dlQueueName = getDeadLetterQueueName(queueName);
 
-            final ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
-            final ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
             final QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
             Exchange dlExchange = null;
-            synchronized(exchangeRegistry)
+            final UUID dlExchangeId = UUIDGenerator.generateExchangeUUID(dlExchangeName, virtualHost.getName());
+
+            try
             {
-                dlExchange = exchangeRegistry.getExchange(dlExchangeName);
-
-                if(dlExchange == null)
-                {
-                    dlExchange = exchangeFactory.createExchange(UUIDGenerator.generateExchangeUUID(dlExchangeName, virtualHost.getName()), new AMQShortString(dlExchangeName), ExchangeDefaults.FANOUT_EXCHANGE_CLASS, true, false, 0);
-
-                    exchangeRegistry.registerExchange(dlExchange);
-
-                    //enter the dle in the persistent store
-                    DurableConfigurationStoreHelper.createExchange(virtualHost.getDurableConfigurationStore(),
-                            dlExchange);
-                }
+                dlExchange = virtualHost.createExchange(dlExchangeId,
+                                                                dlExchangeName,
+                                                                ExchangeDefaults.FANOUT_EXCHANGE_CLASS.toString(),
+                                                                true, false, null);
+            }
+            catch(ExchangeExistsException e)
+            {
+                // We're ok if the exchange already exists
+                dlExchange = e.getExistingExchange();
             }
 
             AMQQueue dlQueue = null;

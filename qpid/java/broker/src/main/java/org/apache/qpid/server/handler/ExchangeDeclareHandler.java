@@ -32,12 +32,11 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.virtualhost.ExchangeExistsException;
+import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ExchangeDeclareHandler implements StateAwareMethodListener<ExchangeDeclareBody>
@@ -59,8 +58,6 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
-        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
-        ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
         final AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
         {
@@ -73,57 +70,63 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             _logger.debug("Request to declare exchange of type " + body.getType() + " with name " + exchangeName);
         }
 
-        synchronized(exchangeRegistry)
+        Exchange exchange;
+
+        if (body.getPassive())
         {
-            Exchange exchange = exchangeRegistry.getExchange(exchangeName);
-
-            if (exchange == null)
+            exchange = virtualHost.getExchange(exchangeName == null ? null : exchangeName.toString());
+            if(exchange == null)
             {
-                if(body.getPassive() && ((body.getType() == null) || body.getType().length() ==0))
-                {
-                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
-                }
-                else if(exchangeName.startsWith("amq."))
-                {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                              "Attempt to declare exchange: " + exchangeName +
-                              " which begins with reserved prefix 'amq.'.");
-                }
-                else if(exchangeName.startsWith("qpid."))
-                {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Attempt to declare exchange: " + exchangeName +
-                                                      " which begins with reserved prefix 'qpid.'.");
-                }
-                else
-                {
-                    try
-                    {
-                        exchange = exchangeFactory.createExchange(exchangeName == null ? null : exchangeName.intern(),
-                                                                  body.getType() == null ? null : body.getType().intern(),
-                                                                  body.getDurable(),
-                                                                  body.getAutoDelete(), body.getTicket());
-                        exchangeRegistry.registerExchange(exchange);
-
-                        if (exchange.isDurable())
-                        {
-                            DurableConfigurationStoreHelper.createExchange(virtualHost.getDurableConfigurationStore(),
-                                    exchange);
-                        }
-                    }
-                    catch(AMQUnknownExchangeType e)
-                    {
-                        throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + exchangeName,e);
-                    }
-                }
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
             }
-            else if (!exchange.getTypeShortString().equals(body.getType()) && !((body.getType() == null || body.getType().length() ==0) && body.getPassive()))
+            else if (!exchange.getTypeShortString().equals(body.getType()) && !(body.getType() == null || body.getType().length() ==0))
             {
 
                 throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " +
-                                                                          exchangeName + " of type " + exchange.getTypeShortString() + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
+                                  exchangeName + " of type " + exchange.getTypeShortString()
+                                  + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
+            }
+
+        }
+        else
+        {
+            try
+            {
+                exchange = virtualHost.createExchange(null,
+                                                      exchangeName == null ? null : exchangeName.intern().toString(),
+                                                      body.getType() == null ? null : body.getType().intern().toString(),
+                                                      body.getDurable(),
+                                                      body.getAutoDelete(),
+                        null);
+
+            }
+            catch(ReservedExchangeNameException e)
+            {
+                throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                          "Attempt to declare exchange: " + exchangeName +
+                                          " which begins with reserved prefix.");
+
+            }
+            catch(ExchangeExistsException e)
+            {
+                exchange = e.getExistingExchange();
+                if(!exchange.getTypeShortString().equals(body.getType()))
+                {
+                    throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
+                                                                              + exchangeName + " of type "
+                                                                              + exchange.getTypeShortString()
+                                                                              + " to " + body.getType() +".",
+                                                     body.getClazz(), body.getMethod(),
+                                                     body.getMajor(), body.getMinor(),null);
+                }
+            }
+            catch(AMQUnknownExchangeType e)
+            {
+                throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + exchangeName,e);
             }
         }
+
+
         if(!body.getNowait())
         {
             MethodRegistry methodRegistry = session.getMethodRegistry();

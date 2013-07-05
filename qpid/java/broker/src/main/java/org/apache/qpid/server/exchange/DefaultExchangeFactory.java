@@ -102,51 +102,45 @@ public class DefaultExchangeFactory implements ExchangeFactory
 
     public Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes()
     {
-        Collection<ExchangeType<? extends Exchange>> publicTypes = 
+        Collection<ExchangeType<? extends Exchange>> publicTypes =
                                 new ArrayList<ExchangeType<? extends Exchange>>();
         publicTypes.addAll(_exchangeClassMap.values());
-        
+
         return publicTypes;
     }
 
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
-    throws AMQException
+        throws AMQException
     {
-        return createExchange(new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete, 0);
+
+        UUID id = UUIDGenerator.generateExchangeUUID(exchange, _host.getName());
+        return createExchange(id, new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete);
     }
 
     public Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete)
             throws AMQException
     {
-        return createExchange(id, new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete, 0);
+        return createExchange(id, new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete);
     }
 
-    public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable,
-                                   boolean autoDelete, int ticket)
-            throws AMQException
-    {
-        UUID id = UUIDGenerator.generateExchangeUUID(exchange.asString(), _host.getName());
-        return createExchange(id, exchange, type, durable, autoDelete, ticket);
-    }
-
-    public Exchange createExchange(UUID id, AMQShortString exchange, AMQShortString type, boolean durable,
-                                   boolean autoDelete, int ticket)
+    private Exchange createExchange(UUID id, AMQShortString exchange, AMQShortString type, boolean durable,
+                                   boolean autoDelete)
             throws AMQException
     {
         // Check access
         if (!_host.getSecurityManager().authoriseCreateExchange(autoDelete, durable, exchange, null, null, null, type))
         {
-            String description = "Permission denied: exchange-name '" + exchange.asString() + "'";
+            String description = "Permission denied: exchange-name '" + exchange + "'";
             throw new AMQSecurityException(description);
         }
-        
+
         ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
         if (exchType == null)
         {
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
         }
-        
-        Exchange e = exchType.newInstance(id, _host, exchange, durable, ticket, autoDelete);
+
+        Exchange e = exchType.newInstance(id, _host, exchange, durable, autoDelete);
         return e;
     }
 }

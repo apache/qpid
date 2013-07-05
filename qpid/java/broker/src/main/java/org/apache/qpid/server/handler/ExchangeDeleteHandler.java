@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,16 +21,21 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
+import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.ExecutionErrorCode;
 
 public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeDeleteBody>
 {
@@ -49,7 +54,6 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
-        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         final AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
         {
@@ -58,20 +62,34 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         channel.sync();
         try
         {
-            if(exchangeRegistry.getExchange(body.getExchange()) == null)
+            final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
+
+            final Exchange exchange = virtualHost.getExchange(exchangeName);
+            if(exchange == null)
             {
                 throw body.getChannelException(AMQConstant.NOT_FOUND, "No such exchange: " + body.getExchange());
             }
-            exchangeRegistry.unregisterExchange(body.getExchange(), body.getIfUnused());
+
+            virtualHost.removeExchange(exchange, !body.getIfUnused());
 
             ExchangeDeleteOkBody responseBody = session.getMethodRegistry().createExchangeDeleteOkBody();
-                        
+
             session.writeFrame(responseBody.generateFrame(channelId));
         }
         catch (ExchangeInUseException e)
         {
             throw body.getChannelException(AMQConstant.IN_USE, "Exchange in use");
             // TODO: sort out consistent channel close mechanism that does all clean up etc.
+        }
+
+        catch (ExchangeIsAlternateException e)
+        {
+            throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange in use as an alternate exchange");
+
+        }
+        catch (RequiredExchangeException e)
+        {
+            throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange '"+body.getExchange()+"' cannot be deleted");
         }
     }
 }

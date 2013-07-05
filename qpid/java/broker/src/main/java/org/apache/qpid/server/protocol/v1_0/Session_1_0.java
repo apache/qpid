@@ -115,7 +115,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                     }
                     else
                     {
-                        Exchange exchg = _vhost.getExchangeRegistry().getExchange(addr);
+                        Exchange exchg = _vhost.getExchange(addr);
                         if(exchg != null)
                         {
                             destination = new ExchangeDestination(exchg, source.getDurable(), source.getExpiryPolicy());
@@ -244,7 +244,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                         }
 
                         String addr = target.getAddress();
-                        Exchange exchg = _vhost.getExchangeRegistry().getExchange(addr);
+                        Exchange exchg = _vhost.getExchange(addr);
                         if(exchg != null)
                         {
                             destination = new ExchangeDestination(exchg, target.getDurable(),

@@ -21,6 +21,8 @@
 package org.apache.qpid.server.store;
 
 
+import java.util.ArrayList;
+import java.util.Collection;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -78,9 +80,9 @@ public class MessageStoreTest extends QpidTestCase
     public static final String SELECTOR_VALUE = "Test = 'MST'";
     public static final String LVQ_KEY = "MST-LVQ-KEY";
 
-    private AMQShortString nonDurableExchangeName = new AMQShortString("MST-NonDurableDirectExchange");
-    private AMQShortString directExchangeName = new AMQShortString("MST-DirectExchange");
-    private AMQShortString topicExchangeName = new AMQShortString("MST-TopicExchange");
+    private String nonDurableExchangeName = "MST-NonDurableDirectExchange";
+    private String directExchangeName = "MST-DirectExchange";
+    private String topicExchangeName = "MST-TopicExchange";
 
     private AMQShortString durablePriorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue-Durable");
     private AMQShortString durableTopicQueueName = new AMQShortString("MST-TopicQueue-Durable");
@@ -365,12 +367,12 @@ public class MessageStoreTest extends QpidTestCase
      */
     public void testExchangePersistence() throws Exception
     {
-        int origExchangeCount = getVirtualHost().getExchangeRegistry().getExchangeNames().size();
+        int origExchangeCount = getVirtualHost().getExchanges().size();
 
-        Map<AMQShortString, Exchange> oldExchanges = createExchanges();
+        Map<String, Exchange> oldExchanges = createExchanges();
 
         assertEquals("Incorrect number of exchanges registered before recovery",
-                origExchangeCount + 3, getVirtualHost().getExchangeRegistry().getExchangeNames().size());
+                origExchangeCount + 3, getVirtualHost().getExchanges().size());
 
         reloadVirtualHost();
 
@@ -385,31 +387,28 @@ public class MessageStoreTest extends QpidTestCase
      */
     public void testDurableExchangeRemoval() throws Exception
     {
-        int origExchangeCount = getVirtualHost().getExchangeRegistry().getExchangeNames().size();
+        int origExchangeCount = getVirtualHost().getExchanges().size();
 
         createExchange(DirectExchange.TYPE, directExchangeName, true);
 
-        ExchangeRegistry exchangeRegistry = getVirtualHost().getExchangeRegistry();
         assertEquals("Incorrect number of exchanges registered before recovery",
-                origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
+                origExchangeCount + 1,  getVirtualHost().getExchanges().size());
 
         reloadVirtualHost();
 
-        exchangeRegistry = getVirtualHost().getExchangeRegistry();
         assertEquals("Incorrect number of exchanges registered after first recovery",
-                origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
+                origExchangeCount + 1,  getVirtualHost().getExchanges().size());
 
         //test that removing the exchange means it is not recovered next time
-        final Exchange exchange = exchangeRegistry.getExchange(directExchangeName);
+        final Exchange exchange = getVirtualHost().getExchange(directExchangeName);
         DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), exchange);
 
         reloadVirtualHost();
 
-        exchangeRegistry = getVirtualHost().getExchangeRegistry();
         assertEquals("Incorrect number of exchanges registered after second recovery",
-                origExchangeCount,  exchangeRegistry.getExchangeNames().size());
+                origExchangeCount,  getVirtualHost().getExchanges().size());
         assertNull("Durable exchange was not removed:" + directExchangeName,
-                exchangeRegistry.getExchange(directExchangeName));
+                getVirtualHost().getExchange(directExchangeName));
     }
 
     /**
@@ -420,12 +419,12 @@ public class MessageStoreTest extends QpidTestCase
      */
     public void testBindingPersistence() throws Exception
     {
-        int origExchangeCount = getVirtualHost().getExchangeRegistry().getExchangeNames().size();
+        int origExchangeCount = getVirtualHost().getExchanges().size();
 
         createAllQueues();
         createAllTopicQueues();
 
-        Map<AMQShortString, Exchange> exchanges = createExchanges();
+        Map<String, Exchange> exchanges = createExchanges();
 
         Exchange nonDurableExchange = exchanges.get(nonDurableExchangeName);
         Exchange directExchange = exchanges.get(directExchangeName);
@@ -436,7 +435,7 @@ public class MessageStoreTest extends QpidTestCase
         bindAllTopicQueuesToExchange(topicExchange, topicRouting);
 
         assertEquals("Incorrect number of exchanges registered before recovery",
-                origExchangeCount + 3, getVirtualHost().getExchangeRegistry().getExchangeNames().size());
+                origExchangeCount + 3, getVirtualHost().getExchanges().size());
 
         reloadVirtualHost();
 
@@ -469,8 +468,7 @@ public class MessageStoreTest extends QpidTestCase
         assertEquals("Incorrect number of bindings registered after first recovery",
                 1, queueRegistry.getQueue(durableQueueName).getBindings().size());
 
-        ExchangeRegistry exchangeRegistry = getVirtualHost().getExchangeRegistry();
-        exch = exchangeRegistry.getExchange(directExchangeName);
+        exch = getVirtualHost().getExchange(directExchangeName);
         assertNotNull("Exchange was not recovered", exch);
 
         //remove the binding and verify result after recovery
@@ -488,26 +486,30 @@ public class MessageStoreTest extends QpidTestCase
      * and that the new exchanges are not the same objects as the provided list (i.e. that the
      * reload actually generated new exchange objects)
      */
-    private void validateExchanges(int originalNumExchanges, Map<AMQShortString, Exchange> oldExchanges)
+    private void validateExchanges(int originalNumExchanges, Map<String, Exchange> oldExchanges)
     {
-        ExchangeRegistry registry = getVirtualHost().getExchangeRegistry();
-
+        Collection<Exchange> exchanges = getVirtualHost().getExchanges();
+        Collection<String> exchangeNames = new ArrayList(exchanges.size());
+        for(Exchange exchange : exchanges)
+        {
+            exchangeNames.add(exchange.getName());
+        }
         assertTrue(directExchangeName + " exchange NOT reloaded",
-                registry.getExchangeNames().contains(directExchangeName));
+                exchangeNames.contains(directExchangeName));
         assertTrue(topicExchangeName + " exchange NOT reloaded",
-                registry.getExchangeNames().contains(topicExchangeName));
+                exchangeNames.contains(topicExchangeName));
         assertTrue(nonDurableExchangeName + " exchange reloaded",
-                !registry.getExchangeNames().contains(nonDurableExchangeName));
+                !exchangeNames.contains(nonDurableExchangeName));
 
         //check the old exchange objects are not the same as the new exchanges
         assertTrue(directExchangeName + " exchange NOT reloaded",
-                registry.getExchange(directExchangeName) != oldExchanges.get(directExchangeName));
+                getVirtualHost().getExchange(directExchangeName) != oldExchanges.get(directExchangeName));
         assertTrue(topicExchangeName + " exchange NOT reloaded",
-                registry.getExchange(topicExchangeName) != oldExchanges.get(topicExchangeName));
+                getVirtualHost().getExchange(topicExchangeName) != oldExchanges.get(topicExchangeName));
 
         // There should only be the original exchanges + our 2 recovered durable exchanges
         assertEquals("Incorrect number of exchanges available",
-                originalNumExchanges + 2, registry.getExchangeNames().size());
+                originalNumExchanges + 2, getVirtualHost().getExchanges().size());
     }
 
     /** Validates the Durable queues and their properties are as expected following recovery */
@@ -771,9 +773,9 @@ public class MessageStoreTest extends QpidTestCase
 
     }
 
-    private Map<AMQShortString, Exchange> createExchanges()
+    private Map<String, Exchange> createExchanges()
     {
-        Map<AMQShortString, Exchange> exchanges = new HashMap<AMQShortString, Exchange>();
+        Map<String, Exchange> exchanges = new HashMap<String, Exchange>();
 
         //Register non-durable DirectExchange
         exchanges.put(nonDurableExchangeName, createExchange(DirectExchange.TYPE, nonDurableExchangeName, false));
@@ -785,32 +787,19 @@ public class MessageStoreTest extends QpidTestCase
         return exchanges;
     }
 
-    private Exchange createExchange(ExchangeType<?> type, AMQShortString name, boolean durable)
+    private Exchange createExchange(ExchangeType<?> type, String name, boolean durable)
     {
         Exchange exchange = null;
 
         try
         {
-            exchange = type.newInstance(UUIDGenerator.generateRandomUUID(), getVirtualHost(), name, durable, 0, false);
+            exchange = getVirtualHost().createExchange(null, name, type.getName().toString(), durable, false, null);
         }
         catch (AMQException e)
         {
             fail(e.getMessage());
         }
 
-        try
-        {
-            getVirtualHost().getExchangeRegistry().registerExchange(exchange);
-            if (durable)
-            {
-                DurableConfigurationStoreHelper.createExchange(getVirtualHost().getDurableConfigurationStore(),
-                        exchange);
-            }
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
         return exchange;
     }
 
