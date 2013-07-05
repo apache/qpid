@@ -39,7 +39,7 @@ define(["dojo/_base/xhr",
 
                 array.forEach(registry.toArray(),
                               function(item) {
-                                  if(item.id.substr(0,27) == "formAddVirtualHost.specific") {
+                                  if(item.id.substr(0,34) == "formAddVirtualHost.specific.store.") {
                                       item.destroyRecursive();
                                   }
                               });
@@ -47,8 +47,45 @@ define(["dojo/_base/xhr",
                 xhr.get({url: "virtualhost/store/jdbc/add.html",
                      sync: true,
                      load:  function(data) {
-                                node.innerHTML = data;
-                                parser.parse(node);
+                                 node.innerHTML = data;
+                                 parser.parse(node);
+
+                                 if (that.hasOwnProperty("poolTypeChooser"))
+                                 {
+                                     that.poolTypeChooser.destroy();
+                                 }
+
+                                 var selectPoolType = function(type) {
+                                     if(type && string.trim(type) != "") {
+                                         require(["qpid/management/virtualhost/store/pool/"+type.toLowerCase()+"/add"],
+                                         function(poolType)
+                                         {
+                                             poolType.show();
+                                         });
+                                     }
+                                 }
+
+                                 xhr.get({
+                                     sync: true,
+                                     url: "rest/helper?action=pluginList&plugin=JDBCConnectionProviderFactory",
+                                     handleAs: "json"
+                                 }).then(
+                                     function(data) {
+                                         var poolTypes =  data;
+                                         var poolTypesData = [];
+                                         for (var i =0 ; i < poolTypes.length; i++)
+                                         {
+                                             poolTypesData[i]= {id: poolTypes[i], name: poolTypes[i]};
+                                         }
+                                         var poolTypesStore = new Memory({ data: poolTypesData });
+                                         var poolTypesDiv = dom.byId("addVirtualHost.specific.selectPoolType");
+                                         var input = construct.create("input", {id: "addPoolType", required: false}, poolTypesDiv);
+                                         that.poolTypeChooser = new FilteringSelect({ id: "addVirtualHost.specific.store.poolType",
+                                                                                   name: "connectionPool",
+                                                                                   store: poolTypesStore,
+                                                                                   searchAttr: "name", required: false,
+                                                                                   onChange: selectPoolType }, input);
+                                 });
 
                      }});
             }

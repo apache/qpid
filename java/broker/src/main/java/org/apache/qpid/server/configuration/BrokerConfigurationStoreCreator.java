@@ -43,7 +43,7 @@ public class BrokerConfigurationStoreCreator
                 .instancesOf(ConfigurationStoreFactory.class);
         for (ConfigurationStoreFactory storeFactory : configurationStoreFactories)
         {
-            String type = storeFactory.getStoreType();
+            String type = storeFactory.getType();
             ConfigurationStoreFactory factory = _factories.put(type.toLowerCase(), storeFactory);
             if (factory != null)
             {

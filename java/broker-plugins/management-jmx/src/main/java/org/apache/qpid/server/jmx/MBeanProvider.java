@@ -25,6 +25,7 @@ import javax.management.JMException;
 import javax.management.StandardMBean;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.Pluggable;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 /**
@@ -32,7 +33,7 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
  *
  * Provider implementations are advertised as services and loaded by a {@link QpidServiceLoader}.
  */
-public interface MBeanProvider
+public interface MBeanProvider extends Pluggable
 {
     /**
      * Tests whether a <code>child</code> can be managed by the mbean

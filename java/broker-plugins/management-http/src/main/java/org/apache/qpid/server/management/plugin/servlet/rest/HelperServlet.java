@@ -50,17 +50,22 @@ public class HelperServlet extends AbstractServlet
     {
         _mapper = new ObjectMapper();
         _mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+
+        Action[] supportedActions = {
+                new ListAuthenticationProviderAttributes(),
+                new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, "ListMessageStoreTypes"),
+                new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_TYPES, "ListVirtualHostTypes"),
+                new ListGroupProviderAttributes(),
+                new ListAccessControlProviderAttributes(),
+                new PluginClassProviderAction()
+        };
+
         _actions = new HashMap<String, Action>();
-        Action listProviderAttributes = new ListAuthenticationProviderAttributes();
-        _actions.put(listProviderAttributes.getName(), listProviderAttributes);
-        Action listMessageStoreTypes = new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, "ListMessageStoreTypes");
-        _actions.put(listMessageStoreTypes.getName(), listMessageStoreTypes);
-        Action listVirtualHostTypes = new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_TYPES, "ListVirtualHostTypes");
-        _actions.put(listVirtualHostTypes.getName(), listVirtualHostTypes);
-        Action groupProviderAttributes = new ListGroupProviderAttributes();
-        _actions.put(groupProviderAttributes.getName(), groupProviderAttributes);
-        Action aclProviderAttributes = new ListAccessControlProviderAttributes();
-        _actions.put(aclProviderAttributes.getName(), aclProviderAttributes);
+
+        for(Action action : supportedActions)
+        {
+            _actions.put(action.getName(), action);
+        }
     }
 
     @Override

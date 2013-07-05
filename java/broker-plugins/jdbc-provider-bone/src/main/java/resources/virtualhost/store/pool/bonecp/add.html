@@ -1,0 +1,25 @@
+<table class="tableContainer-table tableContainer-table-horiz">
+
+  <tr>
+      <td class="tableContainer-labelCell" style="width: 300px;"><strong>Partition Count:  </strong></td>
+      <td class="tableContainer-valueCell">
+          <input data-dojo-type="dijit/form/NumberSpinner" id="formAddVirtualHost.specific.store.pool.parititions"
+                                             name="minConnectionsPerPartition" value="4" smallDelta="1" constraints="{min:1,max:1000,places:0}"/>
+      </td>
+  </tr>
+  <tr>
+      <td class="tableContainer-labelCell" style="width: 300px;"><strong>Min Conn per Partition:  </strong></td>
+      <td class="tableContainer-valueCell">
+          <input dojoType="dijit/form/NumberSpinner" id="formAddVirtualHost.specific.store.pool.minConn"
+                 name="minConnectionsPerPartition" value="5" smallDelta="1" constraints="{min:1,max:1000,places:0}"/>
+      </td>
+  </tr>
+  <tr>
+      <td class="tableContainer-labelCell" style="width: 300px;"><strong>Max Conn per Partition:  </strong></td>
+      <td class="tableContainer-valueCell">
+          <input dojoType="dijit/form/NumberSpinner" id="formAddVirtualHost.specific.store.pool.maxCon"
+                 name="maxConnectionsPerPartition" value="10" smallDelta="1" constraints="{min:1,max:1000,places:0}"/>
+      </td>
+  </tr>
+
+</table>

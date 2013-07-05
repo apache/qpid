@@ -30,6 +30,12 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class TopicExchangeType implements ExchangeType<TopicExchange>
 {
+    @Override
+    public String getType()
+    {
+        return getName().toString();
+    }
+
     public AMQShortString getName()
     {
         return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
