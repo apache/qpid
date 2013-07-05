@@ -23,6 +23,7 @@
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/amqp/MapHandler.h"
+#include "qpid/amqp/MessageId.h"
 #include "qpid/broker/Message.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/MessageProperties.h"
@@ -66,6 +67,28 @@ std::string MessageTransfer::getAnnotationAsString(const std::string& key) const
     }
 }
 std::string MessageTransfer::getPropertyAsString(const std::string& key) const { return getAnnotationAsString(key); }
+
+amqp::MessageId MessageTransfer::getMessageId() const
+{
+    const qpid::framing::MessageProperties* mp = getProperties<qpid::framing::MessageProperties>();
+
+    amqp::MessageId r;
+    if (mp->hasMessageId()) {
+        r.set(amqp::CharSequence::create(&mp->getMessageId()[0],16), types::VAR_UUID);
+    }
+    return r;
+}
+
+amqp::MessageId MessageTransfer::getCorrelationId() const
+{
+    const qpid::framing::MessageProperties* mp = getProperties<qpid::framing::MessageProperties>();
+
+    amqp::MessageId r;
+    if (mp->hasCorrelationId()) {
+        r.set(amqp::CharSequence::create(mp->getCorrelationId()), types::VAR_STRING);
+    }
+    return r;
+}
 
 bool MessageTransfer::getTtl(uint64_t& result) const
 {

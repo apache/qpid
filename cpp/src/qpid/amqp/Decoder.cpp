@@ -263,7 +263,7 @@ void Decoder::readValue(Reader& reader, uint8_t code, const Descriptor* descript
         break;
 
       case LIST0:
-        reader.onStartList(0, CharSequence::create(0, 0), descriptor);
+        reader.onStartList(0, CharSequence::create(), descriptor);
         reader.onEndList(0, descriptor);
         break;
       case LIST8:

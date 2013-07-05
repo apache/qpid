@@ -51,10 +51,10 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     std::string getContent() const;
     void processProperties(qpid::amqp::MapHandler&) const;
     std::string getUserId() const;
-
     qpid::amqp::MessageId getMessageId() const;
-    qpid::amqp::CharSequence getReplyTo() const;
     qpid::amqp::MessageId getCorrelationId() const;
+
+    qpid::amqp::CharSequence getReplyTo() const;
     qpid::amqp::CharSequence getContentType() const;
     qpid::amqp::CharSequence getContentEncoding() const;
 

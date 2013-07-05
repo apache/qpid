@@ -22,8 +22,9 @@
 #include "qpid/broker/Selector.h"
 
 #include "qpid/amqp/CharSequence.h"
-#include "qpid/broker/Message.h"
 #include "qpid/amqp/MapHandler.h"
+#include "qpid/amqp/MessageId.h"
+#include "qpid/broker/Message.h"
 #include "qpid/broker/SelectorExpression.h"
 #include "qpid/broker/SelectorValue.h"
 #include "qpid/log/Statement.h"
@@ -43,6 +44,7 @@ using std::string;
 using qpid::sys::unordered_map;
 using qpid::amqp::CharSequence;
 using qpid::amqp::MapHandler;
+using qpid::amqp::MessageId;
 
 /**
  * Identifier  (amqp.)  | JMS...       | amqp 1.0 equivalent
@@ -63,32 +65,6 @@ const string EMPTY;
 const string PERSISTENT("PERSISTENT");
 const string NON_PERSISTENT("NON_PERSISTENT");
 
-const Value specialValue(const Message& msg, const string& id)
-{
-    // TODO: Just use a simple if chain for now - improve this later
-    if ( id=="delivery_mode" ) {
-        return msg.getEncoding().isPersistent() ? PERSISTENT : NON_PERSISTENT;
-    } else if ( id=="redelivered" ) {
-        return msg.getDeliveryCount()>0 ? true : false;
-    } else if ( id=="priority" ) {
-        return int64_t(msg.getPriority());
-    } else if ( id=="correlation_id" ) {
-        return EMPTY; // Needs an indirection in getEncoding().
-    } else if ( id=="message_id" ) {
-        return EMPTY; // Needs an indirection in getEncoding().
-    } else if ( id=="to" ) {
-        return EMPTY; // This is good for 0-10, not sure about 1.0
-    } else if ( id=="reply_to" ) {
-        return EMPTY; // Needs an indirection in getEncoding().
-    } else if ( id=="absolute_expiry_time" ) {
-        return EMPTY; // Needs an indirection in getEncoding().
-    } else if ( id=="creation_time" ) {
-        return EMPTY; // Needs an indirection in getEncoding().
-    } else if ( id=="jms_type" ) {
-        return EMPTY;
-    } else return Value();
-}
-
 class MessageSelectorEnv : public SelectorEnv {
     const Message& msg;
     mutable boost::ptr_vector<string> returnedStrings;
@@ -96,6 +72,7 @@ class MessageSelectorEnv : public SelectorEnv {
     mutable bool valuesLookedup;
 
     const Value& value(const string&) const;
+    const Value specialValue(const string&) const;
 
 public:
     MessageSelectorEnv(const Message&);
@@ -105,6 +82,55 @@ MessageSelectorEnv::MessageSelectorEnv(const Message& m) :
     msg(m),
     valuesLookedup(false)
 {
+}
+
+const Value MessageSelectorEnv::specialValue(const string& id) const
+{
+    Value v;
+    // TODO: Just use a simple if chain for now - improve this later
+    if ( id=="delivery_mode" ) {
+        v = msg.getEncoding().isPersistent() ? PERSISTENT : NON_PERSISTENT;
+    } else if ( id=="redelivered" ) {
+        v = msg.getDeliveryCount()>0 ? true : false;
+    } else if ( id=="priority" ) {
+        v = int64_t(msg.getPriority());
+    } else if ( id=="correlation_id" ) {
+        MessageId cId = msg.getEncoding().getCorrelationId();
+        if (cId) {
+            returnedStrings.push_back(new string(cId.str()));
+            v = returnedStrings[returnedStrings.size()-1];
+        }
+    } else if ( id=="message_id" ) {
+        MessageId mId = msg.getEncoding().getMessageId();
+        if (mId) {
+            returnedStrings.push_back(new string(mId.str()));
+            v = returnedStrings[returnedStrings.size()-1];
+        }
+    } else if ( id=="to" ) {
+        v = EMPTY; // Hard to get this correct for both 1.0 and 0-10
+    } else if ( id=="reply_to" ) {
+        v = EMPTY; // Hard to get this correct for both 1.0 and 0-10
+    } else if ( id=="absolute_expiry_time" ) {
+        qpid::sys::AbsTime expiry = msg.getExpiration();
+        // Java property has value of 0 for no expiry
+        v = (expiry==qpid::sys::FAR_FUTURE) ? 0
+            : qpid::sys::Duration(qpid::sys::AbsTime::Epoch(), expiry) / qpid::sys::TIME_MSEC;
+    } else if ( id=="creation_time" ) {
+        // Use the time put on queue (if it is enabled) as 0-10 has no standard way to get message
+        // creation time and we're not paying attention to the 1.0 creation time yet.
+        v = int64_t(msg.getTimestamp() * 1000); // getTimestamp() returns time in seconds we need milliseconds
+    } else if ( id=="jms_type" ) {
+        // Currently we can't distinguish between an empty JMSType and no JMSType
+        // We'll assume for now that setting an empty JMSType doesn't make a lot of sense
+        const string jmsType = msg.getAnnotation("jms-type").asString();
+        if ( !jmsType.empty() ) {
+            returnedStrings.push_back(new string(jmsType));
+            v = returnedStrings[returnedStrings.size()-1];
+        }
+    } else {
+        v = Value();
+    }
+    return v;
 }
 
 struct ValueHandler : public broker::MapHandler {
@@ -152,7 +178,7 @@ const Value& MessageSelectorEnv::value(const string& identifier) const
     if ( identifier.substr(0, 5) == "amqp." ) {
         if ( returnedValues.count(identifier)==0 ) {
             QPID_LOG(debug, "Selector lookup special identifier: " << identifier);
-            returnedValues[identifier] = specialValue(msg, identifier.substr(5));
+            returnedValues[identifier] = specialValue(identifier.substr(5));
         }
     } else if (!valuesLookedup) {
         QPID_LOG(debug, "Selector lookup triggered by: " << identifier);
