@@ -37,12 +37,15 @@ struct MessageId
     } value;
     enum
     {
+        NONE,
         BYTES,
         UUID,
         ULONG
     } type;
 
     QPID_COMMON_EXTERN MessageId();
+    QPID_COMMON_EXTERN operator bool() const;
+    QPID_COMMON_EXTERN std::string str() const;
     QPID_COMMON_EXTERN void assign(std::string&) const;
     QPID_COMMON_EXTERN void set(qpid::amqp::CharSequence bytes, qpid::types::VariantType t);
     QPID_COMMON_EXTERN void set(uint64_t ulong);

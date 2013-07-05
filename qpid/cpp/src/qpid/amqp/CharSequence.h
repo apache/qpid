@@ -42,7 +42,10 @@ struct CharSequence
     QPID_COMMON_EXTERN std::string str() const;
     QPID_COMMON_EXTERN void init();
 
+    QPID_COMMON_EXTERN static CharSequence create();
+    QPID_COMMON_EXTERN static CharSequence create(const std::string& str);
     QPID_COMMON_EXTERN static CharSequence create(const char* data, size_t size);
+    QPID_COMMON_EXTERN static CharSequence create(const unsigned char* data, size_t size);
 };
 }} // namespace qpid::amqp
 
