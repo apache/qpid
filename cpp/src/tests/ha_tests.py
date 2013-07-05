@@ -1286,9 +1286,12 @@ class StoreTests(BrokerTest):
         cluster[1].assert_browse_backup("q2", ["hello", "end"])
 
 if __name__ == "__main__":
-    shutil.rmtree("brokertest.tmp", True)
+    outdir = "ha_tests.tmp"
+    shutil.rmtree(outdir, True)
     qpid_ha = os.getenv("QPID_HA_EXEC")
     if  qpid_ha and os.path.exists(qpid_ha):
-        os.execvp("qpid-python-test", ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])
+        os.execvp("qpid-python-test",
+                  ["qpid-python-test", "-m", "ha_tests", "-DOUTDIR=%s"%outdir]
+                  + sys.argv[1:])
     else:
         print "Skipping ha_tests, %s not available"%(qpid_ha)
