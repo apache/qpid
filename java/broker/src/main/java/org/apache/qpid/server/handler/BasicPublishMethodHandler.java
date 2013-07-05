@@ -67,7 +67,7 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
         }
 
         VirtualHost vHost = session.getVirtualHost();
-        Exchange exch = vHost.getExchangeRegistry().getExchange(exchangeName);
+        Exchange exch = vHost.getExchange(exchangeName.toString());
         // if the exchange does not exist we raise a channel exception
         if (exch == null)
         {

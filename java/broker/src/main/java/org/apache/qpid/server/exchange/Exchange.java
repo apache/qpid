@@ -39,7 +39,7 @@ import java.util.UUID;
 
 public interface Exchange extends ExchangeReferrer
 {
-    void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, boolean autoDelete)
             throws AMQException;
 
 
@@ -59,8 +59,6 @@ public interface Exchange extends ExchangeReferrer
      * @return true if the exchange will be deleted after all queues have been detached
      */
     boolean isAutoDelete();
-
-    int getTicket();
 
     Exchange getAlternateExchange();
 

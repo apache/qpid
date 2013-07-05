@@ -18,25 +18,24 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.server.virtualhost;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.queue.AMQQueue;
 
-import java.util.Collection;
-import java.util.UUID;
-
-
-public interface ExchangeFactory
+public interface VirtualHostListener
 {
 
-    Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
+    public void queueRegistered(AMQQueue queue);
 
-    Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes();
+    public void queueUnregistered(AMQQueue queue);
 
-    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
+    public void connectionRegistered(AMQConnectionModel connection);
 
-    Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
+    public void connectionUnregistered(AMQConnectionModel connection);
 
+    public void exchangeRegistered(Exchange exchange);
+
+    public void exchangeUnregistered(Exchange exchange);
 }

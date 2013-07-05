@@ -42,6 +42,8 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
+import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apache.qpid.server.exchange.Exchange.BindingListener
@@ -121,7 +123,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         return createBinding(bindingKey, queue, bindingArgs, attributes);
 
     }
-    
+
     public org.apache.qpid.server.model.Binding createBinding(String bindingKey, Queue queue,
                                                               Map<String, Object> bindingArguments,
                                                               Map<String, Object> attributes)
@@ -165,21 +167,11 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     {
         try
         {
-            ExchangeRegistry exchangeRegistry = _vhost.getVirtualHost().getExchangeRegistry();
-            if (exchangeRegistry.isReservedExchangeName(getName()))
-            {
-                throw new UnsupportedOperationException("'" + getName() + "' is a reserved exchange and can't be deleted");
-            }
-
-            if(_exchange.hasReferrers())
-            {
-                throw new AMQException( AMQConstant.NOT_ALLOWED, "Exchange in use as an alternate exchange", null);
-            }
-
-            synchronized(exchangeRegistry)
-            {
-                exchangeRegistry.unregisterExchange(getName(), false);
-            }
+            _vhost.getVirtualHost().removeExchange(_exchange, true);
+        }
+        catch(RequiredExchangeException e)
+        {
+            throw new UnsupportedOperationException("'" + getName() + "' is a reserved exchange and can't be deleted");
         }
         catch(AMQException e)
         {

@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,16 +7,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 package org.apache.qpid.server.handler;
 
@@ -60,7 +60,6 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
-        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
 
@@ -97,7 +96,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
         }
-        final Exchange exch = exchangeRegistry.getExchange(body.getExchange());
+        final Exchange exch = virtualHost.getExchange(body.getExchange() == null ? null : body.getExchange().toString());
         if (exch == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
@@ -112,7 +111,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             exch.removeBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(body.getArguments()));
         }
 
-        
+
         if (_log.isInfoEnabled())
         {
             _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + routingKey);

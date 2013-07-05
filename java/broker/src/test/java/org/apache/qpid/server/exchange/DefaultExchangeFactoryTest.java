@@ -179,8 +179,8 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
             }
 
             @Override
-            public Exchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable, int ticket,
-                    boolean autoDelete) throws AMQException
+            public Exchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable,
+                                        boolean autoDelete) throws AMQException
             {
                 return null;
             }

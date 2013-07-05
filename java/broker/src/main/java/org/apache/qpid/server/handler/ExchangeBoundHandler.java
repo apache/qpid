@@ -88,7 +88,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         {
             throw new AMQException("Exchange exchange must not be null");
         }
-        Exchange exchange = virtualHost.getExchangeRegistry().getExchange(exchangeName);
+        Exchange exchange = virtualHost.getExchange(exchangeName.toString());
         ExchangeBoundOkBody response;
         if (exchange == null)
         {

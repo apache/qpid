@@ -24,12 +24,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -46,8 +44,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     /**
      * Maps from exchange name to exchange instance
      */
-    private ConcurrentMap<AMQShortString, Exchange> _exchangeMap = new ConcurrentHashMap<AMQShortString, Exchange>();
-    private ConcurrentMap<String, Exchange> _exchangeMapStr = new ConcurrentHashMap<String, Exchange>();
+    private ConcurrentMap<String, Exchange> _exchangeMap = new ConcurrentHashMap<String, Exchange>();
 
     private Exchange _defaultExchange;
     private VirtualHost _host;
@@ -59,17 +56,17 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _host = host;
     }
 
-    public void initialise() throws AMQException
+    public void initialise(ExchangeFactory exchangeFactory) throws AMQException
     {
         //create 'standard' exchanges:
-        new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this, getDurableConfigurationStore());
+        new ExchangeInitialiser().initialise(exchangeFactory, this, getDurableConfigurationStore());
 
         _defaultExchange = new DefaultExchange();
 
         UUID defaultExchangeId =
                 UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(), _host.getName());
 
-        _defaultExchange.initialise(defaultExchangeId, _host, ExchangeDefaults.DEFAULT_EXCHANGE_NAME,false,0,false);
+        _defaultExchange.initialise(defaultExchangeId, _host, ExchangeDefaults.DEFAULT_EXCHANGE_NAME,false, false);
 
     }
 
@@ -80,8 +77,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void registerExchange(Exchange exchange) throws AMQException
     {
-        _exchangeMap.put(exchange.getNameShortString(), exchange);
-        _exchangeMapStr.put(exchange.getNameShortString().toString(), exchange);
+        _exchangeMap.put(exchange.getNameShortString().toString(), exchange);
         synchronized (_listeners)
         {
             for(RegistryChangeListener listener : _listeners)
@@ -102,12 +98,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
-    public Collection<AMQShortString> getExchangeNames()
-    {
-        return _exchangeMap.keySet();
-    }
-
-    public void unregisterExchange(AMQShortString name, boolean inUse) throws AMQException
+    public void unregisterExchange(String name, boolean inUse) throws AMQException
     {
         final Exchange exchange = _exchangeMap.get(name);
         if (exchange == null)
@@ -123,13 +114,8 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         // TODO: check inUse argument
 
         Exchange e = _exchangeMap.remove(name);
-        _exchangeMapStr.remove(name.toString());
         if (e != null)
         {
-            if (e.isDurable())
-            {
-                DurableConfigurationStoreHelper.removeExchange(getDurableConfigurationStore(), e);
-            }
             e.close();
 
             synchronized (_listeners)
@@ -147,11 +133,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
     }
 
-    public void unregisterExchange(String name, boolean inUse) throws AMQException
-    {
-        unregisterExchange(new AMQShortString(name), inUse);
-    }
-
     public Collection<Exchange> getExchanges()
     {
         return new ArrayList<Exchange>(_exchangeMap.values());
@@ -162,7 +143,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _listeners.add(listener);
     }
 
-    public Exchange getExchange(AMQShortString name)
+    public Exchange getExchange(String name)
     {
         if ((name == null) || name.length() == 0)
         {
@@ -172,28 +153,13 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             return _exchangeMap.get(name);
         }
-
-    }
-
-    public Exchange getExchange(String name)
-    {
-        if ((name == null) || name.length() == 0)
-        {
-            return getDefaultExchange();
-        }
-        else
-        {
-            return _exchangeMapStr.get(name);
-        }
     }
 
     @Override
     public void clearAndUnregisterMbeans()
     {
-        for (final AMQShortString exchangeName : getExchangeNames())
+        for (final Exchange exchange : getExchanges())
         {
-            final Exchange exchange = getExchange(exchangeName);
-
             //TODO: this is a bit of a hack, what if the listeners aren't aware
             //that we are just unregistering the MBean because of HA, and aren't
             //actually removing the exchange as such.
@@ -206,7 +172,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
             }
         }
         _exchangeMap.clear();
-        _exchangeMapStr.clear();
     }
 
     @Override
@@ -237,7 +202,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             return true;
         }
-        Collection<ExchangeType<? extends Exchange>> registeredTypes = _host.getExchangeFactory().getRegisteredTypes();
+        Collection<ExchangeType<? extends Exchange>> registeredTypes = _host.getExchangeTypes();
         for (ExchangeType<? extends Exchange> type : registeredTypes)
         {
             if (type.getDefaultExchangeName().toString().equals(name))

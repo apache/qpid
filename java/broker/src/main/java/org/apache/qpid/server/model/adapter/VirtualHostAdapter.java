@@ -81,11 +81,13 @@ import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
+import org.apache.qpid.server.virtualhost.ExchangeExistsException;
+import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHostListener;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, ExchangeRegistry.RegistryChangeListener,
-                                                                  QueueRegistry.RegistryChangeListener,
-                                                                  IConnectionRegistry.RegistryChangeListener
+public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
 
@@ -184,7 +186,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     private void populateExchanges()
     {
         Collection<org.apache.qpid.server.exchange.Exchange> actualExchanges =
-                _virtualHost.getExchangeRegistry().getExchanges();
+                _virtualHost.getExchanges();
 
         synchronized (_exchangeAdapters)
         {
@@ -296,31 +298,81 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
         try
         {
-            ExchangeRegistry exchangeRegistry = _virtualHost.getExchangeRegistry();
-            if (exchangeRegistry.isReservedExchangeName(name))
+            String alternateExchange = null;
+            if(attributes.containsKey(Exchange.ALTERNATE_EXCHANGE))
             {
-                throw new UnsupportedOperationException("'" + name + "' is a reserved exchange name");
+                Object altExchangeObject = attributes.get(Exchange.ALTERNATE_EXCHANGE);
+                if(altExchangeObject instanceof Exchange)
+                {
+                    alternateExchange = ((Exchange) altExchangeObject).getName();
+                }
+                else if(altExchangeObject instanceof UUID)
+                {
+                    for(Exchange ex : getExchanges())
+                    {
+                        if(altExchangeObject.equals(ex.getId()))
+                        {
+                            alternateExchange = ex.getName();
+                            break;
+                        }
+                    }
+                }
+                else if(altExchangeObject instanceof String)
+                {
+
+                    for(Exchange ex : getExchanges())
+                    {
+                        if(altExchangeObject.equals(ex.getName()))
+                        {
+                            alternateExchange = ex.getName();
+                            break;
+                        }
+                    }
+                    if(alternateExchange == null)
+                    {
+                        try
+                        {
+                            UUID id = UUID.fromString(altExchangeObject.toString());
+                            for(Exchange ex : getExchanges())
+                            {
+                                if(id.equals(ex.getId()))
+                                {
+                                    alternateExchange = ex.getName();
+                                    break;
+                                }
+                            }
+                        }
+                        catch(IllegalArgumentException e)
+                        {
+                            // ignore
+                        }
+
+                    }
+                }
             }
-            synchronized(exchangeRegistry)
+            org.apache.qpid.server.exchange.Exchange exchange = _virtualHost.createExchange(null,
+                    name,
+                    type,
+                    durable,
+                    lifetime == LifetimePolicy.AUTO_DELETE,
+                    alternateExchange);
+            synchronized (_exchangeAdapters)
             {
-                org.apache.qpid.server.exchange.Exchange exchange = exchangeRegistry.getExchange(name);
-                if (exchange != null)
-                {
-                    throw new IllegalArgumentException("Exchange with name '" + name + "' already exists");
-                }
-                exchange = _virtualHost.getExchangeFactory().createExchange(name, type, durable,
-                                                                     lifetime == LifetimePolicy.AUTO_DELETE);
-                _virtualHost.getExchangeRegistry().registerExchange(exchange);
-                if(durable)
-                {
-                    DurableConfigurationStoreHelper.createExchange(_virtualHost.getDurableConfigurationStore(),
-                            exchange);
-                }
-                synchronized (_exchangeAdapters)
-                {
-                    return _exchangeAdapters.get(exchange);
-                }
+                return _exchangeAdapters.get(exchange);
             }
+
+        }
+        catch(ExchangeExistsException e)
+        {
+            throw new IllegalArgumentException("Exchange with name '" + name + "' already exists");
+        }
+        catch(ReservedExchangeNameException e)
+        {
+            throw new UnsupportedOperationException("'" + name + "' is a reserved exchange name");
+        }
+        catch(UnknownExchangeException e)
+        {
+            throw new IllegalArgumentException("Alternate Exchange with name '" + e.getExchangeName() + "' does not exist");
         }
         catch(AMQException e)
         {
@@ -726,7 +778,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     public Collection<String> getExchangeTypes()
     {
         Collection<ExchangeType<? extends org.apache.qpid.server.exchange.Exchange>> types =
-                _virtualHost.getExchangeFactory().getRegisteredTypes();
+                _virtualHost.getExchangeTypes();
 
         Collection<String> exchangeTypes = new ArrayList<String>();
 
@@ -884,7 +936,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         if(SUPPORTED_EXCHANGE_TYPES.equals(name))
         {
             List<String> types = new ArrayList<String>();
-            for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeFactory().getRegisteredTypes())
+            for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeTypes())
             {
                 types.add(type.getName().asString());
             }
@@ -1009,7 +1061,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             }
             else if(VirtualHost.EXCHANGE_COUNT.equals(name))
             {
-                return _vhost.getExchangeRegistry().getExchanges().size();
+                return _vhost.getExchanges().size();
             }
             else if(VirtualHost.CONNECTION_COUNT.equals(name))
             {
@@ -1127,11 +1179,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         virtualHostRegistry.registerVirtualHost(_virtualHost);
 
         _statistics = new VirtualHostStatisticsAdapter(_virtualHost);
-        _virtualHost.getQueueRegistry().addRegistryChangeListener(this);
+        _virtualHost.addVirtualHostListener(this);
         populateQueues();
-        _virtualHost.getExchangeRegistry().addRegistryChangeListener(this);
         populateExchanges();
-        _virtualHost.getConnectionRegistry().addRegistryChangeListener(this);
 
         synchronized(_aliases)
         {

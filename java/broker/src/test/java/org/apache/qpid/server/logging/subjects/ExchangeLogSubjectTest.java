@@ -40,7 +40,7 @@ public class ExchangeLogSubjectTest extends AbstractTestLogSubject
 
         _testVhost = BrokerTestHelper.createVirtualHost("test");
 
-        _exchange = _testVhost.getExchangeRegistry().getExchange("amq.direct");
+        _exchange = _testVhost.getExchange("amq.direct");
         _subject = new ExchangeLogSubject(_exchange,_testVhost);
     }
 

@@ -33,17 +33,17 @@ public class ExchangeInitialiser
     {
         for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
         {
-            define (registry, factory, type.getDefaultExchangeName(), type.getName(), store);
+            define (registry, factory, type.getDefaultExchangeName().toString(), type.getName().toString(), store);
         }
 
     }
 
     private void define(ExchangeRegistry r, ExchangeFactory f,
-                        AMQShortString name, AMQShortString type, DurableConfigurationStore store) throws AMQException
+                        String name, String type, DurableConfigurationStore store) throws AMQException
     {
         if(r.getExchange(name)== null)
         {
-            Exchange exchange = f.createExchange(name, type, true, false, 0);
+            Exchange exchange = f.createExchange(name, type, true, false);
             r.registerExchange(exchange);
             if(exchange.isDurable())
             {
