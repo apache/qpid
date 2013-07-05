@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <inttypes.h>
 #include "test_case.h"
 #include <qpid/dispatch.h>
 
@@ -76,25 +77,25 @@ static char *test_parser_fixed_scalars(void *context)
         }
         if (fs_vectors[idx].check_uint &&
             dx_parse_as_uint(parsed) != fs_vectors[idx].expected_ulong) {
-            sprintf(error, "(%d) UINT: Expected %08lx, Got %08x", idx,
+            sprintf(error, "(%d) UINT: Expected %"PRIx64", Got %"PRIx32, idx,
                     fs_vectors[idx].expected_ulong, dx_parse_as_uint(parsed));
             return error;
         }
         if (fs_vectors[idx].check_ulong &&
             dx_parse_as_ulong(parsed) != fs_vectors[idx].expected_ulong) {
-            sprintf(error, "(%d) ULONG: Expected %08lx, Got %08lx", idx,
+            sprintf(error, "(%d) ULONG: Expected %"PRIx64", Got %"PRIx64, idx,
                     fs_vectors[idx].expected_ulong, dx_parse_as_ulong(parsed));
             return error;
         }
         if (fs_vectors[idx].check_int &&
             dx_parse_as_int(parsed) != fs_vectors[idx].expected_long) {
-            sprintf(error, "(%d) INT: Expected %08lx, Got %08x", idx,
+            sprintf(error, "(%d) INT: Expected %"PRIx64", Got %"PRIx32, idx,
                     fs_vectors[idx].expected_long, dx_parse_as_int(parsed));
             return error;
         }
         if (fs_vectors[idx].check_long &&
             dx_parse_as_long(parsed) != fs_vectors[idx].expected_long) {
-            sprintf(error, "(%d) LONG: Expected %08lx, Got %08lx", idx,
+            sprintf(error, "(%d) LONG: Expected %"PRIx64", Got %"PRIx64, idx,
                     fs_vectors[idx].expected_long, dx_parse_as_long(parsed));
             return error;
         }
