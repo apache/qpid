@@ -24,12 +24,45 @@
 #include <qpid/dispatch/parse.h>
 #include <qpid/dispatch/iterator.h>
 
+/**
+ * Initialize the embedded-python subsystem.  This must be called before
+ * any other call into this module is invoked.
+ */
 void dx_python_initialize();
+
+/**
+ * Finalize the embedded-python subsystem.  After this is called, there
+ * must be no further invocation of dx_python methods.
+ */
 void dx_python_finalize();
+
+/**
+ * Start using embedded python.  This is called once by each module that plans
+ * to use embedded python capabilities.  It must call dx_python_start before
+ * using any python components.
+ */
 void dx_python_start();
+
+/**
+ * Stop using embedded python.  This is called once by each module after it is
+ * finished using embedded python capabilities.
+ */
 void dx_python_stop();
 
+/**
+ * Convert a Python object to AMQP format and append to a composed_field.
+ *
+ * @param value A Python Object
+ * @param field A composed field
+ */
 void dx_py_to_composed(PyObject *value, dx_composed_field_t *field);
+
+/**
+ * Convert a parsed field to a Python object
+ *
+ * @param field A parsed field
+ * @return A generated Python object
+ */
 PyObject *dx_field_to_py(dx_parsed_field_t *field);
 
 #endif

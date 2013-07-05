@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "python_embedded.h"
+#include <qpid/dispatch/python_embedded.h>
 #include "config_private.h"
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/log.h>

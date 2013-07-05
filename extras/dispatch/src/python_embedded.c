@@ -17,15 +17,65 @@
  * under the License.
  */
 
-#include "python_embedded.h"
+#include <qpid/dispatch/python_embedded.h>
 #include <qpid/dispatch/threading.h>
 #include <qpid/dispatch/log.h>
 #include <qpid/dispatch/amqp.h>
+#include <qpid/dispatch/alloc.h>
+
+
+//===============================================================================
+// Control Functions
+//===============================================================================
 
 static uint32_t     ref_count  = 0;
 static sys_mutex_t *lock       = 0;
 static char        *log_module = "PYTHON";
 
+static void dx_python_setup();
+
+
+void dx_python_initialize()
+{
+    lock = sys_mutex();
+}
+
+
+void dx_python_finalize()
+{
+    assert(ref_count == 0);
+    sys_mutex_free(lock);
+}
+
+
+void dx_python_start()
+{
+    sys_mutex_lock(lock);
+    if (ref_count == 0) {
+        Py_Initialize();
+        dx_python_setup();
+        dx_log(log_module, LOG_TRACE, "Embedded Python Interpreter Initialized");
+    }
+    ref_count++;
+    sys_mutex_unlock(lock);
+}
+
+
+void dx_python_stop()
+{
+    sys_mutex_lock(lock);
+    ref_count--;
+    if (ref_count == 0) {
+        Py_Finalize();
+        dx_log(log_module, LOG_TRACE, "Embedded Python Interpreter Shut Down");
+    }
+    sys_mutex_unlock(lock);
+}
+
+
+//===============================================================================
+// Data Conversion Functions
+//===============================================================================
 
 static PyObject *parsed_to_py_string(dx_parsed_field_t *field)
 {
@@ -64,43 +114,6 @@ static PyObject *parsed_to_py_string(dx_parsed_field_t *field)
         free(buffer);
 
     return result;
-}
-
-
-void dx_python_initialize()
-{
-    lock = sys_mutex();
-}
-
-
-void dx_python_finalize()
-{
-    assert(ref_count == 0);
-    sys_mutex_free(lock);
-}
-
-
-void dx_python_start()
-{
-    sys_mutex_lock(lock);
-    if (ref_count == 0) {
-        Py_Initialize();
-        dx_log(log_module, LOG_TRACE, "Embedded Python Interpreter Initialized");
-    }
-    ref_count++;
-    sys_mutex_unlock(lock);
-}
-
-
-void dx_python_stop()
-{
-    sys_mutex_lock(lock);
-    ref_count--;
-    if (ref_count == 0) {
-        Py_Finalize();
-        dx_log(log_module, LOG_TRACE, "Embedded Python Interpreter Shut Down");
-    }
-    sys_mutex_unlock(lock);
 }
 
 
@@ -255,3 +268,161 @@ PyObject *dx_field_to_py(dx_parsed_field_t *field)
     return result;
 }
 
+
+//===============================================================================
+// Logging Object
+//===============================================================================
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *module_name;
+} LogAdapter;
+
+
+static int LogAdapter_init(LogAdapter *self, PyObject *args, PyObject *kwds)
+{
+    const char *text;
+    if (!PyArg_ParseTuple(args, "s", &text))
+        return -1;
+
+    self->module_name = PyString_FromString(text);
+    return 0;
+}
+
+
+static void LogAdapter_dealloc(LogAdapter* self)
+{
+    Py_XDECREF(self->module_name);
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+
+static PyObject* dx_python_log(PyObject *self, PyObject *args)
+{
+    int level;
+    const char* text;
+
+    if (!PyArg_ParseTuple(args, "is", &level, &text))
+        return 0;
+
+    LogAdapter *self_ptr = (LogAdapter*) self;
+    char       *logmod   = PyString_AS_STRING(self_ptr->module_name);
+
+    dx_log(logmod, level, text);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyMethodDef LogAdapter_methods[] = {
+    {"log", dx_python_log, METH_VARARGS, "Emit a Log Line"},
+    {0, 0, 0, 0}
+};
+
+static PyMethodDef empty_methods[] = {
+  {0, 0, 0, 0}
+};
+
+static PyTypeObject LogAdapterType = {
+    PyObject_HEAD_INIT(0)
+    0,                         /* ob_size*/
+    "dispatch.LogAdapter",     /* tp_name*/
+    sizeof(LogAdapter),        /* tp_basicsize*/
+    0,                         /* tp_itemsize*/
+    (destructor)LogAdapter_dealloc, /* tp_dealloc*/
+    0,                         /* tp_print*/
+    0,                         /* tp_getattr*/
+    0,                         /* tp_setattr*/
+    0,                         /* tp_compare*/
+    0,                         /* tp_repr*/
+    0,                         /* tp_as_number*/
+    0,                         /* tp_as_sequence*/
+    0,                         /* tp_as_mapping*/
+    0,                         /* tp_hash */
+    0,                         /* tp_call*/
+    0,                         /* tp_str*/
+    0,                         /* tp_getattro*/
+    0,                         /* tp_setattro*/
+    0,                         /* tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,        /* tp_flags*/
+    "Dispatch Log Adapter",    /* tp_doc */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
+    LogAdapter_methods,        /* tp_methods */
+    0,                         /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)LogAdapter_init, /* tp_init */
+    0,                         /* tp_alloc */
+    0,                         /* tp_new */
+    0,                         /* tp_free */
+    0,                         /* tp_is_gc */
+    0,                         /* tp_bases */
+    0,                         /* tp_mro */
+    0,                         /* tp_cache */
+    0,                         /* tp_subclasses */
+    0,                         /* tp_weaklist */
+    0,                         /* tp_del */
+    0                          /* tp_version_tag */
+};
+
+
+//===============================================================================
+// Message IO Object
+//===============================================================================
+
+typedef struct dx_python_io_adapter {
+    int x;
+} dx_python_io_adapter;
+
+ALLOC_DECLARE(dx_python_io_adapter);
+ALLOC_DEFINE(dx_python_io_adapter);
+
+//static PyObject* dx_python_send(PyObject *self, PyObject *args)
+//{
+//    return 0;
+//}
+
+
+//===============================================================================
+// Initialization of Modules and Types
+//===============================================================================
+
+static void dx_python_setup()
+{
+    //
+    // Add LogAdapter
+    //
+    LogAdapterType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&LogAdapterType) < 0) {
+        PyErr_Print();
+        dx_log(log_module, LOG_ERROR, "Unable to initialize LogAdapter");
+        assert(0);
+    } else {
+        PyObject *m = Py_InitModule3("dispatch", empty_methods, "Dispatch Adapter Module");
+
+        Py_INCREF(&LogAdapterType);
+        PyModule_AddObject(m, "LogAdapter", (PyObject*) &LogAdapterType);
+
+        PyObject *LogTrace = PyInt_FromLong((long) LOG_TRACE);
+        Py_INCREF(LogTrace);
+        PyModule_AddObject(m, "LOG_TRACE", LogTrace);
+
+        PyObject *LogError = PyInt_FromLong((long) LOG_ERROR);
+        Py_INCREF(LogError);
+        PyModule_AddObject(m, "LOG_ERROR", LogError);
+
+        PyObject *LogInfo = PyInt_FromLong((long) LOG_INFO);
+        Py_INCREF(LogInfo);
+        PyModule_AddObject(m, "LOG_INFO", LogInfo);
+    }
+}
