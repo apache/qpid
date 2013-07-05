@@ -58,8 +58,8 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
     }
 
 
-    private static final String STORE_TYPE_ATTRIBUTE = org.apache.qpid.server.model.VirtualHost.STORE_TYPE;
-    private static final String STORE_PATH_ATTRIBUTE = org.apache.qpid.server.model.VirtualHost.STORE_PATH;
+    public static final String STORE_TYPE_ATTRIBUTE = org.apache.qpid.server.model.VirtualHost.STORE_TYPE;
+    public static final String STORE_PATH_ATTRIBUTE = org.apache.qpid.server.model.VirtualHost.STORE_PATH;
 
     @Override
     public void validateAttributes(Map<String, Object> attributes)
@@ -82,16 +82,23 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
 
         }
 
+        for(MessageStoreFactory factory : storeCreator.getFactories())
+        {
+            if(factory.getType().equalsIgnoreCase((String)storeType))
+            {
+                factory.validateAttributes(attributes);
+            }
+        }
         // TODO - each store type should validate its own attributes
         if(!((String) storeType).equalsIgnoreCase(MemoryMessageStore.TYPE))
         {
-            Object storePath = attributes.get(STORE_PATH_ATTRIBUTE);
+        /*    Object storePath = attributes.get(STORE_PATH_ATTRIBUTE);
             if(!(storePath instanceof String))
             {
                 throw new IllegalArgumentException("Attribute '"+ STORE_PATH_ATTRIBUTE
                                                                +"' is required and must be of type String.");
 
-            }
+            }*/
         }
 
     }

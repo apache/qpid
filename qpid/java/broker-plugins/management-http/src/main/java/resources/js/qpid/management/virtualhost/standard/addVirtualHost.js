@@ -26,11 +26,12 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/_base/array",
         "dojo/_base/event",
-        'dojo/_base/json',
+        "dojo/_base/json",
+        "dojo/string",
         "dojo/store/Memory",
         "dijit/form/FilteringSelect",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, string, Memory, FilteringSelect) {
         return {
             show: function() {
                 var node = dom.byId("addVirtualHost.typeSpecificDiv");
@@ -42,6 +43,17 @@ define(["dojo/_base/xhr",
                                       item.destroyRecursive();
                                   }
                               });
+
+
+                var selectStoreType = function(type) {
+                            if(type && string.trim(type) != "") {
+                                require(["qpid/management/virtualhost/store/"+type.toLowerCase()+"/add"],
+                                function(storeType)
+                                {
+                                    storeType.show();
+                                });
+                            }
+                        }
 
                 xhr.get({url: "virtualhost/standard/add.html",
                      sync: true,
@@ -70,7 +82,8 @@ define(["dojo/_base/xhr",
                                         that.storeTypeChooser = new FilteringSelect({ id: "addVirtualHost.specific.storeType",
                                                                                   name: "storeType",
                                                                                   store: storeTypesStore,
-                                                                                  searchAttr: "name", required: false}, input);
+                                                                                  searchAttr: "name", required: false,
+                                                                                  onChange: selectStoreType }, input);
                                 });
 
                      }});
