@@ -172,6 +172,8 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
             qpid::amqp::MessageId mid = message->getMessageId();
             qpid::framing::Uuid uuid;
             switch (mid.type) {
+              case qpid::amqp::MessageId::NONE:
+                break;
               case qpid::amqp::MessageId::UUID:
               case qpid::amqp::MessageId::BYTES:
                 if (mid.value.bytes.size == 0) break;
@@ -183,6 +185,8 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
 
             qpid::amqp::MessageId cid = message->getCorrelationId();
             switch (cid.type) {
+              case qpid::amqp::MessageId::NONE:
+                break;
               case qpid::amqp::MessageId::UUID:
                 assert(cid.value.bytes.size = 16);
                 props->setCorrelationId(qpid::framing::Uuid(cid.value.bytes.data).str());

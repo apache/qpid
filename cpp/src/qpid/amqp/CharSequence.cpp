@@ -38,9 +38,27 @@ std::string CharSequence::str() const
     return std::string(data, size);
 }
 
+CharSequence CharSequence::create()
+{
+    CharSequence c = {0, 0};
+    return c;
+}
+
+CharSequence CharSequence::create(const std::string& str)
+{
+    CharSequence c = {str.data(), str.size()};
+    return c;
+}
+
 CharSequence CharSequence::create(const char* data, size_t size)
 {
     CharSequence c = {data, size};
+    return c;
+}
+
+CharSequence CharSequence::create(const unsigned char* data, size_t size)
+{
+    CharSequence c = {reinterpret_cast<const char*>(data), size};
     return c;
 }
 

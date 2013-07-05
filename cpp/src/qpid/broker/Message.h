@@ -22,22 +22,24 @@
  *
  */
 
-#include "qpid/broker/BrokerImportExport.h"
-#include "qpid/sys/Time.h"
-#include "qpid/types/Variant.h"
-//TODO: move the following out of framing or replace it
-#include "qpid/framing/SequenceNumber.h"
-#include <string>
-#include <vector>
-
 #include "qpid/RefCounted.h"
-#include <boost/intrusive_ptr.hpp>
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/PersistableMessage.h"
+//TODO: move the following out of framing or replace it
+#include "qpid/framing/SequenceNumber.h"
+#include "qpid/sys/Time.h"
+#include "qpid/types/Variant.h"
+
+#include "qpid/broker/BrokerImportExport.h"
+
+#include <string>
+#include <vector>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace amqp {
 class MapHandler;
+class MessageId;
 }
 
 namespace management {
@@ -67,6 +69,8 @@ public:
         virtual bool isPersistent() const = 0;
         virtual uint8_t getPriority() const = 0;
         virtual uint64_t getContentSize() const = 0;
+        virtual qpid::amqp::MessageId getMessageId() const = 0;
+        virtual qpid::amqp::MessageId getCorrelationId() const = 0;
         virtual std::string getPropertyAsString(const std::string& key) const = 0;
         virtual std::string getAnnotationAsString(const std::string& key) const = 0;
         virtual bool getTtl(uint64_t&) const = 0;

@@ -25,14 +25,14 @@
 namespace qpid {
 namespace amqp {
 
-MessageId::MessageId() : type(BYTES)
+MessageId::MessageId() : type(NONE)
 {
-    value.bytes.data = 0;
-    value.bytes.size = 0;
 }
 void MessageId::assign(std::string& s) const
 {
     switch (type) {
+      case NONE:
+        s = std::string();
       case BYTES:
         if (value.bytes) s.assign(value.bytes.data, value.bytes.size);
         break;
@@ -43,6 +43,18 @@ void MessageId::assign(std::string& s) const
         s = boost::lexical_cast<std::string>(value.ulong);
         break;
     }
+}
+
+MessageId::operator bool() const
+{
+    return type!=NONE;
+}
+
+std::string MessageId::str() const
+{
+    std::string s;
+    assign(s);
+    return s;
 }
 
 void MessageId::set(qpid::amqp::CharSequence bytes, qpid::types::VariantType t)
