@@ -18,7 +18,8 @@
 ##
 
 import json
-from schema import config_schema
+from schema   import config_schema
+from dispatch import LogAdapter, LOG_TRACE, LOG_ERROR, LOG_INFO
 
 class Section:
   """
@@ -198,10 +199,12 @@ class DXConfig:
     self.raw_config = None
     self.config     = None
     self.schema     = Schema()
+    self.log        = LogAdapter('config.parser')
 
 
   def read_file(self):
     try:
+      self.log.log(LOG_INFO, "Reading Configuration File: %s" % self.path)
       cfile = open(self.path)
       text = cfile.read()
       cfile.close()
