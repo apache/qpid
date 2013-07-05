@@ -33,7 +33,7 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public interface VirtualHostFactory
+public interface VirtualHostFactory extends Pluggable
 {
     String getType();
 

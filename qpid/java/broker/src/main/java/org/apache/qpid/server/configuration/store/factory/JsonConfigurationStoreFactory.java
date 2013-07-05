@@ -35,7 +35,7 @@ public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
     }
 
     @Override
-    public String getStoreType()
+    public String getType()
     {
         return JsonConfigurationEntryStore.STORE_TYPE;
     }

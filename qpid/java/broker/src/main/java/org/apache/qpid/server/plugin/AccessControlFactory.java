@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.security.AccessControl;
 
-public interface AccessControlFactory
+public interface AccessControlFactory extends Pluggable
 {
     public static final String ATTRIBUTE_TYPE = AccessControlProvider.TYPE;
 

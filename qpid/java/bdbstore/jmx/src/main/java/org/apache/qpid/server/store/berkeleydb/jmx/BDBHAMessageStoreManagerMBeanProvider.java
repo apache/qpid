@@ -65,4 +65,10 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
 
         return new BDBHAMessageStoreManagerMBean(messageStore, (ManagedObject) parent);
     }
+
+    @Override
+    public String getType()
+    {
+        return "BDBHA";
+    }
 }

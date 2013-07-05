@@ -27,8 +27,9 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public interface ExchangeType<T extends Exchange>
+public interface ExchangeType<T extends Exchange> extends Pluggable
 {
+    public String getType();
     public AMQShortString getName();
     public T newInstance(UUID id, VirtualHost host, AMQShortString name,
                          boolean durable, boolean autoDelete) throws AMQException;

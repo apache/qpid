@@ -38,4 +38,10 @@ public class HttpManagementFactory implements PluginFactory
 
         return new HttpManagement(id, broker, attributes);
     }
+
+    @Override
+    public String getType()
+    {
+        return "HTTP Management";
+    }
 }

@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.group.GroupManager;
 
-public interface GroupManagerFactory
+public interface GroupManagerFactory extends Pluggable
 {
     public static final String ATTRIBUTE_TYPE = GroupProvider.TYPE;
 

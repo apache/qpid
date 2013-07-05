@@ -26,12 +26,12 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 
 
-public interface ConfigurationStoreFactory
+public interface ConfigurationStoreFactory extends Pluggable
 {
     /**
      * Returns the type of the store this factory can create
      */
-    public String getStoreType();
+    public String getType();
 
     /**
      * Creates and opens the store from a given location using initial store if provided.

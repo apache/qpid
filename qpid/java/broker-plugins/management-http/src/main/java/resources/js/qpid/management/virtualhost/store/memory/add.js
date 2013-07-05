@@ -39,7 +39,7 @@ define(["dojo/_base/xhr",
 
                 array.forEach(registry.toArray(),
                               function(item) {
-                                  if(item.id.substr(0,27) == "formAddVirtualHost.specific") {
+                                  if(item.id.substr(0,33) == "formAddVirtualHost.specific.store") {
                                       item.destroyRecursive();
                                   }
                               });

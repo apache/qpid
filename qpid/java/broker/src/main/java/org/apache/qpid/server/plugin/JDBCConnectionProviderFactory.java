@@ -29,7 +29,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 
-public interface JDBCConnectionProviderFactory
+public interface JDBCConnectionProviderFactory extends Pluggable
 {
     String getType();
 

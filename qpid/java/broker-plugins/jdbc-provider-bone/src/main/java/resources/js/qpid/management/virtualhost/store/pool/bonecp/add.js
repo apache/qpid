@@ -34,17 +34,17 @@ define(["dojo/_base/xhr",
     function (xhr, dom, construct, win, registry, parser, array, event, json, string, Memory, FilteringSelect) {
         return {
             show: function() {
-                var node = dom.byId("addVirtualHost.storeSpecificDiv");
+                var node = dom.byId("addVirtualHost.poolSpecificDiv");
                 var that = this;
 
                 array.forEach(registry.toArray(),
                               function(item) {
-                                  if(item.id.substr(0,34) == "formAddVirtualHost.specific.store.") {
+                                  if(item.id.substr(0,39) == "formAddVirtualHost.specific.store.pool.") {
                                       item.destroyRecursive();
                                   }
                               });
 
-                xhr.get({url: "virtualhost/store/derby/add.html",
+                xhr.get({url: "virtualhost/store/pool/bonecp/add.html",
                      sync: true,
                      load:  function(data) {
                                 node.innerHTML = data;

@@ -24,7 +24,7 @@ import java.util.UUID;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Plugin;
 
-public interface PluginFactory
+public interface PluginFactory extends Pluggable
 {
     static final String PLUGIN_TYPE = "pluginType";
 

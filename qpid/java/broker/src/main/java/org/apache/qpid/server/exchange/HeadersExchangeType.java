@@ -30,6 +30,12 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class HeadersExchangeType implements ExchangeType<HeadersExchange>
 {
+    @Override
+    public String getType()
+    {
+        return getName().toString();
+    }
+
     public AMQShortString getName()
     {
         return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;

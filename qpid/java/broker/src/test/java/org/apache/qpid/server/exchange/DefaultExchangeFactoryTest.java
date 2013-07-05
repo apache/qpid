@@ -170,8 +170,14 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
 
     public void testCreateDefaultExchangeFactoryWithCustomExchangeType()
     {
-        ExchangeType<?> customeExchangeType = new ExchangeType<Exchange>()
+        ExchangeType<?> customExchangeType = new ExchangeType<Exchange>()
         {
+            @Override
+            public String getType()
+            {
+                return getName().toString();
+            }
+
             @Override
             public AMQShortString getName()
             {
@@ -192,7 +198,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
             }
         };
 
-        _stubbedExchangeTypes.add(customeExchangeType);
+        _stubbedExchangeTypes.add(customExchangeType);
         _stubbedExchangeTypes.add(_directExchangeType);
         _stubbedExchangeTypes.add(_topicExchangeType);
         _stubbedExchangeTypes.add(_fanoutExchangeType);
@@ -206,7 +212,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         assertTrue("Fanout exchange type is not found", registeredTypes.contains(_fanoutExchangeType));
         assertTrue("Topic exchange type is not found", registeredTypes.contains(_topicExchangeType));
         assertTrue("Headers exchange type is not found", registeredTypes.contains(_headersExchangeType));
-        assertTrue("Custom exchange type is not found", registeredTypes.contains(customeExchangeType));
+        assertTrue("Custom exchange type is not found", registeredTypes.contains(customExchangeType));
     }
 
     private final class TestExchangeFactory extends DefaultExchangeFactory
