@@ -142,25 +142,24 @@ public class AMQQueueFactoryTest extends QpidTestCase
         fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
 
         String queueName = "testDeadLetterQueueEnabled";
-        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         QueueRegistry qReg = _virtualHost.getQueueRegistry();
-        ExchangeRegistry exReg = _virtualHost.getExchangeRegistry();
 
         assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
-        assertNull("The alternate exchange should not yet exist", exReg.getExchange(dlExchangeName));
+        assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
                                            _virtualHost, FieldTable.convertToMap(fieldTable));
 
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
-        assertEquals("Alternate exchange name was not as expected", dlExchangeName.asString(), altExchange.getName());
+        assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
         assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType().getName());
 
-        assertNotNull("The alternate exchange was not registered as expected", exReg.getExchange(dlExchangeName));
-        assertEquals("The registered exchange was not the expected exchange instance", altExchange, exReg.getExchange(dlExchangeName));
+        assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
+        assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));
 
         AMQQueue dlQueue = qReg.getQueue(dlQueueName);
         assertNotNull("The DLQ was not registered as expected", dlQueue);
@@ -180,14 +179,13 @@ public class AMQQueueFactoryTest extends QpidTestCase
     public void testDeadLetterQueueDoesNotInheritDLQorMDCSettings() throws Exception
     {
         String queueName = "testDeadLetterQueueEnabled";
-        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         QueueRegistry qReg = _virtualHost.getQueueRegistry();
-        ExchangeRegistry exReg = _virtualHost.getExchangeRegistry();
 
         assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
-        assertNull("The alternate exchange should not yet exist", exReg.getExchange(dlExchangeName));
+        assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
                                            _virtualHost, null);
@@ -195,11 +193,11 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryCount());
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
-        assertEquals("Alternate exchange name was not as expected", dlExchangeName.toString(), altExchange.getName());
+        assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
         assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType().getName());
 
-        assertNotNull("The alternate exchange was not registered as expected", exReg.getExchange(dlExchangeName));
-        assertEquals("The registered exchange was not the expected exchange instance", altExchange, exReg.getExchange(dlExchangeName));
+        assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
+        assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));
 
         AMQQueue dlQueue = qReg.getQueue(dlQueueName);
         assertNotNull("The DLQ was not registered as expected", dlQueue);
@@ -222,20 +220,19 @@ public class AMQQueueFactoryTest extends QpidTestCase
         fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, false);
 
         String queueName = "testDeadLetterQueueDisabled";
-        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         QueueRegistry qReg = _virtualHost.getQueueRegistry();
-        ExchangeRegistry exReg = _virtualHost.getExchangeRegistry();
 
         assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
-        assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+        assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
                                            _virtualHost, FieldTable.convertToMap(fieldTable));
 
         assertNull("Queue should not have an alternate exchange as DLQ is disabled", queue.getAlternateExchange());
-        assertNull("The alternate exchange should still not exist", exReg.getExchange(dlExchangeName));
+        assertNull("The alternate exchange should still not exist", _virtualHost.getExchange(dlExchangeName));
 
         assertNull("The DLQ should still not exist", qReg.getQueue(dlQueueName));
 
@@ -255,14 +252,13 @@ public class AMQQueueFactoryTest extends QpidTestCase
         fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
 
         String queueName = "testDeadLetterQueueNotCreatedForAutodeleteQueues";
-        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         QueueRegistry qReg = _virtualHost.getQueueRegistry();
-        ExchangeRegistry exReg = _virtualHost.getExchangeRegistry();
 
         assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
-        assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+        assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
         //create an autodelete queue
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", true, false,
@@ -271,7 +267,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         //ensure that the autodelete property overrides the request to enable DLQ
         assertNull("Queue should not have an alternate exchange as queue is autodelete", queue.getAlternateExchange());
-        assertNull("The alternate exchange should not exist as queue is autodelete", exReg.getExchange(dlExchangeName));
+        assertNull("The alternate exchange should not exist as queue is autodelete", _virtualHost.getExchange(dlExchangeName));
         assertNull("The DLQ should not exist as queue is autodelete", qReg.getQueue(dlQueueName));
 
         //only 1 queue should have been registered

@@ -62,7 +62,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         final AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
         final AMQSessionModel session = protocolConnection.getChannel(channelId);
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
-        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 

@@ -31,6 +31,6 @@ public interface ExchangeType<T extends Exchange>
 {
     public AMQShortString getName();
     public T newInstance(UUID id, VirtualHost host, AMQShortString name,
-                         boolean durable, int ticket, boolean autoDelete) throws AMQException;
+                         boolean durable, boolean autoDelete) throws AMQException;
     public AMQShortString getDefaultExchangeName();
 }

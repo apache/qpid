@@ -112,7 +112,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
                 false, false, _virtualHost, FieldTable.convertToMap(_arguments));
 
-        _exchange = (DirectExchange) _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+        _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME.toString());
     }
 
     @Override
@@ -423,7 +423,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals("Unexpected total number of messages sent to both after enqueue", 2, subscription1.getMessages().size() + subscription2.getMessages().size());
 
         /* Now release the first message only, causing it to be requeued */
-        queueEntries.get(0).release();  
+        queueEntries.get(0).release();
 
         Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
 

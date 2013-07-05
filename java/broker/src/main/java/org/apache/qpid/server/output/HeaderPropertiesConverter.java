@@ -102,7 +102,7 @@ public class HeaderPropertiesConverter
                     exchangeName = "";
                 }
 
-                Exchange exchange = vhost.getExchangeRegistry().getExchange(exchangeName);
+                Exchange exchange = vhost.getExchange(exchangeName);
                 String exchangeClass = exchange == null ? ExchangeDefaults.DIRECT_EXCHANGE_CLASS.asString() : exchange.getType().getName().asString();
                 props.setReplyTo(exchangeClass + "://"+exchangeName+"//?routingkey='"+(routingKey==null ? "" : routingKey+"'"));
 

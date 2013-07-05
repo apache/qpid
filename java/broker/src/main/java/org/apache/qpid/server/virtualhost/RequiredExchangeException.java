@@ -1,4 +1,4 @@
-/*
+package org.apache.qpid.server.virtualhost;/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,25 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.plugin.ExchangeType;
 
-import java.util.Collection;
-import java.util.UUID;
-
-
-public interface ExchangeFactory
+public class RequiredExchangeException extends AMQException
 {
-
-    Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
-
-    Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes();
-
-    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
-
-    Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
-
+    public RequiredExchangeException(String name)
+    {
+        super(name);
+    }
 }

@@ -23,6 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -32,7 +33,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -62,7 +62,6 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
     {
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
-        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         AMQChannel channel = protocolConnection.getChannel(channelId);
 
@@ -103,10 +102,11 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
         }
-        final Exchange exch = exchangeRegistry.getExchange(body.getExchange());
+        final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
+        final Exchange exch = virtualHost.getExchange(exchangeName);
         if (exch == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + exchangeName + " does not exist.");
         }
 
 

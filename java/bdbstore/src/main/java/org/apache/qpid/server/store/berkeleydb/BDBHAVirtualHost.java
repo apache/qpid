@@ -70,7 +70,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         _messageStore.addEventListener(new AfterInitialisationListener(), Event.AFTER_INIT);
         _messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
+        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getExchangeRegistry(), getExchangeFactory());
 
         _messageStore.configureConfigStore(getName(),
                 recoveryHandler,

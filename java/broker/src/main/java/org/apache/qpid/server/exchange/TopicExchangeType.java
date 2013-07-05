@@ -36,13 +36,12 @@ public class TopicExchangeType implements ExchangeType<TopicExchange>
     }
 
     public TopicExchange newInstance(UUID id, VirtualHost host,
-                                        AMQShortString name,
-                                        boolean durable,
-                                        int ticket,
-                                        boolean autoDelete) throws AMQException
+                                     AMQShortString name,
+                                     boolean durable,
+                                     boolean autoDelete) throws AMQException
     {
         TopicExchange exch = new TopicExchange();
-        exch.initialise(id, host, name, durable, ticket, autoDelete);
+        exch.initialise(id, host, name, durable, autoDelete);
         return exch;
     }
 

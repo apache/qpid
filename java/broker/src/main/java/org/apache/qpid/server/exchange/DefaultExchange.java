@@ -49,7 +49,6 @@ public class DefaultExchange implements Exchange
 
     private UUID _id;
     private VirtualHost _virtualHost;
-    private int _ticket;
     private static final Logger _logger = Logger.getLogger(DefaultExchange.class);
     private final AtomicBoolean _closed = new AtomicBoolean();
 
@@ -62,12 +61,10 @@ public class DefaultExchange implements Exchange
                            VirtualHost host,
                            AMQShortString name,
                            boolean durable,
-                           int ticket,
                            boolean autoDelete) throws AMQException
     {
         _id = id;
         _virtualHost = host;
-        _ticket = ticket;
     }
 
     @Override
@@ -194,12 +191,6 @@ public class DefaultExchange implements Exchange
     public boolean isAutoDelete()
     {
         return false;
-    }
-
-    @Override
-    public int getTicket()
-    {
-        return _ticket;
     }
 
     @Override

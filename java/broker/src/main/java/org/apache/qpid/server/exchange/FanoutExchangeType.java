@@ -36,11 +36,11 @@ public class FanoutExchangeType implements ExchangeType<FanoutExchange>
     }
 
     public FanoutExchange newInstance(UUID id, VirtualHost host, AMQShortString name,
-                                     boolean durable, int ticket, boolean autoDelete)
+                                      boolean durable, boolean autoDelete)
                                      throws AMQException
     {
         FanoutExchange exch = new FanoutExchange();
-        exch.initialise(id, host, name, durable, ticket, autoDelete);
+        exch.initialise(id, host, name, durable, autoDelete);
         return exch;
     }
 

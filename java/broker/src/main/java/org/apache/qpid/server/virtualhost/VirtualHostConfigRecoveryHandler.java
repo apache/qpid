@@ -31,9 +31,10 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
@@ -82,12 +83,19 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     private final Map<String, Map<UUID, Map<String, Object>>> _configuredObjects = new HashMap<String, Map<UUID, Map<String, Object>>>();
 
+    private final ExchangeRegistry _exchangeRegistry;
+    private final ExchangeFactory _exchangeFactory;
+
     private MessageStoreLogSubject _logSubject;
     private MessageStore _store;
 
-    public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost)
+    public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost,
+                                            ExchangeRegistry exchangeRegistry,
+                                            ExchangeFactory exchangeFactory)
     {
         _virtualHost = virtualHost;
+        _exchangeRegistry = exchangeRegistry;
+        _exchangeFactory = exchangeFactory;
     }
 
     @Override
@@ -120,7 +128,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
                 if (alternateExchangeId != null)
                 {
-                    Exchange altExchange = _virtualHost.getExchangeRegistry().getExchange(alternateExchangeId);
+                    Exchange altExchange = _exchangeRegistry.getExchange(alternateExchangeId);
                     if (altExchange == null)
                     {
                         _logger.error("Unknown exchange id " + alternateExchangeId + ", cannot set alternate exchange on queue with id " + id);
@@ -146,12 +154,11 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         try
         {
             Exchange exchange;
-            AMQShortString exchangeNameSS = new AMQShortString(exchangeName);
-            exchange = _virtualHost.getExchangeRegistry().getExchange(exchangeNameSS);
+            exchange = _exchangeRegistry.getExchange(exchangeName);
             if (exchange == null)
             {
-                exchange = _virtualHost.getExchangeFactory().createExchange(id, exchangeNameSS, new AMQShortString(type), true, autoDelete, 0);
-                _virtualHost.getExchangeRegistry().registerExchange(exchange);
+                exchange = _exchangeFactory.createExchange(id, exchangeName, type, true, autoDelete);
+                _exchangeRegistry.registerExchange(exchange);
             }
         }
         catch (AMQException e)
@@ -352,7 +359,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     {
         try
         {
-            Exchange exchange = _virtualHost.getExchangeRegistry().getExchange(exchangeId);
+            Exchange exchange = _exchangeRegistry.getExchange(exchangeId);
             if (exchange == null)
             {
                 _logger.error("Unknown exchange id " + exchangeId + ", cannot bind queue with id " + queueId);
