@@ -107,3 +107,5 @@ if (SWIG_FOUND)
       add_subdirectory(qpid/perl)
   endif (PERLLIBS_FOUND)
 endif (SWIG_FOUND)
+
+add_subdirectory(qmf2/examples/cpp)
