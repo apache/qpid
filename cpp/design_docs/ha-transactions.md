@@ -1,4 +1,3 @@
-
 # Design note: HA with Transactions.
 
 Clients can use transactions (TX or DTX) with the current HA module but:
@@ -127,14 +126,14 @@ Backups abort all open tx if the primary fails.
 ## Atomicity
 
 Keep tx atomic when backups catch up while a tx is in progress.
-A `ready` backup should never contain a subset of messages in a transaction.
+A `ready` backup should never contain a proper subset of messages in a transaction.
 
 Scenario:
 
 - Guard placed on Q for an expected backup.
 - Transaction with messages A,B,C on Q is prepared, tx-queue is closed.
 - Expected backup connects and is declared ready due to guard.
-- Transaction commits, primary adds A, B to Q and crashes before adding C.
+- Transaction commits, primary publishes A, B to Q and crashes before adding C.
 - Backup is ready so promoted to new primary with a partial transaction A,B.
 
 *TODO*: Not happy with the following solution.
@@ -167,9 +166,13 @@ NOTE: needs thougthful locking to correctly handle
 
 ## Testing
 
-*TODO*
+New tests:
 
-- JMS tests
-- Port old cluster_tests.py Dtx & Tx tests to HA.
-- tests/src/py/qpid_tests/broker_0_10/dtx.py,tx.py (run all python tests against HA broker?)
-- new tests with messaging API tx
+- TX transaction tests in python.
+- TX failover stress test (c.f. `test_failover_send_receive`)
+
+Existing tests:
+
+- JMS transaction tests (DTX & TX)
+- `qpid/tests/src/py/qpid_tests/broker_0_10/dtx.py,tx.py` run against HA broker.
+
