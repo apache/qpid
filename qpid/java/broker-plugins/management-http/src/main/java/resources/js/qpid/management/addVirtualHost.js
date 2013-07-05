@@ -26,7 +26,8 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/_base/array",
         "dojo/_base/event",
-        'dojo/_base/json',
+        "dojo/_base/json",
+        "dojo/string",
         "dojo/store/Memory",
         "dijit/form/FilteringSelect",
         "dojo/_base/connect",
@@ -48,7 +49,7 @@ define(["dojo/_base/xhr",
         "dijit/layout/AccordionContainer",
         "dijit/layout/AccordionPane",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, string, Memory, FilteringSelect, connect, domStyle) {
 
         var addVirtualHost = {};
 
@@ -150,7 +151,7 @@ define(["dojo/_base/xhr",
         }
 
         addVirtualHost.selectVhostType = function(type) {
-            if(type && String(type).trim() != "") {
+            if(type && string.trim(type) != "") {
                 require(["qpid/management/virtualhost/"+type.toLowerCase()+"/addVirtualHost"],
                 function(vhostType)
                 {
