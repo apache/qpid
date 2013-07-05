@@ -1,4 +1,5 @@
-/*
+package org.apache.qpid.server.plugin;/*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,34 +16,10 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.server.jmx;
 
-import java.util.Map;
-import java.util.UUID;
-
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.plugin.PluginFactory;
-
-public class JMXManagementFactory implements PluginFactory
+public interface Pluggable
 {
-    @Override
-    public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
-    {
-        if (JMXManagement.PLUGIN_TYPE.equals(attributes.get(PLUGIN_TYPE)))
-        {
-            return new JMXManagement(id, broker, attributes);
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    @Override
-    public String getType()
-    {
-        return "JMX Management";
-    }
+    String getType();
 }

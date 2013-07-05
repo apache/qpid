@@ -30,6 +30,12 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class DirectExchangeType implements ExchangeType<DirectExchange>
 {
+    @Override
+    public String getType()
+    {
+        return getName().toString();
+    }
+
     public AMQShortString getName()
     {
         return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;

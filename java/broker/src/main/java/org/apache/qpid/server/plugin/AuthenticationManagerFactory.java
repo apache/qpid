@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
-public interface AuthenticationManagerFactory
+public interface AuthenticationManagerFactory extends Pluggable
 {
     public static final String ATTRIBUTE_TYPE = AuthenticationProvider.TYPE;
 

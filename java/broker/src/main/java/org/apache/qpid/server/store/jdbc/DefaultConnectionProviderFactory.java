@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 
@@ -30,7 +29,7 @@ public class DefaultConnectionProviderFactory implements JDBCConnectionProviderF
     @Override
     public String getType()
     {
-        return "DEFAULT";
+        return "NONE";
     }
 
     @Override

@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.store.MessageStore;
 
-public interface MessageStoreFactory
+public interface MessageStoreFactory extends Pluggable
 {
     String getType();
 

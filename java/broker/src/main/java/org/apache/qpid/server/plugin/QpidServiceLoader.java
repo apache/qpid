@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 /**
  * Simple facade over a {@link ServiceLoader} to instantiate all configured implementations of an interface.
  */
-public class QpidServiceLoader<C>
+public class QpidServiceLoader<C extends Pluggable>
 {
     private static final Logger _logger = Logger.getLogger(QpidServiceLoader.class);
 

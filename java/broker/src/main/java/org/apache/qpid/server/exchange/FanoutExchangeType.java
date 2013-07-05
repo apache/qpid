@@ -30,6 +30,12 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class FanoutExchangeType implements ExchangeType<FanoutExchange>
 {
+    @Override
+    public String getType()
+    {
+        return getName().toString();
+    }
+
     public AMQShortString getName()
     {
         return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;

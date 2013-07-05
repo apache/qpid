@@ -35,7 +35,7 @@ public class MemoryConfigurationStoreFactory  implements ConfigurationStoreFacto
     }
 
     @Override
-    public String getStoreType()
+    public String getType()
     {
         return MemoryConfigurationEntryStore.STORE_TYPE;
     }
