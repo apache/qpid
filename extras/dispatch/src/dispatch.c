@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "python_embedded.h"
+#include <qpid/dispatch/python_embedded.h>
 #include <qpid/dispatch.h>
 #include <qpid/dispatch/server.h>
 #include <qpid/dispatch/ctools.h>
