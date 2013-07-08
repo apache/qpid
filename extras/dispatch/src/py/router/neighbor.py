@@ -20,13 +20,11 @@
 from data import LinkState, MessageHELLO
 from time import time
 
-TRACE    = 0
-DEBUG    = 1
-INFO     = 2
-NOTICE   = 3
-WARNING  = 4
-ERROR    = 5
-CRITICAL = 6
+try:
+  from dispatch import *
+except ImportError:
+  from stubs import *
+
 
 class NeighborEngine(object):
   """
@@ -51,7 +49,7 @@ class NeighborEngine(object):
 
     if now - self.last_hello_time >= self.hello_interval:
       self.last_hello_time = now
-      self.container.send('_peer', MessageHELLO(None, self.id, self.area, self.hellos.keys()))
+      self.container.send('_local/qdxrouter', MessageHELLO(None, self.id, self.area, self.hellos.keys()))
 
     if self.link_state_changed:
       self.link_state_changed = False
@@ -66,7 +64,7 @@ class NeighborEngine(object):
     if msg.is_seen(self.id):
       if self.link_state.add_peer(msg.id):
         self.link_state_changed = True
-        self.container.log(INFO, "New neighbor established: %s" % msg.id)
+        self.container.log(LOG_INFO, "New neighbor established: %s" % msg.id)
     ##
     ## TODO - Use this function to detect area boundaries
     ##
@@ -80,6 +78,6 @@ class NeighborEngine(object):
       self.hellos.pop(key)
       if self.link_state.del_peer(key):
         self.link_state_changed = True
-        self.container.log(INFO, "Neighbor lost: %s" % key)
+        self.container.log(LOG_INFO, "Neighbor lost: %s" % key)
         
       

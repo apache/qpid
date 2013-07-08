@@ -20,6 +20,7 @@
  */
 
 #include <Python.h>
+#include <qpid/dispatch/dispatch.h>
 #include <qpid/dispatch/compose.h>
 #include <qpid/dispatch/parse.h>
 #include <qpid/dispatch/iterator.h>
@@ -28,7 +29,7 @@
  * Initialize the embedded-python subsystem.  This must be called before
  * any other call into this module is invoked.
  */
-void dx_python_initialize();
+void dx_python_initialize(dx_dispatch_t *dx);
 
 /**
  * Finalize the embedded-python subsystem.  After this is called, there
@@ -48,6 +49,11 @@ void dx_python_start();
  * finished using embedded python capabilities.
  */
 void dx_python_stop();
+
+/**
+ * Get the Python top level "dispatch" module.
+ */
+PyObject *dx_python_module();
 
 /**
  * Convert a Python object to AMQP format and append to a composed_field.

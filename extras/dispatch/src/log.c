@@ -51,12 +51,16 @@ static dx_log_list_t  entries;
 static sys_mutex_t   *log_lock = 0;
 
 
-static char *cls_prefix(int cls)
+static const char *cls_prefix(int cls)
 {
     switch (cls) {
-    case LOG_TRACE : return "TRACE";
-    case LOG_ERROR : return "ERROR";
-    case LOG_INFO  : return "INFO";
+    case LOG_TRACE    : return "TRACE";
+    case LOG_DEBUG    : return "DEBUG";
+    case LOG_INFO     : return "INFO";
+    case LOG_NOTICE   : return "NOTICE";
+    case LOG_WARNING  : return "WARNING";
+    case LOG_ERROR    : return "ERROR";
+    case LOG_CRITICAL : return "CRITICAL";
     }
 
     return "";
