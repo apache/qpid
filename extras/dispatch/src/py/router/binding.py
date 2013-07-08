@@ -17,13 +17,11 @@
 # under the License.
 #
 
-TRACE    = 0
-DEBUG    = 1
-INFO     = 2
-NOTICE   = 3
-WARNING  = 4
-ERROR    = 5
-CRITICAL = 6
+try:
+  from dispatch import *
+except ImportError:
+  from stubs import *
+
 
 class BindingEngine(object):
   """

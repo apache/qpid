@@ -30,39 +30,44 @@ from routing import RoutingTableEngine
 from binding import BindingEngine
 from adapter import AdapterEngine
 
-TRACE    = 0
-DEBUG    = 1
-INFO     = 2
-NOTICE   = 3
-WARNING  = 4
-ERROR    = 5
-CRITICAL = 6
+##
+## Import the Dispatch adapters from the environment.  If they are not found
+## (i.e. we are in a test bench, etc.), load the stub versions.
+##
+try:
+  from dispatch import *
+except ImportError:
+  from stubs import *
+
 
 class RouterEngine:
   """
   """
 
-  def __init__(self, adapter, domain, router_id=None, area='area', config_override={}):
+  def __init__(self, router_adapter, router_id=None, area='area', config_override={}):
     """
     Initialize an instance of a router for a domain.
     """
     ##
     ## Record important information about this router instance
     ##
-    self.adapter = adapter
-    self.domain = domain
+    self.domain         = "domain"
+    self.router_adapter = router_adapter
+    self.log_adapter    = LogAdapter("dispatch.router")
+    self.io_adapter     = IoAdapter(self, "qdxrouter")
+
     if router_id:
       self.id = router_id
     else:
       self.id = str(uuid4())
     self.area = area
-    self.log(NOTICE, "Router Engine Instantiated: area=%s id=%s" % (self.area, self.id))
+    self.log(LOG_INFO, "Router Engine Instantiated: area=%s id=%s" % (self.area, self.id))
 
     ##
     ## Setup configuration
     ##
     self.config = Configuration(config_override)
-    self.log(INFO, "Config: %r" % self.config)
+    self.log(LOG_INFO, "Config: %r" % self.config)
 
     ##
     ## Launch the sub-module engines
@@ -75,13 +80,6 @@ class RouterEngine:
     self.binding_engine        = BindingEngine(self)
     self.adapter_engine        = AdapterEngine(self)
 
-    ##
-    ## Establish the local bindings so that this router instance can receive
-    ## traffic addressed to it
-    ##
-    self.adapter.local_bind('router')
-    self.adapter.local_bind('_topo/%s/%s' % (self.area, self.id))
-    self.adapter.local_bind('_topo/%s/all' % self.area)
 
 
   ##========================================================================================
@@ -102,7 +100,7 @@ class RouterEngine:
         return
       self.mobile_address_engine.add_local_address(key)
     except Exception, e:
-      self.log(ERROR, "Exception in new-address processing: exception=%r" % e)
+      self.log(LOG_ERROR, "Exception in new-address processing: exception=%r" % e)
 
   def delLocalAddress(self, key):
     """
@@ -112,7 +110,7 @@ class RouterEngine:
         return
       self.mobile_address_engine.del_local_address(key)
     except Exception, e:
-      self.log(ERROR, "Exception in del-address processing: exception=%r" % e)
+      self.log(LOG_ERROR, "Exception in del-address processing: exception=%r" % e)
 
 
   def handleTimerTick(self):
@@ -128,7 +126,7 @@ class RouterEngine:
       self.binding_engine.tick(now)
       self.adapter_engine.tick(now)
     except Exception, e:
-      self.log(ERROR, "Exception in timer processing: exception=%r" % e)
+      self.log(LOG_ERROR, "Exception in timer processing: exception=%r" % e)
 
 
   def handleControlMessage(self, opcode, body):
@@ -138,38 +136,48 @@ class RouterEngine:
       now = time()
       if   opcode == 'HELLO':
         msg = MessageHELLO(body)
-        self.log(TRACE, "RCVD: %r" % msg)
+        self.log(LOG_TRACE, "RCVD: %r" % msg)
         self.neighbor_engine.handle_hello(msg, now)
 
       elif opcode == 'RA':
         msg = MessageRA(body)
-        self.log(TRACE, "RCVD: %r" % msg)
+        self.log(LOG_TRACE, "RCVD: %r" % msg)
         self.link_state_engine.handle_ra(msg, now)
         self.mobile_address_engine.handle_ra(msg, now)
 
       elif opcode == 'LSU':
         msg = MessageLSU(body)
-        self.log(TRACE, "RCVD: %r" % msg)
+        self.log(LOG_TRACE, "RCVD: %r" % msg)
         self.link_state_engine.handle_lsu(msg, now)
 
       elif opcode == 'LSR':
         msg = MessageLSR(body)
-        self.log(TRACE, "RCVD: %r" % msg)
+        self.log(LOG_TRACE, "RCVD: %r" % msg)
         self.link_state_engine.handle_lsr(msg, now)
 
       elif opcode == 'MAU':
         msg = MessageMAU(body)
-        self.log(TRACE, "RCVD: %r" % msg)
+        self.log(LOG_TRACE, "RCVD: %r" % msg)
         self.mobile_address_engine.handle_mau(msg, now)
 
       elif opcode == 'MAR':
         msg = MessageMAR(body)
-        self.log(TRACE, "RCVD: %r" % msg)
+        self.log(LOG_TRACE, "RCVD: %r" % msg)
         self.mobile_address_engine.handle_mar(msg, now)
 
     except Exception, e:
-      self.log(ERROR, "Exception in message processing: opcode=%s body=%r exception=%r" % (opcode, body, e))
+      self.log(LOG_ERROR, "Exception in message processing: opcode=%s body=%r exception=%r" % (opcode, body, e))
 
+
+  def receive(self, message_properties, body):
+    """
+    This is the IoAdapter message-receive handler
+    """
+    try:
+      self.handleControlMessage(message_properties['opcode'], body)
+    except Exception, e:
+      self.log(LOG_ERROR, "Exception in raw message processing: properties=%r body=%r exception=%r" %
+               (message_properties, body, e))
 
   def getRouterData(self, kind):
     """
@@ -196,51 +204,52 @@ class RouterEngine:
 
 
   ##========================================================================================
-  ## Adapter Calls - outbound calls to the adapter
+  ## Adapter Calls - outbound calls to Dispatch
   ##========================================================================================
   def log(self, level, text):
     """
     Emit a log message to the host's event log
     """
-    self.adapter.log(level, text)
+    self.log_adapter.log(level, text)
 
 
   def send(self, dest, msg):
     """
     Send a control message to another router.
     """
-    self.adapter.send(dest, msg.get_opcode(), msg.to_dict())
-    self.log(TRACE, "SENT: %r dest=%s" % (msg, dest))
+    app_props = {'opcode' : msg.get_opcode() }
+    self.io_adapter.send(dest, app_props, msg.to_dict())
+    self.log(LOG_TRACE, "SENT: %r dest=%s" % (msg, dest))
 
 
   ##========================================================================================
   ## Interconnect between the Sub-Modules
   ##========================================================================================
   def local_link_state_changed(self, link_state):
-    self.log(DEBUG, "Event: local_link_state_changed: %r" % link_state)
+    self.log(LOG_DEBUG, "Event: local_link_state_changed: %r" % link_state)
     self.link_state_engine.new_local_link_state(link_state)
 
   def ls_collection_changed(self, collection):
-    self.log(DEBUG, "Event: ls_collection_changed: %r" % collection)
+    self.log(LOG_DEBUG, "Event: ls_collection_changed: %r" % collection)
     self.path_engine.ls_collection_changed(collection)
 
   def next_hops_changed(self, next_hop_table):
-    self.log(DEBUG, "Event: next_hops_changed: %r" % next_hop_table)
+    self.log(LOG_DEBUG, "Event: next_hops_changed: %r" % next_hop_table)
     self.routing_table_engine.next_hops_changed(next_hop_table)
     self.binding_engine.next_hops_changed()
 
   def mobile_sequence_changed(self, mobile_seq):
-    self.log(DEBUG, "Event: mobile_sequence_changed: %d" % mobile_seq)
+    self.log(LOG_DEBUG, "Event: mobile_sequence_changed: %d" % mobile_seq)
     self.link_state_engine.set_mobile_sequence(mobile_seq)
 
   def mobile_keys_changed(self, keys):
-    self.log(DEBUG, "Event: mobile_keys_changed: %r" % keys)
+    self.log(LOG_DEBUG, "Event: mobile_keys_changed: %r" % keys)
     self.binding_engine.mobile_keys_changed(keys)
 
   def get_next_hops(self):
     return self.routing_table_engine.get_next_hops()
 
   def remote_routes_changed(self, key_class, routes):
-    self.log(DEBUG, "Event: remote_routes_changed: class=%s routes=%r" % (key_class, routes))
+    self.log(LOG_DEBUG, "Event: remote_routes_changed: class=%s routes=%r" % (key_class, routes))
     self.adapter_engine.remote_routes_changed(key_class, routes)
 

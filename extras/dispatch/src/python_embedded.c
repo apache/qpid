@@ -22,21 +22,25 @@
 #include <qpid/dispatch/log.h>
 #include <qpid/dispatch/amqp.h>
 #include <qpid/dispatch/alloc.h>
+#include <qpid/dispatch/router.h>
 
 
 //===============================================================================
 // Control Functions
 //===============================================================================
 
-static uint32_t     ref_count  = 0;
-static sys_mutex_t *lock       = 0;
-static char        *log_module = "PYTHON";
+static dx_dispatch_t *dispatch   = 0;
+static uint32_t       ref_count  = 0;
+static sys_mutex_t   *lock       = 0;
+static char          *log_module = "PYTHON";
+static PyObject      *dispatch_module = 0;
 
 static void dx_python_setup();
 
 
-void dx_python_initialize()
+void dx_python_initialize(dx_dispatch_t *dx)
 {
+    dispatch = dx;
     lock = sys_mutex();
 }
 
@@ -66,10 +70,19 @@ void dx_python_stop()
     sys_mutex_lock(lock);
     ref_count--;
     if (ref_count == 0) {
+        Py_DECREF(dispatch_module);
+        dispatch_module = 0;
         Py_Finalize();
         dx_log(log_module, LOG_TRACE, "Embedded Python Interpreter Shut Down");
     }
     sys_mutex_unlock(lock);
+}
+
+
+PyObject *dx_python_module()
+{
+    assert(dispatch_module);
+    return dispatch_module;
 }
 
 
@@ -380,49 +393,159 @@ static PyTypeObject LogAdapterType = {
 // Message IO Object
 //===============================================================================
 
-typedef struct dx_python_io_adapter {
-    int x;
-} dx_python_io_adapter;
+typedef struct {
+    PyObject_HEAD
+    PyObject       *handler;
+    dx_dispatch_t  *dx;
+    dx_address_t   *address;
+} IoAdapter;
 
-ALLOC_DECLARE(dx_python_io_adapter);
-ALLOC_DEFINE(dx_python_io_adapter);
 
-//static PyObject* dx_python_send(PyObject *self, PyObject *args)
-//{
-//    return 0;
-//}
+static void dx_io_rx_handler(void *context, dx_message_t *msg)
+{
+    //IoAdapter *self = (IoAdapter*) context;
+
+    // TODO - Parse the incoming message and send it to the python handler.
+}
+
+
+static int IoAdapter_init(IoAdapter *self, PyObject *args, PyObject *kwds)
+{
+    const char *address;
+    if (!PyArg_ParseTuple(args, "Os", &self->handler, &address))
+        return -1;
+
+    Py_INCREF(self->handler);
+    self->dx = dispatch;
+    self->address = dx_router_register_address(self->dx, true, address, dx_io_rx_handler, self);
+    return 0;
+}
+
+
+static void IoAdapter_dealloc(IoAdapter* self)
+{
+    dx_router_unregister_address(self->address);
+    Py_DECREF(self->handler);
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+
+static PyObject* dx_python_send(PyObject *self, PyObject *args)
+{
+    const char *address;
+    PyObject   *app_properties;
+    PyObject   *body;
+    if (!PyArg_ParseTuple(args, "sOO", &address, &app_properties, &body))
+        return 0;
+
+    // TODO - Compose and send a message
+
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyMethodDef IoAdapter_methods[] = {
+    {"send", dx_python_send, METH_VARARGS, "Send a Message"},
+    {0, 0, 0, 0}
+};
+
+
+static PyTypeObject IoAdapterType = {
+    PyObject_HEAD_INIT(0)
+    0,                         /* ob_size*/
+    "dispatch.IoAdapter",      /* tp_name*/
+    sizeof(IoAdapter),         /* tp_basicsize*/
+    0,                         /* tp_itemsize*/
+    (destructor)IoAdapter_dealloc, /* tp_dealloc*/
+    0,                         /* tp_print*/
+    0,                         /* tp_getattr*/
+    0,                         /* tp_setattr*/
+    0,                         /* tp_compare*/
+    0,                         /* tp_repr*/
+    0,                         /* tp_as_number*/
+    0,                         /* tp_as_sequence*/
+    0,                         /* tp_as_mapping*/
+    0,                         /* tp_hash */
+    0,                         /* tp_call*/
+    0,                         /* tp_str*/
+    0,                         /* tp_getattro*/
+    0,                         /* tp_setattro*/
+    0,                         /* tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,        /* tp_flags*/
+    "Dispatch IO Adapter",     /* tp_doc */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
+    IoAdapter_methods,         /* tp_methods */
+    0,                         /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)IoAdapter_init,  /* tp_init */
+    0,                         /* tp_alloc */
+    0,                         /* tp_new */
+    0,                         /* tp_free */
+    0,                         /* tp_is_gc */
+    0,                         /* tp_bases */
+    0,                         /* tp_mro */
+    0,                         /* tp_cache */
+    0,                         /* tp_subclasses */
+    0,                         /* tp_weaklist */
+    0,                         /* tp_del */
+    0                          /* tp_version_tag */
+};
 
 
 //===============================================================================
 // Initialization of Modules and Types
 //===============================================================================
 
+static void dx_register_log_constant(PyObject *module, const char *name, uint32_t value)
+{
+    PyObject *const_object = PyInt_FromLong((long) value);
+    Py_INCREF(const_object);
+    PyModule_AddObject(module, name, const_object);
+}
+
+
 static void dx_python_setup()
 {
-    //
-    // Add LogAdapter
-    //
     LogAdapterType.tp_new = PyType_GenericNew;
-    if (PyType_Ready(&LogAdapterType) < 0) {
+    IoAdapterType.tp_new  = PyType_GenericNew;
+    if ((PyType_Ready(&LogAdapterType) < 0) || (PyType_Ready(&IoAdapterType) < 0)) {
         PyErr_Print();
-        dx_log(log_module, LOG_ERROR, "Unable to initialize LogAdapter");
+        dx_log(log_module, LOG_ERROR, "Unable to initialize Adapters");
         assert(0);
     } else {
         PyObject *m = Py_InitModule3("dispatch", empty_methods, "Dispatch Adapter Module");
 
+        //
+        // Add LogAdapter
+        //
         Py_INCREF(&LogAdapterType);
         PyModule_AddObject(m, "LogAdapter", (PyObject*) &LogAdapterType);
 
-        PyObject *LogTrace = PyInt_FromLong((long) LOG_TRACE);
-        Py_INCREF(LogTrace);
-        PyModule_AddObject(m, "LOG_TRACE", LogTrace);
+        dx_register_log_constant(m, "LOG_TRACE",    LOG_TRACE);
+        dx_register_log_constant(m, "LOG_DEBUG",    LOG_DEBUG);
+        dx_register_log_constant(m, "LOG_INFO",     LOG_INFO);
+        dx_register_log_constant(m, "LOG_NOTICE",   LOG_NOTICE);
+        dx_register_log_constant(m, "LOG_WARNING",  LOG_WARNING);
+        dx_register_log_constant(m, "LOG_ERROR",    LOG_ERROR);
+        dx_register_log_constant(m, "LOG_CRITICAL", LOG_CRITICAL);
 
-        PyObject *LogError = PyInt_FromLong((long) LOG_ERROR);
-        Py_INCREF(LogError);
-        PyModule_AddObject(m, "LOG_ERROR", LogError);
+        //
+        Py_INCREF(&IoAdapterType);
+        PyModule_AddObject(m, "IoAdapter", (PyObject*) &IoAdapterType);
 
-        PyObject *LogInfo = PyInt_FromLong((long) LOG_INFO);
-        Py_INCREF(LogInfo);
-        PyModule_AddObject(m, "LOG_INFO", LogInfo);
+        Py_INCREF(m);
+        dispatch_module = m;
     }
 }

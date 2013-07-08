@@ -17,13 +17,10 @@
 # under the License.
 #
 
-TRACE    = 0
-DEBUG    = 1
-INFO     = 2
-NOTICE   = 3
-WARNING  = 4
-ERROR    = 5
-CRITICAL = 6
+try:
+  from dispatch import *
+except ImportError:
+  from stubs import *
 
 ENTRY_OLD     = 1
 ENTRY_CURRENT = 2
@@ -91,12 +88,12 @@ class AdapterEngine(object):
     #       messages to be duplicated.  It's better to have gaps in the routing
     #       tables momentarily because unroutable messages are stored for retry.
     for a,b in to_delete:
-      self.container.adapter.remote_unbind(a, b)
+      self.container.router_adapter.remote_unbind(a, b)
     for a,b in to_add:
-      self.container.adapter.remote_bind(a, b)
+      self.container.router_adapter.remote_bind(a, b)
 
-    self.container.log(INFO, "New Routing Table (class=%s):" % key_class)
+    self.container.log(LOG_INFO, "New Routing Table (class=%s):" % key_class)
     for a,b in new_table:
-      self.container.log(INFO, "  %s => %s" % (a, b))
+      self.container.log(LOG_INFO, "  %s => %s" % (a, b))
 
 

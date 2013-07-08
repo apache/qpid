@@ -30,18 +30,11 @@ class Adapter(object):
 
   def send(self, dest, opcode, body):
     print "Adapter.send: domain=%s, dest=%s, opcode=%s, body=%s" % (self._domain, dest, opcode, body)
-
-  def local_bind(self, key):
-    print "Adapter.local_bind: key=%s" % key
-
   def remote_bind(self, subject, peer):
     print "Adapter.remote_bind: subject=%s, peer=%s" % (subject, peer)
 
   def remote_unbind(self, subject, peer):
     print "Adapter.remote_unbind: subject=%s, peer=%s" % (subject, peer)
-
-  def remote_rebind(self, subject, old_peer, new_peer):
-    print "Adapter.remote_rebind: subject=%s, old_peer=%s, new_peer=%s" % (subject, old_peer, new_peer)
 
 
 class DataTest(unittest.TestCase):
@@ -122,7 +115,7 @@ class NeighborTest(unittest.TestCase):
     self.engine.tick(1.5)
     self.assertEqual(len(self.sent), 1)
     dest, msg = self.sent.pop(0)
-    self.assertEqual(dest, "_peer")
+    self.assertEqual(dest, "_local/qdxrouter")
     self.assertEqual(msg.get_opcode(), "HELLO")
     self.assertEqual(msg.id, self.id)
     self.assertEqual(msg.area, self.area)
