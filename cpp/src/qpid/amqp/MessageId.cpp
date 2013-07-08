@@ -33,6 +33,7 @@ void MessageId::assign(std::string& s) const
     switch (type) {
       case NONE:
         s = std::string();
+        break;
       case BYTES:
         if (value.bytes) s.assign(value.bytes.data, value.bytes.size);
         break;
