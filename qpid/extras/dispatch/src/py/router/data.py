@@ -18,6 +18,12 @@
 #
 
 
+try:
+  from dispatch import *
+except ImportError:
+  from stubs import *
+
+
 def getMandatory(data, key, cls=None):
   """
   Get the value mapped to the requested key.  If it's not present, raise an exception.

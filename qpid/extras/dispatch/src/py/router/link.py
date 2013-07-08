@@ -20,13 +20,10 @@
 from data import MessageRA, MessageLSU, MessageLSR
 from time import time
 
-TRACE    = 0
-DEBUG    = 1
-INFO     = 2
-NOTICE   = 3
-WARNING  = 4
-ERROR    = 5
-CRITICAL = 6
+try:
+  from dispatch import *
+except ImportError:
+  from stubs import *
 
 class LinkStateEngine(object):
   """
@@ -57,9 +54,9 @@ class LinkStateEngine(object):
 
     if self.collection_changed:
       self.collection_changed = False
-      self.container.log(INFO, "New Link-State Collection:")
+      self.container.log(LOG_INFO, "New Link-State Collection:")
       for a,b in self.collection.items():
-        self.container.log(INFO, "  %s => %r" % (a, b.peers))
+        self.container.log(LOG_INFO, "  %s => %r" % (a, b.peers))
       self.container.ls_collection_changed(self.collection)
 
 
@@ -90,7 +87,7 @@ class LinkStateEngine(object):
       self.collection[msg.id] = ls
       self.collection_changed = True
       ls.last_seen = now
-      self.container.log(INFO, "Learned link-state from new router: %s" % msg.id)
+      self.container.log(LOG_INFO, "Learned link-state from new router: %s" % msg.id)
     # Schedule LSRs for any routers referenced in this LS that we don't know about
     for _id in msg.ls.peers:
       if _id not in self.collection:
@@ -103,7 +100,7 @@ class LinkStateEngine(object):
     if self.id not in self.collection:
       return
     my_ls = self.collection[self.id]
-    self.container.send('_topo.%s.%s' % (msg.area, msg.id), MessageLSU(None, self.id, self.area, my_ls.ls_seq, my_ls))
+    self.container.send('_topo/%s/%s' % (msg.area, msg.id), MessageLSU(None, self.id, self.area, my_ls.ls_seq, my_ls))
 
 
   def new_local_link_state(self, link_state):
@@ -127,12 +124,12 @@ class LinkStateEngine(object):
     for key in to_delete:
       ls = self.collection.pop(key)
       self.collection_changed = True
-      self.container.log(INFO, "Expired link-state from router: %s" % key)
+      self.container.log(LOG_INFO, "Expired link-state from router: %s" % key)
 
 
   def _send_lsrs(self):
     for (_area, _id) in self.needed_lsrs.keys():
-      self.container.send('_topo.%s.%s' % (_area, _id), MessageLSR(None, self.id, self.area))
+      self.container.send('_topo/%s/%s' % (_area, _id), MessageLSR(None, self.id, self.area))
     self.needed_lsrs = {}
 
 
@@ -140,4 +137,4 @@ class LinkStateEngine(object):
     ls_seq = 0
     if self.id in self.collection:
       ls_seq = self.collection[self.id].ls_seq
-    self.container.send('_topo.%s.all' % self.area, MessageRA(None, self.id, self.area, ls_seq, self.mobile_seq))
+    self.container.send('_topo/%s/all' % self.area, MessageRA(None, self.id, self.area, ls_seq, self.mobile_seq))

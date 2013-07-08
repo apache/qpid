@@ -19,6 +19,11 @@
 
 from data import MessageRA, MessageMAR, MessageMAU
 
+try:
+  from dispatch import *
+except ImportError:
+  from stubs import *
+
 class MobileAddressEngine(object):
   """
   This module is responsible for maintaining an up-to-date list of mobile addresses in the domain.

@@ -61,7 +61,7 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
     DEQ_INIT(dx->config_listeners);
     DEQ_INIT(dx->config_connectors);
 
-    dx_python_initialize();
+    dx_python_initialize(dx);
     dx_log_initialize();
     dx_alloc_initialize();
 
