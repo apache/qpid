@@ -91,7 +91,10 @@ if (MSVC)
 endif (MSVC)
 
 add_installed_example(qmf2 agent qmf2)
-add_installed_example(qmf2 event_driven_list_agents qmf2)
+if (NOT WIN32)
+  # uses posix select()
+  add_installed_example(qmf2 event_driven_list_agents qmf2)
+endif (NOT WIN32)
 add_installed_example(qmf2 list_agents qmf2)
 add_installed_example(qmf2 print_events qmf2)
 
