@@ -613,6 +613,16 @@ void dx_router_send(dx_dispatch_t       *dx,
 }
 
 
+void dx_router_send2(dx_dispatch_t *dx,
+                     const char    *address,
+                     dx_message_t  *msg)
+{
+    dx_field_iterator_t *iter = dx_field_iterator_string(address, ITER_VIEW_ADDRESS_HASH);
+    dx_router_send(dx, iter, msg);
+    dx_field_iterator_free(iter);
+}
+
+
 //===============================================================================
 // Python Router Adapter
 //===============================================================================
