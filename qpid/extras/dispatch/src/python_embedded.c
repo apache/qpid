@@ -432,14 +432,36 @@ static void IoAdapter_dealloc(IoAdapter* self)
 
 static PyObject* dx_python_send(PyObject *self, PyObject *args)
 {
+    IoAdapter  *ioa = (IoAdapter*) self;
     const char *address;
     PyObject   *app_properties;
     PyObject   *body;
     if (!PyArg_ParseTuple(args, "sOO", &address, &app_properties, &body))
         return 0;
 
-    // TODO - Compose and send a message
+    dx_composed_field_t *field = dx_compose(DX_PERFORMATIVE_HEADER, 0);
+    dx_compose_start_list(field);
+    dx_compose_insert_bool(field, 0);     // durable
+    dx_compose_end_list(field);
 
+    field = dx_compose(DX_PERFORMATIVE_PROPERTIES, field);
+    dx_compose_start_list(field);
+    dx_compose_insert_null(field);            // message-id
+    dx_compose_insert_null(field);            // user-id
+    dx_compose_insert_string(field, address); // to
+    dx_compose_end_list(field);
+
+    field = dx_compose(DX_PERFORMATIVE_APPLICATION_PROPERTIES, field);
+    dx_py_to_composed(app_properties, field);
+
+    field = dx_compose(DX_PERFORMATIVE_BODY_AMQP_VALUE, field);
+    dx_py_to_composed(body, field);
+
+    dx_message_t *msg = dx_allocate_message();
+    dx_message_compose_2(msg, field);
+    dx_router_send2(ioa->dx, address, msg);
+    dx_free_message(msg);
+    dx_compose_free(field);
 
     Py_INCREF(Py_None);
     return Py_None;
