@@ -43,5 +43,9 @@ void dx_router_send(dx_dispatch_t       *dx,
                     dx_field_iterator_t *address,
                     dx_message_t        *msg);
 
+void dx_router_send2(dx_dispatch_t *dx,
+                     const char    *address,
+                     dx_message_t  *msg);
+
 
 #endif
