@@ -227,9 +227,6 @@ void SessionAdapter::QueueHandlerImpl::destroyExclusiveQueues()
     while (!exclusiveQueues.empty()) {
         Queue::shared_ptr q(exclusiveQueues.front());
         q->releaseExclusiveOwnership();
-        if (q->canAutoDelete()) {
-            Queue::tryAutoDelete(broker, q, connectionId, userId);
-        }
         exclusiveQueues.erase(exclusiveQueues.begin());
     }
 }

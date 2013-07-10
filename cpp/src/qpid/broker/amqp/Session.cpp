@@ -24,9 +24,11 @@
 #include "Message.h"
 #include "Connection.h"
 #include "Domain.h"
+#include "Exception.h"
 #include "Interconnects.h"
 #include "Relay.h"
 #include "Topic.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/Exchange.h"
@@ -112,10 +114,16 @@ void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Exchange> 
 class IncomingToQueue : public DecodingIncoming
 {
   public:
-    IncomingToQueue(Broker& b, Session& p, boost::shared_ptr<qpid::broker::Queue> q, pn_link_t* l, const std::string& source) : DecodingIncoming(l, b, p, source, q->getName(), pn_link_name(l)), queue(q) {}
+    IncomingToQueue(Broker& b, Session& p, boost::shared_ptr<qpid::broker::Queue> q, pn_link_t* l, const std::string& source, bool icl)
+        : DecodingIncoming(l, b, p, source, q->getName(), pn_link_name(l)), queue(q), isControllingLink(icl)
+    {
+        queue->markInUse(isControllingLink);
+    }
+    ~IncomingToQueue() { queue->releaseFromUse(isControllingLink); }
     void handle(qpid::broker::Message& m);
   private:
     boost::shared_ptr<qpid::broker::Queue> queue;
+    bool isControllingLink;
 };
 
 class IncomingToExchange : public DecodingIncoming
@@ -152,6 +160,7 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
                                                       args, connection.getUserId(), connection.getId()).first;
             }
+            node.created = true;
         } else {
             size_t i = name.find('@');
             if (i != std::string::npos && (i+1) < name.length()) {
@@ -188,7 +197,12 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
 std::string Session::generateName(pn_link_t* link)
 {
     std::stringstream s;
-    s << qpid::types::Uuid(true) << "::" << pn_link_name(link);
+    if (connection.getContainerId().empty()) {
+        s << qpid::types::Uuid(true);
+    } else {
+        s << connection.getContainerId();
+    }
+    s << "_" << pn_link_name(link);
     return s.str();
 }
 
@@ -210,7 +224,7 @@ void Session::attach(pn_link_t* link)
         //i.e a subscription
         std::string name;
         if (pn_terminus_get_type(source) == PN_UNSPECIFIED) {
-            throw qpid::Exception("No source specified!");/*invalid-field?*/
+            throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "No source specified!");
         } else if (pn_terminus_is_dynamic(source)) {
             name = generateName(link);
             QPID_LOG(debug, "Received attach request for outgoing link from " << name);
@@ -226,7 +240,7 @@ void Session::attach(pn_link_t* link)
         pn_terminus_t* target = pn_link_remote_target(link);
         std::string name;
         if (pn_terminus_get_type(target) == PN_UNSPECIFIED) {
-            throw qpid::Exception("No target specified!");/*invalid field?*/
+            throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "No target specified!");
         } else if (pn_terminus_is_dynamic(target)) {
             name = generateName(link);
             QPID_LOG(debug, "Received attach request for incoming link to " << name);
@@ -252,6 +266,9 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.exchange);
         authorise.incoming(node.exchange);
     }
+    if (node.created) {
+        node.properties.write(pn_terminus_properties(pn_link_target(link)));
+    }
 
     const char* sourceAddress = pn_terminus_get_address(pn_link_remote_source(link));
     if (!sourceAddress) {
@@ -262,7 +279,7 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         source = sourceAddress;
     }
     if (node.queue) {
-        boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source));
+        boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source, node.properties.trackControllingLink()));
         incoming[link] = q;
     } else if (node.exchange) {
         boost::shared_ptr<Incoming> e(new IncomingToExchange(connection.getBroker(), *this, node.exchange, link, source));
@@ -272,7 +289,7 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         incoming[link] = in;
     } else {
         pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
-        throw qpid::Exception("Node not found: " + name);/*not-found*/
+        throw Exception(qpid::amqp::error_conditions::NOT_FOUND, std::string("Node not found: ") + name);
     }
     if (connection.getBroker().getOptions().auth && !connection.isLink())
         incoming[link]->verify(connection.getUserId(), connection.getBroker().getOptions().realm);
@@ -284,6 +301,9 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
     ResolvedNode node = resolve(name, source, false);
     if (node.queue) setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.queue);
     else if (node.exchange) setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.exchange);
+    if (node.created) {
+        node.properties.write(pn_terminus_properties(pn_link_source(link)));
+    }
 
     Filter filter;
     filter.read(pn_terminus_filter(source));
@@ -299,7 +319,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
 
     if (node.queue) {
         authorise.outgoing(node.queue);
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, false));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, false, node.properties.trackControllingLink()));
         q->init();
         filter.apply(q);
         outgoing[link] = q;
@@ -330,7 +350,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         if (!shared) queue->setExclusiveOwner(this);
         authorise.outgoing(node.exchange, queue, filter);
         filter.bind(node.exchange, queue);
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, queue, link, *this, out, !shared));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, queue, link, *this, out, !shared, false));
         outgoing[link] = q;
         q->init();
     } else if (node.relay) {
@@ -339,7 +359,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         out->init();
     } else {
         pn_terminus_set_type(pn_link_source(link), PN_UNSPECIFIED);
-        throw qpid::Exception("Node not found: " + name);/*not-found*/
+        throw Exception(qpid::amqp::error_conditions::NOT_FOUND, std::string("Node not found: ") + name);/*not-found*/
     }
     filter.write(pn_terminus_filter(pn_link_source(link)));
     QPID_LOG(debug, "Outgoing link attached");
@@ -438,8 +458,19 @@ void Session::writable(pn_link_t* link, pn_delivery_t* delivery)
 bool Session::dispatch()
 {
     bool output(false);
-    for (OutgoingLinks::iterator s = outgoing.begin(); s != outgoing.end(); ++s) {
-        if (s->second->doWork()) output = true;
+    for (OutgoingLinks::iterator s = outgoing.begin(); s != outgoing.end();) {
+        try {
+            if (s->second->doWork()) output = true;
+            ++s;
+        } catch (const Exception& e) {
+            pn_condition_t* error = pn_link_condition(s->first);
+            pn_condition_set_name(error, e.symbol());
+            pn_condition_set_description(error, e.what());
+            pn_link_close(s->first);
+            s->second->detached();
+            outgoing.erase(s++);
+            output = true;
+        }
     }
     if (completed.size()) {
         output = true;
@@ -452,8 +483,19 @@ bool Session::dispatch()
             accepted(*i, true);
         }
     }
-    for (IncomingLinks::iterator i = incoming.begin(); i != incoming.end(); ++i) {
-        if (i->second->doWork()) output = true;
+    for (IncomingLinks::iterator i = incoming.begin(); i != incoming.end();) {
+        try {
+            if (i->second->doWork()) output = true;
+            ++i;
+        } catch (const Exception& e) {
+            pn_condition_t* error = pn_link_condition(i->first);
+            pn_condition_set_name(error, e.symbol());
+            pn_condition_set_description(error, e.what());
+            pn_link_close(i->first);
+            i->second->detached();
+            incoming.erase(i++);
+            output = true;
+        }
     }
 
     return output;
@@ -470,7 +512,7 @@ void Session::close()
     }
     outgoing.clear();
     incoming.clear();
-    QPID_LOG(debug, "Session closed, all links detached.");
+    QPID_LOG(debug, "Session " << session << " closed, all links detached.");
     for (std::set< boost::shared_ptr<Queue> >::const_iterator i = exclusiveQueues.begin(); i != exclusiveQueues.end(); ++i) {
         (*i)->releaseExclusiveOwnership();
     }
@@ -490,6 +532,11 @@ Authorise& Session::getAuthorise()
 
 void IncomingToQueue::handle(qpid::broker::Message& message)
 {
+    if (queue->isDeleted()) {
+        std::stringstream msg;
+        msg << " Queue " << queue->getName() << " has been deleted";
+        throw Exception(qpid::amqp::error_conditions::RESOURCE_DELETED, msg.str());
+    }
     queue->deliver(message);
 }
 

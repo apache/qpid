@@ -51,7 +51,7 @@ void Lvq::push(Message& message, bool isRecovery)
                     brokerMgmtObject->inc_discardsLvq();
                 }
             }
-            observeDequeue(old, locker);
+            observeDequeue(old, locker, 0/*can't be empty, so no need to check autodelete*/);
         }
     }
     copy.notify();

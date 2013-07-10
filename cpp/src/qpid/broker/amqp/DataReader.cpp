@@ -160,13 +160,15 @@ void DataReader::readArray(pn_data_t* /*data*/, const qpid::amqp::Descriptor* /*
 void DataReader::readList(pn_data_t* data, const qpid::amqp::Descriptor* descriptor)
 {
     size_t count = pn_data_get_list(data);
-    reader.onStartList(count, qpid::amqp::CharSequence(), descriptor);
-    pn_data_enter(data);
-    for (size_t i = 0; i < count && pn_data_next(data); ++i) {
-        read(data);
+    bool skip = reader.onStartList(count, qpid::amqp::CharSequence(), descriptor);
+    if (!skip) {
+        pn_data_enter(data);
+        for (size_t i = 0; i < count && pn_data_next(data); ++i) {
+            read(data);
+        }
+        pn_data_exit(data);
+        reader.onEndList(count, descriptor);
     }
-    pn_data_exit(data);
-    reader.onEndList(count, descriptor);
 }
 
 void DataReader::readMap(pn_data_t* data, const qpid::amqp::Descriptor* descriptor)

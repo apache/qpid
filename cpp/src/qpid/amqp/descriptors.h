@@ -89,6 +89,18 @@ const uint64_t SELECTOR_FILTER_CODE(0x0000468C00000004ULL);
 const uint64_t XQUERY_FILTER_CODE(0x0000468C00000005ULL);
 }
 
+namespace lifetime_policy {
+const std::string DELETE_ON_CLOSE_SYMBOL("amqp:delete-on-close:list");
+const std::string DELETE_ON_NO_LINKS_SYMBOL("amqp:delete-on-no-links:list");
+const std::string DELETE_ON_NO_MESSAGES_SYMBOL("amqp:delete-on-no-messages:list");
+const std::string DELETE_ON_NO_LINKS_OR_MESSAGES_SYMBOL("amqp:delete-on-no-links-or-messages:list");
+
+const uint64_t DELETE_ON_CLOSE_CODE(0x2B);
+const uint64_t DELETE_ON_NO_LINKS_CODE(0x2C);
+const uint64_t DELETE_ON_NO_MESSAGES_CODE(0x2D);
+const uint64_t DELETE_ON_NO_LINKS_OR_MESSAGES_CODE(0x2E);
+}
+
 namespace error_conditions {
 //note these are not actually descriptors
 const std::string INTERNAL_ERROR("amqp:internal-error");
@@ -97,6 +109,8 @@ const std::string UNAUTHORIZED_ACCESS("amqp:unauthorized-access");
 const std::string DECODE_ERROR("amqp:decode-error");
 const std::string NOT_ALLOWED("amqp:not-allowed");
 const std::string RESOURCE_LIMIT_EXCEEDED("amqp:resource-limit-exceeded");
+const std::string RESOURCE_DELETED("amqp:resource-deleted");
+const std::string PRECONDITION_FAILED("amqp:precondition-failed");
 }
 }} // namespace qpid::amqp
 
