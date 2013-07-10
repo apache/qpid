@@ -42,9 +42,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -54,11 +51,10 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.Transaction.Record;
-import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
-public class DurableConfigurationStoreTest extends QpidTestCase
+public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTestCase
 {
     private static final String EXCHANGE_NAME = "exchangeName";
     private String _storePath;
@@ -371,6 +367,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
 
     private void reopenStore() throws Exception
     {
+        onReopenStore();
         if (_messageStore != null)
         {
             _messageStore.close();
@@ -383,8 +380,10 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         _messageStore.activate();
     }
 
-    protected MessageStore createMessageStore() throws Exception
-    {
+    protected abstract void onReopenStore();
+
+    abstract protected MessageStore createMessageStore() throws Exception;
+    /*{
         String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
         if (storeClass == null)
         {
@@ -394,9 +393,9 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         MessageStore messageStore = (MessageStore) Class.forName(storeClass).newInstance();
         return messageStore;
     }
-
-    protected DurableConfigurationStore createConfigStore() throws Exception
-    {
+*/
+    abstract protected DurableConfigurationStore createConfigStore() throws Exception;
+    /*{
         String storeClass = System.getProperty(CONFIGURATION_STORE_CLASS_NAME_KEY);
         if (storeClass == null)
         {
@@ -414,7 +413,7 @@ public class DurableConfigurationStoreTest extends QpidTestCase
         }
         return configurationStore;
     }
-
+*/
     public void testRecordXid() throws Exception
     {
         Record enqueueRecord = getTestRecord(1);

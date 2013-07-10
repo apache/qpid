@@ -31,7 +31,6 @@ import java.util.Set;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
-import org.apache.qpid.server.store.derby.DerbyMessageStore;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
@@ -133,7 +132,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
         }
         catch(SQLException e)
         {
-            if (e.getSQLState().equalsIgnoreCase(DerbyMessageStore.DERBY_SINGLE_DB_SHUTDOWN_CODE))
+            if (e.getSQLState().equalsIgnoreCase("08006"))
             {
                 //expected and represents a clean shutdown of this database only, do nothing.
             }

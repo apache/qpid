@@ -96,6 +96,8 @@ perftests.test.libs=${test.libs}
 broker-plugins-access-control.test.libs=${test.libs}
 broker-plugins-management-http.test.libs=${test.libs}
 broker-plugins-management-jmx.test.libs=${test.libs}
+broker-plugins-jdbc-store.test.libs=${test.libs}
+broker-plugins-derby-store.test.libs=${test.libs}
 
 management-common.test.libs=${test.libs}
 
