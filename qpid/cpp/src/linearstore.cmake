@@ -118,6 +118,10 @@ if (BUILD_LINEARSTORE)
         qpid/linearstore/TxnCtxt.cpp
     )
 
+    set (util_SOURCES
+        qpid/linearstore/jrnl/utils/file_hdr.c
+    )
+
     # linearstore include directories
     get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
     set (legacy_include_DIRECTORIES
@@ -131,6 +135,14 @@ if (BUILD_LINEARSTORE)
              ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h
              "#include <${DB_INCLUDE_DIR}/db_cxx.h>\n")
     endif()
+
+    add_library (linearstoreutils SHARED
+        ${util_SOURCES}
+    )
+
+    target_link_libraries (linearstoreutils
+        rt
+    )
 
     add_library (linearstore MODULE
         ${legacy_jrnl_SOURCES}
@@ -148,7 +160,7 @@ if (BUILD_LINEARSTORE)
     target_link_libraries (linearstore
         aio
         uuid
-        qpidcommon qpidtypes qpidbroker
+        qpidcommon qpidtypes qpidbroker linearstoreutils
         ${DB_LIBRARY}
     )
 
