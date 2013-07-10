@@ -40,9 +40,21 @@ namespace broker {
 struct QueueSettings
 {
     QPID_BROKER_EXTERN QueueSettings(bool durable=false, bool autodelete=false);
+    /**
+     * The lifetime policy  dictates when an autodelete queue is
+     * eligible for delete.
+     */
+    enum LifetimePolicy
+    {
+        DELETE_IF_UNUSED = 0,
+        DELETE_IF_EMPTY,
+        DELETE_IF_UNUSED_AND_EMPTY,
+        DELETE_ON_CLOSE
+    };
 
     bool durable;
     bool autodelete;
+    LifetimePolicy lifetime;
     bool isTemporary;
 
     //basic queue types:

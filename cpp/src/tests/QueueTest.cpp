@@ -388,6 +388,7 @@ QPID_AUTO_TEST_CASE(testGroupsMultiConsumer) {
     // Owners= ---, ---, ---
 
     TestConsumer::shared_ptr c3(new TestConsumer("C3"));
+    queue->consume(c3);
     std::deque<QueueCursor> dequeMeC3;
 
     verifyAcquire(queue, c3, dequeMeC3, "a", 2 );

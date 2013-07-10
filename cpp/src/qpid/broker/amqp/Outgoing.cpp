@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/amqp/Outgoing.h"
+#include "qpid/broker/amqp/Exception.h"
 #include "qpid/broker/amqp/Header.h"
 #include "qpid/broker/amqp/Session.h"
 #include "qpid/broker/amqp/Translation.h"
@@ -26,7 +27,9 @@
 #include "qpid/broker/Selector.h"
 #include "qpid/broker/TopicKeyNode.h"
 #include "qpid/sys/OutputControl.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MessageEncoder.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
@@ -41,10 +44,11 @@ void Outgoing::wakeup()
     session.wakeup();
 }
 
-OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session, qpid::sys::OutputControl& o, bool e)
+OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session, qpid::sys::OutputControl& o, bool e, bool p)
     : Outgoing(broker, session, source, target, pn_link_name(l)),
       Consumer(pn_link_name(l), /*FIXME*/CONSUMER),
       exclusive(e),
+      isControllingUser(p),
       queue(q), deliveries(5000), link(l), out(o),
       current(0), outstanding(0),
       buffer(1024)/*used only for header at present*/
@@ -52,6 +56,7 @@ OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, 
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         deliveries[i].init(i);
     }
+    if (isControllingUser) queue->markInUse(true);
 }
 
 void OutgoingFromQueue::init()
@@ -63,11 +68,15 @@ bool OutgoingFromQueue::doWork()
 {
     QPID_LOG(trace, "Dispatching to " << getName() << ": " << pn_link_credit(link));
     if (canDeliver()) {
-        if (queue->dispatch(shared_from_this())) {
-            return true;
-        } else {
-            pn_link_drained(link);
-            QPID_LOG(debug, "No message available on " << queue->getName());
+        try{
+            if (queue->dispatch(shared_from_this())) {
+                return true;
+            } else {
+                pn_link_drained(link);
+                QPID_LOG(debug, "No message available on " << queue->getName());
+            }
+        } catch (const qpid::framing::ResourceDeletedException& e) {
+            throw Exception(qpid::amqp::error_conditions::RESOURCE_DELETED, e.what());
         }
     } else {
         QPID_LOG(debug, "Can't deliver to " << getName() << " from " << queue->getName() << ": " << pn_link_credit(link));
@@ -142,14 +151,14 @@ bool OutgoingFromQueue::canDeliver()
 
 void OutgoingFromQueue::detached()
 {
-    QPID_LOG(debug, "Detaching outgoing link from " << queue->getName());
+    QPID_LOG(debug, "Detaching outgoing link " << getName() << " from " << queue->getName());
     queue->cancel(shared_from_this());
     //TODO: release in a clearer order?
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         if (deliveries[i].msg) queue->release(deliveries[i].cursor, true);
     }
     if (exclusive) queue->releaseExclusiveOwnership();
-    Queue::tryAutoDelete(*queue->getBroker(), queue, "", "");
+    else if (isControllingUser) queue->releaseFromUse(true);
 }
 
 //Consumer interface:

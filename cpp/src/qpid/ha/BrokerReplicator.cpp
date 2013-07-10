@@ -871,7 +871,8 @@ void BrokerReplicator::autoDeleteCheck(boost::shared_ptr<Exchange> ex) {
     if (qr->getQueue()->isAutoDelete() && qr->isSubscribed()) {
         if (qr->getQueue()->getSettings().autoDeleteDelay) {
             // Start the auto-delete timer
-            Queue::tryAutoDelete(broker, qr->getQueue(), remoteHost, userId);
+            qr->getQueue()->releaseFromUse();
+            qr->getQueue()->scheduleAutoDelete();
         }
         else {
             // Delete immediately. Don't purge, the primary is gone so we need
