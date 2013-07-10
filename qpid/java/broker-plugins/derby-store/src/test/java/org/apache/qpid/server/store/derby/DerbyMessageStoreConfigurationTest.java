@@ -18,22 +18,41 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.derby;
 
-import org.apache.qpid.server.store.derby.DerbyMessageStore;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.server.store.AbstractDurableConfigurationStoreTestCase;
 
-public class MessageStoreCreatorTest extends QpidTestCase
+public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
-    private static final String[] STORE_TYPES = {MemoryMessageStore.TYPE, DerbyMessageStore.TYPE};
 
-    public void testMessageStoreCreator()
+    private DerbyMessageStore _derbyMessageStore;
+
+    @Override
+    protected void onReopenStore()
     {
-        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
-        for (String type : STORE_TYPES)
+        _derbyMessageStore = null;
+    }
+
+    @Override
+    protected DerbyMessageStore createMessageStore() throws Exception
+    {
+        createStoreIfNecessary();
+        return _derbyMessageStore;
+    }
+
+
+    private void createStoreIfNecessary()
+    {
+        if(_derbyMessageStore == null)
         {
-            MessageStore store = messageStoreCreator.createMessageStore(type);
-            assertNotNull("Store of type " + type + " is not created", store);
+            _derbyMessageStore = new DerbyMessageStore();
         }
+    }
+
+    @Override
+    protected DerbyMessageStore createConfigStore() throws Exception
+    {
+        createStoreIfNecessary();
+        return _derbyMessageStore;
     }
 }
