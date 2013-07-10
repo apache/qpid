@@ -44,7 +44,7 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, Broker
     : BrokerContext(b), ManagedConnection(getBroker(), i),
       connection(pn_connection()),
       transport(pn_transport()),
-      out(o), id(i), haveOutput(true)
+      out(o), id(i), haveOutput(true), closeInitiated(false)
 {
     if (pn_transport_bind(transport, connection)) {
         //error
@@ -130,9 +130,6 @@ size_t Connection::encode(char* buffer, size_t size)
         QPID_LOG_CAT(debug, network, id << " encoded " << n << " bytes from " << size)
         haveOutput = true;
         return n;
-    } else if (n == PN_EOS) {
-        haveOutput = size;
-        return size;//Is this right?
     } else if (n == PN_ERR) {
         throw Exception(qpid::amqp::error_conditions::INTERNAL_ERROR, QPID_MSG("Error on output: " << getError()));
     } else {
@@ -142,23 +139,29 @@ size_t Connection::encode(char* buffer, size_t size)
 }
 bool Connection::canEncode()
 {
-    try {
-        for (Sessions::iterator i = sessions.begin();i != sessions.end(); ++i) {
-            if (i->second->dispatch()) haveOutput = true;
+    if (!closeInitiated) {
+        try {
+            for (Sessions::iterator i = sessions.begin();i != sessions.end(); ++i) {
+                if (i->second->dispatch()) haveOutput = true;
+            }
+            process();
+        } catch (const Exception& e) {
+            QPID_LOG(error, id << ": " << e.what());
+            pn_condition_t* error = pn_connection_condition(connection);
+            pn_condition_set_name(error, e.symbol());
+            pn_condition_set_description(error, e.what());
+            close();
+            haveOutput = true;
+        } catch (const std::exception& e) {
+            QPID_LOG(error, id << ": " << e.what());
+            pn_condition_t* error = pn_connection_condition(connection);
+            pn_condition_set_name(error, qpid::amqp::error_conditions::INTERNAL_ERROR.c_str());
+            pn_condition_set_description(error, e.what());
+            close();
+            haveOutput = true;
         }
-        process();
-    } catch (const Exception& e) {
-        QPID_LOG(error, id << ": " << e.what());
-        pn_condition_t* error = pn_connection_condition(connection);
-        pn_condition_set_name(error, e.symbol());
-        pn_condition_set_description(error, e.what());
-        close();
-    } catch (const std::exception& e) {
-        QPID_LOG(error, id << ": " << e.what());
-        pn_condition_t* error = pn_connection_condition(connection);
-        pn_condition_set_name(error, qpid::amqp::error_conditions::INTERNAL_ERROR.c_str());
-        pn_condition_set_description(error, e.what());
-        close();
+    } else {
+        QPID_LOG(info, "Connection " << id << " has been closed locally");
     }
     //TODO: proper handling of time in and out of tick
     pn_transport_tick(transport, 0);
@@ -195,9 +198,12 @@ void Connection::closed()
 }
 void Connection::close()
 {
-    closed();
-    QPID_LOG_CAT(debug, model, id << " connection closed");
-    pn_connection_close(connection);
+    if (!closeInitiated) {
+        closeInitiated = true;
+        closed();
+        QPID_LOG_CAT(debug, model, id << " connection closed");
+        pn_connection_close(connection);
+    }
 }
 bool Connection::isClosed() const
 {
@@ -256,29 +262,29 @@ void Connection::process()
     //handle deliveries
     for (pn_delivery_t* delivery = pn_work_head(connection); delivery; delivery = pn_work_next(delivery)) {
         pn_link_t* link = pn_delivery_link(delivery);
-        if (pn_link_is_receiver(link)) {
-            Sessions::iterator i = sessions.find(pn_link_session(link));
-            if (i != sessions.end()) {
-                try {
+        try {
+            if (pn_link_is_receiver(link)) {
+                Sessions::iterator i = sessions.find(pn_link_session(link));
+                if (i != sessions.end()) {
                     i->second->readable(link, delivery);
-                } catch (const Exception& e) {
-                    QPID_LOG_CAT(error, protocol, "Error on publish: " << e.what());
-                    pn_condition_t* error = pn_link_condition(link);
-                    pn_condition_set_name(error, e.symbol());
-                    pn_condition_set_description(error, e.what());
-                    pn_link_close(link);
+                } else {
+                    pn_delivery_update(delivery, PN_REJECTED);
                 }
-            } else {
-                pn_delivery_update(delivery, PN_REJECTED);
+            } else { //i.e. SENDER
+                Sessions::iterator i = sessions.find(pn_link_session(link));
+                if (i != sessions.end()) {
+                    QPID_LOG(trace, id << " handling outgoing delivery for " << link << " on session " << pn_link_session(link));
+                    i->second->writable(link, delivery);
+                } else {
+                    QPID_LOG(error, id << " Got delivery for non-existent session: " << pn_link_session(link) << ", link: " << link);
+                }
             }
-        } else { //i.e. SENDER
-            Sessions::iterator i = sessions.find(pn_link_session(link));
-            if (i != sessions.end()) {
-                QPID_LOG(trace, id << " handling outgoing delivery for " << link << " on session " << pn_link_session(link));
-                i->second->writable(link, delivery);
-            } else {
-                QPID_LOG(error, id << " Got delivery for non-existent session: " << pn_link_session(link) << ", link: " << link);
-            }
+        } catch (const Exception& e) {
+            QPID_LOG_CAT(error, protocol, "Error processing deliveries: " << e.what());
+            pn_condition_t* error = pn_link_condition(link);
+            pn_condition_set_name(error, e.symbol());
+            pn_condition_set_description(error, e.what());
+            pn_link_close(link);
         }
     }
 

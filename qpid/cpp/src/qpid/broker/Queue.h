@@ -87,6 +87,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     typedef boost::shared_ptr<Queue> shared_ptr;
 
   protected:
+  friend struct AutoDeleteTask;
     struct UsageBarrier
     {
         Queue& parent;
@@ -119,6 +120,54 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         void rollback() throw();
     };
 
+    /**
+     * This class tracks whether a queue is in use and how it is being
+     * used.
+     */
+    class QueueUsers
+    {
+      public:
+        QueueUsers();
+        void addConsumer();
+        void addBrowser();
+        void addOther();
+        void removeConsumer();
+        void removeBrowser();
+        void addLifecycleController();
+        void removeLifecycleController();
+        void removeOther();
+        bool isUsed() const;
+        uint32_t getSubscriberCount() const;
+        bool hasConsumers() const;
+        bool isInUseByController() const;
+      private:
+        uint32_t consumers;
+        uint32_t browsers;
+        uint32_t others;
+        bool controller;
+    };
+
+    /**
+     * This class is used to check - and if necessary trigger -
+     * autodeletion when removing messages, as this could cause the
+     * queue to become empty (which is one possible trigger for
+     * autodeletion).
+     *
+     * The constructor and descructor should be called outside the
+     * message lock. The check method should be called while holding
+     * the message lock.
+     */
+    class ScopedAutoDelete
+    {
+      public:
+        ScopedAutoDelete(Queue& q);
+        void check(const sys::Mutex::ScopedLock& lock);
+        ~ScopedAutoDelete();
+      private:
+        Queue& queue;
+        bool eligible;
+    };
+
     typedef std::set< boost::shared_ptr<QueueObserver> > Observers;
     enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
     typedef boost::function1<void, Message&> MessageFunctor;
@@ -126,8 +175,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     const std::string name;
     MessageStore* store;
     const OwnershipToken* owner;
-    uint32_t consumerCount;     // Actually a count of all subscriptions, acquiring or not.
-    uint32_t browserCount;      // Count of non-acquiring subscriptions.
+    QueueUsers users;
     OwnershipToken* exclusive;
     std::vector<std::string> traceExclude;
     QueueListeners listeners;
@@ -149,7 +197,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      *     o  Queue::UsageBarrier (TBD: move under separate lock)
      */
     mutable qpid::sys::Mutex messageLock;
-    mutable qpid::sys::Mutex ownershipLock;
     mutable uint64_t persistenceId;
     QueueSettings settings;
     qpid::framing::FieldTable encodableSettings;
@@ -176,6 +223,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     Queue::shared_ptr redirectPeer;
     bool redirectSource;
 
+    bool checkAutoDelete(const qpid::sys::Mutex::ScopedLock&) const;
+    bool isUnused(const qpid::sys::Mutex::ScopedLock&) const;
+    bool isEmpty(const qpid::sys::Mutex::ScopedLock&) const;
     virtual void push(Message& msg, bool isRecovery=false);
     bool accept(const Message&);
     void process(Message& msg);
@@ -191,7 +241,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void observeEnqueue(const Message& msg, const sys::Mutex::ScopedLock& lock);
     void observeAcquire(const Message& msg, const sys::Mutex::ScopedLock& lock);
     void observeRequeue(const Message& msg, const sys::Mutex::ScopedLock& lock);
-    void observeDequeue(const Message& msg, const sys::Mutex::ScopedLock& lock);
+    void observeDequeue(const Message& msg, const sys::Mutex::ScopedLock& lock, ScopedAutoDelete*);
     void observeConsumerAdd( const Consumer&, const sys::Mutex::ScopedLock& lock);
     void observeConsumerRemove( const Consumer&, const sys::Mutex::ScopedLock& lock);
 
@@ -203,9 +253,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void abandoned(const Message& message);
     bool checkNotDeleted(const Consumer::shared_ptr&);
     void notifyDeleted();
-    uint32_t remove(uint32_t maxCount, MessagePredicate, MessageFunctor, SubscriptionType);
+    uint32_t remove(uint32_t maxCount, MessagePredicate, MessageFunctor, SubscriptionType, bool triggerAutoDelete);
     virtual bool checkDepth(const QueueDepth& increment, const Message&);
-
+    void tryAutoDelete();
   public:
 
     typedef std::vector<shared_ptr> vector;
@@ -284,6 +334,14 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void consume(Consumer::shared_ptr c,
                                     bool exclusive = false);
     QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
+    /**
+     * Used to indicate that the queue is being used in some other
+     * context than by a subscriber. The controlling flag should only
+     * be set if the mode of use is the one that caused the queue to
+     * be created.
+     */
+    QPID_BROKER_EXTERN void markInUse(bool controlling=false);
+    QPID_BROKER_EXTERN void releaseFromUse(bool controlling=false);
 
     QPID_BROKER_EXTERN uint32_t purge(const uint32_t purge_request=0,  //defaults to all messages
                    boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>(),
@@ -308,6 +366,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     inline const qpid::framing::FieldTable& getEncodableSettings() const { return encodableSettings; }
     inline bool isAutoDelete() const { return settings.autodelete; }
     QPID_BROKER_EXTERN bool canAutoDelete() const;
+    QPID_BROKER_EXTERN void scheduleAutoDelete();
+    QPID_BROKER_EXTERN bool isDeleted() const;
     const QueueBindings& getBindings() const { return bindings; }
 
     /**
@@ -340,7 +400,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * exclusive owner
      */
     static Queue::shared_ptr restore(QueueRegistry& queues, framing::Buffer& buffer);
-    QPID_BROKER_EXTERN static void tryAutoDelete(Broker& broker, Queue::shared_ptr, const std::string& connectionId, const std::string& userId);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);
 

@@ -67,6 +67,7 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     const std::string id;
     bool haveOutput;
     Sessions sessions;
+    bool closeInitiated;
 
     virtual void process();
     std::string getError();

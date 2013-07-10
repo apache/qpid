@@ -23,6 +23,7 @@
  */
 #include "qpid/amqp/MapReader.h"
 #include "qpid/types/Variant.h"
+#include "qpid/broker/QueueSettings.h"
 
 struct pn_data_t;
 namespace qpid {
@@ -35,6 +36,7 @@ class NodeProperties : public qpid::amqp::MapReader
   public:
     NodeProperties();
     void read(pn_data_t*);
+    void write(pn_data_t*);
     void onNullValue(const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor*);
     void onBooleanValue(const qpid::amqp::CharSequence&, bool, const qpid::amqp::Descriptor*);
     void onUByteValue(const qpid::amqp::CharSequence&, uint8_t, const qpid::amqp::Descriptor*);
@@ -51,12 +53,14 @@ class NodeProperties : public qpid::amqp::MapReader
     void onTimestampValue(const qpid::amqp::CharSequence&, int64_t, const qpid::amqp::Descriptor*);
     void onStringValue(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor*);
     void onSymbolValue(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor*);
+    bool onStartListValue(const qpid::amqp::CharSequence&, uint32_t count, const qpid::amqp::Descriptor*);
     bool isQueue() const;
     QueueSettings getQueueSettings();
     bool isDurable() const;
     bool isExclusive() const;
     std::string getExchangeType() const;
     std::string getAlternateExchange() const;
+    bool trackControllingLink() const;
   private:
     bool queue;
     bool durable;
@@ -65,8 +69,9 @@ class NodeProperties : public qpid::amqp::MapReader
     std::string exchangeType;
     std::string alternateExchange;
     qpid::types::Variant::Map properties;
+    QueueSettings::LifetimePolicy lifetime;
 
-    void process(const std::string&, const qpid::types::Variant&);
+    void process(const std::string&, const qpid::types::Variant&, const qpid::amqp::Descriptor*);
 };
 }}} // namespace qpid::broker::amqp
 

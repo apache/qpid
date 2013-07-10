@@ -75,6 +75,12 @@ const std::string MOVE("move");
 const std::string COPY("copy");
 
 const std::string SUPPORTED_DIST_MODES("supported-dist-modes");
+const std::string AUTO_DELETE("auto-delete");
+const std::string LIFETIME_POLICY("lifetime-policy");
+const std::string DELETE_ON_CLOSE("delete-on-close");
+const std::string DELETE_IF_UNUSED("delete-if-unused");
+const std::string DELETE_IF_EMPTY("delete-if-empty");
+const std::string DELETE_IF_UNUSED_AND_EMPTY("delete-if-unused-and-empty");
 const std::string CREATE_ON_DEMAND("create-on-demand");
 
 const std::string DUMMY(".");
@@ -307,6 +313,10 @@ AddressHelper::AddressHelper(const Address& address) :
         flatten(x_declare, ARGUMENTS);
         add(properties, x_declare);
         node.erase(i);
+    }
+    //for temp queues, if neither lifetime-policy nor autodelete are specified, assume delete-on-close
+    if (isTemporary && properties.find(LIFETIME_POLICY) == properties.end() && properties.find(AUTO_DELETE) == properties.end()) {
+        properties[LIFETIME_POLICY] = DELETE_ON_CLOSE;
     }
 
     if (properties.size() && !(isTemporary || createPolicy.size())) {
@@ -559,7 +569,24 @@ std::string AddressHelper::getLinkName(const Address& address)
         return name.str();
     }
 }
-
+namespace {
+std::string toLifetimePolicy(const std::string& value)
+{
+    if (value == DELETE_ON_CLOSE) return qpid::amqp::lifetime_policy::DELETE_ON_CLOSE_SYMBOL;
+    else if (value == DELETE_IF_UNUSED) return qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_SYMBOL;
+    else if (value == DELETE_IF_EMPTY) return qpid::amqp::lifetime_policy::DELETE_ON_NO_MESSAGES_SYMBOL;
+    else if (value == DELETE_IF_UNUSED_AND_EMPTY) return qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_OR_MESSAGES_SYMBOL;
+    else return value;//asume value is itself the symbolic descriptor
+}
+void putLifetimePolicy(pn_data_t* data, const std::string& value)
+{
+    pn_data_put_described(data);
+    pn_data_enter(data);
+    pn_data_put_symbol(data, convert(value));
+    pn_data_put_list(data);
+    pn_data_exit(data);
+}
+}
 void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
 {
     if (properties.size() || type.size()) {
@@ -575,8 +602,13 @@ void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
             pn_data_put_bool(data, true);
         }
         for (qpid::types::Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
-            pn_data_put_symbol(data, convert(i->first));
-            pn_data_put_string(data, convert(i->second.asString()));
+            if (i->first == LIFETIME_POLICY) {
+                pn_data_put_symbol(data, convert(i->first));
+                putLifetimePolicy(data, toLifetimePolicy(i->second.asString()));
+            } else {
+                pn_data_put_symbol(data, convert(i->first));
+                pn_data_put_string(data, convert(i->second.asString()));
+            }
         }
         pn_data_exit(data);
     }

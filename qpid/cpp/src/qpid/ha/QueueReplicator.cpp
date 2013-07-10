@@ -121,6 +121,7 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
     framing::FieldTable args = getArgs();
     args.setString(QPID_REPLICATE, printable(NONE).str());
     setArgs(args);
+    if (q->isAutoDelete()) q->markInUse();
 }
 
 // This must be called immediately after the constructor.

@@ -58,6 +58,9 @@ const std::string PAGING("qpid.paging");
 const std::string MAX_PAGES("qpid.max_pages_loaded");
 const std::string PAGE_FACTOR("qpid.page_factor");
 const std::string FILTER("qpid.filter");
+const std::string LIFETIME_POLICY("qpid.lifetime-policy");
+const std::string DELETE_IF_UNUSED_KEY("delete-if-unused");
+const std::string DELETE_IF_UNUSED_AND_EMPTY_KEY("delete-if-unused-and-empty");
 
 const std::string LVQ_LEGACY("qpid.last_value_queue");
 const std::string LVQ_LEGACY_KEY("qpid.LVQ_key");
@@ -86,6 +89,7 @@ const QueueSettings::Aliases QueueSettings::aliases;
 QueueSettings::QueueSettings(bool d, bool a) :
     durable(d),
     autodelete(a),
+    lifetime(DELETE_IF_UNUSED),
     isTemporary(false),
     priorities(0),
     defaultFairshare(0),
@@ -213,6 +217,15 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
         return true;
     } else if (key == FILTER) {
         filter = value.asString();
+        return true;
+    } else if (key == LIFETIME_POLICY) {
+        if (value.asString() == DELETE_IF_UNUSED_KEY) {
+            lifetime = DELETE_IF_UNUSED;
+        } else if (value.asString() == DELETE_IF_UNUSED_AND_EMPTY_KEY) {
+            lifetime = DELETE_IF_UNUSED_AND_EMPTY;
+        } else {
+            QPID_LOG(warning, "Invalid value for " << LIFETIME_POLICY << ": " << value);
+        }
         return true;
     } else {
         return false;
