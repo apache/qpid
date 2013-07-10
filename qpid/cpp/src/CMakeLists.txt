@@ -1595,6 +1595,7 @@ install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 # Legacy store
 #
 include (legacystore.cmake)
+include (linearstore.cmake)
 
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
