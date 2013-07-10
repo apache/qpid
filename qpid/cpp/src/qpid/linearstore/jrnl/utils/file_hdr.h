@@ -1,5 +1,5 @@
-#ifndef QPID_LEGACYSTORE_JRNL_FILE_HDR_H
-#define QPID_LEGACYSTORE_JRNL_FILE_HDR_H
+#ifndef QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H
+#define QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -103,4 +103,4 @@ void set_time(file_hdr_t *fh, struct timespec *ts);
 
 #pragma pack()
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_FILE_HDR_H
+#endif // ifndef QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H

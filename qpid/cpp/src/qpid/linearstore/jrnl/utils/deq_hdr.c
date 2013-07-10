@@ -19,25 +19,15 @@
  *
  */
 
-#include "file_hdr.h"
+#include "deq_hdr.h"
 
-int set_time_now(file_hdr_t *fh)
-{
-    struct timespec ts;
-    int    err;
+static const uint16_t DEQ_HDR_TXNCMPLCOMMIT_MASK = 0x10;
 
-    if (err = clock_gettime(CLOCK_REALTIME, &ts))
-        return err;
-    fh->_ts_sec = ts.tv_sec;
-    fh->_ts_nsec = ts.tv_nsec;
-    return 0;
+bool is_txn_coml_commit(deq_hdr_t *dh) {
+    return dh->_rhdr._uflag & DEQ_HDR_TXNCMPLCOMMIT_MASK;
 }
 
-
-void set_time(file_hdr_t *fh, struct timespec *ts)
-{
-    fh->_ts_sec  = ts->tv_sec;
-    fh->_ts_nsec = ts->tv_nsec;
+void set_txn_coml_commit(deq_hdr_t *dh, const bool commit) {
+    dh->_rhdr._uflag = commit ? dh->_rhdr._uflag | DEQ_HDR_TXNCMPLCOMMIT_MASK :
+                                dh->_rhdr._uflag & (~DEQ_HDR_TXNCMPLCOMMIT_MASK);
 }
-
-

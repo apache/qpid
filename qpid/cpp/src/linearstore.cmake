@@ -120,6 +120,8 @@ if (BUILD_LINEARSTORE)
 
     set (util_SOURCES
         qpid/linearstore/jrnl/utils/file_hdr.c
+        qpid/linearstore/jrnl/utils/enq_hdr.c
+        qpid/linearstore/jrnl/utils/deq_hdr.c
     )
 
     # linearstore include directories

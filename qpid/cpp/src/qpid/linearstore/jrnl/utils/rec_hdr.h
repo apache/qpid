@@ -1,5 +1,5 @@
-#ifndef QPID_LEGACYSTORE_JRNL_REC_HDR_H
-#define QPID_LEGACYSTORE_JRNL_REC_HDR_H
+#ifndef QPID_LINEARSTORE_JRNL_UTILS_REC_HDR_H
+#define QPID_LINEARSTORE_JRNL_UTILS_REC_HDR_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -34,8 +34,8 @@
  */
 
 #include <stdint.h>
-#include "qpid/legacystore/jrnl/jcfg.h"
-#include <sys/types.h>
+/*#include "qpid/legacystore/jrnl/jcfg.h"*/
+/*#include <sys/types.h>*/
 
 #pragma pack(1)
 
@@ -72,4 +72,4 @@ typedef struct rec_hdr_t {
 
 #pragma pack()
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_REC_HDR_H
+#endif // ifndef QPID_LINEARSTORE_JRNL_UTILS_REC_HDR_H

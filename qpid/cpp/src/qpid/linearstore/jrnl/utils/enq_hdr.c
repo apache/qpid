@@ -19,25 +19,25 @@
  *
  */
 
-#include "file_hdr.h"
+#include "enq_hdr.h"
 
-int set_time_now(file_hdr_t *fh)
-{
-    struct timespec ts;
-    int    err;
+static const uint16_t ENQ_HDR_TRANSIENT_MASK = 0x10;
+static const uint16_t ENQ_HDR_EXTERNAL_MASK = 0x20;
 
-    if (err = clock_gettime(CLOCK_REALTIME, &ts))
-        return err;
-    fh->_ts_sec = ts.tv_sec;
-    fh->_ts_nsec = ts.tv_nsec;
-    return 0;
+bool is_transient(enq_hdr_t *eh) {
+    return eh->_rhdr._uflag & ENQ_HDR_TRANSIENT_MASK;
 }
 
-
-void set_time(file_hdr_t *fh, struct timespec *ts)
-{
-    fh->_ts_sec  = ts->tv_sec;
-    fh->_ts_nsec = ts->tv_nsec;
+void set_transient(enq_hdr_t *eh, const bool transient) {
+    eh->_rhdr._uflag = transient ? eh->_rhdr._uflag | ENQ_HDR_TRANSIENT_MASK :
+                                   eh->_rhdr._uflag & (~ENQ_HDR_TRANSIENT_MASK);
 }
 
+bool is_external(enq_hdr_t *eh) {
+    return eh->_rhdr._uflag & ENQ_HDR_EXTERNAL_MASK;
+}
 
+void set_external(enq_hdr_t *eh, const bool external) {
+    eh->_rhdr._uflag = external ? eh->_rhdr._uflag | ENQ_HDR_EXTERNAL_MASK :
+                                  eh->_rhdr._uflag & (~ENQ_HDR_EXTERNAL_MASK);
+}
