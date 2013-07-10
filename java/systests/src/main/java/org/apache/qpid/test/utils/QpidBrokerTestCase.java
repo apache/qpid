@@ -69,7 +69,6 @@ import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 
@@ -839,7 +838,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         if (System.getProperty("profile", "").startsWith("java-dby-mem"))
         {
-            storeDir = DerbyMessageStore.MEMORY_STORE_LOCATION;
+            storeDir = ":memory:";
         }
         else if (!MEMORY_STORE_CLASS_NAME.equals(storeClassName))
         {

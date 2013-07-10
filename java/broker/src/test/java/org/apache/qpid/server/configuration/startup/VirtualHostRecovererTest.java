@@ -78,8 +78,7 @@ public class VirtualHostRecovererTest extends TestCase
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
 
-        attributes.put(VirtualHost.STORE_PATH, "/path/to/virtualhost/store");
-        attributes.put(VirtualHost.STORE_TYPE, "DERBY");
+        attributes.put(VirtualHost.STORE_TYPE, "MEMORY");
         when(entry.getAttributes()).thenReturn(attributes);
 
         VirtualHost host = recoverer.create(null, entry, parent);
@@ -99,8 +98,7 @@ public class VirtualHostRecovererTest extends TestCase
 
         attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.STORE_PATH, "/path/to/store");
-        attributes.put(VirtualHost.STORE_TYPE, "DERBY");
+        attributes.put(VirtualHost.STORE_TYPE, "MEMORY");
         mandatoryAttributes = new String[]{VirtualHost.NAME, VirtualHost.STORE_TYPE};
 
         checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);

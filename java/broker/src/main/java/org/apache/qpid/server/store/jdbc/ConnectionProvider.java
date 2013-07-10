@@ -29,3 +29,4 @@ public interface ConnectionProvider
 
     void close() throws SQLException;
 }
+

@@ -20,26 +20,40 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import org.apache.qpid.server.store.AbstractDurableConfigurationStoreTestCase;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.DurableConfigurationStoreTest;
-import org.apache.qpid.server.store.MessageStore;
 
-public class BDBMessageStoreConfigurationTest extends DurableConfigurationStoreTest
+public class BDBMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
 
     private BDBMessageStore _bdbMessageStore;
 
     @Override
+    protected void onReopenStore()
+    {
+        _bdbMessageStore = null;
+    }
+
+    @Override
     protected BDBMessageStore createMessageStore() throws Exception
     {
-        _bdbMessageStore = new BDBMessageStore();
+        createStoreIfNecessary();
         return _bdbMessageStore;
     }
 
-    // TODO - this only works so long as createConfigStore is called after createMessageStore
+    private void createStoreIfNecessary()
+    {
+        if(_bdbMessageStore == null)
+        {
+            _bdbMessageStore = new BDBMessageStore();
+        }
+    }
+
     @Override
     protected DurableConfigurationStore createConfigStore() throws Exception
     {
+        createStoreIfNecessary();
+
         return _bdbMessageStore;
     }
 }
