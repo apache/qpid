@@ -39,7 +39,7 @@
 namespace qpid {
 namespace amqp {
 class MapHandler;
-class MessageId;
+struct MessageId;
 }
 
 namespace management {
