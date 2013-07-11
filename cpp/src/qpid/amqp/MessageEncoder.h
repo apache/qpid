@@ -84,7 +84,7 @@ class MessageEncoder : public Encoder
         virtual void handle(MapHandler&) const = 0;
     };
 
-    MessageEncoder(char* d, size_t s, bool o=false) : Encoder(d, s), optimise(o) {}
+    MessageEncoder(char* d, size_t s) : Encoder(d, s), optimise(true) {}
     void writeHeader(const Header&);
     void writeProperties(const Properties&);
     void writeApplicationProperties(const ApplicationProperties&);
