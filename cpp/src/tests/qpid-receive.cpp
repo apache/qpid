@@ -222,6 +222,7 @@ int main(int argc, char ** argv)
                         if (opts.printHeaders) {
                             if (msg.getSubject().size()) std::cout << "Subject: " << msg.getSubject() << std::endl;
                             if (msg.getReplyTo()) std::cout << "ReplyTo: " << msg.getReplyTo() << std::endl;
+                            if (msg.getMessageId().size()) std::cout << "MessageId: " << msg.getMessageId() << std::endl;
                             if (msg.getCorrelationId().size()) std::cout << "CorrelationId: " << msg.getCorrelationId() << std::endl;
                             if (msg.getUserId().size()) std::cout << "UserId: " << msg.getUserId() << std::endl;
                             if (msg.getTtl().getMilliseconds()) std::cout << "TTL: " << msg.getTtl().getMilliseconds() << std::endl;
