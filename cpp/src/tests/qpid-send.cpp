@@ -371,6 +371,7 @@ int main(int argc, char ** argv)
                 msg.setReplyTo(Address(opts.replyto));
             }
             if (!opts.userid.empty()) msg.setUserId(opts.userid);
+            if (!opts.id.empty()) msg.setMessageId(opts.id);
             if (!opts.correlationid.empty()) msg.setCorrelationId(opts.correlationid);
             opts.setProperties(msg);
             uint sent = 0;

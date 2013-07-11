@@ -132,7 +132,7 @@ void MessageReader::PropertiesReader::onUuid(const CharSequence& v, const Descri
     if (index == MESSAGE_ID) {
         parent.onMessageId(v, qpid::types::VAR_UUID);
     } else if (index == CORRELATION_ID) {
-        parent.onCorrelationId(v);
+        parent.onCorrelationId(v, qpid::types::VAR_UUID);
     } else {
         QPID_LOG(warning, "Unexpected message format, got uuid at index " << index << " of properties");
     }
@@ -154,7 +154,7 @@ void MessageReader::PropertiesReader::onBinary(const CharSequence& v, const Desc
     if (index == MESSAGE_ID) {
         parent.onMessageId(v, qpid::types::VAR_STRING);
     } else if (index == CORRELATION_ID) {
-        parent.onCorrelationId(v);
+        parent.onCorrelationId(v, qpid::types::VAR_STRING);
     } else if (index == USER_ID) {
         parent.onUserId(v);
     } else {
@@ -165,9 +165,9 @@ void MessageReader::PropertiesReader::onBinary(const CharSequence& v, const Desc
 void MessageReader::PropertiesReader::onString(const CharSequence& v, const Descriptor*) // message-id, correlation-id, group-id, reply-to-group-id, subject, to, reply-to
 {
     if (index == MESSAGE_ID) {
-        parent.onMessageId(v);
+        parent.onMessageId(v, qpid::types::VAR_STRING);
     } else if (index == CORRELATION_ID) {
-        parent.onCorrelationId(v);
+        parent.onCorrelationId(v, qpid::types::VAR_STRING);
     } else if (index == GROUP_ID) {
         parent.onGroupId(v);
     } else if (index == REPLY_TO_GROUP_ID) {
@@ -218,123 +218,6 @@ void MessageReader::PropertiesReader::onNull(const Descriptor*)
 {
     ++index;
 }
-
-/*
-MessageReader::DurableReader::DurableReader(MessageReader& p) : parent(p) {}
-void MessageReader::DurableReader::onBoolean(bool v, const Descriptor*)
-{
-    parent.onDurable(v);
-}
-MessageReader::PriorityReader::PriorityReader(MessageReader& p) : parent(p) {}
-void MessageReader::PriorityReader::onUByte(uint8_t v, const Descriptor*)
-{
-    parent.onPriority(v);
-}
-MessageReader::TtlReader::TtlReader(MessageReader& p) : parent(p) {}
-void MessageReader::TtlReader::onUInt(uint32_t v, const Descriptor*)
-{
-    parent.onTtl(v);
-}
-MessageReader::FirstAcquirerReader::FirstAcquirerReader(MessageReader& p) : parent(p) {}
-void MessageReader::FirstAcquirerReader::onBoolean(bool v, const Descriptor*)
-{
-    parent.onFirstAcquirer(v);
-}
-MessageReader::DeliveryCountReader::DeliveryCountReader(MessageReader& p) : parent(p) {}
-void MessageReader::DeliveryCountReader::onUInt(uint32_t v, const Descriptor*)
-{
-    parent.onDeliveryCount(v);
-}
-MessageReader::MessageIdReader::MessageIdReader(MessageReader& p) : parent(p) {}
-void MessageReader::MessageIdReader::onUuid(const qpid::types::Uuid& v, const Descriptor*)
-{
-    parent.onMessageId(v);
-}
-void MessageReader::MessageIdReader::onULong(uint64_t v, const Descriptor*)
-{
-    parent.onMessageId(v);
-}
-void MessageReader::MessageIdReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onMessageId(v);
-}
-void MessageReader::MessageIdReader::onBinary(const CharSequence& v, const Descriptor*)
-{
-    parent.onMessageId(v);
-}
-MessageReader::UserIdReader::UserIdReader(MessageReader& p) : parent(p) {}
-void MessageReader::UserIdReader::onBinary(const CharSequence& v, const Descriptor*)
-{
-    parent.onUserId(v);
-}
-MessageReader::ToReader::ToReader(MessageReader& p) : parent(p) {}
-void MessageReader::ToReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onTo(v);
-}
-MessageReader::SubjectReader::SubjectReader(MessageReader& p) : parent(p) {}
-void MessageReader::SubjectReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onSubject(v);
-}
-MessageReader::ReplyToReader::ReplyToReader(MessageReader& p) : parent(p) {}
-void MessageReader::ReplyToReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onReplyTo(v);
-}
-MessageReader::CorrelationIdReader::CorrelationIdReader(MessageReader& p) : parent(p) {}
-void MessageReader::CorrelationIdReader::onUuid(const qpid::types::Uuid& v, const Descriptor*)
-{
-    parent.onCorrelationId(v);
-}
-void MessageReader::CorrelationIdReader::onULong(uint64_t v, const Descriptor*)
-{
-    parent.onCorrelationId(v);
-}
-void MessageReader::CorrelationIdReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onCorrelationId(v);
-}
-void MessageReader::CorrelationIdReader::onBinary(const CharSequence& v, const Descriptor*)
-{
-    parent.onCorrelationId(v);
-}
-MessageReader::ContentTypeReader::ContentTypeReader(MessageReader& p) : parent(p) {}
-void MessageReader::ContentTypeReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onContentType(v);
-}
-MessageReader::ContentEncodingReader::ContentEncodingReader(MessageReader& p) : parent(p) {}
-void MessageReader::ContentEncodingReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onContentEncoding(v);
-}
-MessageReader::AbsoluteExpiryTimeReader::AbsoluteExpiryTimeReader(MessageReader& p) : parent(p) {}
-void MessageReader::AbsoluteExpiryTimeReader::onTimestamp(int64_t v, const Descriptor*)
-{
-    parent.onAbsoluteExpiryTime(v);
-}
-MessageReader::CreationTimeReader::CreationTimeReader(MessageReader& p) : parent(p) {}
-void MessageReader::CreationTimeReader::onTimestamp(int64_t v, const Descriptor*)
-{
-    parent.onCreationTime(v);
-}
-MessageReader::GroupIdReader::GroupIdReader(MessageReader& p) : parent(p) {}
-void MessageReader::GroupIdReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onGroupId(v);
-}
-MessageReader::GroupSequenceReader::GroupSequenceReader(MessageReader& p) : parent(p) {}
-void MessageReader::GroupSequenceReader::onUInt(uint32_t v, const Descriptor*)
-{
-    parent.onGroupSequence(v);
-}
-MessageReader::ReplyToGroupIdReader::ReplyToGroupIdReader(MessageReader& p) : parent(p) {}
-void MessageReader::ReplyToGroupIdReader::onString(const CharSequence& v, const Descriptor*)
-{
-    parent.onReplyToGroupId(v);
-}
-*/
 
 //header, properties, amqp-sequence, amqp-value
 bool MessageReader::onStartList(uint32_t count, const CharSequence& raw, const Descriptor* descriptor)
