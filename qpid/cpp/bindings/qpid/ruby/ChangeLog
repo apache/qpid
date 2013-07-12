@@ -1,4 +1,4 @@
-Verison 0.22:
+Version 0.22:
 	* Qpid::Messaging::Address can use an address string on creation.
 	* Qpid::Messaging::Message can use an address string for reply_to.
 	* Removed errors.rb and the KeyError and SessionNameException errors.
