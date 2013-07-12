@@ -262,7 +262,7 @@ dx_agent_t *dx_agent(dx_dispatch_t *dx)
     DEQ_INIT(agent->out_fifo);
     agent->lock    = sys_mutex();
     agent->timer   = dx_timer(dx, dx_agent_deferred_handler, agent);
-    agent->address = dx_router_register_address(dx, true, "agent", dx_agent_rx_handler, agent);
+    agent->address = dx_router_register_address(dx, "agent", dx_agent_rx_handler, agent);
 
     return agent;
 }

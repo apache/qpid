@@ -513,10 +513,10 @@ int dx_container_register_node_type(dx_dispatch_t *dx, const dx_node_type_t *nt)
 }
 
 
-void dx_container_set_default_node_type(dx_dispatch_t        *dx,
-                                        const dx_node_type_t *nt,
-                                        void                 *context,
-                                        dx_dist_mode_t        supported_dist)
+dx_node_t *dx_container_set_default_node_type(dx_dispatch_t        *dx,
+                                              const dx_node_type_t *nt,
+                                              void                 *context,
+                                              dx_dist_mode_t        supported_dist)
 {
     dx_container_t *container = dx->container;
 
@@ -530,6 +530,8 @@ void dx_container_set_default_node_type(dx_dispatch_t        *dx,
         container->default_node = 0;
         dx_log(module, LOG_TRACE, "Default node removed");
     }
+
+    return container->default_node;
 }
 
 

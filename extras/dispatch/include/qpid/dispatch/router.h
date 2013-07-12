@@ -31,7 +31,6 @@ typedef void (*dx_router_message_cb)(void *context, dx_message_t *msg);
 
 
 dx_address_t *dx_router_register_address(dx_dispatch_t        *dx,
-                                         bool                  is_local,
                                          const char           *address,
                                          dx_router_message_cb  handler,
                                          void                 *context);
