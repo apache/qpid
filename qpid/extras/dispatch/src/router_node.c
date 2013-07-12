@@ -28,8 +28,9 @@ static char *module = "ROUTER";
 static void dx_router_python_setup(dx_router_t *router);
 static void dx_pyrouter_tick(dx_router_t *router);
 
-//static char *local_prefix = "_local/";
-//static char *topo_prefix  = "_topo/";
+static char *router_address = "_local/qdxrouter";
+static char *local_prefix   = "_local/";
+//static char *topo_prefix    = "_topo/";
 
 /**
  * Address Types and Processing:
@@ -46,52 +47,72 @@ static void dx_pyrouter_tick(dx_router_t *router);
  *   <mobile>                             M<mobile>      forward+handler   forward
  */
 
-struct dx_router_t {
-    dx_dispatch_t      *dx;
-    const char         *router_area;
-    const char         *router_id;
-    dx_node_t          *node;
-    dx_link_list_t      in_links;
-    dx_link_list_t      out_links;
-    dx_message_list_t   in_fifo;
-    sys_mutex_t        *lock;
-    dx_timer_t         *timer;
-    hash_t             *out_hash;
-    uint64_t            dtag;
-    PyObject           *pyRouter;
-    PyObject           *pyTick;
+
+typedef struct dx_router_link_t dx_router_link_t;
+typedef struct dx_router_node_t dx_router_node_t;
+
+
+typedef enum {
+    DX_LINK_ENDPOINT,   // A link to a connected endpoint
+    DX_LINK_ROUTER,     // A link to a peer router in the same area
+    DX_LINK_AREA        // A link to a peer router in a different area (area boundary)
+} dx_link_type_t;
+
+
+struct dx_router_link_t {
+    DEQ_LINKS(dx_router_link_t);
+    dx_direction_t     link_direction;
+    dx_link_type_t     link_type;
+    dx_address_t      *owning_addr;     // [ref] Address record that owns this link
+    dx_link_t         *link;            // [own] Link pointer
+    dx_router_link_t  *connected_link;  // [ref] If this is a link-route, reference the connected link
+    dx_router_link_t  *peer_link;       // [ref] If this is a bidirectional link-route, reference the peer link
+    dx_message_list_t  out_fifo;        // Message FIFO for outgoing messages
 };
-
-
-typedef struct {
-    dx_link_t         *link;
-    dx_message_list_t  out_fifo;
-} dx_router_link_t;
 
 ALLOC_DECLARE(dx_router_link_t);
 ALLOC_DEFINE(dx_router_link_t);
+DEQ_DECLARE(dx_router_link_t, dx_router_link_list_t);
 
-
-typedef struct {
+struct dx_router_node_t {
+    DEQ_LINKS(dx_router_node_t);
     const char       *id;
-    dx_router_link_t *next_hop;
+    dx_router_node_t *next_hop;   // Next hop node _if_ this is not a neighbor node
+    dx_router_link_t *peer_link;  // Outgoing link _if_ this is a neighbor node
     // list of valid origins (pointers to router_node) - (bit masks?)
-} dx_router_node_t;
+};
 
 ALLOC_DECLARE(dx_router_node_t);
 ALLOC_DEFINE(dx_router_node_t);
+DEQ_DECLARE(dx_router_node_t, dx_router_node_list_t);
 
 
 struct dx_address_t {
-    int                   is_local;
-    dx_router_message_cb  handler;           // In-Process Consumer
-    void                 *handler_context;
-    dx_router_link_t     *rlink;             // Locally-Connected Consumer  - TODO: Make this a list
-    dx_router_node_t     *rnode;             // Remotely-Connected Consumer - TODO: Make this a list
+    dx_router_message_cb   handler;          // In-Process Consumer
+    void                  *handler_context;
+    dx_router_link_list_t  rlinks;           // Locally-Connected Consumers
+    dx_router_node_list_t  rnodes;           // Remotely-Connected Consumers
 };
 
 ALLOC_DECLARE(dx_address_t);
 ALLOC_DEFINE(dx_address_t);
+
+
+struct dx_router_t {
+    dx_dispatch_t         *dx;
+    const char            *router_area;
+    const char            *router_id;
+    dx_node_t             *node;
+    dx_router_link_list_t  in_links;
+    dx_router_node_list_t  routers;
+    dx_message_list_t      in_fifo;
+    sys_mutex_t           *lock;
+    dx_timer_t            *timer;
+    hash_t                *out_hash;
+    uint64_t               dtag;
+    PyObject              *pyRouter;
+    PyObject              *pyTick;
+};
 
 
 /**
@@ -141,10 +162,11 @@ static void router_tx_handler(void* context, dx_link_t *link, pn_delivery_t *del
  */
 static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *delivery)
 {
-    dx_router_t  *router  = (dx_router_t*) context;
-    pn_link_t    *pn_link = pn_delivery_link(delivery);
-    dx_message_t *msg;
-    int           valid_message = 0;
+    dx_router_t      *router  = (dx_router_t*) context;
+    pn_link_t        *pn_link = pn_delivery_link(delivery);
+    dx_router_link_t *rlink   = (dx_router_link_t*) dx_link_get_context(link);
+    dx_message_t     *msg;
+    int               valid_message = 0;
 
     //
     // Receive the message into a local representation.  If the returned message
@@ -158,20 +180,49 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
         return;
 
     //
-    // Validate the message through the Properties section
+    // Consume the delivery and issue a replacement credit
     //
-    valid_message = dx_message_check(msg, DX_DEPTH_PROPERTIES);
-
     pn_link_advance(pn_link);
     pn_link_flow(pn_link, 1);
+
+    sys_mutex_lock(router->lock);
+
+    //
+    // Handle the Link-Routing case.  If this incoming link is associated with a connected
+    // link, simply deliver the message to the outgoing link.  There is no need to validate
+    // the message in this case.
+    //
+    if (rlink->connected_link) {
+        dx_router_link_t *clink      = rlink->connected_link;
+        pn_link_t        *pn_outlink = dx_link_pn(clink->link);
+        DEQ_INSERT_TAIL(clink->out_fifo, msg);
+        sys_mutex_unlock(router->lock);
+
+        pn_link_offered(pn_outlink, DEQ_SIZE(clink->out_fifo));
+        dx_link_activate(clink->link);
+        sys_mutex_unlock(router->lock);
+
+        return;
+    }
+
+    //
+    // We are performing Message-Routing, therefore we will need to validate the message
+    // through the Properties section so we can access the TO field.
+    //
+    dx_message_t         *in_process_copy = 0;
+    dx_router_message_cb  handler         = 0;
+    void                 *handler_context = 0;
+
+    valid_message = dx_message_check(msg, DX_DEPTH_PROPERTIES);
 
     if (valid_message) {
         dx_field_iterator_t *iter = dx_message_field_iterator(msg, DX_FIELD_TO);
         dx_address_t        *addr;
         if (iter) {
             dx_field_iterator_reset_view(iter, ITER_VIEW_ADDRESS_HASH);
-            sys_mutex_lock(router->lock);
             hash_retrieve(router->out_hash, iter, (void*) &addr);
+            dx_field_iterator_reset_view(iter, ITER_VIEW_NO_HOST);
+            int is_local = dx_field_iterator_prefix(iter, local_prefix);
             dx_field_iterator_free(iter);
 
             if (addr) {
@@ -179,51 +230,71 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
                 // To field is valid and contains a known destination.  Handle the various
                 // cases for forwarding.
                 //
-                // Forward to the in-process handler for this message if there is one.
-                // Note: If the handler is going to queue the message for deferred processing,
-                //       it must copy the message.  This function assumes that the handler
-                //       will process the message synchronously and be finished with it upon
-                //       completion.
-                //
-                if (addr->handler)
-                    addr->handler(addr->handler_context, msg);
 
                 //
-                // Forward to the local link for the locally-connected consumer, if present.
-                // TODO - Don't forward if this is a "_local" address.
+                // Forward to the in-process handler for this message if there is one.  The
+                // actual invocation of the handler will occur later after we've released
+                // the lock.
                 //
-                if (addr->rlink) {
-                    pn_link_t    *pn_outlink = dx_link_pn(addr->rlink->link);
-                    dx_message_t *copy       = dx_message_copy(msg);
-                    DEQ_INSERT_TAIL(addr->rlink->out_fifo, copy);
-                    pn_link_offered(pn_outlink, DEQ_SIZE(addr->rlink->out_fifo));
-                    dx_link_activate(addr->rlink->link);
+                if (addr->handler) {
+                    in_process_copy = dx_message_copy(msg);
+                    handler         = addr->handler;
+                    handler_context = addr->handler_context;
                 }
 
                 //
-                // Forward to the next-hop for a remotely-connected consumer, if present.
-                // Don't forward if this is a "_local" address.
+                // If the address form is local (i.e. is prefixed by _local), don't forward
+                // outside of the router process.
                 //
-                if (addr->rnode) {
-                    // TODO
+                if (!is_local) {
+                    //
+                    // Forward to all of the local links receiving this address.
+                    //
+                    dx_router_link_t *dest_link = DEQ_HEAD(addr->rlinks);
+                    while (dest_link) {
+                        pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
+                        dx_message_t *copy       = dx_message_copy(msg);
+                        DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
+                        pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+                        dx_link_activate(dest_link->link);
+                        dest_link = DEQ_NEXT(dest_link);
+                    }
+
+                    //
+                    // Forward to the next-hops for remote destinations.
+                    //
+                    dx_router_node_t *dest_node = DEQ_HEAD(addr->rnodes);
+                    while (dest_node) {
+                        if (dest_node->next_hop)
+                            dest_link = dest_node->next_hop->peer_link;
+                        else
+                            dest_link = dest_node->peer_link;
+                        if (dest_link) {
+                            pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
+                            dx_message_t *copy       = dx_message_copy(msg);
+                            DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
+                            pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+                            dx_link_activate(dest_link->link);
+                        }
+                        dest_node = DEQ_NEXT(dest_node);
+                    }
                 }
 
             } else {
                 //
                 // To field contains an unknown address.  Release the message.
                 //
+                // TODO - Undeliverable processing
                 pn_delivery_update(delivery, PN_RELEASED);
                 pn_delivery_settle(delivery);
             }
 
-            sys_mutex_unlock(router->lock); // TOINVESTIGATE Move this higher?
-            dx_free_message(msg);
-
             //
-            // If this was a pre-settled delivery, we must also locally settle it.
+            // Since we are message-routing, there is no end-to-end disposition or
+            // settlement.  Accept and settle the delivery now.
             //
-            if (pn_delivery_settled(delivery))
-                pn_delivery_settle(delivery);
+            pn_delivery_update(delivery, PN_ACCEPTED);
+            pn_delivery_settle(delivery);
         }
     } else {
         //
@@ -232,8 +303,16 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
         pn_delivery_update(delivery, PN_REJECTED);
         pn_delivery_settle(delivery);
         pn_delivery_set_context(delivery, 0);
-        dx_free_message(msg);
     }
+
+    sys_mutex_unlock(router->lock);
+    dx_free_message(msg);
+
+    //
+    // Invoke the in-process handler now that the lock is released.
+    //
+    if (handler)
+        handler(handler_context, in_process_copy);
 }
 
 
@@ -242,7 +321,14 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
  */
 static void router_disp_handler(void* context, dx_link_t *link, pn_delivery_t *delivery)
 {
-    pn_link_t *pn_link = pn_delivery_link(delivery);
+    pn_link_t        *pn_link = pn_delivery_link(delivery);
+    //dx_router_link_t *rlink   = (dx_router_link_t*) dx_link_get_context(link);
+
+    //
+    // TODO - Propagate disposition and settlement between deliveries on a link-routed
+    //        link pair.
+    //
+    return;
 
     if (pn_link_is_sender(pn_link)) {
         uint64_t       disp     = pn_delivery_remote_state(delivery);
@@ -290,25 +376,35 @@ static void router_disp_handler(void* context, dx_link_t *link, pn_delivery_t *d
  */
 static int router_incoming_link_handler(void* context, dx_link_t *link)
 {
-    dx_router_t    *router  = (dx_router_t*) context;
-    dx_link_item_t *item    = new_dx_link_item_t();
-    pn_link_t      *pn_link = dx_link_pn(link);
+    dx_router_t      *router  = (dx_router_t*) context;
+    dx_router_link_t *rlink   = new_dx_router_link_t();
+    pn_link_t        *pn_link = dx_link_pn(link);
 
-    if (item) {
-        DEQ_ITEM_INIT(item);
-        item->link = link;
+    DEQ_ITEM_INIT(rlink);
+    rlink->link_direction = DX_INCOMING;
+    rlink->link_type      = DX_LINK_ENDPOINT;
+    rlink->owning_addr    = 0;
+    rlink->link           = link;
+    rlink->connected_link = 0;
+    rlink->peer_link      = 0;
+    DEQ_INIT(rlink->out_fifo);  // Won't be used
 
-        sys_mutex_lock(router->lock);
-        DEQ_INSERT_TAIL(router->in_links, item);
-        sys_mutex_unlock(router->lock);
+    dx_link_set_context(link, rlink);
 
-        pn_terminus_copy(pn_link_source(pn_link), pn_link_remote_source(pn_link));
-        pn_terminus_copy(pn_link_target(pn_link), pn_link_remote_target(pn_link));
-        pn_link_flow(pn_link, 1000);
-        pn_link_open(pn_link);
-    } else {
-        pn_link_close(pn_link);
-    }
+    sys_mutex_lock(router->lock);
+    DEQ_INSERT_TAIL(router->in_links, rlink);
+    sys_mutex_unlock(router->lock);
+
+    pn_terminus_copy(pn_link_source(pn_link), pn_link_remote_source(pn_link));
+    pn_terminus_copy(pn_link_target(pn_link), pn_link_remote_target(pn_link));
+    pn_link_flow(pn_link, 1000);
+    pn_link_open(pn_link);
+
+    //
+    // TODO - If the address has link-route semantics, create all associated
+    //        links needed to go with this one.
+    //
+
     return 0;
 }
 
@@ -327,41 +423,44 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
         return 0;
     }
 
-    dx_router_link_t *rlink = new_dx_router_link_t();
-    rlink->link = link;
+    dx_field_iterator_t *iter  = dx_field_iterator_string(r_tgt, ITER_VIEW_NO_HOST);
+    dx_router_link_t    *rlink = new_dx_router_link_t();
+
+    int is_router = dx_field_iterator_equal(iter, (unsigned char*) router_address);
+
+    DEQ_ITEM_INIT(rlink);
+    rlink->link_direction = DX_OUTGOING;
+    rlink->link_type      = is_router ? DX_LINK_ROUTER : DX_LINK_ENDPOINT;
+    rlink->link           = link;
+    rlink->connected_link = 0;
+    rlink->peer_link      = 0;
     DEQ_INIT(rlink->out_fifo);
+
     dx_link_set_context(link, rlink);
 
+    dx_field_iterator_reset_view(iter, ITER_VIEW_ADDRESS_HASH);
     dx_address_t *addr;
-
-    dx_field_iterator_t *iter = dx_field_iterator_string(r_tgt, ITER_VIEW_ADDRESS_HASH);
 
     sys_mutex_lock(router->lock);
     hash_retrieve(router->out_hash, iter, (void**) &addr);
     if (!addr) {
         addr = new_dx_address_t();
-        addr->is_local        = 0;
         addr->handler         = 0;
         addr->handler_context = 0;
-        addr->rlink           = 0;
-        addr->rnode           = 0;
+        DEQ_INIT(addr->rlinks);
+        DEQ_INIT(addr->rnodes);
         hash_insert(router->out_hash, iter, addr);
     }
     dx_field_iterator_free(iter);
 
-    if (addr->rlink == 0) {
-        addr->rlink = rlink;
-        pn_terminus_copy(pn_link_source(pn_link), pn_link_remote_source(pn_link));
-        pn_terminus_copy(pn_link_target(pn_link), pn_link_remote_target(pn_link));
-        pn_link_open(pn_link);
-        sys_mutex_unlock(router->lock);
-        dx_log(module, LOG_TRACE, "Registered new local address: %s", r_tgt);
-        return 0;
-    }
+    rlink->owning_addr = addr;
+    DEQ_INSERT_TAIL(addr->rlinks, rlink);
 
-    dx_log(module, LOG_TRACE, "Address '%s' not registered as it already exists", r_tgt);
-    pn_link_close(pn_link);
+    pn_terminus_copy(pn_link_source(pn_link), pn_link_remote_source(pn_link));
+    pn_terminus_copy(pn_link_target(pn_link), pn_link_remote_target(pn_link));
+    pn_link_open(pn_link);
     sys_mutex_unlock(router->lock);
+    dx_log(module, LOG_TRACE, "Registered new local address: %s", r_tgt);
     return 0;
 }
 
@@ -403,45 +502,36 @@ static int router_writable_link_handler(void* context, dx_link_t *link)
  */
 static int router_link_detach_handler(void* context, dx_link_t *link, int closed)
 {
-    dx_router_t    *router  = (dx_router_t*) context;
-    pn_link_t      *pn_link = dx_link_pn(link);
-    const char     *r_tgt   = pn_terminus_get_address(pn_link_remote_target(pn_link));
-    dx_link_item_t *item;
+    dx_router_t      *router  = (dx_router_t*) context;
+    pn_link_t        *pn_link = dx_link_pn(link);
+    dx_router_link_t *rlink   = (dx_router_link_t*) dx_link_get_context(link);
+    const char       *r_tgt   = pn_terminus_get_address(pn_link_remote_target(pn_link));
 
-    if (!r_tgt)
+    if (!rlink)
         return 0;
 
     sys_mutex_lock(router->lock);
     if (pn_link_is_sender(pn_link)) {
-        item = DEQ_HEAD(router->out_links);
+        DEQ_REMOVE(rlink->owning_addr->rlinks, rlink);
 
-        dx_field_iterator_t *iter = dx_field_iterator_string(r_tgt, ITER_VIEW_ADDRESS_HASH);
-        dx_address_t        *addr;
-        if (iter) {
-            hash_retrieve(router->out_hash, iter, (void**) &addr);
-            if (addr) {
-                hash_remove(router->out_hash, iter);
-                free_dx_router_link_t(addr->rlink);
-                free_dx_address_t(addr);
-                dx_log(module, LOG_TRACE, "Removed local address: %s", r_tgt);
+        if ((rlink->owning_addr->handler == 0) &&
+            (DEQ_SIZE(rlink->owning_addr->rlinks) == 0) &&
+            (DEQ_SIZE(rlink->owning_addr->rnodes) == 0)) {
+            dx_field_iterator_t *iter = dx_field_iterator_string(r_tgt, ITER_VIEW_ADDRESS_HASH);
+            dx_address_t        *addr;
+            if (iter) {
+                hash_retrieve(router->out_hash, iter, (void**) &addr);
+                if (addr == rlink->owning_addr) {
+                    hash_remove(router->out_hash, iter);
+                    free_dx_router_link_t(rlink);
+                    free_dx_address_t(addr);
+                    dx_log(module, LOG_TRACE, "Removed local address: %s", r_tgt);
+                }
+                dx_field_iterator_free(iter);
             }
-            dx_field_iterator_free(iter);
         }
-    }
-    else
-        item = DEQ_HEAD(router->in_links);
-
-    while (item) {
-        if (item->link == link) {
-            if (pn_link_is_sender(pn_link))
-                DEQ_REMOVE(router->out_links, item);
-            else
-                DEQ_REMOVE(router->in_links, item);
-            free_dx_link_item_t(item);
-            break;
-        }
-        item = item->next;
-    }
+    } else
+        DEQ_REMOVE(router->in_links, rlink);
 
     sys_mutex_unlock(router->lock);
     return 0;
@@ -455,6 +545,81 @@ static void router_inbound_open_handler(void *type_context, dx_connection_t *con
 
 static void router_outbound_open_handler(void *type_context, dx_connection_t *conn)
 {
+    // TODO - Make sure this connection is annotated as an inter-router transport.
+    //        Ignore otherwise
+
+    dx_router_t         *router = (dx_router_t*) type_context;
+    dx_field_iterator_t *aiter  = dx_field_iterator_string(router_address, ITER_VIEW_ADDRESS_HASH);
+    dx_link_t           *sender;
+    dx_link_t           *receiver;
+    dx_router_link_t    *rlink;
+
+    //
+    // Create an incoming link and put it in the in-links collection.  The address
+    // of the remote source of this link is '_local/qdxrouter'.
+    //
+    receiver = dx_link(router->node, conn, DX_INCOMING, "inter-router-rx");
+    pn_terminus_set_address(dx_link_remote_source(receiver), router_address);
+    pn_terminus_set_address(dx_link_target(receiver), router_address);
+
+    rlink = new_dx_router_link_t();
+
+    DEQ_ITEM_INIT(rlink);
+    rlink->link_direction = DX_INCOMING;
+    rlink->link_type      = DX_LINK_ROUTER;
+    rlink->owning_addr    = 0;
+    rlink->link           = receiver;
+    rlink->connected_link = 0;
+    rlink->peer_link      = 0;
+    DEQ_INIT(rlink->out_fifo);  // Won't be used
+
+    dx_link_set_context(receiver, rlink);
+
+    sys_mutex_lock(router->lock);
+    DEQ_INSERT_TAIL(router->in_links, rlink);
+    sys_mutex_unlock(router->lock);
+
+    //
+    // Create an outgoing link with a local source of '_local/qdxrouter' and place
+    // it in the routing table.
+    //
+    sender = dx_link(router->node, conn, DX_OUTGOING, "inter-router-tx");
+    pn_terminus_set_address(dx_link_remote_target(sender), router_address);
+    pn_terminus_set_address(dx_link_source(sender), router_address);
+
+    rlink = new_dx_router_link_t();
+
+    DEQ_ITEM_INIT(rlink);
+    rlink->link_direction = DX_OUTGOING;
+    rlink->link_type      = DX_LINK_ROUTER;
+    rlink->link           = sender;
+    rlink->connected_link = 0;
+    rlink->peer_link      = 0;
+    DEQ_INIT(rlink->out_fifo);
+
+    dx_link_set_context(sender, rlink);
+
+    dx_address_t *addr;
+
+    sys_mutex_lock(router->lock);
+    hash_retrieve(router->out_hash, aiter, (void**) &addr);
+    if (!addr) {
+        addr = new_dx_address_t();
+        addr->handler         = 0;
+        addr->handler_context = 0;
+        DEQ_INIT(addr->rlinks);
+        DEQ_INIT(addr->rnodes);
+        hash_insert(router->out_hash, aiter, addr);
+    }
+
+    rlink->owning_addr = addr;
+    DEQ_INSERT_TAIL(addr->rlinks, rlink);
+    sys_mutex_unlock(router->lock);
+
+    pn_link_open(dx_link_pn(receiver));
+    pn_link_open(dx_link_pn(sender));
+    pn_link_flow(dx_link_pn(receiver), 1000);
+    dx_field_iterator_free(aiter);
 }
 
 
@@ -494,22 +659,23 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
     }
 
     dx_router_t *router = NEW(dx_router_t);
-    dx_container_set_default_node_type(dx, &router_node, (void*) router, DX_DIST_BOTH);
 
-    DEQ_INIT(router->in_links);
-    DEQ_INIT(router->out_links);
-    DEQ_INIT(router->in_fifo);
+    router_node.type_context = router;
 
     router->dx          = dx;
-    router->lock        = sys_mutex();
     router->router_area = area;
     router->router_id   = id;
+    router->node        = dx_container_set_default_node_type(dx, &router_node, (void*) router, DX_DIST_BOTH);
+    DEQ_INIT(router->in_links);
+    DEQ_INIT(router->routers);
+    DEQ_INIT(router->in_fifo);
+    router->lock        = sys_mutex();
+    router->timer       = dx_timer(dx, dx_router_timer_handler, (void*) router);
+    router->out_hash    = hash(10, 32, 0);
+    router->dtag        = 1;
+    router->pyRouter    = 0;
+    router->pyTick      = 0;
 
-    router->timer = dx_timer(dx, dx_router_timer_handler, (void*) router);
-
-    router->out_hash = hash(10, 32, 0);
-    router->dtag     = 1;
-    router->pyRouter = 0;
 
     //
     // Inform the field iterator module of this router's id and area.  The field iterator
@@ -547,46 +713,44 @@ void dx_router_free(dx_router_t *router)
 
 
 dx_address_t *dx_router_register_address(dx_dispatch_t        *dx,
-                                         bool                  is_local,
                                          const char           *address,
                                          dx_router_message_cb  handler,
                                          void                 *context)
 {
-    char                 addr[1000];
-    dx_address_t        *ad = new_dx_address_t();
+    char                 addr_string[1000];
+    dx_router_t         *router = dx->router;
+    dx_address_t        *addr;
     dx_field_iterator_t *iter;
-    int                  result;
 
-    if (!ad)
-        return 0;
+    strcpy(addr_string, "L");  // Local Hash-Key Space
+    strcat(addr_string, address);
+    iter = dx_field_iterator_string(addr_string, ITER_VIEW_NO_HOST);
 
-    ad->is_local        = is_local;
-    ad->handler         = handler;
-    ad->handler_context = context;
-    ad->rlink           = 0;
-
-    if (ad->is_local)
-        strcpy(addr, "L");  // Local Hash-Key Space
-    else
-        strcpy(addr, "M");  // Mobile Hash-Key Space
-
-    strcat(addr, address);
-    iter = dx_field_iterator_string(addr, ITER_VIEW_NO_HOST);
-    result = hash_insert(dx->router->out_hash, iter, ad);
-    dx_field_iterator_free(iter);
-    if (result != 0) {
-        free_dx_address_t(ad);
-        return 0;
+    sys_mutex_lock(router->lock);
+    hash_retrieve(router->out_hash, iter, (void**) &addr);
+    if (!addr) {
+        addr = new_dx_address_t();
+        addr->handler         = 0;
+        addr->handler_context = 0;
+        DEQ_INIT(addr->rlinks);
+        DEQ_INIT(addr->rnodes);
+        hash_insert(router->out_hash, iter, addr);
     }
+    dx_field_iterator_free(iter);
+
+    addr->handler         = handler;
+    addr->handler_context = context;
+
+    sys_mutex_unlock(router->lock);
 
     dx_log(module, LOG_TRACE, "In-Process Address Registered: %s", address);
-    return ad;
+    return addr;
 }
 
 
 void dx_router_unregister_address(dx_address_t *ad)
 {
-    free_dx_address_t(ad);
+    //free_dx_address_t(ad);
 }
 
 
@@ -601,12 +765,36 @@ void dx_router_send(dx_dispatch_t       *dx,
     sys_mutex_lock(router->lock);
     hash_retrieve(router->out_hash, address, (void*) &addr);
     if (addr) {
-        if (addr->rlink) {
-            pn_link_t    *pn_outlink = dx_link_pn(addr->rlink->link);
+        //
+        // Forward to all of the local links receiving this address.
+        //
+        dx_router_link_t *dest_link = DEQ_HEAD(addr->rlinks);
+        while (dest_link) {
+            pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
             dx_message_t *copy       = dx_message_copy(msg);
-            DEQ_INSERT_TAIL(addr->rlink->out_fifo, copy);
-            pn_link_offered(pn_outlink, DEQ_SIZE(addr->rlink->out_fifo));
-            dx_link_activate(addr->rlink->link);
+            DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
+            pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+            dx_link_activate(dest_link->link);
+            dest_link = DEQ_NEXT(dest_link);
+        }
+
+        //
+        // Forward to the next-hops for remote destinations.
+        //
+        dx_router_node_t *dest_node = DEQ_HEAD(addr->rnodes);
+        while (dest_node) {
+            if (dest_node->next_hop)
+                dest_link = dest_node->next_hop->peer_link;
+            else
+                dest_link = dest_node->peer_link;
+            if (dest_link) {
+                pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
+                dx_message_t *copy       = dx_message_copy(msg);
+                DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
+                pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+                dx_link_activate(dest_link->link);
+            }
+            dest_node = DEQ_NEXT(dest_node);
         }
     }
     sys_mutex_unlock(router->lock); // TOINVESTIGATE Move this higher?
