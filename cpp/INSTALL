@@ -150,9 +150,12 @@ all of the above plus:
  * doxygen    <ftp://ftp.stack.nl/pub/users/dimitri/>  	(1.5.1)
  * graphviz   <http://www.graphviz.org/>               	(2.12)
  * ruby 1.8   <http://www.ruby-lang.org>               	(1.8.4)
-
+ * python 2.x <http://www.python.org>                   (2.4.3)
 
 NOTE: make sure to install the related '-devel' packages also!!!!
+
+NOTE: Python 3.x is know to NOT work - please use 2.7 or earlier.
+Ruby should be prior to version 2.
 
 To build the QMF (Qpid Management Framework) bindings for Ruby and Python,
 the following must also be installed:
