@@ -41,15 +41,16 @@ Take these as a recommended minimum version.
 The following libraries and header files must be installed to build
 from either a source checkout or a source distribution:
 
- * boost      <http://www.boost.org>                   	(1.35)(*)
-
-earlier versions of boost e.g. 1.33 also work
+ * boost      <http://www.boost.org>                   	(1.35)
 
 To build from a source repository (SVN) checkout you will need boost plus:
 
  * CMake      <http://www.cmake.org>                    (2.4)
  * python     <http://www.python.org>                   (2.5.2)
  * ruby       <http://www.ruby-lang.org>               	(1.8.4)
+
+NOTE: Python 3.x is known to NOT work - please use 2.7 or earlier.
+Ruby should be prior to version 2.
 
 Regardless of which type of build you perform, if you wish to run the full
 test suite, you will need to have python, listed above, installed.
