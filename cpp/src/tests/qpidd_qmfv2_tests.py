@@ -39,20 +39,25 @@ class ConsoleTest(BrokerTest):
 
     def setUp(self):
         BrokerTest.setUp(self)
-        args = ["--mgmt-qmf1=no",
-                "--mgmt-pub-interval=%d" % self.PUB_INTERVAL]
+
+    def _startBroker(self, QMFv1=False ):
+        self._broker_is_v1 = QMFv1
+        if self._broker_is_v1:
+            args = ["--mgmt-qmf1=yes", "--mgmt-qmf2=no"]
+        else:
+            args = ["--mgmt-qmf1=no", "--mgmt-qmf2=yes"]
+
+        args.append("--mgmt-pub-interval=%d" % self.PUB_INTERVAL)
         self.broker = BrokerTest.broker(self, args)
 
-    def _startQmfV2(self, broker, console=None):
+
+    def _myStartQmf(self, broker, console=None):
         # I manually set up the QMF session here rather than call the startQmf
         # method from BrokerTest as I can guarantee the console library is used
         # (assuming BrokerTest's implementation of startQmf could change)
         self.qmf_session = qmf.console.Session(console)
         self.qmf_broker = self.qmf_session.addBroker("%s:%s" % (broker.host(),
                                                                 broker.port()))
-        self.assertEqual(self.qmf_broker.getBrokerAgent().isV2, True,
-                         "Expected broker agent to support QMF V2")
-
 
     def _create_queue( self, q_name, args={} ):
         broker = self.qmf_session.getObjects(_class="broker")[0]
@@ -60,11 +65,11 @@ class ConsoleTest(BrokerTest):
         self.assertEqual(result.status, 0, result)
 
 
-    def test_method_call(self):
+    def _test_method_call(self):
         """ Verify method calls work, and check the behavior of getObjects()
         call
         """
-        self._startQmfV2( self.broker )
+        self._myStartQmf( self.broker )
         self._create_queue( "fleabag", {"auto-delete":True} )
 
         qObj = None
@@ -76,12 +81,14 @@ class ConsoleTest(BrokerTest):
         self.assertNotEqual(qObj, None, "Failed to get queue object")
         #print qObj
 
-    def test_unsolicited_updates(self):
+    def _test_unsolicited_updates(self):
         """ Verify that the Console callbacks work
         """
 
         class Handler(qmf.console.Console):
             def __init__(self):
+                self.v1_oids = 0
+                self.v2_oids = 0
                 self.broker_info = []
                 self.broker_conn = []
                 self.newpackage = []
@@ -109,28 +116,33 @@ class ConsoleTest(BrokerTest):
             def event(self, broker, event):
                 #print "EVENT %s" % event
                 self.events.append(event)
-            def objectProps(self, broker, record):
-                #print "ObjProps %s" % record
-                assert len(record.getProperties()), "objectProps() invoked with no properties?"
-                oid = record.getObjectId()
-                if oid not in self.updates:
-                    self.updates[oid] = record
-                else:
-                    self.updates[oid].mergeUpdate( record )
-            def objectStats(self, broker, record):
-                #print "ObjStats %s" % record
-                assert len(record.getStatistics()), "objectStats() invoked with no properties?"
-                oid = record.getObjectId()
-                if oid not in self.updates:
-                    self.updates[oid] = record
-                else:
-                    self.updates[oid].mergeUpdate( record )
             def heartbeat(self, agent, timestamp):
                 #print "Heartbeat %s" % agent
                 self.heartbeats.append( (agent, timestamp) )
 
+            # generic handler for objectProps and objectStats
+            def _handle_obj_update(self, record):
+                oid = record.getObjectId()
+                if oid.isV2:
+                    self.v2_oids += 1
+                else:
+                    self.v1_oids += 1
+
+                if oid not in self.updates:
+                    self.updates[oid] = record
+                else:
+                    self.updates[oid].mergeUpdate( record )
+
+            def objectProps(self, broker, record):
+                assert len(record.getProperties()), "objectProps() invoked with no properties?"
+                self._handle_obj_update(record)
+
+            def objectStats(self, broker, record):
+                assert len(record.getStatistics()), "objectStats() invoked with no properties?"
+                self._handle_obj_update(record)
+
         handler = Handler()
-        self._startQmfV2( self.broker, handler )
+        self._myStartQmf( self.broker, handler )
         # this should force objectProps, queueDeclare Event callbacks
         self._create_queue( "fleabag", {"auto-delete":True} )
         # this should force objectStats callback
@@ -163,7 +175,13 @@ class ConsoleTest(BrokerTest):
                 break
         assert msgs == 3, "msgDepth statistics not accurate!"
 
-    def test_async_method(self):
+        # verify that the published objects were of the correct QMF version
+        if self._broker_is_v1:
+            assert handler.v1_oids and handler.v2_oids == 0, "QMFv2 updates received while in V1-only mode!"
+        else:
+            assert handler.v2_oids and handler.v1_oids == 0, "QMFv1 updates received while in V2-only mode!"
+
+    def _test_async_method(self):
         class Handler (qmf.console.Console):
             def __init__(self):
                 self.cv = Condition()
@@ -207,11 +225,39 @@ class ConsoleTest(BrokerTest):
                     return "fail (lost=%d, mismatch=%d, spurious=%d)" % (lost, mismatched, spurious)
 
         handler = Handler()
-        self._startQmfV2(self.broker, handler)
+        self._myStartQmf(self.broker, handler)
         broker = self.qmf_session.getObjects(_class="broker")[0]
         handler.request(broker, 20)
         sleep(1)
         self.assertEqual(handler.check(), "pass")
+
+    def test_method_call(self):
+        self._startBroker()
+        self._test_method_call()
+
+    def test_unsolicited_updates(self):
+        self._startBroker()
+        self._test_unsolicited_updates()
+
+    def test_async_method(self):
+        self._startBroker()
+        self._test_async_method()
+
+    # For now, include "QMFv1 only" tests.  Once QMFv1 is deprecated, these can
+    # be removed
+
+    def test_method_call_v1(self):
+        self._startBroker(QMFv1=True)
+        self._test_method_call()
+
+    def test_unsolicited_updates_v1(self):
+        self._startBroker(QMFv1=True)
+        self._test_unsolicited_updates()
+
+    def test_async_method_v1(self):
+        self._startBroker(QMFv1=True)
+        self._test_async_method()
+
 
 
 if __name__ == "__main__":

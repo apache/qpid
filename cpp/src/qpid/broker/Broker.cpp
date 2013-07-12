@@ -139,7 +139,7 @@ Broker::Options::Options(const std::string& name) :
     requireEncrypted(false),
     knownHosts(knownHostsNone),
     qmf2Support(true),
-    qmf1Support(true),
+    qmf1Support(false),
     queueFlowStopRatio(80),
     queueFlowResumeRatio(70),
     queueThresholdEventRatio(80),
