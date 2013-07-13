@@ -26,7 +26,6 @@ import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.store.MemoryMessageStore;
 
 import java.io.File;
 import java.util.HashMap;
@@ -129,7 +128,7 @@ public class VirtualHostConfiguration extends AbstractConfiguration
 
     public String getMessageStoreClass()
     {
-        return getStringValue("store.class", MemoryMessageStore.class.getName());
+        return getStringValue("store.class", null);
     }
 
     public void setMessageStoreClass(String storeFactoryClass)

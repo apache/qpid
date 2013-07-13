@@ -33,7 +33,7 @@
     </condition>
 
     <property name="module.depends" value="client common"/>
-    <property name="module.test.depends" value="systests broker common/tests management/common ${perftests.optional.test.depends}"/>
+    <property name="module.test.depends" value="systests broker broker-plugins/memory-store broker-plugins/derby-store common/tests management/common ${perftests.optional.test.depends}"/>
 
     <import file="../module.xml"/>
 

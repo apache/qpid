@@ -66,7 +66,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.url.URLSyntaxException;
@@ -1433,10 +1432,10 @@ public class QpidBrokerTestCase extends QpidTestCase
     public String getTestProfileMessageStoreType()
     {
         final String storeClass = getTestProfileMessageStoreClassName();
-        if (storeClass == null)
+       /* if (storeClass == null)
         {
-            return MemoryMessageStore.TYPE;
-        }
+            return "Memory";
+        }*/
         return supportedStoresClassToTypeMapping.get(storeClass);
     }
 
