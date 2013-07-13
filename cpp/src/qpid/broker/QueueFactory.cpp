@@ -33,6 +33,7 @@
 #include "qpid/broker/PagedQueue.h"
 #include "qpid/broker/PriorityQueue.h"
 #include "qpid/broker/QueueFlowLimit.h"
+#include "qpid/broker/SelfDestructQueue.h"
 #include "qpid/broker/ThresholdAlerts.h"
 #include "qpid/broker/FifoDistributor.h"
 #include "qpid/log/Statement.h"
@@ -53,6 +54,8 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
     boost::shared_ptr<Queue> queue;
     if (settings.dropMessagesAtLimit) {
         queue = boost::shared_ptr<Queue>(new LossyQueue(name, settings, settings.durable ? store : 0, parent, broker));
+    } else if (settings.selfDestructAtLimit) {
+        queue = boost::shared_ptr<Queue>(new SelfDestructQueue(name, settings, settings.durable ? store : 0, parent, broker));
     } else if (settings.lvqKey.size()) {
         std::auto_ptr<MessageMap> map(new MessageMap(settings.lvqKey));
         queue = boost::shared_ptr<Queue>(new Lvq(name, map, settings, settings.durable ? store : 0, parent, broker));

@@ -38,6 +38,7 @@ const std::string MAX_FILE_SIZE("qpid.file_size");
 const std::string POLICY_TYPE("qpid.policy_type");
 const std::string POLICY_TYPE_REJECT("reject");
 const std::string POLICY_TYPE_RING("ring");
+const std::string POLICY_TYPE_SELF_DESTRUCT("self-destruct");
 const std::string NO_LOCAL("no-local");
 const std::string BROWSE_ONLY("qpid.browse-only");
 const std::string TRACE_ID("qpid.trace.id");
@@ -96,6 +97,7 @@ QueueSettings::QueueSettings(bool d, bool a) :
     shareGroups(false),
     addTimestamp(false),
     dropMessagesAtLimit(false),
+    selfDestructAtLimit(false),
     paging(false),
     maxPages(0),
     pageFactor(0),
@@ -119,6 +121,9 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
     } else if (key == POLICY_TYPE) {
         if (value.getString() == POLICY_TYPE_RING) {
             dropMessagesAtLimit = true;
+            return true;
+        } else if (value.getString() == POLICY_TYPE_SELF_DESTRUCT) {
+            selfDestructAtLimit = true;
             return true;
         } else if (value.getString() == POLICY_TYPE_REJECT) {
             //do nothing, thats the default
