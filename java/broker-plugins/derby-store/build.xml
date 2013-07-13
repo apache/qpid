@@ -22,6 +22,7 @@
 
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
+    <property name="broker-plugins-derby-store.libs" value="" />
 
     <property name="broker.plugin" value="true"/>
 

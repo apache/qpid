@@ -78,7 +78,7 @@ public class VirtualHostRecovererTest extends TestCase
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
 
-        attributes.put(VirtualHost.STORE_TYPE, "MEMORY");
+        attributes.put(VirtualHost.STORE_TYPE, "TESTMEMORY");
         when(entry.getAttributes()).thenReturn(attributes);
 
         VirtualHost host = recoverer.create(null, entry, parent);

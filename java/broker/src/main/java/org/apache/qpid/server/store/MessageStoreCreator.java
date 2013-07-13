@@ -61,7 +61,8 @@ public class MessageStoreCreator
         MessageStoreFactory factory = _factories.get(storeType.toLowerCase());
         if (factory == null)
         {
-            throw new IllegalConfigurationException("Unknown store type: " + storeType);
+            throw new IllegalConfigurationException("Unknown store type: " + storeType
+                                                    + ". Supported types: " + _factories.keySet());
         }
         return factory.createMessageStore();
     }

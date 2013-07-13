@@ -39,7 +39,7 @@ import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStoreTest;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -57,13 +57,12 @@ import org.apache.qpid.transport.MessageTransfer;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against
  * the BDB Store as well as additional tests specific to the BDB store-implementation.
  */
-public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageStoreTest
+public class BDBMessageStoreTest extends MessageStoreTest
 {
     private static byte[] CONTENT_BYTES = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 

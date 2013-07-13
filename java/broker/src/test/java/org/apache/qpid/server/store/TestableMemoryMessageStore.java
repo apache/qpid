@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Adds some extra methods to the memory message store for testing purposes.
  */
-public class TestableMemoryMessageStore extends MemoryMessageStore
+public class TestableMemoryMessageStore extends TestMemoryMessageStore
 {
     private final Map<Long, AMQQueue> _messages = new HashMap<Long, AMQQueue>();
     private final AtomicInteger _messageCount = new AtomicInteger(0);

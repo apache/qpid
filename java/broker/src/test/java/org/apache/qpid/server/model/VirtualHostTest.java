@@ -38,9 +38,8 @@ import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 
 public class VirtualHostTest extends TestCase
@@ -92,7 +91,7 @@ public class VirtualHostTest extends TestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        attributes.put(VirtualHost.STORE_TYPE, MemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
         attributes.put(VirtualHost.STATE, State.QUIESCED);
 
         VirtualHost host = createHost(attributes);
@@ -131,7 +130,7 @@ public class VirtualHostTest extends TestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        attributes.put(VirtualHost.STORE_TYPE, MemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
 
         VirtualHost host = createHost(attributes);
         return host;

@@ -40,8 +40,8 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     private HashMap<String, Long> _preDelays = new HashMap<String, Long>();
     private HashMap<String, Long> _postDelays = new HashMap<String, Long>();
     private long _defaultDelay = 0L;
-    private MessageStore _realStore = new MemoryMessageStore();
-    private DurableConfigurationStore _durableConfigurationStore = (MemoryMessageStore) _realStore;
+    private MessageStore _realStore = new MessageStoreCreator().createMessageStore("Memory");
+    private DurableConfigurationStore _durableConfigurationStore = (DurableConfigurationStore) _realStore;
     private static final String PRE = "pre";
     private static final String POST = "post";
     private String DEFAULT_DELAY = "default";

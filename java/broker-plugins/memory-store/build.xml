@@ -6,9 +6,9 @@
  - to you under the Apache License, Version 2.0 (the
  - "License"); you may not use this file except in compliance
  - with the License.  You may obtain a copy of the License at
- -
+ - 
  -   http://www.apache.org/licenses/LICENSE-2.0
- -
+ - 
  - Unless required by applicable law or agreed to in writing,
  - software distributed under the License is distributed on an
  - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,16 +16,17 @@
  - specific language governing permissions and limitations
  - under the License.
  -->
-<project name="bdbstore-jmx" default="build">
-    <property name="module.depends" value="common broker broker-plugins/management-jmx management/common bdbstore" />
-    <property name="module.test.depends" value="broker/tests common/tests management/common client systests bdbstore/tests broker-plugins/memory-store" />
+<project name="Qpid Broker-Plugins Memory Store" default="build">
+    <property name="module.depends" value="common broker" />
+    <property name="module.test.depends" value="common/tests broker/tests" />
 
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-broker-plugins-management-jmx=provided -Sqpid-management-common=provided -Sqpid-bdbstore=provided -Sje=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
 
     <property name="broker.plugin" value="true"/>
+    <property name="broker-plugins-memory-store.libs" value="" />
 
     <import file="../../module.xml" />
 
-    <target name="bundle" depends="bundle-tasks" />
+    <target name="bundle" depends="bundle-tasks"/>
 </project>
