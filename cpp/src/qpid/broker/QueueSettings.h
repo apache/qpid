@@ -70,6 +70,7 @@ struct QueueSettings
 
     QueueDepth maxDepth;
     bool dropMessagesAtLimit;//aka ring queue policy
+    bool selfDestructAtLimit;
 
     //PagedQueue:
     bool paging;
