@@ -35,8 +35,8 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -56,7 +56,7 @@ public class TopicExchangeTest extends QpidTestCase
         BrokerTestHelper.setUp();
         _exchange = new TopicExchange();
         _vhost = BrokerTestHelper.createVirtualHost(getName());
-        _store = new MemoryMessageStore();
+        _store = new TestMemoryMessageStore();
     }
 
     @Override

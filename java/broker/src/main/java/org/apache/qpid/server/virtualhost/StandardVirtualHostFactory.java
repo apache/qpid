@@ -19,20 +19,14 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreCreator;
 
@@ -88,17 +82,6 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
             {
                 factory.validateAttributes(attributes);
             }
-        }
-        // TODO - each store type should validate its own attributes
-        if(!((String) storeType).equalsIgnoreCase(MemoryMessageStore.TYPE))
-        {
-        /*    Object storePath = attributes.get(STORE_PATH_ATTRIBUTE);
-            if(!(storePath instanceof String))
-            {
-                throw new IllegalArgumentException("Attribute '"+ STORE_PATH_ATTRIBUTE
-                                                               +"' is required and must be of type String.");
-
-            }*/
         }
 
     }

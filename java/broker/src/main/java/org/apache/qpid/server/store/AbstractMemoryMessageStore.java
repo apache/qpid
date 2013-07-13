@@ -20,19 +20,15 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
-import java.util.UUID;
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
-public class MemoryMessageStore extends NullMessageStore
+abstract public class AbstractMemoryMessageStore extends NullMessageStore
 {
-    public static final String TYPE = "Memory";
     private final AtomicLong _messageId = new AtomicLong(1);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
 
@@ -78,7 +74,7 @@ public class MemoryMessageStore extends NullMessageStore
     private final StateManager _stateManager;
     private final EventManager _eventManager = new EventManager();
 
-    public MemoryMessageStore()
+    public AbstractMemoryMessageStore()
     {
         _stateManager = new StateManager(_eventManager);
     }
@@ -142,9 +138,4 @@ public class MemoryMessageStore extends NullMessageStore
         _eventManager.addEventListener(eventListener, events);
     }
 
-    @Override
-    public String getStoreType()
-    {
-        return TYPE;
-    }
 }

@@ -31,8 +31,8 @@ import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryIterator;
 import org.apache.qpid.server.queue.SimpleQueueEntryList;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 
@@ -63,7 +63,7 @@ public class ExtractResendAndRequeueTest extends TestCase
     private UnacknowledgedMessageMapImpl _unacknowledgedMessageMap;
     private static final int INITIAL_MSG_COUNT = 10;
     private AMQQueue _queue = new MockAMQQueue(getName());
-    private MessageStore _messageStore = new MemoryMessageStore();
+    private MessageStore _messageStore = new TestMemoryMessageStore();
     private LinkedList<QueueEntry> _referenceList = new LinkedList<QueueEntry>();
 
     @Override
