@@ -1289,6 +1289,32 @@ QPID_AUTO_TEST_CASE(testSimpleRequestResponse)
     BOOST_CHECK_EQUAL(m.getSubject(), original.getSubject());
 }
 
+QPID_AUTO_TEST_CASE(testSelfDestructQueue)
+{
+    MessagingFixture fix;
+    //create receiver on temp queue for responses (using shorthand for temp queue)
+    Session other = fix.connection.createSession();
+    Receiver r1 = other.createReceiver("amq.fanout; {link:{reliability:at-least-once, x-declare:{arguments:{qpid.max_count:10,qpid.policy_type:self-destruct}}}}");
+    Receiver r2 = fix.session.createReceiver("amq.fanout");
+    //send request
+    Sender s = fix.session.createSender("amq.fanout");
+    for (uint i = 0; i < 20; ++i) {
+        s.send(Message((boost::format("MSG_%1%") % (i+1)).str()));
+    }
+    try {
+        ScopedSuppressLogging sl;
+        for (uint i = 0; i < 20; ++i) {
+            r1.fetch(Duration::SECOND);
+        }
+        BOOST_FAIL("Expected exception.");
+    } catch (const qpid::messaging::MessagingException&) {
+    }
+
+    for (uint i = 0; i < 20; ++i) {
+        BOOST_CHECK_EQUAL(r2.fetch(Duration::SECOND).getContent(), (boost::format("MSG_%1%") % (i+1)).str());
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
