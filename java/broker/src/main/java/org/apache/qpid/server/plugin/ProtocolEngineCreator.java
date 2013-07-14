@@ -1,4 +1,4 @@
-/*
+package org.apache.qpid.server.plugin;/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,11 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol.v1_0;
 
-import org.apache.qpid.server.protocol.LinkModel;
+import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
+import org.apache.qpid.transport.network.NetworkConnection;
 
-public interface Link_1_0 extends LinkModel
+public interface ProtocolEngineCreator extends Pluggable
 {
-    void start();
+    AmqpProtocolVersion getVersion();
+    byte[] getHeaderIdentifier();
+    ServerProtocolEngine newProtocolEngine(Broker broker, NetworkConnection network, Port port, Transport transport, long id);
 }
+
