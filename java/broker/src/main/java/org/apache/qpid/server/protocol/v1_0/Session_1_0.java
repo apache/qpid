@@ -43,6 +43,7 @@ import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -81,13 +82,15 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
         Link_1_0 link = null;
         Error error = null;
 
-        final LinkRegistry linkRegistry = _vhost.getLinkRegistry(endpoint.getSession().getConnection().getRemoteContainerId());
+        final
+        LinkRegistry
+                linkRegistry = _vhost.getLinkRegistry(endpoint.getSession().getConnection().getRemoteContainerId());
 
 
         if(endpoint.getRole() == Role.SENDER)
         {
 
-            SendingLink_1_0 previousLink = linkRegistry.getDurableSendingLink(endpoint.getName());
+            SendingLink_1_0 previousLink = (SendingLink_1_0) linkRegistry.getDurableSendingLink(endpoint.getName());
 
             if(previousLink == null)
             {
@@ -227,7 +230,8 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
             else
             {
 
-                ReceivingLink_1_0 previousLink = linkRegistry.getDurableReceivingLink(endpoint.getName());
+                ReceivingLink_1_0 previousLink =
+                        (ReceivingLink_1_0) linkRegistry.getDurableReceivingLink(endpoint.getName());
 
                 if(previousLink == null)
                 {
