@@ -132,9 +132,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                              MessageAcquireMode acquireMode,
                              MessageFlowMode flowMode,
                              FlowCreditManager_0_10 creditManager,
-                             FilterManager filters,Map<String, Object> arguments, long subscriptionId)
+                             FilterManager filters,Map<String, Object> arguments)
     {
-        _subscriptionID = subscriptionId;
+        _subscriptionID = SUB_ID_GENERATOR.getAndIncrement();
         _session = session;
         _postIdSettingAction = new AddMessageDispositionListenerAction(session);
         _destination = destination;

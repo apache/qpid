@@ -101,11 +101,10 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                                    AMQShortString consumerTag, FieldTable filters,
                                    boolean noLocal, FlowCreditManager creditManager,
                                    ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod,
-                                   long subscriptionID)
+                                   RecordDeliveryMethod recordMethod)
             throws AMQException
         {
-            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
 
@@ -152,12 +151,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         public NoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                  AMQShortString consumerTag, FieldTable filters,
                                  boolean noLocal, FlowCreditManager creditManager,
-                                   ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod,
-                                   long subscriptionID)
+                                 ClientDeliveryMethod deliveryMethod,
+                                 RecordDeliveryMethod recordMethod)
             throws AMQException
         {
-            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
 
@@ -241,14 +239,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public static final class GetNoAckSubscription extends SubscriptionImpl.NoAckSubscription
     {
         public GetNoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
-                               AMQShortString consumerTag, FieldTable filters,
-                               boolean noLocal, FlowCreditManager creditManager,
-                                   ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod,
-                                   long subscriptionID)
+                                    AMQShortString consumerTag, FieldTable filters,
+                                    boolean noLocal, FlowCreditManager creditManager,
+                                    ClientDeliveryMethod deliveryMethod,
+                                    RecordDeliveryMethod recordMethod)
             throws AMQException
         {
-            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
         public boolean isTransient()
@@ -268,12 +265,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         public AckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                AMQShortString consumerTag, FieldTable filters,
                                boolean noLocal, FlowCreditManager creditManager,
-                                   ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod,
-                                   long subscriptionID)
+                               ClientDeliveryMethod deliveryMethod,
+                               RecordDeliveryMethod recordMethod)
             throws AMQException
         {
-            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
 
@@ -336,15 +332,14 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
 
-    public SubscriptionImpl(AMQChannel channel , AMQProtocolSession protocolSession,
+    public SubscriptionImpl(AMQChannel channel, AMQProtocolSession protocolSession,
                             AMQShortString consumerTag, FieldTable arguments,
                             boolean noLocal, FlowCreditManager creditManager,
                             ClientDeliveryMethod deliveryMethod,
-                            RecordDeliveryMethod recordMethod,
-                            long subscriptionID)
+                            RecordDeliveryMethod recordMethod)
             throws AMQException
     {
-        _subscriptionID = subscriptionID;
+        _subscriptionID = SUB_ID_GENERATOR.getAndIncrement();
         _channel = channel;
         _consumerTag = consumerTag;
 

@@ -1322,6 +1322,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return _stopped;
     }
 
+    @Override
+    public String getVirtualHostName()
+    {
+        return _virtualHost == null ? null : _virtualHost.getName();
+    }
+
     public long getLastReceivedTime()
     {
         return _lastReceivedTime;
@@ -1359,7 +1365,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public String getAuthId()
     {
-        return getAuthorizedPrincipal().getName();
+        return getAuthorizedPrincipal() == null ? null : getAuthorizedPrincipal().getName();
     }
 
     public Integer getRemotePID()

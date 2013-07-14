@@ -56,33 +56,23 @@ public interface SubscriptionFactory
 
 
     Subscription createSubscription(AMQChannel channel,
-                                            AMQProtocolSession protocolSession,
-                                            AMQShortString consumerTag,
-                                            boolean acks,
-                                            FieldTable filters,
-                                            boolean noLocal,
-                                            FlowCreditManager creditManager,
-                                            ClientDeliveryMethod clientMethod,
-                                            RecordDeliveryMethod recordMethod
-    )
-            throws AMQException;
+                                    AMQProtocolSession protocolSession,
+                                    AMQShortString consumerTag,
+                                    boolean acks,
+                                    FieldTable filters,
+                                    boolean noLocal,
+                                    FlowCreditManager creditManager,
+                                    ClientDeliveryMethod clientMethod,
+                                    RecordDeliveryMethod recordMethod) throws AMQException;
 
 
-    SubscriptionImpl.GetNoAckSubscription createBasicGetNoAckSubscription(AMQChannel channel,
-                                                                          AMQProtocolSession session,
-                                                                          AMQShortString consumerTag,
-                                                                          FieldTable filters,
-                                                                          boolean noLocal,
-                                                                          FlowCreditManager creditManager,
-                                                                          ClientDeliveryMethod deliveryMethod,
-                                                                          RecordDeliveryMethod recordMethod) throws AMQException;
+    Subscription createBasicGetNoAckSubscription(AMQChannel channel,
+                                                 AMQProtocolSession session,
+                                                 AMQShortString consumerTag,
+                                                 FieldTable filters,
+                                                 boolean noLocal,
+                                                 FlowCreditManager creditManager,
+                                                 ClientDeliveryMethod deliveryMethod,
+                                                 RecordDeliveryMethod recordMethod) throws AMQException;
 
-    Subscription_0_10 createSubscription(final ServerSession session,
-                                         final String destination,
-                                         final MessageAcceptMode acceptMode,
-                                         final MessageAcquireMode acquireMode,
-                                         final MessageFlowMode flowMode,
-                                         final FlowCreditManager_0_10 creditManager,
-                                         final FilterManager filterManager,
-                                         final Map<String,Object> arguments);
 }

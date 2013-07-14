@@ -14,14 +14,15 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 
@@ -39,7 +40,7 @@ public class AMQPConnectionActor extends AbstractActor
 {
     private ConnectionLogSubject _logSubject;
 
-    public AMQPConnectionActor(AMQProtocolSession session, RootMessageLogger rootLogger)
+    public AMQPConnectionActor(AMQConnectionModel session, RootMessageLogger rootLogger)
     {
         super(rootLogger);
 
