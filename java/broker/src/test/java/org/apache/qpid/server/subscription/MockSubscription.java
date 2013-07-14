@@ -569,5 +569,11 @@ public class MockSubscription implements Subscription
         {
             return false;
         }
+
+        @Override
+        public String getVirtualHostName()
+        {
+            return null;
+        }
     }
 }

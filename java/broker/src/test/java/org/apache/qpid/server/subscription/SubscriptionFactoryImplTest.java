@@ -23,6 +23,9 @@ package org.apache.qpid.server.subscription;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.protocol.v0_10.Subscription_0_10;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_10.WindowCreditManager;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
@@ -40,6 +43,9 @@ import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageFlowMode;
 import org.apache.qpid.transport.TestNetworkConnection;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SubscriptionFactoryImplTest extends QpidTestCase
 {
@@ -104,14 +110,17 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
         previousId = getNoAckSub.getSubscriptionID();
 
         //create a 0-10 subscription
-        ServerConnection conn = new ServerConnection(1);
+        final Broker broker = mock(Broker.class);
+        when(broker.getRootMessageLogger()).thenReturn(mock(RootMessageLogger.class));
+
+        ServerConnection conn = new ServerConnection(1, broker);
         ProtocolEngine_0_10 engine = new ProtocolEngine_0_10(conn, new TestNetworkConnection(), null, null);
         conn.setVirtualHost(_session.getVirtualHost());
         ServerSessionDelegate sesDel = new ServerSessionDelegate();
         Binary name = new Binary(new byte[]{new Byte("1")});
         ServerSession session = new ServerSession(conn, sesDel, name, 0);
 
-        Subscription sub_0_10 = SubscriptionFactoryImpl.INSTANCE.createSubscription(session, "1", MessageAcceptMode.EXPLICIT,
+        Subscription sub_0_10 = new Subscription_0_10(session, "1", MessageAcceptMode.EXPLICIT,
                 MessageAcquireMode.PRE_ACQUIRED, MessageFlowMode.WINDOW, new WindowCreditManager(), null, null);
         assertEquals("Unexpected Subscription ID allocated", previousId + 1, sub_0_10.getSubscriptionID());
     }

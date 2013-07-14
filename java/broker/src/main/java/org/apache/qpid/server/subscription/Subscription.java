@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.subscription;
 
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.logging.LogActor;
@@ -29,6 +30,8 @@ import org.apache.qpid.server.queue.QueueEntry;
 
 public interface Subscription
 {
+    AtomicLong SUB_ID_GENERATOR = new AtomicLong(0);
+
     LogActor getLogActor();
 
     boolean isTransient();

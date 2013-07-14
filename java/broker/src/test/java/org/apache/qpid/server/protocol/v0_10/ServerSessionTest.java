@@ -18,15 +18,17 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.protocol.v0_10.ServerConnection;
-import org.apache.qpid.server.protocol.v0_10.ServerSession;
-import org.apache.qpid.server.protocol.v0_10.ServerSessionDelegate;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.Binary;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ServerSessionTest extends QpidTestCase
 {
@@ -61,13 +63,15 @@ public class ServerSessionTest extends QpidTestCase
 
     public void testCompareTo() throws Exception
     {
-        ServerConnection connection = new ServerConnection(1);
+        final Broker broker = mock(Broker.class);
+        when(broker.getRootMessageLogger()).thenReturn(mock(RootMessageLogger.class));
+        ServerConnection connection = new ServerConnection(1, broker);
         connection.setVirtualHost(_virtualHost);
         ServerSession session1 = new ServerSession(connection, new ServerSessionDelegate(),
                 new Binary(getName().getBytes()), 0);
 
         // create a session with the same name but on a different connection
-        ServerConnection connection2 = new ServerConnection(2);
+        ServerConnection connection2 = new ServerConnection(2, broker);
         connection2.setVirtualHost(_virtualHost);
         ServerSession session2 = new ServerSession(connection2, new ServerSessionDelegate(),
                 new Binary(getName().getBytes()), 0);

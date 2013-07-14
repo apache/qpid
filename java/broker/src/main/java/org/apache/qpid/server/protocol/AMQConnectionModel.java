@@ -92,4 +92,6 @@ public interface AMQConnectionModel extends StatisticsGatherer
     void stop();
 
     boolean isStopped();
+
+    String getVirtualHostName();
 }

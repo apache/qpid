@@ -32,9 +32,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -60,7 +62,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 {
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
-    private LogActor _actor = GenericActor.getInstance(this);
+    private LogActor _actor;
 
     private Subject _authorizedSubject = null;
     private Principal _authorizedPrincipal = null;
@@ -76,9 +78,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private Transport _transport;
     private volatile boolean _stopped;
 
-    public ServerConnection(final long connectionId)
+    public ServerConnection(final long connectionId, Broker broker)
     {
         _connectionId = connectionId;
+        _actor = new AMQPConnectionActor(this, broker.getRootMessageLogger());
     }
 
     public Object getReference()
@@ -151,6 +154,12 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         _virtualHost = virtualHost;
 
         initialiseStatistics();
+    }
+
+    @Override
+    public String getVirtualHostName()
+    {
+        return _virtualHost == null ? null : _virtualHost.getName();
     }
 
     @Override
@@ -503,7 +512,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
     public String getPrincipalAsString()
     {
-        return getAuthorizedPrincipal().getName();
+        return getAuthorizedPrincipal() == null ? null : getAuthorizedPrincipal().getName();
     }
 
     public long getSessionCountLimit()

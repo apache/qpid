@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
@@ -45,7 +46,7 @@ public class AMQPChannelActor extends AbstractActor
      * @param channel    The Channel for this LogActor
      * @param rootLogger The root Logger that this LogActor should use
      */
-    public AMQPChannelActor(AMQChannel channel, RootMessageLogger rootLogger)
+    public AMQPChannelActor(AMQSessionModel channel, RootMessageLogger rootLogger)
     {
         super(rootLogger);
 

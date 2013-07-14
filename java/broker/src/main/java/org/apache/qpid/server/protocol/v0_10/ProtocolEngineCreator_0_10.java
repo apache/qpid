@@ -76,7 +76,7 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
         final ConnectionDelegate connDelegate = new ServerConnectionDelegate(broker,
                 fqdn, broker.getSubjectCreator(address));
 
-        ServerConnection conn = new ServerConnection(id);
+        ServerConnection conn = new ServerConnection(id,broker);
 
         conn.setConnectionDelegate(connDelegate);
         conn.setRemoteAddress(network.getRemoteAddress());
