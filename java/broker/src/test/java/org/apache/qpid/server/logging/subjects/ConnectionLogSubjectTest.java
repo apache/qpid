@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.v0_8.InternalTestProtocolSession;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 /**

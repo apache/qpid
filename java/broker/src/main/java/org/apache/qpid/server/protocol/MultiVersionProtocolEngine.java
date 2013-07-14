@@ -37,7 +37,12 @@ import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.protocol.v0_10.ProtocolEngine_0_10;
+import org.apache.qpid.server.protocol.v0_10.ServerConnection;
+import org.apache.qpid.server.protocol.v0_10.ServerConnectionDelegate;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolEngine;
+import org.apache.qpid.server.protocol.v1_0.ProtocolEngine_1_0_0;
+import org.apache.qpid.server.protocol.v1_0.ProtocolEngine_1_0_0_SASL;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -325,7 +330,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public ServerProtocolEngine getProtocolEngine()
         {
-            final ConnectionDelegate connDelegate = new org.apache.qpid.server.transport.ServerConnectionDelegate(_broker,
+            final ConnectionDelegate connDelegate = new ServerConnectionDelegate(_broker,
                     _fqdn, _broker.getSubjectCreator(getLocalAddress()));
 
             ServerConnection conn = new ServerConnection(_id);

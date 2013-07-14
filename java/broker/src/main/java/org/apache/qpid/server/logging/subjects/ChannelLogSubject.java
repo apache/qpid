@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.transport.ServerConnection;
-import org.apache.qpid.server.transport.ServerSession;
+import org.apache.qpid.server.protocol.v0_10.ServerConnection;
+import org.apache.qpid.server.protocol.v0_10.ServerSession;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
 

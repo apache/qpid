@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.message.MessageMetaData_0_10;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
+import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageMetaData_1_0;
 
 import java.nio.ByteBuffer;

@@ -33,7 +33,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
 
 import java.nio.ByteBuffer;

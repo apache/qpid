@@ -25,9 +25,8 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
+import org.apache.qpid.server.protocol.v0_8.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.store.MessageStore;
@@ -130,7 +129,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         // indicate we are using the prefetch credit. i.e. using acks not No-Ack
         assertTrue("The subscription has been suspended",
                    !getChannel().getSubscription(browser).getState()
-                           .equals(Subscription.State.SUSPENDED));       
+                           .equals(Subscription.State.SUSPENDED));
     }
 
     private void checkStoreContents(int messageCount)

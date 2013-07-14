@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 
