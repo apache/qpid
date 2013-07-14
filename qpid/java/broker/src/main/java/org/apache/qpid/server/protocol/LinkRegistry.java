@@ -18,22 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol.v1_0;
+package org.apache.qpid.server.protocol;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class LinkRegistry
 {
-    private final Map<String, SendingLink_1_0> _sendingLinks = new HashMap<String, SendingLink_1_0>();
-    private final Map<String, ReceivingLink_1_0> _receivingLinks = new HashMap<String, ReceivingLink_1_0>();
+    private final Map<String, LinkModel> _sendingLinks = new HashMap<String, LinkModel>();
+    private final Map<String, LinkModel> _receivingLinks = new HashMap<String, LinkModel>();
 
-    public synchronized SendingLink_1_0 getDurableSendingLink(String name)
+    public synchronized LinkModel getDurableSendingLink(String name)
     {
         return _sendingLinks.get(name);
     }
 
-    public synchronized boolean registerSendingLink(String name, SendingLink_1_0 link)
+    public synchronized boolean registerSendingLink(String name, LinkModel link)
     {
         if(_sendingLinks.containsKey(name))
         {
@@ -59,12 +59,12 @@ public class LinkRegistry
         }
     }
 
-    public synchronized ReceivingLink_1_0 getDurableReceivingLink(String name)
+    public synchronized LinkModel getDurableReceivingLink(String name)
     {
         return _receivingLinks.get(name);
     }
 
-    public synchronized  boolean registerReceivingLink(String name, ReceivingLink_1_0 link)
+    public synchronized  boolean registerReceivingLink(String name, LinkModel link)
     {
         if(_receivingLinks.containsKey(name))
         {

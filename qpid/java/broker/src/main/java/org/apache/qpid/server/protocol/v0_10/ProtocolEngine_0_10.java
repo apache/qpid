@@ -49,7 +49,9 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _lastWriteTime;
 
     public ProtocolEngine_0_10(ServerConnection conn,
-                               NetworkConnection network, Port port, Transport transport)
+                               NetworkConnection network,
+                               Port port,
+                               Transport transport)
     {
         super(new Assembler(conn));
         _connection = conn;

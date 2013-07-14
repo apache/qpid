@@ -20,6 +20,8 @@
 */
 package org.apache.qpid.server.protocol;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.net.ssl.SSLContext;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
@@ -29,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.ProtocolEngineCreator;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
@@ -42,6 +46,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private final boolean _needClientAuth;
     private final Port _port;
     private final Transport _transport;
+    private final ProtocolEngineCreator[] _creators;
 
     public MultiVersionProtocolEngineFactory(Broker broker,
                                              SSLContext sslContext,
@@ -62,6 +67,12 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
         _sslContext = sslContext;
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
+        List<ProtocolEngineCreator> creators = new ArrayList<ProtocolEngineCreator>();
+        for(ProtocolEngineCreator c : new QpidServiceLoader<ProtocolEngineCreator>().instancesOf(ProtocolEngineCreator.class))
+        {
+            creators.add(c);
+        }
+        _creators = creators.toArray(new ProtocolEngineCreator[creators.size()]);
         _wantClientAuth = wantClientAuth;
         _needClientAuth = needClientAuth;
         _port = port;
@@ -72,7 +83,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     {
         return new MultiVersionProtocolEngine(_broker, _sslContext, _wantClientAuth, _needClientAuth,
                                               _supported, _defaultSupportedReply, _port, _transport,
-                                              ID_GENERATOR.getAndIncrement()
-        );
+                                              ID_GENERATOR.getAndIncrement(),
+                                              _creators);
     }
 }

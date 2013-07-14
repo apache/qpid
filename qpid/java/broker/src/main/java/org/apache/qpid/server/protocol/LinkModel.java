@@ -18,11 +18,8 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol.v1_0;
+package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.server.protocol.LinkModel;
-
-public interface Link_1_0 extends LinkModel
+public interface LinkModel
 {
-    void start();
 }
