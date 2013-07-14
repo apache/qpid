@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 
 public class MockAMQMessage extends AMQMessage
 {
