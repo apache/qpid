@@ -19,4 +19,3 @@
 org.apache.qpid.server.protocol.v0_8.ProtocolEngineCreator_0_8
 org.apache.qpid.server.protocol.v0_8.ProtocolEngineCreator_0_9
 org.apache.qpid.server.protocol.v0_8.ProtocolEngineCreator_0_9_1
-org.apache.qpid.server.protocol.v0_10.ProtocolEngineCreator_0_10

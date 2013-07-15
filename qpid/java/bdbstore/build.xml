@@ -18,7 +18,7 @@
  -->
 <project name="bdbstore" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
     <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="client common/tests broker/tests management/common systests broker-plugins/management-jmx broker-plugins/memory-store" />
+    <property name="module.test.depends" value="client common/tests broker/tests management/common systests broker-plugins/management-jmx broker-plugins/memory-store broker-plugins/amqp-0-10-protocol" />
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sje=provided"/>
 

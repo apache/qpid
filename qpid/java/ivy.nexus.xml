@@ -57,6 +57,36 @@
     <artifact name="qpid-broker-plugins-management-jmx" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-broker-plugins-management-jmx" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-management-jmx" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-10-to-1-0" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-10-to-1-0" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-10-to-1-0" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-10-to-1-0" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-10-to-1-0" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-10-to-1-0" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-0-10" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-0-10" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-0-10" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-0-10" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-0-10" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-0-10" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-1-0" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-1-0" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-1-0" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-1-0" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-1-0" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-msg-conv-0-8-to-1-0" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-amqp-1-0-common" type="pom" ext="pom"/>
     <artifact name="qpid-amqp-1-0-common" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-amqp-1-0-common" type="jar" ext="jar"/>
