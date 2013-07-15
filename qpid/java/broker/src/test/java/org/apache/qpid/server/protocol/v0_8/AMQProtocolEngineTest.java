@@ -1,4 +1,4 @@
-package org.apache.qpid.server.protocol;
+package org.apache.qpid.server.protocol.v0_8;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -11,7 +11,6 @@ import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.v0_8.AMQProtocolEngine;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.network.NetworkConnection;

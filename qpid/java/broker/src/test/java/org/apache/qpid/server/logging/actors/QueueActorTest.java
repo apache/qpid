@@ -31,7 +31,7 @@ public class QueueActorTest extends BaseConnectionActorTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        setAmqpActor(new QueueActor(BrokerTestHelper.createQueue(getName(), getSession().getVirtualHost()), getRootLogger()));
+        setAmqpActor(new QueueActor(BrokerTestHelper.createQueue(getName(), getVirtualHost()), getRootLogger()));
     }
 
     /**

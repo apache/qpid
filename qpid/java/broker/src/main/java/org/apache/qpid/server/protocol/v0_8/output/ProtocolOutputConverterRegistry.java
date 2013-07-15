@@ -29,7 +29,7 @@ package org.apache.qpid.server.protocol.v0_8.output;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter.Factory;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 
 import java.util.HashMap;
 import java.util.Map;

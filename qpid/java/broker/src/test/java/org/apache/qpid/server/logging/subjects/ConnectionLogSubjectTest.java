@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.protocol.v0_8.InternalTestProtocolSession;
-import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Validate ConnectionLogSubjects are logged as expected
@@ -29,25 +31,24 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 public class ConnectionLogSubjectTest extends AbstractTestLogSubject
 {
 
-    private InternalTestProtocolSession _session;
+    private static final long CONNECTION_ID = 456l;
+    private static final String USER = "InternalTestProtocolSession";
+    private static final String IP_STRING = "127.0.0.1:1";
+    private static final String VHOST = "test";
+
+    private AMQConnectionModel _connection;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _session = BrokerTestHelper.createSession("test");
-        _subject = new ConnectionLogSubject(_session);
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        if (_session != null)
-        {
-            _session.getVirtualHost().close();
-        }
-        super.tearDown();
+        _connection = mock(AMQConnectionModel.class);
+        when(_connection.getConnectionId()).thenReturn(CONNECTION_ID);
+        when(_connection.getPrincipalAsString()).thenReturn(USER);
+        when(_connection.getRemoteAddressString()).thenReturn("/"+IP_STRING);
+        when(_connection.getVirtualHostName()).thenReturn(VHOST);
+        _subject = new ConnectionLogSubject(_connection);
     }
 
     /**
@@ -57,12 +58,12 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
      */
     protected void validateLogStatement(String message)
     {
-        verifyConnection(_session.getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
+        verifyConnection(CONNECTION_ID, USER, IP_STRING, VHOST, message);
     }
 
-    public InternalTestProtocolSession getSession()
+    public AMQConnectionModel getConnection()
     {
-        return _session;
+        return _connection;
     }
 
 }

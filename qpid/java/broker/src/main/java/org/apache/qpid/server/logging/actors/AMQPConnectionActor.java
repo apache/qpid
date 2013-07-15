@@ -23,8 +23,6 @@ package org.apache.qpid.server.logging.actors;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-
 
 
 /**
