@@ -34,13 +34,15 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8;
 import org.apache.qpid.server.store.MessageStoreTest;
-import org.apache.qpid.server.store.MessageMetaDataType;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
@@ -135,7 +137,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
          */
         StorableMessageMetaData storeableMMD_0_8 = bdbStore.getMessageMetaData(messageid_0_8);
 
-        assertEquals("Unexpected message type",MessageMetaDataType.META_DATA_0_8, storeableMMD_0_8.getType());
+        assertEquals("Unexpected message type", MessageMetaDataType_0_8.TYPE, storeableMMD_0_8.getType().ordinal());
         assertTrue("Unexpected instance type", storeableMMD_0_8 instanceof MessageMetaData);
         MessageMetaData returnedMMD_0_8 = (MessageMetaData) storeableMMD_0_8;
 
@@ -167,7 +169,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
          */
         StorableMessageMetaData storeableMMD_0_10 = bdbStore.getMessageMetaData(messageid_0_10);
 
-        assertEquals("Unexpected message type",MessageMetaDataType.META_DATA_0_10, storeableMMD_0_10.getType());
+        assertEquals("Unexpected message type", MessageMetaDataType_0_10.TYPE, storeableMMD_0_10.getType().ordinal());
         assertTrue("Unexpected instance type", storeableMMD_0_10 instanceof MessageMetaData_0_10);
         MessageMetaData_0_10 returnedMMD_0_10 = (MessageMetaData_0_10) storeableMMD_0_10;
 

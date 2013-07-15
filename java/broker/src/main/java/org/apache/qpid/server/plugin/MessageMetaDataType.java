@@ -18,27 +18,25 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
-
-import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
-import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
-import org.apache.qpid.server.message.MessageMetaData_1_0;
+package org.apache.qpid.server.plugin;
 
 import java.nio.ByteBuffer;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoredMessage;
 
-public enum MessageMetaDataType
+public interface MessageMetaDataType<M extends StorableMessageMetaData> extends Pluggable
 {
-    META_DATA_0_8  {   public Factory<MessageMetaData> getFactory() { return MessageMetaData.FACTORY; } },
-    META_DATA_0_10 {   public Factory<MessageMetaData_0_10> getFactory() { return MessageMetaData_0_10.FACTORY; } },
-    META_DATA_1_0 {   public Factory<MessageMetaData_1_0> getFactory() { return MessageMetaData_1_0.FACTORY; } };
-
-
 
     public static interface Factory<M extends StorableMessageMetaData>
     {
         M createMetaData(ByteBuffer buf);
     }
 
-    abstract public Factory<? extends StorableMessageMetaData> getFactory();
+    public int ordinal();
+
+    public M createMetaData(ByteBuffer buf);
+
+    public ServerMessage<M> createMessage(StoredMessage<M> msg);
 
 }

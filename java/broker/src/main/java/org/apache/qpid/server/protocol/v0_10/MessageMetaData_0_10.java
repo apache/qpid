@@ -23,7 +23,7 @@ package org.apache.qpid.server.protocol.v0_10;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.store.MessageMetaDataType;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -51,6 +51,8 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
 
     public static final MessageMetaDataType.Factory<MessageMetaData_0_10> FACTORY = new MetaDataFactory();
 
+    private static final MessageMetaDataType_0_10 TYPE = new MessageMetaDataType_0_10();
+
     private volatile ByteBuffer _encoded;
     private Object _connectionReference;
 
@@ -60,7 +62,7 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
         this(xfr.getHeader(), xfr.getBodySize(), System.currentTimeMillis());
     }
 
-    private MessageMetaData_0_10(Header header, int bodySize, long arrivalTime)
+    public MessageMetaData_0_10(Header header, int bodySize, long arrivalTime)
     {
         _header = header;
         if(_header != null)
@@ -83,7 +85,7 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
 
     public MessageMetaDataType getType()
     {
-        return MessageMetaDataType.META_DATA_0_10;
+        return TYPE;
     }
 
     public int getStorableSize()

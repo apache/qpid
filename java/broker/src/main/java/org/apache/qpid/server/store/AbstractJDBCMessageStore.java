@@ -45,6 +45,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
@@ -1055,8 +1056,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
                         buf.position(1);
                         buf = buf.slice();
-                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+                        MessageMetaDataType type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                        StorableMessageMetaData metaData = type.createMetaData(buf);
                         StoredJDBCMessage message = new StoredJDBCMessage(messageId, metaData, true);
                         messageHandler.message(message);
                     }
@@ -1307,8 +1308,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
                         buf.position(1);
                         buf = buf.slice();
-                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+                        MessageMetaDataType type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                        StorableMessageMetaData metaData = type.createMetaData(buf);
 
                         return metaData;
                     }
