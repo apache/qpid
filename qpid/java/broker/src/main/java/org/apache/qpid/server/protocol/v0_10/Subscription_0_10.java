@@ -33,7 +33,8 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
+import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -48,21 +49,16 @@ import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageCreditUnit;
-import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageFlowMode;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.ReplyTo;
 import org.apache.qpid.transport.Struct;
-import org.apache.qpid.url.AMQBindingURL;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.QUEUE_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
 
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -209,10 +205,21 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             return false;
         }
 
-        if (_noLocal && entry.getMessage() instanceof MessageTransferMessage)
+        if (entry.getMessage() instanceof MessageTransferMessage)
         {
-            Object connectionRef = ((MessageTransferMessage)entry.getMessage()).getConnectionReference();
-            if (connectionRef != null && connectionRef == _session.getReference())
+            if(_noLocal)
+            {
+                Object connectionRef = ((MessageTransferMessage)entry.getMessage()).getConnectionReference();
+                if (connectionRef != null && connectionRef == _session.getReference())
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            // no interest in messages we can't convert
+            if(MessageConverterRegistry.getConverter(entry.getMessage().getClass(), MessageTransferMessage.class)==null)
             {
                 return false;
             }
@@ -348,200 +355,72 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         DeliveryProperties deliveryProps;
         MessageProperties messageProps = null;
 
+        MessageTransferMessage msg;
+
         if(serverMsg instanceof MessageTransferMessage)
         {
 
-            MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
-            DeliveryProperties origDeliveryProps = msg.getHeader() == null ? null : msg.getHeader().getDeliveryProperties();
-            messageProps = msg.getHeader() == null ? null : msg.getHeader().getMessageProperties();
+            msg = (MessageTransferMessage) serverMsg;
 
-            deliveryProps = new DeliveryProperties();
-            if(origDeliveryProps != null)
-            {
-                if(origDeliveryProps.hasDeliveryMode())
-                {
-                    deliveryProps.setDeliveryMode(origDeliveryProps.getDeliveryMode());
-                }
-                if(origDeliveryProps.hasExchange())
-                {
-                    deliveryProps.setExchange(origDeliveryProps.getExchange());
-                }
-                if(origDeliveryProps.hasExpiration())
-                {
-                    deliveryProps.setExpiration(origDeliveryProps.getExpiration());
-                }
-                if(origDeliveryProps.hasPriority())
-                {
-                    deliveryProps.setPriority(origDeliveryProps.getPriority());
-                }
-                if(origDeliveryProps.hasRoutingKey())
-                {
-                    deliveryProps.setRoutingKey(origDeliveryProps.getRoutingKey());
-                }
-                if(origDeliveryProps.hasTimestamp())
-                {
-                    deliveryProps.setTimestamp(origDeliveryProps.getTimestamp());
-                }
-                if(origDeliveryProps.hasTtl())
-                {
-                    deliveryProps.setTtl(origDeliveryProps.getTtl());
-                }
-
-
-            }
-
-            deliveryProps.setRedelivered(entry.isRedelivered());
-
-            if(_trace != null && messageProps == null)
-            {
-                messageProps = new MessageProperties();
-            }
-
-            Header header = new Header(deliveryProps, messageProps, msg.getHeader() == null ? null : msg.getHeader().getNonStandardProperties());
-
-
-            xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody(), BATCHED)
-                        : new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody());
-        }
-        else if(serverMsg instanceof AMQMessage)
-        {
-            AMQMessage message_0_8 = (AMQMessage) serverMsg;
-            deliveryProps = new DeliveryProperties();
-            messageProps = new MessageProperties();
-
-            int size = (int) message_0_8.getSize();
-            ByteBuffer body = ByteBuffer.allocate(size);
-            message_0_8.getContent(body, 0);
-            body.flip();
-
-            BasicContentHeaderProperties properties =
-                    (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().getProperties();
-            final AMQShortString exchange = message_0_8.getMessagePublishInfo().getExchange();
-            if(exchange != null)
-            {
-                deliveryProps.setExchange(exchange.toString());
-            }
-            deliveryProps.setExpiration(message_0_8.getExpiration());
-            deliveryProps.setImmediate(message_0_8.isImmediate());
-            deliveryProps.setPriority(MessageDeliveryPriority.get(properties.getPriority()));
-            deliveryProps.setRedelivered(entry.isRedelivered());
-            deliveryProps.setRoutingKey(message_0_8.getRoutingKey());
-            deliveryProps.setTimestamp(properties.getTimestamp());
-
-            messageProps.setContentEncoding(properties.getEncodingAsString());
-            messageProps.setContentLength(size);
-            if(properties.getAppId() != null)
-            {
-                messageProps.setAppId(properties.getAppId().getBytes());
-            }
-            messageProps.setContentType(properties.getContentTypeAsString());
-            if(properties.getCorrelationId() != null)
-            {
-                messageProps.setCorrelationId(properties.getCorrelationId().getBytes());
-            }
-
-            if(properties.getReplyTo() != null && properties.getReplyTo().length() != 0)
-            {
-                String origReplyToString = properties.getReplyTo().asString();
-                ReplyTo replyTo = new ReplyTo();
-                // if the string looks like a binding URL, then attempt to parse it...
-                try
-                {
-                    AMQBindingURL burl = new AMQBindingURL(origReplyToString);
-                    AMQShortString routingKey = burl.getRoutingKey();
-                    if(routingKey != null)
-                    {
-                        replyTo.setRoutingKey(routingKey.asString());
-                    }
-
-                    AMQShortString exchangeName = burl.getExchangeName();
-                    if(exchangeName != null)
-                    {
-                        replyTo.setExchange(exchangeName.asString());
-                    }
-                }
-                catch (URISyntaxException e)
-                {
-                    replyTo.setRoutingKey(origReplyToString);
-                }
-                messageProps.setReplyTo(replyTo);
-
-            }
-
-            if(properties.getMessageId() != null)
-            {
-                try
-                {
-                    String messageIdAsString = properties.getMessageIdAsString();
-                    if(messageIdAsString.startsWith("ID:"))
-                    {
-                        messageIdAsString = messageIdAsString.substring(3);
-                    }
-                    UUID uuid = UUID.fromString(messageIdAsString);
-                    messageProps.setMessageId(uuid);
-                }
-                catch(IllegalArgumentException e)
-                {
-                    // ignore - can't parse
-                }
-            }
-
-
-
-            if(properties.getUserId() != null)
-            {
-                messageProps.setUserId(properties.getUserId().getBytes());
-            }
-
-            FieldTable fieldTable = properties.getHeaders();
-
-            Map<String, Object> appHeaders = FieldTable.convertToMap(fieldTable);
-
-            if(properties.getType() != null)
-            {
-                appHeaders.put("x-jms-type", properties.getTypeAsString());
-            }
-
-
-            messageProps.setApplicationHeaders(appHeaders);
-
-            Header header = new Header(deliveryProps, messageProps, null);
-            xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body, BATCHED)
-                        : new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
         }
         else
         {
-
-            deliveryProps = new DeliveryProperties();
-            messageProps = new MessageProperties();
-
-            int size = (int) serverMsg.getSize();
-            ByteBuffer body = ByteBuffer.allocate(size);
-            serverMsg.getContent(body, 0);
-            body.flip();
+            MessageConverter converter =
+                    MessageConverterRegistry.getConverter(serverMsg.getClass(), MessageTransferMessage.class);
 
 
-            deliveryProps.setExpiration(serverMsg.getExpiration());
-            deliveryProps.setImmediate(serverMsg.isImmediate());
-            deliveryProps.setPriority(MessageDeliveryPriority.get(serverMsg.getMessageHeader().getPriority()));
-            deliveryProps.setRedelivered(entry.isRedelivered());
-            deliveryProps.setRoutingKey(serverMsg.getRoutingKey());
-            deliveryProps.setTimestamp(serverMsg.getMessageHeader().getTimestamp());
+            msg = (MessageTransferMessage) converter.convert(serverMsg, getQueue().getVirtualHost());
+        }
+        DeliveryProperties origDeliveryProps = msg.getHeader() == null ? null : msg.getHeader().getDeliveryProperties();
+        messageProps = msg.getHeader() == null ? null : msg.getHeader().getMessageProperties();
 
-            messageProps.setContentEncoding(serverMsg.getMessageHeader().getEncoding());
-            messageProps.setContentLength(size);
-            messageProps.setContentType(serverMsg.getMessageHeader().getMimeType());
-            if(serverMsg.getMessageHeader().getCorrelationId() != null)
+        deliveryProps = new DeliveryProperties();
+        if(origDeliveryProps != null)
+        {
+            if(origDeliveryProps.hasDeliveryMode())
             {
-                messageProps.setCorrelationId(serverMsg.getMessageHeader().getCorrelationId().getBytes());
+                deliveryProps.setDeliveryMode(origDeliveryProps.getDeliveryMode());
+            }
+            if(origDeliveryProps.hasExchange())
+            {
+                deliveryProps.setExchange(origDeliveryProps.getExchange());
+            }
+            if(origDeliveryProps.hasExpiration())
+            {
+                deliveryProps.setExpiration(origDeliveryProps.getExpiration());
+            }
+            if(origDeliveryProps.hasPriority())
+            {
+                deliveryProps.setPriority(origDeliveryProps.getPriority());
+            }
+            if(origDeliveryProps.hasRoutingKey())
+            {
+                deliveryProps.setRoutingKey(origDeliveryProps.getRoutingKey());
+            }
+            if(origDeliveryProps.hasTimestamp())
+            {
+                deliveryProps.setTimestamp(origDeliveryProps.getTimestamp());
+            }
+            if(origDeliveryProps.hasTtl())
+            {
+                deliveryProps.setTtl(origDeliveryProps.getTtl());
             }
 
-            // TODO - ReplyTo
 
-            Header header = new Header(deliveryProps, messageProps, null);
-            xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body, BATCHED)
-                        : new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
         }
+
+        deliveryProps.setRedelivered(entry.isRedelivered());
+
+        if(_trace != null && messageProps == null)
+        {
+            messageProps = new MessageProperties();
+        }
+
+        Header header = new Header(deliveryProps, messageProps, msg.getHeader() == null ? null : msg.getHeader().getNonStandardProperties());
+
+
+        xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody(), BATCHED)
+                    : new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody());
 
         boolean excludeDueToFederation = false;
 

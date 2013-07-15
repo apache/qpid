@@ -152,7 +152,7 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
 
     }
 
-    public MessagePublishInfo getMessagePublishInfo() throws AMQException
+    public MessagePublishInfo getMessagePublishInfo()
     {
         return getMessageMetaData().getMessagePublishInfo();
     }

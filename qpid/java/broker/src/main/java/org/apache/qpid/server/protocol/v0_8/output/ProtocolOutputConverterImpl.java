@@ -27,19 +27,19 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicCancelOkBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicGetOkBody;
 import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.transport.DeliveryProperties;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -67,33 +67,34 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     public void writeDeliver(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
-        AMQBody deliverBody = createEncodedDeliverBody(entry, deliveryTag, consumerTag);
-        writeMessageDelivery(entry, channelId, deliverBody);
+        AMQMessage msg = convertToAMQMessage(entry);
+        AMQBody deliverBody = createEncodedDeliverBody(msg, entry.isRedelivered(), deliveryTag, consumerTag);
+        writeMessageDelivery(msg, channelId, deliverBody);
     }
 
-
-    private ContentHeaderBody getContentHeaderBody(QueueEntry entry)
-            throws AMQException
+    private AMQMessage convertToAMQMessage(QueueEntry entry)
     {
-        if(entry.getMessage() instanceof AMQMessage)
+        ServerMessage serverMessage = entry.getMessage();
+        if(serverMessage instanceof AMQMessage)
         {
-            return ((AMQMessage)entry.getMessage()).getContentHeaderBody();
+            return (AMQMessage) serverMessage;
         }
         else
         {
-            final MessageTransferMessage message = (MessageTransferMessage) entry.getMessage();
-            BasicContentHeaderProperties props = HeaderPropertiesConverter.convert(message, entry.getQueue().getVirtualHost());
-            ContentHeaderBody chb = new ContentHeaderBody(props, BASIC_CLASS_ID);
-            chb.setBodySize(message.getSize());
-            return chb;
+            return getMessageConverter(serverMessage).convert(serverMessage, entry.getQueue().getVirtualHost());
         }
     }
 
+    private <M extends ServerMessage> MessageConverter<M, AMQMessage> getMessageConverter(M message)
+    {
+        Class<M> clazz = (Class<M>) message.getClass();
+        return MessageConverterRegistry.getConverter(clazz, AMQMessage.class);
+    }
 
-    private void writeMessageDelivery(QueueEntry entry, int channelId, AMQBody deliverBody)
+    private void writeMessageDelivery(AMQMessage message, int channelId, AMQBody deliverBody)
             throws AMQException
     {
-        writeMessageDelivery(entry.getMessage(), getContentHeaderBody(entry), channelId, deliverBody);
+        writeMessageDelivery(message, message.getContentHeaderBody(), channelId, deliverBody);
     }
 
     private void writeMessageDelivery(MessageContentSource message, ContentHeaderBody contentHeaderBody, int channelId, AMQBody deliverBody)
@@ -188,35 +189,23 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     public void writeGetOk(QueueEntry entry, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
         AMQBody deliver = createEncodedGetOkBody(entry, deliveryTag, queueSize);
-        writeMessageDelivery(entry, channelId, deliver);
+        writeMessageDelivery(convertToAMQMessage(entry), channelId, deliver);
     }
 
 
-    private AMQBody createEncodedDeliverBody(QueueEntry entry,
-                                              final long deliveryTag,
-                                              final AMQShortString consumerTag)
+    private AMQBody createEncodedDeliverBody(AMQMessage message,
+                                             boolean isRedelivered,
+                                             final long deliveryTag,
+                                             final AMQShortString consumerTag)
             throws AMQException
     {
 
         final AMQShortString exchangeName;
         final AMQShortString routingKey;
 
-        if(entry.getMessage() instanceof AMQMessage)
-        {
-            final AMQMessage message = (AMQMessage) entry.getMessage();
-            final MessagePublishInfo pb = message.getMessagePublishInfo();
-            exchangeName = pb.getExchange();
-            routingKey = pb.getRoutingKey();
-        }
-        else
-        {
-            MessageTransferMessage message = (MessageTransferMessage) entry.getMessage();
-            DeliveryProperties delvProps = message.getHeader().getDeliveryProperties();
-            exchangeName = (delvProps == null || delvProps.getExchange() == null) ? null : new AMQShortString(delvProps.getExchange());
-            routingKey = (delvProps == null || delvProps.getRoutingKey() == null) ? null : new AMQShortString(delvProps.getRoutingKey());
-        }
-
-        final boolean isRedelivered = entry.isRedelivered();
+        final MessagePublishInfo pb = message.getMessagePublishInfo();
+        exchangeName = pb.getExchange();
+        routingKey = pb.getRoutingKey();
 
         final AMQBody returnBlock = new EncodedDeliveryBody(deliveryTag, routingKey, exchangeName, consumerTag, isRedelivered);
         return returnBlock;
@@ -291,20 +280,10 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final AMQShortString exchangeName;
         final AMQShortString routingKey;
 
-        if(entry.getMessage() instanceof AMQMessage)
-        {
-            final AMQMessage message = (AMQMessage) entry.getMessage();
-            final MessagePublishInfo pb = message.getMessagePublishInfo();
-            exchangeName = pb.getExchange();
-            routingKey = pb.getRoutingKey();
-        }
-        else
-        {
-            MessageTransferMessage message = (MessageTransferMessage) entry.getMessage();
-            DeliveryProperties delvProps = message.getHeader().getDeliveryProperties();
-            exchangeName = (delvProps == null || delvProps.getExchange() == null) ? null : new AMQShortString(delvProps.getExchange());
-            routingKey = (delvProps == null || delvProps.getRoutingKey() == null) ? null : new AMQShortString(delvProps.getRoutingKey());
-        }
+        final AMQMessage message = convertToAMQMessage(entry);
+        final MessagePublishInfo pb = message.getMessagePublishInfo();
+        exchangeName = pb.getExchange();
+        routingKey = pb.getRoutingKey();
 
         final boolean isRedelivered = entry.isRedelivered();
 

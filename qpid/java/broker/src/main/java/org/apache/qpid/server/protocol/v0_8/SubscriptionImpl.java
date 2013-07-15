@@ -35,6 +35,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.SubscriptionActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
+import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -482,16 +483,27 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             }
         }
 
-        if (_noLocal)
+        if(entry.getMessage() instanceof AMQMessage)
         {
-            AMQMessage message = (AMQMessage) entry.getMessage();
+            if (_noLocal)
+            {
+                AMQMessage message = (AMQMessage) entry.getMessage();
 
-            final Object publisherReference = message.getConnectionIdentifier();
+                final Object publisherReference = message.getConnectionIdentifier();
 
-            // We don't want local messages so check to see if message is one we sent
-            Object localReference = getProtocolSession().getReference();
+                // We don't want local messages so check to see if message is one we sent
+                Object localReference = getProtocolSession().getReference();
 
-            if(publisherReference != null && publisherReference.equals(localReference))
+                if(publisherReference != null && publisherReference.equals(localReference))
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            // No interest in messages we can't convert to AMQMessage
+            if(MessageConverterRegistry.getConverter(entry.getMessage().getClass(), AMQMessage.class)==null)
             {
                 return false;
             }
