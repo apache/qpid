@@ -94,6 +94,9 @@ static char *get_type_info(dx_field_iterator_t *iter, uint8_t *tag, uint32_t *le
     if ((*tag == DX_AMQP_MAP8 || *tag == DX_AMQP_MAP32) && (*count & 1))
         return "Odd Number of Elements in a Map";
 
+    if (*clen > *length)
+        return "Insufficient Length to Determine Count";
+
     return 0;
 }
 
