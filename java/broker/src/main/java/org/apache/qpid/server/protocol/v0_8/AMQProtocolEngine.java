@@ -184,7 +184,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private long _lastReceivedTime;
     private boolean _blocking;
 
-    private final Lock _receivedLock;
+    private final ReentrantLock _receivedLock;
     private AtomicLong _lastWriteTime = new AtomicLong(System.currentTimeMillis());
     private final Broker _broker;
     private final Transport _transport;
@@ -973,15 +973,29 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         {
             synchronized(this)
             {
+
+                boolean lockHeld = _receivedLock.isHeldByCurrentThread();
+
                 while(!_closed)
                 {
                     try
                     {
+                        if(lockHeld)
+                        {
+                            _receivedLock.unlock();
+                        }
                         wait(1000);
                     }
                     catch (InterruptedException e)
                     {
 
+                    }
+                    finally
+                    {
+                        if(lockHeld)
+                        {
+                            _receivedLock.lock();
+                        }
                     }
                 }
             }
