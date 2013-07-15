@@ -367,7 +367,7 @@ dx_field_iterator_t *dx_field_iterator_sub(dx_field_iterator_t *iter, uint32_t l
 void dx_field_iterator_advance(dx_field_iterator_t *iter, uint32_t length)
 {
     // TODO - Make this more efficient.
-    for (uint8_t idx = 0; idx < length; idx++)
+    for (uint8_t idx = 0; idx < length && !dx_field_iterator_end(iter); idx++)
         dx_field_iterator_octet(iter);
 }
 
