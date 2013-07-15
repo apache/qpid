@@ -28,12 +28,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.message.MessageMetaData_1_0;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.StoredMessage;
 
-public class Message_1_0 implements ServerMessage, InboundMessage
+public class Message_1_0 implements ServerMessage<MessageMetaData_1_0>, InboundMessage
 {
 
 

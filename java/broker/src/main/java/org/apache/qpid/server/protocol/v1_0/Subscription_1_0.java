@@ -64,7 +64,6 @@ import org.apache.qpid.typedmessage.TypedBytesFormatException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.message.MessageMetaData_1_0;
 import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;

@@ -174,21 +174,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void message(StoredMessage message)
     {
-        ServerMessage serverMessage;
-        switch(message.getMetaData().getType())
-        {
-            case META_DATA_0_8:
-                serverMessage = new AMQMessage(message);
-                break;
-            case META_DATA_0_10:
-                serverMessage = new MessageTransferMessage(message, null);
-                break;
-            case META_DATA_1_0:
-                serverMessage = new Message_1_0(message);
-                break;
-            default:
-                throw new RuntimeException("Unknown message type retrieved from store " + message.getMetaData().getClass());
-        }
+        ServerMessage serverMessage  = message.getMetaData().getType().createMessage(message);
 
         _recoveredMessages.put(message.getMessageNumber(), serverMessage);
         _unusedMessages.put(message.getMessageNumber(), message);

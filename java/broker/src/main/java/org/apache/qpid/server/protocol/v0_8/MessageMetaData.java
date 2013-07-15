@@ -29,7 +29,7 @@ import org.apache.qpid.framing.EncodingUtils;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.store.MessageMetaDataType;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.util.ByteBufferOutputStream;
 import org.apache.qpid.util.ByteBufferInputStream;
@@ -56,6 +56,7 @@ public class MessageMetaData implements StorableMessageMetaData
     private static final byte MANDATORY_FLAG = 1;
     private static final byte IMMEDIATE_FLAG = 2;
     public static final MessageMetaDataType.Factory<MessageMetaData> FACTORY = new MetaDataFactory();
+    private static final MessageMetaDataType_0_8 TYPE = new MessageMetaDataType_0_8();
 
     public MessageMetaData(MessagePublishInfo publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount)
     {
@@ -112,7 +113,7 @@ public class MessageMetaData implements StorableMessageMetaData
 
     public MessageMetaDataType getType()
     {
-        return MessageMetaDataType.META_DATA_0_8;
+        return TYPE;
     }
 
     public int getStorableSize()
