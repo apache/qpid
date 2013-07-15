@@ -26,7 +26,8 @@ import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 
-import org.apache.qpid.server.store.MessageMetaDataType;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
+import org.apache.qpid.server.store.MessageMetaDataTypeRegistry;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 
 /**
@@ -54,10 +55,8 @@ public class MessageMetaDataBinding extends TupleBinding<StorableMessageMetaData
         ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
         buf.position(1);
         buf = buf.slice();
-        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
-
-        return metaData;
+        MessageMetaDataType type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+        return type.createMetaData(buf);
     }
 
     @Override

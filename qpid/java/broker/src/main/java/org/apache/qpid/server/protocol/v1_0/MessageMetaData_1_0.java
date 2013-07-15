@@ -18,7 +18,7 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.message;
+package org.apache.qpid.server.protocol.v1_0;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -38,13 +38,16 @@ import org.apache.qpid.amqp_1_0.type.messaging.Footer;
 import org.apache.qpid.amqp_1_0.type.messaging.Header;
 import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
-import org.apache.qpid.server.store.MessageMetaDataType;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 
 public class MessageMetaData_1_0 implements StorableMessageMetaData
 {
     // TODO move to somewhere more useful
     public static final Symbol JMS_TYPE = Symbol.valueOf("x-opt-jms-type");
+    public static final MessageMetaDataType.Factory<MessageMetaData_1_0> FACTORY = new MetaDataFactory();
+    private static final MessageMetaDataType_1_0 TYPE = new MessageMetaDataType_1_0();
 
 
     private Header _header;
@@ -280,7 +283,7 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
 
     public MessageMetaDataType getType()
     {
-        return MessageMetaDataType.META_DATA_1_0;
+        return TYPE;
     }
 
 
@@ -352,7 +355,7 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         return _messageHeader;
     }
 
-    public static final MessageMetaDataType.Factory<MessageMetaData_1_0> FACTORY = new MetaDataFactory();
+
 
 
     private static class MetaDataFactory implements MessageMetaDataType.Factory<MessageMetaData_1_0>
