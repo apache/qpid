@@ -35,7 +35,6 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;

@@ -18,17 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.subjects;
+package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
+import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
+import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
-import org.apache.qpid.server.protocol.v0_8.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.protocol.v0_8.SubscriptionFactory;
-import org.apache.qpid.server.protocol.v0_8.SubscriptionFactoryImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -48,7 +46,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        InternalTestProtocolSession session = BrokerTestHelper.createSession();
+        InternalTestProtocolSession session = BrokerTestHelper_0_8.createProtocolSession();
         _testVhost = session.getVirtualHost();
 
         _queue = new MockAMQQueue("SubscriptionLogSubjectTest");

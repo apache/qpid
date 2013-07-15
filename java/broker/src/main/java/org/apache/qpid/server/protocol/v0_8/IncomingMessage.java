@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.log4j.Logger;
 
@@ -33,7 +33,8 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.Filterable;
 import org.apache.qpid.server.store.StoredMessage;
 
 import java.nio.ByteBuffer;

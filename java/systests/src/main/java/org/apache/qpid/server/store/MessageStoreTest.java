@@ -48,7 +48,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
-import org.apache.qpid.server.queue.IncomingMessage;
+import org.apache.qpid.server.protocol.v0_8.IncomingMessage;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;

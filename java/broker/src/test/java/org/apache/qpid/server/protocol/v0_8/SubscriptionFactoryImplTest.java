@@ -18,16 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.SubscriptionFactoryImpl;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -41,7 +39,7 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
     {
         super.setUp();
         BrokerTestHelper.setUp();
-        _channel = BrokerTestHelper.createChannel();
+        _channel = BrokerTestHelper_0_8.createChannel();
         _session = _channel.getProtocolSession();
         GenericActor.setDefaultMessageLogger(new UnitTestMessageLogger(false));
     }

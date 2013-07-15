@@ -113,7 +113,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
         // This should return us MockProtocolSessionUser@null/test
         String connectionSlice = getSlice("con:" + connectionID, message);
 
-        assertNotNull("Unable to find connection 'con:" + connectionID + "'",
+        assertNotNull("Unable to find connection 'con:" + connectionID + "' in '"+message+"'",
                       connectionSlice);
 
         // Exract the userName
@@ -131,7 +131,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
 
         // We will have three sections
         assertEquals("Unable to split IP from rest of Connection:"
-                     + userNameParts[1], 3, ipParts.length);
+                     + userNameParts[1] + " in '"+message+"'", 3, ipParts.length);
 
         // We need to skip the first '/' split will be empty so validate 1 as IP
         assertEquals("IP not as expected", ipString, ipParts[1]);

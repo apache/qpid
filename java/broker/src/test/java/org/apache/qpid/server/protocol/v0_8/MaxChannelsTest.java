@@ -22,8 +22,6 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.protocol.v0_8.AMQProtocolEngine;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -37,7 +35,7 @@ public class MaxChannelsTest extends QpidTestCase
     {
         super.setUp();
         BrokerTestHelper.setUp();
-        _session = BrokerTestHelper.createSession();
+        _session = BrokerTestHelper_0_8.createProtocolSession();
     }
 
     public void testChannels() throws Exception
