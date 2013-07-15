@@ -1,0 +1,245 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.server.protocol.v1_0;
+
+import java.io.EOFException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
+import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
+import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
+import org.apache.qpid.amqp_1_0.type.messaging.Data;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.codec.BBDecoder;
+import org.apache.qpid.typedmessage.TypedBytesContentReader;
+import org.apache.qpid.typedmessage.TypedBytesFormatException;
+
+public abstract class MessageConverter_to_1_0<M extends ServerMessage> implements MessageConverter<M, Message_1_0>
+{
+    private final AMQPDescribedTypeRegistry _typeRegistry = AMQPDescribedTypeRegistry.newInstance()
+                                                                                         .registerTransportLayer()
+                                                                                         .registerMessagingLayer()
+                                                                                         .registerTransactionLayer()
+                                                                                         .registerSecurityLayer();
+
+    @Override
+    public final Class<Message_1_0> getOutputClass()
+    {
+        return Message_1_0.class;
+    }
+
+    @Override
+    public final Message_1_0 convert(M message, VirtualHost vhost)
+    {
+
+        SectionEncoder sectionEncoder = new SectionEncoderImpl(_typeRegistry);
+        return new Message_1_0(convertToStoredMessage(message, sectionEncoder));
+    }
+
+
+    private StoredMessage<MessageMetaData_1_0> convertToStoredMessage(final M serverMessage, SectionEncoder sectionEncoder)
+    {
+        final MessageMetaData_1_0 metaData = convertMetaData(serverMessage, sectionEncoder);
+        return convertServerMessage(metaData, serverMessage, sectionEncoder);
+    }
+
+    abstract protected MessageMetaData_1_0 convertMetaData(final M serverMessage, SectionEncoder sectionEncoder);
+
+
+    private static Section convertMessageBody(String mimeType, byte[] data)
+    {
+        if("text/plain".equals(mimeType) || "text/xml".equals(mimeType))
+        {
+            String text = new String(data);
+            return new AmqpValue(text);
+        }
+        else if("jms/map-message".equals(mimeType))
+        {
+            TypedBytesContentReader reader = new TypedBytesContentReader(ByteBuffer.wrap(data));
+
+            LinkedHashMap map = new LinkedHashMap();
+            final int entries = reader.readIntImpl();
+            for (int i = 0; i < entries; i++)
+            {
+                try
+                {
+                    String propName = reader.readStringImpl();
+                    Object value = reader.readObject();
+                    map.put(propName, value);
+                }
+                catch (EOFException e)
+                {
+                    throw new IllegalArgumentException(e);
+                }
+                catch (TypedBytesFormatException e)
+                {
+                    throw new IllegalArgumentException(e);
+                }
+
+            }
+
+            return new AmqpValue(map);
+
+        }
+        else if("amqp/map".equals(mimeType))
+        {
+            BBDecoder decoder = new BBDecoder();
+            decoder.init(ByteBuffer.wrap(data));
+            return new AmqpValue(decoder.readMap());
+
+        }
+        else if("amqp/list".equals(mimeType))
+        {
+            BBDecoder decoder = new BBDecoder();
+            decoder.init(ByteBuffer.wrap(data));
+            return new AmqpValue(decoder.readList());
+        }
+        else if("jms/stream-message".equals(mimeType))
+        {
+            TypedBytesContentReader reader = new TypedBytesContentReader(ByteBuffer.wrap(data));
+
+            List list = new ArrayList();
+            while (reader.remaining() != 0)
+            {
+                try
+                {
+                    list.add(reader.readObject());
+                }
+                catch (TypedBytesFormatException e)
+                {
+                    throw new RuntimeException(e);  // TODO - Implement
+                }
+                catch (EOFException e)
+                {
+                    throw new RuntimeException(e);  // TODO - Implement
+                }
+            }
+            return new AmqpValue(list);
+        }
+        else
+        {
+            return new Data(new Binary(data));
+
+        }
+    }
+
+    private StoredMessage<MessageMetaData_1_0> convertServerMessage(final MessageMetaData_1_0 metaData,
+                                                                      final ServerMessage serverMessage,
+                                                                      SectionEncoder sectionEncoder)
+    {
+            final String mimeType = serverMessage.getMessageHeader().getMimeType();
+            byte[] data = new byte[(int) serverMessage.getSize()];
+            serverMessage.getContent(ByteBuffer.wrap(data), 0);
+
+            Section bodySection = convertMessageBody(mimeType, data);
+
+            final ByteBuffer allData = encodeConvertedMessage(metaData, bodySection, sectionEncoder);
+
+            return new StoredMessage<MessageMetaData_1_0>()
+            {
+                @Override
+                public MessageMetaData_1_0 getMetaData()
+                {
+                    return metaData;
+                }
+
+                @Override
+                public long getMessageNumber()
+                {
+                    return serverMessage.getMessageNumber();
+                }
+
+                @Override
+                public void addContent(int offsetInMessage, ByteBuffer src)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public int getContent(int offsetInMessage, ByteBuffer dst)
+                {
+                    ByteBuffer buf = allData.duplicate();
+                    buf.position(offsetInMessage);
+                    buf = buf.slice();
+                    int size;
+                    if(dst.remaining()<buf.remaining())
+                    {
+                        buf.limit(dst.remaining());
+                        size = dst.remaining();
+                    }
+                    else
+                    {
+                        size = buf.remaining();
+                    }
+                    dst.put(buf);
+                    return size;
+                }
+
+                @Override
+                public ByteBuffer getContent(int offsetInMessage, int size)
+                {
+                    ByteBuffer buf = allData.duplicate();
+                    buf.position(offsetInMessage);
+                    buf = buf.slice();
+                    if(size < buf.remaining())
+                    {
+                        buf.limit(size);
+                    }
+                    return buf;
+                }
+
+                @Override
+                public StoreFuture flushToStore()
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void remove()
+                {
+                    serverMessage.getStoredMessage().remove();
+                }
+            };
+        }
+
+    private ByteBuffer encodeConvertedMessage(MessageMetaData_1_0 metaData, Section bodySection, SectionEncoder sectionEncoder)
+    {
+        int headerSize = (int) metaData.getStorableSize();
+
+        sectionEncoder.reset();
+        sectionEncoder.encodeObject(bodySection);
+        Binary dataEncoding = sectionEncoder.getEncoding();
+
+        final ByteBuffer allData = ByteBuffer.allocate(headerSize + dataEncoding.getLength());
+        metaData.writeToBuffer(0,allData);
+        allData.put(dataEncoding.getArray(),dataEncoding.getArrayOffset(),dataEncoding.getLength());
+        return allData;
+    }
+}

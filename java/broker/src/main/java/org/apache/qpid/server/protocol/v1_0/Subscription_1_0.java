@@ -59,6 +59,8 @@ import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.typedmessage.TypedBytesContentReader;
 import org.apache.qpid.typedmessage.TypedBytesFormatException;
 import org.apache.qpid.server.filter.FilterManager;
@@ -168,9 +170,18 @@ class Subscription_1_0 implements Subscription
 
     public boolean hasInterest(final QueueEntry entry)
     {
-        return !(_noLocal && (entry.getMessage() instanceof Message_1_0)
-                          && ((Message_1_0)entry.getMessage()).getSession() == getSession())
-               && checkFilters(entry);
+        if(entry.getMessage() instanceof Message_1_0)
+        {
+            if(_noLocal && ((Message_1_0)entry.getMessage()).getSession() == getSession())
+            {
+                return false;
+            }
+        }
+        else if(MessageConverterRegistry.getConverter(entry.getMessage().getClass(), Message_1_0.class)==null)
+        {
+            return false;
+        }
+        return checkFilters(entry);
 
     }
 
@@ -221,18 +232,8 @@ class Subscription_1_0 implements Subscription
         }
         else
         {
-            if(serverMessage instanceof AMQMessage)
-            {
-                message = new Message_1_0(convert08Message((AMQMessage)serverMessage));
-            }
-            else if(serverMessage instanceof MessageTransferMessage)
-            {
-                message = new Message_1_0(convert010Message((MessageTransferMessage)serverMessage));
-            }
-            else
-            {
-                return;
-            }
+            final MessageConverter converter = MessageConverterRegistry.getConverter(serverMessage.getClass(), Message_1_0.class);
+            message = (Message_1_0) converter.convert(serverMessage, queueEntry.getQueue().getVirtualHost());
         }
 
         Transfer transfer = new Transfer();
