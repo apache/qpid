@@ -20,7 +20,10 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Validate ChannelLogSubjects are logged as expected
@@ -34,10 +37,10 @@ public class ChannelLogSubjectTest extends ConnectionLogSubjectTest
     {
         super.setUp();
 
-
-        AMQChannel channel = new AMQChannel(getSession(), _channelID, getSession().getVirtualHost().getMessageStore());
-
-        _subject = new ChannelLogSubject(channel);
+        AMQSessionModel session = mock(AMQSessionModel.class);
+        when(session.getConnectionModel()).thenReturn(getConnection());
+        when(session.getChannelId()).thenReturn(_channelID);
+        _subject = new ChannelLogSubject(session);
     }
 
     /**

@@ -44,7 +44,7 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
 
         MockSubscription mockSubscription = new MockSubscription();
 
-        mockSubscription.setQueue(BrokerTestHelper.createQueue(getName(), getSession().getVirtualHost()), false);
+        mockSubscription.setQueue(BrokerTestHelper.createQueue(getName(), getVirtualHost()), false);
 
         setAmqpActor(new SubscriptionActor(getRootLogger(), mockSubscription));
     }

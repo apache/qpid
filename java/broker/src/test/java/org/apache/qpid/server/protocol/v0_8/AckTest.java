@@ -28,9 +28,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -67,7 +65,7 @@ public class AckTest extends QpidTestCase
     {
         super.setUp();
         BrokerTestHelper.setUp();
-        _channel = BrokerTestHelper.createChannel(5);
+        _channel = BrokerTestHelper_0_8.createChannel(5);
         _protocolSession = _channel.getProtocolSession();
         _virtualHost = _protocolSession.getVirtualHost();
         _queue = BrokerTestHelper.createQueue(getTestName(), _virtualHost);

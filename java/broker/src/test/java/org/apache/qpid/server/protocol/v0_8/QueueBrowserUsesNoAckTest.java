@@ -18,19 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.protocol.v0_8.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -49,7 +48,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
     {
         super.setUp();
         BrokerTestHelper.setUp();
-        _channel = BrokerTestHelper.createChannel();
+        _channel = BrokerTestHelper_0_8.createChannel();
         VirtualHost virtualHost = _channel.getVirtualHost();
         _queueName = getTestName();
         _queue = BrokerTestHelper.createQueue(_queueName, virtualHost);
@@ -97,7 +96,10 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         checkStoreContents(0);
 
         //Send required messsages to the queue
-        BrokerTestHelper.publishMessages(getChannel(), sendMessageCount, _queueName, ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString());
+        BrokerTestHelper_0_8.publishMessages(getChannel(),
+                sendMessageCount,
+                _queueName,
+                ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString());
 
         //Ensure they are stored
         checkStoreContents(sendMessageCount);
