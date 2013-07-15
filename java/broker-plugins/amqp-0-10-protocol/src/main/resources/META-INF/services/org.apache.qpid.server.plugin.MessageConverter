@@ -16,4 +16,4 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8
+org.apache.qpid.server.protocol.v0_10.MessageConverter_v0_10

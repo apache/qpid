@@ -23,20 +23,11 @@ package org.apache.qpid.server.protocol.v0_8;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.protocol.v0_10.FlowCreditManager_0_10;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_10.Subscription_0_10;
-import org.apache.qpid.server.protocol.v0_10.ServerSession;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.transport.MessageAcceptMode;
-import org.apache.qpid.transport.MessageAcquireMode;
-import org.apache.qpid.transport.MessageFlowMode;
-
-import java.util.Map;
 
 /**
  * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This factory
