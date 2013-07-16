@@ -909,7 +909,7 @@ qpid.name=${project.name}
         <map from="${project.root}${file.separator}" to=''/>
       </pathconvert>
       <map property="eclipse.required.slashedprojectnames" value="${eclipse.required.projectnames}" join="${path.separator}">
-        <globmapper from="*" to="/*"/>
+        <globmapper from="*" to="/*${eclipse.project.suffix}"/>
       </map>
 
       <echo message="Ant module dependencies : ${module.depends} ${module.test.depends} converted to Eclipse required project(s): ${eclipse.required.slashedprojectnames}"/>
@@ -921,7 +921,7 @@ qpid.name=${project.name}
     <!-- Create the Eclipse .project -->
     <target name="eclipse-project">
       <eclipse updatealways="${eclipse.updatealways}">
-        <project name="${module.name}"/>
+        <project name="${module.name}${eclipse.project.suffix}"/>
 
         <!-- If the Eclipse task were to ever support the generation of
              linked resources, we would configure it to generate
