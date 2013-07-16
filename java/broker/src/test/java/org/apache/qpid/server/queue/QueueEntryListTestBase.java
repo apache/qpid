@@ -22,7 +22,12 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Abstract test class for QueueEntryList implementations.
@@ -72,7 +77,14 @@ public abstract class QueueEntryListTestBase extends TestCase
     public void testAddGenericMessage() throws AMQException
     {
         final QueueEntryList<QueueEntry> list = getTestList();
-        list.add(new MockAMQMessage(666));
+        final ServerMessage message = mock(ServerMessage.class);
+        when(message.getMessageNumber()).thenReturn((long)666);
+        MessageReference ref = mock(MessageReference.class);
+        AMQMessageHeader hdr = mock(AMQMessageHeader.class);
+        when(ref.getMessage()).thenReturn(message);
+        when(message.newReference()).thenReturn(ref);
+        when(message.getMessageHeader()).thenReturn(hdr);
+        list.add(message);
 
         final QueueEntryIterator<?> iter = list.iterator();
         int count = 0;

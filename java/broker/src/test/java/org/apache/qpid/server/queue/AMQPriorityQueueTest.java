@@ -24,11 +24,13 @@ import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.ArrayList;
+
+import static org.mockito.Mockito.when;
 
 public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 {
@@ -95,16 +97,16 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 
     }
 
-    protected AMQMessage createMessage(Long id, byte i) throws AMQException
+    protected ServerMessage createMessage(Long id, byte i) throws AMQException
     {
-        AMQMessage msg = super.createMessage(id);
-        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
-        props.setPriority(i);
-        msg.getContentHeaderBody().setProperties(props);
+
+        ServerMessage msg = super.createMessage(id);
+        AMQMessageHeader hdr = msg.getMessageHeader();
+        when(hdr.getPriority()).thenReturn(i);
         return msg;
     }
 
-    protected AMQMessage createMessage(Long id) throws AMQException
+    protected ServerMessage createMessage(Long id) throws AMQException
     {
         return createMessage(id, (byte) 0);
     }
