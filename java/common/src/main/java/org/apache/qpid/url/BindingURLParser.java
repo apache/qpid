@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,16 +7,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 package org.apache.qpid.url;
 
@@ -61,7 +61,8 @@ public class BindingURLParser
     }
 
     //<exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
-    public synchronized void parse(String url,AMQBindingURL bindingURL)  throws URISyntaxException
+    public synchronized void
+    parse(String url,AMQBindingURL bindingURL)  throws URISyntaxException
     {
         _url = (url + END_OF_URL_MARKER_CHAR).toCharArray();
         _bindingURL = bindingURL;
@@ -442,7 +443,7 @@ public class BindingURLParser
 
     public static void main(String[] args)
     {
-        
+
         String[] urls = new String[]
            {
              "topic://amq.topic//myTopic?routingkey='stocks.#'",

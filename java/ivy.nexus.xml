@@ -63,6 +63,12 @@
     <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-amqp-0-10-protocol" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-0-8-protocol" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-amqp-0-8-protocol" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-0-8-protocol" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-amqp-0-8-protocol" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-amqp-0-8-protocol" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-amqp-0-8-protocol" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="pom" ext="pom"/>
     <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-broker-plugins-amqp-1-0-protocol" type="jar" ext="jar"/>

@@ -16,13 +16,13 @@
  - specific language governing permissions and limitations
  - under the License.
  -->
-<project name="Qpid Broker-Plugins AMQP 0.8 to 0.10 MessageConversion" default="build">
-    <property name="module.depends" value="common broker broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol" />
+<project name="Qpid Broker-Plugins AMQP 0-8 Protocol" default="build">
+    <property name="module.depends" value="common broker" />
     <property name="module.test.depends" value="common/tests broker/tests" />
 
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-broker-plugins-amqp-0-10-protocol=provided -Sqpid-broker-plugins-amqp-0-8-protocol=provided"/>
-    <property name="broker-plugins-amqp-msg-conv-0-8-to-0-10-libs" value="" />
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
+    <property name="broker-plugins-amqp-0-8-protocol.libs" value="" />
 
     <property name="broker.plugin" value="true"/>
 
