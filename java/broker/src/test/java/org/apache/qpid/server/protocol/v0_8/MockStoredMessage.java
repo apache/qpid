@@ -18,13 +18,12 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 

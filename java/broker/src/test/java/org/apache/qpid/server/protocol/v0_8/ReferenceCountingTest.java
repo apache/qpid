@@ -18,16 +18,16 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
