@@ -22,7 +22,7 @@
 
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-amqp-1-0-common=provided -Sqpid-broker-plugins-amqp-1-0-protocol=provided -Sqpid-broker-plugins-amqp-0-8-protocol=provided"/>
-    <property name="broker-plugins-amqp-msg-conv-0-8-to-1-0-libs" value="" />
+    <property name="broker-plugins-amqp-msg-conv-0-8-to-1-0.libs" value="" />
 
     <property name="broker.plugin" value="true"/>
 
