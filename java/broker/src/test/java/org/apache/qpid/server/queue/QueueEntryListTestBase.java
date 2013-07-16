@@ -71,19 +71,12 @@ public abstract class QueueEntryListTestBase extends TestCase
      * Test to add a generic mock message.
      * @see QueueEntryListTestBase#getTestList()
      * @see QueueEntryListTestBase#getExpectedListLength()
-     * @see MockAMQMessage
      * @throws AMQException
      */
     public void testAddGenericMessage() throws AMQException
     {
         final QueueEntryList<QueueEntry> list = getTestList();
-        final ServerMessage message = mock(ServerMessage.class);
-        when(message.getMessageNumber()).thenReturn((long)666);
-        MessageReference ref = mock(MessageReference.class);
-        AMQMessageHeader hdr = mock(AMQMessageHeader.class);
-        when(ref.getMessage()).thenReturn(message);
-        when(message.newReference()).thenReturn(ref);
-        when(message.getMessageHeader()).thenReturn(hdr);
+        final ServerMessage message = createServerMessage(666l);
         list.add(message);
 
         final QueueEntryIterator<?> iter = list.iterator();
@@ -95,6 +88,18 @@ public abstract class QueueEntryListTestBase extends TestCase
         }
         assertEquals("List did not grow by one entry after a generic message added", getExpectedListLength() + 1, count);
 
+    }
+
+    private ServerMessage createServerMessage(long number)
+    {
+        final ServerMessage message = mock(ServerMessage.class);
+        when(message.getMessageNumber()).thenReturn(number);
+        MessageReference ref = mock(MessageReference.class);
+        AMQMessageHeader hdr = mock(AMQMessageHeader.class);
+        when(ref.getMessage()).thenReturn(message);
+        when(message.newReference()).thenReturn(ref);
+        when(message.getMessageHeader()).thenReturn(hdr);
+        return message;
     }
 
     /**
@@ -213,8 +218,8 @@ public abstract class QueueEntryListTestBase extends TestCase
         QueueEntryList<QueueEntry> list = getTestList(true);
         int i = 0;
 
-        QueueEntry queueEntry1 = list.add(new MockAMQMessage(i++));
-        QueueEntry queueEntry2 = list.add(new MockAMQMessage(i++));
+        QueueEntry queueEntry1 = list.add(createServerMessage(i++));
+        QueueEntry queueEntry2 = list.add(createServerMessage(i++));
 
         assertSame(queueEntry2, list.next(queueEntry1));
         assertNull(list.next(queueEntry2));

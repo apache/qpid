@@ -23,11 +23,7 @@ package org.apache.qpid.server.protocol.v0_8;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.protocol.v0_8.UnacknowledgedMessageMapImpl;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.protocol.v0_8.ExtractResendAndRequeue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockAMQMessage;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryIterator;
