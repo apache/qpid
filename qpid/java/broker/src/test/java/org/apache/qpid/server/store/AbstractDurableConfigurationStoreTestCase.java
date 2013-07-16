@@ -48,7 +48,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.Transaction.Record;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -445,7 +444,9 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         EnqueableMessage message1 = mock(EnqueableMessage.class);
         when(message1.isPersistent()).thenReturn(true);
         when(message1.getMessageNumber()).thenReturn(messageNumber);
-        when(message1.getStoredMessage()).thenReturn(new MockStoredMessage(messageNumber));
+        final StoredMessage storedMessage = mock(StoredMessage.class);
+        when(storedMessage.getMessageNumber()).thenReturn(messageNumber);
+        when(message1.getStoredMessage()).thenReturn(storedMessage);
         Record enqueueRecord = new TestRecord(queue1, message1);
         return enqueueRecord;
     }

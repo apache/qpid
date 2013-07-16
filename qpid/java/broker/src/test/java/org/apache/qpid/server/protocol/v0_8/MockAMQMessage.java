@@ -18,9 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
-
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
+package org.apache.qpid.server.protocol.v0_8;
 
 public class MockAMQMessage extends AMQMessage
 {
