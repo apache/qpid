@@ -142,7 +142,7 @@ if (BUILD_AMQP)
          qpid/messaging/amqp/TcpTransport.cpp
         )
     add_library (amqpc MODULE ${amqpc_SOURCES})
-    target_link_libraries (amqpc qpidclient qpidcommon)
+    target_link_libraries (amqpc qpidmessaging qpidclient qpidcommon)
     set_target_properties (amqpc PROPERTIES
                            PREFIX ""
                            COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"

@@ -20,7 +20,7 @@
 import time
 from math import ceil
 from qpid.harness import Skipped
-from qpid.messaging import *
+from qpid.tests.messaging.implementation import *
 from qpid.tests import Test
 
 class Base(Test):
@@ -115,7 +115,7 @@ class Base(Test):
         echo = echo.content
         assert msg == echo, "expected %s, got %s" % (msg, echo)
     else:
-      delta = self.diff(msg, echo, ("x-amqp-0-10.routing-key",))
+      delta = self.diff(msg, echo, ("x-amqp-0-10.routing-key","qpid.subject"))
       mttl, ettl = delta.pop("ttl", (0, 0))
       if redelivered:
         assert echo.redelivered, \
@@ -179,7 +179,13 @@ class Base(Test):
       return "tcp"
 
   def connection_options(self):
-    return {"reconnect": self.reconnect(),
-            "transport": self.transport()}
+    protocol_version = self.config.defines.get("protocol_version")
+    if protocol_version:
+      return {"reconnect": self.reconnect(),
+              "transport": self.transport(),
+              "protocol":protocol_version}
+    else:
+      return {"reconnect": self.reconnect(),
+              "transport": self.transport()}
 
 import address, endpoints, message

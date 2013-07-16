@@ -139,8 +139,9 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 /* This only renames the non-const version (I believe).  Then again, I
  * don't even know why there is a non-const version of the method. */
 %rename(opened) qpid::messaging::Connection::isOpen();
+%rename(_close) qpid::messaging::Connection::close();
 %rename(receiver) qpid::messaging::Session::createReceiver;
-%rename(sender) qpid::messaging::Session::createSender;
+%rename(_sender) qpid::messaging::Session::createSender;
 %rename(_acknowledge_all) qpid::messaging::Session::acknowledge(bool);
 %rename(_acknowledge_msg) qpid::messaging::Session::acknowledge(
     Message &, bool);
@@ -169,20 +170,26 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
          # when possible.
          def __init__(self, url=None, **options):
              if url:
-                 args = [url]
+                 args = [str(url)]
              else:
                  args = []
-             if options :
-                 if "sasl_mechanisms" in options :
-                     if ' ' in options.get("sasl_mechanisms",'') :
-                         raise Exception(
-                             "C++ Connection objects are unable to handle "
-                             "multiple sasl-mechanisms")
-                     options["sasl_mechanism"] = options.pop("sasl_mechanisms")
-                 args.append(options)
+             if options:
+                 # remove null valued options
+                 clean_opts = {}
+                 for k, v in options.iteritems():
+                     if v:
+                         clean_opts[k] = v
+                 args.append(clean_opts)
              this = _cqpid.new_Connection(*args)
              try: self.this.append(this)
              except: self.this = this
+
+         def attached(self):
+             return self.opened()
+
+         def close(self, timeout=None):
+             #timeout not supported in c++
+             self._close()
     %}
 
     /* Return a pre-existing session with the given name, if one
@@ -236,18 +243,29 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 
          __swig_getmethods__["connection"] = getConnection
          if _newclass: connection = property(getConnection)
+
+         def sender(self, target, **options) :
+            s = self._sender(target)
+            s._setDurable(options.get("durable"))
+            return s
     %}
 }
 
 
 %extend qpid::messaging::Receiver {
     %pythoncode %{
+         def _get_source(self):
+             return self.getAddress().str()
+
          __swig_getmethods__["capacity"] = getCapacity
          __swig_setmethods__["capacity"] = setCapacity
          if _newclass: capacity = property(getCapacity, setCapacity)
 
          __swig_getmethods__["session"] = getSession
          if _newclass: session = property(getSession)
+
+         __swig_getmethods__["source"] = _get_source
+         if _newclass: source = property(_get_source)
     %}
 
     %pythoncode %{
@@ -263,19 +281,31 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 
 %extend qpid::messaging::Sender {
     %pythoncode %{
+         def _get_target(self):
+             return self.getAddress().str()
+
+         def _setDurable(self, d):
+             self.durable = d
+
          def send(self, object, sync=True) :
              if isinstance(object, Message):
                  message = object
              else:
                  message = Message(object)
+             if self.durable and message.durable is None:
+                 message.durable = self.durable
              return self._send(message, sync)
-         
+
          __swig_getmethods__["capacity"] = getCapacity
          __swig_setmethods__["capacity"] = setCapacity
          if _newclass: capacity = property(getCapacity, setCapacity)
 
          __swig_getmethods__["session"] = getSession
          if _newclass: session = property(getSession)
+
+         __swig_getmethods__["target"] = _get_target
+         if _newclass: source = property(_get_target)
+
     %}
 }
 
@@ -293,7 +323,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
              this = _cqpid.new_Message('')
              try: self.this.append(this)
              except: self.this = this
-             if content :
+             if not content is None:
                  self.content = content
              if content_type != UNSPECIFIED :
                  self.content_type = content_type
@@ -327,21 +357,29 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
                  return decodeMap(self)
              return self.getContent()
          def _set_content(self, content) :
-             if isinstance(content, basestring) :
+             if isinstance(content, str) :
                  self.setContent(content)
+             elif isinstance(content, unicode) :
+                 if not self.content_type: self.content_type = "text/plain"
+                 self.setContent(str(content))
              elif isinstance(content, list) or isinstance(content, dict) :
                  encode(content, self)
              else :
                  # Not a type we can handle.  Try setting it anyway,
                  # although this will probably lead to a swig error
-                 self.setContent(content)
+                 self.setContent(str(content))
          __swig_getmethods__["content"] = _get_content
          __swig_setmethods__["content"] = _set_content
          if _newclass: content = property(_get_content, _set_content)
 
-         __swig_getmethods__["content_type"] = getContentType
+         def _get_content_type(self) :
+             ct = self.getContentType()
+             if ct == "": return None
+             else: return ct
+
+         __swig_getmethods__["content_type"] = _get_content_type
          __swig_setmethods__["content_type"] = setContentType
-         if _newclass: content_type = property(getContentType, setContentType)
+         if _newclass: content_type = property(_get_content_type, setContentType)
 
          __swig_getmethods__["id"] = getMessageId
          __swig_setmethods__["id"] = setMessageId

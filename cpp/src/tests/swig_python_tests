@@ -1,0 +1,65 @@
+#!/bin/bash
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run the python tests.
+source ./test_env.sh
+trap stop_broker INT TERM QUIT
+
+if [ -f $AMQP_LIB ] ; then
+    MODULES="--load-module $AMQP_LIB"
+fi
+
+fail() {
+    echo "FAIL swigged python tests: $1"; exit 1;
+}
+skip() {
+    echo "SKIPPED swigged python tests: $1"; exit 0;
+}
+
+start_broker() {
+    QPID_PORT=$($QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-data-dir $MODULES --auth no) || fail "Could not start broker"
+}
+
+stop_broker() {
+    $QPIDD_EXEC -q --port $QPID_PORT
+}
+
+test -d $PYTHON_DIR || skip "no python dir"
+test -f $PYTHONSWIGMODULE || skip "no swigged python client"
+
+start_broker
+echo "Running swigged python tests using broker on port $QPID_PORT"
+
+export PYTHONPATH=$PYTHONPATH:$PYTHONPATH_SWIG
+export QPID_LOAD_MODULE=$AMQPC_LIB
+$QPID_PYTHON_TEST -m qpid.tests.messaging.message -m qpid_tests.broker_0_10.priority -m qpid_tests.broker_0_10.lvq -m qpid_tests.broker_0_10.new_api -b localhost:$QPID_PORT -I $srcdir/failing-amqp0-10-python-tests
+RESULT=$?
+if [ -f $AMQPC_LIB ] ; then
+    $QPID_PYTHON_TEST --define="protocol_version=amqp1.0" -m qpid_tests.broker_1_0 -b localhost:$QPID_PORT -I $srcdir/failing-amqp1.0-python-tests
+    if test x$RESULT == x0; then
+        RESULT=$?
+    fi
+fi
+stop_broker
+if test x$RESULT != x0; then
+    fail ""
+fi
+

@@ -25,6 +25,8 @@ builddir=`absdir @abs_builddir@`
 top_srcdir=`absdir @abs_top_srcdir@`
 top_builddir=`absdir @abs_top_builddir@`
 moduledir=$top_builddir/src@builddir_lib_suffix@
+pythonswigdir=$top_builddir/bindings/qpid/python/
+pythonswiglibdir=$top_builddir/bindings/qpid/python@builddir_lib_suffix@
 testmoduledir=$builddir@builddir_lib_suffix@
 export QPID_INSTALL_PREFIX=@prefix@
 
@@ -44,7 +46,8 @@ export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$QPID_TESTS_PY:$QMF_LIB:$
 export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_HA_EXEC=$PYTHON_COMMANDS/qpid-ha
-
+export PYTHONPATH_SWIG=$pythonswigdir:$pythonswiglibdir
+export PYTHONSWIGMODULE=$pythonswigdir/cqpid.py
 # Executables
 export QPIDD_EXEC=$top_builddir/src/qpidd
 

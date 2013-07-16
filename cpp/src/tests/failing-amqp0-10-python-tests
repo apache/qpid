@@ -1,0 +1,7 @@
+#The following four tests fail the because pure python client excludes
+#the node type for queues from the reply-to address, weheras the swigged
+#client does not (as that prevents it resolving the node on every send)
+qpid.tests.messaging.message.MessageEchoTests.testReplyTo
+qpid.tests.messaging.message.MessageEchoTests.testReplyToQueue
+qpid.tests.messaging.message.MessageEchoTests.testReplyToQueueSubject
+qpid.tests.messaging.message.MessageEchoTests.testProperties
