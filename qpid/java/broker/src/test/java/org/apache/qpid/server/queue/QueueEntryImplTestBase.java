@@ -21,12 +21,16 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry.EntryState;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 
 import java.lang.reflect.Field;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link QueueEntryImpl}
@@ -211,8 +215,9 @@ public abstract class QueueEntryImplTestBase extends TestCase
         // create test entries
         for(int i = 0; i < numberOfEntries ; i++)
         {
-            AMQMessage message = new MockAMQMessage(i);
-            QueueEntryImpl entry = (QueueEntryImpl)queueEntryList.add(message);
+            ServerMessage message = mock(ServerMessage.class);
+            when(message.getMessageNumber()).thenReturn((long)i);
+            QueueEntryImpl entry = queueEntryList.add(message);
             entries[i] = entry;
         }
 
