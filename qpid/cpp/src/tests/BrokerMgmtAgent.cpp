@@ -63,6 +63,7 @@ class AgentFixture
                   qpid::broker::Broker::Options opts = qpid::broker::Broker::Options())
     {
         opts.enableMgmt=true;
+        opts.qmf1Support=!qmfV2;
         opts.qmf2Support=qmfV2;
         opts.mgmtPubInterval=pubInterval;
         mFix = new MessagingFixture(opts, true);
