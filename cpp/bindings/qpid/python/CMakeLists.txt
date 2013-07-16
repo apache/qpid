@@ -24,8 +24,8 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES CPLU
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i
    PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
 
-swig_add_module(cqpid_python python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
-swig_link_libraries(cqpid_python qpidmessaging qpidtypes qmf2 ${PYTHON_LIBRARIES})
+swig_add_module(cqpid python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
+swig_link_libraries(cqpid qpidmessaging qpidtypes ${PYTHON_LIBRARIES})
 
 set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing")
 include_directories(${PYTHON_INCLUDE_PATH}
@@ -45,8 +45,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid.py
         DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/_cqpid_python.so
-        RENAME _cqpid.so
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/_cqpid.so
         DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )

@@ -17,7 +17,7 @@
 # under the License.
 #
 
-from qpid.messaging import *
+from qpid.tests.messaging.implementation import *
 from qpid.tests.messaging import Base
 from qpid.compat import set
 import math

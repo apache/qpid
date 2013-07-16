@@ -17,7 +17,8 @@
 # under the License.
 #
 
-from qpid.messaging import *
+from qpid.tests.messaging.implementation import *
+from qpid.messaging.address import parse
 from qpid.tests.messaging import Base
 
 class MessageTests(Base):
@@ -126,7 +127,14 @@ class MessageEchoTests(Base):
     msg = Message(reply_to=addr)
     self.snd.send(msg)
     echo = self.rcv.fetch(0)
-    assert echo.reply_to == expected, echo.reply_to
+    #reparse addresses and check individual parts as this avoids
+    #failing due to differenecs in whitespace when running over
+    #swigged client:
+    (actual_name, actual_subject, actual_options) = parse(echo.reply_to)
+    (expected_name, expected_subject, expected_options) = parse(expected)
+    assert actual_name == expected_name, (actual_name, expected_name)
+    assert actual_subject == expected_subject, (actual_subject, expected_subject)
+    assert actual_options == expected_options, (actual_options, expected_options)
     self.ssn.acknowledge(echo)
 
   def testReplyTo(self):
