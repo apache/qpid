@@ -17,7 +17,7 @@
 # under the License.
 #
 
-from qpid.messaging import *
+from qpid.tests.messaging.implementation import *
 from qpid.tests.messaging import Base
 import math
 
@@ -61,8 +61,7 @@ class LVQTests (Base):
 
 
 def create_message(key, content):
-    msg = Message(content=content)
-    msg.properties["lvq-key"] = key
+    msg = Message(content=content, properties={"lvq-key":key})
     return msg
 
 def fetch_all(rcv):

@@ -17,9 +17,8 @@
 # under the License.
 #
 
-from qpid.messaging import *
+from qpid.tests.messaging.implementation import *
 from qpid.tests.messaging import Base
-import qmf.console
 from time import sleep
 
 #

@@ -861,7 +861,7 @@ amqp_la_CXXFLAGS=$(AM_CXXFLAGS) $(BROKER_CXXFLAGS) $(PROTON_CFLAGS)
 amqp_la_LDFLAGS = $(PLUGINLDFLAGS) $(PROTON_LIBS)
 
 cmoduleexec_LTLIBRARIES += amqpc.la
-amqpc_la_LIBADD = libqpidcommon.la
+amqpc_la_LIBADD = libqpidcommon.la libqpidclient.la libqpidmessaging.la libqpidtypes.la
 amqpc_la_SOURCES = \
   qpid/messaging/amqp/AddressHelper.h		\
   qpid/messaging/amqp/AddressHelper.cpp		\
