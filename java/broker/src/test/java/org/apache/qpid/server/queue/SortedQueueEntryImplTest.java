@@ -19,8 +19,14 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.Collections;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SortedQueueEntryImplTest extends QueueEntryImplTestBase {
 
@@ -29,7 +35,13 @@ public class SortedQueueEntryImplTest extends QueueEntryImplTestBase {
     private SelfValidatingSortedQueueEntryList queueEntryList = new SelfValidatingSortedQueueEntryList(new MockAMQQueue("test"),"KEY");
 
     public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException {
-        final ServerMessage message = new MockAMQMessage(msgId, "KEY", keys[msgId-1]);
+        final ServerMessage message = mock(ServerMessage.class);
+        AMQMessageHeader hdr = mock(AMQMessageHeader.class);
+        when(message.getMessageHeader()).thenReturn(hdr);
+        when(hdr.getHeader(eq("KEY"))).thenReturn(keys[msgId-1]);
+        when(hdr.containsHeader(eq("KEY"))).thenReturn(true);
+        when(hdr.getHeaderNames()).thenReturn(Collections.singleton("KEY"));
+
         return queueEntryList.add(message);
     }
 

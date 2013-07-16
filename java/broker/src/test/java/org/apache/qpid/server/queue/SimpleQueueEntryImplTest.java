@@ -23,12 +23,16 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.ServerMessage;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase {
 
     private SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
 
     public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException {
-        ServerMessage message = new MockAMQMessage(msgId);
+        ServerMessage message = mock(ServerMessage.class);
+        when(message.getMessageNumber()).thenReturn((long)msgId);
         return queueEntryList.add(message);
     }
 

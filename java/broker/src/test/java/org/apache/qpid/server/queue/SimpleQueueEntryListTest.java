@@ -21,11 +21,14 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SimpleQueueEntryListTest extends QueueEntryListTestBase
 {
@@ -41,8 +44,13 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         _sqel = new SimpleQueueEntryList(_testQueue);
         for(int i = 1; i <= 100; i++)
         {
-            final ServerMessage msg = new MockAMQMessage(i);
-            final QueueEntry bleh = _sqel.add(msg);
+            final ServerMessage message = mock(ServerMessage.class);
+            when(message.getMessageNumber()).thenReturn((long) i);
+            MessageReference ref = mock(MessageReference.class);
+            when(ref.getMessage()).thenReturn(message);
+            when(message.newReference()).thenReturn(ref);
+
+            final QueueEntry bleh = _sqel.add(message);
             assertNotNull("QE should not have been null", bleh);
         }
     }
@@ -92,9 +100,11 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
     }
 
     @Override
-    public AMQMessage getTestMessageToAdd() throws AMQException
+    public ServerMessage getTestMessageToAdd() throws AMQException
     {
-        return new MockAMQMessage(1l);
+        ServerMessage msg = mock(ServerMessage.class);
+        when(msg.getMessageNumber()).thenReturn(1l);
+        return msg;
     }
 
     public void testScavenge() throws Exception
@@ -106,8 +116,12 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         //Add messages to generate QueueEntry's
         for(int i = 1; i <= 100 ; i++)
         {
-            AMQMessage msg = new MockAMQMessage(i);
-            QueueEntry bleh = sqel.add(msg);
+            ServerMessage message = mock(ServerMessage.class);
+            when(message.getMessageNumber()).thenReturn((long) i);
+            MessageReference ref = mock(MessageReference.class);
+            when(ref.getMessage()).thenReturn(message);
+            when(message.newReference()).thenReturn(ref);
+            QueueEntry bleh = sqel.add(message);
             assertNotNull("QE should not have been null", bleh);
             entriesMap.put(i,bleh);
         }
@@ -195,7 +209,8 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         // create test entries
         for(int i = 0; i < numberOfEntries; i++)
         {
-            AMQMessage message =  new MockAMQMessage(i);
+            ServerMessage message =  mock(ServerMessage.class);
+            when(message.getMessageNumber()).thenReturn((long)i);
             entries[i] = queueEntryList.add(message);
         }
 
