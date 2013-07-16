@@ -24,7 +24,6 @@ import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.util.BrokerTestHelper;

@@ -99,6 +99,7 @@ broker-plugins-management-jmx.test.libs=${test.libs}
 broker-plugins-jdbc-store.test.libs=${test.libs}
 broker-plugins-derby-store.test.libs=${test.libs}
 broker-plugins-memory-store.test.libs=${test.libs}
+broker-plugins-amqp-0-8-protocol.test.libs=${test.libs}
 broker-plugins-amqp-0-10-protocol.test.libs=${test.libs}
 broker-plugins-amqp-1-0-protocol.test.libs=${test.libs}
 
