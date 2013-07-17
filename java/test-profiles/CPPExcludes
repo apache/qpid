@@ -187,3 +187,5 @@ org.apache.qpid.client.ssl.SSLTest#testCreateSSLandTCPonSamePort
 // QPID-2796 : Java 0-10 client only sends heartbeats in response to heartbeats from the server, not timeout based
 org.apache.qpid.client.HeartbeatTest#testReadOnlyConnectionHeartbeats
 
+// Exclude java broker specific behavior allowing queue re-bind to topic exchanges on 0.8/0-10 paths
+org.apache.qpid.server.queue.QueueBindTest#testQueueCanBeReboundOnTopicExchange
