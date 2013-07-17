@@ -677,17 +677,6 @@ namespace {
         return new MessageFilter();
     }
 
-    bool reroute(boost::shared_ptr<Exchange> e, const Message& m)
-    {
-        if (e) {
-            DeliverableMessage d(m, 0);
-            d.getMessage().clearTrace();
-            e->routeWithAlternate(d);
-            return true;
-        } else {
-            return false;
-        }
-    }
     void moveTo(boost::shared_ptr<Queue> q, Message& m)
     {
         if (q) {
@@ -1684,6 +1673,19 @@ void Queue::setMgmtRedirectState( std::string peer, bool enabled, bool isSrc ) {
         mgmtObject->set_redirectSource(isSrc);
     }
 }
+
+bool Queue::reroute(boost::shared_ptr<Exchange> e, const Message& m)
+{
+    if (e) {
+        DeliverableMessage d(m, 0);
+        d.getMessage().clearTrace();
+        e->routeWithAlternate(d);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 Queue::QueueUsers::QueueUsers() : consumers(0), browsers(0), others(0), controller(false) {}
 void Queue::QueueUsers::addConsumer() { ++consumers; }
 void Queue::QueueUsers::addBrowser() { ++browsers; }
