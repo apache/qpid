@@ -52,7 +52,7 @@ bool LossyQueue::checkDepth(const QueueDepth& increment, const Message& message)
         QPID_LOG(debug, "purging " << name << ": current depth is [" << current << "], max depth is [" << settings.maxDepth << "], new message has size " << increment.getSize());
         qpid::sys::Mutex::ScopedUnlock u(messageLock);
         //TODO: arguably we should try and purge expired messages first but that is potentially expensive
-        if (remove(1, settings.priorities ? boost::bind(&isLowerPriorityThan, message.getPriority(), _1) : MessagePredicate(), MessageFunctor(), PURGE, false)) {
+        if (remove(1, settings.priorities ? boost::bind(&isLowerPriorityThan, message.getPriority(), _1) : MessagePredicate(), boost::bind(&reroute, alternateExchange, _1), PURGE, false)) {
             if (mgmtObject) {
                 mgmtObject->inc_discardsRing(1);
                 if (brokerMgmtObject)

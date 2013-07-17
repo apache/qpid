@@ -501,6 +501,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN bool isRedirectSource() const { return redirectSource; }
     QPID_BROKER_EXTERN void setMgmtRedirectState( std::string peer, bool enabled, bool isSrc );
 
+    //utility function
+    static bool reroute(boost::shared_ptr<Exchange> e, const Message& m);
+
   friend class QueueFactory;
 };
 }
