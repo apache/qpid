@@ -419,26 +419,6 @@ public class BindingURLParser
         {
             throw new URISyntaxException(String.valueOf(_url),"It is illegal to specify both a routingKey and a bindingKey in the same URL",-1);
         }
-
-        // check for durable subscriptions
-        if (_bindingURL.getExchangeClass().equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
-        {
-            String queueName = null;
-            if (Boolean.parseBoolean(_bindingURL.getOption(BindingURL.OPTION_DURABLE)))
-            {
-                if (_bindingURL.containsOption(BindingURL.OPTION_CLIENTID) && _bindingURL.containsOption(BindingURL.OPTION_SUBSCRIPTION))
-                {
-                    queueName = _bindingURL.getOption(BindingURL.OPTION_CLIENTID) + ":" + _bindingURL.getOption(BindingURL.OPTION_SUBSCRIPTION);
-                }
-                else
-                {
-                    throw new URISyntaxException(String.valueOf(_url),"Durable subscription must have values for " + BindingURL.OPTION_CLIENTID
-                        + " and " + BindingURL.OPTION_SUBSCRIPTION , -1);
-
-                }
-            }
-            _bindingURL.setQueueName(queueName);
-        }
     }
 
     public static void main(String[] args)
