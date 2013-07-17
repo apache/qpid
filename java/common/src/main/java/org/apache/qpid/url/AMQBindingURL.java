@@ -56,7 +56,6 @@ public class AMQBindingURL implements BindingURL
     {
         BindingURLParser parser = new BindingURLParser();
         parser.parse(_url,this);
-        processOptions();
         _logger.debug("URL Parsed: " + this);
     }
 
@@ -78,10 +77,6 @@ public class AMQBindingURL implements BindingURL
     public void setExchangeName(String exchangeName)
     {
         setExchangeName(new AMQShortString(exchangeName));
-    }
-
-    private void processOptions() throws URISyntaxException
-    {
     }
 
     public String getURL()
