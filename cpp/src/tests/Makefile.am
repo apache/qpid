@@ -313,6 +313,7 @@ EXTRA_DIST +=								\
   ssl_test								\
   ping_broker								\
   config.null								\
+  swig_python_tests							\
   run_federation_tests							\
   run_federation_sys_tests                  \
   run_long_federation_sys_tests             \
