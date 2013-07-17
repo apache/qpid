@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -126,7 +127,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
                 String bindingKey = String.valueOf(routingKey);
                 Map<String,Object> arguments = FieldTable.convertToMap(body.getArguments());
 
-                if(!exch.addBinding(bindingKey, queue, arguments))
+                if(!exch.addBinding(bindingKey, queue, arguments) && ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(exch.getTypeShortString()))
                 {
                     Binding oldBinding = exch.getBinding(bindingKey, queue, arguments);
 
