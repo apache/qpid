@@ -392,6 +392,13 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             _xidDb.close();
         }
 
+
+        if (_configVersionDb != null)
+        {
+            LOGGER.info("Close config version database");
+            _configVersionDb.close();
+        }
+
         closeEnvironment();
 
     }
