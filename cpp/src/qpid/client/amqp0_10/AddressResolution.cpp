@@ -89,6 +89,7 @@ const std::string NODE("node");
 const std::string LINK("link");
 const std::string MODE("mode");
 const std::string RELIABILITY("reliability");
+const std::string TIMEOUT("timeout");
 const std::string NAME("name");
 const std::string DURABLE("durable");
 const std::string X_DECLARE("x-declare");
@@ -517,14 +518,24 @@ Subscription::Subscription(const Address& address, const std::string& type)
     : Exchange(address),
       queue(getSubscriptionName(name, (Opt(address)/LINK/NAME).str())),
       durable(Opt(address)/LINK/DURABLE),
-      //if the link is durable, then assume it is also reliable unless expclitly stated otherwise
-      //if not assume it is unreliable unless expclitly stated otherwise
+      //if the link is durable, then assume it is also reliable unless explicitly stated otherwise
+      //if not assume it is unreliable unless explicitly stated otherwise
       reliable(durable ? !AddressResolution::is_unreliable(address) : AddressResolution::is_reliable(address)),
       actualType(type.empty() ? (specifiedType.empty() ? TOPIC_EXCHANGE : specifiedType) : type),
       exclusiveQueue((Opt(address)/LINK/X_DECLARE/EXCLUSIVE).asBool(true)),
       exclusiveSubscription((Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE).asBool(exclusiveQueue)),
       alternateExchange((Opt(address)/LINK/X_DECLARE/ALTERNATE_EXCHANGE).str())
 {
+    const Variant* timeout = (Opt(address)/LINK/TIMEOUT).value;
+    if (timeout) {
+        if (timeout->asUint32()) queueOptions.setInt("qpid.auto_delete_timeout", timeout->asUint32());
+    } else if (durable && !(Opt(address)/LINK/RELIABILITY).value) {
+        //if durable but not explicitly reliable, then set a non-zero
+        //default for the autodelete timeout (previously this would
+        //have defaulted to autodelete immediately anyway, so the risk
+        //of the change causing problems is mitigated)
+        queueOptions.setInt("qpid.auto_delete_delay", 15*60);
+    }
     (Opt(address)/LINK/X_DECLARE/ARGUMENTS).collect(queueOptions);
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(subscriptionOptions);
     std::string selector = Opt(address)/LINK/SELECTOR;
@@ -999,6 +1010,7 @@ Verifier::Verifier()
     link[NAME] = true;
     link[DURABLE] = true;
     link[RELIABILITY] = true;
+    link[TIMEOUT] = true;
     link[X_SUBSCRIBE] = true;
     link[X_DECLARE] = true;
     link[X_BINDINGS] = true;
