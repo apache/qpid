@@ -21,6 +21,7 @@ package org.apache.qpid.server.store;
 
 import java.util.Map;
 import java.util.UUID;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.VirtualHost;
 
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
@@ -34,6 +35,11 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
 
     @Override
     public void update(UUID id, String type, Map<String, Object> attributes)
+    {
+    }
+
+    @Override
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
     {
     }
 
