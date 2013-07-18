@@ -68,6 +68,7 @@ class AddressHelper
     std::string type;
     bool durableNode;
     bool durableLink;
+    uint32_t timeout;
     bool browse;
     std::vector<Filter> filters;
 

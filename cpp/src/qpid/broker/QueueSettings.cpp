@@ -173,6 +173,7 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
         return true;
     } else if (key == AUTO_DELETE_TIMEOUT) {
         autoDeleteDelay = value;
+        if (autoDeleteDelay) autodelete = true;
         return true;
     } else if (key == QueueFlowLimit::flowStopCountKey) {
         flowStop.setCount(value);
