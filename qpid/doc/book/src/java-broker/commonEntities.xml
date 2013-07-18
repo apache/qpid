@@ -23,7 +23,7 @@
 <!ENTITY qpidProgrammingBook "../../Programming-In-Apache-Qpid/html/">
 <!ENTITY qpidCppBook "../../AMQP-Messaging-Broker-CPP-Book/html/">
 
-<!ENTITY qpidCurrentRelease "0.23">
+<!ENTITY qpidCurrentRelease "0.24">
 
 <!ENTITY windowsBrokerDownloadFileName "qpid-java-broker-&qpidCurrentRelease;.zip">
 <!ENTITY windowsExtractedBrokerDirName "qpid-broker-&qpidCurrentRelease;">
