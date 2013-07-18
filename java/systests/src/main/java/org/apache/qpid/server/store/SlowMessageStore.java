@@ -197,6 +197,14 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         doPostDelay("update");
     }
 
+    @Override
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        doPreDelay("update");
+        _durableConfigurationStore.update(records);
+        doPostDelay("update");
+    }
+
     public Transaction newTransaction()
     {
         doPreDelay("beginTran");
