@@ -240,8 +240,8 @@ class Subscription : public Exchange, public MessageSource
     void cancel(qpid::client::AsyncSession& session, const std::string& destination);
   private:
     const std::string queue;
-    const bool reliable;
     const bool durable;
+    const bool reliable;
     const std::string actualType;
     const bool exclusiveQueue;
     const bool exclusiveSubscription;
@@ -516,8 +516,10 @@ std::string Subscription::getSubscriptionName(const std::string& base, const std
 Subscription::Subscription(const Address& address, const std::string& type)
     : Exchange(address),
       queue(getSubscriptionName(name, (Opt(address)/LINK/NAME).str())),
-      reliable(AddressResolution::is_reliable(address)),
       durable(Opt(address)/LINK/DURABLE),
+      //if the link is durable, then assume it is also reliable unless expclitly stated otherwise
+      //if not assume it is unreliable unless expclitly stated otherwise
+      reliable(durable ? !AddressResolution::is_unreliable(address) : AddressResolution::is_reliable(address)),
       actualType(type.empty() ? (specifiedType.empty() ? TOPIC_EXCHANGE : specifiedType) : type),
       exclusiveQueue((Opt(address)/LINK/X_DECLARE/EXCLUSIVE).asBool(true)),
       exclusiveSubscription((Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE).asBool(exclusiveQueue)),
@@ -584,7 +586,7 @@ void Subscription::subscribe(qpid::client::AsyncSession& session, const std::str
 
     //create subscription queue:
     session.queueDeclare(arg::queue=queue, arg::exclusive=exclusiveQueue,
-                         arg::autoDelete=!reliable, arg::durable=durable,
+                         arg::autoDelete=!(durable || reliable), arg::durable=durable,
                          arg::alternateExchange=alternateExchange,
                          arg::arguments=queueOptions);
     //'default' binding:
