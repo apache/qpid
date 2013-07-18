@@ -35,7 +35,7 @@ if ! test -e "$HOME"; then
 fi
 
 trap "$qpidd -q" exit
-QPID_PORT=`$qpidd -dp0 $broker_args` || { echo "Can't run qpidd" ; exit 1; }
+QPID_PORT=`$qpidd -dp0 --interface 127.0.0.1 $broker_args` || { echo "Can't run qpidd" ; exit 1; }
 export QPID_PORT
 
 find="find $topsrcdir/cpp/examples/old_api"
