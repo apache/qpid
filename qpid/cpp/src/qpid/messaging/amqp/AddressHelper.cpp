@@ -57,6 +57,7 @@ const std::string PROPERTIES("properties");
 const std::string MODE("mode");
 const std::string BROWSE("browse");
 const std::string CONSUME("consume");
+const std::string TIMEOUT("timeout");
 
 const std::string TYPE("type");
 const std::string TOPIC("topic");
@@ -139,6 +140,16 @@ bool test(const Variant::Map& options, const std::string& name)
     Variant::Map::const_iterator j = options.find(name);
     if (j == options.end()) {
         return false;
+    } else {
+        return j->second;
+    }
+}
+
+template <typename T> T get(const Variant::Map& options, const std::string& name, T defaultValue)
+{
+    Variant::Map::const_iterator j = options.find(name);
+    if (j == options.end()) {
+        return defaultValue;
     } else {
         return j->second;
     }
@@ -260,6 +271,8 @@ void write(pn_data_t* data, const Variant& value)
         break;
     }
 }
+const uint32_t DEFAULT_DURABLE_TIMEOUT(15*60);//15 minutes
+const uint32_t DEFAULT_TIMEOUT(0);
 }
 
 AddressHelper::AddressHelper(const Address& address) :
@@ -268,6 +281,7 @@ AddressHelper::AddressHelper(const Address& address) :
     type(address.getType()),
     durableNode(false),
     durableLink(false),
+    timeout(0),
     browse(false)
 {
     verifier.verify(address);
@@ -281,6 +295,7 @@ AddressHelper::AddressHelper(const Address& address) :
     bind(node, CAPABILITIES, capabilities);
     durableNode = test(node, DURABLE);
     durableLink = test(link, DURABLE);
+    timeout = get(link, TIMEOUT, durableLink ? DEFAULT_DURABLE_TIMEOUT : DEFAULT_TIMEOUT);
     std::string mode;
     if (bind(address, MODE, mode)) {
         if (mode == BROWSE) {
@@ -521,27 +536,30 @@ void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
     if (durableLink) {
         pn_terminus_set_durability(terminus, PN_DELIVERIES);
     }
-    if (mode == FOR_RECEIVER && browse) {
-        //when PROTON-139 is resolved, set the required delivery-mode
-    }
-    //set filter(s):
-    if (mode == FOR_RECEIVER && !filters.empty()) {
-        pn_data_t* filter = pn_terminus_filter(terminus);
-        pn_data_put_map(filter);
-        pn_data_enter(filter);
-        for (std::vector<Filter>::const_iterator i = filters.begin(); i != filters.end(); ++i) {
-            pn_data_put_symbol(filter, convert(i->name));
-            pn_data_put_described(filter);
+    if (mode == FOR_RECEIVER) {
+        if (timeout) pn_terminus_set_timeout(terminus, timeout);
+        if (browse) {
+            //when PROTON-139 is resolved, set the required delivery-mode
+        }
+        //set filter(s):
+        if (!filters.empty()) {
+            pn_data_t* filter = pn_terminus_filter(terminus);
+            pn_data_put_map(filter);
             pn_data_enter(filter);
-            if (i->descriptorSymbol.size()) {
-                pn_data_put_symbol(filter, convert(i->descriptorSymbol));
-            } else {
-                pn_data_put_ulong(filter, i->descriptorCode);
+            for (std::vector<Filter>::const_iterator i = filters.begin(); i != filters.end(); ++i) {
+                pn_data_put_symbol(filter, convert(i->name));
+                pn_data_put_described(filter);
+                pn_data_enter(filter);
+                if (i->descriptorSymbol.size()) {
+                    pn_data_put_symbol(filter, convert(i->descriptorSymbol));
+                } else {
+                    pn_data_put_ulong(filter, i->descriptorCode);
+                }
+                write(filter, i->value);
+                pn_data_exit(filter);
             }
-            write(filter, i->value);
             pn_data_exit(filter);
         }
-        pn_data_exit(filter);
     }
 
 }
@@ -632,6 +650,7 @@ Verifier::Verifier()
     link[NAME] = true;
     link[DURABLE] = true;
     link[RELIABILITY] = true;
+    link[TIMEOUT] = true;
     link[X_SUBSCRIBE] = true;
     link[X_DECLARE] = true;
     link[X_BINDINGS] = true;

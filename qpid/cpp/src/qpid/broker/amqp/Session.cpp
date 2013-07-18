@@ -333,8 +333,12 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
             settings.durable = durable;
             settings.autodelete = !durable;
         }
+        settings.autoDeleteDelay = pn_terminus_get_timeout(source);
+        if (settings.autoDeleteDelay) {
+            settings.autodelete = true;
+            settings.original["qpid.auto_delete_timeout"] = settings.autoDeleteDelay;
+        }
         filter.configure(settings);
-        //TODO: populate settings from source details when available from engine
         std::stringstream queueName;
         if (shared) {
             //just use link name (TODO: could allow this to be
