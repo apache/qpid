@@ -24,6 +24,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -35,6 +36,8 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.FilterSupport;
+import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
@@ -49,6 +52,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
@@ -62,6 +66,8 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.transport.Xid;
 import org.apache.qpid.transport.util.Functions;
 import org.apache.qpid.util.ByteBufferInputStream;
+
+import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
 
 public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHandler,
                                                         MessageStoreRecoveryHandler,
@@ -85,6 +91,8 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     private MessageStoreLogSubject _logSubject;
     private MessageStore _store;
+    private int _currentConfigVersion;
+    private DurableConfigurationStore _configStore;
 
     public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost,
                                             ExchangeRegistry exchangeRegistry,
@@ -96,10 +104,11 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     }
 
     @Override
-    public void beginConfigurationRecovery(DurableConfigurationStore store)
+    public void beginConfigurationRecovery(DurableConfigurationStore store, int configVersion)
     {
         _logSubject = new MessageStoreLogSubject(_virtualHost,store.getClass().getSimpleName());
-
+        _configStore = store;
+        _currentConfigVersion = configVersion;
         CurrentActor.get().message(_logSubject, ConfigStoreMessages.RECOVERY_START());
     }
 
@@ -482,8 +491,20 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     }
 
     @Override
-    public void completeConfigurationRecovery()
+    public int completeConfigurationRecovery()
     {
+        if(CURRENT_CONFIG_VERSION !=_currentConfigVersion)
+        {
+            try
+            {
+                upgrade();
+            }
+            catch (AMQStoreException e)
+            {
+                throw new IllegalArgumentException("Unable to upgrade configuration from version " + _currentConfigVersion + " to version " + CURRENT_CONFIG_VERSION);
+            }
+        }
+
         Map<UUID, Map<String, Object>> exchangeObjects =
                 _configuredObjects.remove(org.apache.qpid.server.model.Exchange.class.getName());
 
@@ -511,6 +532,88 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
 
         CurrentActor.get().message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
+
+        return CURRENT_CONFIG_VERSION;
+    }
+
+    private void upgrade() throws AMQStoreException
+    {
+
+        Map<UUID, String> updates = new HashMap<UUID, String>();
+
+        final String bindingType = Binding.class.getName();
+
+        switch(_currentConfigVersion)
+        {
+            case 0:
+                Map<UUID, Map<String, Object>> bindingObjects =
+                                    _configuredObjects.get(bindingType);
+                if(bindingObjects != null)
+                {
+                    for(Map.Entry<UUID, Map<String,Object>> bindingEntry : bindingObjects.entrySet())
+                    {
+                        Map<String, Object> binding = bindingEntry.getValue();
+
+                        if(hasSelectorArguments(binding) && !isTopicExchange(binding))
+                        {
+                            binding = new LinkedHashMap<String, Object>(binding);
+                            removeSelectorArguments(binding);
+                            bindingEntry.setValue(binding);
+
+                            updates.put(bindingEntry.getKey(), bindingType);
+                        }
+                    }
+                }
+            case CURRENT_CONFIG_VERSION:
+                if(!updates.isEmpty())
+                {
+                    ConfiguredObjectRecord[] updateRecords = new ConfiguredObjectRecord[updates.size()];
+                    int i = 0;
+                    for(Map.Entry<UUID, String> update : updates.entrySet())
+                    {
+                        updateRecords[i++] = new ConfiguredObjectRecord(update.getKey(), update.getValue(), _configuredObjects.get(update.getValue()).get(update.getKey()));
+                    }
+                    _configStore.update(updateRecords);
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unknown configuration model version: " + _currentConfigVersion + ". Are you attempting to run an older instance against an upgraded configuration?");
+        }
+    }
+
+    private void removeSelectorArguments(Map<String, Object> binding)
+    {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> arguments = new LinkedHashMap<String, Object>((Map<String,Object>)binding.get(Binding.ARGUMENTS));
+
+        FilterSupport.removeFilters(arguments);
+        binding.put(Binding.ARGUMENTS, arguments);
+    }
+
+    private boolean isTopicExchange(Map<String, Object> binding)
+    {
+        UUID exchangeId = UUID.fromString((String)binding.get(Binding.EXCHANGE));
+        final
+        Map<UUID, Map<String, Object>> exchanges =
+                _configuredObjects.get(org.apache.qpid.server.model.Exchange.class.getName());
+
+        if(exchanges != null && exchanges.containsKey(exchangeId))
+        {
+            return "topic".equals(exchanges.get(exchangeId).get(org.apache.qpid.server.model.Exchange.TYPE));
+        }
+        else
+        {
+            return _exchangeRegistry.getExchange(exchangeId) != null
+                   && _exchangeRegistry.getExchange(exchangeId).getType() == TopicExchange.TYPE;
+        }
+
+    }
+
+    private boolean hasSelectorArguments(Map<String, Object> binding)
+    {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> arguments = (Map<String, Object>) binding.get(Binding.ARGUMENTS);
+        return (arguments != null) && FilterSupport.argumentsContainFilter(arguments);
     }
 
     private void recoverExchanges(Map<UUID, Map<String, Object>> exchangeObjects)

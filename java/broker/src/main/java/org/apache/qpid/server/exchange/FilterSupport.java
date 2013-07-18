@@ -91,10 +91,18 @@ public class FilterSupport
     }
 
 
-    static boolean argumentsContainFilter(final Map<String, Object> args)
+    public static boolean argumentsContainFilter(final Map<String, Object> args)
     {
         return argumentsContainNoLocal(args) || argumentsContainJMSSelector(args);
     }
+
+
+    public static void removeFilters(final Map<String, Object> args)
+    {
+        args.remove(AMQPFilterTypes.JMS_SELECTOR.toString());
+        args.remove(AMQPFilterTypes.NO_LOCAL.toString());
+    }
+
 
 
     static boolean argumentsContainNoLocal(final Map<String, Object> args)

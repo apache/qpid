@@ -60,4 +60,29 @@ public class ConfiguredObjectRecord
         return "ConfiguredObjectRecord [id=" + _id + ", type=" + _type + ", attributes=" + _attributes + "]";
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        if(this == o)
+        {
+            return true;
+        }
+        if(o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        ConfiguredObjectRecord that = (ConfiguredObjectRecord) o;
+
+        return _type.equals(that._type) && _id.equals(that._id) && _attributes.equals(that._attributes);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _id.hashCode();
+        result = 31 * result + _type.hashCode();
+        result = 31 * result + _attributes.hashCode();
+        return result;
+    }
 }

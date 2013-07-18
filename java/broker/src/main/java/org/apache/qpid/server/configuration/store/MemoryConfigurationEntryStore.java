@@ -531,6 +531,10 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                 if (fieldValues != null)
                 {
                     Object[] array = fieldValues.toArray(new Object[fieldValues.size()]);
+                    if (attributes == null)
+                    {
+                        attributes = new HashMap<String, Object>();
+                    }
                     attributes.put(fieldName, array);
                 }
             }

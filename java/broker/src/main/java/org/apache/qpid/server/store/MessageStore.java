@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
-
 /**
  * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages.
  *
