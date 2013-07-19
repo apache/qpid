@@ -74,13 +74,16 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     public static String[] ALL_TABLES = new String[] { DB_VERSION_TABLE_NAME, LINKS_TABLE_NAME, BRIDGES_TABLE_NAME, XID_ACTIONS_TABLE_NAME,
         XID_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, META_DATA_TABLE_NAME, CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME };
 
-    private static final int DB_VERSION = 6;
+    private static final int DB_VERSION = 7;
 
     private final AtomicLong _messageId = new AtomicLong(0);
     private AtomicBoolean _closed = new AtomicBoolean(false);
 
     private static final String CREATE_DB_VERSION_TABLE = "CREATE TABLE "+ DB_VERSION_TABLE_NAME + " ( version int not null )";
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+ DB_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
+    private static final String SELECT_FROM_DB_VERSION = "SELECT version FROM " + DB_VERSION_TABLE_NAME;
+    private static final String UPDATE_DB_VERSION = "UPDATE " + DB_VERSION_TABLE_NAME + " SET version = ?";
+
 
     private static final String CREATE_CONFIG_VERSION_TABLE = "CREATE TABLE "+ CONFIGURATION_VERSION_TABLE_NAME + " ( version int not null )";
     private static final String INSERT_INTO_CONFIG_VERSION = "INSERT INTO "+ CONFIGURATION_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
@@ -208,11 +211,83 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     private void commonConfiguration(String name, VirtualHost virtualHost)
-            throws ClassNotFoundException, SQLException
+            throws ClassNotFoundException, SQLException, AMQStoreException
     {
         implementationSpecificConfiguration(name, virtualHost);
         createOrOpenDatabase();
+        upgradeIfNecessary();
+    }
 
+    protected void upgradeIfNecessary() throws SQLException, AMQStoreException
+    {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+
+            PreparedStatement statement = conn.prepareStatement(SELECT_FROM_DB_VERSION);
+            try
+            {
+                ResultSet rs = statement.executeQuery();
+                try
+                {
+                    if(!rs.next())
+                    {
+                        throw new AMQStoreException(DB_VERSION_TABLE_NAME + " does not contain the database version");
+                    }
+                    int version = rs.getInt(1);
+                    switch (version)
+                    {
+                        case 6:
+                            upgradeFromV6();
+                        case DB_VERSION:
+                            return;
+                        default:
+                            throw new AMQStoreException("Unknown database version: " + version);
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                statement.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
+
+    }
+
+    private void upgradeFromV6() throws SQLException
+    {
+        updateDbVersion(7);
+    }
+
+    private void updateDbVersion(int newVersion) throws SQLException
+    {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+
+            PreparedStatement statement = conn.prepareStatement(UPDATE_DB_VERSION);
+            try
+            {
+                statement.setInt(1,newVersion);
+                statement.execute();
+            }
+            finally
+            {
+                statement.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
     }
 
     protected abstract void implementationSpecificConfiguration(String name,
