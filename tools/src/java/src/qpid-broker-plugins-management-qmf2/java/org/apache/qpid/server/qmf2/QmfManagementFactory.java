@@ -76,4 +76,10 @@ public class QmfManagementFactory implements PluginFactory
             return null;
         }
     }
+
+    @Override
+    public String getType()
+    {
+        return "QMF2 Management";
+    }
 }
