@@ -66,7 +66,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     private static final int LOCK_RETRY_ATTEMPTS = 5;
 
-    public static final int VERSION = 6;
+    public static final int VERSION = 7;
 
     private static final Map<String, String> ENVCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
     {{

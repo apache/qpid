@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
+import com.sleepycat.je.Cursor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -73,7 +74,12 @@ public class Upgrader
             }
 
             int version = getSourceVersion(versionDb);
-
+            if(version > AbstractBDBMessageStore.VERSION)
+            {
+                throw new AMQStoreException("Database version " + version
+                                            + " is higher than the most recent known version: "
+                                            + AbstractBDBMessageStore.VERSION);
+            }
             performUpgradeFromVersion(version, versionDb);
         }
         finally
@@ -87,19 +93,34 @@ public class Upgrader
 
     int getSourceVersion(Database versionDb)
     {
-        int version = AbstractBDBMessageStore.VERSION + 1;
-        OperationStatus result;
+        int version = -1;
 
-        do
+        Cursor cursor = null;
+        try
         {
-            version--;
+            cursor = versionDb.openCursor(null, null);
+
             DatabaseEntry key = new DatabaseEntry();
-            IntegerBinding.intToEntry(version, key);
             DatabaseEntry value = new DatabaseEntry();
 
-            result = versionDb.get(null, key, value, LockMode.READ_COMMITTED);
+            while(cursor.getNext(key, value, null) == OperationStatus.SUCCESS)
+            {
+                int ver = IntegerBinding.entryToInt(key);
+                if(ver > version)
+                {
+                    version = ver;
+                }
+            }
         }
-        while(result == OperationStatus.NOTFOUND);
+        finally
+        {
+            if(cursor != null)
+            {
+                cursor.close();
+            }
+        }
+
+
         return version;
     }
 
