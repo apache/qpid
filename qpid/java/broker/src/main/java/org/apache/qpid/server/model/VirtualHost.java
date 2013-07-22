@@ -119,6 +119,7 @@ public interface VirtualHost extends ConfiguredObject
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
                             CONFIG_PATH));
+    int CURRENT_CONFIG_VERSION = 1;
 
     //children
     Collection<VirtualHostAlias> getAliases();

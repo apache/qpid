@@ -91,4 +91,7 @@ public interface DurableConfigurationStore
     void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException;
 
 
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException;
+
+
 }
