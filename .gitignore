@@ -62,6 +62,7 @@ qpid/java/lib/findbugs
 qpid/java/lib/ivy
 qpid/java/lib/csvjdbc
 qpid/java/lib/jfree
+qpid/java/lib/bonecp
 qpid/java/build.overrides
 qpid/java/felix-cache/*
 qpid/java/eclipse-projects
