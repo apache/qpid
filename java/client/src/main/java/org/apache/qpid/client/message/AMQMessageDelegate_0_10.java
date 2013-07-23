@@ -206,7 +206,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
             }
             else
             {
-                throw new JMSException("MessageId '"+messageId+"' is not of the correct format, it must be ID: followed by a UUID");
+                throw new JMSException("MessageId '"+messageId+"' is not of the correct format, it must be prefixed with 'ID:'");
             }
         }
     }
