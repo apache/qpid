@@ -71,6 +71,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     private static final Map<String, String> ENVCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
     {{
         put(EnvironmentConfig.LOCK_N_LOCK_TABLES, "7");
+        put("je.stats.collect", "false"); // Turn off stats generation - feature introduced (and on by default) from BDB JE 5.0.84 - not using symbol EnvironmentConfig.STATS_COLLECT to avoid dependency
     }});
 
     private Environment _environment;
