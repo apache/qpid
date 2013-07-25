@@ -32,8 +32,8 @@ opcontrol --start
 opcontrol --stop
 opcontrol --dump
 opcontrol --shutdown
-opreport -l ./.libs/lt-qpidd > stats.txt
-opannotate --source --output-dir=qpidd-prof ./.libs/lt-qpidd
+opreport -l ./qpidd > stats.txt
+opannotate --source --output-dir=qpidd-prof ./qpidd
 
 # clear the relusts
 #opcontrol --reset
