@@ -35,13 +35,7 @@ typedef void (*CallMe)(int*);
 
 
 QPID_AUTO_TEST_CASE(testShlib) {
-    // The CMake-based build passes in the shared lib suffix; if it's not
-    // there, this is a Linux/UNIX libtool-based build.
-#if defined (QPID_SHLIB_PREFIX) && defined (QPID_SHLIB_SUFFIX)
     Shlib sh("./" QPID_SHLIB_PREFIX "shlibtest" QPID_SHLIB_POSTFIX QPID_SHLIB_SUFFIX);
-#else
-    Shlib sh(".libs/libshlibtest.so");
-#endif
     // Double cast to avoid ISO warning.
     CallMe callMe=sh.getSymbol<CallMe>("callMe");
     BOOST_REQUIRE(callMe != 0);
@@ -59,11 +53,7 @@ QPID_AUTO_TEST_CASE(testShlib) {
 QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
-#if defined (QPID_SHLIB_PREFIX) && defined (QPID_SHLIB_SUFFIX)
         AutoShlib sh("./" QPID_SHLIB_PREFIX "shlibtest" QPID_SHLIB_POSTFIX QPID_SHLIB_SUFFIX);
-#else
-        AutoShlib sh(".libs/libshlibtest.so");
-#endif
         CallMe callMe=sh.getSymbol<CallMe>("callMe");
         BOOST_REQUIRE(callMe != 0);
         callMe(&unloaded);

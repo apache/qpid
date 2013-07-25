@@ -7,15 +7,11 @@ on Windows.
 Linux
 =====
 
-SSL support for Qpid-C++, based on Mozilla's Network Security Services
-library, is provided as two loadable modules: one for the client
-(sslconnector.so), one for the broker (ssl.so). Either these libraries
-should be present in the relevant module directory or the
-'load-module' option (or QPID_LOAD_MODULE environment variable) is
-used to ensure they are loaded.
+SSL support for Qpid-C++ is based on Mozilla's Network Security Services
+library. SSL support will be built automatically providing this library
+and include files are found at build time.
 
-Broker side SSL Settings (note you can get these by qpidd --help
-providing the ssl.so module is loaded):
+Broker side SSL Settings (note you can get these by qpidd --help)
 
 SSL Settings:
   --ssl-use-export-policy              Use NSS export policy
@@ -57,14 +53,13 @@ for accessing the created db.
 
 The daemon can then be started with something like the following:
 
-./src/qpidd --auth no --load-module src/.libs/ssl.so \
+./src/qpidd --auth no \
             --ssl-cert-db ./test_cert_db \
             --ssl-cert-password-file ./cert.password \
             --ssl-cert-name myhost.mydomain
 
 then for client set:
 
-QPID_LOAD_MODULE=./src/.libs/sslconnector.so
 QPID_SSL_CERT_DB=./test_cert_db
 
 and run e.g.

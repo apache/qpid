@@ -25,7 +25,7 @@ source ./test_env.sh
 #set -x
 trap stop_brokers INT TERM QUIT
 
-if [ -f ../.libs/xml.so ] ; then
+if [ -f ../xml.so ] ; then
     MODULES="--load-module xml" # Load the XML exchange and run XML exchange federation tests
     SKIPTESTS=
 else
