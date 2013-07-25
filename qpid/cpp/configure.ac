@@ -33,6 +33,22 @@ AC_LANG([C++])
 # doesn't exist)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],[],[AC_MSG_ERROR([No C++ compiler found])])
 
+AC_ARG_ENABLE(deprecated-autotools,
+ [AS_HELP_STRING([--enable-deprecated-autotools],[Allow use of deprecated autotools build])],
+ [],
+ [enableval=no])
+case "${enableval}" in
+   yes) ;;
+   *)  AC_MSG_ERROR([
+
+The autotools build system is deprecated and will be removed in the
+next release. Please use the cmake build system instead. See INSTALL
+for how to use cmake to build qpid.
+
+If you still want to use the autotools build you must add
+"--enable-deprecated-autotools" to the invocation of configure.
+]) ;;
+esac
 
 # Check for optional use of help2man
 AC_CHECK_PROG([HELP2MAN], [help2man], [help2man])
@@ -559,9 +575,9 @@ cat <<EOF
    The autotools build system is deprecated, use the cmake build system
    instead as described in the INSTALL file.
 
-   You can continue to use the autotools system for now, but it will be
-   removed in a future release. If you encounter any problems with the
-   cmake system send email to dev@qpid.apache.org.
+   You can continue to use the autotools system, but it will be removed
+   in the next release. If you encounter any problems with the cmake
+   system send email to dev@qpid.apache.org.
 
    ========================================================================
 
