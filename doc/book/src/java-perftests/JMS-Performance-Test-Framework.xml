@@ -1,0 +1,304 @@
+<?xml version="1.0"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>JMS Performance Test Framework</title>
+  <chapter>
+    <para>
+      The distributed test (aka Perf Test) framework was written for
+      testing the performance of a JMS provider in various common scenarios.
+      Although it was originally written for the purpose of testing Qpid,
+      it can be used to test the performance of any JMS provider with minimal configuration changes.
+    <para>
+    </para>
+      This document explains how to use the framework.
+    </para>
+
+    <section id="how-it-works">
+      <title>How it works</title>
+      <para>
+        First, you need to <emphasis>run a message broker</emphasis>. This can be Qpid, ActiveMQ etc
+        (although see <xref linkend="caveats-for-non-qpid-jms-providers"/>).
+        All messages are sent using the JMS API.
+      <para>
+      </para>
+        Then run a <emphasis>Perf Test Controller</emphasis>, providing the details of the test in one or more
+        JSON or Javascript files (see <xref linkend="test-definitions">Test definitions</xref>).
+      <para>
+      </para>
+        Now <emphasis>run one or more Perf Test Client processes</emphasis>. These will be responsible for
+        sending/receiving the messages once the test starts. For convenience, you can
+        instead configure the Controller to start clients in-process. The clients and
+        the controller communicate using queues on the message broker.
+      <para>
+      </para>
+        The test results are written to CSV files or optionally to a
+        database (see <xref linkend="writing-results-to-a-jdbc-database"/>).
+      <para>
+      </para>
+        You can <emphasis>use the qpid-perftests-visualisation tool</emphasis>
+        (<xref linkend="visualising-test-results"/>) to create charts from the results.
+      </para>
+    </section>
+
+    <section id="test-definitions">
+      <title>Test definitions</title>
+      <para>
+        Test definition files specify details about the messages to send,
+        how many connections and sessions to use etc. There are a lot of options
+        available - see the .js and .json files under the <filename>perftests/etc/testdefs/</filename> folder for examples.
+      </para>
+      <para>
+        Each JSON file contains a list of tests, expressed as a JSON structure. Alternatively, JavaScript can be used
+        to generate this data structure. If a file has a .js extension it is parsed as JavaScript and the
+        resulting object <code>jsonObject</code> used as the test specification. JavaScript is useful for reducing
+        duplication in test specifications (e.g. by looping or by moving repeating literals into variables).
+      </para>
+      <para>
+        If the ControllerRunner is pointed at a directory instead of a file, each test specification file in that
+        directory is used.
+      </para>
+    </section>
+
+    <section id="example-usage">
+      <title>Example usage</title>
+      <para>
+        The <filename>perftests/etc/</filename> folder contains shell scripts that can be used to run the performance
+        tests and visualise the results.  It also contains sub-folders for test config
+        and chart definitions.
+      </para>
+    </section>
+
+    <section id="instructions">
+      <title>Instructions</title>
+      <para>
+        <itemizedlist>
+          <listitem>Extract the perftests archive</listitem>
+          <listitem>Start your JMS broker</listitem>
+          <listitem>cd into the <filename>perftests/etc/</filename> folder</listitem>
+          <listitem>
+            <para>To run the Controller and clients in a single process, run the following command:
+            </para>
+            <screen>
+  $ java -cp ".:../lib/*:/path/to/your-jms-client-jars/*" \
+    -Dqpid.dest_syntax=BURL \ # used if the test specifications use Qpid's BURL format for queues
+    org.apache.qpid.disttest.ControllerRunner \
+    jndi-config=perftests-jndi.properties \
+    test-config=/path/to/test-config.json \
+    distributed=false
+            </screen>
+            <para>
+              When the test is complete, the CSV files containing the results are written to
+              the current directory.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+
+      <section id="running-clients-in-a-separate-process">
+        <title>Running the clients in a separate process</title>
+        <para>
+          When using a large number of clients, you may get more representative
+          performance results if the clients are distributed among multiple processes,
+          potentially on multiple machines. To do this:
+          <itemizedlist>
+            <listitem>Run the Controller, providing <envar>distributed=true</envar>.</listitem>
+            <listitem>
+              <para>Run your clients (assuming you want to launch 10 logical clients in this process):</para>
+              <screen>
+  $ cd perftests/etc
+  $ java -cp ".:../lib/*:/path/to/your-jms-client-jars/*" \
+    -Dqpid.dest_syntax=BURL \
+    org.apache.qpid.disttest.ClientRunner \
+    jndi-config=perftests-jndi.properties \
+    number-of-clients=10
+              </screen>
+            </listitem>
+          </itemizedlist>
+        </para>
+      </section>
+    </section>
+
+    <section id="writing-results-to-a-jdbc-database">
+      <title>Writing results to a JDBC database</title>
+      <para>
+        For most use cases, writing results to a CSV file is acceptable. However, there are some cases
+        where it is desired to write to a database instead. For example, if you need to keep track of how
+        results have varied over time, writing to a database table allows this to be easily discovered by
+        running a SQL query and/or producing a time series chart with the visualisation tool
+        (see <xref linkend="visualising-test-results-queries"/>).
+      </para>
+      <para>
+        To write results to a database:
+        <itemizedlist>
+          <listitem>Add <code>writeToDb=true</code> to the <code>ControllerRunner</code> parameters</listitem>
+          <listitem>
+            Add <code>jdbcDriverClass</code> and <code>jdbcUrl</code> properties to your JNDI configuration file
+            (obviously adding the JDBC driver class to your classpath too).
+          </listitem>
+          <listitem>
+            Note that the framework automatically creates the results table <code>RESULTS</code>
+            if it does not already exist.
+          </listitem>
+        </itemizedlist>
+      </para>
+    </section>
+
+    <section id="caveats-for-non-qpid-jms-providers">
+      <title>Caveats for non-Qpid JMS providers</title>
+      <para>
+        If you are not using the Qpid broker, you must create one or more queues before
+        running the test.  This is necessary because you can't use Qpid's API to create
+        queues on the broker. The queues are:
+        <itemizedlist>
+          <listitem>
+            The controller queue. You can specify the physical name of this in
+            <filename>perftests/etc/perftests-jndi.properties</filename>.
+            This queue is used by the clients to register with the Controller and to send results to it.
+          </listitem>
+          <listitem>
+            The queue(s) used by your JSON test configuration
+            (unless you have configured a vendor-specific queue creator).
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        You must also override the Controller's default queue creator using the system
+        property <envar>qpid.disttest.queue.creator.class</envar>. Provide the class name of an
+        implementation of <classname>org.apache.qpid.disttest.jms.QueueCreator</classname>, or
+        <classname>org.apache.qpid.disttest.jms.NoOpQueueCreator</classname> if you are going to create and
+        delete the queues manually.
+      </para>
+      <para>
+        You can also omit the <envar>qpid.dest_syntax</envar> system property if your JMS provider is
+        not Qpid.
+      </para>
+    </section>
+
+    <section id="when-production-is-slower-than-consumption">
+      <title>When message production is slower than consumption</title>
+      <para>
+        A given test configuration may cause messages to be produced faster than they are consumed.
+        Unless you deal with this, the broker may become overwhelmed (e.g. running out of disk space or memory).
+        The steps you can take to mitigate this are:
+        <itemizedlist>
+          <listitem>
+            Apply a small delay between each message publication, using the Producer JSON property <code>_interval</code>.
+          </listitem>
+          <listitem>
+            Use your JMS provider's built-in features for throttling incoming messages.
+            In the case of Qpid, this is done by configuring the queue to enforce flow control, like so:
+            <screen><![CDATA[
+    {
+      "_tests":[
+      {
+        "_name": "My test",
+        "_queues":[
+          {
+            "_name": "direct://amq.direct//myTestQueue",
+            "_attributes":
+              {
+                "x-qpid-capacity": 10000000,
+                "x-qpid-flow-resume-capacity": 8000000
+              }
+          }
+        ],
+        ...
+      }
+    }]]>
+            </screen>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </section>
+
+    <section id="visualising-test-results">
+      <title>Visualising test results</title>
+      <para>
+       The module visualisation-jfc can be used to generate charts as .png files from the results
+       produced by running the perf tests (or in fact from any CSV file with a header row or database table).
+       At runtime the visualisation module accepts the following input:
+       <itemizedlist>
+         <listitem>The test results (either a CSV file or a database table)</listitem>
+         <listitem>
+           The chart definition, which is a properties file specifying settings such as the query to run against the data,
+           and the type of chart to generate.
+           <para>
+             The quickest way to create a new chart definition is to base it on an existing example in
+             <filename>perftests/etc/chartdefs/</filename>.
+           </para>
+         </listitem>
+        </itemizedlist>
+      </para>
+      <section>
+        <title>Chart types</title>
+        <para>
+          Currently, the available chart types are:
+          <itemizedlist>
+            <listitem>LINE</listitem>
+            <listitem>LINE3D</listitem>
+            <listitem>BAR</listitem>
+            <listitem>BAR3D</listitem>
+            <listitem>XYLINE</listitem>
+            <listitem>TIMELINE</listitem>
+            <listitem>STATISTICAL_BAR</listitem>
+          </itemizedlist>
+        </para>
+      </section>
+      <section id="visualising-test-results-queries">
+        <title>Queries</title>
+        <para>
+          The query in the chart definition file is an ANSI SQL query. If reading from a CSV file the SQL table name
+          is simply the file name and the SQL column names are the CSV header row entries.
+        </para>
+      </section>
+      <section>
+        <title>Running the visualisation tool</title>
+        <para>
+          Here is an example of how to run the visualisation tool.
+          <screen>
+$ cd perftests/etc
+$ BASE_DIR=`pwd`
+$ java -cp "${BASE_DIR}:/path/to/extracted/visualistion-module/lib/*" \
+    -Djava.awt.headless=true -Dlog4j.configuration=file:log4j.properties \
+    -DcsvCurrentDir=/path/to/csv-files-directory/ \            # referenced in chart definition file
+    -DcsvBaselineDir=/path/to/baseline-csv-files-directory/ \  # referenced in chart definition file
+    -DbaselineName="My baseline name"  \                       # referenced in chart definition file
+    org.apache.qpid.disttest.charting.ChartingUtil \
+    chart-defs=/path/to/chartdefs-files/ \
+          </screen>
+        </para>
+        <para>
+          To fetch the results from a database table instead of a CSV file, modify the visualistion tool
+          parameters like so:
+          <screen>
+    $ java -cp "${BASE_DIR}:/path/to/extracted/visualistion-module/lib/*" \
+        ...
+        org.apache.qpid.disttest.charting.ChartingUtil \
+        jdbcUrl=jdbc:your-jdbc-url
+        jdbcDriverClass=your.jdbc.driver.Classname
+          </screen>
+        </para>
+      </section>
+    </section>
+  </chapter>
+</book>
