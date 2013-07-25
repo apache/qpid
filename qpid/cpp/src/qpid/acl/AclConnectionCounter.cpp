@@ -102,9 +102,11 @@ bool ConnectionCounter::countConnectionLH(
     if (eRef != theMap.end()) {
         count = (uint16_t)(*eRef).second + 1;
         (*eRef).second = count;
-        result = (enforceLimit ? count <= theLimit : true);
     } else {
         theMap[theName] = count = 1;
+    }
+    if (enforceLimit) { 
+        result = count <= theLimit;
     }
     if (emitLog) {
         QPID_LOG(trace, "ACL ConnectionApprover user=" << theName
