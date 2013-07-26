@@ -108,7 +108,6 @@ set(all_unit_tests
     ClientMessage
     ClientMessageTest
     ClientSessionTest
-    ConsoleTest
     DeliveryRecordTest
     DtxWorkRecordTest
     exception_test
@@ -171,7 +170,7 @@ add_executable (unit_test unit_test
                 ${actual_unit_tests} ${platform_test_additions})
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
-                       qpidmessaging qpidbroker qmfconsole)
+                       qpidmessaging qpidbroker)
 set_target_properties (unit_test PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(unit_test)
 
