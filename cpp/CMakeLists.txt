@@ -64,8 +64,7 @@ set_absolute_install_path (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf)
 set_absolute_install_path (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf)
 
 install(FILES  LICENSE NOTICE  DESTINATION ${QPID_INSTALL_DOCDIR})
-install(FILES  include/qmf/qmfengine.i
-               include/qmf/qmf2.i
+install(FILES  include/qmf/qmf2.i
         DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf)
 
 if (WIN32)

@@ -81,7 +81,6 @@ if (SWIG_FOUND)
 
       add_subdirectory(qpid/python)
       add_subdirectory(qmf2/python)
-      add_subdirectory(qmf/python)
   endif (PYTHONLIBS_FOUND)
 
   if (RUBY_FOUND)
@@ -93,7 +92,6 @@ if (SWIG_FOUND)
 #     string(REPLACE ${RUBY_PREFIX} ${CMAKE_INSTALL_PREFIX} RUBY_PFX_ARCH_DIR ${RUBY_ARCH_DIR})
       add_subdirectory(qpid/ruby)
       add_subdirectory(qmf2/ruby)
-      add_subdirectory(qmf/ruby)
   endif (RUBY_FOUND)
 
   if (PERLLIBS_FOUND)
