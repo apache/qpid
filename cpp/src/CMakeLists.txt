@@ -1205,22 +1205,13 @@ add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
 target_link_libraries (qpidmessaging qpidclient)
-set_target_properties (qpidmessaging PROPERTIES 
-                       VERSION ${qpidmessaging_version} 
+set_target_properties (qpidmessaging PROPERTIES
+                       VERSION ${qpidmessaging_version}
                        SOVERSION ${qpidmessaging_version_major})
 install (TARGETS qpidmessaging
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
 install_pdb (qpidmessaging ${QPID_COMPONENT_CLIENT})
-
-# Released source artifacts from Apache have the generated headers included in
-# the source tree, not the binary tree. So don't attempt to grab them when
-# they're not supposed to be there.
-if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
-  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../include/qpid
-           DESTINATION ${QPID_INSTALL_INCLUDEDIR}
-           COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
-endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
 
 if (MSVC)
