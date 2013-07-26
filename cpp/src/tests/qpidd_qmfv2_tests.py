@@ -88,7 +88,9 @@ class ConsoleTest(BrokerTest):
         class Handler(qmf.console.Console):
             def __init__(self):
                 self.v1_oids = 0
+                self.v1_events = 0
                 self.v2_oids = 0
+                self.v2_events = 0
                 self.broker_info = []
                 self.broker_conn = []
                 self.newpackage = []
@@ -116,6 +118,11 @@ class ConsoleTest(BrokerTest):
             def event(self, broker, event):
                 #print "EVENT %s" % event
                 self.events.append(event)
+                if event.isV2:
+                    self.v2_events += 1
+                else:
+                    self.v1_events += 1
+
             def heartbeat(self, agent, timestamp):
                 #print "Heartbeat %s" % agent
                 self.heartbeats.append( (agent, timestamp) )
@@ -178,8 +185,10 @@ class ConsoleTest(BrokerTest):
         # verify that the published objects were of the correct QMF version
         if self._broker_is_v1:
             assert handler.v1_oids and handler.v2_oids == 0, "QMFv2 updates received while in V1-only mode!"
+            assert handler.v1_events and handler.v2_events == 0, "QMFv2 events received while in V1-only mode!"
         else:
             assert handler.v2_oids and handler.v1_oids == 0, "QMFv1 updates received while in V2-only mode!"
+            assert handler.v2_events and handler.v1_events == 0, "QMFv1 events received while in V2-only mode!"
 
     def _test_async_method(self):
         class Handler (qmf.console.Console):
