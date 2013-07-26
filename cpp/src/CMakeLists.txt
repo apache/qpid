@@ -1463,49 +1463,6 @@ endif (NOT WIN32)
             COMPONENT ${QPID_COMPONENT_QMF})
     install_pdb (qmf2 ${QPID_COMPONENT_QMF})
 
-set (qmfconsole_SOURCES
-     qpid/console/Agent.cpp
-     qpid/console/Broker.cpp
-     qpid/console/ClassKey.cpp
-     qpid/console/Event.cpp
-     qpid/console/Object.cpp
-     qpid/console/ObjectId.cpp
-     qpid/console/Package.cpp
-     qpid/console/Schema.cpp
-     qpid/console/SequenceManager.cpp
-     qpid/console/SessionManager.cpp
-     qpid/console/Value.cpp
-    )
-set (qmfconsole_HEADERS
-     ../include/qpid/console/Agent.h
-     ../include/qpid/console/Broker.h
-     ../include/qpid/console/ClassKey.h
-     ../include/qpid/console/ConsoleImportExport.h
-     ../include/qpid/console/ConsoleListener.h
-     ../include/qpid/console/Event.h
-     ../include/qpid/console/Object.h
-     ../include/qpid/console/ObjectId.h
-     ../include/qpid/console/Package.h
-     ../include/qpid/console/Schema.h
-     ../include/qpid/console/SequenceManager.h
-     ../include/qpid/console/SessionManager.h
-     ../include/qpid/console/Value.h
-    )
-add_msvc_version (qmfconsole library dll)
-add_library (qmfconsole SHARED ${qmfconsole_SOURCES})
-target_link_libraries (qmfconsole qpidclient)
-set_target_properties (qmfconsole PROPERTIES
-                       VERSION ${qmfconsole_version}
-                       SOVERSION ${qmfconsole_version_major})
-install (TARGETS qmfconsole
-         DESTINATION ${QPID_INSTALL_LIBDIR}
-         COMPONENT ${QPID_COMPONENT_QMF})
-install (FILES ${qmfconsole_HEADERS}
-         DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qpid/console
-         COMPONENT ${QPID_COMPONENT_QMF})
-install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
-
-
 #
 # Legacy store
 #
