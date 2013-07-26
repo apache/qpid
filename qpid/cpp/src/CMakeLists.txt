@@ -1373,30 +1373,6 @@ if (UNIX)
   install (CODE "FILE(MAKE_DIRECTORY \$ENV{DESTDIR}/${QPID_LOCALSTATE_DIR}/spool/qpidd)")
 endif (UNIX)
 
-set (qmf_SOURCES
-    qpid/agent/ManagementAgentImpl.cpp
-    qpid/agent/ManagementAgentImpl.h
-    )
-set (qmf_HEADERS
-  ../include/qpid/agent/ManagementAgent.h
-  ../include/qpid/agent/QmfAgentImportExport.h
-  ../include/qmf/BrokerImportExport.h
-    )
-
-add_msvc_version (qmf library dll)
-add_library (qmf SHARED ${qmf_SOURCES})
-target_link_libraries (qmf qmfengine)
-set_target_properties (qmf PROPERTIES
-                       VERSION ${qmf_version} 
-                       SOVERSION ${qmf_version_major})
-install (TARGETS qmf OPTIONAL
-         DESTINATION ${QPID_INSTALL_LIBDIR}
-         COMPONENT ${QPID_COMPONENT_QMF})
-install (FILES ${qmf_HEADERS}
-         DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qpid/agent
-         COMPONENT ${QPID_COMPONENT_QMF})
-install_pdb (qmf ${QPID_COMPONENT_QMF})
-
 if (NOT WIN32)
     set (qmf2_platform_headers
         ../include/qmf/posix/EventNotifier.h
@@ -1486,68 +1462,6 @@ endif (NOT WIN32)
             DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf
             COMPONENT ${QPID_COMPONENT_QMF})
     install_pdb (qmf2 ${QPID_COMPONENT_QMF})
-
-set (qmfengine_SOURCES
-     qmf/engine/Agent.cpp
-     qmf/engine/BrokerProxyImpl.cpp
-     qmf/engine/BrokerProxyImpl.h
-     qmf/engine/ConnectionSettingsImpl.cpp
-     qmf/engine/ConnectionSettingsImpl.h
-     qmf/engine/ConsoleImpl.cpp
-     qmf/engine/ConsoleImpl.h
-     qmf/engine/EventImpl.cpp
-     qmf/engine/EventImpl.h
-     qmf/engine/MessageImpl.cpp
-     qmf/engine/MessageImpl.h
-     qmf/engine/ObjectIdImpl.cpp
-     qmf/engine/ObjectIdImpl.h
-     qmf/engine/ObjectImpl.cpp
-     qmf/engine/ObjectImpl.h
-     qmf/engine/Protocol.cpp
-     qmf/engine/Protocol.h
-     qmf/engine/QueryImpl.cpp
-     qmf/engine/QueryImpl.h
-     qmf/engine/SequenceManager.cpp
-     qmf/engine/SequenceManager.h
-     qmf/engine/SchemaImpl.cpp
-     qmf/engine/SchemaImpl.h
-     qmf/engine/ValueImpl.cpp
-     qmf/engine/ValueImpl.h
-    )
-
-set (qmfengine_HEADERS
-  ../include/qmf/engine/Agent.h
-  ../include/qmf/engine/ConnectionSettings.h
-  ../include/qmf/engine/Console.h
-  ../include/qmf/engine/Event.h
-  ../include/qmf/engine/Message.h
-  ../include/qmf/engine/Object.h
-  ../include/qmf/engine/ObjectId.h
-  ../include/qmf/engine/QmfEngineImportExport.h
-  ../include/qmf/engine/Query.h
-  ../include/qmf/engine/ResilientConnection.h
-  ../include/qmf/engine/Schema.h
-  ../include/qmf/engine/Typecode.h
-  ../include/qmf/engine/Value.h
-    )
-install (FILES ${qmfengine_HEADERS}
-         DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf/engine
-         COMPONENT ${QPID_COMPONENT_QMF})
-
-if (NOT WIN32)
-    list(APPEND qmfengine_SOURCES qmf/engine/ResilientConnection.cpp)
-endif (NOT WIN32)
-add_msvc_version (qmfengine library dll)
-
-add_library (qmfengine SHARED ${qmfengine_SOURCES})
-target_link_libraries (qmfengine qpidclient)
-set_target_properties (qmfengine PROPERTIES
-                       VERSION ${qmfengine_version} 
-                       SOVERSION ${qmfengine_version_major})
-install (TARGETS qmfengine OPTIONAL
-         DESTINATION ${QPID_INSTALL_LIBDIR}
-         COMPONENT ${QPID_COMPONENT_QMF})
-install_pdb (qmfengine ${QPID_COMPONENT_QMF})
 
 set (qmfconsole_SOURCES
      qpid/console/Agent.cpp
