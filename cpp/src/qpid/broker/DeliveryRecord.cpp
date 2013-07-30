@@ -106,7 +106,9 @@ void DeliveryRecord::dequeue(TransactionContext* ctxt) const
 
 void DeliveryRecord::committed() const
 {
-    queue->dequeueCommitted(msg);
+    if (acquired && !ended) {
+        queue->dequeueCommitted(msg);
+    }
 }
 
 void DeliveryRecord::reject()
