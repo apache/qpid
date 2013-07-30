@@ -114,7 +114,7 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
                      result.getStatus());
         assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
 
-        // Null princial
+        // Null principal
         saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", null);
         result = _manager.authenticate(saslServer, new byte[0]);
 
