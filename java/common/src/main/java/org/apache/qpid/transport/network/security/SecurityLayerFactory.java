@@ -124,7 +124,7 @@ public class SecurityLayerFactory
 
         public String getUserID()
         {
-            return SSLUtil.retriveIdentity(_engine);
+            return SSLUtil.retrieveIdentity(_engine);
         }
     }
 

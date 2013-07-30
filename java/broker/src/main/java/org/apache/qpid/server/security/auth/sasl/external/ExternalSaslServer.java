@@ -26,6 +26,7 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class ExternalSaslServer implements SaslServer
 {
@@ -88,7 +89,6 @@ public class ExternalSaslServer implements SaslServer
         if (_externalPrincipal instanceof X500Principal && !_useFullDN)
         {
             // Construct username as <CN>@<DC1>.<DC2>.<DC3>....<DCN>
-
             String username;
             String dn = ((X500Principal) _externalPrincipal).getName(X500Principal.RFC2253);
 
@@ -97,62 +97,21 @@ public class ExternalSaslServer implements SaslServer
                 LOGGER.debug("Parsing username from Principal DN: " + dn);
             }
 
-            if (dn.contains("CN="))
+            username = SSLUtil.getIdFromSubjectDN(dn);
+            if (username.isEmpty())
             {
-                username = dn.substring(dn.indexOf("CN=") + 3, (dn.indexOf(",", dn.indexOf("CN=")) != -1) ? dn.indexOf(",", dn.indexOf("CN=")) : dn.length());
-
-                if (username.isEmpty())
-                {
-                    // CN is empty => Cannot construct username => Authentication failed => return null
-                    if(LOGGER.isDebugEnabled())
-                    {
-                        LOGGER.debug("CN value was empty in Principal name, unable to construct username");
-                    }
-                    return null;
-                }
-                else
-                {
-                    if (dn.contains("DC="))
-                    {
-                        int start = 0;
-                        String dc = "";
-
-                        while (dn.indexOf("DC=", start) != -1)
-                        {
-                            int dcStart = dn.indexOf("DC=", start) + 3;
-                            int dcEnd = (dn.indexOf(",", dn.indexOf("DC=", start)) != -1) ? dn.indexOf(",", dn.indexOf("DC=", start)) : dn.length();
-
-                            if (dc.isEmpty())
-                            {
-                                dc = dn.substring(dcStart, dcEnd);
-                            }
-                            else
-                            {
-                                dc = dc.concat(".").concat(dn.substring(dcStart, dcEnd));
-                            }
-
-                            start = dn.indexOf("DC=", start) + 1;
-                        }
-
-                        username = username.concat("@").concat(dc);
-                    }
-                }
-
+                // CN is empty => Cannot construct username => Authentication failed => return null
                 if(LOGGER.isDebugEnabled())
                 {
-                    LOGGER.debug("Constructing Principal with username: " + username);
-                }
-                return new UsernamePrincipal(username);
-            }
-            else
-            {
-                // No CN => Cannot construct username => Authentication failed => return null
-                if(LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("No CN= present in DN, unable to construct username");
+                    LOGGER.debug("CN value was empty in Principal name, unable to construct username");
                 }
                 return null;
             }
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Constructing Principal with username: " + username);
+            }
+            return new UsernamePrincipal(username);
         }
         else
         {
@@ -160,7 +119,6 @@ public class ExternalSaslServer implements SaslServer
             {
                 LOGGER.debug("Using external Principal: " + _externalPrincipal);
             }
-
             return _externalPrincipal;
         }
     }

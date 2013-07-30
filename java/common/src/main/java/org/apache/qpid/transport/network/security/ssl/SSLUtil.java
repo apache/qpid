@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,19 +7,22 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 package org.apache.qpid.transport.network.security.ssl;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
 
@@ -50,21 +53,21 @@ public class SSLUtil
           Certificate cert = engine.getSession().getPeerCertificates()[0];
           Principal p = ((X509Certificate)cert).getSubjectDN();
           String dn = p.getName();
-          String hostname = null; 
-          
+          String hostname = null;
+
           if (dn.contains("CN="))
           {
               hostname = dn.substring(3,
                       dn.indexOf(",") == -1? dn.length(): dn.indexOf(","));
-          }   
-          
+          }
+
           if (log.isDebugEnabled())
           {
               log.debug("Hostname expected : " + hostnameExpected);
               log.debug("Distinguished Name for server certificate : " + dn);
               log.debug("Host Name obtained from DN : " + hostname);
           }
-          
+
           if (hostname != null && !(hostname.equalsIgnoreCase(hostnameExpected) ||
                   hostname.equalsIgnoreCase(hostnameExpected + ".localdomain")))
           {
@@ -72,60 +75,78 @@ public class SSLUtil
                                            " Expected : " + hostnameExpected +
                                            " Found in cert : " + hostname);
           }
-          
+
         }
         catch(SSLPeerUnverifiedException e)
         {
             log.warn("Exception received while trying to verify hostname",e);
             // For some reason the SSL engine sets the handshake status to FINISH twice
-            // in succession. The first time the peer certificate 
+            // in succession. The first time the peer certificate
             // info is not available. The second time it works !
             // Therefore have no choice but to ignore the exception here.
         }
     }
-    
-    public static String retriveIdentity(SSLEngine engine)
+
+    public static String getIdFromSubjectDN(String dn)
     {
-        StringBuffer id = new StringBuffer(); 
+        String cnStr = null;
+        String dcStr = null;
+        if(dn == null)
+        {
+            return "";
+        }
+        else
+        {
+            try
+            {
+                LdapName ln = new LdapName(dn);
+                for(Rdn rdn : ln.getRdns())
+                {
+                    if("CN".equalsIgnoreCase(rdn.getType()))
+                    {
+                        cnStr = rdn.getValue().toString();
+                    }
+                    else if("DC".equalsIgnoreCase(rdn.getType()))
+                    {
+                        if(dcStr == null)
+                        {
+                            dcStr = rdn.getValue().toString();
+                        }
+                        else
+                        {
+                            dcStr = rdn.getValue().toString() + '.' + dcStr;
+                        }
+                    }
+                }
+                return cnStr == null || cnStr.length()==0 ? "" : dcStr == null ? cnStr : cnStr + '@' + dcStr;
+            }
+            catch (InvalidNameException e)
+            {
+                log.warn("Invalid name: '"+dn+"'. ");
+                return "";
+            }
+        }
+    }
+
+
+    public static String retrieveIdentity(SSLEngine engine)
+    {
+        String id = "";
+        Certificate cert = engine.getSession().getLocalCertificates()[0];
+        Principal p = ((X509Certificate)cert).getSubjectDN();
+        String dn = p.getName();
         try
         {
-          Certificate cert = engine.getSession().getLocalCertificates()[0];
-          Principal p = ((X509Certificate)cert).getSubjectDN();
-          String dn = p.getName();
-                    
-          if (dn.contains("CN="))
-          {
-              String str = dn.substring(dn.indexOf("CN=")+3, dn.length());
-              id.append(str.substring(0,
-                      str.indexOf(",") == -1? str.length(): str.indexOf(",")));
-          } 
-          
-          if (dn.contains("DC="))
-          {
-              id.append("@");
-              int c = 0;
-              for (String toks : dn.split(","))
-              {
-                  if (toks.contains("DC"))
-                  {
-                     if (c > 0) {id.append(".");}                         
-                     id.append(toks.substring(
-                             toks.indexOf("=")+1, 
-                             toks.indexOf(",") == -1? toks.length(): toks.indexOf(",")));
-                     c++;
-                  }
-              }
-          }
+            id = SSLUtil.getIdFromSubjectDN(dn);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
-            log.info("Exception received while trying to retrive client identity from SSL cert",e);
+            log.info("Exception received while trying to retrive client identity from SSL cert", e);
         }
-        
         log.debug("Extracted Identity from client certificate : " + id);
-        return id.toString();
+        return id;
     }
-    
+
     public static KeyStore getInitializedKeyStore(String storePath, String storePassword, String keyStoreType) throws GeneralSecurityException, IOException
     {
         KeyStore ks = KeyStore.getInstance(keyStoreType);
@@ -137,7 +158,7 @@ public class SSLUtil
             {
                 in = new FileInputStream(f);
             }
-            else 
+            else
             {
                 in = Thread.currentThread().getContextClassLoader().getResourceAsStream(storePath);
             }
