@@ -96,6 +96,7 @@ void ReceiverContext::verify(pn_terminus_t* source)
 void ReceiverContext::configure()
 {
     configure(pn_link_source(receiver));
+    pn_terminus_set_address(pn_link_target(receiver), pn_terminus_get_address(pn_link_source(receiver)));
 }
 void ReceiverContext::configure(pn_terminus_t* source)
 {
