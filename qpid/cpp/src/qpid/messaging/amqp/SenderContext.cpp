@@ -506,6 +506,7 @@ void SenderContext::configure()
 void SenderContext::configure(pn_terminus_t* target)
 {
     helper.configure(target, AddressHelper::FOR_SENDER);
+    pn_terminus_set_address(pn_link_source(sender), pn_terminus_get_address(pn_link_target(sender)));
 }
 
 bool SenderContext::settled()
