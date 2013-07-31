@@ -73,22 +73,11 @@ macro(add_installed_example subdir example)
   install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${example}.cpp
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/${subdir}
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
-  if (MSVC)
-    install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}_${example}.vcproj
-             DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/${subdir}
-             COMPONENT ${QPID_COMPONENT_EXAMPLES})
-  endif (MSVC)
-
 endmacro(add_installed_example)
 
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
          DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
          COMPONENT ${QPID_COMPONENT_EXAMPLES})
-if (MSVC)
-  install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/examples.sln
-           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
-           COMPONENT ${QPID_COMPONENT_EXAMPLES})
-endif (MSVC)
 
 add_installed_example(qmf2 agent qmf2)
 if (NOT WIN32)
