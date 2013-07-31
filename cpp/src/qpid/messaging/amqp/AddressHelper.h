@@ -40,6 +40,8 @@ class AddressHelper
     void checkAssertion(pn_terminus_t* terminus, CheckMode mode);
 
     const qpid::types::Variant::Map& getNodeProperties() const;
+    bool getLinkSource(std::string& out) const;
+    bool getLinkTarget(std::string& out) const;
     const qpid::types::Variant::Map& getLinkProperties() const;
     static std::string getLinkName(const Address& address);
   private:
@@ -83,6 +85,7 @@ class AddressHelper
     void addFilters(const qpid::types::Variant::List&);
     void confirmFilter(const std::string& descriptor);
     void confirmFilter(uint64_t descriptor);
+    bool getLinkOption(const std::string& name, std::string& out) const;
 };
 }}} // namespace qpid::messaging::amqp
 

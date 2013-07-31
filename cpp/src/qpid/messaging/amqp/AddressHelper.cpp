@@ -70,6 +70,8 @@ const std::string FILTER("filter");
 const std::string DESCRIPTOR("descriptor");
 const std::string VALUE("value");
 const std::string SUBJECT_FILTER("subject-filter");
+const std::string SOURCE("sender-source");
+const std::string TARGET("receiver-target");
 
 //distribution modes:
 const std::string MOVE("move");
@@ -516,6 +518,27 @@ const qpid::types::Variant::Map& AddressHelper::getLinkProperties() const
     return link;
 }
 
+bool AddressHelper::getLinkSource(std::string& out) const
+{
+    return getLinkOption(SOURCE, out);
+}
+
+bool AddressHelper::getLinkTarget(std::string& out) const
+{
+    return getLinkOption(TARGET, out);
+}
+
+bool AddressHelper::getLinkOption(const std::string& name, std::string& out) const
+{
+    qpid::types::Variant::Map::const_iterator i = link.find(name);
+    if (i != link.end()) {
+        out = i->second.asString();
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
 {
     bool createOnDemand(false);
@@ -532,6 +555,7 @@ void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
             createOnDemand = true;
         }
     }
+
     setCapabilities(terminus, createOnDemand);
     if (durableLink) {
         pn_terminus_set_durability(terminus, PN_DELIVERIES);
@@ -651,6 +675,8 @@ Verifier::Verifier()
     link[DURABLE] = true;
     link[RELIABILITY] = true;
     link[TIMEOUT] = true;
+    link[SOURCE] = true;
+    link[TARGET] = true;
     link[X_SUBSCRIBE] = true;
     link[X_DECLARE] = true;
     link[X_BINDINGS] = true;
