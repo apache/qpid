@@ -96,11 +96,16 @@ void ReceiverContext::verify(pn_terminus_t* source)
 void ReceiverContext::configure()
 {
     configure(pn_link_source(receiver));
-    pn_terminus_set_address(pn_link_target(receiver), pn_terminus_get_address(pn_link_source(receiver)));
 }
 void ReceiverContext::configure(pn_terminus_t* source)
 {
     helper.configure(source, AddressHelper::FOR_RECEIVER);
+    std::string option;
+    if (helper.getLinkTarget(option)) {
+        pn_terminus_set_address(pn_link_target(receiver), option.c_str());
+    } else {
+        pn_terminus_set_address(pn_link_target(receiver), pn_terminus_get_address(pn_link_source(receiver)));
+    }
 }
 
 Address ReceiverContext::getAddress() const
