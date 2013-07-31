@@ -282,8 +282,8 @@ function BuildAPlatform
 
     # Set top level info files to DOS line endings
     Unix2Dos "$install_dir/README-winsdk.txt"
-    Unix2Dos "$install_dir/LICENSE"
-    Unix2Dos "$install_dir/NOTICE"
+    Unix2Dos "$install_dir/docs/LICENSE"
+    Unix2Dos "$install_dir/docs/NOTICE"
     Unix2Dos "$install_dir/examples/README.txt"
 
     # Install the .NET binding example source code
