@@ -241,7 +241,6 @@ function BuildAPlatform
         'bin/boost_regex*.*',
         'bin/boost',
         'conf',
-        'examples/qmf-console',
         'examples/*.sln',
         'examples/*.vcproj',
         'examples/messaging/*.vcproj',
