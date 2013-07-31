@@ -222,15 +222,11 @@ function BuildAPlatform
     )
 
     $preserve=(
-        'include/qpid/agent',
-        'include/qpid/amqp_0_10',
-        'include/qpid/management',
         'include/qpid/messaging',
         'include/qpid/sys/IntegerTypes.h',
         'include/qpid/sys/windows/IntegerTypes.h',
         'include/qpid/sys/posix/IntegerTypes.h',
         'include/qpid/types',
-        'include/qpid/CommonImportExport.h',
         'include/qpid/ImportExport.h')
 
     $remove=(
