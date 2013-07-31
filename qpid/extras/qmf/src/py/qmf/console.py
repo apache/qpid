@@ -3943,6 +3943,7 @@ class Event:
     self.broker  = agent.broker
 
     if isinstance(v2Map,dict):
+      self.isV2 = True
       self.classKey = None
       self.schema = None
       try:
@@ -3958,6 +3959,7 @@ class Event:
         self.schema = self.session.schemaCache.getSchema(self.classKey)
 
     elif codec is not None:
+      self.isV2 = None
       self.classKey = ClassKey(codec)
       self.classKey._setType(ClassKey.TYPE_EVENT)
       self.timestamp = codec.read_int64()
