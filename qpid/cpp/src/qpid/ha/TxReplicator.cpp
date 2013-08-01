@@ -28,15 +28,20 @@
 #include "HaBroker.h"
 #include "types.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Link.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/SessionHandler.h"
 #include "qpid/broker/TxBuffer.h"
 #include "qpid/broker/TxAccept.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/framing/BufferTypes.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
+#include "qpid/broker/amqp_0_10/MessageTransfer.h"
+#include "qpid/framing/MessageTransferBody.h"
 
 namespace qpid {
 namespace ha {
@@ -45,12 +50,16 @@ using namespace std;
 using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
+using qpid::broker::amqp_0_10::MessageTransfer;
+using qpid::types::Uuid;
 
 namespace {
 const string QPID_HA(QPID_HA_PREFIX);
-const string TYPE_NAME(QPID_HA+"tx-queue-replicator");
+const string TYPE_NAME(QPID_HA+"tx-replicator");
 const string PREFIX(TRANSACTION_REPLICATOR_PREFIX);
+
 } // namespace
+
 
 
 bool TxReplicator::isTxQueue(const string& q) {
@@ -69,13 +78,13 @@ TxReplicator::TxReplicator(
     const boost::shared_ptr<broker::Queue>& txQueue,
     const boost::shared_ptr<broker::Link>& link) :
     QueueReplicator(hb, txQueue, link),
-    id(getTxId(txQueue->getName())),
     txBuffer(new broker::TxBuffer),
-    broker(hb.getBroker()),
-    store(broker.hasStore() ? &broker.getStore() : 0),
+    store(hb.getBroker().hasStore() ? &hb.getBroker().getStore() : 0),
+    channel(link->nextChannel()),
     dequeueState(hb.getBroker().getQueues())
 {
-    logPrefix = "Backup of transaction "+id+": ";
+    string shortId = getTxId(txQueue->getName()).substr(0, 8);
+    logPrefix = "Backup of transaction "+shortId+": ";
 
     if (!store) throw Exception(QPID_MSG(logPrefix << "No message store loaded."));
     boost::shared_ptr<Backup> backup = dynamic_pointer_cast<Backup>(hb.getRole());
@@ -95,17 +104,45 @@ TxReplicator::TxReplicator(
         boost::bind(&TxReplicator::rollback, this, _1, _2);
 }
 
+TxReplicator::~TxReplicator() {
+    link->returnChannel(channel);
+}
+
+// Send a message to the primary tx.
+void TxReplicator::sendMessage(const broker::Message& msg, sys::Mutex::ScopedLock&) {
+    assert(sessionHandler);
+    const MessageTransfer& transfer(MessageTransfer::get(msg));
+    for (FrameSet::const_iterator i = transfer.getFrames().begin();
+         i != transfer.getFrames().end();
+         ++i)
+    {
+        sessionHandler->out.handle(const_cast<AMQFrame&>(*i));
+    }
+}
+
 void TxReplicator::deliver(const broker::Message& m_) {
+    sys::Mutex::ScopedLock l(lock);
     // Deliver message to the target queue, not the tx-queue.
     broker::Message m(m_);
     m.setReplicationId(enq.id); // Use replicated id.
-    boost::shared_ptr<broker::Queue> queue = broker.getQueues().get(enq.queue);
+    boost::shared_ptr<broker::Queue> queue =
+        haBroker.getBroker().getQueues().get(enq.queue);
     QPID_LOG(trace, logPrefix << "Deliver " << LogMessageId(*queue, m));
     DeliverableMessage dm(m, txBuffer.get());
     dm.deliverTo(queue);
 }
 
+void TxReplicator::destroy() {
+    {
+        sys::Mutex::ScopedLock l(lock);
+        if (context.get()) store->abort(*context);
+        txBuffer->rollback();
+    }
+    QueueReplicator::destroy();
+}
+
 void TxReplicator::enqueue(const string& data, sys::Mutex::ScopedLock&) {
+    sys::Mutex::ScopedLock l(lock);
     TxEnqueueEvent e;
     decodeStr(data, e);
     QPID_LOG(trace, logPrefix << "Enqueue: " << e);
@@ -113,6 +150,7 @@ void TxReplicator::enqueue(const string& data, sys::Mutex::ScopedLock&) {
 }
 
 void TxReplicator::dequeue(const string& data, sys::Mutex::ScopedLock&) {
+    sys::Mutex::ScopedLock l(lock);
     TxDequeueEvent e;
     decodeStr(data, e);
     QPID_LOG(trace, logPrefix << "Dequeue: " << e);
@@ -132,9 +170,6 @@ bool TxReplicator::DequeueState::addRecord(
     const ReplicationIdSet& rids)
 {
     if (rids.contains(m.getReplicationId())) {
-        // FIXME aconway 2013-07-24:
-        // - Do we need to acquire before creating a DR?
-        // - Are the parameters to DeliveryRecord ok?
         DeliveryRecord dr(cursor, m.getSequence(), m.getReplicationId(), queue,
                           string() /*tag*/,
                           boost::shared_ptr<Consumer>(),
@@ -142,7 +177,7 @@ bool TxReplicator::DequeueState::addRecord(
                           false /*accepted*/,
                           false /*credit.isWindowMode()*/,
                           0 /*credit*/);
-        // Fake record ids, unique within this transaction.
+        // Generate record ids, unique within this transaction.
         dr.setId(nextId++);
         records.push_back(dr);
         recordIds += dr.getId();
@@ -163,30 +198,40 @@ boost::shared_ptr<TxAccept> TxReplicator::DequeueState::makeAccept() {
     return make_shared<TxAccept>(cref(recordIds), ref(records));
 }
 
-void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock&) {
+void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock& l) {
     QPID_LOG(trace, logPrefix << "Prepare");
     txBuffer->enlist(dequeueState.makeAccept());
     context = store->begin();
-    txBuffer->prepare(context.get());
-    // FIXME aconway 2013-07-26: notify the primary of prepare outcome.
+    if (txBuffer->prepare(context.get())) {
+        QPID_LOG(trace, logPrefix << "Prepared OK");
+        QPID_LOG(critical, logPrefix << "FIXME Prepared OK " << haBroker.getSystemId());
+        QPID_LOG(critical, logPrefix << "FIXME Prepared ok "<<
+                 encodeStr(TxPrepareOkEvent(haBroker.getSystemId())));
+        sendMessage(TxPrepareOkEvent(haBroker.getSystemId()).message(queue->getName()), l);
+    } else {
+        QPID_LOG(trace, logPrefix << "Prepare failed");
+        sendMessage(TxPrepareFailEvent(haBroker.getSystemId()).message(queue->getName()), l);
+    }
 }
 
-void TxReplicator::commit(const string&, sys::Mutex::ScopedLock&) {
+void TxReplicator::commit(const string&, sys::Mutex::ScopedLock& l) {
     QPID_LOG(trace, logPrefix << "Commit");
     if (context.get()) store->commit(*context);
     txBuffer->commit();
-    end();
+    end(l);
 }
 
-void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock&) {
+void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock& l) {
     QPID_LOG(trace, logPrefix << "Rollback");
     if (context.get()) store->abort(*context);
     txBuffer->rollback();
-    end();
+    end(l);
 }
 
-void TxReplicator::end(){
-    // FIXME aconway 2013-07-26: destroying the txqueue (auto-delete?) will
-    // destroy this via QueueReplicator::destroy
+void TxReplicator::end(sys::Mutex::ScopedLock&) {
+    // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
+    // FIXME aconway 2013-08-01: what about connection & user ID for destroy?
+    haBroker.getBroker().getQueues().destroy(queue->getName());
 }
+
 }} // namespace qpid::ha

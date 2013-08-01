@@ -390,12 +390,16 @@ void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards)
 
 void Primary::startTx(const boost::shared_ptr<broker::TxBuffer>& tx) {
     QPID_LOG(trace, logPrefix << "Started TX transaction");
-    tx->setObserver(make_shared<PrimaryTxObserver>(boost::ref(haBroker)));
+    shared_ptr<PrimaryTxObserver> observer(new PrimaryTxObserver(haBroker));
+    observer->initialize();
+    tx->setObserver(observer);
 }
 
 void Primary::startDtx(const boost::shared_ptr<broker::DtxBuffer>& dtx) {
     QPID_LOG(trace, logPrefix << "Started DTX transaction");
-    dtx->setObserver(make_shared<PrimaryTxObserver>(boost::ref(haBroker)));
+    shared_ptr<PrimaryTxObserver> observer(new PrimaryTxObserver(haBroker));
+    observer->initialize();
+    dtx->setObserver(observer);
 }
 
 }} // namespace qpid::ha

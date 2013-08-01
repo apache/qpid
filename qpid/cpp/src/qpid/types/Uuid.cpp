@@ -52,6 +52,11 @@ Uuid::Uuid(const unsigned char* uuid)
     ::memcpy(bytes, uuid, Uuid::SIZE);
 }
 
+Uuid::Uuid(const char* uuid)
+{
+    ::memcpy(bytes, uuid, Uuid::SIZE);
+}
+
 Uuid& Uuid::operator=(const Uuid& other)
 {
     if (this == &other) return *this;
