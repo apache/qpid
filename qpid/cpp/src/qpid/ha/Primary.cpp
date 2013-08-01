@@ -82,8 +82,6 @@ class ExpectedBackupTimerTask : public sys::TimerTask {
 
 } // namespace
 
-Primary* Primary::instance = 0;
-
 Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     haBroker(hb), membership(hb.getMembership()),
     logPrefix("Primary: "), active(false),
@@ -92,8 +90,6 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     hb.getMembership().setStatus(RECOVERING);
     broker::QueueRegistry& queues = hb.getBroker().getQueues();
     queues.eachQueue(boost::bind(&Primary::initializeQueue, this, _1));
-    assert(instance == 0);
-    instance = this;            // Let queue replicators find us.
     if (expect.empty()) {
         QPID_LOG(notice, logPrefix << "Promoted to primary. No expected backups.");
     }
