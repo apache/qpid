@@ -81,7 +81,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(
             result = std::pair<Exchange::shared_ptr, bool>(exchange, true);
             if (alternate) exchange->setAlternate(alternate);
             // Call exchangeCreate inside the lock to ensure correct ordering.
-            if (broker) broker->getConfigurationObservers().exchangeCreate(exchange);
+            if (broker) broker->getBrokerObservers().exchangeCreate(exchange);
         } else {
             result = std::pair<Exchange::shared_ptr, bool>(i->second, false);
         }
@@ -118,7 +118,7 @@ void ExchangeRegistry::destroy(
             if (broker) {
                 // Call exchangeDestroy and raiseEvent inside the lock to ensure
                 // correct ordering.
-                broker->getConfigurationObservers().exchangeDestroy(i->second);
+                broker->getBrokerObservers().exchangeDestroy(i->second);
                 if (broker->getManagementAgent())
                     broker->getManagementAgent()->raiseEvent(
                         _qmf::EventExchangeDelete(connectionId, userId, name));

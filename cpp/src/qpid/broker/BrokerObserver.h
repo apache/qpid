@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_CONFIGURATIONOBSERVER_H
-#define QPID_BROKER_CONFIGURATIONOBSERVER_H
+#ifndef QPID_BROKER_BROKEROBSERVER_H
+#define QPID_BROKER_BROKEROBSERVER_H
 
 /*
  *
@@ -43,10 +43,10 @@ class Exchange;
  * the registry lock held. This is necessary to ensure
  * they are called in the correct sequence.
  */
-class ConfigurationObserver
+class BrokerObserver
 {
   public:
-    virtual ~ConfigurationObserver() {}
+    virtual ~BrokerObserver() {}
     virtual void queueCreate(const boost::shared_ptr<Queue>&) {}
     virtual void queueDestroy(const boost::shared_ptr<Queue>&) {}
     virtual void exchangeCreate(const boost::shared_ptr<Exchange>&) {}
@@ -62,4 +62,4 @@ class ConfigurationObserver
 };
 }} // namespace qpid::broker
 
-#endif  /*!QPID_BROKER_CONFIGURATIONOBSERVER_H*/
+#endif  /*!QPID_BROKER_BROKEROBSERVER_H*/

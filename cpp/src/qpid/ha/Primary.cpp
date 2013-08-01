@@ -29,7 +29,7 @@
 #include "QueueReplicator.h"
 #include "qpid/assert.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/ConfigurationObserver.h"
+#include "qpid/broker/BrokerObserver.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/FieldTable.h"
@@ -59,10 +59,10 @@ class PrimaryConnectionObserver : public broker::ConnectionObserver
     Primary& primary;
 };
 
-class PrimaryConfigurationObserver : public broker::ConfigurationObserver
+class PrimaryBrokerObserver : public broker::BrokerObserver
 {
   public:
-    PrimaryConfigurationObserver(Primary& p) : primary(p) {}
+    PrimaryBrokerObserver(Primary& p) : primary(p) {}
     void queueCreate(const Primary::QueuePtr& q) { primary.queueCreate(q); }
     void queueDestroy(const Primary::QueuePtr& q) { primary.queueDestroy(q); }
     void exchangeCreate(const Primary::ExchangePtr& q) { primary.exchangeCreate(q); }
@@ -98,7 +98,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         QPID_LOG(notice, logPrefix << "Promoted to primary. No expected backups.");
     }
     else {
-        // NOTE: RemoteBackups must be created before we set the ConfigurationObserver
+        // NOTE: RemoteBackups must be created before we set the BrokerObserver
         // or ConnectionObserver so that there is no client activity while
         // the QueueGuards are created.
         QPID_LOG(notice, logPrefix << "Promoted to primary. Expected backups: " << expect);
@@ -113,8 +113,8 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         timerTask = new ExpectedBackupTimerTask(*this, deadline);
         hb.getBroker().getTimer().add(timerTask);
     }
-    configurationObserver.reset(new PrimaryConfigurationObserver(*this));
-    haBroker.getBroker().getConfigurationObservers().add(configurationObserver);
+    brokerObserver.reset(new PrimaryBrokerObserver(*this));
+    haBroker.getBroker().getBrokerObservers().add(brokerObserver);
     checkReady();               // Outside lock
 
     // Allow client connections
@@ -124,7 +124,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
 
 Primary::~Primary() {
     if (timerTask) timerTask->cancel();
-    haBroker.getBroker().getConfigurationObservers().remove(configurationObserver);
+    haBroker.getBroker().getBrokerObservers().remove(brokerObserver);
     haBroker.getObserver()->reset();
 }
 
