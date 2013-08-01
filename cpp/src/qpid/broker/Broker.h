@@ -65,6 +65,7 @@ class AclModule;
 class ExpiryPolicy;
 class Message;
 struct QueueSettings;
+
 static const  uint16_t DEFAULT_PORT=5672;
 
 struct NoSuchTransportException : qpid::Exception
