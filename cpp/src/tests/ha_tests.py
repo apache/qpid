@@ -1381,7 +1381,18 @@ class TransactionTests(BrokerTest):
         self.assertEqual(open_read(cluster[0].store_log), expect)
         self.assertEqual(open_read(cluster[1].store_log), expect)
 
-# FIXME aconway 2013-07-23: test with partial acknowledgement.
+    def test_tx_backup_fail(self):
+        # FIXME aconway 2013-07-31: check exception types, reduce timeout.
+        cluster = HaCluster(
+            self, 2, test_store=True, s_args=[[],["--test-store-throw=bang"]])
+        c = cluster[0].connect()
+        tx = c.session(transactional=True)
+        s = tx.sender("q;{create:always,node:{durable:true}}")
+        for m in ["foo","bang","bar"]: s.send(Message(m, durable=True))
+        self.assertRaises(Exception, tx.commit)
+        for b in cluster: b.assert_browse_backup("q", [])
+        self.assertEqual(open_read(cluster[0].store_log), "<begin tx 1>\n<abort tx=1>\n")
+        self.assertEqual(open_read(cluster[1].store_log), "<begin tx 1>\n<enqueue q foo tx=1>\n<enqueue q bang tx=1>\n<abort tx=1>\n")
 
 if __name__ == "__main__":
     outdir = "ha_tests.tmp"

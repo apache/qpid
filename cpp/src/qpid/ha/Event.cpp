@@ -49,28 +49,36 @@ const string TxDequeueEvent::KEY(QPID_HA+"txde");
 const string TxPrepareEvent::KEY(QPID_HA+"txpr");
 const string TxCommitEvent::KEY(QPID_HA+"txcm");
 const string TxRollbackEvent::KEY(QPID_HA+"txrb");
+const string TxPrepareOkEvent::KEY(QPID_HA+"txok");
+const string TxPrepareFailEvent::KEY(QPID_HA+"txno");
 
-broker::Message makeMessage(const string& data, const string& key) {
+broker::Message makeMessage(
+    const string& data, const string& destination, const string& routingKey)
+{
     boost::intrusive_ptr<MessageTransfer> transfer(new MessageTransfer());
-    AMQFrame method((MessageTransferBody(ProtocolVersion(), key, 0, 0)));
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), destination, 0, 0)));
+    method.setBof(true);
+    method.setEof(false);
+    method.setBos(true);
+    method.setEos(true);
     AMQFrame header((AMQHeaderBody()));
-    AMQFrame content((AMQContentBody()));
-    Buffer buffer(const_cast<char*>(&data[0]), data.size());
-    // AMQContentBody::decode is missing a const declaration, so cast it here.
-    content.castBody<AMQContentBody>()->decode(
-        const_cast<Buffer&>(buffer), buffer.getSize());
     header.setBof(false);
     header.setEof(false);
     header.setBos(true);
     header.setEos(true);
+    AMQFrame content((AMQContentBody()));
     content.setBof(false);
     content.setEof(true);
     content.setBos(true);
     content.setEos(true);
+    Buffer buffer(const_cast<char*>(&data[0]), data.size());
+    content.castBody<AMQContentBody>()->decode(
+        const_cast<Buffer&>(buffer), buffer.getSize());
     transfer->getFrames().append(method);
     transfer->getFrames().append(header);
     transfer->getFrames().append(content);
-    transfer->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(key);
+    transfer->getFrames().getHeaders()->
+        get<DeliveryProperties>(true)->setRoutingKey(routingKey);
     return broker::Message(transfer, 0);
 }
 

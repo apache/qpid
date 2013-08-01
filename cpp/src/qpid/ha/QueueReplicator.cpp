@@ -107,9 +107,13 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()),
       haBroker(hb),
       brokerInfo(hb.getBrokerInfo()),
+      link(l),
+      queue(q),
+      sessionHandler(0),
       logPrefix("Backup of "+q->getName()+": "),
-      queue(q), link(l), subscribed(false),
-      settings(hb.getSettings()), destroyed(false),
+      subscribed(false),
+      settings(hb.getSettings()),
+      destroyed(false),
       nextId(0), maxId(0)
 {
     args.setString(QPID_REPLICATE, printable(NONE).str());
@@ -176,22 +180,23 @@ void QueueReplicator::destroy() {
         if (destroyed) return;
         destroyed = true;
         QPID_LOG(debug, logPrefix << "Destroyed");
+        bridge2 = bridge;       // call close outside the lock.
         // Need to drop shared pointers to avoid pointer cycles keeping this in memory.
         queue.reset();
         link.reset();
         bridge.reset();
         getBroker()->getExchanges().destroy(getName());
-        bridge2 = bridge;
     }
     if (bridge2) bridge2->close(); // Outside of lock, avoid deadlock.
 }
 
 // Called in a broker connection thread when the bridge is created.
 // Note: called with the Link lock held.
-void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler_) {
     Mutex::ScopedLock l(lock);
     if (destroyed) return;         // Already destroyed
-    AMQP_ServerProxy peer(sessionHandler.out);
+    sessionHandler = &sessionHandler_;
+    AMQP_ServerProxy peer(sessionHandler->out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     FieldTable arguments;
     arguments.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);

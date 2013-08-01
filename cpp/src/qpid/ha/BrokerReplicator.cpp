@@ -130,7 +130,6 @@ const string COLON(":");
 void sendQuery(const string& packageName, const string& className, const string& queueName,
                SessionHandler& sessionHandler)
 {
-    framing::AMQP_ServerProxy peer(sessionHandler.out);
     Variant::Map request;
     request[WHAT] = OBJECT;
     Variant::Map schema;
@@ -649,9 +648,6 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicationTest.getLevel(argsMap)) return;
     string name(values[NAME].asString());
-
-    if (TxReplicator::isTxQueue(name)) return; // Can't join a transaction in progress.
-
     if (!queueTracker.get())
         throw Exception(QPID_MSG("Unexpected queue response: " << values));
     if (!queueTracker->response(name)) return; // Response is out-of-date

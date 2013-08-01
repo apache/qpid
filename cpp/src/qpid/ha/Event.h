@@ -33,7 +33,10 @@
 namespace qpid {
 namespace ha {
 
-broker::Message makeMessage(const std::string& content, const std::string& destination);
+broker::Message makeMessage(
+    const std::string& content,
+    const std::string& destination,
+    const std::string& routingKey);
 
 
 /** Test if a string is an event key */
@@ -47,7 +50,8 @@ struct  Event {
     virtual size_t encodedSize() const = 0;
     virtual std::string key() const = 0; // Routing key
     virtual void print(std::ostream& o) const = 0;
-    broker::Message message() const { return makeMessage(framing::encodeStr(*this), key()); }
+    broker::Message message(const std::string& destination=std::string()) const {
+        return makeMessage(framing::encodeStr(*this), destination, key()); }
 };
 
 
@@ -140,6 +144,37 @@ struct TxRollbackEvent : public EventBase<TxRollbackEvent> {
     void print(std::ostream&) const {}
 };
 
+struct TxPrepareOkEvent : public EventBase<TxPrepareOkEvent> {
+    static const std::string KEY;
+    types::Uuid broker;
+    TxPrepareOkEvent(const types::Uuid& b=types::Uuid()) : broker(b) {}
+
+    void encode(framing::Buffer& b) const {
+        b.putRawData(broker.data(), broker.size());
+    }
+
+    void decode(framing::Buffer& b) {
+        std::string s;
+        b.getRawData(s, broker.size());
+        broker = types::Uuid(&s[0]);
+    }
+    virtual size_t encodedSize() const { return broker.size(); }
+    void print(std::ostream& o) const { o << broker; }
+};
+
+struct TxPrepareFailEvent : public EventBase<TxPrepareFailEvent> {
+    static const std::string KEY;
+    types::Uuid broker;
+    TxPrepareFailEvent(const types::Uuid& b=types::Uuid()) : broker(b) {}
+    void encode(framing::Buffer& b) const { b.putRawData(broker.data(), broker.size()); }
+    void decode(framing::Buffer& b) {
+        std::string s;
+        b.getRawData(s, broker.size());
+        broker = types::Uuid(&s[0]);
+    }
+    virtual size_t encodedSize() const { return broker.size(); }
+    void print(std::ostream& o) const { o << broker; }
+};
 
 }} // namespace qpid::ha
 

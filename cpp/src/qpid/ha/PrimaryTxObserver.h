@@ -26,13 +26,18 @@
 
 #include "qpid/broker/TransactionObserver.h"
 #include "qpid/log/Statement.h"
-#include "qpid/framing/Uuid.h"
+#include "qpid/types/Uuid.h"
 #include "qpid/sys/unordered_map.h"
+#include "qpid/sys/Monitor.h"
 #include <boost/functional/hash.hpp>
+#include <boost/enable_shared_from_this.hpp>
+
 namespace qpid {
 
 namespace broker {
 class Broker;
+class Message;
+class Consumer;
 }
 
 namespace ha {
@@ -46,11 +51,21 @@ class HaBroker;
  * A TxReplicator on the backup replicates the tx-queue and creates
  * a TxBuffer on the backup equivalent to the one on the primary.
  *
- * THREAD UNSAFE: called sequentially in the context of a transaction.
+ * Also observes the tx-queue for prepare-complete messages and
+ * subscription cancellations.
+ *
+ * THREAD SAFE: called in user connection thread for TX events,
+ * and in backup connection threads for prepare-completed events
+ * and unsubscriptions.
  */
-class PrimaryTxObserver : public broker::TransactionObserver {
+class PrimaryTxObserver : public broker::TransactionObserver,
+                          public boost::enable_shared_from_this<PrimaryTxObserver>
+{
   public:
     PrimaryTxObserver(HaBroker&);
+
+    /** Call immediately after constructor, uses shared_from_this. */
+    void initialize();
 
     void enqueue(const QueuePtr&, const broker::Message&);
     void dequeue(const QueuePtr& queue, QueuePosition, ReplicationId);
@@ -58,18 +73,29 @@ class PrimaryTxObserver : public broker::TransactionObserver {
     void commit();
     void rollback();
 
+    types::Uuid getId() const { return id; }
+
   private:
+    class Exchange;
     typedef qpid::sys::unordered_map<
       QueuePtr, ReplicationIdSet, boost::hash<QueuePtr> > QueueIdsMap;
 
-    void deduplicate();
+    void deduplicate(sys::Mutex::ScopedLock&);
+    void txPrepareOkEvent(const std::string& data);
+    void txPrepareFailEvent(const std::string& data);
+    void consumerRemoved(const broker::Consumer&);
+    bool isPrepared(sys::Mutex::ScopedLock&);
 
+    sys::Monitor lock;
     std::string logPrefix;
     HaBroker& haBroker;
     broker::Broker& broker;
-    framing::Uuid id;
+    types::Uuid id;
     QueuePtr txQueue;
     QueueIdsMap enqueues;
+    bool failed;
+    UuidSet backups;
+    UuidSet prepared;
 };
 
 }} // namespace qpid::ha

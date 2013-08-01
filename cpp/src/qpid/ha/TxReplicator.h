@@ -58,12 +58,14 @@ class TxReplicator : public QueueReplicator {
     static std::string getTxId(const std::string& queue);
 
     TxReplicator(HaBroker&, const QueuePtr& txQueue, const LinkPtr& link);
+    ~TxReplicator();
 
     std::string getType() const;
 
   protected:
 
     void deliver(const broker::Message&);
+    void destroy();
 
   private:
 
@@ -72,21 +74,21 @@ class TxReplicator : public QueueReplicator {
     typedef qpid::sys::unordered_map<std::string, DispatchFunction> DispatchMap;
     typedef qpid::sys::unordered_map<std::string, ReplicationIdSet> DequeueMap;
 
+    void sendMessage(const broker::Message&, sys::Mutex::ScopedLock&);
     void enqueue(const std::string& data, sys::Mutex::ScopedLock&);
     void dequeue(const std::string& data, sys::Mutex::ScopedLock&);
     void prepare(const std::string& data, sys::Mutex::ScopedLock&);
     void commit(const std::string& data, sys::Mutex::ScopedLock&);
     void rollback(const std::string& data, sys::Mutex::ScopedLock&);
-    void end();
+    void end(sys::Mutex::ScopedLock&);
 
     std::string logPrefix;
-    const std::string id;
     TxEnqueueEvent enq;         // Enqueue data for next deliver.
     boost::shared_ptr<broker::TxBuffer> txBuffer;
-    broker::Broker& broker;
     broker::MessageStore* store;
     boost::shared_ptr<BrokerReplicator> brokerReplicator;
     std::auto_ptr<broker::TransactionContext> context;
+    framing::ChannelId channel; // Channel to send prepare-complete.
 
     // Class to process dequeues and create DeliveryRecords to populate a
     // TxAccept.
@@ -103,7 +105,8 @@ class TxReplicator : public QueueReplicator {
         typedef framing::SequenceSet IdSet;
         typedef qpid::sys::unordered_map<std::string, ReplicationIdSet> EventMap;
 
-        bool addRecord(const broker::Message& m, const boost::shared_ptr<broker::Queue>&,
+        bool addRecord(const broker::Message& m,
+                       const boost::shared_ptr<broker::Queue>&,
                        const ReplicationIdSet& );
         void addRecords(const DequeueMap::value_type& entry);
 

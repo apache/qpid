@@ -87,9 +87,11 @@ istream& operator>>(istream& i, EnumBase& e) {
     return i;
 }
 
-ostream& operator<<(ostream& o, const IdSet& ids) {
+ostream& operator<<(ostream& o, const UuidSet& ids) {
     ostream_iterator<qpid::types::Uuid> out(o, " ");
+    o << "{ ";
     copy(ids.begin(), ids.end(), out);
+    o << "}";
     return o;
 }
 

@@ -265,16 +265,19 @@ acl allow all all
 class HaCluster(object):
     _cluster_count = 0
 
-    def __init__(self, test, n, promote=True, wait=True, args=[], **kwargs):
+    def __init__(self, test, n, promote=True, wait=True, args=[], s_args=[], **kwargs):
         """Start a cluster of n brokers.
 
         @test: The test being run
         @n: start n brokers
         @promote: promote self[0] to primary
         @wait: wait for primary active and backups ready. Ignored if promote=False
+        @args: args for all brokers in the cluster.
+        @s_args: args for specific brokers: s_args[i] for broker i.
         """
         self.test = test
         self.args = args
+        self.s_args = s_args
         self.kwargs = kwargs
         self._ports = [HaPort(test) for i in xrange(n)]
         self._set_url()
@@ -294,9 +297,12 @@ class HaCluster(object):
         self.broker_id += 1
         return name
 
-    def _ha_broker(self, ha_port, name):
+    def _ha_broker(self, i, name):
+        args = self.args
+        if i < len(self.s_args): args += self.s_args[i]
+        ha_port = self._ports[i]
         b = HaBroker(ha_port.test, ha_port, brokers_url=self.url, name=name,
-                     args=self.args, **self.kwargs)
+                     args=args, **self.kwargs)
         b.ready()
         return b
 
@@ -308,7 +314,7 @@ class HaCluster(object):
             self._ports.append(HaPort(self.test))
             self._set_url()
             self._update_urls()
-        b = self._ha_broker(self._ports[i], self.next_name())
+        b = self._ha_broker(i, self.next_name())
         self._brokers.append(b)
         return b
 
@@ -334,7 +340,7 @@ class HaCluster(object):
         a separate log file: foo.n.log"""
         if self._ports[i].stopped: raise Exception("Restart after final kill: %s"%(self))
         b = self._brokers[i]
-        self._brokers[i] = self._ha_broker(self._ports[i], b.name)
+        self._brokers[i] = self._ha_broker(i, b.name)
         self._brokers[i].ready()
 
     def bounce(self, i, promote_next=True):
