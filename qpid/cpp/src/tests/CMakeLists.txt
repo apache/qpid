@@ -146,6 +146,7 @@ set(all_unit_tests
     TimerTest
     TopicExchangeTest
     TxBufferTest
+    TransactionObserverTest
     Url
     Uuid
     Variant

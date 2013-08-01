@@ -78,7 +78,7 @@ def error_line(filename, n=1):
     except: return ""
     return ":\n" + "".join(result)
 
-def retry(function, timeout=10, delay=.01, max_delay=1):
+def retry(function, timeout=10, delay=.001, max_delay=1):
     """Call function until it returns a true value or timeout expires.
     Double the delay for each retry up to max_delay.
     Returns what function returns if true, None if timeout expires."""
@@ -398,7 +398,7 @@ def assert_browse(session, queue, expect_contents, timeout=0, transform=lambda m
     if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
     assert expect_contents == actual_contents, msg
 
-def assert_browse_retry(session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content, msg="browse failed"):
+def assert_browse_retry(session, queue, expect_contents, timeout=1, delay=.001, transform=lambda m:m.content, msg="browse failed"):
     """Wait up to timeout for contents of queue to match expect_contents"""
     test = lambda: browse(session, queue, 0, transform=transform) == expect_contents
     retry(test, timeout, delay)

@@ -23,7 +23,6 @@
 #include <limits.h>             // Include before boost/test headers.
 #include <boost/test/test_tools.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/assign/list_of.hpp>
 #include <vector>
 #include <set>
 #include <ostream>

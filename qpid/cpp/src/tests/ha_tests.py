@@ -1287,6 +1287,51 @@ class StoreTests(BrokerTest):
         cluster[0].assert_browse("q2", ["hello", "end"])
         cluster[1].assert_browse_backup("q2", ["hello", "end"])
 
+class TransactionTests(BrokerTest):
+
+    def tx_simple_setup(self, broker):
+        """Start a transaction: receive 'foo' from 'a' and send 'bar' to 'b'"""
+        c = broker.connect()
+        c.session().sender("a;{create:always}").send("foo")
+        tx = c.session(transactional=True)
+        self.assertEqual("foo", tx.receiver("a").fetch(1).content)
+        tx.acknowledge();
+        tx.sender("b;{create:always}").send("bar")
+        return tx
+
+    def test_tx_simple_commit(self):
+        cluster = HaCluster(self, 2, args=["--log-enable=trace+:ha::"])
+        tx = self.tx_simple_setup(cluster[0])
+        tx.commit()
+        for b in cluster:
+            b.assert_browse_backup("a", [], msg=b)
+            b.assert_browse_backup("b", ["bar"], msg=b)
+
+    def test_tx_simple_rollback(self):
+        cluster = HaCluster(self, 2)
+        tx = self.tx_simple_setup(cluster[0])
+        tx.rollback()
+        for b in cluster:
+            b.assert_browse_backup("a", ["foo"], msg=b)
+            b.assert_browse_backup("b", [], msg=b)
+
+    def test_tx_simple_failover(self):
+        cluster = HaCluster(self, 2)
+        tx = self.tx_simple_setup(cluster[0])
+        cluster.bounce(0)       # Should cause roll-back
+        for b in cluster:
+            b.assert_browse_backup("a", ["foo"], msg=b)
+            b.assert_browse_backup("b", [], msg=b)
+
+    def test_tx_simple_join(self):
+        cluster = HaCluster(self, 2)
+        tx = self.tx_simple_setup(cluster[0])
+        cluster.bounce(1)       # Should catch up with tx
+        tx.commit()
+        for b in cluster:
+            b.assert_browse_backup("a", [], msg=b)
+            b.assert_browse_backup("b", ["bar"], msg=b)
+
 if __name__ == "__main__":
     outdir = "ha_tests.tmp"
     shutil.rmtree(outdir, True)

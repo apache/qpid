@@ -37,6 +37,7 @@ namespace broker {
  */
 class TxAccept : public TxOp {
     typedef std::vector<AckRange> AckRanges;
+    typedef boost::shared_ptr<TransactionObserver> ObserverPtr;
 
     void each(boost::function<void(DeliveryRecord&)>);
 
@@ -54,6 +55,7 @@ class TxAccept : public TxOp {
     virtual bool prepare(TransactionContext* ctxt) throw();
     virtual void commit() throw();
     virtual void rollback() throw();
+    virtual void callObserver(const ObserverPtr&);
     virtual ~TxAccept(){}
 };
 }

@@ -34,7 +34,8 @@ class FieldTable;
 namespace broker {
 class Queue;
 class Exchange;
-
+class TxBuffer;
+class DtxBuffer;
 
 /**
  * Observer for changes to configuration (aka wiring)
@@ -59,6 +60,8 @@ class BrokerObserver
                         const boost::shared_ptr<Queue>& ,
                         const std::string& /*key*/,
                         const framing::FieldTable& /*args*/) {}
+    virtual void startTx(const boost::shared_ptr<TxBuffer>&) {}
+    virtual void startDtx(const boost::shared_ptr<DtxBuffer>&) {}
 };
 }} // namespace qpid::broker
 

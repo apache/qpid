@@ -19,7 +19,9 @@
  *
  */
 #include "qpid/broker/TxAccept.h"
+#include "qpid/broker/TransactionObserver.h"
 #include "qpid/log/Statement.h"
+
 
 using std::bind1st;
 using std::bind2nd;
@@ -76,3 +78,13 @@ void TxAccept::commit() throw()
 }
 
 void TxAccept::rollback() throw() {}
+
+namespace {
+void callObserverDR(boost::shared_ptr<TransactionObserver> observer, DeliveryRecord& dr) {
+    observer->dequeue(dr.getQueue(), dr.getMessageId(), dr.getReplicationId());
+}
+} // namespace
+
+void TxAccept::callObserver(const ObserverPtr& observer) {
+    each(boost::bind(&callObserverDR, observer, _1));
+}
