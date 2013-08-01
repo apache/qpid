@@ -199,30 +199,26 @@ boost::shared_ptr<TxAccept> TxReplicator::DequeueState::makeAccept() {
 }
 
 void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock& l) {
-    QPID_LOG(trace, logPrefix << "Prepare");
     txBuffer->enlist(dequeueState.makeAccept());
     context = store->begin();
     if (txBuffer->prepare(context.get())) {
-        QPID_LOG(trace, logPrefix << "Prepared OK");
-        QPID_LOG(critical, logPrefix << "FIXME Prepared OK " << haBroker.getSystemId());
-        QPID_LOG(critical, logPrefix << "FIXME Prepared ok "<<
-                 encodeStr(TxPrepareOkEvent(haBroker.getSystemId())));
+        QPID_LOG(debug, logPrefix << "Prepared OK");
         sendMessage(TxPrepareOkEvent(haBroker.getSystemId()).message(queue->getName()), l);
     } else {
-        QPID_LOG(trace, logPrefix << "Prepare failed");
+        QPID_LOG(debug, logPrefix << "Prepare failed");
         sendMessage(TxPrepareFailEvent(haBroker.getSystemId()).message(queue->getName()), l);
     }
 }
 
 void TxReplicator::commit(const string&, sys::Mutex::ScopedLock& l) {
-    QPID_LOG(trace, logPrefix << "Commit");
+    QPID_LOG(debug, logPrefix << "Commit");
     if (context.get()) store->commit(*context);
     txBuffer->commit();
     end(l);
 }
 
 void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock& l) {
-    QPID_LOG(trace, logPrefix << "Rollback");
+    QPID_LOG(debug, logPrefix << "Rollback");
     if (context.get()) store->abort(*context);
     txBuffer->rollback();
     end(l);
