@@ -63,12 +63,18 @@ struct TestStoreOptions : public Options {
     string name;
     string dump;
     string events;
+    vector<string> throwMsg; // Throw exception if message content matches.
 
     TestStoreOptions() : Options("Test Store Options") {
         addOptions()
-            ("test-store-name", optValue(name, "NAME"), "Name of test store instance.")
-            ("test-store-dump", optValue(dump, "FILE"), "File to dump enqueued messages.")
-            ("test-store-events", optValue(events, "FILE"), "File to log events, 1 line per event.")
+            ("test-store-name", optValue(name, "NAME"),
+             "Name of test store instance.")
+            ("test-store-dump", optValue(dump, "FILE"),
+             "File to dump enqueued messages.")
+            ("test-store-events", optValue(events, "FILE"),
+             "File to log events, 1 line per event.")
+            ("test-store-throw", optValue(throwMsg, "CONTENT"),
+             "Throw exception if message content matches.")
             ;
     }
 };
@@ -91,7 +97,8 @@ class TestStore : public NullMessageStore {
     {
         QPID_LOG(info, "TestStore name=" << name
                  << " dump=" << options.dump
-                 << " events=" << options.events);
+                 << " events=" << options.events
+                 << " throw messages =" << options.throwMsg.size());
 
         if (!options.dump.empty())
             dump.reset(new ofstream(options.dump.c_str()));
@@ -148,7 +155,8 @@ class TestStore : public NullMessageStore {
                  const PersistableQueue& queue)
     {
         QPID_LOG(debug, "TestStore enqueue " << queue.getName());
-        qpid::broker::amqp_0_10::MessageTransfer* msg = dynamic_cast<qpid::broker::amqp_0_10::MessageTransfer*>(pmsg.get());
+        qpid::broker::amqp_0_10::MessageTransfer* msg =
+            dynamic_cast<qpid::broker::amqp_0_10::MessageTransfer*>(pmsg.get());
         assert(msg);
 
         ostringstream o;
@@ -170,7 +178,11 @@ class TestStore : public NullMessageStore {
         string data = msg->getFrames().getContent();
         size_t i = string::npos;
         size_t j = string::npos;
-        if (strncmp(data.c_str(), TEST_STORE_DO.c_str(), strlen(TEST_STORE_DO.c_str())) == 0
+        const vector<string>& throwMsg(options.throwMsg);
+        if (find(throwMsg.begin(), throwMsg.end(), data) != throwMsg.end()) {
+                throw Exception(QPID_MSG("TestStore " << name << " throwing exception for: " << data));
+        }
+        else if (strncmp(data.c_str(), TEST_STORE_DO.c_str(), strlen(TEST_STORE_DO.c_str())) == 0
             && (i = data.find(name+"[")) != string::npos
             && (j = data.find("]", i)) != string::npos)
         {

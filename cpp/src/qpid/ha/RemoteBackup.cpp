@@ -66,8 +66,6 @@ bool RemoteBackup::isReady() {
 }
 
 void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {
-    // Ignore transaction queues for purposes of catch-up calculation
-    if (TxReplicator::isTxQueue(q->getName())) return;
     if (replicationTest.getLevel(*q) == ALL) {
         QPID_LOG(debug, logPrefix << "Catch-up queue"
                  << (createGuard ? " and guard" : "") << ": " << q->getName());

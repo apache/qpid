@@ -25,7 +25,6 @@
 #include "BrokerInfo.h"
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/ConsumerFactory.h"
-#include "qpid/types/Uuid.h"
 #include <iosfwd>
 
 namespace qpid {

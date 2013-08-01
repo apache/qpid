@@ -117,7 +117,7 @@ void FailoverExchange::sendUpdate(const Queue::shared_ptr& queue, sys::Mutex::Sc
     if (urls.empty()) return;
     framing::Array array = vectorToUrlArray(urls);
     const ProtocolVersion v;
-    broker::Message message(makeMessage(std::string(), typeName));
+    broker::Message message(makeMessage(std::string(), typeName, typeName));
     MessageTransfer& transfer = MessageTransfer::get(message);
     MessageProperties* props =
         transfer.getFrames().getHeaders()->get<framing::MessageProperties>(true);

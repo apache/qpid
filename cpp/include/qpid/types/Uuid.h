@@ -42,6 +42,7 @@ class QPID_TYPES_CLASS_EXTERN Uuid
     QPID_TYPES_EXTERN Uuid& operator=(const Uuid&);
     /** Copy the UUID from data16, which must point to a 16-byte UUID */
     QPID_TYPES_EXTERN Uuid(const unsigned char* data16);
+    QPID_TYPES_EXTERN Uuid(const char* data16);
 
     /** Set to a new unique identifier. */
     QPID_TYPES_EXTERN void generate();
