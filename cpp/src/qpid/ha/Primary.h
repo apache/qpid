@@ -38,7 +38,7 @@ namespace broker {
 class Queue;
 class Connection;
 class ConnectionObserver;
-class ConfigurationObserver;
+class BrokerObserver;
 }
 
 namespace sys {
@@ -79,7 +79,7 @@ class Primary : public Role
     void readyReplica(const ReplicatingSubscription&);
     void removeReplica(const std::string& q);
 
-    // Called via ConfigurationObserver
+    // Called via BrokerObserver
     void queueCreate(const QueuePtr&);
     void queueDestroy(const QueuePtr&);
     void exchangeCreate(const ExchangePtr&);
@@ -126,7 +126,7 @@ class Primary : public Role
      */
     BackupMap backups;
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
-    boost::shared_ptr<broker::ConfigurationObserver> configurationObserver;
+    boost::shared_ptr<broker::BrokerObserver> brokerObserver;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     static Primary* instance;
 };

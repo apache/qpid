@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_CONFIGURATIONOBSERVERS_H
-#define QPID_BROKER_CONFIGURATIONOBSERVERS_H
+#ifndef QPID_BROKER_BROKEROBSERVERS_H
+#define QPID_BROKER_BROKEROBSERVERS_H
 
 /*
  *
@@ -22,7 +22,7 @@
  *
  */
 
-#include "ConfigurationObserver.h"
+#include "BrokerObserver.h"
 #include "Observers.h"
 #include "qpid/sys/Mutex.h"
 
@@ -30,43 +30,42 @@ namespace qpid {
 namespace broker {
 
 /**
- * A configuration observer that delegates to a collection of
- * configuration observers.
+ * A broker observer that delegates to a collection of broker observers.
  *
  * THREAD SAFE
  */
-class ConfigurationObservers : public ConfigurationObserver,
-                               public Observers<ConfigurationObserver>
+class BrokerObservers : public BrokerObserver,
+                               public Observers<BrokerObserver>
 {
   public:
     void queueCreate(const boost::shared_ptr<Queue>& q) {
-        each(boost::bind(&ConfigurationObserver::queueCreate, _1, q));
+        each(boost::bind(&BrokerObserver::queueCreate, _1, q));
     }
     void queueDestroy(const boost::shared_ptr<Queue>& q) {
-        each(boost::bind(&ConfigurationObserver::queueDestroy, _1, q));
+        each(boost::bind(&BrokerObserver::queueDestroy, _1, q));
     }
     void exchangeCreate(const boost::shared_ptr<Exchange>& e) {
-        each(boost::bind(&ConfigurationObserver::exchangeCreate, _1, e));
+        each(boost::bind(&BrokerObserver::exchangeCreate, _1, e));
     }
     void exchangeDestroy(const boost::shared_ptr<Exchange>& e) {
-        each(boost::bind(&ConfigurationObserver::exchangeDestroy, _1, e));
+        each(boost::bind(&BrokerObserver::exchangeDestroy, _1, e));
     }
     void bind(const boost::shared_ptr<Exchange>& exchange,
               const boost::shared_ptr<Queue>& queue,
               const std::string& key,
               const framing::FieldTable& args) {
         each(boost::bind(
-                 &ConfigurationObserver::bind, _1, exchange, queue, key, args));
+                 &BrokerObserver::bind, _1, exchange, queue, key, args));
     }
     void unbind(const boost::shared_ptr<Exchange>& exchange,
                 const boost::shared_ptr<Queue>& queue,
                 const std::string& key,
                 const framing::FieldTable& args) {
         each(boost::bind(
-                 &ConfigurationObserver::unbind, _1, exchange, queue, key, args));
+                 &BrokerObserver::unbind, _1, exchange, queue, key, args));
     }
 };
 
 }} // namespace qpid::broker
 
-#endif  /*!QPID_BROKER_CONFIGURATIONOBSERVERS_H*/
+#endif  /*!QPID_BROKER_BROKEROBSERVERS_H*/

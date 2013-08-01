@@ -59,8 +59,8 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
         QueueMap::iterator i =  queues.find(name);
         if (i == queues.end()) {
             Queue::shared_ptr queue = create(name, settings);
-            // Allow ConfigurationObserver to modify settings before storing the message.
-            if (getBroker()) getBroker()->getConfigurationObservers().queueCreate(queue);
+            // Allow BrokerObserver to modify settings before storing the message.
+            if (getBroker()) getBroker()->getBrokerObservers().queueCreate(queue);
             //Move this to factory also?
             if (alternate)
                 queue->setAlternateExchange(alternate);//need to do this *before* create
@@ -100,7 +100,7 @@ void QueueRegistry::destroy(
                 // NOTE: queueDestroy and raiseEvent must be called with the
                 // lock held in order to ensure events are generated
                 // in the correct order.
-                getBroker()->getConfigurationObservers().queueDestroy(q);
+                getBroker()->getBrokerObservers().queueDestroy(q);
                 if (getBroker()->getManagementAgent())
                     getBroker()->getManagementAgent()->raiseEvent(
                         _qmf::EventQueueDelete(connectionId, userId, name));

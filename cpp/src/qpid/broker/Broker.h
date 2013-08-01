@@ -38,7 +38,7 @@
 #include "qpid/broker/System.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/ConnectionObservers.h"
-#include "qpid/broker/ConfigurationObservers.h"
+#include "qpid/broker/BrokerObservers.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Mutex.h"
@@ -175,7 +175,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     AclModule* acl;
     DataDir dataDir;
     ConnectionObservers connectionObservers;
-    ConfigurationObservers configurationObservers;
+    BrokerObservers brokerObservers;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
@@ -352,7 +352,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
-    ConfigurationObservers& getConfigurationObservers() { return configurationObservers; }
+    BrokerObservers& getBrokerObservers() { return brokerObservers; }
 
     /** Properties to be set on outgoing link connections */
     QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;
