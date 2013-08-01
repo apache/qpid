@@ -29,6 +29,7 @@ from mobile import MobileAddressEngine
 from routing import RoutingTableEngine
 from binding import BindingEngine
 from adapter import AdapterEngine
+from node import NodeTracker
 
 ##
 ## Import the Dispatch adapters from the environment.  If they are not found
@@ -79,6 +80,7 @@ class RouterEngine:
     self.routing_table_engine  = RoutingTableEngine(self)
     self.binding_engine        = BindingEngine(self)
     self.adapter_engine        = AdapterEngine(self)
+    self.node_tracker          = NodeTracker(self)
 
 
 
@@ -125,6 +127,7 @@ class RouterEngine:
       self.routing_table_engine.tick(now)
       self.binding_engine.tick(now)
       self.adapter_engine.tick(now)
+      self.node_tracker.tick(now)
     except Exception, e:
       self.log(LOG_ERROR, "Exception in timer processing: exception=%r" % e)
 
@@ -222,6 +225,12 @@ class RouterEngine:
     self.log(LOG_TRACE, "SENT: %r dest=%s" % (msg, dest))
 
 
+  def node_updated(self, addr, reachable, neighbor):
+    """
+    """
+    self.router_adapter(addr, reachable, neighbor)
+
+
   ##========================================================================================
   ## Interconnect between the Sub-Modules
   ##========================================================================================
@@ -252,4 +261,20 @@ class RouterEngine:
   def remote_routes_changed(self, key_class, routes):
     self.log(LOG_DEBUG, "Event: remote_routes_changed: class=%s routes=%r" % (key_class, routes))
     self.adapter_engine.remote_routes_changed(key_class, routes)
+
+  def new_neighbor(self, rid):
+    self.log(LOG_DEBUG, "Event: new_neighbor: id=%s" % rid)
+    self.node_tracker.new_neighbor(rid)
+
+  def lost_neighbor(self, rid):
+    self.log(LOG_DEBUG, "Event: lost_neighbor: id=%s" % rid)
+    self.node_tracker.lost_neighbor(rid)
+
+  def new_node(self, rid):
+    self.log(LOG_DEBUG, "Event: new_node: id=%s" % rid)
+    self.node_tracker.new_node(rid)
+
+  def lost_node(self, rid):
+    self.log(LOG_DEBUG, "Event: lost_node: id=%s" % rid)
+    self.node_tracker.lost_node(rid)
 

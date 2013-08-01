@@ -20,6 +20,7 @@
 #include <qpid/dispatch/python_embedded.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <qpid/dispatch.h>
 #include "dispatch_private.h"
 
@@ -35,16 +36,16 @@ static char *local_prefix   = "_local/";
 /**
  * Address Types and Processing:
  *
- *   Address                              Hash Key       onReceive         onEmit
- *   =============================================================================
- *   _local/<local>                       L<local>       handler           forward
- *   _topo/<area>/<router>/<local>        A<area>        forward           forward
- *   _topo/<my-area>/<router>/<local>     R<router>      forward           forward
- *   _topo/<my-area>/<my-router>/<local>  L<local>       forward+handler   forward
- *   _topo/<area>/all/<local>             A<area>        forward           forward
- *   _topo/<my-area>/all/<local>          L<local>       forward+handler   forward
- *   _topo/all/all/<local>                L<local>       forward+handler   forward
- *   <mobile>                             M<mobile>      forward+handler   forward
+ *   Address                              Hash Key       onReceive
+ *   ===================================================================
+ *   _local/<local>                       L<local>               handler
+ *   _topo/<area>/<router>/<local>        A<area>        forward
+ *   _topo/<my-area>/<router>/<local>     R<router>      forward
+ *   _topo/<my-area>/<my-router>/<local>  L<local>               handler
+ *   _topo/<area>/all/<local>             A<area>        forward
+ *   _topo/<my-area>/all/<local>          L<local>       forward handler
+ *   _topo/all/all/<local>                L<local>       forward handler
+ *   <mobile>                             M<mobile>      forward handler
  */
 
 
@@ -59,6 +60,14 @@ typedef enum {
 } dx_link_type_t;
 
 
+typedef struct dx_routed_event_t {
+    DEQ_LINKS(struct dx_routed_event_t);
+    dx_message_t *message;
+    bool          settled;
+    uint64_t      disposition;
+} dx_routed_event_t;
+
+
 struct dx_router_link_t {
     DEQ_LINKS(dx_router_link_t);
     dx_direction_t     link_direction;
@@ -67,7 +76,7 @@ struct dx_router_link_t {
     dx_link_t         *link;            // [own] Link pointer
     dx_router_link_t  *connected_link;  // [ref] If this is a link-route, reference the connected link
     dx_router_link_t  *peer_link;       // [ref] If this is a bidirectional link-route, reference the peer link
-    dx_message_list_t  out_fifo;        // Message FIFO for outgoing messages
+    dx_message_list_t  out_fifo;        // Message FIFO for outgoing messages.  Unused for incoming links
 };
 
 ALLOC_DECLARE(dx_router_link_t);
@@ -662,19 +671,19 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
 
     router_node.type_context = router;
 
-    router->dx          = dx;
-    router->router_area = area;
-    router->router_id   = id;
-    router->node        = dx_container_set_default_node_type(dx, &router_node, (void*) router, DX_DIST_BOTH);
+    router->dx           = dx;
+    router->router_area  = area;
+    router->router_id    = id;
+    router->node         = dx_container_set_default_node_type(dx, &router_node, (void*) router, DX_DIST_BOTH);
     DEQ_INIT(router->in_links);
     DEQ_INIT(router->routers);
     DEQ_INIT(router->in_fifo);
-    router->lock        = sys_mutex();
-    router->timer       = dx_timer(dx, dx_router_timer_handler, (void*) router);
-    router->out_hash    = hash(10, 32, 0);
-    router->dtag        = 1;
-    router->pyRouter    = 0;
-    router->pyTick      = 0;
+    router->lock         = sys_mutex();
+    router->timer        = dx_timer(dx, dx_router_timer_handler, (void*) router);
+    router->out_hash     = hash(10, 32, 0);
+    router->dtag         = 1;
+    router->pyRouter     = 0;
+    router->pyTick       = 0;
 
 
     //
@@ -821,6 +830,24 @@ typedef struct {
 } RouterAdapter;
 
 
+static PyObject* dx_router_node_updated(PyObject *self, PyObject *args)
+{
+    //RouterAdapter *adapter = (RouterAdapter*) self;
+    //dx_router_t   *router  = adapter->router;
+    const char    *address;
+    int            is_reachable;
+    int            is_neighbor;
+
+    if (!PyArg_ParseTuple(args, "sii", &address, &is_reachable, &is_neighbor))
+        return 0;
+
+    // TODO
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
 static PyObject* dx_router_add_route(PyObject *self, PyObject *args)
 {
     //RouterAdapter *adapter = (RouterAdapter*) self;
@@ -854,8 +881,9 @@ static PyObject* dx_router_del_route(PyObject *self, PyObject *args)
 
 
 static PyMethodDef RouterAdapter_methods[] = {
-    {"add_route", dx_router_add_route, METH_VARARGS, "Add a newly discovered route"},
-    {"del_route", dx_router_del_route, METH_VARARGS, "Delete a route"},
+    {"node_updated", dx_router_node_updated, METH_VARARGS, "Update the status of a remote router node"},
+    {"add_route",    dx_router_add_route,    METH_VARARGS, "Add a newly discovered route"},
+    {"del_route",    dx_router_del_route,    METH_VARARGS, "Delete a route"},
     {0, 0, 0, 0}
 };
 
