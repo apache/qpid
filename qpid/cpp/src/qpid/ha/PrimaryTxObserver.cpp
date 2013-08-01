@@ -91,7 +91,7 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
     BrokerInfo::Set infoSet(haBroker.getMembership().otherBackups());
     transform(infoSet.begin(), infoSet.end(), inserter(backups, backups.begin()),
               bind(&BrokerInfo::getSystemId, _1));
-    QPID_LOG(trace, logPrefix << "Started on " << backups);
+    QPID_LOG(debug, logPrefix << "Started on " << backups);
 
     pair<shared_ptr<Queue>, bool> result =
         broker.getQueues().declare(
@@ -108,7 +108,7 @@ void PrimaryTxObserver::initialize() {
 void PrimaryTxObserver::enqueue(const QueuePtr& q, const broker::Message& m)
 {
     sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(trace, logPrefix << "enqueue: " << LogMessageId(*q, m));
+    QPID_LOG(trace, logPrefix << "Enqueue: " << LogMessageId(*q, m));
     enqueues[q] += m.getReplicationId();
     txQueue->deliver(TxEnqueueEvent(q->getName(), m.getReplicationId()).message());
     txQueue->deliver(m);
@@ -118,7 +118,7 @@ void PrimaryTxObserver::dequeue(
     const QueuePtr& q, QueuePosition pos, ReplicationId id)
 {
     sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(trace, logPrefix << "dequeue: " << LogMessageId(*q, pos, id));
+    QPID_LOG(trace, logPrefix << "Dequeue: " << LogMessageId(*q, pos, id));
     txQueue->deliver(TxDequeueEvent(q->getName(), id).message());
 }
 
@@ -134,7 +134,7 @@ void PrimaryTxObserver::deduplicate(sys::Mutex::ScopedLock&) {
 bool PrimaryTxObserver::prepare() {
     sys::Mutex::ScopedLock l(lock);
     // FIXME aconway 2013-07-23: WRONG blocking. Need async completion.
-    QPID_LOG(trace, logPrefix << "Prepare");
+    QPID_LOG(debug, logPrefix << "Prepare");
     deduplicate(l);
     txQueue->deliver(TxPrepareEvent().message());
     while (!isPrepared(l)) lock.wait();
@@ -143,22 +143,20 @@ bool PrimaryTxObserver::prepare() {
 
 void PrimaryTxObserver::commit() {
     sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(trace, logPrefix << "Commit");
+    QPID_LOG(debug, logPrefix << "Commit");
     txQueue->deliver(TxCommitEvent().message());
 }
 
 void PrimaryTxObserver::rollback() {
     sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(trace, logPrefix << "Rollback");
+    QPID_LOG(debug, logPrefix << "Rollback");
     txQueue->deliver(TxRollbackEvent().message());
 }
 
 void PrimaryTxObserver::txPrepareOkEvent(const string& data) {
-    QPID_LOG(critical, logPrefix << "FIXME data: " << data);
     sys::Mutex::ScopedLock l(lock);
     types::Uuid backup = decodeStr<TxPrepareOkEvent>(data).broker;
-    QPID_LOG(critical, logPrefix << "FIXME backup: " << backup);
-    QPID_LOG(trace, logPrefix << "Backup prepared ok: " << backup);
+    QPID_LOG(debug, logPrefix << "Backup prepared ok: " << backup);
     prepared.insert(backup);
     lock.notify();
 }
