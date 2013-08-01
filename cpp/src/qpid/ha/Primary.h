@@ -66,8 +66,6 @@ class Primary : public Role
     typedef boost::shared_ptr<broker::Exchange> ExchangePtr;
     typedef boost::shared_ptr<RemoteBackup> RemoteBackupPtr;
 
-    static Primary* get() { return instance; }
-
     Primary(HaBroker& hb, const BrokerInfo::Set& expectedBackups);
     ~Primary();
 
@@ -128,7 +126,6 @@ class Primary : public Role
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
     boost::shared_ptr<broker::BrokerObserver> brokerObserver;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
-    static Primary* instance;
 };
 }} // namespace qpid::ha
 
