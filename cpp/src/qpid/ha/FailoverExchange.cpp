@@ -19,7 +19,7 @@
  *
  */
 #include "FailoverExchange.h"
-#include "makeMessage.h"
+#include "Event.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/DeliverableMessage.h"
@@ -117,7 +117,7 @@ void FailoverExchange::sendUpdate(const Queue::shared_ptr& queue, sys::Mutex::Sc
     if (urls.empty()) return;
     framing::Array array = vectorToUrlArray(urls);
     const ProtocolVersion v;
-    broker::Message message(makeMessage(Buffer(), typeName));
+    broker::Message message(makeMessage(std::string(), typeName));
     MessageTransfer& transfer = MessageTransfer::get(message);
     MessageProperties* props =
         transfer.getFrames().getHeaders()->get<framing::MessageProperties>(true);

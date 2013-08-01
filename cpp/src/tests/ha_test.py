@@ -107,7 +107,7 @@ class HaBroker(Broker):
         ha_port = ha_port or HaPort(test)
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
-                 "--log-enable=debug+:ha::",
+                 "--log-enable=trace+:ha::", # FIXME aconway 2013-07-29: debug
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
@@ -220,6 +220,12 @@ acl allow all all
         finally: bs.connection.close()
 
     def wait_backup(self, address): self.wait_address(address)
+
+    def browse(self, queue, timeout=0, transform=lambda m: m.content):
+        c = self.connect_admin()
+        try:
+            return browse(c.session(), queue, timeout, transform)
+        finally: c.close()
 
     def assert_browse(self, queue, expected, **kwargs):
         """Verify queue contents by browsing."""

@@ -20,8 +20,8 @@
  */
 #include "qpid/broker/TxAccept.h"
 #include "qpid/broker/TransactionObserver.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/log/Statement.h"
-
 
 using std::bind1st;
 using std::bind2nd;

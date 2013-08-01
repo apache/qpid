@@ -20,6 +20,7 @@
  */
 #include "RemoteBackup.h"
 #include "QueueGuard.h"
+#include "TxReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
@@ -65,6 +66,8 @@ bool RemoteBackup::isReady() {
 }
 
 void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {
+    // Ignore transaction queues for purposes of catch-up calculation
+    if (TxReplicator::isTxQueue(q->getName())) return;
     if (replicationTest.getLevel(*q) == ALL) {
         QPID_LOG(debug, logPrefix << "Catch-up queue"
                  << (createGuard ? " and guard" : "") << ": " << q->getName());

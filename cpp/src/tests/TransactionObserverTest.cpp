@@ -89,6 +89,7 @@ Session simpleTxTransaction(MessagingFixture& fix) {
     // Transaction with 1 enqueue and 1 dequeue.
     Session txSession = fix.connection.createTransactionalSession();
     BOOST_CHECK_EQUAL("foo", txSession.createReceiver("q1").fetch().getContent());
+    txSession.acknowledge();
     txSession.createSender("q2;{create:always}").send(msg("bar"));
     return txSession;
 }

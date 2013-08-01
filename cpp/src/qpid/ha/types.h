@@ -105,9 +105,16 @@ inline bool isPrimary(BrokerStatus s) {
 
 inline bool isBackup(BrokerStatus s) { return !isPrimary(s); }
 
-// String constants.
+// String constants, defined as char* to avoid initialization order problems.
 extern const std::string QPID_REPLICATE;
 extern const std::string QPID_HA_UUID;
+
+// Strings used as prefixes, defined as char* to avoid link order problems.
+extern const char* QPID_HA_PREFIX;
+extern const char* QUEUE_REPLICATOR_PREFIX;
+extern const char* TRANSACTION_REPLICATOR_PREFIX;
+
+bool startsWith(const std::string& name, const std::string& prefix);
 
 /** Define IdSet type, not a typedef so we can overload operator << */
 class IdSet : public std::set<types::Uuid> {};

@@ -27,6 +27,7 @@
 #include "RemoteBackup.h"
 #include "ConnectionObserver.h"
 #include "QueueReplicator.h"
+#include "PrimaryTxObserver.h"
 #include "qpid/assert.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/BrokerObserver.h"
@@ -34,16 +35,19 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
-#include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
+#include "qpid/types/Uuid.h"
 #include "qpid/sys/Timer.h"
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace ha {
 
 using sys::Mutex;
 using boost::shared_ptr;
+using boost::make_shared;
 using namespace std;
 using namespace framing;
 
@@ -67,7 +71,10 @@ class PrimaryBrokerObserver : public broker::BrokerObserver
     void queueDestroy(const Primary::QueuePtr& q) { primary.queueDestroy(q); }
     void exchangeCreate(const Primary::ExchangePtr& q) { primary.exchangeCreate(q); }
     void exchangeDestroy(const Primary::ExchangePtr& q) { primary.exchangeDestroy(q); }
-  private:
+    void startTx(const shared_ptr<broker::TxBuffer>& tx) { primary.startTx(tx); }
+    void startDtx(const shared_ptr<broker::DtxBuffer>& dtx) { primary.startDtx(dtx); }
+
+ private:
     Primary& primary;
 };
 
@@ -206,6 +213,26 @@ void Primary::readyReplica(const ReplicatingSubscription& rs) {
         }
     }
     if (backup) checkReady(backup);
+}
+
+void Primary::addReplica(ReplicatingSubscription& rs) {
+    sys::Mutex::ScopedLock l(lock);
+    replicas[make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue())] = &rs;
+}
+
+void Primary::skip(
+    const types::Uuid& backup,
+    const boost::shared_ptr<broker::Queue>& queue,
+    const ReplicationIdSet& ids)
+{
+    sys::Mutex::ScopedLock l(lock);
+    ReplicaMap::const_iterator i = replicas.find(make_pair(backup, queue));
+    if (i != replicas.end()) i->second->addSkip(ids);
+}
+
+void Primary::removeReplica(const ReplicatingSubscription& rs) {
+    sys::Mutex::ScopedLock l(lock);
+    replicas.erase(make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue()));
 }
 
 // NOTE: Called with queue registry lock held.
@@ -359,6 +386,16 @@ void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards)
     haBroker.getBroker().getQueues().eachQueue(
         boost::bind(&RemoteBackup::catchupQueue, backup, _1, createGuards));
     backup->startCatchup();
+}
+
+void Primary::startTx(const boost::shared_ptr<broker::TxBuffer>& tx) {
+    QPID_LOG(trace, logPrefix << "Started TX transaction");
+    tx->setObserver(make_shared<PrimaryTxObserver>(boost::ref(haBroker)));
+}
+
+void Primary::startDtx(const boost::shared_ptr<broker::DtxBuffer>& dtx) {
+    QPID_LOG(trace, logPrefix << "Started DTX transaction");
+    dtx->setObserver(make_shared<PrimaryTxObserver>(boost::ref(haBroker)));
 }
 
 }} // namespace qpid::ha

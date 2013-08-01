@@ -277,6 +277,7 @@ void Queue::deliver(Message msg, TxBuffer* txn)
 void Queue::deliverTo(Message msg, TxBuffer* txn)
 {
     if (accept(msg)) {
+        interceptors.record(msg);
         if (txn) {
             TxOp::shared_ptr op(new TxPublish(msg, shared_from_this()));
             txn->enlist(op);
@@ -842,7 +843,6 @@ bool Queue::isEmpty(const Mutex::ScopedLock&) const
  */
 bool Queue::enqueue(TransactionContext* ctxt, Message& msg)
 {
-    interceptors.record(msg);
     ScopedUse u(barrier);
     if (!u.acquired) return false;
 

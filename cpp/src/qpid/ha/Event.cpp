@@ -18,25 +18,44 @@
  * under the License.
  *
  */
-#include "makeMessage.h"
+#include "Event.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace ha {
 
-broker::Message makeMessage(const framing::Buffer& buffer,
-                            const std::string& destination)
-{
-    using namespace framing;
-    using broker::amqp_0_10::MessageTransfer;
+using namespace std;
+using namespace framing;
+using namespace broker::amqp_0_10;
 
-    boost::intrusive_ptr<MessageTransfer> transfer(
-        new qpid::broker::amqp_0_10::MessageTransfer());
-    AMQFrame method((MessageTransferBody(ProtocolVersion(), destination, 0, 0)));
+namespace {
+const string QPID_HA(QPID_HA_PREFIX);
+}
+
+bool isEventKey(const std::string& key) {
+    const std::string& prefix = QPID_HA;
+    bool ret = key.size() > prefix.size() && key.compare(0, prefix.size(), prefix) == 0;
+    return ret;
+}
+
+const string DequeueEvent::KEY(QPID_HA+"de");
+const string IdEvent::KEY(QPID_HA+"id");
+const string TxEnqueueEvent::KEY(QPID_HA+"txen");
+const string TxDequeueEvent::KEY(QPID_HA+"txde");
+const string TxPrepareEvent::KEY(QPID_HA+"txpr");
+const string TxCommitEvent::KEY(QPID_HA+"txcm");
+const string TxRollbackEvent::KEY(QPID_HA+"txrb");
+
+broker::Message makeMessage(const string& data, const string& key) {
+    boost::intrusive_ptr<MessageTransfer> transfer(new MessageTransfer());
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), key, 0, 0)));
     AMQFrame header((AMQHeaderBody()));
     AMQFrame content((AMQContentBody()));
+    Buffer buffer(const_cast<char*>(&data[0]), data.size());
     // AMQContentBody::decode is missing a const declaration, so cast it here.
     content.castBody<AMQContentBody>()->decode(
         const_cast<Buffer&>(buffer), buffer.getSize());
@@ -51,12 +70,8 @@ broker::Message makeMessage(const framing::Buffer& buffer,
     transfer->getFrames().append(method);
     transfer->getFrames().append(header);
     transfer->getFrames().append(content);
+    transfer->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(key);
     return broker::Message(transfer, 0);
-}
-
-broker::Message makeMessage(const std::string& content, const std::string& destination) {
-    framing::Buffer buffer(const_cast<char*>(&content[0]), content.size());
-    return makeMessage(buffer, destination);
 }
 
 }} // namespace qpid::ha

@@ -81,5 +81,5 @@ if [ ! -e "$HOME" ]; then
 fi
 
 # Options for boost test framework
-export BOOST_TEST_SHOW_PROGRESS=yes
-export BOOST_TEST_CATCH_SYSTEM_ERRORS=no
+test -z "$BOOST_TEST_SHOW_PROGRESS" && export BOOST_TEST_SHOW_PROGRESS=yes
+test -z "$BOOST_TEST_CATCH_SYSTEM_ERRORS" && export BOOST_TEST_CATCH_SYSTEM_ERRORS=no

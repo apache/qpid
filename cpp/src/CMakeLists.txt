@@ -355,7 +355,7 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 # where Boost 1.45 is supported, or we can just accept some versions using
 # the Additional_versions variable.
 if (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
-  set (Boost_ADDITIONAL_VERSIONS 
+  set (Boost_ADDITIONAL_VERSIONS
         "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0"
         "1.48" "1.48.0" "1.49" "1.49.0" "1.50" "1.50.0"
         "1.51" "1.51.0" "1.52" "1.52.0" "1.53" "1.53.0")
@@ -743,6 +743,8 @@ if (BUILD_HA)
         qpid/ha/BrokerReplicator.h
         qpid/ha/ConnectionObserver.cpp
         qpid/ha/ConnectionObserver.h
+	qpid/ha/Event.cpp
+	qpid/ha/Event.h
         qpid/ha/FailoverExchange.cpp
         qpid/ha/FailoverExchange.h
         qpid/ha/HaBroker.cpp
@@ -751,8 +753,6 @@ if (BUILD_HA)
         qpid/ha/hash.h
 	qpid/ha/IdSetter.h
         qpid/ha/QueueSnapshot.h
-        qpid/ha/makeMessage.cpp
-        qpid/ha/makeMessage.h
         qpid/ha/Membership.cpp
         qpid/ha/Membership.h
         qpid/ha/Primary.cpp
@@ -772,7 +772,11 @@ if (BUILD_HA)
         qpid/ha/StandAlone.h
         qpid/ha/StatusCheck.cpp
         qpid/ha/StatusCheck.h
+        qpid/ha/PrimaryTxObserver.cpp
+        qpid/ha/PrimaryTxObserver.h
         qpid/ha/types.cpp
+	qpid/ha/TxReplicator.cpp
+	qpid/ha/TxReplicator.h
         qpid/ha/types.h
     )
 
@@ -798,7 +802,7 @@ include (amqp.cmake)
 # Check for syslog capabilities not present on all systems
 check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
 check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
-  
+
 # Set default Memory Status module (Null implementation)
 set (qpid_memstat_module
   qpid/sys/MemStat.cpp
@@ -884,7 +888,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     # On Linux override memory status module
     set (qpid_memstat_module
       qpid/sys/posix/MemStat.cpp
-    ) 
+    )
   endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
 
   if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
@@ -1070,7 +1074,7 @@ target_link_libraries (qpidcommon qpidtypes
                        ${qpidcommon_platform_LIBS}
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
-                       VERSION ${qpidcommon_version} 
+                       VERSION ${qpidcommon_version}
                        SOVERSION ${qpidcommon_version_major}
                        ${qpidcommon_LINK_FLAGS})
 install (TARGETS qpidcommon
@@ -1087,7 +1091,7 @@ set(qpidtypes_SOURCES
 add_msvc_version (qpidtypes library dll)
 add_library(qpidtypes SHARED ${qpidtypes_SOURCES})
 target_link_libraries(qpidtypes ${qpidtypes_platform_LIBS})
-set_target_properties (qpidtypes PROPERTIES 
+set_target_properties (qpidtypes PROPERTIES
                        VERSION ${qpidtypes_version}
                        SOVERSION ${qpidtypes_version_major})
 install(TARGETS qpidtypes
@@ -1329,9 +1333,9 @@ set (qpidbroker_SOURCES
 add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
-set_target_properties (qpidbroker PROPERTIES 
+set_target_properties (qpidbroker PROPERTIES
                        VERSION ${qpidbroker_version}
-                       SOVERSION ${qpidbroker_version_major} 
+                       SOVERSION ${qpidbroker_version_major}
                        COMPILE_DEFINITIONS _IN_QPID_BROKER)
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
@@ -1444,7 +1448,7 @@ endif (NOT WIN32)
     add_library (qmf2 SHARED ${qmf2_SOURCES})
     target_link_libraries (qmf2 qpidmessaging qpidtypes qpidclient qpidcommon)
     set_target_properties (qmf2 PROPERTIES
-                           VERSION ${qmf2_version} 
+                           VERSION ${qmf2_version}
                            SOVERSION ${qmf2_version_major})
     install (TARGETS qmf2 OPTIONAL
             DESTINATION ${QPID_INSTALL_LIBDIR}

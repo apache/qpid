@@ -400,7 +400,7 @@ boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
     return boost::intrusive_ptr<Broker>(new Broker(opts));
 }
 
-void Broker::setStore (boost::shared_ptr<MessageStore>& _store)
+void Broker::setStore (const boost::shared_ptr<MessageStore>& _store)
 {
     store.reset(new MessageStoreModule (_store));
     setStore();

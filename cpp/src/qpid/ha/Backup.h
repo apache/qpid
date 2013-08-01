@@ -59,6 +59,8 @@ class Backup : public Role
 
     Role* promote();
 
+    boost::shared_ptr<BrokerReplicator> getBrokerReplicator() { return replicator; }
+
   private:
     void stop(sys::Mutex::ScopedLock&);
     Role* recover(sys::Mutex::ScopedLock&);

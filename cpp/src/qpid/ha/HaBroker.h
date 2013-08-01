@@ -84,6 +84,7 @@ class HaBroker : public management::Manageable
 
     broker::Broker& getBroker() { return broker; }
     const Settings& getSettings() const { return settings; }
+    boost::shared_ptr<Role> getRole() const {return role; }
 
     /** Shut down the broker because of a critical error. */
     void shutdown(const std::string& message);
