@@ -71,10 +71,10 @@ class RemoteBackup
      */
     void ready(const QueuePtr& queue);
 
-    /** Called via ConfigurationObserver */
+    /** Called via BrokerObserver */
     void queueCreate(const QueuePtr&);
 
-    /** Called via ConfigurationObserver. Note: may set isReady() */
+    /** Called via BrokerObserver. Note: may set isReady() */
     void queueDestroy(const QueuePtr&);
 
     /**@return true when all catch-up queues for this backup are ready. */

@@ -82,7 +82,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         broker.getExchanges().registerExchange(failoverExchange);
     }
     // QueueSnapshots are needed for standalone replication as well as cluster.
-    broker.getConfigurationObservers().add(queueSnapshots);
+    broker.getBrokerObservers().add(queueSnapshots);
 }
 
 namespace {

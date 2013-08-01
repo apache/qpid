@@ -27,7 +27,7 @@
 #include "hash.h"
 
 #include "qpid/assert.h"
-#include "qpid/broker/ConfigurationObserver.h"
+#include "qpid/broker/BrokerObserver.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/sys/Mutex.h"
 
@@ -37,10 +37,10 @@ namespace qpid {
 namespace ha {
 
 /**
- * ConfigurationObserver that maintains a map of the QueueSnapshot for each queue.
+ * BrokerObserver that maintains a map of the QueueSnapshot for each queue.
  * THREAD SAFE.
  */
-class QueueSnapshots : public broker::ConfigurationObserver
+class QueueSnapshots : public broker::BrokerObserver
 {
   public:
     boost::shared_ptr<QueueSnapshot> get(const boost::shared_ptr<broker::Queue>& q) const {
@@ -49,7 +49,7 @@ class QueueSnapshots : public broker::ConfigurationObserver
         return i != snapshots.end() ? i->second : boost::shared_ptr<QueueSnapshot>();
     }
 
-    // ConfigurationObserver overrides.
+    // BrokerObserver overrides.
     void queueCreate(const boost::shared_ptr<broker::Queue>& q) {
         sys::Mutex::ScopedLock l(lock);
         boost::shared_ptr<QueueSnapshot> observer(new QueueSnapshot);
