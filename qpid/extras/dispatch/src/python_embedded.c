@@ -444,7 +444,6 @@ static void dx_io_rx_handler(void *context, dx_message_t *msg)
     //
     dx_parsed_field_t *body_map = dx_parse(body);
     if (body_map == 0 || !dx_parse_ok(body_map) || !dx_parse_is_map(body_map)) {
-        printf("XXXX %s\n", dx_parse_error(body_map));
         dx_field_iterator_free(ap);
         dx_field_iterator_free(body);
         dx_parse_free(ap_map);
