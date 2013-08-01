@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,54 +28,23 @@ using namespace qpid::broker;
 using qpid::framing::SequenceSet;
 using qpid::framing::SequenceNumber;
 
-TxAccept::RangeOp::RangeOp(const AckRange& r) : range(r) {}
 
-void TxAccept::RangeOp::prepare(TransactionContext* ctxt)
+TxAccept::TxAccept(const SequenceSet& _acked, DeliveryRecords& _unacked) :
+    acked(_acked), unacked(_unacked)
 {
-    for_each(range.start, range.end, bind(&DeliveryRecord::dequeue, _1, ctxt));
+    for(SequenceSet::RangeIterator i = acked.rangesBegin(); i != acked.rangesEnd(); ++i)
+        ranges.push_back(DeliveryRecord::findRange(unacked, i->first(), i->last()));
 }
 
-void TxAccept::RangeOp::commit()
-{
-    for_each(range.start, range.end, bind(&DeliveryRecord::committed, _1));
-    for_each(range.start, range.end, bind(&DeliveryRecord::setEnded, _1));
-}
-
-TxAccept::RangeOps::RangeOps(DeliveryRecords& u) : unacked(u) {} 
-
-void TxAccept::RangeOps::operator()(SequenceNumber start, SequenceNumber end)
-{
-    ranges.push_back(RangeOp(DeliveryRecord::findRange(unacked, start, end)));
-}
-
-void TxAccept::RangeOps::prepare(TransactionContext* ctxt)
-{
-    std::for_each(ranges.begin(), ranges.end(), bind(&RangeOp::prepare, _1, ctxt));
-}
-
-void TxAccept::RangeOps::commit()
-{
-    std::for_each(ranges.begin(), ranges.end(), bind(&RangeOp::commit, _1));
-    //now remove if isRedundant():
-    if (!ranges.empty()) {
-        DeliveryRecords::iterator begin = ranges.front().range.start;
-        DeliveryRecords::iterator end = ranges.back().range.end;
-        DeliveryRecords::iterator removed = remove_if(begin, end, mem_fun_ref(&DeliveryRecord::isRedundant));
-        unacked.erase(removed, end);
-    }
-}
-
-TxAccept::TxAccept(const SequenceSet& _acked, DeliveryRecords& _unacked) : 
-    acked(_acked), unacked(_unacked), ops(unacked) 
-{
-    //populate the ops
-    acked.for_each(ops);
+void TxAccept::each(boost::function<void(DeliveryRecord&)> f) {
+    for(AckRanges::iterator i = ranges.begin(); i != ranges.end(); ++i)
+        for_each(i->start, i->end, f);
 }
 
 bool TxAccept::prepare(TransactionContext* ctxt) throw()
 {
     try{
-        ops.prepare(ctxt);
+        each(bind(&DeliveryRecord::dequeue, _1, ctxt));
         return true;
     }catch(const std::exception& e){
         QPID_LOG(error, "Failed to prepare: " << e.what());
@@ -86,10 +55,19 @@ bool TxAccept::prepare(TransactionContext* ctxt) throw()
     }
 }
 
-void TxAccept::commit() throw() 
+void TxAccept::commit() throw()
 {
     try {
-        ops.commit();
+        each(bind(&DeliveryRecord::committed, _1));
+        each(bind(&DeliveryRecord::setEnded, _1));
+        //now remove if isRedundant():
+        if (!ranges.empty()) {
+            DeliveryRecords::iterator begin = ranges.front().start;
+            DeliveryRecords::iterator end = ranges.back().end;
+            DeliveryRecords::iterator removed =
+                remove_if(begin, end, mem_fun_ref(&DeliveryRecord::isRedundant));
+            unacked.erase(removed, end);
+        }
     } catch (const std::exception& e) {
         QPID_LOG(error, "Failed to commit: " << e.what());
     } catch(...) {
