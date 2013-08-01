@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/TxBuffer.h"
+#include "qpid/broker/TransactionObserver.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/mem_fn.hpp>
@@ -26,8 +27,11 @@
 using boost::mem_fn;
 using namespace qpid::broker;
 
+TxBuffer::TxBuffer() : observer(new NullTransactionObserver) {}
+
 bool TxBuffer::prepare(TransactionContext* const ctxt)
 {
+    if (!observer->prepare()) return false;
     for(op_iterator i = ops.begin(); i != ops.end(); i++){
         if(!(*i)->prepare(ctxt)){
             return false;
@@ -38,18 +42,21 @@ bool TxBuffer::prepare(TransactionContext* const ctxt)
 
 void TxBuffer::commit()
 {
+    observer->commit();
     std::for_each(ops.begin(), ops.end(), mem_fn(&TxOp::commit));
     ops.clear();
 }
 
 void TxBuffer::rollback()
 {
+    observer->rollback();
     std::for_each(ops.begin(), ops.end(), mem_fn(&TxOp::rollback));
     ops.clear();
 }
 
 void TxBuffer::enlist(TxOp::shared_ptr op)
 {
+    op->callObserver(observer);
     ops.push_back(op);
 }
 

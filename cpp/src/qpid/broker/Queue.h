@@ -118,6 +118,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         bool prepare(TransactionContext* ctxt) throw();
         void commit() throw();
         void rollback() throw();
+        void callObserver(const boost::shared_ptr<TransactionObserver>&);
     };
 
     /**

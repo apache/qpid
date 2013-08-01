@@ -25,17 +25,19 @@
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
-    namespace broker {
+namespace broker {
+class TransactionObserver;
 
-        class TxOp{
-        public:
-            typedef boost::shared_ptr<TxOp> shared_ptr;
+class TxOp{
+  public:
+    typedef boost::shared_ptr<TxOp> shared_ptr;
 
-            virtual bool prepare(TransactionContext*) throw() = 0;
-            virtual void commit()  throw() = 0;
-            virtual void rollback()  throw() = 0;
-            virtual ~TxOp(){}
-        };
+    virtual bool prepare(TransactionContext*) throw() = 0;
+    virtual void commit()  throw() = 0;
+    virtual void rollback()  throw() = 0;
+    virtual void callObserver(const boost::shared_ptr<TransactionObserver>&) = 0;
+    virtual ~TxOp(){}
+};
 
 }} // namespace qpid::broker
 

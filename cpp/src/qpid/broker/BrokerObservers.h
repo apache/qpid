@@ -64,6 +64,12 @@ class BrokerObservers : public BrokerObserver,
         each(boost::bind(
                  &BrokerObserver::unbind, _1, exchange, queue, key, args));
     }
+    void startTx(const boost::shared_ptr<TxBuffer>& tx) {
+        each(boost::bind(&BrokerObserver::startTx, _1, tx));
+    }
+    void startDtx(const boost::shared_ptr<DtxBuffer>& dtx) {
+        each(boost::bind(&BrokerObserver::startDtx, _1, dtx));
+    }
 };
 
 }} // namespace qpid::broker

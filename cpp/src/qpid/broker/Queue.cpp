@@ -34,6 +34,7 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/Selector.h"
+#include "qpid/broker/TransactionObserver.h"
 
 //TODO: get rid of this
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
@@ -165,6 +166,12 @@ void Queue::TxPublish::rollback() throw()
     } catch (const std::exception& e) {
         QPID_LOG(error, "Failed to rollback: " << e.what());
     }
+}
+
+void Queue::TxPublish::callObserver(
+    const boost::shared_ptr<TransactionObserver>& observer)
+{
+    observer->enqueue(queue, message);
 }
 
 Queue::Queue(const string& _name, const QueueSettings& _settings,
