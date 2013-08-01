@@ -87,6 +87,7 @@ class LinkStateEngine(object):
       self.collection[msg.id] = ls
       self.collection_changed = True
       ls.last_seen = now
+      self.container.new_node(msg.id)
       self.container.log(LOG_INFO, "Learned link-state from new router: %s" % msg.id)
     # Schedule LSRs for any routers referenced in this LS that we don't know about
     for _id in msg.ls.peers:
@@ -108,6 +109,7 @@ class LinkStateEngine(object):
     self.collection_changed = True
     self._send_ra()
 
+
   def set_mobile_sequence(self, seq):
     self.mobile_seq = seq
 
@@ -124,6 +126,7 @@ class LinkStateEngine(object):
     for key in to_delete:
       ls = self.collection.pop(key)
       self.collection_changed = True
+      self.container.lost_node(key)
       self.container.log(LOG_INFO, "Expired link-state from router: %s" % key)
 
 

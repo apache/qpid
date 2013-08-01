@@ -64,6 +64,7 @@ class NeighborEngine(object):
     if msg.is_seen(self.id):
       if self.link_state.add_peer(msg.id):
         self.link_state_changed = True
+        self.container.new_neighbor(msg.id)
         self.container.log(LOG_INFO, "New neighbor established: %s" % msg.id)
     ##
     ## TODO - Use this function to detect area boundaries
@@ -78,6 +79,7 @@ class NeighborEngine(object):
       self.hellos.pop(key)
       if self.link_state.del_peer(key):
         self.link_state_changed = True
+        self.container.lost_neighbor(key)
         self.container.log(LOG_INFO, "Neighbor lost: %s" % key)
         
       
