@@ -285,7 +285,6 @@ class Broker(Popen):
         test.cleanup_stop(self)
         self._host = "127.0.0.1"
         log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
-        self._log_ready = False
 
     def startQmf(self, handler=None):
         self.qmf_session = qmf.console.Session(handler)
@@ -363,29 +362,21 @@ class Broker(Popen):
 
     def host_port(self): return "%s:%s" % (self.host(), self.port())
 
-    def log_contains(self, str, timeout=1):
-        """Wait for str to appear in the log file up to timeout. Return true if found"""
-        return retry(lambda: find_in_file(str, self.log), timeout)
-
-    def log_ready(self):
-        """Return true if the log file exists and contains a broker ready message"""
-        if not self._log_ready:
-            self._log_ready = find_in_file("notice Broker running", self.log)
-        return self._log_ready
-
     def ready(self, timeout=30, **kwargs):
         """Wait till broker is ready to serve clients"""
-        # First make sure the broker is listening by checking the log.
-        if not retry(self.log_ready, timeout=timeout):
-            raise Exception(
-                "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,5)))
-        # Create a connection and a session.
-        try:
-            c = self.connect(**kwargs)
-            try: c.session()
-            finally: c.close()
-        except Exception,e: raise RethrownException(
-            "Broker %s not responding: (%s)%s"%(self.name,e,error_line(self.log, 5)))
+        deadline = time.time()+timeout
+        while True:
+            try:
+                c = self.connect(**kwargs)
+                try:
+                    c.session()
+                    return      # All good
+                finally: c.close()
+            except Exception,e: # Retry up to timeout
+                if time.time() > deadline:
+                    raise RethrownException(
+                        "Broker %s not responding: (%s)%s"%(
+                            self.name,e,error_line(self.log, 5)))
 
 def browse(session, queue, timeout=0, transform=lambda m: m.content):
     """Return a list with the contents of each message on queue."""
