@@ -26,6 +26,7 @@
 #include "hash.h"
 #include "qpid/broker/Exchange.h"
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/function.hpp>
 #include <iosfwd>
 
 namespace qpid {
@@ -56,15 +57,11 @@ class QueueReplicator : public broker::Exchange,
                         public boost::enable_shared_from_this<QueueReplicator>
 {
   public:
-    static const std::string DEQUEUE_EVENT_KEY;
-    static const std::string ID_EVENT_KEY;
     static const std::string QPID_SYNC_FREQUENCY;
+    static const std::string REPLICATOR_PREFIX;
 
     static std::string replicatorName(const std::string& queueName);
     static bool isReplicatorName(const std::string&);
-
-    /** Test if a string is an event key */
-    static bool isEventKey(const std::string key);
 
     QueueReplicator(HaBroker&,
                     boost::shared_ptr<broker::Queue> q,
@@ -72,7 +69,7 @@ class QueueReplicator : public broker::Exchange,
 
     ~QueueReplicator();
 
-    void activate();            // Must be called immediately after constructor.
+    void activate();    // Must be called immediately after constructor.
 
     std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue
@@ -89,24 +86,36 @@ class QueueReplicator : public broker::Exchange,
 
     ReplicationId getMaxId();
 
-  private:
-    typedef qpid::sys::unordered_map<ReplicationId, QueuePosition, TrivialHasher<int32_t> > PositionMap;
+  protected:
+    typedef boost::function<void(const std::string&, sys::Mutex::ScopedLock&)> DispatchFn;
+    typedef qpid::sys::unordered_map<std::string, DispatchFn> DispatchMap;
 
+    virtual void deliver(const broker::Message&);
+
+    sys::Mutex lock;
+    HaBroker& haBroker;
+    const BrokerInfo brokerInfo;
+    DispatchMap dispatch;
+
+  private:
+    typedef qpid::sys::unordered_map<
+      ReplicationId, QueuePosition, TrivialHasher<int32_t> > PositionMap;
     class ErrorListener;
     class QueueObserver;
 
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
     void destroy();             // Called when the queue is destroyed.
-    void dequeue(const ReplicationIdSet&, sys::Mutex::ScopedLock&);
 
-    HaBroker& haBroker;
+    // Dispatch functions
+    void dequeueEvent(const std::string& data, sys::Mutex::ScopedLock&);
+    void idEvent(const std::string& data, sys::Mutex::ScopedLock&);
+
     std::string logPrefix;
     std::string bridgeName;
-    sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
     boost::shared_ptr<broker::Bridge> bridge;
-    BrokerInfo brokerInfo;
+
     bool subscribed;
     const Settings& settings;
     bool destroyed;

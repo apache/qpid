@@ -107,6 +107,14 @@ BrokerInfo::Set Membership::otherBackups() const {
     return result;
 }
 
+BrokerInfo::Set Membership::getBrokers() const {
+    Mutex::ScopedLock l(lock);
+    BrokerInfo::Set result;
+    transform(brokers.begin(), brokers.end(), inserter(result, result.begin()),
+              bind(&BrokerInfo::Map::value_type::second, _1));
+    return result;
+}
+
 bool Membership::get(const types::Uuid& id, BrokerInfo& result) const {
     Mutex::ScopedLock l(lock);
     BrokerInfo::Map::const_iterator i = brokers.find(id);

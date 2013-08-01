@@ -33,7 +33,7 @@ using std::string;
 namespace qpid {
 namespace broker {
 
-MessageStoreModule::MessageStoreModule(boost::shared_ptr<MessageStore>& _store)
+MessageStoreModule::MessageStoreModule(const boost::shared_ptr<MessageStore>& _store)
   : store(_store) {}
 
 MessageStoreModule::~MessageStoreModule()

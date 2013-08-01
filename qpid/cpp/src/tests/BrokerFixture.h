@@ -42,34 +42,23 @@ namespace tests {
 struct  BrokerFixture : private boost::noncopyable {
     typedef qpid::broker::Broker Broker;
     typedef boost::intrusive_ptr<Broker> BrokerPtr;
+    typedef std::vector<std::string> Args;
 
     BrokerPtr broker;
+    uint16_t port;
     qpid::sys::Thread brokerThread;
 
-    BrokerFixture(Broker::Options opts=Broker::Options(), bool enableMgmt=false) {
-        // Keep the tests quiet unless logging env. vars have been set by user.
-        if (!::getenv("QPID_LOG_ENABLE") && !::getenv("QPID_TRACE")) {
-            qpid::log::Options logOpts;
-            logOpts.selectors.clear();
-            logOpts.deselectors.clear();
-            logOpts.selectors.push_back("error+");
-            qpid::log::Logger::instance().configure(logOpts);
-        }
-        opts.port=0;
-        opts.listenInterfaces.push_back("127.0.0.1");
-        // Management doesn't play well with multiple in-process brokers.
-        opts.enableMgmt=enableMgmt;
-        opts.workerThreads=1;
-        opts.dataDir="";
-        opts.auth=false;
-        broker = Broker::create(opts);
-        // TODO aconway 2007-12-05: At one point BrokerFixture
-        // tests could hang in Connection ctor if the following
-        // line is removed. This may not be an issue anymore.
-        broker->accept();
-        broker->getPort(qpid::broker::Broker::TCP_TRANSPORT);
-        brokerThread = qpid::sys::Thread(*broker);
-    };
+    BrokerFixture(const Args& args=Args(), const Broker::Options& opts=Broker::Options(),
+                  bool isExternalPort_=false, uint16_t externalPort_=0)
+    {
+        init(args, opts, isExternalPort_, externalPort_);
+    }
+
+    BrokerFixture(const Broker::Options& opts,
+                  bool isExternalPort_=false, uint16_t externalPort_=0)
+    {
+        init(Args(), opts, isExternalPort_, externalPort_);
+    }
 
     void shutdownBroker() {
         if (broker) {
@@ -83,10 +72,45 @@ struct  BrokerFixture : private boost::noncopyable {
 
     /** Open a connection to the broker. */
     void open(qpid::client::Connection& c) {
-        c.open("localhost", broker->getPort(qpid::broker::Broker::TCP_TRANSPORT));
+        c.open("localhost", getPort());
     }
 
-    uint16_t getPort() { return broker->getPort(qpid::broker::Broker::TCP_TRANSPORT); }
+    uint16_t getPort() { return port; }
+
+  private:
+    void init(const Args& args, Broker::Options opts,
+              bool isExternalPort=false, uint16_t externalPort=0)
+    {
+        // Keep the tests quiet unless logging env. vars have been set by user.
+        if (!::getenv("QPID_LOG_ENABLE") && !::getenv("QPID_TRACE")) {
+            qpid::log::Options logOpts;
+            logOpts.selectors.clear();
+            logOpts.deselectors.clear();
+            logOpts.selectors.push_back("error+");
+            qpid::log::Logger::instance().configure(logOpts);
+        }
+        // Default options, may be over-ridden when we parse args.
+        opts.port=0;
+        opts.listenInterfaces.push_back("127.0.0.1");
+        opts.workerThreads=1;
+        opts.dataDir="";
+        opts.auth=false;
+
+        // Argument parsing
+        std::vector<const char*> argv(args.size());
+        std::transform(args.begin(), args.end(), argv.begin(),
+                       boost::bind(&std::string::c_str, _1));
+        Plugin::addOptions(opts);
+        opts.parse(argv.size(), &argv[0]);
+        broker = Broker::create(opts);
+        // TODO aconway 2007-12-05: At one point BrokerFixture
+        // tests could hang in Connection ctor if the following
+        // line is removed. This may not be an issue anymore.
+        broker->accept();
+        if (isExternalPort) port = externalPort;
+        else port = broker->getPort(qpid::broker::Broker::TCP_TRANSPORT);
+        brokerThread = qpid::sys::Thread(*broker);
+    };
 };
 
 /** Connection that opens in its constructor */
@@ -125,8 +149,8 @@ template <class ConnectionType, class SessionType=qpid::client::Session>
 struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 
     SessionFixtureT(Broker::Options opts=Broker::Options()) :
-        BrokerFixture(opts),
-        ClientT<ConnectionType,SessionType>(broker->getPort(qpid::broker::Broker::TCP_TRANSPORT))
+        BrokerFixture(BrokerFixture::Args(), opts),
+        ClientT<ConnectionType,SessionType>(getPort())
     {}
 
 };

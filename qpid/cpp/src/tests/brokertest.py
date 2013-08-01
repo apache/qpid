@@ -244,14 +244,10 @@ class Broker(Popen):
 
     def __str__(self): return "Broker<%s %s :%d>"%(self.log, self.pname, self.port())
 
-    def find_log(self):
-        self.log = "%03d:%s.log" % (Broker._log_count, self.name)
-        Broker._log_count += 1
-
     def get_log(self):
         return os.path.abspath(self.log)
 
-    def __init__(self, test, args=[], name=None, expect=EXPECT_RUNNING, port=0, log_level=None, wait=None, show_cmd=False):
+    def __init__(self, test, args=[], test_store=False, name=None, expect=EXPECT_RUNNING, port=0, log_level=None, wait=None, show_cmd=False):
         """Start a broker daemon. name determines the data-dir and log
         file names."""
 
@@ -273,10 +269,17 @@ class Broker(Popen):
         else:
             self.name = "broker%d" % Broker._broker_count
             Broker._broker_count += 1
-        self.find_log()
+
+        self.log = "%03d:%s.log" % (Broker._log_count, self.name)
+        self.store_log = "%03d:%s.store.log" % (Broker._log_count, self.name)
+        Broker._log_count += 1
+
         cmd += ["--log-to-file", self.log]
         cmd += ["--log-to-stderr=no"]
         cmd += ["--log-enable=%s"%(log_level or "info+") ]
+
+        if test_store: cmd += ["--load-module", BrokerTest.test_store_lib,
+                               "--test-store-events", self.store_log]
 
         self.datadir = self.name
         cmd += ["--data-dir", self.datadir]

@@ -38,7 +38,7 @@ class MessageStoreModule : public MessageStore
 {
     boost::shared_ptr<MessageStore> store;
   public:
-    MessageStoreModule(boost::shared_ptr<MessageStore>& store);
+    MessageStoreModule(const boost::shared_ptr<MessageStore>& store);
 
     bool init(const Options* options);
     std::auto_ptr<TransactionContext> begin();

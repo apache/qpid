@@ -44,6 +44,8 @@ class Buffer;
 namespace ha {
 class QueueGuard;
 class HaBroker;
+class Event;
+class Primary;
 
 /**
  * A susbcription that replicates to a remote backup.
@@ -118,6 +120,9 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
 
     BrokerInfo getBrokerInfo() const { return info; }
 
+    /** Skip replicating enqueue of of ids. */
+    void addSkip(const ReplicationIdSet& ids);
+
   protected:
     bool doDispatch();
 
@@ -128,7 +133,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     std::string logPrefix;
     QueuePosition position;
     ReplicationIdSet dequeues;  // Dequeues to be sent in next dequeue event.
-    ReplicationIdSet skip;      // Messages already on backup will be skipped.
+    ReplicationIdSet skip;   // Skip enqueues: messages already on backup and tx enqueues.
     ReplicationIdSet unready;   // Unguarded, replicated and un-acknowledged.
     bool ready;
     bool cancelled;
@@ -136,12 +141,13 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl
     boost::shared_ptr<QueueGuard> guard;
     HaBroker& haBroker;
     boost::shared_ptr<QueueObserver> observer;
+    boost::shared_ptr<Primary> primary;
 
     bool isGuarded(sys::Mutex::ScopedLock&);
     void dequeued(ReplicationId);
     void sendDequeueEvent(sys::Mutex::ScopedLock&);
     void sendIdEvent(ReplicationId, sys::Mutex::ScopedLock&);
-    void sendEvent(const std::string& key, const std::string& data, sys::Mutex::ScopedLock&);
+    void sendEvent(const Event&, sys::Mutex::ScopedLock&);
     void checkReady(sys::Mutex::ScopedLock&);
   friend class Factory;
 };
