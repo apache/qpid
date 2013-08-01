@@ -97,16 +97,10 @@ void StatusCheckThread::run() {
             QPID_LOG(debug, statusCheck.logPrefix << "Status of " << url << ": " << status);
         }
     } catch(const exception& error) {
-        QPID_LOG(info, statusCheck.logPrefix << "Checking status of " << url <<  ": " << error.what());
+        QPID_LOG(info, statusCheck.logPrefix << "Error checking status of " << url
+                 <<  ": " << error.what());
     }
-    try { c.close(); }
-    catch(const exception&) {
-        QPID_LOG(warning, statusCheck.logPrefix << "Error closing status check connection to " << url);
-    }
-    try { c.close(); }
-    catch(const exception&) {
-        QPID_LOG(warning, "Error closing status check connection to " << url);
-    }
+    try { c.close(); } catch(...) {}
     delete this;
 }
 

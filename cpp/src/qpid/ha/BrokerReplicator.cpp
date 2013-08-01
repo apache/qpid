@@ -21,6 +21,7 @@
 #include "BrokerReplicator.h"
 #include "HaBroker.h"
 #include "QueueReplicator.h"
+#include "TxReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/ConnectionObserver.h"
@@ -648,11 +649,16 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     Variant::Map argsMap(asMapVoid(values[ARGUMENTS]));
     if (!replicationTest.getLevel(argsMap)) return;
     string name(values[NAME].asString());
+
+    if (TxReplicator::isTxQueue(name)) return; // Can't join a transaction in progress.
+
     if (!queueTracker.get())
         throw Exception(QPID_MSG("Unexpected queue response: " << values));
     if (!queueTracker->response(name)) return; // Response is out-of-date
+
     QPID_LOG(debug, logPrefix << "Queue response: " << name);
     boost::shared_ptr<Queue> queue = queues.find(name);
+
     if (queue) { // Already exists
         bool uuidOk = (getHaUuid(queue->getSettings().original) == getHaUuid(argsMap));
         if (!uuidOk) QPID_LOG(debug, logPrefix << "UUID mismatch for queue: " << name);
@@ -660,6 +666,7 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
         QPID_LOG(debug, logPrefix << "Queue response replacing queue:  " << name);
         deleteQueue(name);
     }
+
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
     boost::shared_ptr<QueueReplicator> qr = replicateQueue(
@@ -770,8 +777,13 @@ boost::shared_ptr<QueueReplicator> BrokerReplicator::startQueueReplicator(
     const boost::shared_ptr<Queue>& queue)
 {
     if (replicationTest.getLevel(*queue) == ALL) {
-        boost::shared_ptr<QueueReplicator> qr(
-            new QueueReplicator(haBroker, queue, link));
+        boost::shared_ptr<QueueReplicator> qr;
+        if (TxReplicator::isTxQueue(queue->getName())){
+            qr.reset(new TxReplicator(haBroker, queue, link));
+        }
+        else {
+            qr.reset(new QueueReplicator(haBroker, queue, link));
+        }
         qr->activate();
         return qr;
     }

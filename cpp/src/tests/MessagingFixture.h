@@ -115,6 +115,7 @@ struct MessagingFixture : public BrokerFixture
             (boost::format("amqp:tcp:localhost:%1%") % (port)).str());
         connection.open();
         return connection;
+
     }
 
     /** Open a connection to the broker. */
@@ -231,9 +232,10 @@ inline void receive(messaging::Receiver& receiver, uint count = 1, uint start = 
 class MethodInvoker
 {
   public:
-    MethodInvoker(messaging::Session& session) : replyTo("#; {create:always, node:{x-declare:{auto-delete:true}}}"),
-                                      sender(session.createSender("qmf.default.direct/broker")),
-                                      receiver(session.createReceiver(replyTo)) {}
+    MethodInvoker(messaging::Session session) :
+        replyTo("#; {create:always, node:{x-declare:{auto-delete:true}}}"),
+        sender(session.createSender("qmf.default.direct/broker")),
+        receiver(session.createReceiver(replyTo)) {}
 
     void createExchange(const std::string& name, const std::string& type, bool durable=false)
     {
@@ -292,11 +294,14 @@ class MethodInvoker
         methodRequest("delete", params);
     }
 
-    void methodRequest(const std::string& method, const Variant::Map& inParams, Variant::Map* outParams = 0)
+    void methodRequest(
+        const std::string& method,
+        const Variant::Map& inParams, Variant::Map* outParams = 0,
+        const std::string& objectName="org.apache.qpid.broker:broker:amqp-broker")
     {
         Variant::Map content;
         Variant::Map objectId;
-        objectId["_object_name"] = "org.apache.qpid.broker:broker:amqp-broker";
+        objectId["_object_name"] = objectName;;
         content["_object_id"] = objectId;
         content["_method_name"] = method;
         content["_arguments"] = inParams;

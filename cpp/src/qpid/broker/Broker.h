@@ -226,7 +226,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     /** Shut down the broker */
     QPID_BROKER_EXTERN virtual void shutdown();
 
-    QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
+    QPID_BROKER_EXTERN void setStore (const boost::shared_ptr<MessageStore>& store);
+    bool hasStore() const { return store.get(); }
     MessageStore& getStore() { return *store; }
     void setAcl (AclModule* _acl) {acl = _acl;}
     AclModule* getAcl() { return acl; }

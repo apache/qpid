@@ -379,24 +379,7 @@ add_test (queue_redirect ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_queue_redirect
 
 add_library(test_store MODULE test_store.cpp)
 target_link_libraries (test_store qpidbroker qpidcommon)
-set_target_properties (test_store PROPERTIES
-                       COMPILE_DEFINITIONS _IN_QPID_BROKER
-                       PREFIX "")
+set_target_properties (test_store PROPERTIES PREFIX "" COMPILE_DEFINITIONS _IN_QPID_BROKER)
 
 
 add_library (dlclose_noop MODULE dlclose_noop.c)
-#libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
-
-#CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
-#
-## Longer running stability tests, not run by default check: target.
-## Not run under valgrind, too slow
-#LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest
-#EXTRA_DIST+=$(LONG_TESTS) run_perftest
-#check-long:
-#	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=
-
-#
-# legacystore
-#
-# add_subdirectory(legacystore)

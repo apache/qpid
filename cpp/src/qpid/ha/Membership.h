@@ -69,6 +69,9 @@ class Membership
     /** Return IDs of all READY backups other than self */
     BrokerInfo::Set otherBackups() const;
 
+    /** Return IDs of all brokers */
+    BrokerInfo::Set getBrokers() const;
+
     void assign(const types::Variant::List&);
     types::Variant::List asList() const;
 
