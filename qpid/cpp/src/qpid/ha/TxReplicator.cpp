@@ -47,11 +47,11 @@ namespace qpid {
 namespace ha {
 
 using namespace std;
-using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using qpid::broker::amqp_0_10::MessageTransfer;
 using qpid::types::Uuid;
+using boost::make_shared;
 
 namespace {
 const string QPID_HA(QPID_HA_PREFIX);
@@ -87,7 +87,7 @@ TxReplicator::TxReplicator(
     logPrefix = "Backup of transaction "+shortId+": ";
 
     if (!store) throw Exception(QPID_MSG(logPrefix << "No message store loaded."));
-    boost::shared_ptr<Backup> backup = dynamic_pointer_cast<Backup>(hb.getRole());
+    boost::shared_ptr<Backup> backup = boost::dynamic_pointer_cast<Backup>(hb.getRole());
     if (!backup) throw Exception(QPID_MSG(logPrefix << "Broker is not in backup mode."));
     brokerReplicator = backup->getBrokerReplicator();
 
@@ -195,7 +195,7 @@ void TxReplicator::DequeueState::addRecords(const EventMap::value_type& entry) {
 boost::shared_ptr<TxAccept> TxReplicator::DequeueState::makeAccept() {
     for_each(events.begin(), events.end(),
              boost::bind(&TxReplicator::DequeueState::addRecords, this, _1));
-    return make_shared<TxAccept>(cref(recordIds), ref(records));
+    return boost::make_shared<TxAccept>(boost::cref(recordIds), boost::ref(records));
 }
 
 void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock& l) {

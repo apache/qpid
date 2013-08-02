@@ -47,7 +47,6 @@ namespace ha {
 using namespace broker;
 using namespace framing;
 using namespace std;
-using namespace boost;
 using std::exception;
 using sys::Mutex;
 

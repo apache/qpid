@@ -43,7 +43,7 @@ class Buffer;
 namespace ha {
 class QueueGuard;
 class HaBroker;
-class Event;
+struct Event;
 class Primary;
 
 /**

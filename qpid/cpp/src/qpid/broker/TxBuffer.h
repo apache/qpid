@@ -71,7 +71,7 @@ class TxBuffer {
  public:
     typedef boost::shared_ptr<TxBuffer> shared_ptr;
 
-    TxBuffer();
+    QPID_BROKER_EXTERN TxBuffer();
 
     /**
      * Adds an operation to the transaction.

@@ -111,7 +111,7 @@ BrokerInfo::Set Membership::getBrokers() const {
     Mutex::ScopedLock l(lock);
     BrokerInfo::Set result;
     transform(brokers.begin(), brokers.end(), inserter(result, result.begin()),
-              bind(&BrokerInfo::Map::value_type::second, _1));
+              boost::bind(&BrokerInfo::Map::value_type::second, _1));
     return result;
 }
 
