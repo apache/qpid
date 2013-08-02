@@ -44,6 +44,7 @@ import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
 import static org.apache.qpid.server.security.access.ObjectType.USER;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
+import static org.apache.qpid.server.security.access.Operation.ACCESS_LOGS;
 import static org.apache.qpid.server.security.access.Operation.BIND;
 import static org.apache.qpid.server.security.access.Operation.CONFIGURE;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
@@ -625,6 +626,17 @@ public class SecurityManager implements ConfigurationChangeListener
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CONFIGURE, BROKER, properties);
+            }
+        });
+    }
+
+    public boolean authoriseLogsAccess()
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.authorise(ACCESS_LOGS, BROKER, ObjectProperties.EMPTY);
             }
         });
     }

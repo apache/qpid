@@ -31,6 +31,10 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class LogRecordsServlet extends AbstractServlet
 {
+    private static final long serialVersionUID = 2L;
+
+    public static final String PARAM_LAST_LOG_ID = "lastLogId";
+
     public LogRecordsServlet()
     {
         super();
@@ -46,12 +50,31 @@ public class LogRecordsServlet extends AbstractServlet
         response.setHeader("Pragma","no-cache");
         response.setDateHeader ("Expires", 0);
 
+        if (!getBroker().getSecurityManager().authoriseLogsAccess())
+        {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Broker logs access is denied");
+            return;
+        }
+
+        long lastLogId = 0;
+        try
+        {
+            lastLogId = Long.parseLong(request.getParameter(PARAM_LAST_LOG_ID));
+        }
+        catch(Exception e)
+        {
+            // ignore null and incorrect parameter values
+        }
+
         List<Map<String,Object>> logRecords = new ArrayList<Map<String, Object>>();
 
         LogRecorder logRecorder = getBroker().getLogRecorder();
         for(LogRecorder.Record record : logRecorder)
         {
-            logRecords.add(logRecordToObject(record));
+            if (record.getId() > lastLogId)
+            {
+                logRecords.add(logRecordToObject(record));
+            }
         }
 
         final PrintWriter writer = response.getWriter();

@@ -23,12 +23,13 @@ define(["dojo/store/Memory",
 				"dojo/data/ObjectStore",
 				"dojo/store/Observable"], function (Memory, DataGrid, ObjectStore, Observable) {
 
-    function UpdatableStore( data, divName, structure, func, props, Grid ) {
+    function UpdatableStore( data, divName, structure, func, props, Grid, notObservable ) {
 
         var that = this;
         var GridType = DataGrid;
 
-        that.store = Observable(Memory({data: data, idProperty: "id"}));
+        that.memoryStore = new Memory({data: data, idProperty: "id"});
+        that.store = notObservable? that.memoryStore : new Observable(that.memoryStore);
         that.dataStore = ObjectStore({objectStore: that.store});
 
         var gridProperties = {  store: that.dataStore,
@@ -63,7 +64,7 @@ define(["dojo/store/Memory",
 
     UpdatableStore.prototype.update = function(data)
     {
-
+        var changed = false;
         var store = this.store;
         var theItem;
 
@@ -78,7 +79,7 @@ define(["dojo/store/Memory",
                                          }
                                      }
                                      store.remove(object.id);
-
+                                     changed = true;
                                  });
 
         // iterate over data...
@@ -91,20 +92,84 @@ define(["dojo/store/Memory",
                             if(theItem[ propName ] != data[i][ propName ]) {
                                 theItem[ propName ] = data[i][ propName ];
                                 modified = true;
+                                changed = true;
                             }
                         }
                     }
                     if(modified) {
                         // ... check attributes for updates
                         store.notify(theItem, data[i].id);
+                        changed = true;
                     }
                 } else {
                     // ,,, if not in the store then add
                     store.put(data[i]);
+                    changed = true;
                 }
             }
         }
 
+        return changed;
+    };
+
+    function removeItemsFromArray(items, numberToRemove)
+    {
+      if (items)
+      {
+        if (numberToRemove > 0 && items.length > 0)
+        {
+          if (numberToRemove >= items.length)
+          {
+            numberToRemove = numberToRemove - items.length;
+            items.length = 0
+          }
+          else
+          {
+            items.splice(0, numberToRemove);
+            numberToRemove = 0;
+          }
+        }
+      }
+      return numberToRemove;
+    };
+
+    UpdatableStore.prototype.append = function(data, limit)
+    {
+        var changed = false;
+        var items = this.memoryStore.data;
+
+        if (limit)
+        {
+          var totalSize = items.length + (data ? data.length : 0);
+          var numberToRemove = totalSize - limit;
+
+          if (numberToRemove > 0)
+          {
+            changed = true;
+            numberToRemove = removeItemsFromArray(items, numberToRemove);
+            if (numberToRemove > 0)
+            {
+              removeItemsFromArray(data, numberToRemove);
+            }
+          }
+        }
+
+        if (data && data.length > 0)
+        {
+          changed = true;
+          items.push.apply(items, data);
+        }
+
+        this.memoryStore.setData(items);
+        return changed;
+    };
+
+    UpdatableStore.prototype.close = function()
+    {
+        this.dataStore.close();
+        this.dataStore = null;
+        this.store = null;
+        this.memoryStore = null;
     };
     return UpdatableStore;
 });

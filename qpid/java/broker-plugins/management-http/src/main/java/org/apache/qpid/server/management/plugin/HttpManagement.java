@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import java.io.File;
 import java.lang.reflect.Type;
 import java.net.SocketAddress;
 import java.util.Collection;
@@ -39,7 +38,9 @@ import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFi
 import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
+import org.apache.qpid.server.management.plugin.servlet.LogFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LogFileListingServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
@@ -312,6 +313,8 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.txt");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.xsl");
         root.addServlet(new ServletHolder(new HelperServlet()), "/rest/helper");
+        root.addServlet(new ServletHolder(new LogFileListingServlet()), "/rest/logfiles");
+        root.addServlet(new ServletHolder(new LogFileServlet()), "/rest/logfile");
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
         sessionManager.setSessionCookie(JSESSIONID_COOKIE_PREFIX + lastPort);
