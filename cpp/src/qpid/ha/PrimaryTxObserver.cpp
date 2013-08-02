@@ -40,7 +40,6 @@ class FieldTable;
 namespace ha {
 
 using namespace std;
-using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
@@ -70,7 +69,7 @@ class PrimaryTxObserver::Exchange : public broker::Exchange {
 
   private:
     static const string TYPE_NAME;
-    typedef function<void(const std::string&)> DispatchFn;
+    typedef boost::function<void(const std::string&)> DispatchFn;
     typedef qpid::sys::unordered_map<std::string, DispatchFn> DispatchMap;
 
     DispatchMap dispatch;
@@ -89,11 +88,11 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
     // when the tx-queue is deleted.
     //
     BrokerInfo::Set infoSet(haBroker.getMembership().otherBackups());
-    transform(infoSet.begin(), infoSet.end(), inserter(backups, backups.begin()),
-              bind(&BrokerInfo::getSystemId, _1));
+    std::transform(infoSet.begin(), infoSet.end(), inserter(backups, backups.begin()),
+              boost::bind(&BrokerInfo::getSystemId, _1));
     QPID_LOG(debug, logPrefix << "Started on " << backups);
 
-    pair<shared_ptr<Queue>, bool> result =
+    pair<QueuePtr, bool> result =
         broker.getQueues().declare(
             TRANSACTION_REPLICATOR_PREFIX+id.str(),
             QueueSettings(/*durable*/false, /*autodelete*/true));
@@ -102,7 +101,7 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
 }
 
 void PrimaryTxObserver::initialize() {
-    broker.getExchanges().registerExchange(make_shared<Exchange>(shared_from_this()));
+    broker.getExchanges().registerExchange(boost::make_shared<Exchange>(shared_from_this()));
 }
 
 void PrimaryTxObserver::enqueue(const QueuePtr& q, const broker::Message& m)
@@ -123,7 +122,7 @@ void PrimaryTxObserver::dequeue(
 }
 
 void PrimaryTxObserver::deduplicate(sys::Mutex::ScopedLock&) {
-    shared_ptr<Primary> primary(boost::dynamic_pointer_cast<Primary>(haBroker.getRole()));
+    boost::shared_ptr<Primary> primary(boost::dynamic_pointer_cast<Primary>(haBroker.getRole()));
     assert(primary);
     // Tell replicating subscriptions to skip IDs in the transaction.
     for (UuidSet::iterator b = backups.begin(); b != backups.end(); ++b)

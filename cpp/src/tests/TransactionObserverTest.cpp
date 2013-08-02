@@ -39,7 +39,9 @@ namespace qpid {
 namespace tests {
 
 using framing::SequenceSet;
-using  messaging::Message;
+using messaging::Message;
+using boost::shared_ptr;
+using boost::make_shared;
 
 using namespace boost::assign;
 using namespace boost;

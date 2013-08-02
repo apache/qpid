@@ -22,6 +22,7 @@
 #define _TxAccept_
 
 #include "qpid/framing/SequenceSet.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/DeliveryRecord.h"
 #include "qpid/broker/TxOp.h"
 #include <boost/function.hpp>
@@ -51,7 +52,7 @@ class TxAccept : public TxOp {
      * acks received
      * @param unacked the record of delivered messages
      */
-    TxAccept(const framing::SequenceSet& acked, DeliveryRecords& unacked);
+    QPID_BROKER_EXTERN TxAccept(const framing::SequenceSet& acked, DeliveryRecords& unacked);
     virtual bool prepare(TransactionContext* ctxt) throw();
     virtual void commit() throw();
     virtual void rollback() throw();
