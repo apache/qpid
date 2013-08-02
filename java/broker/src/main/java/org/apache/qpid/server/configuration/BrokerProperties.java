@@ -54,6 +54,7 @@ public class BrokerProperties
 
     public static final String PROPERTY_QPID_HOME = "QPID_HOME";
     public static final String PROPERTY_QPID_WORK = "QPID_WORK";
+    public static final String PROPERTY_LOG_RECORDS_BUFFER_SIZE = "qpid.broker_log_records_buffer_size";
 
     private BrokerProperties()
     {

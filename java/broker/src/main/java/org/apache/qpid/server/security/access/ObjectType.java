@@ -19,6 +19,7 @@
 package org.apache.qpid.server.security.access;
 
 import static org.apache.qpid.server.security.access.Operation.ACCESS;
+import static org.apache.qpid.server.security.access.Operation.ACCESS_LOGS;
 import static org.apache.qpid.server.security.access.Operation.BIND;
 import static org.apache.qpid.server.security.access.Operation.CONFIGURE;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
@@ -50,7 +51,7 @@ public enum ObjectType
     METHOD(Operation.ALL, ACCESS, UPDATE),
     USER(Operation.ALL, CREATE, DELETE, UPDATE),
     GROUP(Operation.ALL, CREATE, DELETE, UPDATE),
-    BROKER(Operation.ALL, CONFIGURE);
+    BROKER(Operation.ALL, CONFIGURE, ACCESS_LOGS);
 
     private EnumSet<Operation> _actions;
     

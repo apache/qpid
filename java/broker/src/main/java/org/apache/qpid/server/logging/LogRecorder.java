@@ -25,15 +25,17 @@ import org.apache.log4j.spi.ErrorHandler;
 import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
+import org.apache.qpid.server.configuration.BrokerProperties;
 
 public class LogRecorder implements Appender, Iterable<LogRecorder.Record>
 {
+    private static final int DEFAULT_BUFFER_SIZE = 4096;
     private ErrorHandler _errorHandler;
     private Filter _filter;
     private String _name;
     private long _recordId;
 
-    private final int _bufferSize = 4096;
+    private final int _bufferSize = Integer.getInteger(BrokerProperties.PROPERTY_LOG_RECORDS_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
     private final int _mask = _bufferSize - 1;
     private Record[] _records = new Record[_bufferSize];
 

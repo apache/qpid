@@ -33,7 +33,8 @@ public enum Operation
     DELETE,
     PURGE,
     UPDATE,
-    CONFIGURE;
+    CONFIGURE,
+    ACCESS_LOGS;
 
     public static Operation parse(String text)
     {

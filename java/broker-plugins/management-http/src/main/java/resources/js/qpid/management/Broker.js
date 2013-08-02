@@ -352,6 +352,12 @@ define(["dojo/_base/xhr",
 
                             that.brokerUpdater.update();
 
+                            var logViewerButton = query(".logViewer", contentPane.containerNode)[0];
+                            registry.byNode(logViewerButton).on("click", function(evt){
+                              that.controller.show("logViewer", null, null);
+                            });
+
+
                             var addProviderButton = query(".addAuthenticationProvider", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addProviderButton), "onClick", function(evt){ addAuthenticationProvider.show(); });
 
@@ -664,43 +670,6 @@ define(["dojo/_base/xhr",
                                                }, gridProperties, EnhancedGrid);
                              that.displayACLWarnMessage(aclData);
                          });
-
-               xhr.get({url: "rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
-                   .then(function(data)
-                         {
-                             that.logData = data;
-
-                             var gridProperties = {
-                                 height: 400,
-                                 plugins: {
-                                          pagination: {
-                                              pageSizes: ["10", "25", "50", "100"],
-                                              description: true,
-                                              sizeSwitch: true,
-                                              pageStepper: true,
-                                              gotoButton: true,
-                                              maxPageStep: 4,
-                                              position: "bottom"
-                                          }
-                                 }};
-
-
-                             that.logfileGrid =
-                                new UpdatableStore(that.logData, query(".broker-logfile")[0],
-                                                [   { name: "Timestamp", field: "timestamp", width: "200px",
-                                                        formatter: function(val) {
-                                                        var d = new Date(0);
-                                                        d.setUTCSeconds(val/1000);
-
-                                                        return d.toLocaleString();
-                                                    }},
-                                                    { name: "Level", field: "level", width: "60px"},
-                                                    { name: "Logger", field: "logger", width: "280px"},
-                                                    { name: "Thread", field: "thread", width: "120px"},
-                                                    { name: "Log Message", field: "message", width: "100%"}
-
-                                                ], null, gridProperties, EnhancedGrid);
-                         });
            }
 
            BrokerUpdater.prototype.updateHeader = function()
@@ -805,15 +774,6 @@ define(["dojo/_base/xhr",
                                                                                          that.displayACLWarnMessage(data);
                                                                                        }
                                                                                    });
-
-
-               xhr.get({url: "rest/logrecords", sync: properties.useSyncGet, handleAs: "json"})
-                   .then(function(data)
-                         {
-                             that.logData = data;
-                             that.logfileGrid.update(that.logData);
-                         });
-
            };
 
            BrokerUpdater.prototype.showReadOnlyAttributes = function()
