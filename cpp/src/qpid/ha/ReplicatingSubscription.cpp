@@ -46,7 +46,6 @@ namespace ha {
 using namespace framing;
 using namespace broker;
 using namespace std;
-using namespace boost;
 using sys::Mutex;
 using broker::amqp_0_10::MessageTransfer;
 

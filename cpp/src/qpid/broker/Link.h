@@ -151,8 +151,8 @@ class Link : public PersistableConfig, public management::Manageable {
 
     bool isDurable() { return durable; }
     void maintenanceVisit ();
-    framing::ChannelId nextChannel();        // allocate channel from link free pool
-    void returnChannel(framing::ChannelId);  // return channel to link free pool
+    QPID_BROKER_EXTERN framing::ChannelId nextChannel();        // allocate channel from link free pool
+    QPID_BROKER_EXTERN void returnChannel(framing::ChannelId);  // return channel to link free pool
     void add(Bridge::shared_ptr);
     void cancel(Bridge::shared_ptr);
 
