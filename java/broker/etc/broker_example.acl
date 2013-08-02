@@ -76,6 +76,9 @@ ACL ALLOW-LOG webadmins UPDATE METHOD
 # authorise operations changing broker model
 ACL ALLOW-LOG webadmins CONFIGURE BROKER
 
+# authorise operations to view and download broker logs
+ACL ALLOW webadmins ACCESS_LOGS BROKER
+
 # at the moment only the following UPDATE METHOD rules are supported by web management console
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"

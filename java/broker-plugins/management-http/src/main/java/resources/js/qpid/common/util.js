@@ -353,5 +353,21 @@ define(["dojo/_base/xhr",
              }
            };
 
+           util.errorHandler = function errorHandler(error)
+           {
+               if(error.status == 401)
+               {
+                   alert("Authentication Failed");
+               }
+               else if(error.status == 403)
+               {
+                   alert("Access Denied");
+               }
+               else
+               {
+                   alert(error);
+               }
+           }
+
            return util;
        });
