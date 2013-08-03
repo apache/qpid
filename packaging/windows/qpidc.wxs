@@ -96,8 +96,7 @@
         <!-- This registry key, values, procedure, and reasoning are
              described at http://support.microsoft.com/kb/817066
              It's necessary for the WCF XA support to work properly. -->
-        <RegistryKey Root="HKLM" Key="SOFTWARE\Microsoft\MSDTC\XADLL"
-                     Action="create">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Microsoft\MSDTC\XADLL">
           <RegistryValue Type="string"
                          Name="qpidxarm.dll"
                          Value="[QpidBin]qpidxarm.dll" />
