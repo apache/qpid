@@ -21,9 +21,7 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;

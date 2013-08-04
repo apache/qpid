@@ -116,8 +116,16 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     public void tearDown() throws Exception
     {
-        FileUtils.delete(new File(_storePath), true);
-        super.tearDown();
+        try
+        {
+            closeMessageStore();
+            closeConfigStore();
+            FileUtils.delete(new File(_storePath), true);
+        }
+        finally
+        {
+            super.tearDown();
+        }
     }
 
     public void testCreateExchange() throws Exception
@@ -366,11 +374,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     private void reopenStore() throws Exception
     {
-        onReopenStore();
-        if (_messageStore != null)
-        {
-            _messageStore.close();
-        }
+        closeMessageStore();
+        closeConfigStore();
         _messageStore = createMessageStore();
         _configStore = createConfigStore();
 
@@ -379,40 +384,11 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _messageStore.activate();
     }
 
-    protected abstract void onReopenStore();
+    protected abstract MessageStore createMessageStore() throws Exception;
+    protected abstract DurableConfigurationStore createConfigStore() throws Exception;
+    protected abstract void closeMessageStore() throws Exception;
+    protected abstract void closeConfigStore() throws Exception;
 
-    abstract protected MessageStore createMessageStore() throws Exception;
-    /*{
-        String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
-        if (storeClass == null)
-        {
-            storeClass = DerbyMessageStore.class.getName();
-        }
-        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-        MessageStore messageStore = (MessageStore) Class.forName(storeClass).newInstance();
-        return messageStore;
-    }
-*/
-    abstract protected DurableConfigurationStore createConfigStore() throws Exception;
-    /*{
-        String storeClass = System.getProperty(CONFIGURATION_STORE_CLASS_NAME_KEY);
-        if (storeClass == null)
-        {
-            storeClass = DerbyMessageStore.class.getName();
-        }
-        Class<DurableConfigurationStore> clazz = (Class<DurableConfigurationStore>) Class.forName(storeClass);
-        DurableConfigurationStore configurationStore ;
-        if(clazz.isInstance(_messageStore))
-        {
-            configurationStore = (DurableConfigurationStore) _messageStore;
-        }
-        else
-        {
-            configurationStore = (DurableConfigurationStore) Class.forName(storeClass).newInstance();
-        }
-        return configurationStore;
-    }
-*/
     public void testRecordXid() throws Exception
     {
         Record enqueueRecord = getTestRecord(1);
