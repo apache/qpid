@@ -28,18 +28,17 @@ public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigura
     private DerbyMessageStore _derbyMessageStore;
 
     @Override
-    protected void onReopenStore()
-    {
-        _derbyMessageStore = null;
-    }
-
-    @Override
     protected DerbyMessageStore createMessageStore() throws Exception
     {
         createStoreIfNecessary();
         return _derbyMessageStore;
     }
 
+    @Override
+    protected void closeMessageStore() throws Exception
+    {
+        closeStoreIfNecessary();
+    }
 
     private void createStoreIfNecessary()
     {
@@ -54,5 +53,20 @@ public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigura
     {
         createStoreIfNecessary();
         return _derbyMessageStore;
+    }
+
+    @Override
+    protected void closeConfigStore() throws Exception
+    {
+        closeStoreIfNecessary();
+    }
+
+    private void closeStoreIfNecessary() throws Exception
+    {
+        if (_derbyMessageStore != null)
+        {
+            _derbyMessageStore.close();
+            _derbyMessageStore = null;
+        }
     }
 }

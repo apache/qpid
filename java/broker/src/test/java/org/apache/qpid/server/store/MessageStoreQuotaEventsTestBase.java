@@ -70,6 +70,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
         _store = createStore();
         ((DurableConfigurationStore)_store).configureConfigStore("test", null, vhost);
+        _store.configureMessageStore("test", null, null);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();
@@ -79,8 +80,18 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     @Override
     public void tearDown() throws Exception
     {
-        super.tearDown();
-        FileUtils.delete(_storeLocation, true);
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            if (_store != null)
+            {
+                _store.close();
+            }
+            FileUtils.delete(_storeLocation, true);
+        }
     }
 
     public void testOverflow() throws Exception

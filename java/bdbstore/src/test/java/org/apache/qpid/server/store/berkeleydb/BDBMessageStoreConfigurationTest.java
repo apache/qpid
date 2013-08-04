@@ -25,20 +25,33 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 
 public class BDBMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
-
     private BDBMessageStore _bdbMessageStore;
-
-    @Override
-    protected void onReopenStore()
-    {
-        _bdbMessageStore = null;
-    }
 
     @Override
     protected BDBMessageStore createMessageStore() throws Exception
     {
         createStoreIfNecessary();
         return _bdbMessageStore;
+    }
+
+    @Override
+    protected void closeMessageStore() throws Exception
+    {
+        closeStoreIfNecessary();
+    }
+
+    @Override
+    protected DurableConfigurationStore createConfigStore() throws Exception
+    {
+        createStoreIfNecessary();
+
+        return _bdbMessageStore;
+    }
+
+    @Override
+    protected void closeConfigStore() throws Exception
+    {
+        closeStoreIfNecessary();
     }
 
     private void createStoreIfNecessary()
@@ -49,11 +62,12 @@ public class BDBMessageStoreConfigurationTest extends AbstractDurableConfigurati
         }
     }
 
-    @Override
-    protected DurableConfigurationStore createConfigStore() throws Exception
+    private void closeStoreIfNecessary() throws Exception
     {
-        createStoreIfNecessary();
-
-        return _bdbMessageStore;
+        if (_bdbMessageStore != null)
+        {
+            _bdbMessageStore.close();
+            _bdbMessageStore = null;
+        }
     }
 }
