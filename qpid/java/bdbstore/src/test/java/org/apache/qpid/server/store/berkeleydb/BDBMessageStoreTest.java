@@ -42,7 +42,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8;
 import org.apache.qpid.server.store.MessageStoreTest;
-import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
@@ -56,9 +55,6 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against
@@ -130,12 +126,12 @@ public class BDBMessageStoreTest extends MessageStoreTest
         /*
          * reload the store only (read-only)
          */
-        bdbStore = reloadStore(bdbStore);
+        AbstractBDBMessageStore readOnlyStore = reloadStore(bdbStore);
 
         /*
          * Read back and validate the 0-8 message metadata and content
          */
-        StorableMessageMetaData storeableMMD_0_8 = bdbStore.getMessageMetaData(messageid_0_8);
+        StorableMessageMetaData storeableMMD_0_8 = readOnlyStore.getMessageMetaData(messageid_0_8);
 
         assertEquals("Unexpected message type", MessageMetaDataType_0_8.TYPE, storeableMMD_0_8.getType().ordinal());
         assertTrue("Unexpected instance type", storeableMMD_0_8 instanceof MessageMetaData);
@@ -159,7 +155,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         assertEquals("Property MessageID has changed", props_0_8.getMessageIdAsString(), returnedProperties_0_8.getMessageIdAsString());
 
         ByteBuffer recoveredContent_0_8 = ByteBuffer.allocate((int) chb_0_8.getBodySize()) ;
-        long recoveredCount_0_8 = bdbStore.getContent(messageid_0_8, 0, recoveredContent_0_8);
+        long recoveredCount_0_8 = readOnlyStore.getContent(messageid_0_8, 0, recoveredContent_0_8);
         assertEquals("Incorrect amount of payload data recovered", chb_0_8.getBodySize(), recoveredCount_0_8);
         String returnedPayloadString_0_8 = new String(recoveredContent_0_8.array());
         assertEquals("Message Payload has changed", bodyText, returnedPayloadString_0_8);
@@ -167,7 +163,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         /*
          * Read back and validate the 0-10 message metadata and content
          */
-        StorableMessageMetaData storeableMMD_0_10 = bdbStore.getMessageMetaData(messageid_0_10);
+        StorableMessageMetaData storeableMMD_0_10 = readOnlyStore.getMessageMetaData(messageid_0_10);
 
         assertEquals("Unexpected message type", MessageMetaDataType_0_10.TYPE, storeableMMD_0_10.getType().ordinal());
         assertTrue("Unexpected instance type", storeableMMD_0_10 instanceof MessageMetaData_0_10);
@@ -190,11 +186,13 @@ public class BDBMessageStoreTest extends MessageStoreTest
         assertEquals("Message content type has changed", msgProps_0_10.getContentType(), returnedMsgProps.getContentType());
 
         ByteBuffer recoveredContent = ByteBuffer.allocate((int) msgProps_0_10.getContentLength()) ;
-        long recoveredCount = bdbStore.getContent(messageid_0_10, 0, recoveredContent);
+        long recoveredCount = readOnlyStore.getContent(messageid_0_10, 0, recoveredContent);
         assertEquals("Incorrect amount of payload data recovered", msgProps_0_10.getContentLength(), recoveredCount);
 
         String returnedPayloadString_0_10 = new String(recoveredContent.array());
         assertEquals("Message Payload has changed", bodyText, returnedPayloadString_0_10);
+
+        readOnlyStore.close();
     }
 
     private DeliveryProperties createDeliveryProperties_0_10()
