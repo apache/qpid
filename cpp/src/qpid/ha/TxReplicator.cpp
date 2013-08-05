@@ -39,7 +39,6 @@
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/MessageTransferBody.h"
 
@@ -51,7 +50,6 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using qpid::broker::amqp_0_10::MessageTransfer;
 using qpid::types::Uuid;
-using boost::make_shared;
 
 namespace {
 const string QPID_HA(QPID_HA_PREFIX);
@@ -195,7 +193,8 @@ void TxReplicator::DequeueState::addRecords(const EventMap::value_type& entry) {
 boost::shared_ptr<TxAccept> TxReplicator::DequeueState::makeAccept() {
     for_each(events.begin(), events.end(),
              boost::bind(&TxReplicator::DequeueState::addRecords, this, _1));
-    return boost::make_shared<TxAccept>(boost::cref(recordIds), boost::ref(records));
+    return boost::shared_ptr<TxAccept>(
+        new TxAccept(boost::cref(recordIds), boost::ref(records)));
 }
 
 void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock& l) {

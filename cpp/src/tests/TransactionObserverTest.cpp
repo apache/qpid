@@ -30,7 +30,6 @@
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <vector>
@@ -41,7 +40,6 @@ namespace tests {
 using framing::SequenceSet;
 using messaging::Message;
 using boost::shared_ptr;
-using boost::make_shared;
 
 using namespace boost::assign;
 using namespace boost;
@@ -81,7 +79,7 @@ struct MockBrokerObserver : public BrokerObserver {
     MockBrokerObserver(bool prep_=true) : prep(prep_) {}
 
     void startTx(const shared_ptr<TxBuffer>& buffer) {
-        tx = make_shared<MockTransactionObserver>(prep);
+        tx.reset(new MockTransactionObserver(prep));
         buffer->setObserver(tx);
     }
 };
