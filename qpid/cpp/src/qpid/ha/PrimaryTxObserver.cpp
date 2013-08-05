@@ -31,7 +31,6 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include <boost/lexical_cast.hpp>
-#include <boost/make_shared.hpp>
 
 namespace qpid {
 namespace framing {
@@ -101,7 +100,8 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
 }
 
 void PrimaryTxObserver::initialize() {
-    broker.getExchanges().registerExchange(boost::make_shared<Exchange>(shared_from_this()));
+    broker.getExchanges().registerExchange(
+        boost::shared_ptr<Exchange>(new Exchange(shared_from_this())));
 }
 
 void PrimaryTxObserver::enqueue(const QueuePtr& q, const broker::Message& m)

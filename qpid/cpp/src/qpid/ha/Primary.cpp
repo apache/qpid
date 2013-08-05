@@ -39,7 +39,6 @@
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/Timer.h"
 #include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
@@ -47,7 +46,6 @@ namespace ha {
 
 using sys::Mutex;
 using boost::shared_ptr;
-using boost::make_shared;
 using namespace std;
 using namespace framing;
 

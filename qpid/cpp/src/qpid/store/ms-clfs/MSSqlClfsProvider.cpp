@@ -34,7 +34,6 @@
 #include <qpid/store/StorageProvider.h>
 #include <qpid/sys/Mutex.h>
 #include <boost/foreach.hpp>
-#include <boost/make_shared.hpp>
 
 // From ms-sql...
 #include "BlobAdapter.h"
@@ -356,7 +355,7 @@ MSSqlClfsProvider::finalizeMe()
 MSSqlClfsProvider::MSSqlClfsProvider()
     : options("MS SQL/CLFS Provider options")
 {
-    transactions = boost::make_shared<TransactionLog>();
+    transactions.reset(new TransactionLog());
 }
 
 MSSqlClfsProvider::~MSSqlClfsProvider()
