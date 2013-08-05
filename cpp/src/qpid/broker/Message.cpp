@@ -182,8 +182,10 @@ void Message::addAnnotation(const std::string& key, const qpid::types::Variant& 
 void Message::annotationsChanged()
 {
     if (persistentContext) {
+        uint64_t id = persistentContext->getPersistenceId();
         persistentContext = persistentContext->merge(annotations);
         persistentContext->setIngressCompletion(encoding);
+        persistentContext->setPersistenceId(id);
     }
 }
 
