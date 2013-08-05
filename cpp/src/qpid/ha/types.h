@@ -116,8 +116,13 @@ extern const char* TRANSACTION_REPLICATOR_PREFIX;
 
 bool startsWith(const std::string& name, const std::string& prefix);
 
-/** Define IdSet type, not a typedef so we can overload operator << */
-class UuidSet : public std::set<types::Uuid> {};
+/** Define IdSet type, not a typedef so we can overload operator << and add encoding.*/
+class UuidSet : public std::set<types::Uuid> {
+  public:
+    void encode(framing::Buffer&) const;
+    void decode(framing::Buffer&);
+    size_t encodedSize() const;
+};
 
 std::ostream& operator<<(std::ostream& o, const UuidSet& ids);
 

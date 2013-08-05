@@ -63,6 +63,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
 {
   public:
     PrimaryTxObserver(HaBroker&);
+    ~PrimaryTxObserver();
 
     /** Call immediately after constructor, uses shared_from_this. */
     void initialize();
@@ -80,11 +81,13 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     typedef qpid::sys::unordered_map<
       QueuePtr, ReplicationIdSet, boost::hash<QueuePtr> > QueueIdsMap;
 
+    void membership(const BrokerInfo::Map&);
     void deduplicate(sys::Mutex::ScopedLock&);
     void txPrepareOkEvent(const std::string& data);
     void txPrepareFailEvent(const std::string& data);
     void consumerRemoved(const broker::Consumer&);
     bool isPrepared(sys::Mutex::ScopedLock&);
+    void destroy();
 
     sys::Monitor lock;
     std::string logPrefix;
@@ -94,7 +97,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     QueuePtr txQueue;
     QueueIdsMap enqueues;
     bool failed;
-    UuidSet backups;
+    UuidSet members;
     UuidSet prepared;
 };
 

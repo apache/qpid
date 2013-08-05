@@ -81,13 +81,11 @@ TxReplicator::TxReplicator(
     channel(link->nextChannel()),
     dequeueState(hb.getBroker().getQueues())
 {
-    string shortId = getTxId(txQueue->getName()).substr(0, 8);
+    string id(getTxId(txQueue->getName()));
+    string shortId = id.substr(0, 8);
     logPrefix = "Backup of transaction "+shortId+": ";
-
+    QPID_LOG(debug, logPrefix << "Started TX " << id);
     if (!store) throw Exception(QPID_MSG(logPrefix << "No message store loaded."));
-    boost::shared_ptr<Backup> backup = boost::dynamic_pointer_cast<Backup>(hb.getRole());
-    if (!backup) throw Exception(QPID_MSG(logPrefix << "Broker is not in backup mode."));
-    brokerReplicator = backup->getBrokerReplicator();
 
     // Dispatch transaction events.
     dispatch[TxEnqueueEvent::KEY] =
@@ -100,6 +98,8 @@ TxReplicator::TxReplicator(
         boost::bind(&TxReplicator::commit, this, _1, _2);
     dispatch[TxRollbackEvent::KEY] =
         boost::bind(&TxReplicator::rollback, this, _1, _2);
+    dispatch[TxMembersEvent::KEY] =
+        boost::bind(&TxReplicator::members, this, _1, _2);
 }
 
 TxReplicator::~TxReplicator() {
@@ -128,15 +128,6 @@ void TxReplicator::deliver(const broker::Message& m_) {
     QPID_LOG(trace, logPrefix << "Deliver " << LogMessageId(*queue, m));
     DeliverableMessage dm(m, txBuffer.get());
     dm.deliverTo(queue);
-}
-
-void TxReplicator::destroy() {
-    {
-        sys::Mutex::ScopedLock l(lock);
-        if (context.get()) store->abort(*context);
-        txBuffer->rollback();
-    }
-    QueueReplicator::destroy();
 }
 
 void TxReplicator::enqueue(const string& data, sys::Mutex::ScopedLock&) {
@@ -209,24 +200,27 @@ void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock& l) {
     }
 }
 
-void TxReplicator::commit(const string&, sys::Mutex::ScopedLock& l) {
+void TxReplicator::commit(const string&, sys::Mutex::ScopedLock&) {
     QPID_LOG(debug, logPrefix << "Commit");
     if (context.get()) store->commit(*context);
     txBuffer->commit();
-    end(l);
 }
 
-void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock& l) {
+void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock&) {
     QPID_LOG(debug, logPrefix << "Rollback");
     if (context.get()) store->abort(*context);
     txBuffer->rollback();
-    end(l);
 }
 
-void TxReplicator::end(sys::Mutex::ScopedLock&) {
-    // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
-    // FIXME aconway 2013-08-01: what about connection & user ID for destroy?
-    haBroker.getBroker().getQueues().destroy(queue->getName());
+void TxReplicator::members(const string& data, sys::Mutex::ScopedLock&) {
+    TxMembersEvent e;
+    decodeStr(data, e);
+    QPID_LOG(debug, logPrefix << "Members: " << e.members);
+    if (!e.members.count(haBroker.getMembership().getSelf())) {
+        QPID_LOG(debug, logPrefix << "Not a member of transaction, terminating");
+        // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
+        haBroker.deleteQueue(getQueue()->getName());
+    }
 }
 
 }} // namespace qpid::ha

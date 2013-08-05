@@ -221,4 +221,8 @@ boost::shared_ptr<QueueReplicator> HaBroker::findQueueReplicator(const std::stri
         broker.getExchanges().find(QueueReplicator::replicatorName(queueName)));
 }
 
+void HaBroker::deleteQueue(const string& name, const string& connectionId) {
+    broker.deleteQueue(name, settings.username, connectionId);
+}
+
 }} // namespace qpid::ha

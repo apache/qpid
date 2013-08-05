@@ -182,7 +182,6 @@ void QueueReplicator::destroy() {
         bridge2 = bridge;       // call close outside the lock.
         // Need to drop shared pointers to avoid pointer cycles keeping this in memory.
         queue.reset();
-        link.reset();
         bridge.reset();
         getBroker()->getExchanges().destroy(getName());
     }

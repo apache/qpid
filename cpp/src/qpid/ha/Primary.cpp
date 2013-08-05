@@ -301,6 +301,7 @@ void Primary::backupDisconnect(shared_ptr<RemoteBackup> backup, Mutex::ScopedLoc
     backup->cancel();
     expectedBackups.erase(backup);
     backups.erase(id);
+    membership.remove(id);
 }
 
 
@@ -387,14 +388,12 @@ void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards)
 }
 
 void Primary::startTx(const boost::shared_ptr<broker::TxBuffer>& tx) {
-    QPID_LOG(debug, logPrefix << "Started TX transaction");
     shared_ptr<PrimaryTxObserver> observer(new PrimaryTxObserver(haBroker));
     observer->initialize();
     tx->setObserver(observer);
 }
 
 void Primary::startDtx(const boost::shared_ptr<broker::DtxBuffer>& dtx) {
-    QPID_LOG(debug, logPrefix << "Started DTX transaction");
     shared_ptr<PrimaryTxObserver> observer(new PrimaryTxObserver(haBroker));
     observer->initialize();
     dtx->setObserver(observer);
