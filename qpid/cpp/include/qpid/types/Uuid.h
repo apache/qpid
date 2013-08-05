@@ -82,6 +82,9 @@ class QPID_TYPES_CLASS_EXTERN Uuid
     unsigned char bytes[16];
 };
 
+/** Hash value function for use with boots::hash or std::hash */
+inline size_t hash_value(const Uuid& uuid) { return uuid.hash(); }
+
 /** Returns true if the uuids are equal, false otherwise. **/
 QPID_TYPES_EXTERN bool operator==(const Uuid&, const Uuid&);
 /** Returns true if the uuids are NOT equal, false if they are. **/
