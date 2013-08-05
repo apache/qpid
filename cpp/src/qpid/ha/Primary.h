@@ -29,9 +29,9 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/unordered_map.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/functional/hash.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <string>
-#include <boost/functional/hash.hpp>
 
 namespace qpid {
 
@@ -105,7 +105,7 @@ class Primary : public Role
 
   private:
     typedef sys::unordered_map<
-      types::Uuid, RemoteBackupPtr, types::Uuid::Hasher > BackupMap;
+      types::Uuid, RemoteBackupPtr, boost::hash<types::Uuid> > BackupMap;
 
     typedef std::set<RemoteBackupPtr > BackupSet;
 
