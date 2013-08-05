@@ -102,6 +102,10 @@ class HaBroker : public management::Manageable
 
     boost::shared_ptr<QueueReplicator> findQueueReplicator(const std::string& queueName);
 
+    /**@param connectionId optional, only available on backup */
+    void deleteQueue(const std::string& name,
+                     const std::string& connectionId=std::string());
+
   private:
     void setPublicUrl(const Url&);
     void setBrokerUrl(const Url&);

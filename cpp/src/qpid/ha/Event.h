@@ -43,7 +43,8 @@ broker::Message makeMessage(
 bool isEventKey(const std::string& key);
 
 /** Base class for encodable events */
-struct  Event {
+class Event {
+  public:
     virtual ~Event() {}
     virtual void encode(framing::Buffer& buffer) const = 0;
     virtual void decode(framing::Buffer& buffer) = 0;
@@ -62,7 +63,8 @@ inline std::ostream& operator<<(std::ostream& o, const Event& e) {
 }
 
 /** Event base template */
-template <class Derived> struct EventBase : public Event {
+template <class Derived> class EventBase : public Event {
+  public:
     std::string key() const { return Derived::KEY; }
 };
 
@@ -174,6 +176,16 @@ struct TxPrepareFailEvent : public EventBase<TxPrepareFailEvent> {
     }
     virtual size_t encodedSize() const { return broker.size(); }
     void print(std::ostream& o) const { o << broker; }
+};
+
+struct TxMembersEvent : public EventBase<TxMembersEvent> {
+    static const std::string KEY;
+    UuidSet members;
+    TxMembersEvent(const UuidSet& s=UuidSet()) : members(s) {}
+    void encode(framing::Buffer& b) const { b.put(members); }
+    void decode(framing::Buffer& b) { b.get(members); }
+    size_t encodedSize() const { return members.encodedSize(); }
+    void print(std::ostream& o) const { o << members; }
 };
 
 }} // namespace qpid::ha

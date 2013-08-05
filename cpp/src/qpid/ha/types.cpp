@@ -108,6 +108,24 @@ std::ostream& operator<<(std::ostream& o, const LogMessageId& m) {
     return o  << m.queue << "[" << m.position << "]=" << m.replicationId;
 }
 
+void UuidSet::encode(framing::Buffer& b) const {
+    b.putLong(size());
+    for (const_iterator i = begin(); i != end(); ++i)
+        b.putRawData(i->data(), i->size());
+}
+
+void UuidSet::decode(framing::Buffer& b) {
+    size_t n = b.getLong();
+    for ( ; n > 0; --n) {
+        types::Uuid id;
+        b.getRawData(const_cast<unsigned char*>(id.data()), id.size());
+        insert(id);
+    }
+}
+
+size_t UuidSet::encodedSize() const {
+    return sizeof(uint32_t) + size()*16;
+}
 
 
 }} // namespace qpid::ha
