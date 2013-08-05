@@ -750,7 +750,6 @@ if (BUILD_HA)
         qpid/ha/HaBroker.cpp
         qpid/ha/HaBroker.h
         qpid/ha/HaPlugin.cpp
-        qpid/ha/hash.h
 	qpid/ha/IdSetter.h
         qpid/ha/QueueSnapshot.h
         qpid/ha/Membership.cpp
