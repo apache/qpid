@@ -48,6 +48,9 @@ class QmfAgent(object):
             address, client_properties={"qpid.ha-admin":1}, **kwargs)
         self._agent = BrokerAgent(self._connection)
 
+    def get_queues(self):
+        return [q.values['name'] for q in self._agent.getAllQueues()]
+
     def __getattr__(self, name):
         a = getattr(self._agent, name)
         return a
@@ -107,7 +110,7 @@ class HaBroker(Broker):
         ha_port = ha_port or HaPort(test)
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
-                 "--log-enable=trace+:ha::", # FIXME aconway 2013-07-29: debug
+                 "--log-enable=debug+:ha::",
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
@@ -276,8 +279,8 @@ class HaCluster(object):
         @s_args: args for specific brokers: s_args[i] for broker i.
         """
         self.test = test
-        self.args = args
-        self.s_args = s_args
+        self.args = copy(args)
+        self.s_args = copy(s_args)
         self.kwargs = kwargs
         self._ports = [HaPort(test) for i in xrange(n)]
         self._set_url()

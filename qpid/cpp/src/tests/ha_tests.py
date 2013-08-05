@@ -20,7 +20,7 @@
 
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil, math, unittest
 import traceback
-from qpid.messaging import Message, SessionError, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED, Empty
+from qpid.messaging import Message, SessionError, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED, Empty, ServerError
 from qpid.datatypes import uuid4, UUID
 from brokertest import *
 from ha_test import *
@@ -1278,7 +1278,7 @@ class StoreTests(BrokerTest):
         cluster[0].assert_browse("q1",  ["x","y","z"])
         cluster[1].assert_browse_backup("q1",  ["x","y","z"])
 
-        sn = cluster[0].connect(heartbeat=1).session() # FIXME aconway 2012-09-25: should fail over!
+        sn = cluster[0].connect(heartbeat=1).session()
         sn.sender("ex/k1").send("boo")
         cluster[0].assert_browse_backup("q1", ["x","y","z", "boo"])
         cluster[1].assert_browse_backup("q1", ["x","y","z", "boo"])
@@ -1382,17 +1382,47 @@ class TransactionTests(BrokerTest):
         self.assertEqual(open_read(cluster[1].store_log), expect)
 
     def test_tx_backup_fail(self):
-        # FIXME aconway 2013-07-31: check exception types, reduce timeout.
         cluster = HaCluster(
             self, 2, test_store=True, s_args=[[],["--test-store-throw=bang"]])
         c = cluster[0].connect()
         tx = c.session(transactional=True)
         s = tx.sender("q;{create:always,node:{durable:true}}")
         for m in ["foo","bang","bar"]: s.send(Message(m, durable=True))
-        self.assertRaises(Exception, tx.commit)
+        self.assertRaises(ServerError, tx.commit)
         for b in cluster: b.assert_browse_backup("q", [])
         self.assertEqual(open_read(cluster[0].store_log), "<begin tx 1>\n<abort tx=1>\n")
         self.assertEqual(open_read(cluster[1].store_log), "<begin tx 1>\n<enqueue q foo tx=1>\n<enqueue q bang tx=1>\n<abort tx=1>\n")
+
+    def test_tx_join_leave(self):
+        """Test cluster members joining/leaving cluster.
+        Also check that tx-queues are cleaned up at end of transaction."""
+
+        def tx_queues(broker):
+            return [q for q in broker.agent().get_queues() if q.startswith("qpid.ha-tx")]
+
+        cluster = HaCluster(self, 3)
+
+        # Leaving
+        tx = cluster[0].connect().session(transactional=True)
+        s = tx.sender("q;{create:always}")
+        s.send("a", sync=True)
+        self.assertEqual([1,1,1], [len(tx_queues(b)) for b in cluster])
+        cluster[1].kill(final=False)
+        s.send("b")
+        self.assertRaises(ServerError, tx.commit)
+        self.assertEqual([[],[]], [tx_queues(b) for b in [cluster[0],cluster[2]]])
+
+        # Joining
+        tx = cluster[0].connect().session(transactional=True)
+        s = tx.sender("q;{create:always}")
+        s.send("foo")
+        tx_q = tx_queues(cluster[0])[0]
+        cluster.restart(1)
+        # Verify the new member should not be in the transaction.
+        # but should receive the result of the transaction via normal replication.
+        cluster[1].wait_no_queue(tx_q)
+        tx.commit()
+        for b in cluster: b.assert_browse_backup("q", ["foo"])
 
 if __name__ == "__main__":
     outdir = "ha_tests.tmp"

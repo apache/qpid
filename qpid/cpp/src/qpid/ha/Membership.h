@@ -61,6 +61,11 @@ class Membership
 
     void setMgmtObject(boost::shared_ptr<qmf::org::apache::qpid::ha::HaBroker>);
 
+    /** Call callback when membership changes.
+     *  NOTE: called with Membership lock held.
+     */
+    typedef boost::function<void(const BrokerInfo::Map&)> UpdateCallback;
+    void addCallback(UpdateCallback);
     void clear();               ///< Clear all but self.
     void add(const BrokerInfo& b);
     void remove(const types::Uuid& id);
@@ -94,6 +99,7 @@ class Membership
     const types::Uuid self;
     BrokerInfo::Map brokers;
     BrokerStatus oldStatus;
+    std::vector<UpdateCallback> callbacks;
 };
 
 }} // namespace qpid::ha

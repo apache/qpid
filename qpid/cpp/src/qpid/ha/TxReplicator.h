@@ -65,7 +65,6 @@ class TxReplicator : public QueueReplicator {
   protected:
 
     void deliver(const broker::Message&);
-    void destroy();
 
   private:
 
@@ -80,13 +79,12 @@ class TxReplicator : public QueueReplicator {
     void prepare(const std::string& data, sys::Mutex::ScopedLock&);
     void commit(const std::string& data, sys::Mutex::ScopedLock&);
     void rollback(const std::string& data, sys::Mutex::ScopedLock&);
-    void end(sys::Mutex::ScopedLock&);
+    void members(const std::string& data, sys::Mutex::ScopedLock&);
 
     std::string logPrefix;
     TxEnqueueEvent enq;         // Enqueue data for next deliver.
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     broker::MessageStore* store;
-    boost::shared_ptr<BrokerReplicator> brokerReplicator;
     std::auto_ptr<broker::TransactionContext> context;
     framing::ChannelId channel; // Channel to send prepare-complete.
 
