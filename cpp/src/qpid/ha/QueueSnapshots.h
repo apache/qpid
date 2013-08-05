@@ -24,7 +24,6 @@
 
 
 #include "QueueSnapshot.h"
-#include "hash.h"
 
 #include "qpid/assert.h"
 #include "qpid/broker/BrokerObserver.h"
@@ -32,6 +31,7 @@
 #include "qpid/sys/Mutex.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace qpid {
 namespace ha {
@@ -67,10 +67,10 @@ class QueueSnapshots : public broker::BrokerObserver
     }
 
   private:
-    typedef qpid::sys::unordered_map<boost::shared_ptr<broker::Queue>,
-                                     boost::shared_ptr<QueueSnapshot>,
-                                     SharedPtrHasher<broker::Queue>
-                                     > SnapshotMap;
+    typedef qpid::sys::unordered_map<
+      boost::shared_ptr<broker::Queue>, boost::shared_ptr<QueueSnapshot>,
+      boost::hash<boost::shared_ptr<broker::Queue> > > SnapshotMap;
+
     SnapshotMap snapshots;
     mutable sys::Mutex lock;
 };

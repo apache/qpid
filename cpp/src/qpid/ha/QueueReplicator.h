@@ -23,9 +23,9 @@
  */
 
 #include "BrokerInfo.h"
-#include "hash.h"
 #include "qpid/broker/Exchange.h"
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/functional/hash.hpp>
 #include <boost/function.hpp>
 #include <iosfwd>
 
@@ -106,7 +106,7 @@ class QueueReplicator : public broker::Exchange,
 
   private:
     typedef qpid::sys::unordered_map<
-      ReplicationId, QueuePosition, TrivialHasher<int32_t> > PositionMap;
+      ReplicationId, QueuePosition, boost::hash<int32_t> > PositionMap;
     class ErrorListener;
     class QueueObserver;
 

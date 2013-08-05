@@ -28,6 +28,7 @@
 #include "qpid/types/Uuid.h"
 #include "qpid/types/Variant.h"
 #include "qpid/sys/unordered_map.h"
+#include <boost/functional/hash.hpp>
 #include <string>
 #include <iosfwd>
 #include <vector>
@@ -42,7 +43,8 @@ class BrokerInfo
 {
   public:
     typedef std::set<BrokerInfo> Set;
-    typedef qpid::sys::unordered_map<types::Uuid, BrokerInfo, types::Uuid::Hasher> Map;
+    typedef qpid::sys::unordered_map<types::Uuid, BrokerInfo,
+                                     boost::hash<types::Uuid> > Map;
 
     BrokerInfo();
     BrokerInfo(const types::Uuid& id, BrokerStatus, const Address& = Address());
