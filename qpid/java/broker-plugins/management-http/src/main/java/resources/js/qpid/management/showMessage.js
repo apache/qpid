@@ -37,15 +37,10 @@ define(["dojo/_base/xhr",
             return typeof val === 'string' ? entities.encode(val) : val;
         }
 
+        var populatedFields = [];
         var showMessage = {};
 
         showMessage.hide = function () {
-            if(this.populatedFields) {
-                for(var i = 0 ; i < this.populatedFields.length; i++) {
-                    this.populatedFields[i].innerHTML = "";
-                }
-                this.populatedFields = [];
-            }
             registry.byId("showMessage").hide();
         };
 
@@ -65,16 +60,22 @@ define(["dojo/_base/xhr",
 
         showMessage.populateShowMessage = function(data) {
 
-            this.populatedFields = [];
+            // clear fields set by previous invocation.
+            if(populatedFields) {
+                for(var i = 0 ; i < populatedFields.length; i++) {
+                    populatedFields[i].innerHTML = "";
+                }
+                populatedFields = [];
+            }
 
             for(var attrName in data) {
                 if(data.hasOwnProperty(attrName)) {
                     var fields = query(".message-"+attrName, this.dialogNode);
                     if(fields && fields.length != 0) {
                         var field = fields[0];
-                        this.populatedFields.push(field);
+                        populatedFields.push(field);
                         var val = data[attrName];
-                        if(val) {
+                        if(val != null) {
                             if(domClass.contains(field,"map")) {
                                 var tableStr = "<table style='border: 1pt'><tr><th style='width: 6em; font-weight: bold'>Header</th><th style='font-weight: bold'>Value</th></tr>";
                                 for(var name in val) {
@@ -112,7 +113,7 @@ define(["dojo/_base/xhr",
                                                             + "/" + encodeURIComponent(showMessage.messageNumber)
                                         + "\" target=\"_blank\">Download</a>";
             }
-            this.populatedFields.push(contentField);
+            populatedFields.push(contentField);
 
             registry.byId("showMessage").show();
         };
