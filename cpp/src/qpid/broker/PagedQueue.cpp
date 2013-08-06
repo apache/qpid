@@ -295,7 +295,8 @@ void PagedQueue::Page::load(MemoryMappedFile& file, ProtocolRegistry& protocols)
     bool haveData = used > 0;
     used = 4;//first 4 bytes are the count
     if (haveData) {
-        uint32_t count = *(reinterpret_cast<uint32_t*>(region));
+        qpid::framing::Buffer buffer(region, sizeof(uint32_t));
+        uint32_t count = buffer.getLong();
         //decode messages into Page::messages
         for (size_t i = 0; i < count; ++i) {
             Message message;
@@ -331,7 +332,8 @@ void PagedQueue::Page::unload(MemoryMappedFile& file)
         if (i->getState() == ACQUIRED) acquired.add(i->getSequence());
     }
     uint32_t count = messages.size();
-    ::memcpy(region, &count, sizeof(count));
+    qpid::framing::Buffer buffer(region, sizeof(uint32_t));
+    buffer.putLong(count);
     file.flush(region, size);
     file.unmap(region, size);
     //remove messages from memory
