@@ -29,7 +29,6 @@
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/unordered_map.h"
 #include "qpid/sys/Monitor.h"
-#include <boost/functional/hash.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
@@ -79,7 +78,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
   private:
     class Exchange;
     typedef qpid::sys::unordered_map<
-      QueuePtr, ReplicationIdSet, boost::hash<QueuePtr> > QueueIdsMap;
+      QueuePtr, ReplicationIdSet, Hasher<QueuePtr> > QueueIdsMap;
 
     void membership(const BrokerInfo::Map&);
     void deduplicate(sys::Mutex::ScopedLock&);

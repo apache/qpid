@@ -25,7 +25,6 @@
 #include "qpid/log/Statement.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/ExchangeRegistry.h"
-#include "boost/function.hpp"
 #include <map>
 
 namespace qpid {

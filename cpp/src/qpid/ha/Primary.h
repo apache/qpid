@@ -23,13 +23,13 @@
  */
 
 #include "types.h"
+#include "hash.h"
 #include "BrokerInfo.h"
 #include "ReplicationTest.h"
 #include "Role.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/unordered_map.h"
 #include <boost/shared_ptr.hpp>
-#include <boost/functional/hash.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <string>
 
@@ -105,13 +105,13 @@ class Primary : public Role
 
   private:
     typedef sys::unordered_map<
-      types::Uuid, RemoteBackupPtr, boost::hash<types::Uuid> > BackupMap;
+      types::Uuid, RemoteBackupPtr, Hasher<types::Uuid> > BackupMap;
 
     typedef std::set<RemoteBackupPtr > BackupSet;
 
     typedef std::pair<types::Uuid, boost::shared_ptr<broker::Queue> > UuidQueue;
     typedef sys::unordered_map<UuidQueue, ReplicatingSubscription*,
-                               boost::hash<UuidQueue> > ReplicaMap;
+                               Hasher<UuidQueue> > ReplicaMap;
 
     RemoteBackupPtr backupConnect(const BrokerInfo&, broker::Connection&, sys::Mutex::ScopedLock&);
     void backupDisconnect(RemoteBackupPtr, sys::Mutex::ScopedLock&);
