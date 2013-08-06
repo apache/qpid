@@ -268,8 +268,17 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/management/common/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-common/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/access-control/release/maven artifacts/
-  cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-0-8-protocol/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-0-10-protocol/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-1-0-protocol/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-8-to-0-10/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-8-to-1-0/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-10-to-1-0/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/derby-store/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/jdbc-store/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-http/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/memory-store/release/maven artifacts/
   cp -a qpid-${VER}/java/bdbstore/jmx/release/maven artifacts/
 fi
 
