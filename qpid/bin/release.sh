@@ -249,7 +249,7 @@ if [ "JAVA" == "$JAVA" ] ; then
   # now generate the binary packages, with the glue for optional features
   pushd qpid-${VER}/java
   ant build release-bin -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx" -Ddownload-bdb=true
-  ant release-mvn -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx" -Dmaven.snapshot=false
+  ant release-mvn -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx,broker-plugins/jdbc-provider-bone" -Ddownload-bonecp=true -Dmaven.snapshot=false
   popd
 
   cp qpid-${VER}/java/broker/release/*.tar.gz artifacts/qpid-java-broker-${VER}.tar.gz
@@ -275,6 +275,7 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-8-to-1-0/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-10-to-1-0/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/derby-store/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/jdbc-provider-bone/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/jdbc-store/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-http/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
