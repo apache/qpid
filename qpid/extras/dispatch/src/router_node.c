@@ -62,21 +62,27 @@ typedef enum {
 
 typedef struct dx_routed_event_t {
     DEQ_LINKS(struct dx_routed_event_t);
-    dx_message_t *message;
-    bool          settled;
-    uint64_t      disposition;
+    dx_delivery_t *delivery;
+    dx_message_t  *message;
+    bool           settle;
+    uint64_t       disposition;
 } dx_routed_event_t;
+
+ALLOC_DECLARE(dx_routed_event_t);
+ALLOC_DEFINE(dx_routed_event_t);
+DEQ_DECLARE(dx_routed_event_t, dx_routed_event_list_t);
 
 
 struct dx_router_link_t {
     DEQ_LINKS(dx_router_link_t);
-    dx_direction_t     link_direction;
-    dx_link_type_t     link_type;
-    dx_address_t      *owning_addr;     // [ref] Address record that owns this link
-    dx_link_t         *link;            // [own] Link pointer
-    dx_router_link_t  *connected_link;  // [ref] If this is a link-route, reference the connected link
-    dx_router_link_t  *peer_link;       // [ref] If this is a bidirectional link-route, reference the peer link
-    dx_message_list_t  out_fifo;        // Message FIFO for outgoing messages.  Unused for incoming links
+    dx_direction_t          link_direction;
+    dx_link_type_t          link_type;
+    dx_address_t           *owning_addr;     // [ref] Address record that owns this link
+    dx_link_t              *link;            // [own] Link pointer
+    dx_router_link_t       *connected_link;  // [ref] If this is a link-route, reference the connected link
+    dx_router_link_t       *peer_link;       // [ref] If this is a bidirectional link-route, reference the peer link
+    dx_routed_event_list_t  event_fifo;      // FIFO of outgoing delivery/link events (no messages)
+    dx_routed_event_list_t  msg_fifo;        // FIFO of outgoing message deliveries
 };
 
 ALLOC_DECLARE(dx_router_link_t);
@@ -125,54 +131,128 @@ struct dx_router_t {
 
 
 /**
- * Outbound Delivery Handler
+ * Outgoing Link Writable Handler
  */
-static void router_tx_handler(void* context, dx_link_t *link, pn_delivery_t *delivery)
+static int router_writable_link_handler(void* context, dx_link_t *link)
 {
-    dx_router_t      *router  = (dx_router_t*) context;
-    pn_link_t        *pn_link = pn_delivery_link(delivery);
-    dx_router_link_t *rlink   = (dx_router_link_t*) dx_link_get_context(link);
-    dx_message_t     *msg;
-    size_t            size;
+    dx_router_t            *router = (dx_router_t*) context;
+    dx_delivery_t          *delivery;
+    dx_router_link_t       *rlink = (dx_router_link_t*) dx_link_get_context(link);
+    pn_link_t              *pn_link = dx_link_pn(link);
+    uint64_t                tag;
+    int                     link_credit = pn_link_credit(pn_link);
+    dx_routed_event_list_t  to_send;
+    dx_routed_event_list_t  events;
+    dx_routed_event_t      *re;
+    size_t                  offer;
+    int                     event_count = 0;
+
+    DEQ_INIT(to_send);
+    DEQ_INIT(events);
 
     sys_mutex_lock(router->lock);
-    msg = DEQ_HEAD(rlink->out_fifo);
-    if (!msg) {
-        // TODO - Recind the delivery
-        sys_mutex_unlock(router->lock);
-        return;
+
+    //
+    // Pull the non-delivery events into a local list so they can be processed without
+    // the lock being held.
+    //
+    re = DEQ_HEAD(rlink->event_fifo);
+    while (re) {
+        DEQ_REMOVE_HEAD(rlink->event_fifo);
+        DEQ_INSERT_TAIL(events, re);
+        re = DEQ_HEAD(rlink->event_fifo);
     }
 
-    DEQ_REMOVE_HEAD(rlink->out_fifo);
-    size = (DEQ_SIZE(rlink->out_fifo));
+    //
+    // Under lock, move available deliveries from the msg_fifo to the local to_send
+    // list.  Don't move more than we have credit to send.
+    //
+    if (link_credit > 0) {
+        tag = router->dtag;
+        re = DEQ_HEAD(rlink->msg_fifo);
+        while (re) {
+            DEQ_REMOVE_HEAD(rlink->msg_fifo);
+            DEQ_INSERT_TAIL(to_send, re);
+            if (DEQ_SIZE(to_send) == link_credit)
+                break;
+            re = DEQ_HEAD(rlink->msg_fifo);
+        }
+        router->dtag += DEQ_SIZE(to_send);
+    }
+
+    offer = DEQ_SIZE(rlink->msg_fifo);
     sys_mutex_unlock(router->lock);
 
-    dx_message_send(msg, pn_link);
+    //
+    // Deliver all the to_send messages downrange
+    //
+    re = DEQ_HEAD(to_send);
+    while (re) {
+        DEQ_REMOVE_HEAD(to_send);
 
-    //
-    // If there is no incoming delivery, it was pre-settled.  In this case,
-    // we must pre-settle the outgoing delivery as well.
-    //
-    if (dx_message_in_delivery(msg)) {
-        pn_delivery_set_context(delivery, (void*) msg);
-        dx_message_set_out_delivery(msg, delivery);
-    } else {
-        pn_delivery_settle(delivery);
-        dx_free_message(msg);
+        //
+        // Get a delivery for the send.  This will be the current deliver on the link.
+        //
+        tag++;
+        delivery = dx_delivery(link, pn_dtag((char*) &tag, 8));
+
+        //
+        // Send the message
+        //
+        dx_message_send(re->message, link);
+
+        //
+        // If there is an incoming delivery associated with this message, link it
+        // with the outgoing delivery.  Otherwise, the message arrived pre-settled
+        // and should be sent presettled.
+        //
+        if (re->delivery) {
+            dx_delivery_set_peer(re->delivery, delivery);
+            dx_delivery_set_peer(delivery, re->delivery);
+        } else
+            dx_delivery_free(delivery, 0);  // settle and free
+
+        pn_link_advance(pn_link);
+        event_count++;
+
+        dx_free_message(re->message);
+        free_dx_routed_event_t(re);
+        re = DEQ_HEAD(to_send);
     }
 
-    pn_link_advance(pn_link);
-    pn_link_offered(pn_link, size);
+    //
+    // Process the non-delivery events.
+    //
+    re = DEQ_HEAD(events);
+    while (re) {
+        DEQ_REMOVE_HEAD(events);
+
+        if (re->delivery) {
+            if (re->disposition)
+                pn_delivery_update(dx_delivery_pn(re->delivery), re->disposition);
+            if (re->settle)
+                dx_delivery_free(re->delivery, 0);
+        }
+
+        free_dx_routed_event_t(re);
+        re = DEQ_HEAD(events);
+    }
+
+    //
+    // Set the offer to the number of messages remaining to be sent.
+    //
+    pn_link_offered(pn_link, offer);
+    return event_count;
 }
 
 
 /**
  * Inbound Delivery Handler
  */
-static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *delivery)
+static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *delivery)
 {
     dx_router_t      *router  = (dx_router_t*) context;
-    pn_link_t        *pn_link = pn_delivery_link(delivery);
+    pn_link_t        *pn_link = dx_link_pn(link);
     dx_router_link_t *rlink   = (dx_router_link_t*) dx_link_get_context(link);
     dx_message_t     *msg;
     int               valid_message = 0;
@@ -202,15 +282,27 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
     // the message in this case.
     //
     if (rlink->connected_link) {
-        dx_router_link_t *clink      = rlink->connected_link;
-        pn_link_t        *pn_outlink = dx_link_pn(clink->link);
-        DEQ_INSERT_TAIL(clink->out_fifo, msg);
-        sys_mutex_unlock(router->lock);
+        dx_router_link_t  *clink = rlink->connected_link;
+        dx_routed_event_t *re    = new_dx_routed_event_t();
 
-        pn_link_offered(pn_outlink, DEQ_SIZE(clink->out_fifo));
+        DEQ_ITEM_INIT(re);
+        re->delivery    = 0; 
+        re->message     = msg;
+        re->settle      = false;
+        re->disposition = 0;
+        DEQ_INSERT_TAIL(clink->msg_fifo, re);
+
+        //
+        // If the incoming delivery is settled (pre-settled), don't link it into the routed
+        // event.  If it's not settled, link it into the event for later handling.
+        //
+        if (dx_delivery_settled(delivery))
+            dx_delivery_free(delivery, 0);
+        else
+            re->delivery = delivery;
+
+        sys_mutex_unlock(router->lock);
         dx_link_activate(clink->link);
-        sys_mutex_unlock(router->lock);
-
         return;
     }
 
@@ -227,6 +319,8 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
     if (valid_message) {
         dx_field_iterator_t *iter = dx_message_field_iterator(msg, DX_FIELD_TO);
         dx_address_t        *addr;
+        int                  fanout = 0;
+
         if (iter) {
             dx_field_iterator_reset_view(iter, ITER_VIEW_ADDRESS_HASH);
             hash_retrieve(router->out_hash, iter, (void*) &addr);
@@ -261,10 +355,18 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
                     //
                     dx_router_link_t *dest_link = DEQ_HEAD(addr->rlinks);
                     while (dest_link) {
-                        pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
-                        dx_message_t *copy       = dx_message_copy(msg);
-                        DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
-                        pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+                        dx_routed_event_t *re = new_dx_routed_event_t();
+                        DEQ_ITEM_INIT(re);
+                        re->delivery    = 0;
+                        re->message     = dx_message_copy(msg);
+                        re->settle      = 0;
+                        re->disposition = 0;
+                        DEQ_INSERT_TAIL(dest_link->msg_fifo, re);
+
+                        fanout++;
+                        if (fanout == 1 && !dx_delivery_settled(delivery))
+                            re->delivery = delivery;
+
                         dx_link_activate(dest_link->link);
                         dest_link = DEQ_NEXT(dest_link);
                     }
@@ -279,39 +381,41 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
                         else
                             dest_link = dest_node->peer_link;
                         if (dest_link) {
-                            pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
-                            dx_message_t *copy       = dx_message_copy(msg);
-                            DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
-                            pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+                            dx_routed_event_t *re = new_dx_routed_event_t();
+                            DEQ_ITEM_INIT(re);
+                            re->delivery    = 0;
+                            re->message     = dx_message_copy(msg);
+                            re->settle      = 0;
+                            re->disposition = 0;
+                            DEQ_INSERT_TAIL(dest_link->msg_fifo, re);
+
+                            fanout++;
+                            if (fanout == 1)
+                                re->delivery = delivery;
+
                             dx_link_activate(dest_link->link);
                         }
                         dest_node = DEQ_NEXT(dest_node);
                     }
                 }
-
-            } else {
-                //
-                // To field contains an unknown address.  Release the message.
-                //
-                // TODO - Undeliverable processing
-                pn_delivery_update(delivery, PN_RELEASED);
-                pn_delivery_settle(delivery);
             }
 
             //
-            // Since we are message-routing, there is no end-to-end disposition or
-            // settlement.  Accept and settle the delivery now.
+            // In message-routing mode, the handling of the incoming delivery depends on the
+            // number of copies of the received message that were forwarded.
             //
-            pn_delivery_update(delivery, PN_ACCEPTED);
-            pn_delivery_settle(delivery);
+            if (handler) {
+                dx_delivery_free(delivery, PN_ACCEPTED);
+            } else if (fanout == 0) {
+                dx_delivery_free(delivery, PN_RELEASED);
+            } else if (fanout > 1)
+                dx_delivery_free(delivery, PN_ACCEPTED);
         }
     } else {
         //
         // Message is invalid.  Reject the message.
         //
-        pn_delivery_update(delivery, PN_REJECTED);
-        pn_delivery_settle(delivery);
-        pn_delivery_set_context(delivery, 0);
+        dx_delivery_free(delivery, PN_REJECTED);
     }
 
     sys_mutex_unlock(router->lock);
@@ -328,54 +432,41 @@ static void router_rx_handler(void* context, dx_link_t *link, pn_delivery_t *del
 /**
  * Delivery Disposition Handler
  */
-static void router_disp_handler(void* context, dx_link_t *link, pn_delivery_t *delivery)
+static void router_disp_handler(void* context, dx_link_t *link, dx_delivery_t *delivery)
 {
-    pn_link_t        *pn_link = pn_delivery_link(delivery);
-    //dx_router_link_t *rlink   = (dx_router_link_t*) dx_link_get_context(link);
+    dx_router_t   *router  = (dx_router_t*) context;
+    bool           changed = dx_delivery_disp_changed(delivery);
+    uint64_t       disp    = dx_delivery_disp(delivery);
+    bool           settled = dx_delivery_settled(delivery);
+    dx_delivery_t *peer    = dx_delivery_peer(delivery);
 
-    //
-    // TODO - Propagate disposition and settlement between deliveries on a link-routed
-    //        link pair.
-    //
-    return;
+    if (peer) {
+        //
+        // The case where this delivery has a peer.
+        //
+        if (changed || settled) {
+            dx_link_t         *peer_link = dx_delivery_link(peer);
+            dx_router_link_t  *prl       = (dx_router_link_t*) dx_link_get_context(peer_link);
+            dx_routed_event_t *re        = new_dx_routed_event_t();
+            DEQ_ITEM_INIT(re);
+            re->delivery    = peer;
+            re->message     = 0;
+            re->settle      = settled;
+            re->disposition = changed ? disp : 0;
 
-    if (pn_link_is_sender(pn_link)) {
-        uint64_t       disp     = pn_delivery_remote_state(delivery);
-        dx_message_t  *msg      = pn_delivery_get_context(delivery);
-        pn_delivery_t *activate = 0;
+            sys_mutex_lock(router->lock);
+            DEQ_INSERT_TAIL(prl->event_fifo, re);
+            sys_mutex_unlock(router->lock);
 
-        if (msg) {
-            assert(delivery == dx_message_out_delivery(msg));
-            if (disp != 0) {
-                activate = dx_message_in_delivery(msg);
-                pn_delivery_update(activate, disp);
-                // TODO - handling of the data accompanying RECEIVED/MODIFIED
-            }
-
-            if (pn_delivery_settled(delivery)) {
-                //
-                // Downstream delivery has been settled.  Propagate the settlement
-                // upstream.
-                //
-                activate = dx_message_in_delivery(msg);
-                pn_delivery_settle(activate);
-                pn_delivery_settle(delivery);
-                dx_free_message(msg);
-            }
-
-            if (activate) {
-                //
-                // Activate the upstream/incoming link so that the settlement will
-                // get pushed out.
-                //
-                dx_link_t *act_link = (dx_link_t*) pn_link_get_context(pn_delivery_link(activate));
-                dx_link_activate(act_link);
-            }
-
-            return;
+            dx_link_activate(peer_link);
         }
+
     } else {
-        // TODO - Handle disposition updates from upstream
+        //
+        // The no-peer case.  Ignore status changes and echo settlement.
+        //
+        if (settled)
+            dx_delivery_free(delivery, 0);
     }
 }
 
@@ -396,7 +487,8 @@ static int router_incoming_link_handler(void* context, dx_link_t *link)
     rlink->link           = link;
     rlink->connected_link = 0;
     rlink->peer_link      = 0;
-    DEQ_INIT(rlink->out_fifo);  // Won't be used
+    DEQ_INIT(rlink->event_fifo);
+    DEQ_INIT(rlink->msg_fifo);
 
     dx_link_set_context(link, rlink);
 
@@ -443,7 +535,8 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     rlink->link           = link;
     rlink->connected_link = 0;
     rlink->peer_link      = 0;
-    DEQ_INIT(rlink->out_fifo);
+    DEQ_INIT(rlink->event_fifo);
+    DEQ_INIT(rlink->msg_fifo);
 
     dx_link_set_context(link, rlink);
 
@@ -470,38 +563,6 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     pn_link_open(pn_link);
     sys_mutex_unlock(router->lock);
     dx_log(module, LOG_TRACE, "Registered new local address: %s", r_tgt);
-    return 0;
-}
-
-
-/**
- * Outgoing Link Writable Handler
- */
-static int router_writable_link_handler(void* context, dx_link_t *link)
-{
-    dx_router_t      *router = (dx_router_t*) context;
-    int               grant_delivery = 0;
-    pn_delivery_t    *delivery;
-    dx_router_link_t *rlink = (dx_router_link_t*) dx_link_get_context(link);
-    pn_link_t        *pn_link = dx_link_pn(link);
-    uint64_t          tag;
-
-    sys_mutex_lock(router->lock);
-    if (DEQ_SIZE(rlink->out_fifo) > 0) {
-        grant_delivery = 1;
-        tag = router->dtag++;
-    }
-    sys_mutex_unlock(router->lock);
-
-    if (grant_delivery) {
-        pn_delivery(pn_link, pn_dtag((char*) &tag, 8));
-        delivery = pn_link_current(pn_link);
-        if (delivery) {
-            router_tx_handler(context, link, delivery);
-            return 1;
-        }
-    }
-
     return 0;
 }
 
@@ -539,8 +600,10 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
                 dx_field_iterator_free(iter);
             }
         }
-    } else
+    } else {
         DEQ_REMOVE(router->in_links, rlink);
+        free_dx_router_link_t(rlink);
+    }
 
     sys_mutex_unlock(router->lock);
     return 0;
@@ -580,7 +643,8 @@ static void router_outbound_open_handler(void *type_context, dx_connection_t *co
     rlink->link           = receiver;
     rlink->connected_link = 0;
     rlink->peer_link      = 0;
-    DEQ_INIT(rlink->out_fifo);  // Won't be used
+    DEQ_INIT(rlink->event_fifo);
+    DEQ_INIT(rlink->msg_fifo);
 
     dx_link_set_context(receiver, rlink);
 
@@ -604,7 +668,8 @@ static void router_outbound_open_handler(void *type_context, dx_connection_t *co
     rlink->link           = sender;
     rlink->connected_link = 0;
     rlink->peer_link      = 0;
-    DEQ_INIT(rlink->out_fifo);
+    DEQ_INIT(rlink->event_fifo);
+    DEQ_INIT(rlink->msg_fifo);
 
     dx_link_set_context(sender, rlink);
 
@@ -647,7 +712,6 @@ static void dx_router_timer_handler(void *context)
 
 static dx_node_type_t router_node = {"router", 0, 0,
                                      router_rx_handler,
-                                     router_tx_handler,
                                      router_disp_handler,
                                      router_incoming_link_handler,
                                      router_outgoing_link_handler,
@@ -779,10 +843,14 @@ void dx_router_send(dx_dispatch_t       *dx,
         //
         dx_router_link_t *dest_link = DEQ_HEAD(addr->rlinks);
         while (dest_link) {
-            pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
-            dx_message_t *copy       = dx_message_copy(msg);
-            DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
-            pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+            dx_routed_event_t *re = new_dx_routed_event_t();
+            DEQ_ITEM_INIT(re);
+            re->delivery    = 0;
+            re->message     = dx_message_copy(msg);
+            re->settle      = 0;
+            re->disposition = 0;
+            DEQ_INSERT_TAIL(dest_link->msg_fifo, re);
+
             dx_link_activate(dest_link->link);
             dest_link = DEQ_NEXT(dest_link);
         }
@@ -797,10 +865,13 @@ void dx_router_send(dx_dispatch_t       *dx,
             else
                 dest_link = dest_node->peer_link;
             if (dest_link) {
-                pn_link_t    *pn_outlink = dx_link_pn(dest_link->link);
-                dx_message_t *copy       = dx_message_copy(msg);
-                DEQ_INSERT_TAIL(dest_link->out_fifo, copy);
-                pn_link_offered(pn_outlink, DEQ_SIZE(dest_link->out_fifo));
+                dx_routed_event_t *re = new_dx_routed_event_t();
+                DEQ_ITEM_INIT(re);
+                re->delivery    = 0;
+                re->message     = dx_message_copy(msg);
+                re->settle      = 0;
+                re->disposition = 0;
+                DEQ_INSERT_TAIL(dest_link->msg_fifo, re);
                 dx_link_activate(dest_link->link);
             }
             dest_node = DEQ_NEXT(dest_node);

@@ -343,8 +343,7 @@ dx_message_t *dx_allocate_message()
         return 0;
 
     DEQ_ITEM_INIT(msg);
-    msg->content      = new_dx_message_content_t();
-    msg->out_delivery = 0;
+    msg->content = new_dx_message_content_t();
 
     if (msg->content == 0) {
         free_dx_message_t((dx_message_t*) msg);
@@ -397,8 +396,7 @@ dx_message_t *dx_message_copy(dx_message_t *in_msg)
         return 0;
 
     DEQ_ITEM_INIT(copy);
-    copy->content      = content;
-    copy->out_delivery = 0;
+    copy->content = content;
 
     sys_mutex_lock(content->lock);
     content->ref_count++;
@@ -408,36 +406,11 @@ dx_message_t *dx_message_copy(dx_message_t *in_msg)
 }
 
 
-void dx_message_set_out_delivery(dx_message_t *msg, pn_delivery_t *delivery)
+dx_message_t *dx_message_receive(dx_delivery_t *delivery)
 {
-    ((dx_message_pvt_t*) msg)->out_delivery = delivery;
-}
-
-
-pn_delivery_t *dx_message_out_delivery(dx_message_t *msg)
-{
-    return ((dx_message_pvt_t*) msg)->out_delivery;
-}
-
-
-void dx_message_set_in_delivery(dx_message_t *msg, pn_delivery_t *delivery)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    content->in_delivery = delivery;
-}
-
-
-pn_delivery_t *dx_message_in_delivery(dx_message_t *msg)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    return content->in_delivery;
-}
-
-
-dx_message_t *dx_message_receive(pn_delivery_t *delivery)
-{
-    pn_link_t        *link = pn_delivery_link(delivery);
-    dx_message_pvt_t *msg  = (dx_message_pvt_t*) pn_delivery_get_context(delivery);
+    pn_delivery_t    *pnd  = dx_delivery_pn(delivery);
+    dx_message_pvt_t *msg  = (dx_message_pvt_t*) dx_delivery_context(delivery);
+    pn_link_t        *link = pn_delivery_link(pnd);
     ssize_t           rc;
     dx_buffer_t      *buf;
 
@@ -448,15 +421,7 @@ dx_message_t *dx_message_receive(pn_delivery_t *delivery)
     //
     if (!msg) {
         msg = (dx_message_pvt_t*) dx_allocate_message();
-        pn_delivery_set_context(delivery, (void*) msg);
-
-        //
-        // Record the incoming delivery only if it is not settled.  If it is 
-        // settled, it should not be recorded as no future operations on it are
-        // permitted.
-        //
-        if (!pn_delivery_settled(delivery))
-            msg->content->in_delivery = delivery;
+        dx_delivery_set_context(delivery, (void*) msg);
     }
 
     //
@@ -489,6 +454,7 @@ dx_message_t *dx_message_receive(pn_delivery_t *delivery)
                 DEQ_REMOVE_TAIL(msg->content->buffers);
                 dx_free_buffer(buf);
             }
+            dx_delivery_set_context(delivery, 0);
             return (dx_message_t*) msg;
         }
 
@@ -520,14 +486,14 @@ dx_message_t *dx_message_receive(pn_delivery_t *delivery)
 }
 
 
-void dx_message_send(dx_message_t *in_msg, pn_link_t *link)
+void dx_message_send(dx_message_t *in_msg, dx_link_t *link)
 {
     dx_message_pvt_t *msg = (dx_message_pvt_t*) in_msg;
     dx_buffer_t      *buf = DEQ_HEAD(msg->content->buffers);
 
     // TODO - Handle cases where annotations have been added or modified
     while (buf) {
-        pn_link_send(link, (char*) dx_buffer_base(buf), dx_buffer_size(buf));
+        pn_link_send(dx_link_pn(link), (char*) dx_buffer_base(buf), dx_buffer_size(buf));
         buf = DEQ_NEXT(buf);
     }
 }
