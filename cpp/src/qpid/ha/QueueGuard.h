@@ -23,12 +23,12 @@
  */
 
 #include "types.h"
+#include "hash.h"
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/unordered_map.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <boost/functional/hash.hpp>
 #include <deque>
 #include <set>
 
@@ -89,7 +89,7 @@ class QueueGuard {
     class QueueObserver;
     typedef qpid::sys::unordered_map<ReplicationId,
                                      boost::intrusive_ptr<broker::AsyncCompletion>,
-                                     boost::hash<ReplicationId> > Delayed;
+                                     Hasher<ReplicationId> > Delayed;
 
     bool complete(ReplicationId, sys::Mutex::ScopedLock &);
     void complete(Delayed::iterator, sys::Mutex::ScopedLock &);

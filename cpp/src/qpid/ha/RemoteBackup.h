@@ -25,8 +25,8 @@
 #include "ReplicationTest.h"
 #include "BrokerInfo.h"
 #include "types.h"
+#include "hash.h"
 #include "qpid/sys/unordered_map.h"
-#include <boost/functional/hash.hpp>
 #include <set>
 
 namespace qpid {
@@ -96,8 +96,10 @@ class RemoteBackup
     void startCatchup() { started = true; }
 
   private:
-    typedef qpid::sys::unordered_map<QueuePtr, GuardPtr,
-                                     boost::hash<QueuePtr> > GuardMap;
+    typedef qpid::sys::unordered_map<
+      QueuePtr, GuardPtr, Hasher<boost::shared_ptr<broker::Queue> >
+      > GuardMap;
+
     typedef std::set<QueuePtr> QueueSet;
 
     std::string logPrefix;
