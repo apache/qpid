@@ -19,12 +19,12 @@
  * under the License.
  */
 
-#include <proton/engine.h>
 #include <qpid/dispatch/ctools.h>
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/iterator.h>
 #include <qpid/dispatch/buffer.h>
 #include <qpid/dispatch/compose.h>
+#include <qpid/dispatch/container.h>
 
 // Callback for status change (confirmed persistent, loaded-in-memory, etc.)
 
@@ -97,24 +97,17 @@ dx_message_t *dx_message_copy(dx_message_t *qm);
 int dx_message_persistent(dx_message_t *qm);
 int dx_message_in_memory(dx_message_t *qm);
 
-void dx_message_set_out_delivery(dx_message_t *msg, pn_delivery_t *delivery);
-pn_delivery_t *dx_message_out_delivery(dx_message_t *msg);
-void dx_message_set_in_delivery(dx_message_t *msg, pn_delivery_t *delivery);
-pn_delivery_t *dx_message_in_delivery(dx_message_t *msg);
-
 //
 // Functions for received messages
 //
-dx_message_t *dx_message_receive(pn_delivery_t *delivery);
-void dx_message_send(dx_message_t *msg, pn_link_t *link);
+dx_message_t *dx_message_receive(dx_delivery_t *delivery);
+void dx_message_send(dx_message_t *msg, dx_link_t *link);
 
 int dx_message_check(dx_message_t *msg, dx_message_depth_t depth);
 dx_field_iterator_t *dx_message_field_iterator(dx_message_t *msg, dx_message_field_t field);
 
 ssize_t dx_message_field_length(dx_message_t *msg, dx_message_field_t field);
 ssize_t dx_message_field_copy(dx_message_t *msg, dx_message_field_t field, void *buffer);
-
-pn_delivery_t *dx_message_inbound_delivery(dx_message_t *qm);
 
 //
 // Functions for composed messages

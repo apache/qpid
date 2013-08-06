@@ -47,6 +47,7 @@ ALLOC_DECLARE(dx_node_t);
 ALLOC_DEFINE(dx_node_t);
 ALLOC_DEFINE(dx_link_item_t);
 
+
 struct dx_link_t {
     pn_link_t *pn_link;
     void      *context;
@@ -55,6 +56,19 @@ struct dx_link_t {
 
 ALLOC_DECLARE(dx_link_t);
 ALLOC_DEFINE(dx_link_t);
+
+
+struct dx_delivery_t {
+    pn_delivery_t *pn_delivery;
+    dx_delivery_t *peer;
+    void          *context;
+    uint64_t       disposition;
+    dx_link_t     *link;
+};
+
+ALLOC_DECLARE(dx_delivery_t);
+ALLOC_DEFINE(dx_delivery_t);
+
 
 typedef struct dxc_node_type_t {
     DEQ_LINKS(struct dxc_node_type_t);
@@ -180,14 +194,25 @@ static int do_writable(pn_link_t *pn_link)
 }
 
 
-static void process_receive(pn_delivery_t *delivery)
+static void do_receive(pn_delivery_t *pnd)
 {
-    pn_link_t *pn_link = pn_delivery_link(delivery);
-    dx_link_t *link    = (dx_link_t*) pn_link_get_context(pn_link);
+    pn_link_t     *pn_link  = pn_delivery_link(pnd);
+    dx_link_t     *link     = (dx_link_t*) pn_link_get_context(pn_link);
+    dx_delivery_t *delivery = (dx_delivery_t*) pn_delivery_get_context(pnd);
 
     if (link) {
         dx_node_t *node = link->node;
         if (node) {
+            if (!delivery) {
+                delivery = new_dx_delivery_t();
+                delivery->pn_delivery = pnd;
+                delivery->peer        = 0;
+                delivery->context     = 0;
+                delivery->disposition = 0;
+                delivery->link        = link;
+                pn_delivery_set_context(pnd, delivery);
+            }
+
             node->ntype->rx_handler(node->context, link, delivery);
             return;
         }
@@ -198,34 +223,18 @@ static void process_receive(pn_delivery_t *delivery)
     //
     pn_link_advance(pn_link);
     pn_link_flow(pn_link, 1);
-    pn_delivery_update(delivery, PN_REJECTED);
-    pn_delivery_settle(delivery);
+    pn_delivery_update(pnd, PN_REJECTED);
+    pn_delivery_settle(pnd);
 }
 
 
-static void do_send(pn_delivery_t *delivery)
+static void do_updated(pn_delivery_t *pnd)
 {
-    pn_link_t *pn_link = pn_delivery_link(delivery);
-    dx_link_t *link    = (dx_link_t*) pn_link_get_context(pn_link);
+    pn_link_t     *pn_link  = pn_delivery_link(pnd);
+    dx_link_t     *link     = (dx_link_t*) pn_link_get_context(pn_link);
+    dx_delivery_t *delivery = (dx_delivery_t*) pn_delivery_get_context(pnd);
 
-    if (link) {
-        dx_node_t *node = link->node;
-        if (node) {
-            node->ntype->tx_handler(node->context, link, delivery);
-            return;
-        }
-    }
-
-    // TODO - Cancel the delivery
-}
-
-
-static void do_updated(pn_delivery_t *delivery)
-{
-    pn_link_t *pn_link = pn_delivery_link(delivery);
-    dx_link_t *link    = (dx_link_t*) pn_link_get_context(pn_link);
-
-    if (link) {
+    if (link && delivery) {
         dx_node_t *node = link->node;
         if (node)
             node->ntype->disp_handler(node->context, link, delivery);
@@ -239,15 +248,15 @@ static int close_handler(void* unused, pn_connection_t *conn)
     // Close all links, passing False as the 'closed' argument.  These links are not
     // being properly 'detached'.  They are being orphaned.
     //
-    pn_link_t *pn_link = pn_link_head(conn, 0);
+    pn_link_t *pn_link = pn_link_head(conn, PN_LOCAL_ACTIVE);
     while (pn_link) {
         dx_link_t *link = (dx_link_t*) pn_link_get_context(pn_link);
         dx_node_t *node = link->node;
-        if (node)
+        if (node && link)
             node->ntype->link_detach_handler(node->context, link, 0);
         pn_link_close(pn_link);
         free_dx_link_t(link);
-        pn_link = pn_link_next(pn_link, 0);
+        pn_link = pn_link_next(pn_link, PN_LOCAL_ACTIVE);
     }
 
     // teardown all sessions
@@ -305,9 +314,7 @@ static int process_handler(dx_container_t *container, void* unused, pn_connectio
     delivery = pn_work_head(conn);
     while (delivery) {
         if (pn_delivery_readable(delivery))
-            process_receive(delivery);
-        else if (pn_delivery_writable(delivery))
-            do_send(delivery);
+            do_receive(delivery);
 
         if (pn_delivery_updated(delivery)) {
             do_updated(delivery);
@@ -325,7 +332,7 @@ static int process_handler(dx_container_t *container, void* unused, pn_connectio
     pn_link = pn_link_head(conn, PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
     while (pn_link) {
         assert(pn_session_connection(pn_link_session(pn_link)) == conn);
-        if (pn_link_is_sender(pn_link) && pn_link_credit(pn_link) > 0)
+        if (pn_link_is_sender(pn_link))
             event_count += do_writable(pn_link);
         pn_link = pn_link_next(pn_link, PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
     }
@@ -700,4 +707,111 @@ void dx_link_close(dx_link_t *link)
     pn_link_close(link->pn_link);
 }
 
+
+dx_delivery_t *dx_delivery(dx_link_t *link, pn_delivery_tag_t tag)
+{
+    pn_link_t *pnl = dx_link_pn(link);
+
+    //
+    // If there is a current delivery on this outgoing link, something
+    // is wrong with the delivey algorithm.  We assume that the current
+    // delivery ('pnd' below) is the one created by pn_delivery.  If it is
+    // not, then my understanding of how proton works is incorrect.
+    //
+    assert(!pn_link_current(pnl));
+
+    pn_delivery(pnl, tag);
+    pn_delivery_t *pnd = pn_link_current(pnl);
+
+    if (!pnd)
+        return 0;
+
+    dx_delivery_t *delivery = new_dx_delivery_t();
+    delivery->pn_delivery = pnd;
+    delivery->peer        = 0;
+    delivery->context     = 0;
+    delivery->disposition = 0;
+    delivery->link        = link;
+    pn_delivery_set_context(pnd, delivery);
+
+    return delivery;
+}
+
+
+void dx_delivery_free(dx_delivery_t *delivery, uint64_t final_disposition)
+{
+    if (delivery->pn_delivery) {
+        if (final_disposition > 0)
+            pn_delivery_update(delivery->pn_delivery, final_disposition);
+        pn_delivery_set_context(delivery->pn_delivery, 0);
+        pn_delivery_settle(delivery->pn_delivery);
+    }
+    if (delivery->peer)
+        delivery->peer->peer = 0;
+    free_dx_delivery_t(delivery);
+}
+
+
+void dx_delivery_set_peer(dx_delivery_t *delivery, dx_delivery_t *peer)
+{
+    delivery->peer = peer;
+}
+
+
+void dx_delivery_set_context(dx_delivery_t *delivery, void *context)
+{
+    delivery->context = context;
+}
+
+
+void *dx_delivery_context(dx_delivery_t *delivery)
+{
+    return delivery->context;
+}
+
+
+dx_delivery_t *dx_delivery_peer(dx_delivery_t *delivery)
+{
+    return delivery->peer;
+}
+
+
+pn_delivery_t *dx_delivery_pn(dx_delivery_t *delivery)
+{
+    return delivery->pn_delivery;
+}
+
+
+void dx_delivery_settle(dx_delivery_t *delivery)
+{
+    if (delivery->pn_delivery) {
+        pn_delivery_settle(delivery->pn_delivery);
+        delivery->pn_delivery = 0;
+    }
+}
+
+
+bool dx_delivery_settled(dx_delivery_t *delivery)
+{
+    return pn_delivery_settled(delivery->pn_delivery);
+}
+
+
+bool dx_delivery_disp_changed(dx_delivery_t *delivery)
+{
+    return delivery->disposition != pn_delivery_remote_state(delivery->pn_delivery);
+}
+
+
+uint64_t dx_delivery_disp(dx_delivery_t *delivery)
+{
+    delivery->disposition = pn_delivery_remote_state(delivery->pn_delivery);
+    return delivery->disposition;
+}
+
+
+dx_link_t *dx_delivery_link(dx_delivery_t *delivery)
+{
+    return delivery->link;
+}
 
