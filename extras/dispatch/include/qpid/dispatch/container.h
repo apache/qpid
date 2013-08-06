@@ -51,10 +51,11 @@ typedef enum {
 } dx_direction_t;
 
 
-typedef struct dx_node_t dx_node_t;
-typedef struct dx_link_t dx_link_t;
+typedef struct dx_node_t     dx_node_t;
+typedef struct dx_link_t     dx_link_t;
+typedef struct dx_delivery_t dx_delivery_t;
 
-typedef void (*dx_container_delivery_handler_t)    (void *node_context, dx_link_t *link, pn_delivery_t *delivery);
+typedef void (*dx_container_delivery_handler_t)    (void *node_context, dx_link_t *link, dx_delivery_t *delivery);
 typedef int  (*dx_container_link_handler_t)        (void *node_context, dx_link_t *link);
 typedef int  (*dx_container_link_detach_handler_t) (void *node_context, dx_link_t *link, int closed);
 typedef void (*dx_container_node_handler_t)        (void *type_context, dx_node_t *node);
@@ -65,23 +66,68 @@ typedef struct {
     void *type_context;
     int   allow_dynamic_creation;
 
-    //
+    //=======================
     // Node-Instance Handlers
-    //
-    dx_container_delivery_handler_t     rx_handler;
-    dx_container_delivery_handler_t     tx_handler;
-    dx_container_delivery_handler_t     disp_handler;
-    dx_container_link_handler_t         incoming_handler;
-    dx_container_link_handler_t         outgoing_handler;
-    dx_container_link_handler_t         writable_handler;
-    dx_container_link_detach_handler_t  link_detach_handler;
+    //=======================
 
     //
+    // rx_handler - Invoked when a new received delivery is avaliable for processing.
+    //
+    dx_container_delivery_handler_t rx_handler;
+
+    //
+    // disp_handler - Invoked when an existing delivery changes disposition
+    //                or settlement state.
+    //
+    dx_container_delivery_handler_t disp_handler;
+
+    //
+    // incoming_handler - Invoked when an attach for a new incoming link is received.
+    //
+    dx_container_link_handler_t incoming_handler;
+
+    //
+    // outgoing_handler - Invoked when an attach for a new outgoing link is received.
+    //
+    dx_container_link_handler_t outgoing_handler;
+
+    //
+    // writable_handler - Invoked when an outgoing link is available for sending either
+    //                    deliveries or disposition changes.  The handler must check the
+    //                    link's credit to determine whether (and how many) message
+    //                    deliveries may be sent.
+    //
+    dx_container_link_handler_t writable_handler;
+
+    //
+    // link_detach_handler - Invoked when a link is detached.
+    //
+    dx_container_link_detach_handler_t link_detach_handler;
+
+    //===================
     // Node-Type Handlers
+    //===================
+
+    //
+    // node_created_handler - Invoked when a new instance of the node-type is created.
     //
     dx_container_node_handler_t  node_created_handler;
+
+    //
+    // node_destroyed_handler - Invoked when an instance of the node type is destroyed.
+    //
     dx_container_node_handler_t  node_destroyed_handler;
+
+    //
+    // inbound_conn_open_handler - Invoked when an incoming connection (via listener)
+    //                             is established.
+    //
     dx_container_conn_handler_t  inbound_conn_open_handler;
+
+    //
+    // outbound_conn_open_handler - Invoked when an outgoing connection (via connector)
+    //                              is established.
+    //
     dx_container_conn_handler_t  outbound_conn_open_handler;
 } dx_node_type_t;
 
@@ -115,6 +161,26 @@ pn_terminus_t *dx_link_remote_source(dx_link_t *link);
 pn_terminus_t *dx_link_remote_target(dx_link_t *link);
 void dx_link_activate(dx_link_t *link);
 void dx_link_close(dx_link_t *link);
+
+/**
+ * Important: dx_delivery must never be called twice in a row without an intervening pn_link_advance.
+ *            The Disatch architecture provides a hook for discovering when an outgoing link is writable
+ *            and has credit.  When a link is writable, a delivery is allocated, written, and advanced
+ *            in one operation.  If a backlog of pending deliveries is created, an assertion will be
+ *            thrown.
+ */
+dx_delivery_t *dx_delivery(dx_link_t *link, pn_delivery_tag_t tag);
+void dx_delivery_free(dx_delivery_t *delivery, uint64_t final_disposition);
+void dx_delivery_set_peer(dx_delivery_t *delivery, dx_delivery_t *peer);
+dx_delivery_t *dx_delivery_peer(dx_delivery_t *delivery);
+void dx_delivery_set_context(dx_delivery_t *delivery, void *context);
+void *dx_delivery_context(dx_delivery_t *delivery);
+pn_delivery_t *dx_delivery_pn(dx_delivery_t *delivery);
+void dx_delivery_settle(dx_delivery_t *delivery);
+bool dx_delivery_settled(dx_delivery_t *delivery);
+bool dx_delivery_disp_changed(dx_delivery_t *delivery);
+uint64_t dx_delivery_disp(dx_delivery_t *delivery);
+dx_link_t *dx_delivery_link(dx_delivery_t *delivery);
 
 
 typedef struct dx_link_item_t dx_link_item_t;

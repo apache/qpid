@@ -63,7 +63,6 @@ typedef struct {
     sys_mutex_t         *lock;
     uint32_t             ref_count;                       // The number of qmessages referencing this
     dx_buffer_list_t     buffers;                         // The buffer chain containing the message
-    pn_delivery_t       *in_delivery;                     // The delivery on which the message arrived
     dx_field_location_t  section_message_header;          // The message header list
     dx_field_location_t  section_delivery_annotation;     // The delivery annotation map
     dx_field_location_t  section_message_annotation;      // The message annotation map
@@ -83,7 +82,6 @@ typedef struct {
 typedef struct {
     DEQ_LINKS(dx_message_t);                              // Deq linkage that overlays the dx_message_t
     dx_message_content_t *content;
-    pn_delivery_t        *out_delivery;
 } dx_message_pvt_t;
 
 ALLOC_DECLARE(dx_message_t);
