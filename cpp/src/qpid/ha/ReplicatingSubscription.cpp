@@ -36,7 +36,6 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/types/Uuid.h"
-#include <boost/pointer_cast.hpp>
 #include <sstream>
 
 
