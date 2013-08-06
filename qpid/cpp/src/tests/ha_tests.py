@@ -1288,7 +1288,10 @@ class StoreTests(BrokerTest):
         cluster[1].assert_browse_backup("q2", ["hello", "end"])
 
 def open_read(name):
-    with open(name) as f: return f.read()
+    try:
+        f = open(name)
+        return f.read()
+    finally: f.close()
 
 class TransactionTests(BrokerTest):
 
