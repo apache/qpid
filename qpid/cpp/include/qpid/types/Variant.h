@@ -38,7 +38,8 @@ namespace types {
  */
 struct QPID_TYPES_CLASS_EXTERN InvalidConversion : public Exception 
 {
-    InvalidConversion(const std::string& msg);
+    QPID_TYPES_EXTERN InvalidConversion(const std::string& msg);
+    QPID_TYPES_EXTERN ~InvalidConversion() throw();
 };
 
 enum VariantType {

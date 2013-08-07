@@ -36,6 +36,7 @@ const std::string PREFIX("invalid conversion: ");
 }
 
 InvalidConversion::InvalidConversion(const std::string& msg) : Exception(PREFIX + msg) {}
+InvalidConversion::~InvalidConversion() throw() {}
 
 class VariantImpl
 {

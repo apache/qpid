@@ -52,7 +52,7 @@ class SelectorTests (Base):
         self.basic_selection_test("#")
 
     def test_special_fields(self):
-        msgs = [Message(content=i, id=i, correlation_id=i, priority=p) for p, i in enumerate(['a', 'b', 'c', 'd'], 1)]
+        msgs = [Message(content=i, id=i, correlation_id=i, priority=p+1) for p, i in enumerate(['a', 'b', 'c', 'd'])]
 
         snd = self.ssn.sender("#")
         rcv_1 = self.ssn.receiver("%s; {link:{selector:\"amqp.message_id = 'c'\"}}" % snd.target)
