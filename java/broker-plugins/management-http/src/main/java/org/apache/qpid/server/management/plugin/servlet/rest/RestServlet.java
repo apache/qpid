@@ -123,7 +123,7 @@ public class RestServlet extends AbstractServlet
 
             if(names.size() > _hierarchy.length)
             {
-                throw new IllegalArgumentException("Too many entries in path");
+                throw new IllegalArgumentException("Too many entries in path. Expected " + _hierarchy.length + "; path: " + names);
             }
         }
 
@@ -337,7 +337,7 @@ public class RestServlet extends AbstractServlet
             if(names.size() != _hierarchy.length)
             {
                 throw new IllegalArgumentException("Path to object to create must be fully specified. "
-                       + "Found " + names.size() + " expecting " + _hierarchy.length);
+                       + "Found " + names + " of size " + names.size() + " expecting " + _hierarchy.length);
             }
         }
 
