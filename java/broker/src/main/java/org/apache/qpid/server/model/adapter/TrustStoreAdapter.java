@@ -20,8 +20,11 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,8 +33,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import javax.net.ssl.X509TrustManager;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.IntegrityViolationException;
@@ -40,6 +45,8 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
+import org.apache.qpid.transport.network.security.ssl.QpidPeersOnlyTrustManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustStore
@@ -187,6 +194,62 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustS
         catch (NoSuchAlgorithmException e)
         {
             throw new IllegalConfigurationException("Unknown trustManagerFactoryAlgorithm: " + trustManagerFactoryAlgorithm);
+        }
+    }
+
+    public TrustManager[] getTrustManagers() throws GeneralSecurityException
+    {
+        String trustStorePath = (String)getAttribute(TrustStore.PATH);
+        String trustStorePassword = getPassword();
+        String trustStoreType = (String)getAttribute(TrustStore.TYPE);
+        String trustManagerFactoryAlgorithm = (String)getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
+
+        try
+        {
+            KeyStore ts = SSLUtil.getInitializedKeyStore(trustStorePath, trustStorePassword, trustStoreType);
+            final TrustManagerFactory tmf = TrustManagerFactory
+                    .getInstance(trustManagerFactoryAlgorithm);
+            tmf.init(ts);
+            final Collection<TrustManager> trustManagersCol = new ArrayList<TrustManager>();
+            final QpidMultipleTrustManager mulTrustManager = new QpidMultipleTrustManager();
+            TrustManager[] delegateManagers = tmf.getTrustManagers();
+            for (TrustManager tm : delegateManagers)
+            {
+                if (tm instanceof X509TrustManager)
+                {
+                    if (Boolean.TRUE.equals(getAttribute(PEERS_ONLY)))
+                    {
+                        // truststore is supposed to trust only clients which peers certificates
+                        // are directly in the store. CA signing will not be considered.
+                        mulTrustManager.addTrustManager(new QpidPeersOnlyTrustManager(ts, (X509TrustManager) tm));
+                    }
+                    else
+                    {
+                        mulTrustManager.addTrustManager((X509TrustManager) tm);
+                    }
+                }
+                else
+                {
+                    trustManagersCol.add(tm);
+                }
+            }
+            if (! mulTrustManager.isEmpty())
+            {
+                trustManagersCol.add(mulTrustManager);
+            }
+
+            if (trustManagersCol.isEmpty())
+            {
+                return null;
+            }
+            else
+            {
+                return trustManagersCol.toArray(new TrustManager[trustManagersCol.size()]);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new GeneralSecurityException(e);
         }
     }
 }

@@ -36,25 +36,7 @@ public class SSLContextFactoryTest extends QpidTestCase
     private static final String DEFAULT_TRUST_MANAGER_ALGORITHM = TrustManagerFactory.getDefaultAlgorithm();
     private static final String CERT_ALIAS_APP1 = "app1";
 
-    public void testBuildServerContext() throws Exception
-    {
-        SSLContext context = SSLContextFactory.buildServerContext(BROKER_KEYSTORE_PATH, STORE_PASSWORD, STORE_TYPE, DEFAULT_KEY_MANAGER_ALGORITHM);
-        assertNotNull("SSLContext should not be null", context);
-    }
 
-    public void testBuildServerContextWithIncorrectPassword() throws Exception
-    {
-        try
-        {
-            SSLContextFactory.buildServerContext(BROKER_KEYSTORE_PATH, "sajdklsad", STORE_TYPE, DEFAULT_KEY_MANAGER_ALGORITHM);
-            fail("Exception was not thrown due to incorrect password");
-        }
-        catch (IOException e)
-        {
-            //expected
-        }
-    }
-    
     public void testTrustStoreDoesNotExist() throws Exception
     {
         try
@@ -79,7 +61,7 @@ public class SSLContextFactoryTest extends QpidTestCase
         SSLContext context = SSLContextFactory.buildClientContext(CLIENT_TRUSTSTORE_PATH, STORE_PASSWORD, STORE_TYPE, DEFAULT_TRUST_MANAGER_ALGORITHM, CLIENT_KEYSTORE_PATH, STORE_PASSWORD, STORE_TYPE, DEFAULT_KEY_MANAGER_ALGORITHM, null);
         assertNotNull("SSLContext should not be null", context);
     }
-    
+
     public void testBuildClientContextWithForClientAuthWithCertAlias() throws Exception
     {
         SSLContext context = SSLContextFactory.buildClientContext(CLIENT_TRUSTSTORE_PATH, STORE_PASSWORD, STORE_TYPE, DEFAULT_TRUST_MANAGER_ALGORITHM, CLIENT_KEYSTORE_PATH, STORE_PASSWORD, STORE_TYPE, DEFAULT_KEY_MANAGER_ALGORITHM, CERT_ALIAS_APP1);

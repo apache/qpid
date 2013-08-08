@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.server.model;
 
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import javax.net.ssl.TrustManager;
 
 public interface TrustStore extends ConfiguredObject
 {
@@ -64,4 +66,8 @@ public interface TrustStore extends ConfiguredObject
     public String getPassword();
 
     public void setPassword(String password);
+
+    public TrustManager[] getTrustManagers() throws GeneralSecurityException;
+
+
 }
