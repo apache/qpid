@@ -64,7 +64,7 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
 }
 
 PagedQueue::PagedQueue(const std::string& name, const std::string& directory, uint m, uint factor, ProtocolRegistry& p)
-    : pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0)
+    : pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0), loaded(0), version(0)
 {
     path = file.open(name, directory);
     QPID_LOG(debug, "PagedQueue[" << path << "]");
