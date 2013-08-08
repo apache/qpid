@@ -326,14 +326,12 @@ static int process_handler(dx_container_t *container, void* unused, pn_connectio
 
     //
     // Step 2.5: Traverse all of the links on the connection looking for
-    // outgoing links with non-zero credit.  Call the attached node's
-    // writable handler for such links.
+    // links.  Call the attached node's writable handler for such links.
     //
     pn_link = pn_link_head(conn, PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
     while (pn_link) {
         assert(pn_session_connection(pn_link_session(pn_link)) == conn);
-        if (pn_link_is_sender(pn_link))
-            event_count += do_writable(pn_link);
+        event_count += do_writable(pn_link);
         pn_link = pn_link_next(pn_link, PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
     }
 
