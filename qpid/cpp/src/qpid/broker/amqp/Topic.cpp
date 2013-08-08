@@ -117,8 +117,12 @@ bool TopicRegistry::deleteObject(Broker& broker, const std::string& type, const 
 {
     if (type == TOPIC) {
         boost::shared_ptr<Topic> topic = remove(name);
-        if (topic->isDurable()) broker.getStore().destroy(*topic);
-        return true;
+        if (topic) {
+            if (topic->isDurable()) broker.getStore().destroy(*topic);
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
