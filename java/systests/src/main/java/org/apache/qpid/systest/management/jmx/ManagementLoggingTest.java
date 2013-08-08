@@ -249,7 +249,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
             // Validate the keystore path is as expected
             assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
-                       getMessageString(log).endsWith(TestSSLConstants.BROKER_KEYSTORE));
+                       getMessageString(log).endsWith("systestsKeyStore"));
         }
     }
 

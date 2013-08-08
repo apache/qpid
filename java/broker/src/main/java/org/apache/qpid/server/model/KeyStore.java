@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.server.model;
 
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import javax.net.ssl.KeyManager;
 
 public interface KeyStore extends ConfiguredObject
 {
@@ -64,4 +66,7 @@ public interface KeyStore extends ConfiguredObject
     public String getPassword();
 
     public void setPassword(String password);
+
+    public KeyManager[] getKeyManagers() throws GeneralSecurityException;
+
 }

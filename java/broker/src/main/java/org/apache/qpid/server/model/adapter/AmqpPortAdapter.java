@@ -21,18 +21,21 @@ package org.apache.qpid.server.model.adapter;
 
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -46,10 +49,9 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
-import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
 public class AmqpPortAdapter extends PortAdapter
 {
@@ -136,8 +138,8 @@ public class AmqpPortAdapter extends PortAdapter
     private SSLContext createSslContext()
     {
         KeyStore keyStore = getKeyStore();
-
         Collection<TrustStore> trustStores = getTrustStores();
+
         boolean needClientCert = (Boolean)getAttribute(NEED_CLIENT_AUTH) || (Boolean)getAttribute(WANT_CLIENT_AUTH);
         if (needClientCert && trustStores.isEmpty())
         {
@@ -145,44 +147,58 @@ public class AmqpPortAdapter extends PortAdapter
                     + this.getName() + "' but no trust store defined");
         }
 
-        String keystorePath = (String)keyStore.getAttribute(KeyStore.PATH);
-        String keystorePassword = keyStore.getPassword();
-        String keystoreType = (String)keyStore.getAttribute(KeyStore.TYPE);
-        String keyManagerFactoryAlgorithm = (String)keyStore.getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
-        String certAlias = (String)keyStore.getAttribute(KeyStore.CERTIFICATE_ALIAS);
-
-        final SSLContext sslContext;
         try
         {
-            if(! trustStores.isEmpty())
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            KeyManager[] keyManagers = keyStore.getKeyManagers();
+
+            TrustManager[] trustManagers;
+            if(trustStores == null || trustStores.isEmpty())
             {
-                Collection<SSLContextFactory.TrustStoreWrapper> trstWrappers = new ArrayList<SSLContextFactory.TrustStoreWrapper>();
-                for (TrustStore trustStore : trustStores)
-                {
-                    trstWrappers.add(new SSLContextFactory.TrustStoreWrapper((String)trustStore.getAttribute(TrustStore.PATH),
-                                                                             trustStore.getPassword(),
-                                                                             (String)trustStore.getAttribute(TrustStore.TYPE),
-                                                                             (Boolean) trustStore.getAttribute(TrustStore.PEERS_ONLY),
-                                                                             (String)trustStore.getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM)));
-                }
-                sslContext = SSLContextFactory.buildClientContext(trstWrappers, keystorePath,
-                                                                  keystorePassword, keystoreType,
-                                                                  keyManagerFactoryAlgorithm, certAlias);
+                trustManagers = null;
+            }
+            else if(trustStores.size() == 1)
+            {
+                trustManagers = trustStores.iterator().next().getTrustManagers();
             }
             else
             {
-                sslContext = SSLContextFactory.buildServerContext(keystorePath, keystorePassword, keystoreType, keyManagerFactoryAlgorithm);
+                Collection<TrustManager> trustManagerList = new ArrayList<TrustManager>();
+                final QpidMultipleTrustManager mulTrustManager = new QpidMultipleTrustManager();
+
+                for(TrustStore ts : trustStores)
+                {
+                    TrustManager[] managers = ts.getTrustManagers();
+                    if(managers != null)
+                    {
+                        for(TrustManager manager : managers)
+                        {
+                            if(manager instanceof X509TrustManager)
+                            {
+                                mulTrustManager.addTrustManager((X509TrustManager)manager);
+                            }
+                            else
+                            {
+                                trustManagerList.add(manager);
+                            }
+                        }
+                    }
+                }
+                if(!mulTrustManager.isEmpty())
+                {
+                    trustManagerList.add(mulTrustManager);
+                }
+                trustManagers = trustManagerList.toArray(new TrustManager[trustManagerList.size()]);
             }
+            sslContext.init(keyManagers, trustManagers, null);
+
+            return sslContext;
+
         }
         catch (GeneralSecurityException e)
         {
             throw new RuntimeException("Unable to create SSLContext for key or trust store", e);
         }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Unable to create SSLContext - unable to load key/trust store", e);
-        }
-        return sslContext;
     }
 
     private AmqpProtocolVersion getDefaultAmqpSupportedReply()
