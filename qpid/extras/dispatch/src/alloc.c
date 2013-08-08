@@ -24,24 +24,34 @@
 #include <memory.h>
 #include <stdio.h>
 
-typedef struct item_t item_t;
+typedef struct dx_alloc_type_t dx_alloc_type_t;
+typedef struct dx_alloc_item_t dx_alloc_item_t;
 
-struct item_t {
-    DEQ_LINKS(item_t);
+struct dx_alloc_type_t {
+    DEQ_LINKS(dx_alloc_type_t);
     dx_alloc_type_desc_t *desc;
 };
 
-DEQ_DECLARE(item_t, item_list_t);
+DEQ_DECLARE(dx_alloc_type_t, dx_alloc_type_list_t);
+
+
+struct dx_alloc_item_t {
+    DEQ_LINKS(dx_alloc_item_t);
+};
+
+DEQ_DECLARE(dx_alloc_item_t, dx_alloc_item_list_t);
+
 
 struct dx_alloc_pool_t {
-    item_list_t free_list;
+    dx_alloc_item_list_t free_list;
 };
 
 dx_alloc_config_t dx_alloc_default_config_big   = {16,  32, 0};
 dx_alloc_config_t dx_alloc_default_config_small = {64, 128, 0};
+#define BIG_THRESHOLD 256
 
-static sys_mutex_t *init_lock;
-static item_list_t  type_list;
+static sys_mutex_t          *init_lock;
+static dx_alloc_type_list_t  type_list;
 
 static void dx_alloc_init(dx_alloc_type_desc_t *desc)
 {
@@ -56,7 +66,7 @@ static void dx_alloc_init(dx_alloc_type_desc_t *desc)
 
     if (!desc->global_pool) {
         if (desc->config == 0)
-            desc->config = desc->total_size > 256 ?
+            desc->config = desc->total_size > BIG_THRESHOLD ?
                 &dx_alloc_default_config_big : &dx_alloc_default_config_small;
 
         assert (desc->config->local_free_list_max >= desc->config->transfer_batch_size);
@@ -66,12 +76,12 @@ static void dx_alloc_init(dx_alloc_type_desc_t *desc)
         desc->lock = sys_mutex();
         desc->stats = NEW(dx_alloc_stats_t);
         memset(desc->stats, 0, sizeof(dx_alloc_stats_t));
-    }
 
-    item_t *type_item = NEW(item_t);
-    DEQ_ITEM_INIT(type_item);
-    type_item->desc = desc;
-    DEQ_INSERT_TAIL(type_list, type_item);
+        dx_alloc_type_t *type_item = NEW(dx_alloc_type_t);
+        DEQ_ITEM_INIT(type_item);
+        type_item->desc = desc;
+        DEQ_INSERT_TAIL(type_list, type_item);
+    }
 
     sys_mutex_unlock(init_lock);
 }
@@ -103,7 +113,7 @@ void *dx_alloc(dx_alloc_type_desc_t *desc, dx_alloc_pool_t **tpool)
     // list and return it.  Since everything we've touched is thread-local,
     // there is no need to acquire a lock.
     //
-    item_t *item = DEQ_HEAD(pool->free_list);
+    dx_alloc_item_t *item = DEQ_HEAD(pool->free_list);
     if (item) {
         DEQ_REMOVE_HEAD(pool->free_list);
         return &item[1];
@@ -130,11 +140,10 @@ void *dx_alloc(dx_alloc_type_desc_t *desc, dx_alloc_pool_t **tpool)
         // Allocate a full batch from the heap and put it on the thread list.
         //
         for (idx = 0; idx < desc->config->transfer_batch_size; idx++) {
-            item = (item_t*) malloc(sizeof(item_t) + desc->total_size);
+            item = (dx_alloc_item_t*) malloc(sizeof(dx_alloc_item_t) + desc->total_size);
             if (item == 0)
                 break;
             DEQ_ITEM_INIT(item);
-            item->desc = desc;
             DEQ_INSERT_TAIL(pool->free_list, item);
             desc->stats->held_by_threads++;
             desc->stats->total_alloc_from_heap++;
@@ -154,7 +163,7 @@ void *dx_alloc(dx_alloc_type_desc_t *desc, dx_alloc_pool_t **tpool)
 
 void dx_dealloc(dx_alloc_type_desc_t *desc, dx_alloc_pool_t **tpool, void *p)
 {
-    item_t          *item = ((item_t*) p) - 1;
+    dx_alloc_item_t *item = ((dx_alloc_item_t*) p) - 1;
     int              idx;
 
     //
@@ -217,7 +226,7 @@ static void alloc_schema_handler(void *context, void *correlator)
 
 static void alloc_query_handler(void* context, const char *id, void *cor)
 {
-    item_t *item = DEQ_HEAD(type_list);
+    dx_alloc_type_t *item = DEQ_HEAD(type_list);
 
     while (item) {
         dx_agent_value_string(cor, "name", item->desc->type_name);
