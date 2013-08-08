@@ -228,10 +228,14 @@ static int router_writable_link_handler(void* context, dx_link_t *link)
         DEQ_REMOVE_HEAD(events);
 
         if (re->delivery) {
-            if (re->disposition)
+            if (re->disposition) {
                 pn_delivery_update(dx_delivery_pn(re->delivery), re->disposition);
-            if (re->settle)
+                event_count++;
+            }
+            if (re->settle) {
                 dx_delivery_free(re->delivery, 0);
+                event_count++;
+            }
         }
 
         free_dx_routed_event_t(re);
@@ -1096,14 +1100,16 @@ static void dx_pyrouter_tick(dx_router_t *router)
     PyObject *pArgs;
     PyObject *pValue;
 
-    pArgs  = PyTuple_New(0);
-    pValue = PyObject_CallObject(router->pyTick, pArgs);
-    if (PyErr_Occurred()) {
-        PyErr_Print();
-    }
-    Py_DECREF(pArgs);
-    if (pValue) {
-        Py_DECREF(pValue);
+    if (router->pyTick) {
+        pArgs  = PyTuple_New(0);
+        pValue = PyObject_CallObject(router->pyTick, pArgs);
+        if (PyErr_Occurred()) {
+            PyErr_Print();
+        }
+        Py_DECREF(pArgs);
+        if (pValue) {
+            Py_DECREF(pValue);
+        }
     }
 }
 
