@@ -22,6 +22,9 @@ package org.apache.qpid.server.management.plugin;
 
 import java.lang.reflect.Type;
 import java.net.SocketAddress;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -30,6 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.SSLContext;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -239,13 +243,17 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
                 {
                     throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
                 }
-                String keyStorePath = (String)keyStore.getAttribute(KeyStore.PATH);
-                String keyStorePassword = keyStore.getPassword();
-
                 SslContextFactory factory = new SslContextFactory();
-                factory.setKeyStorePath(keyStorePath);
-                factory.setKeyStorePassword(keyStorePassword);
-
+                try
+                {
+                    SSLContext sslContext = SSLContext.getInstance("TLS");
+                    sslContext.init(keyStore.getKeyManagers(), null, null);
+                    factory.setSslContext(sslContext);
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new RuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
+                }
                 connector = new SslSocketConnector(factory);
             }
             else

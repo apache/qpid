@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.jmx;
 
+import javax.net.ssl.KeyManager;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -124,26 +125,19 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         {
             KeyStore keyStore = _connectorPort.getKeyStore();
 
-            String keyStorePath = (String) keyStore.getAttribute(KeyStore.PATH);
-            String keyStorePassword = keyStore.getPassword();
-            String keyStoreType = (String) keyStore.getAttribute(KeyStore.TYPE);
-            String keyManagerFactoryAlgorithm = (String) keyStore.getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
-
             SSLContext sslContext;
             try
             {
-                sslContext = SSLContextFactory.buildServerContext(keyStorePath, keyStorePassword, keyStoreType, keyManagerFactoryAlgorithm);
+
+                sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(keyStore.getKeyManagers(), null, null);
             }
             catch (GeneralSecurityException e)
             {
                 throw new RuntimeException("Unable to create SSLContext for key store", e);
             }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Unable to create SSLContext for key store", e);
-            }
 
-            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStorePath));
+            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStore.getName()));
 
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
