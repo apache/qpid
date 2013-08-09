@@ -157,4 +157,11 @@ void SslTransport::activateOutput()
     if (aio) aio->notifyPendingWrite();
 }
 
+const qpid::sys::SecuritySettings* SslTransport::getSecuritySettings()
+{
+    securitySettings.ssf = socket.getKeyLen();
+    securitySettings.authid = "dummy";//set to non-empty string to enable external authentication
+    return &securitySettings;
+}
+
 }}} // namespace qpid::messaging::amqp

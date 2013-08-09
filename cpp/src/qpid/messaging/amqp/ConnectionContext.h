@@ -44,6 +44,9 @@ namespace qpid {
 namespace framing {
 class ProtocolVersion;
 }
+namespace sys {
+struct SecuritySettings;
+}
 namespace messaging {
 class Duration;
 class Message;
@@ -101,6 +104,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     framing::ProtocolVersion getVersion() const;
     //additionally, Transport needs:
     void opened();//signal successful connection
+    const qpid::sys::SecuritySettings* getTransportSecuritySettings();
 
   private:
     typedef std::map<std::string, boost::shared_ptr<SessionContext> > SessionMap;

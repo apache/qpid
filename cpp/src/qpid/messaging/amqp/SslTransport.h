@@ -23,6 +23,7 @@
  */
 #include "qpid/messaging/amqp/Transport.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/ssl/SslSocket.h"
 #include <boost/shared_ptr.hpp>
 
@@ -50,6 +51,7 @@ class SslTransport : public Transport
     void abort();
     void connectionEstablished() {};
     void close();
+    const qpid::sys::SecuritySettings* getSecuritySettings();
 
   private:
     qpid::sys::ssl::SslSocket socket;
@@ -59,6 +61,7 @@ class SslTransport : public Transport
     boost::shared_ptr<qpid::sys::Poller> poller;
     bool closed;
     std::string id;
+    qpid::sys::SecuritySettings securitySettings;
 
     void connected(const qpid::sys::Socket&);
     void failed(const std::string& msg);

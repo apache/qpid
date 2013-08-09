@@ -27,6 +27,7 @@
 namespace qpid {
 namespace sys {
 class Poller;
+struct SecuritySettings;
 }
 namespace messaging {
 namespace amqp {
@@ -38,6 +39,7 @@ class Transport : public qpid::sys::OutputControl
     virtual ~Transport() {}
     virtual void connect(const std::string& host, const std::string& port) = 0;
     virtual void close() = 0;
+    virtual const qpid::sys::SecuritySettings* getSecuritySettings() = 0;
 
     typedef Transport* Factory(TransportContext&, boost::shared_ptr<qpid::sys::Poller>);
     static Transport* create(const std::string& name, TransportContext&, boost::shared_ptr<qpid::sys::Poller>);
