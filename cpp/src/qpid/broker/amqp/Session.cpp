@@ -507,7 +507,6 @@ bool Session::dispatch()
 
 void Session::close()
 {
-    exclusiveQueues.clear();
     for (OutgoingLinks::iterator i = outgoing.begin(); i != outgoing.end(); ++i) {
         i->second->detached();
     }
@@ -520,6 +519,7 @@ void Session::close()
     for (std::set< boost::shared_ptr<Queue> >::const_iterator i = exclusiveQueues.begin(); i != exclusiveQueues.end(); ++i) {
         (*i)->releaseExclusiveOwnership();
     }
+    exclusiveQueues.clear();
     qpid::sys::Mutex::ScopedLock l(lock);
     deleted = true;
 }
