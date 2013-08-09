@@ -47,6 +47,13 @@ bool testProperty(const std::string& k, const qpid::types::Variant::Map& m)
     else return i->second;
 }
 
+qpid::types::Variant::Map filter(const qpid::types::Variant::Map& properties)
+{
+    qpid::types::Variant::Map filtered = properties;
+    filtered.erase(DURABLE);
+    filtered.erase(EXCHANGE);
+    return filtered;
+}
 }
 
 Topic::Topic(Broker& broker, const std::string& n, const qpid::types::Variant::Map& properties)
@@ -60,7 +67,7 @@ Topic::Topic(Broker& broker, const std::string& n, const qpid::types::Variant::M
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent != 0) {
         topic = _qmf::Topic::shared_ptr(new _qmf::Topic(agent, this, name, exchange->GetManagementObject()->getObjectId(), durable));
-        topic->set_properties(policy.asMap());
+        topic->set_properties(filter(properties));
         agent->addObject(topic);
     }
 }
