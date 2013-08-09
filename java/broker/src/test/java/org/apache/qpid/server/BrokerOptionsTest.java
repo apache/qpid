@@ -240,11 +240,10 @@ public class BrokerOptionsTest extends QpidTestCase
 
     public void testDefaultWorkDirWithQpidWork()
     {
-        String qpidWork = "/test/value";
+        String qpidWork = new File(File.separator + "test" + File.separator + "value").getAbsolutePath();
         setTestSystemProperty("QPID_WORK", qpidWork);
 
-        String expectedPath = new File(qpidWork).getAbsolutePath();
-        assertEquals (expectedPath, _options.getConfigProperties().get(BrokerOptions.QPID_WORK_DIR));
+        assertEquals (qpidWork, _options.getConfigProperties().get(BrokerOptions.QPID_WORK_DIR));
     }
 
     public void testDefaultWorkDirWithoutQpidWork()
@@ -265,11 +264,10 @@ public class BrokerOptionsTest extends QpidTestCase
 
     public void testDefaultHomeDirWithQpidHome()
     {
-        String qpidHome = "/test/value";
+        String qpidHome = new File(File.separator + "test" + File.separator + "value").getAbsolutePath();
         setTestSystemProperty("QPID_HOME", qpidHome);
 
-        String expectedPath = new File(qpidHome).getAbsolutePath();
-        assertEquals (expectedPath, _options.getConfigProperties().get(BrokerOptions.QPID_HOME_DIR));
+        assertEquals (qpidHome, _options.getConfigProperties().get(BrokerOptions.QPID_HOME_DIR));
         assertEquals("unexpected number of entries", 6, _options.getConfigProperties().keySet().size());
     }
 
