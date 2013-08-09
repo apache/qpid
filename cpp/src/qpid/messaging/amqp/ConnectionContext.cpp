@@ -763,4 +763,9 @@ void ConnectionContext::setProperties()
     **/
 }
 
+const qpid::sys::SecuritySettings* ConnectionContext::getTransportSecuritySettings()
+{
+    return transport ?  transport->getSecuritySettings() : 0;
+}
+
 }}} // namespace qpid::messaging::amqp

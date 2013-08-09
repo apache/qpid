@@ -93,7 +93,7 @@ void Sasl::mechanisms(const std::string& offered)
         mechanisms = offered;
     }
 
-    if (sasl->start(mechanisms, response)) {
+    if (sasl->start(mechanisms, response, context.getTransportSecuritySettings())) {
         init(sasl->getMechanism(), &response, hostname.size() ? &hostname : 0);
     } else {
         init(sasl->getMechanism(), 0, hostname.size() ? &hostname : 0);
