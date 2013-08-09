@@ -117,7 +117,7 @@ class Manager:
                     if k == "name":
                         name = v
                     elif v:
-                        if isinstance(v, dict) and v["_object_name"]:
+                        if isinstance(v, dict) and "_object_name" in v:
                             v = v["_object_name"]
                         details += "%s=%s " %(k,v)
                 print "%-25s %s" % (name, details)
