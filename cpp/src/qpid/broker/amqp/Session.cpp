@@ -355,8 +355,8 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         authorise.outgoing(node.exchange, queue, filter);
         filter.bind(node.exchange, queue);
         boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, queue, link, *this, out, !shared, false));
-        outgoing[link] = q;
         q->init();
+        outgoing[link] = q;
     } else if (node.relay) {
         boost::shared_ptr<Outgoing> out(new OutgoingFromRelay(link, connection.getBroker(), *this, name, target, pn_link_name(link), node.relay));
         outgoing[link] = out;
