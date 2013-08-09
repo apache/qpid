@@ -17,7 +17,7 @@
 # under the License.
 #
 java.naming.factory.initial=org.apache.qpid.jndi.PropertiesFileInitialContextFactory
-java.naming.provider.url=${test.profiles}/test-provider.properties
+java.naming.provider.url=${test.profiles}${file.separator}test-provider.properties
 
 broker.ready=Listening on TCP
 broker.config=build/etc/config-systests.json
@@ -36,7 +36,7 @@ root.logging.level=warn
 
 # System property log4j.configuration is used by log4j.
 # QpidBrokerTestCase uses log4j.configuration.file to construct a java.io.File, eg for log configuration of spawned brokers.
-log4j.configuration.file=${test.profiles}/log4j-test.xml
+log4j.configuration.file=${test.profiles}${file.separator}log4j-test.xml
 log4j.configuration=file:///${log4j.configuration.file}
 
 log4j.debug=false
@@ -63,6 +63,6 @@ exclude.modules=none
 
 profile.clustered=false
 broker.config-store-type=json
-broker.virtualhosts-config="${QPID_HOME}/etc/virtualhosts-systests.xml"
+broker.virtualhosts-config="${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml"
 
 
