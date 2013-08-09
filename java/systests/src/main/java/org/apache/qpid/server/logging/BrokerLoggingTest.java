@@ -1000,7 +1000,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
         }
         catch (IOException e)
         {
-            if (!e.getMessage().equals("Connection refused"))
+            if (!e.getMessage().startsWith("Connection refused"))
             {
                 fail("Socket not closed on port:" + port + ":" + e.getMessage());
                 // Keep stack trace for diagnosis.
