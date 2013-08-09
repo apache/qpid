@@ -159,4 +159,8 @@ void TcpTransport::activateOutput()
     if (aio) aio->notifyPendingWrite();
 }
 
+const qpid::sys::SecuritySettings* TcpTransport::getSecuritySettings()
+{
+    return 0;
+}
 }}} // namespace qpid::messaging::amqp
