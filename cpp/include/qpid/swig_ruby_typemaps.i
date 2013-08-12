@@ -32,7 +32,7 @@
         case T_FLOAT:   return qpid::types::Variant(NUM2DBL(value));
         case T_STRING: {
           qpid::types::Variant v = qpid::types::Variant();
-          v = StringValuePtr(value));
+          v = StringValuePtr(value);
           v.setEncoding("utf8");
           return v;
         }
