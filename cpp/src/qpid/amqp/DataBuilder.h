@@ -23,6 +23,7 @@
  */
 #include "Reader.h"
 #include "qpid/types/Variant.h"
+#include "qpid/CommonImportExport.h"
 #include <stack>
 
 namespace qpid {
@@ -34,36 +35,36 @@ namespace amqp {
 class DataBuilder : public Reader
 {
   public:
-    DataBuilder(qpid::types::Variant);
-    virtual ~DataBuilder();
-    void onNull(const Descriptor*);
-    void onBoolean(bool, const Descriptor*);
-    void onUByte(uint8_t, const Descriptor*);
-    void onUShort(uint16_t, const Descriptor*);
-    void onUInt(uint32_t, const Descriptor*);
-    void onULong(uint64_t, const Descriptor*);
-    void onByte(int8_t, const Descriptor*);
-    void onShort(int16_t, const Descriptor*);
-    void onInt(int32_t, const Descriptor*);
-    void onLong(int64_t, const Descriptor*);
-    void onFloat(float, const Descriptor*);
-    void onDouble(double, const Descriptor*);
-    void onUuid(const CharSequence&, const Descriptor*);
-    void onTimestamp(int64_t, const Descriptor*);
+    QPID_COMMON_EXTERN DataBuilder(qpid::types::Variant);
+    QPID_COMMON_EXTERN virtual ~DataBuilder();
+    QPID_COMMON_EXTERN void onNull(const Descriptor*);
+    QPID_COMMON_EXTERN void onBoolean(bool, const Descriptor*);
+    QPID_COMMON_EXTERN void onUByte(uint8_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onUShort(uint16_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onUInt(uint32_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onULong(uint64_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onByte(int8_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onShort(int16_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onInt(int32_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onLong(int64_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onFloat(float, const Descriptor*);
+    QPID_COMMON_EXTERN void onDouble(double, const Descriptor*);
+    QPID_COMMON_EXTERN void onUuid(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onTimestamp(int64_t, const Descriptor*);
 
-    void onBinary(const CharSequence&, const Descriptor*);
-    void onString(const CharSequence&, const Descriptor*);
-    void onSymbol(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onBinary(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onString(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onSymbol(const CharSequence&, const Descriptor*);
 
-    bool onStartList(uint32_t /*count*/, const CharSequence&, const Descriptor*);
-    bool onStartMap(uint32_t /*count*/, const CharSequence&, const Descriptor*);
-    bool onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*);
-    void onEndList(uint32_t /*count*/, const Descriptor*);
-    void onEndMap(uint32_t /*count*/, const Descriptor*);
-    void onEndArray(uint32_t /*count*/, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t /*count*/, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartMap(uint32_t /*count*/, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*);
+    QPID_COMMON_EXTERN void onEndList(uint32_t /*count*/, const Descriptor*);
+    QPID_COMMON_EXTERN void onEndMap(uint32_t /*count*/, const Descriptor*);
+    QPID_COMMON_EXTERN void onEndArray(uint32_t /*count*/, const Descriptor*);
 
-    bool proceed();
-    qpid::types::Variant& getValue();
+    QPID_COMMON_EXTERN bool proceed();
+    QPID_COMMON_EXTERN qpid::types::Variant& getValue();
   private:
     qpid::types::Variant base;
     std::stack<qpid::types::Variant*> nested;
