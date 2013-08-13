@@ -188,4 +188,17 @@ class Base(Test):
       return {"reconnect": self.reconnect(),
               "transport": self.transport()}
 
+class VersionTest (Base):
+  def create_connection(self, version="amqp1.0", force=False):
+    opts = self.connection_options()
+    if force or not 'protocol' in opts:
+      opts['protocol'] = version;
+    return Connection.establish(self.broker, **opts)
+
+  def setup_connection(self):
+    return self.create_connection()
+
+  def setup_session(self):
+    return self.conn.session()
+
 import address, endpoints, message

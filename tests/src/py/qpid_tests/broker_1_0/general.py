@@ -18,18 +18,12 @@
 #
 
 from qpid.tests.messaging.implementation import *
-from qpid.tests.messaging import Base
+from qpid.tests.messaging import VersionTest
 
-class GeneralTests (Base):
+class GeneralTests (VersionTest):
     """
     Miscellaneous tests for core AMQP 1.0 messaging behaviour.
     """
-    def setup_connection(self):
-        return Connection.establish(self.broker, **self.connection_options())
-
-    def setup_session(self):
-        return self.conn.session()
-
     def test_request_response(self):
         snd_request = self.ssn.sender("#")
         rcv_response = self.ssn.receiver("#")

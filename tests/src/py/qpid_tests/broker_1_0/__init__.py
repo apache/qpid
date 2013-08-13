@@ -19,6 +19,7 @@
 # under the License.
 #
 
+from general import *
 from legacy_exchanges import *
 from selector import *
-from general import *
+from translation import *
