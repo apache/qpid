@@ -18,19 +18,13 @@
 #
 
 from qpid.tests.messaging.implementation import *
-from qpid.tests.messaging import Base
+from qpid.tests.messaging import VersionTest
 
-class SelectorTests (Base):
+class SelectorTests (VersionTest):
     """
     Tests for the selector filter registered for AMQP 1.0 under the
     apache namespace.
     """
-    def setup_connection(self):
-        return Connection.establish(self.broker, **self.connection_options())
-
-    def setup_session(self):
-        return self.conn.session()
-
     def basic_selection_test(self, node):
         properties = [(1, 'red','dog'), (2, 'black', 'cat'), (3, 'red', 'squirrel'), (4, 'grey', 'squirrel')]
         msgs = [Message(content="%s.%s" % (colour, creature), properties={'sequence':sequence,'colour':colour}) for sequence, colour, creature in properties]
