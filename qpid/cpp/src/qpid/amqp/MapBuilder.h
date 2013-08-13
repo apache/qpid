@@ -22,6 +22,7 @@
  *
  */
 #include "DataBuilder.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace amqp {
@@ -32,8 +33,8 @@ namespace amqp {
 class MapBuilder : public DataBuilder
 {
   public:
-    MapBuilder();
-    qpid::types::Variant::Map getMap();
+    QPID_COMMON_EXTERN MapBuilder();
+    QPID_COMMON_EXTERN qpid::types::Variant::Map getMap();
 };
 }} // namespace qpid::amqp
 
