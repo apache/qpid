@@ -231,7 +231,7 @@ fi
 if [ "CPP" == "$CPP" ] ; then
   pushd qpid-${VER}/cpp
   ./bootstrap
-  ./configure
+  ./configure --enable-deprecated-autotools
   make dist -j2
   popd
 
