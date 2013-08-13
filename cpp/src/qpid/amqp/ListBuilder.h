@@ -22,6 +22,7 @@
  *
  */
 #include "DataBuilder.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace amqp {
@@ -32,8 +33,8 @@ namespace amqp {
 class ListBuilder : public DataBuilder
 {
   public:
-    ListBuilder();
-    qpid::types::Variant::List& getList();
+    QPID_COMMON_EXTERN ListBuilder();
+    QPID_COMMON_EXTERN qpid::types::Variant::List& getList();
 };
 }} // namespace qpid::amqp
 
