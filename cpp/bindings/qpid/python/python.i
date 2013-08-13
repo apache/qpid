@@ -351,6 +351,9 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
                      self.setProperty(k, v)
 
          def _get_content(self) :
+             obj = self.getContentObject()
+             if obj:
+                 return obj
              if self.content_type == "amqp/list" :
                  return decodeList(self)
              if self.content_type == "amqp/map" :
@@ -365,9 +368,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
              elif isinstance(content, list) or isinstance(content, dict) :
                  encode(content, self)
              else :
-                 # Not a type we can handle.  Try setting it anyway,
-                 # although this will probably lead to a swig error
-                 self.setContent(str(content))
+                 self.setContentObject(content)
          __swig_getmethods__["content"] = _get_content
          __swig_setmethods__["content"] = _set_content
          if _newclass: content = property(_get_content, _set_content)

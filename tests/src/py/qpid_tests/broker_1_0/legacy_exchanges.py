@@ -18,19 +18,13 @@
 #
 
 from qpid.tests.messaging.implementation import *
-from qpid.tests.messaging import Base
+from qpid.tests.messaging import VersionTest
 
-class LegacyExchangeTests (Base):
+class LegacyExchangeTests (VersionTest):
     """
     Tests for the legacy (i.e. pre 1.0) AMQP exchanges and the filters
     defined for them and registered for AMQP 1.0.
     """
-    def setup_connection(self):
-        return Connection.establish(self.broker, **self.connection_options())
-
-    def setup_session(self):
-        return self.conn.session()
-
     def test_fanout(self):
         msgs = [Message(content=s, subject = s) for s in ['a','b','c','d']]
 
