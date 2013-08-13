@@ -32,7 +32,7 @@ namespace types {
 class QPID_TYPES_CLASS_EXTERN Uuid
 {
   public:
-    static const size_t SIZE;
+    QPID_TYPES_EXTERN static const size_t SIZE;
     /** 
      * If unique is true, this will generate a new unique uuid, if not
      * it will construct a null uuid.
