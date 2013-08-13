@@ -62,7 +62,7 @@ public class MessagesRestTest extends QpidRestTestCase
         _session = _connection.createSession(true, Session.SESSION_TRANSACTED);
         String queueName = getTestQueueName();
         Destination queue = _session.createQueue(queueName);
-        _session.createConsumer(queue);
+        _session.createConsumer(queue).close();
         _producer = _session.createProducer(queue);
 
         _ttl = TimeUnit.DAYS.toMillis(1);
@@ -318,7 +318,7 @@ public class MessagesRestTest extends QpidRestTestCase
     {
         if (even)
         {
-            assertEquals("Unexpected message attribute expirationTime", 0, message.get("expirationTime"));
+            assertNull("Unexpected message attribute expirationTime", message.get("expirationTime"));
             assertEquals("Unexpected message attribute priority", 4, message.get("priority"));
             assertEquals("Unexpected message attribute persistent", Boolean.TRUE, message.get("persistent"));
         }
@@ -348,7 +348,6 @@ public class MessagesRestTest extends QpidRestTestCase
         assertNotNull("Unexpected message attribute mimeType", message.get("mimeType"));
         assertNotNull("Unexpected message attribute userId", message.get("userId"));
         assertNotNull("Message priority cannot be null", message.get("priority"));
-        assertNotNull("Message expirationTime cannot be null", message.get("expirationTime"));
         assertNotNull("Message persistent cannot be null", message.get("persistent"));
     }
 }
