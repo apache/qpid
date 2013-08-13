@@ -1,5 +1,5 @@
-#ifndef QPID_AMQP_MAPBUILDER_H
-#define QPID_AMQP_MAPBUILDER_H
+#ifndef QPID_AMQP_LISTBUILDER_H
+#define QPID_AMQP_LISTBUILDER_H
 
 /*
  *
@@ -27,14 +27,14 @@ namespace qpid {
 namespace amqp {
 
 /**
- * Utility to build a Variant::Map from a data stream
+ * Utility to build a Variant::List from a data stream
  */
-class MapBuilder : public DataBuilder
+class ListBuilder : public DataBuilder
 {
   public:
-    MapBuilder();
-    qpid::types::Variant::Map getMap();
+    ListBuilder();
+    qpid::types::Variant::List& getList();
 };
 }} // namespace qpid::amqp
 
-#endif  /*!QPID_AMQP_MAPBUILDER_H*/
+#endif  /*!QPID_AMQP_LISTBUILDER_H*/

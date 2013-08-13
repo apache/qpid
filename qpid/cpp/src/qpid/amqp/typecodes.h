@@ -83,7 +83,7 @@ const uint8_t ARRAY32(0xf0);
 
 
 const std::string NULL_NAME("null");
-const std::string BOOLEAN_NAME("name");
+const std::string BOOLEAN_NAME("bool");
 
 const std::string UBYTE_NAME("ubyte");
 const std::string USHORT_NAME("ushort");

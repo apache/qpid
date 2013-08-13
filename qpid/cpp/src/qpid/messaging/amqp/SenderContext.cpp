@@ -440,7 +440,15 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
         PropertiesAdapter properties(msg, address.getSubject());
         ApplicationPropertiesAdapter applicationProperties(msg.getHeaders());
         //compute size:
-        encoded.resize(qpid::amqp::MessageEncoder::getEncodedSize(header, properties, applicationProperties, msg.getBytes()));
+        size_t contentSize = qpid::amqp::MessageEncoder::getEncodedSize(header)
+            + qpid::amqp::MessageEncoder::getEncodedSize(properties)
+            + qpid::amqp::MessageEncoder::getEncodedSize(applicationProperties);
+        if (msg.getContent().isVoid()) {
+            contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForContent(msg.getBytes());
+        } else {
+            contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForValue(msg.getContent()) + 3/*descriptor*/;
+        }
+        encoded.resize(contentSize);
         QPID_LOG(debug, "Sending message, buffer is " << encoded.getSize() << " bytes")
         qpid::amqp::MessageEncoder encoder(encoded.getData(), encoded.getSize());
         //write header:
@@ -451,7 +459,12 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
         //write application-properties
         encoder.writeApplicationProperties(applicationProperties);
         //write body
-        if (msg.getBytes().size()) encoder.writeBinary(msg.getBytes(), &qpid::amqp::message::DATA);//structured content not yet directly supported
+        if (!msg.getContent().isVoid()) {
+            //write as AmqpValue
+            encoder.writeValue(msg.getContent(), &qpid::amqp::message::AMQP_VALUE);
+        } else if (msg.getBytes().size()) {
+            encoder.writeBinary(msg.getBytes(), &qpid::amqp::message::DATA);//structured content not yet directly supported
+        }
         if (encoder.getPosition() < encoded.getSize()) {
             QPID_LOG(debug, "Trimming buffer from " << encoded.getSize() << " to " << encoder.getPosition());
             encoded.trim(encoder.getPosition());

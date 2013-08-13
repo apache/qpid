@@ -23,10 +23,14 @@
 #include "qpid/amqp/Descriptor.h"
 #include "qpid/amqp/typecodes.h"
 #include "qpid/types/Uuid.h"
+#include "qpid/types/Variant.h"
+#include "qpid/types/encodings.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
 #include <assert.h>
 #include <string.h>
+
+using namespace qpid::types::encodings;
 
 namespace qpid {
 namespace amqp {
@@ -373,6 +377,87 @@ void Encoder::endArray32(size_t count, void* token)
     end<uint32_t>(count, token, data+position);
 }
 
+void Encoder::writeMap(const std::map<std::string, qpid::types::Variant>& value, const Descriptor* d, bool large)
+{
+    void* token = large ? startMap32(d) : startMap8(d);
+    for (qpid::types::Variant::Map::const_iterator i = value.begin(); i != value.end(); ++i) {
+        writeString(i->first);
+        writeValue(i->second);
+    }
+    if (large) endMap32(value.size()*2, token);
+    else endMap8(value.size()*2, token);
+}
+
+void Encoder::writeList(const std::list<qpid::types::Variant>& value, const Descriptor* d, bool large)
+{
+    void* token = large ? startList32(d) : startList8(d);
+    for (qpid::types::Variant::List::const_iterator i = value.begin(); i != value.end(); ++i) {
+        writeValue(*i);
+    }
+    if (large) endList32(value.size(), token);
+    else endList8(value.size(), token);
+}
+
+void Encoder::writeValue(const qpid::types::Variant& value, const Descriptor* d)
+{
+    switch (value.getType()) {
+      case qpid::types::VAR_VOID:
+        writeNull(d);
+        break;
+      case qpid::types::VAR_BOOL:
+        writeBoolean(value.asBool(), d);
+        break;
+      case qpid::types::VAR_UINT8:
+        writeUByte(value.asUint8(), d);
+        break;
+      case qpid::types::VAR_UINT16:
+        writeUShort(value.asUint16(), d);
+        break;
+      case qpid::types::VAR_UINT32:
+        writeUInt(value.asUint32(), d);
+        break;
+      case qpid::types::VAR_UINT64:
+        writeULong(value.asUint64(), d);
+        break;
+      case qpid::types::VAR_INT8:
+        writeByte(value.asInt8(), d);
+        break;
+      case qpid::types::VAR_INT16:
+        writeShort(value.asInt16(), d);
+        break;
+      case qpid::types::VAR_INT32:
+        writeInt(value.asInt32(), d);
+        break;
+      case qpid::types::VAR_INT64:
+        writeLong(value.asInt64(), d);
+        break;
+      case qpid::types::VAR_FLOAT:
+        writeFloat(value.asFloat(), d);
+        break;
+      case qpid::types::VAR_DOUBLE:
+        writeDouble(value.asDouble(), d);
+        break;
+      case qpid::types::VAR_STRING:
+        if (value.getEncoding() == UTF8) {
+            writeString(value.getString(), d);
+        } else if (value.getEncoding() == ASCII) {
+            writeSymbol(value.getString(), d);
+        } else {
+            writeBinary(value.getString(), d);
+        }
+        break;
+      case qpid::types::VAR_MAP:
+        writeMap(value.asMap(), d);
+        break;
+      case qpid::types::VAR_LIST:
+        writeList(value.asList(), d);
+        break;
+      case qpid::types::VAR_UUID:
+        writeUuid(value.asUuid(), d);
+        break;
+    }
+
+}
 
 void Encoder::writeDescriptor(const Descriptor& d)
 {

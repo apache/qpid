@@ -50,8 +50,20 @@ const std::string X_CONTENT_ENCODING("x-amqp-0-10.content-encoding");
 void OutgoingMessage::convert(const qpid::messaging::Message& from)
 {
     //TODO: need to avoid copying as much as possible
-    message.setData(from.getContent());
-    message.getMessageProperties().setContentType(from.getContentType());
+    if (from.getContentObject().getType() == qpid::types::VAR_MAP) {
+        std::string content;
+        qpid::amqp_0_10::MapCodec::encode(from.getContentObject().asMap(), content);
+        message.getMessageProperties().setContentType(qpid::amqp_0_10::MapCodec::contentType);
+        message.setData(content);
+    } else if (from.getContentObject().getType() == qpid::types::VAR_LIST) {
+        std::string content;
+        qpid::amqp_0_10::ListCodec::encode(from.getContentObject().asList(), content);
+        message.getMessageProperties().setContentType(qpid::amqp_0_10::ListCodec::contentType);
+        message.setData(content);
+    } else {
+        message.setData(from.getContent());
+        message.getMessageProperties().setContentType(from.getContentType());
+    }
     if ( !from.getCorrelationId().empty() )
         message.getMessageProperties().setCorrelationId(from.getCorrelationId());
     message.getMessageProperties().setUserId(from.getUserId());

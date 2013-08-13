@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
     const char* address = argc>2 ? argv[2] : "message_queue; {create: always}";
     std::string connectionOptions = argc > 3 ? argv[3] : "";
-    
+
     Connection connection(url, connectionOptions);
     try {
         connection.open();
@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
         colours.push_back(Variant("white"));
         content["colours"] = colours;
         content["uuid"] = Uuid(true);
-        encode(content, message);
-	
+        message.setContentObject(content);
+
         sender.send(message, true);
 
         connection.close();

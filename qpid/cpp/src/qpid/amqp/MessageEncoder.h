@@ -91,22 +91,26 @@ class MessageEncoder : public Encoder
     void writeApplicationProperties(const qpid::types::Variant::Map& properties);
     void writeApplicationProperties(const qpid::types::Variant::Map& properties, bool useLargeMap);
 
-    void writeMap(const qpid::types::Variant::Map& map, const Descriptor*, bool useLargeMap);
-
     static size_t getEncodedSize(const Header&);
     static size_t getEncodedSize(const Properties&);
     static size_t getEncodedSize(const ApplicationProperties&);
-    static size_t getEncodedSize(const Header&, const Properties&, const ApplicationProperties&, const std::string&);
 
+    static size_t getEncodedSize(const qpid::types::Variant::List&, bool useLargeList);
     static size_t getEncodedSize(const qpid::types::Variant::Map&, bool useLargeMap);
-    static size_t getEncodedSize(const qpid::types::Variant::Map&);
-    static size_t getEncodedSize(const Header&, const Properties&, const qpid::types::Variant::Map&, const std::string&);
+
+    static size_t getEncodedSizeForValue(const qpid::types::Variant& value);
+    static size_t getEncodedSizeForContent(const std::string&);
+
+    //used in translating 0-10 content to 1.0, to determine buffer space needed
     static size_t getEncodedSize(const Properties&, const qpid::types::Variant::Map&, const std::string&);
+
   private:
     bool optimise;
 
+    static size_t getEncodedSize(const Header&, const Properties&, const ApplicationProperties&, const std::string&);
+    static size_t getEncodedSize(const Header&, const Properties&, const qpid::types::Variant::Map&, const std::string&);
+
     static size_t getEncodedSizeForElements(const qpid::types::Variant::Map&);
-    static size_t getEncodedSizeForContent(const std::string&);
 };
 }} // namespace qpid::amqp
 

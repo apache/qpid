@@ -21,9 +21,13 @@
 #include "Message.h"
 #include "qpid/amqp/Decoder.h"
 #include "qpid/amqp/descriptors.h"
-#include "qpid/amqp/Reader.h"
-#include "qpid/amqp/MessageEncoder.h"
+#include "qpid/amqp/ListBuilder.h"
+#include "qpid/amqp/MapBuilder.h"
 #include "qpid/amqp/MapHandler.h"
+#include "qpid/amqp/MessageEncoder.h"
+#include "qpid/amqp/Reader.h"
+#include "qpid/amqp/typecodes.h"
+#include "qpid/types/encodings.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/Buffer.h"
 #include <string.h>
@@ -256,9 +260,51 @@ void Message::onReplyToGroupId(const qpid::amqp::CharSequence&) {}
 void Message::onApplicationProperties(const qpid::amqp::CharSequence& v) { applicationProperties = v; }
 void Message::onDeliveryAnnotations(const qpid::amqp::CharSequence& v) { deliveryAnnotations = v; }
 void Message::onMessageAnnotations(const qpid::amqp::CharSequence& v) { messageAnnotations = v; }
-void Message::onBody(const qpid::amqp::CharSequence& v, const qpid::amqp::Descriptor&) { body = v; }
-void Message::onBody(const qpid::types::Variant&, const qpid::amqp::Descriptor&) {}
+
+void Message::onData(const qpid::amqp::CharSequence& v) { body = v; }
+void Message::onAmqpSequence(const qpid::amqp::CharSequence& v) { body = v; bodyType = qpid::amqp::typecodes::LIST_NAME; }
+void Message::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& t)
+{
+    body = v;
+    if (t == qpid::amqp::typecodes::STRING_NAME) {
+        bodyType = qpid::types::encodings::UTF8;
+    } else if (t == qpid::amqp::typecodes::SYMBOL_NAME) {
+        bodyType = qpid::types::encodings::ASCII;
+    } else if (t == qpid::amqp::typecodes::BINARY_NAME) {
+        bodyType = qpid::types::encodings::BINARY;
+    } else {
+        bodyType = t;
+    }
+}
+void Message::onAmqpValue(const qpid::types::Variant& v) { typedBody = v; }
+
 void Message::onFooter(const qpid::amqp::CharSequence& v) { footer = v; }
+
+bool Message::isTypedBody() const
+{
+    return !typedBody.isVoid() || !bodyType.empty();
+}
+
+qpid::types::Variant Message::getTypedBody() const
+{
+    if (bodyType == qpid::amqp::typecodes::LIST_NAME) {
+        qpid::amqp::ListBuilder builder;
+        qpid::amqp::Decoder decoder(body.data, body.size);
+        decoder.read(builder);
+        return builder.getList();
+    } else if (bodyType == qpid::amqp::typecodes::MAP_NAME) {
+        qpid::amqp::MapBuilder builder;
+        qpid::amqp::Decoder decoder(body.data, body.size);
+        decoder.read(builder);
+        return builder.getMap();
+    } else if (!bodyType.empty()) {
+        qpid::types::Variant value(std::string(body.data, body.size));
+        value.setEncoding(bodyType);
+        return value;
+    } else {
+        return typedBody;
+    }
+}
 
 
 //PersistableMessage interface:

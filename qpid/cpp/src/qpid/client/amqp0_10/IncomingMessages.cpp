@@ -399,7 +399,7 @@ void populate(qpid::messaging::Message& message, FrameSet& command)
     //need to be able to link the message back to the transfer it was delivered by
     //e.g. for rejecting.
     MessageImplAccess::get(message).setInternalId(command.getId());
-        
+
     message.setContent(command.getContent());
 
     populateHeaders(message, command.getHeaders());
