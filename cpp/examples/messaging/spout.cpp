@@ -145,7 +145,7 @@ int main(int argc, char** argv)
             if (options.entries.size()) {
                 Variant::Map content;
                 options.setEntries(content);
-                encode(content, message);
+                message.getContentObject() = content;
             } else if (options.content.size()) {
                 message.setContent(options.content);
                 message.setContentType("text/plain");

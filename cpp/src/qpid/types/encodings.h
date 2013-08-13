@@ -1,5 +1,5 @@
-#ifndef QPID_AMQP_MAPBUILDER_H
-#define QPID_AMQP_MAPBUILDER_H
+#ifndef QPID_TYPES_ENCODINGS_H
+#define QPID_TYPES_ENCODINGS_H
 
 /*
  *
@@ -21,20 +21,13 @@
  * under the License.
  *
  */
-#include "DataBuilder.h"
-
 namespace qpid {
-namespace amqp {
+namespace types {
+namespace encodings {
+const std::string BINARY("binary");
+const std::string UTF8("utf8");
+const std::string ASCII("ascii");
+}
+}} // namespace qpid::types
 
-/**
- * Utility to build a Variant::Map from a data stream
- */
-class MapBuilder : public DataBuilder
-{
-  public:
-    MapBuilder();
-    qpid::types::Variant::Map getMap();
-};
-}} // namespace qpid::amqp
-
-#endif  /*!QPID_AMQP_MAPBUILDER_H*/
+#endif  /*!QPID_TYPES_ENCODINGS_H*/

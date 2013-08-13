@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,19 +30,21 @@ const std::string EMPTY_STRING = "";
 
 using namespace qpid::types;
 
-MessageImpl::MessageImpl(const std::string& c) : 
+MessageImpl::MessageImpl(const std::string& c) :
     priority(0),
     ttl(0),
     durable(false),
     redelivered(false),
     bytes(c),
+    contentDecoded(false),
     internalId(0) {}
-MessageImpl::MessageImpl(const char* chars, size_t count) : 
+MessageImpl::MessageImpl(const char* chars, size_t count) :
     priority(0),
     ttl(0),
     durable (false),
     redelivered(false),
     bytes(chars, count),
+    contentDecoded(false),
     internalId(0) {}
 
 void MessageImpl::setReplyTo(const Address& d)
@@ -167,21 +169,35 @@ void MessageImpl::setBytes(const char* chars, size_t count)
     bytes.assign(chars, count);
     updated();
 }
-void MessageImpl::appendBytes(const char* chars, size_t count)
-{
-    bytes.append(chars, count);
-    updated();
-}
 const std::string& MessageImpl::getBytes() const
 {
-    if (!bytes.size() && encoded) encoded->getBody(bytes);
-    return bytes;
+    if (encoded && !contentDecoded) {
+        encoded->getBody(bytes, content);
+        contentDecoded = true;
+    }
+    if (bytes.empty() && !content.isVoid()) return content.getString();
+    else return bytes;
 }
 std::string& MessageImpl::getBytes()
 {
-    if (!bytes.size() && encoded) encoded->getBody(bytes);
     updated();//have to assume body may be edited, invalidating our message
-    return bytes;
+    if (bytes.empty() && !content.isVoid()) return content.getString();
+    else return bytes;
+}
+
+qpid::types::Variant& MessageImpl::getContent()
+{
+    updated();//have to assume content may be edited, invalidating our message
+    return content;
+}
+
+const qpid::types::Variant& MessageImpl::getContent() const
+{
+    if (encoded && !contentDecoded) {
+        encoded->getBody(bytes, content);
+        contentDecoded = true;
+    }
+    return content;
 }
 
 void MessageImpl::setInternalId(qpid::framing::SequenceNumber i) { internalId = i; }
@@ -197,7 +213,10 @@ void MessageImpl::updated()
     if (!userId.size() && encoded) encoded->getUserId(userId);
     if (!correlationId.size() && encoded) encoded->getCorrelationId(correlationId);
     if (!headers.size() && encoded) encoded->populate(headers);
-    if (!bytes.size() && encoded) encoded->getBody(bytes);
+    if (encoded && !contentDecoded) {
+        encoded->getBody(bytes, content);
+        contentDecoded = true;
+    }
 
     encoded.reset();
 }
@@ -210,5 +229,4 @@ const MessageImpl& MessageImplAccess::get(const Message& msg)
 {
     return *msg.impl;
 }
-
 }} // namespace qpid::messaging

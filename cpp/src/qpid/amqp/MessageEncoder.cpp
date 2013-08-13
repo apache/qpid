@@ -156,68 +156,6 @@ void MessageEncoder::writeApplicationProperties(const qpid::types::Variant::Map&
     writeMap(properties, &qpid::amqp::message::APPLICATION_PROPERTIES, large);
 }
 
-void MessageEncoder::writeMap(const qpid::types::Variant::Map& properties, const Descriptor* d, bool large)
-{
-    void* token = large ? startMap32(d) : startMap8(d);
-    for (qpid::types::Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
-        writeString(i->first);
-        switch (i->second.getType()) {
-          case qpid::types::VAR_MAP:
-          case qpid::types::VAR_LIST:
-            //not allowed (TODO: revise, only strictly true for application-properties) whereas this is now a more general method)
-            QPID_LOG(warning, "Ignoring nested map/list; not allowed in application-properties for AMQP 1.0");
-          case qpid::types::VAR_VOID:
-            writeNull();
-            break;
-          case qpid::types::VAR_BOOL:
-            writeBoolean(i->second);
-            break;
-          case qpid::types::VAR_UINT8:
-            writeUByte(i->second);
-            break;
-          case qpid::types::VAR_UINT16:
-            writeUShort(i->second);
-            break;
-          case qpid::types::VAR_UINT32:
-            writeUInt(i->second);
-            break;
-          case qpid::types::VAR_UINT64:
-            writeULong(i->second);
-            break;
-          case qpid::types::VAR_INT8:
-            writeByte(i->second);
-            break;
-          case qpid::types::VAR_INT16:
-            writeShort(i->second);
-            break;
-          case qpid::types::VAR_INT32:
-            writeInt(i->second);
-            break;
-          case qpid::types::VAR_INT64:
-            writeULong(i->second);
-            break;
-          case qpid::types::VAR_FLOAT:
-            writeFloat(i->second);
-            break;
-          case qpid::types::VAR_DOUBLE:
-            writeDouble(i->second);
-            break;
-          case qpid::types::VAR_STRING:
-            if (i->second.getEncoding() == BINARY) {
-                writeBinary(i->second);
-            } else {
-                writeString(i->second);
-            }
-            break;
-          case qpid::types::VAR_UUID:
-            writeUuid(i->second);
-            break;
-        }
-    }
-    if (large) endMap32(properties.size()*2, token);
-    else endMap8(properties.size()*2, token);
-}
-
 size_t MessageEncoder::getEncodedSize(const Header& h, const Properties& p, const qpid::types::Variant::Map& ap, const std::string& d)
 {
     return getEncodedSize(h) + getEncodedSize(p, ap, d);
@@ -288,46 +226,56 @@ size_t MessageEncoder::getEncodedSizeForElements(const qpid::types::Variant::Map
 {
     size_t total = 0;
     for (qpid::types::Variant::Map::const_iterator i = map.begin(); i != map.end(); ++i) {
-        total += 1/*code*/ + encodedSize(i->first);
+        total += 1/*code*/ + encodedSize(i->first) + getEncodedSizeForValue(i->second);
+    }
+    return total;
+}
 
-        switch (i->second.getType()) {
-          case qpid::types::VAR_MAP:
-          case qpid::types::VAR_LIST:
-          case qpid::types::VAR_VOID:
-          case qpid::types::VAR_BOOL:
-            total += 1;
-            break;
+size_t MessageEncoder::getEncodedSizeForValue(const qpid::types::Variant& value)
+{
+    size_t total = 0;
+    switch (value.getType()) {
+      case qpid::types::VAR_MAP:
+        total += getEncodedSize(value.asMap(), true);
+        break;
+      case qpid::types::VAR_LIST:
+        total += getEncodedSize(value.asList(), true);
+        break;
 
-          case qpid::types::VAR_UINT8:
-          case qpid::types::VAR_INT8:
-            total += 2;
-            break;
+      case qpid::types::VAR_VOID:
+      case qpid::types::VAR_BOOL:
+        total += 1;
+        break;
 
-          case qpid::types::VAR_UINT16:
-          case qpid::types::VAR_INT16:
-            total += 3;
-            break;
+      case qpid::types::VAR_UINT8:
+      case qpid::types::VAR_INT8:
+        total += 2;
+        break;
 
-          case qpid::types::VAR_UINT32:
-          case qpid::types::VAR_INT32:
-          case qpid::types::VAR_FLOAT:
-            total += 5;
-            break;
+      case qpid::types::VAR_UINT16:
+      case qpid::types::VAR_INT16:
+        total += 3;
+        break;
 
-          case qpid::types::VAR_UINT64:
-          case qpid::types::VAR_INT64:
-          case qpid::types::VAR_DOUBLE:
-            total += 9;
-            break;
+      case qpid::types::VAR_UINT32:
+      case qpid::types::VAR_INT32:
+      case qpid::types::VAR_FLOAT:
+        total += 5;
+        break;
 
-          case qpid::types::VAR_UUID:
-            total += 17;
-            break;
+      case qpid::types::VAR_UINT64:
+      case qpid::types::VAR_INT64:
+      case qpid::types::VAR_DOUBLE:
+        total += 9;
+        break;
 
-          case qpid::types::VAR_STRING:
-            total += 1/*code*/ + encodedSize(i->second);
-            break;
-        }
+      case qpid::types::VAR_UUID:
+        total += 17;
+        break;
+
+      case qpid::types::VAR_STRING:
+        total += 1/*code*/ + encodedSize(value.getString());
+        break;
     }
     return total;
 }
@@ -342,6 +290,22 @@ size_t MessageEncoder::getEncodedSize(const qpid::types::Variant::Map& map, bool
     else total += 1/*size*/ + 1/*count*/;
 
     total += 1 /*code for map itself*/;
+
+    return total;
+}
+
+size_t MessageEncoder::getEncodedSize(const qpid::types::Variant::List& list, bool alwaysUseLargeList)
+{
+    size_t total(0);
+    for (qpid::types::Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
+        total += getEncodedSizeForValue(*i);
+    }
+
+    //its not just the count that determines whether we can use a small list, but the aggregate size:
+    if (alwaysUseLargeList || list.size()*2 > 255 || total > 255) total +=  4/*size*/ + 4/*count*/;
+    else total += 1/*size*/ + 1/*count*/;
+
+    total += 1 /*code for list itself*/;
 
     return total;
 }

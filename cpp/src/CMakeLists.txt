@@ -1026,12 +1026,16 @@ set (qpidcommon_SOURCES
      qpid/amqp_0_10/Codecs.cpp
      qpid/amqp/CharSequence.h
      qpid/amqp/CharSequence.cpp
+     qpid/amqp/DataBuilder.h
+     qpid/amqp/DataBuilder.cpp
      qpid/amqp/Decoder.h
      qpid/amqp/Decoder.cpp
      qpid/amqp/Descriptor.h
      qpid/amqp/Descriptor.cpp
      qpid/amqp/Encoder.h
      qpid/amqp/Encoder.cpp
+     qpid/amqp/ListBuilder.h
+     qpid/amqp/ListBuilder.cpp
      qpid/amqp/MapHandler.h
      qpid/amqp/MapEncoder.h
      qpid/amqp/MapEncoder.cpp

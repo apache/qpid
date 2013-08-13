@@ -1,6 +1,3 @@
-#ifndef QPID_AMQP_MAPBUILDER_H
-#define QPID_AMQP_MAPBUILDER_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,20 +18,16 @@
  * under the License.
  *
  */
-#include "DataBuilder.h"
+#include "ListBuilder.h"
 
 namespace qpid {
 namespace amqp {
 
-/**
- * Utility to build a Variant::Map from a data stream
- */
-class MapBuilder : public DataBuilder
-{
-  public:
-    MapBuilder();
-    qpid::types::Variant::Map getMap();
-};
-}} // namespace qpid::amqp
+ListBuilder::ListBuilder() : DataBuilder(qpid::types::Variant::List()) {}
 
-#endif  /*!QPID_AMQP_MAPBUILDER_H*/
+qpid::types::Variant::List& ListBuilder::getList()
+{
+    return getValue().asList();
+}
+
+}} // namespace qpid::amqp

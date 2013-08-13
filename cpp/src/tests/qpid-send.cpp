@@ -262,9 +262,8 @@ class MapContentGenerator   : public ContentGenerator {
   public:
     MapContentGenerator(const Options& opt) : opts(opt) {}
     virtual bool setContent(Message& msg) {
-        Variant::Map map;
-        opts.setEntries(map);
-        encode(map, msg);
+        msg.getContentObject() = qpid::types::Variant::Map();
+        opts.setEntries(msg.getContentObject().asMap());
         return true;
     }
   private:

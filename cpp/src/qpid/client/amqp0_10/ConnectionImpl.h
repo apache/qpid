@@ -53,6 +53,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     void setOption(const std::string& name, const qpid::types::Variant& value);
     bool backoff();
     std::string getAuthenticatedUsername();
+    bool getAutoDecode() const;
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
 
@@ -70,6 +71,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     double maxReconnectInterval;
     int32_t retries;
     bool reconnectOnLimitExceeded;
+    bool disableAutoDecode;
 
     void setOptions(const qpid::types::Variant::Map& options);
     void connect(const qpid::sys::AbsTime& started);

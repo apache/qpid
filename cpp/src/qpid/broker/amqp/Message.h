@@ -64,6 +64,8 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     qpid::amqp::CharSequence getBareMessage() const;
     qpid::amqp::CharSequence getBody() const;
     qpid::amqp::CharSequence getFooter() const;
+    bool isTypedBody() const;
+    qpid::types::Variant getTypedBody() const;
 
     Message(size_t size);
     char* getData();
@@ -109,6 +111,8 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
 
     //body:
     qpid::amqp::CharSequence body;
+    qpid::types::Variant typedBody;
+    std::string bodyType;
 
     //footer:
     qpid::amqp::CharSequence footer;
@@ -139,8 +143,12 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     void onApplicationProperties(const qpid::amqp::CharSequence&);
     void onDeliveryAnnotations(const qpid::amqp::CharSequence&);
     void onMessageAnnotations(const qpid::amqp::CharSequence&);
-    void onBody(const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor&);
-    void onBody(const qpid::types::Variant&, const qpid::amqp::Descriptor&);
+
+    void onData(const qpid::amqp::CharSequence&);
+    void onAmqpSequence(const qpid::amqp::CharSequence&);
+    void onAmqpValue(const qpid::amqp::CharSequence&, const std::string& type);
+    void onAmqpValue(const qpid::types::Variant&);
+
     void onFooter(const qpid::amqp::CharSequence&);
 };
 }}} // namespace qpid::broker::amqp

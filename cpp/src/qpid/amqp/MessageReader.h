@@ -98,172 +98,21 @@ class MessageReader : public Reader
     virtual void onApplicationProperties(const CharSequence&) = 0;
     virtual void onDeliveryAnnotations(const CharSequence&) = 0;
     virtual void onMessageAnnotations(const CharSequence&) = 0;
-    virtual void onBody(const CharSequence&, const Descriptor&) = 0;
-    virtual void onBody(const qpid::types::Variant&, const Descriptor&) = 0;
+
+    virtual void onData(const CharSequence&) = 0;
+    virtual void onAmqpSequence(const CharSequence&) = 0;
+    virtual void onAmqpValue(const CharSequence&, const std::string& type) = 0;
+    virtual void onAmqpValue(const qpid::types::Variant&) = 0;
+
     virtual void onFooter(const CharSequence&) = 0;
 
     QPID_COMMON_EXTERN CharSequence getBareMessage() const;
 
   private:
-    /*
-    class DurableReader : public Reader
-    {
-      public:
-        DurableReader(MessageReader&);
-        void onBoolean(bool v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class PriorityReader : public Reader
-    {
-      public:
-        PriorityReader(MessageReader&);
-        void onUByte(uint8_t v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class TtlReader : public Reader
-    {
-      public:
-        TtlReader(MessageReader&);
-        void onUInt(uint32_t v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class FirstAcquirerReader : public Reader
-    {
-      public:
-        FirstAcquirerReader(MessageReader&);
-        void onBoolean(bool v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class DeliveryCountReader : public Reader
-    {
-      public:
-        DeliveryCountReader(MessageReader&);
-        void onUInt(uint32_t v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
 
-    class MessageIdReader : public Reader
+    class HeaderReader : public Reader
     {
       public:
-        MessageIdReader(MessageReader&);
-        void onUuid(const qpid::types::Uuid& v, const Descriptor*);
-        void onULong(uint64_t v, const Descriptor*);
-        void onString(const CharSequence& v, const Descriptor*);
-        void onBinary(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class UserIdReader : public Reader
-    {
-      public:
-        UserIdReader(MessageReader&);
-        void onBinary(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class ToReader : public Reader
-    {
-      public:
-        ToReader(MessageReader&);
-        void onString(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class SubjectReader : public Reader
-    {
-      public:
-        SubjectReader(MessageReader&);
-        void onString(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class ReplyToReader : public Reader
-    {
-      public:
-        ReplyToReader(MessageReader&);
-        void onString(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class CorrelationIdReader : public Reader
-    {
-      public:
-        CorrelationIdReader(MessageReader&);
-        void onUuid(const qpid::types::Uuid& v, const Descriptor*);
-        void onULong(uint64_t v, const Descriptor*);
-        void onString(const CharSequence& v, const Descriptor*);
-        void onBinary(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class ContentTypeReader : public Reader
-    {
-      public:
-        ContentTypeReader(MessageReader&);
-        void onString(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class ContentEncodingReader : public Reader
-    {
-      public:
-        ContentEncodingReader(MessageReader&);
-        void onString(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class AbsoluteExpiryTimeReader : public Reader
-    {
-      public:
-        AbsoluteExpiryTimeReader(MessageReader&);
-        void onTimestamp(int64_t v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class CreationTimeReader : public Reader
-    {
-      public:
-        CreationTimeReader(MessageReader&);
-        void onTimestamp(int64_t v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class GroupIdReader : public Reader
-    {
-      public:
-        GroupIdReader(MessageReader&);
-        void onString(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class GroupSequenceReader : public Reader
-    {
-      public:
-        GroupSequenceReader(MessageReader&);
-        void onUInt(uint32_t v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    class ReplyToGroupIdReader : public Reader
-    {
-      public:
-        ReplyToGroupIdReader(MessageReader&);
-        void onString(const CharSequence& v, const Descriptor*);
-      private:
-        MessageReader& parent;
-    };
-    */
-
-    class HeaderReader : public Reader //public ListReader
-    {
-      public:
-        //Reader& getReader(size_t index);
-
         HeaderReader(MessageReader&);
         void onBoolean(bool v, const Descriptor*);  // durable, first-acquirer
         void onUByte(uint8_t v, const Descriptor*); // priority
@@ -273,11 +122,9 @@ class MessageReader : public Reader
         MessageReader& parent;
         size_t index;
     };
-    class PropertiesReader : public Reader //public ListReader
+    class PropertiesReader : public Reader
     {
       public:
-        //Reader& getReader(size_t index);
-
         PropertiesReader(MessageReader&);
         void onUuid(const CharSequence& v, const Descriptor*); // message-id, correlation-id
         void onULong(uint64_t v, const Descriptor*); // message-id, correlation-id

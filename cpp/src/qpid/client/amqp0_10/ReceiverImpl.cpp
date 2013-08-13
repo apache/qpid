@@ -25,6 +25,7 @@
 #include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Session.h"
+#include "qpid/amqp_0_10/Codecs.h"
 
 namespace qpid {
 namespace client {
@@ -148,9 +149,9 @@ qpid::messaging::Address ReceiverImpl::getAddress() const
 }
 
 ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name,
-                           const qpid::messaging::Address& a) :
+                           const qpid::messaging::Address& a, bool autoDecode_) :
 
-    parent(&p), destination(name), address(a), byteCredit(0xFFFFFFFF),
+    parent(&p), destination(name), address(a), byteCredit(0xFFFFFFFF), autoDecode(autoDecode_),
     state(UNRESOLVED), capacity(0), window(0) {}
 
 bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
@@ -159,7 +160,20 @@ bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::D
         sys::Mutex::ScopedLock l(lock);
         if (state == CANCELLED) return false;
     }
-    return parent->get(*this, message, timeout);
+    if (parent->get(*this, message, timeout)) {
+        if (autoDecode) {
+            if (message.getContentType() == qpid::amqp_0_10::MapCodec::contentType) {
+                message.getContentObject() = qpid::types::Variant::Map();
+                decode(message, message.getContentObject().asMap());
+            } else if (message.getContentType() == qpid::amqp_0_10::ListCodec::contentType) {
+                message.getContentObject() = qpid::types::Variant::List();
+                decode(message, message.getContentObject().asList());
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)

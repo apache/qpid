@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,6 +47,8 @@ class MessageImpl
     mutable qpid::types::Variant::Map headers;
 
     mutable std::string bytes;
+    mutable qpid::types::Variant content;
+    mutable bool contentDecoded;
     boost::shared_ptr<const qpid::messaging::amqp::EncodedMessage> encoded;
 
     qpid::framing::SequenceNumber internalId;
@@ -87,9 +89,10 @@ class MessageImpl
 
     void setBytes(const std::string& bytes);
     void setBytes(const char* chars, size_t count);
-    void appendBytes(const char* chars, size_t count);
     const std::string& getBytes() const;
     std::string& getBytes();
+    qpid::types::Variant& getContent();
+    const qpid::types::Variant& getContent() const;
 
     void setInternalId(qpid::framing::SequenceNumber id);
     qpid::framing::SequenceNumber getInternalId();
