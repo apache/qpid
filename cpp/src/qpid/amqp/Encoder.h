@@ -23,12 +23,15 @@
  */
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/amqp/Constructor.h"
+#include <list>
+#include <map>
 #include <stddef.h>
 #include <string>
 
 namespace qpid {
 namespace types {
 class Uuid;
+class Variant;
 }
 namespace amqp {
 struct CharSequence;
@@ -90,6 +93,10 @@ class Encoder
     void* startArray32(const Constructor&, const Descriptor* d=0);
     void endArray8(size_t count, void*);
     void endArray32(size_t count, void*);
+
+    void writeValue(const qpid::types::Variant&, const Descriptor* d=0);
+    void writeMap(const std::map<std::string, qpid::types::Variant>& value, const Descriptor* d=0, bool large=true);
+    void writeList(const std::list<qpid::types::Variant>& value, const Descriptor* d=0, bool large=true);
 
     void writeDescriptor(const Descriptor&);
     Encoder(char* data, size_t size);

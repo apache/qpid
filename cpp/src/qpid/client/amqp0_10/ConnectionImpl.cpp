@@ -88,7 +88,7 @@ bool expired(const sys::AbsTime& start, double timeout)
 ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) :
     replaceUrls(false), reconnect(false), timeout(FOREVER), limit(-1),
     minReconnectInterval(0.001), maxReconnectInterval(2),
-    retries(0), reconnectOnLimitExceeded(true)
+    retries(0), reconnectOnLimitExceeded(true), disableAutoDecode(false)
 {
     setOptions(options);
     urls.insert(urls.begin(), url);
@@ -157,8 +157,10 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         settings.sslCertName = value.asString();
     } else if (name == "x-reconnect-on-limit-exceeded" || name == "x_reconnect_on_limit_exceeded") {
         reconnectOnLimitExceeded = value;
-    } else if (name == "client-properties") {
+    } else if (name == "client-properties" || name == "client_properties") {
         amqp_0_10::translate(value.asMap(), settings.clientProperties);
+    } else if (name == "disable-auto-decode" || name == "disable_auto_decode") {
+        disableAutoDecode = value;
     } else {
         throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
     }
@@ -344,6 +346,11 @@ bool ConnectionImpl::backoff()
 std::string ConnectionImpl::getAuthenticatedUsername()
 {
     return connection.getNegotiatedSettings().username;
+}
+
+bool ConnectionImpl::getAutoDecode() const
+{
+    return !disableAutoDecode;
 }
 
 }}} // namespace qpid::client::amqp0_10

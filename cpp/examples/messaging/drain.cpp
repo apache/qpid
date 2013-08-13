@@ -90,13 +90,11 @@ int main(int argc, char** argv)
             int count = options.getCount();
             Message message;
             int i = 0;
-            
+
             while (receiver.fetch(message, timeout)) {
                 std::cout << "Message(properties=" << message.getProperties() << ", content='" ;
                 if (message.getContentType() == "amqp/map") {
-                    Variant::Map map;
-                    decode(message, map);
-                    std::cout << map;
+                    std::cout << message.getContentObject().asMap();
                 } else {
                     std::cout << message.getContent();
                 }
@@ -106,7 +104,7 @@ int main(int argc, char** argv)
                     break;
             }
             receiver.close();
-            session.close();            
+            session.close();
             connection.close();
             return 0;
         } catch(const std::exception& error) {
@@ -114,5 +112,5 @@ int main(int argc, char** argv)
             connection.close();
         }
     }
-    return 1;   
+    return 1;
 }

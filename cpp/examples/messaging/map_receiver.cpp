@@ -39,15 +39,13 @@ int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
     const char* address = argc>2 ? argv[2] : "message_queue; {create: always}";
     std::string connectionOptions = argc > 3 ? argv[3] : "";
-    
+
     Connection connection(url, connectionOptions);
     try {
         connection.open();
         Session session = connection.createSession();
         Receiver receiver = session.createReceiver(address);
-        Variant::Map content;
-        decode(receiver.fetch(), content);
-        std::cout << content << std::endl;
+        std::cout << receiver.fetch().getContentObject() << std::endl;
         session.acknowledge();
         receiver.close();
         connection.close();
@@ -56,5 +54,5 @@ int main(int argc, char** argv) {
         std::cout << error.what() << std::endl;
         connection.close();
     }
-    return 1;   
+    return 1;
 }

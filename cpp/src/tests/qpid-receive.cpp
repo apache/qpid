@@ -232,8 +232,10 @@ int main(int argc, char ** argv)
                             std::cout << "Properties: " << msg.getProperties() << std::endl;
                             std::cout << std::endl;
                         }
-                        if (opts.printContent)
-                            std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages
+                        if (opts.printContent) {
+                            if (!msg.getContentObject().isVoid()) std::cout << msg.getContentObject() << std::endl;
+                            else std::cout << msg.getContent() << std::endl;
+                        }
                         if (opts.messages && count >= opts.messages) done = true;
                     }
                 }

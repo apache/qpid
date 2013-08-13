@@ -89,13 +89,14 @@ class EncodedMessage
     void getMessageId(std::string&) const;
     void getUserId(std::string&) const;
     void getCorrelationId(std::string&) const;
+    void populate(qpid::types::Variant::Map&) const;
+    void getBody(std::string&, qpid::types::Variant&) const;
 
     void init(qpid::messaging::MessageImpl&);
-    void populate(qpid::types::Variant::Map&) const;
-    void getBody(std::string&) const;
     qpid::amqp::CharSequence getBareMessage() const;
     qpid::amqp::CharSequence getBody() const;
     bool hasHeaderChanged(const qpid::messaging::MessageImpl&) const;
+
   private:
     size_t size;
     char* data;
@@ -130,8 +131,12 @@ class EncodedMessage
         void onApplicationProperties(const qpid::amqp::CharSequence&);
         void onDeliveryAnnotations(const qpid::amqp::CharSequence&);
         void onMessageAnnotations(const qpid::amqp::CharSequence&);
-        void onBody(const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor&);
-        void onBody(const qpid::types::Variant&, const qpid::amqp::Descriptor&);
+
+        void onData(const qpid::amqp::CharSequence&);
+        void onAmqpSequence(const qpid::amqp::CharSequence&);
+        void onAmqpValue(const qpid::amqp::CharSequence&, const std::string& type);
+        void onAmqpValue(const qpid::types::Variant&);
+
         void onFooter(const qpid::amqp::CharSequence&);
       private:
         EncodedMessage& em;
@@ -164,7 +169,11 @@ class EncodedMessage
     qpid::amqp::CharSequence replyToGroupId;
     //application-properties:
     qpid::amqp::CharSequence applicationProperties;
+    //application data:
     qpid::amqp::CharSequence body;
+    std::string bodyType;
+    qpid::types::Variant content;
+
     //footer:
     qpid::amqp::CharSequence footer;
 

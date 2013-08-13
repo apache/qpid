@@ -22,13 +22,18 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/amqp/Decoder.h"
+#include "qpid/amqp/DataBuilder.h"
+#include "qpid/amqp/ListBuilder.h"
+#include "qpid/amqp/MapBuilder.h"
+#include "qpid/amqp/typecodes.h"
+#include "qpid/types/encodings.h"
+#include "qpid/log/Statement.h"
 #include <boost/lexical_cast.hpp>
 #include <string.h>
 
 namespace qpid {
 namespace messaging {
 namespace amqp {
-
 using namespace qpid::amqp;
 
 EncodedMessage::EncodedMessage(size_t s) : size(s), data(size ? new char[size] : 0)
@@ -178,9 +183,39 @@ void EncodedMessage::getCorrelationId(std::string& s) const
 {
     correlationId.assign(s);
 }
-void EncodedMessage::getBody(std::string& s) const
+void EncodedMessage::getBody(std::string& raw, qpid::types::Variant& c) const
 {
-    s.assign(body.data, body.size);
+    //TODO: based on section type, populate content
+    if (!content.isVoid()) {
+        c = content;//integer types, floats, bool etc
+        //TODO: populate raw data?
+    } else {
+        if (bodyType.empty()
+            || bodyType == qpid::amqp::typecodes::BINARY_NAME
+            || bodyType == qpid::amqp::typecodes::STRING_NAME
+            || bodyType == qpid::amqp::typecodes::SYMBOL_NAME)
+        {
+            c = std::string(body.data, body.size);
+            c.setEncoding(bodyType);
+        } else if (bodyType == qpid::amqp::typecodes::LIST_NAME) {
+            qpid::amqp::ListBuilder builder;
+            qpid::amqp::Decoder decoder(body.data, body.size);
+            decoder.read(builder);
+            c = builder.getList();
+            raw.assign(body.data, body.size);
+        } else if (bodyType == qpid::amqp::typecodes::MAP_NAME) {
+            qpid::amqp::DataBuilder builder = qpid::amqp::DataBuilder(qpid::types::Variant::Map());
+            qpid::amqp::Decoder decoder(body.data, body.size);
+            decoder.read(builder);
+            c = builder.getValue().asMap();
+            raw.assign(body.data, body.size);
+        } else if (bodyType == qpid::amqp::typecodes::UUID_NAME) {
+            if (body.size == qpid::types::Uuid::SIZE) c = qpid::types::Uuid(body.data);
+            raw.assign(body.data, body.size);
+        } else if (bodyType == qpid::amqp::typecodes::ARRAY_NAME) {
+            raw.assign(body.data, body.size);
+        }
+    }
 }
 
 qpid::amqp::CharSequence EncodedMessage::getBody() const
@@ -214,6 +249,7 @@ bool EncodedMessage::hasHeaderChanged(const qpid::messaging::MessageImpl& msg) c
 
     return false;
 }
+
 
 
 EncodedMessage::InitialScan::InitialScan(EncodedMessage& e, qpid::messaging::MessageImpl& m) : em(e), mi(m)
@@ -252,12 +288,32 @@ void EncodedMessage::InitialScan::onReplyToGroupId(const qpid::amqp::CharSequenc
 void EncodedMessage::InitialScan::onApplicationProperties(const qpid::amqp::CharSequence& v) { em.applicationProperties = v; }
 void EncodedMessage::InitialScan::onDeliveryAnnotations(const qpid::amqp::CharSequence& v) { em.deliveryAnnotations = v; }
 void EncodedMessage::InitialScan::onMessageAnnotations(const qpid::amqp::CharSequence& v) { em.messageAnnotations = v; }
-void EncodedMessage::InitialScan::onBody(const qpid::amqp::CharSequence& v, const qpid::amqp::Descriptor&)
+
+void EncodedMessage::InitialScan::onData(const qpid::amqp::CharSequence& v)
 {
-    //TODO: how to communicate the type, i.e. descriptor?
     em.body = v;
 }
-void EncodedMessage::InitialScan::onBody(const qpid::types::Variant&, const qpid::amqp::Descriptor&) {}
+void EncodedMessage::InitialScan::onAmqpSequence(const qpid::amqp::CharSequence& v)
+{
+    em.body = v;
+    em.bodyType = qpid::amqp::typecodes::LIST_NAME;
+}
+void EncodedMessage::InitialScan::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& type)
+{
+    em.body = v;
+    if (type == qpid::amqp::typecodes::STRING_NAME) {
+        em.bodyType = qpid::types::encodings::UTF8;
+    } else if (type == qpid::amqp::typecodes::SYMBOL_NAME) {
+        em.bodyType = qpid::types::encodings::ASCII;
+    } else {
+        em.bodyType = type;
+    }
+}
+void EncodedMessage::InitialScan::onAmqpValue(const qpid::types::Variant& v)
+{
+    em.content = v;
+}
+
 void EncodedMessage::InitialScan::onFooter(const qpid::amqp::CharSequence& v) { em.footer = v; }
 
 }}} // namespace qpid::messaging::amqp
