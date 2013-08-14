@@ -27,16 +27,9 @@
     void RbToList(VALUE, qpid::types::Variant::List*);
 
     qpid::types::Variant RbToVariant(VALUE value) {
-      printf("RbToVariant is of type %d\n", TYPE(value));
         switch (TYPE(value)) {
         case T_FLOAT:   return qpid::types::Variant(NUM2DBL(value));
-        case T_STRING: {
-          qpid::types::Variant v = qpid::types::Variant();
-          v = StringValuePtr(value));
-          v.setEncoding("utf8");
-          return v;
-        }
-          break;
+        case T_STRING:  return qpid::types::Variant(StringValuePtr(value));
         case T_FIXNUM:  return qpid::types::Variant((int64_t) FIX2LONG(value));
         case T_BIGNUM:  return qpid::types::Variant((int64_t) NUM2LL(value));
         case T_TRUE:    return qpid::types::Variant(true);
