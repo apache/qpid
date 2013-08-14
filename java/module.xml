@@ -74,6 +74,7 @@
   <property name="module.genpom.args"  value=""/>
   <property name="module.maven.depends"  value=""/>
   <property name="maven.remote.repo"     value="file://${module.release.base}/maven"/>
+  <property name="eclipse.project.suffix" value=""/>
 
   <property name="broker.log.prefix" value="BROKER: "/> 
   <property name="broker.log.interleave" value="true"/>
