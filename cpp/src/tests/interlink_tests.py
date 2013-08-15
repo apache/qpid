@@ -218,15 +218,21 @@ class AmqpBrokerTest(BrokerTest):
         assert len(domains) == 1
         assert domains[0].name == "BrokerB"
 
-    def test_incoming_link(self):
+    def incoming_link(self, mechanism):
         brokerB = self.amqp_broker()
         agentB = BrokerAgent(brokerB.connect())
         self.agent.create("queue", "q")
         agentB.create("queue", "q")
-        self.agent.create("domain", "BrokerB", {"url":brokerB.host_port(), "sasl_mechanisms":"NONE"})
+        self.agent.create("domain", "BrokerB", {"url":brokerB.host_port(), "sasl_mechanisms":mechanism})
         self.agent.create("incoming", "Link1", {"domain":"BrokerB","source":"q","target":"q"})
         #send to brokerB, receive from brokerA
         self.send_and_receive(send_config=Config(brokerB))
+
+    def test_incoming_link_anonymous(self):
+        self.incoming_link("ANONYMOUS")
+
+    def test_incoming_link_nosasl(self):
+        self.incoming_link("NONE")
 
     def test_outgoing_link(self):
         brokerB = self.amqp_broker()
