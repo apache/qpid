@@ -39,7 +39,11 @@ SessionHandler::SessionHandler(amqp_0_10::Connection& c, ChannelId ch)
       proxy(out)
 {}
 
-SessionHandler::~SessionHandler() {}
+SessionHandler::~SessionHandler()
+{
+    if (session.get())
+        connection.getBroker().getSessionManager().forget(session->getId());
+}
 
 void SessionHandler::connectionException(
     framing::connection::CloseCode code, const std::string& msg)
