@@ -18,20 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.subjects;
+package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import java.util.UUID;
 
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.STORE_FORMAT;
-
-public class MessageStoreLogSubject extends AbstractLogSubject
+public interface UnresolvedDependency<T>
 {
+    public UUID getId();
+    public String getType();
 
-    /** Create an MessageStoreLogSubject that Logs in the following format. */
-    public MessageStoreLogSubject(String vhostName, String messageStoreName)
-    {
-        setLogStringWithFormat(STORE_FORMAT, vhostName, messageStoreName);
-    }
-
-
+    public void resolve(final T dependency);
 }

@@ -37,7 +37,8 @@ public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
 
         _testVhost = BrokerTestHelper.createVirtualHost("test");
 
-        _subject = new MessageStoreLogSubject(_testVhost, _testVhost.getMessageStore().getClass().getSimpleName());
+        _subject = new MessageStoreLogSubject(_testVhost.getName(),
+                                              _testVhost.getMessageStore().getClass().getSimpleName());
     }
 
     @Override

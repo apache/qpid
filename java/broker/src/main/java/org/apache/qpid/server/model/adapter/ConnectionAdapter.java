@@ -190,7 +190,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         }
         else if(name.equals(INCOMING))
         {
-
+            return true;
         }
         else if(name.equals(LOCAL_ADDRESS))
         {

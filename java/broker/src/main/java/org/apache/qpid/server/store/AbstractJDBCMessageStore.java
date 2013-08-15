@@ -35,6 +35,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -1978,16 +1980,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             Connection conn = newAutoCommitConnection();
             try
             {
-                PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_CONFIGURED_OBJECTS);
-                try
-                {
-                    stmt.setString(1, id.toString());
-                    results = stmt.executeUpdate();
-                }
-                finally
-                {
-                    stmt.close();
-                }
+                results = removeConfiguredObject(id, conn);
             }
             finally
             {
@@ -2001,6 +1994,50 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         return results;
     }
 
+    public UUID[] removeConfiguredObjects(UUID... objects) throws AMQStoreException
+    {
+        Collection<UUID> removed = new ArrayList<UUID>(objects.length);
+        try
+        {
+
+            Connection conn = newAutoCommitConnection();
+            try
+            {
+                for(UUID id : objects)
+                {
+                    if(removeConfiguredObject(id, conn) != 0)
+                    {
+                        removed.add(id);
+                    }
+                }
+            }
+            finally
+            {
+                conn.close();
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new AMQStoreException("Error deleting of configured objects " + Arrays.asList(objects) + " from database: " + e.getMessage(), e);
+        }
+        return removed.toArray(new UUID[removed.size()]);
+    }
+
+    private int removeConfiguredObject(final UUID id, final Connection conn) throws SQLException
+    {
+        final int results;PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_CONFIGURED_OBJECTS);
+        try
+        {
+            stmt.setString(1, id.toString());
+            results = stmt.executeUpdate();
+        }
+        finally
+        {
+            stmt.close();
+        }
+        return results;
+    }
+
     private void updateConfiguredObject(final ConfiguredObjectRecord configuredObject) throws AMQStoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
@@ -2010,7 +2047,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 Connection conn = newAutoCommitConnection();
                 try
                 {
-                    updateConfiguredObject(configuredObject, conn);
+                    updateConfiguredObject(configuredObject, false, conn);
                 }
                 finally
                 {
@@ -2027,6 +2064,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void update(ConfiguredObjectRecord... records) throws AMQStoreException
     {
+        update(false, records);
+    }
+
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
         if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.ACTIVATING))
         {
             try
@@ -2036,7 +2078,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 {
                     for(ConfiguredObjectRecord record : records)
                     {
-                        updateConfiguredObject(record, conn);
+                        updateConfiguredObject(record, createIfNecessary, conn);
                     }
                     conn.commit();
                 }
@@ -2054,7 +2096,9 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    private void updateConfiguredObject(ConfiguredObjectRecord configuredObject, Connection conn)
+    private void updateConfiguredObject(ConfiguredObjectRecord configuredObject,
+                                        boolean createIfNecessary,
+                                        Connection conn)
             throws SQLException, AMQStoreException
     {
             PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
@@ -2087,6 +2131,31 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         finally
                         {
                             stmt2.close();
+                        }
+                    }
+                    else if(createIfNecessary)
+                    {
+                        PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_CONFIGURED_OBJECTS);
+                        try
+                        {
+                            insertStmt.setString(1, configuredObject.getId().toString());
+                            insertStmt.setString(2, configuredObject.getType());
+                            if(configuredObject.getAttributes() == null)
+                            {
+                                insertStmt.setNull(3, Types.BLOB);
+                            }
+                            else
+                            {
+                                final Map<String, Object> attributes = configuredObject.getAttributes();
+                                byte[] attributesAsBytes = new ObjectMapper().writeValueAsBytes(attributes);
+                                ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
+                                insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
+                            }
+                            insertStmt.execute();
+                        }
+                        finally
+                        {
+                            insertStmt.close();
                         }
                     }
                 }

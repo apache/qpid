@@ -466,7 +466,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
 
         try
         {
-            // an implicit recover performed when acknowledge throws an exception due to failover 
+            // an implicit recover performed when acknowledge throws an exception due to failover
             lastMessage.acknowledge();
             fail("JMSException should be thrown");
         }
@@ -529,7 +529,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         Message lastMessage = consumeMessages();
         try
         {
-            // an implicit recover performed when acknowledge throws an exception due to failover 
+            // an implicit recover performed when acknowledge throws an exception due to failover
             lastMessage.acknowledge();
             fail("JMSException should be thrown");
         }
@@ -923,9 +923,9 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-capacity", capacity);
         arguments.put("x-qpid-flow-resume-capacity", resumeCapacity);
-        ((AMQSession<?, ?>) session).createQueue(new AMQShortString(queueName), true, true, false, arguments);
+        ((AMQSession<?, ?>) session).createQueue(new AMQShortString(queueName), false, true, false, arguments);
         Queue queue = session.createQueue("direct://amq.direct/" + queueName + "/" + queueName + "?durable='" + true
-                + "'&autodelete='" + true + "'");
+                + "'&autodelete='" + false + "'");
         ((AMQSession<?, ?>) session).declareAndBind((AMQDestination) queue);
         return queue;
     }
