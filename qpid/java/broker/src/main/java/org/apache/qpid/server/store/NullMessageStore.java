@@ -44,8 +44,20 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+    }
+
+
+    @Override
     public void remove(UUID id, String type)
     {
+    }
+
+    @Override
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    {
+        return objects;
     }
 
     @Override

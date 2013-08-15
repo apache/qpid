@@ -55,7 +55,6 @@ public interface DurableConfigurationStore
                               VirtualHost virtualHost) throws Exception;
 
 
-
     /**
      * Makes the specified object persistent.
      *
@@ -77,6 +76,8 @@ public interface DurableConfigurationStore
      */
     void remove(UUID id, String type) throws AMQStoreException;
 
+    public UUID[] removeConfiguredObjects(UUID... objects) throws AMQStoreException;
+
 
     /**
      * Updates the specified object in the persistent store, IF it is already present. If the object
@@ -92,6 +93,7 @@ public interface DurableConfigurationStore
 
 
     public void update(ConfiguredObjectRecord... records) throws AMQStoreException;
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException;
 
 
 }

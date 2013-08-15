@@ -59,6 +59,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.txn.DtxRegistry;
@@ -741,6 +742,22 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         {
             CurrentActor.get().message(VirtualHostMessages.ERRORED());
         }
+    }
+
+    protected Map<String, DurableConfiguredObjectRecoverer> getDurableConfigurationRecoverers()
+    {
+        DurableConfiguredObjectRecoverer[] recoverers = {
+          new QueueRecoverer(this, getExchangeRegistry()),
+          new ExchangeRecoverer(getExchangeRegistry(), getExchangeFactory()),
+          new BindingRecoverer(this, getExchangeRegistry())
+        };
+
+        final Map<String, DurableConfiguredObjectRecoverer> recovererMap= new HashMap<String, DurableConfiguredObjectRecoverer>();
+        for(DurableConfiguredObjectRecoverer recoverer : recoverers)
+        {
+            recovererMap.put(recoverer.getType(), recoverer);
+        }
+        return recovererMap;
     }
 
     private class VirtualHostHouseKeepingTask extends HouseKeepingTask

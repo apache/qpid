@@ -23,6 +23,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreCreator;
@@ -68,7 +69,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
         final
         MessageStoreLogSubject
-                storeLogSubject = new MessageStoreLogSubject(this, messageStore.getClass().getSimpleName());
+                storeLogSubject = new MessageStoreLogSubject(getName(), messageStore.getClass().getSimpleName());
         OperationalLoggingListener.listen(messageStore, storeLogSubject);
 
         return messageStore;
@@ -96,10 +97,12 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
         _durableConfigurationStore = initialiseConfigurationStore(virtualHost);
 
+        DurableConfigurationRecoverer configRecoverer =
+                new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
+                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()));
+        _durableConfigurationStore.configureConfigStore(getName(), configRecoverer, virtualHost);
+
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getExchangeRegistry(), getExchangeFactory());
-
-        _durableConfigurationStore.configureConfigStore(getName(), recoveryHandler, virtualHost);
-
         _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler);
 
         initialiseModel(hostConfig);

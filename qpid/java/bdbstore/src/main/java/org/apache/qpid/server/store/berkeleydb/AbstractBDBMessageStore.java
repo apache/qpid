@@ -29,6 +29,7 @@ import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -809,31 +810,52 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         {
             LOGGER.debug("public void remove(id = " + id + ", type="+type+"): called");
         }
-        OperationStatus status = removeConfiguredObject(id);
+        OperationStatus status = removeConfiguredObject(null, id);
         if (status == OperationStatus.NOTFOUND)
         {
             throw new AMQStoreException("Configured object of type " + type + " with id " + id + " not found");
         }
     }
 
+    @Override
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    {
+        com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
+        Collection<UUID> removed = new ArrayList<UUID>(objects.length);
+        for(UUID id : objects)
+        {
+            if(removeConfiguredObject(txn, id) == OperationStatus.SUCCESS)
+            {
+                removed.add(id);
+            }
+        }
+
+        txn.commit();
+        return removed.toArray(new UUID[removed.size()]);
+    }
 
     @Override
     public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
     {
-        update(id, type, attributes, null);
+        update(false, id, type, attributes, null);
     }
 
     public void update(ConfiguredObjectRecord... records) throws AMQStoreException
     {
+        update(false, records);
+    }
+
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
         com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
         for(ConfiguredObjectRecord record : records)
         {
-            update(record.getId(), record.getType(), record.getAttributes(), txn);
+            update(createIfNecessary, record.getId(), record.getType(), record.getAttributes(), txn);
         }
         txn.commit();
     }
 
-    private void update(UUID id, String type, Map<String, Object> attributes, com.sleepycat.je.Transaction txn) throws AMQStoreException
+    private void update(boolean createIfNecessary, UUID id, String type, Map<String, Object> attributes, com.sleepycat.je.Transaction txn) throws AMQStoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -851,7 +873,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             ConfiguredObjectBinding configuredObjectBinding = ConfiguredObjectBinding.getInstance();
 
             OperationStatus status = _configuredObjectsDb.get(txn, key, value, LockMode.DEFAULT);
-            if (status == OperationStatus.SUCCESS)
+            if (status == OperationStatus.SUCCESS || (createIfNecessary && status == OperationStatus.NOTFOUND))
             {
                 ConfiguredObjectRecord newQueueRecord = new ConfiguredObjectRecord(id, type, attributes);
 
@@ -1406,14 +1428,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
     }
 
-    private OperationStatus removeConfiguredObject(UUID id) throws AMQStoreException
+    private OperationStatus removeConfiguredObject(Transaction tx, UUID id) throws AMQStoreException
     {
         DatabaseEntry key = new DatabaseEntry();
         UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
         uuidBinding.objectToEntry(id, key);
         try
         {
-            return _configuredObjectsDb.delete(null, key);
+            return _configuredObjectsDb.delete(tx, key);
         }
         catch (DatabaseException e)
         {
