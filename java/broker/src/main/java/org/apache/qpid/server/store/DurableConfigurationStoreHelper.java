@@ -36,6 +36,10 @@ import org.apache.qpid.server.queue.AMQQueue;
 public class DurableConfigurationStoreHelper
 {
 
+    private static final String BINDING = Binding.class.getSimpleName();
+    private static final String EXCHANGE = Exchange.class.getSimpleName();
+    private static final String QUEUE = Queue.class.getSimpleName();
+
     public static void updateQueue(DurableConfigurationStore store, AMQQueue queue) throws AMQStoreException
     {
         Map<String, Object> attributesMap = new LinkedHashMap<String, Object>();
@@ -60,7 +64,7 @@ public class DurableConfigurationStoreHelper
         {
             attributesMap.put(Queue.ARGUMENTS, queue.getArguments());
         }
-        store.update(queue.getId(), Queue.class.getName(), attributesMap);
+        store.update(queue.getId(), QUEUE, attributesMap);
     }
 
     public static void createQueue(DurableConfigurationStore store, AMQQueue queue, FieldTable arguments)
@@ -80,12 +84,12 @@ public class DurableConfigurationStoreHelper
         {
             attributesMap.put(Queue.ARGUMENTS, FieldTable.convertToMap(arguments));
         }
-        store.create(queue.getId(),Queue.class.getName(),attributesMap);
+        store.create(queue.getId(), QUEUE,attributesMap);
     }
 
     public static void removeQueue(DurableConfigurationStore store, AMQQueue queue) throws AMQStoreException
     {
-        store.remove(queue.getId(), Queue.class.getName());
+        store.remove(queue.getId(), QUEUE);
     }
 
     public static void createExchange(DurableConfigurationStore store, org.apache.qpid.server.exchange.Exchange exchange)
@@ -96,7 +100,7 @@ public class DurableConfigurationStoreHelper
         attributesMap.put(Exchange.TYPE, AMQShortString.toString(exchange.getTypeShortString()));
         attributesMap.put(Exchange.LIFETIME_POLICY, exchange.isAutoDelete() ? LifetimePolicy.AUTO_DELETE.name()
                 : LifetimePolicy.PERMANENT.name());
-        store.create(exchange.getId(), Exchange.class.getName(), attributesMap);
+        store.create(exchange.getId(), EXCHANGE, attributesMap);
 
     }
 
@@ -104,7 +108,7 @@ public class DurableConfigurationStoreHelper
     public static void removeExchange(DurableConfigurationStore store, org.apache.qpid.server.exchange.Exchange exchange)
             throws AMQStoreException
     {
-        store.remove(exchange.getId(),Exchange.class.getName());
+        store.remove(exchange.getId(), EXCHANGE);
     }
 
     public static void createBinding(DurableConfigurationStore store, org.apache.qpid.server.binding.Binding binding)
@@ -119,14 +123,14 @@ public class DurableConfigurationStoreHelper
         {
             attributesMap.put(Binding.ARGUMENTS, arguments);
         }
-        store.create(binding.getId(), Binding.class.getName(), attributesMap);
+        store.create(binding.getId(), BINDING, attributesMap);
     }
 
 
     public static void removeBinding(DurableConfigurationStore store, org.apache.qpid.server.binding.Binding binding)
                 throws AMQStoreException
     {
-        store.remove(binding.getId(), Binding.class.getName());
+        store.remove(binding.getId(), BINDING);
     }
 
 }

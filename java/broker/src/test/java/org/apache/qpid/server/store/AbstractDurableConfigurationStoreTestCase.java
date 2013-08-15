@@ -56,6 +56,11 @@ import org.apache.qpid.util.FileUtils;
 public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTestCase
 {
     private static final String EXCHANGE_NAME = "exchangeName";
+
+    private static final String EXCHANGE = org.apache.qpid.server.model.Exchange.class.getSimpleName();
+    private static final String BINDING = org.apache.qpid.server.model.Binding.class.getSimpleName();
+    private static final String QUEUE = Queue.class.getSimpleName();
+
     private String _storePath;
     private String _storeName;
     private MessageStore _messageStore;
@@ -134,7 +139,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
 
         reopenStore();
-        verify(_recoveryHandler).configuredObject(eq(_exchangeId), eq(org.apache.qpid.server.model.Exchange.class.getName()),
+        verify(_recoveryHandler).configuredObject(eq(_exchangeId), eq(EXCHANGE),
                 eq(map( org.apache.qpid.server.model.Exchange.NAME, getName(),
                         org.apache.qpid.server.model.Exchange.TYPE, getName()+"Type",
                         org.apache.qpid.server.model.Exchange.LIFETIME_POLICY, LifetimePolicy.AUTO_DELETE.toString())));
@@ -186,7 +191,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         map.put(org.apache.qpid.server.model.Binding.NAME, ROUTING_KEY);
         map.put(org.apache.qpid.server.model.Binding.ARGUMENTS,FieldTable.convertToMap(_bindingArgs));
 
-        verify(_recoveryHandler).configuredObject(eq(binding.getId()), eq(org.apache.qpid.server.model.Binding.class.getName()),
+        verify(_recoveryHandler).configuredObject(eq(binding.getId()), eq(BINDING),
                 eq(map));
     }
 
@@ -201,7 +206,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         reopenStore();
 
         verify(_recoveryHandler, never()).configuredObject(any(UUID.class),
-                eq(org.apache.qpid.server.model.Binding.class.getName()),
+                eq(BINDING),
                 anyMap());
     }
 
@@ -215,7 +220,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     public void testCreateQueueAMQQueueFieldTable() throws Exception
@@ -238,7 +243,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
         queueAttributes.put(Queue.ARGUMENTS, attributes);
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     public void testCreateQueueAMQQueueWithAlternateExchange() throws Exception
@@ -256,7 +261,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     private Exchange createTestAlternateExchange()
@@ -292,7 +297,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.FALSE);
         queueAttributes.put(Queue.ARGUMENTS, attributes);
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
 
     }
 
@@ -323,7 +328,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.ARGUMENTS, attributes);
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     public void testRemoveQueue() throws Exception

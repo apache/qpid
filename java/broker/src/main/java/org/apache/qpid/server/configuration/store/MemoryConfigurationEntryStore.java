@@ -180,7 +180,12 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         return _entries.get(id);
     }
 
-    @Override
+    /**
+     * Copies the store into the given location
+     *
+     * @param target location to copy store into
+     * @throws IllegalConfigurationException if store cannot be copied into given location
+     */
     public void copyTo(String copyLocation)
     {
         File file = new File(copyLocation);

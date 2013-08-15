@@ -18,20 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.subjects;
+package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import java.util.Map;
+import java.util.UUID;
 
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.STORE_FORMAT;
-
-public class MessageStoreLogSubject extends AbstractLogSubject
+public interface DurableConfigurationStoreUpgrader
 {
+    void configuredObject(UUID id, String type, Map<String, Object> attributes);
 
-    /** Create an MessageStoreLogSubject that Logs in the following format. */
-    public MessageStoreLogSubject(String vhostName, String messageStoreName)
-    {
-        setLogStringWithFormat(STORE_FORMAT, vhostName, messageStoreName);
-    }
+    void complete();
 
+    void setNextUpgrader(DurableConfigurationStoreUpgrader upgrader);
 
+    Map<UUID, ConfiguredObjectRecord> getUpdatedRecords();
 }

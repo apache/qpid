@@ -190,6 +190,15 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    {
+        doPreDelay("remove");
+        UUID[] removed = _durableConfigurationStore.removeConfiguredObjects(objects);
+        doPostDelay("remove");
+        return removed;
+    }
+
+    @Override
     public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
     {
         doPreDelay("update");
@@ -202,6 +211,14 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     {
         doPreDelay("update");
         _durableConfigurationStore.update(records);
+        doPostDelay("update");
+    }
+
+    @Override
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        doPreDelay("update");
+        _durableConfigurationStore.update(createIfNecessary, records);
         doPostDelay("update");
     }
 
