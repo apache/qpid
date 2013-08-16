@@ -62,6 +62,7 @@ org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
 // c++ broker doesn't support message bouncing
 org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testUnsubscribeWhenUsingSelectorMakesTopicUnreachable
+org.apache.qpid.test.unit.client.connection.ExceptionListenerTest#testExceptionListenerConnectionStopDeadlock
 
 // c++ broker expires messages on delivery or when the queue cleaner thread runs.
 org.apache.qpid.server.queue.TimeToLiveTest#testActiveTTL
