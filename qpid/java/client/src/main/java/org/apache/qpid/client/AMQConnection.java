@@ -126,7 +126,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /** The virtual path to connect to on the AMQ server */
     private String _virtualHost;
 
-    private ExceptionListener _exceptionListener;
+    /** The exception listener for this connection object. */
+    private volatile ExceptionListener _exceptionListener;
 
     private ConnectionListener _connectionListener;
 
@@ -784,13 +785,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public ExceptionListener getExceptionListener() throws JMSException
     {
         checkNotClosed();
-
-        return _exceptionListener;
+        return getExceptionListenerNoCheck();
     }
 
     public void setExceptionListener(ExceptionListener listener) throws JMSException
     {
         checkNotClosed();
+
         _exceptionListener = listener;
     }
 
@@ -1307,44 +1308,55 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _protocolHandler.getProtocolSession().notifyError(je);
         }
 
-        // get the failover mutex before trying to close
-        synchronized (getFailoverMutex())
+        try
         {
-            // decide if we are going to close the session
-            if (hardError(cause))
+            // get the failover mutex before trying to close
+            synchronized (getFailoverMutex())
             {
-                closer = (!setClosed()) || closer;
+                // decide if we are going to close the session
+                if (hardError(cause))
                 {
-                    _logger.info("Closing AMQConnection due to :" + cause);
+                    closer = (!setClosed()) || closer;
+                    {
+                        _logger.info("Closing AMQConnection due to :" + cause);
+                    }
                 }
-            }
-            else
-            {
-                _logger.info("Not a hard-error connection not closing: " + cause);
-            }
+                else
+                {
+                    _logger.info("Not a hard-error connection not closing: " + cause);
+                }
 
-            // deliver the exception if there is a listener
-            if (_exceptionListener != null)
-            {
-                _exceptionListener.onException(je);
+                // if we are closing the connection, close sessions first
+                if (closer)
+                {
+                    try
+                    {
+                        closeAllSessions(cause, -1, -1); // FIXME: when doing this end up with RejectedExecutionException from executor.
+                    }
+                    catch (JMSException e)
+                    {
+                        _logger.error("Error closing all sessions: " + e, e);
+                    }
+                }
             }
-            else
-            {
-                _logger.error("Throwable Received but no listener set: " + cause);
-            }
+        }
+        finally
+        {
+            deliverJMSExceptionToExceptionListenerOrLog(je, cause);
+        }
+    }
 
-            // if we are closing the connection, close sessions first
-            if (closer)
-            {
-                try
-                {
-                    closeAllSessions(cause, -1, -1); // FIXME: when doing this end up with RejectedExecutionException from executor.
-                }
-                catch (JMSException e)
-                {
-                    _logger.error("Error closing all sessions: " + e, e);
-                }
-            }
+    private void deliverJMSExceptionToExceptionListenerOrLog(final JMSException je, final Throwable cause)
+    {
+        // deliver the exception if there is a listener
+        ExceptionListener exceptionListener = getExceptionListenerNoCheck();
+        if (exceptionListener != null)
+        {
+            exceptionListener.onException(je);
+        }
+        else
+        {
+            _logger.error("Throwable Received but no listener set: " + cause);
         }
     }
 

@@ -20,6 +20,7 @@
 // Those tests are testing 0.8..-0-9-1 specific semantics
 org.apache.qpid.test.client.ImmediateAndMandatoryPublishingTest#*
 org.apache.qpid.test.client.CloseOnNoRouteForMandatoryMessageTest#*
+org.apache.qpid.test.unit.client.connection.ExceptionListenerTest#testExceptionListenerConnectionStopDeadlock
 org.apache.qpid.systest.rest.BrokerRestTest#testSetCloseOnNoRoute
 
 //this test checks explicitly for 0-8 flow control semantics
