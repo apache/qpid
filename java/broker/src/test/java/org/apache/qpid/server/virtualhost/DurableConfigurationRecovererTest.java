@@ -28,7 +28,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
@@ -36,21 +39,27 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -73,6 +82,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     private DurableConfigurationStore _store;
     private ExchangeFactory _exchangeFactory;
     private ExchangeRegistry _exchangeRegistry;
+    private QueueRegistry _queueRegistry;
 
     @Override
     public void setUp() throws Exception
@@ -95,10 +105,57 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         when(_exchangeRegistry.getExchange(eq(DIRECT_EXCHANGE_ID))).thenReturn(_directExchange);
         when(_exchangeRegistry.getExchange(eq(TOPIC_EXCHANGE_ID))).thenReturn(_topicExchange);
 
-        QueueRegistry queueRegistry = mock(QueueRegistry.class);
-        when(_vhost.getQueueRegistry()).thenReturn(queueRegistry);
 
-        when(queueRegistry.getQueue(eq(QUEUE_ID))).thenReturn(queue);
+        final ArgumentCaptor<Exchange> registeredExchange = ArgumentCaptor.forClass(Exchange.class);
+        doAnswer(new Answer()
+        {
+
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                Exchange exchange = registeredExchange.getValue();
+                when(_exchangeRegistry.getExchange(exchange.getId())).thenReturn(exchange);
+                when(_exchangeRegistry.getExchange(exchange.getName())).thenReturn(exchange);
+                return null;
+            }
+        }).when(_exchangeRegistry).registerExchange(registeredExchange.capture());
+
+
+
+        _queueRegistry = mock(QueueRegistry.class);
+        when(_vhost.getQueueRegistry()).thenReturn(_queueRegistry);
+
+        when(_queueRegistry.getQueue(eq(QUEUE_ID))).thenReturn(queue);
+
+        final ArgumentCaptor<AMQQueue> registeredQueue = ArgumentCaptor.forClass(AMQQueue.class);
+        doAnswer(new Answer()
+        {
+
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                AMQQueue queue = registeredQueue.getValue();
+                when(_queueRegistry.getQueue(queue.getId())).thenReturn(queue);
+                when(_queueRegistry.getQueue(queue.getName())).thenReturn(queue);
+                return null;
+            }
+        }).when(_queueRegistry).registerQueue(registeredQueue.capture());
+
+        /* These lines necessary to get queue creation to work because AMQQueueFactory is called directly rather than
+           queue creation being on vhost - yuck! */
+        SecurityManager securityManager = mock(SecurityManager.class);
+        when(_vhost.getSecurityManager()).thenReturn(securityManager);
+        when(securityManager.authoriseCreateQueue(anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),
+                                                  any(AMQShortString.class),anyString())).thenReturn(true);
+        VirtualHostConfiguration configuration = mock(VirtualHostConfiguration.class);
+        when(_vhost.getConfiguration()).thenReturn(configuration);
+        QueueConfiguration queueConfiguration = mock(QueueConfiguration.class);
+        when(configuration.getQueueConfiguration(anyString())).thenReturn(queueConfiguration);
+        LogActor logActor = mock(LogActor.class);
+        CurrentActor.set(logActor);
+        RootMessageLogger rootLogger = mock(RootMessageLogger.class);
+        when(logActor.getRootMessageLogger()).thenReturn(rootLogger);
+        /* end of queue creation mock hackery */
 
         _exchangeFactory = mock(ExchangeFactory.class);
 
@@ -208,15 +265,6 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                                              eq(HeadersExchange.TYPE.getType()),
                                              anyBoolean(),
                                              anyBoolean())).thenReturn(customExchange);
-        doAnswer(new Answer()
-        {
-            @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable
-            {
-                when(_exchangeRegistry.getExchange(eq(customExchangeId))).thenReturn(customExchange);
-                return null;
-            }
-        }).when(_exchangeRegistry).registerExchange(customExchange);
 
         final ConfiguredObjectRecord[] expected = {
                 new ConfiguredObjectRecord(new UUID(1, 0), "org.apache.qpid.server.model.Binding",
@@ -318,6 +366,35 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
     }
 
+    public void testRecoveryOfQueueAlternateExchange() throws Exception
+    {
+
+        final UUID queueId = new UUID(1, 0);
+        final UUID exchangeId = new UUID(2, 0);
+
+
+
+        final Exchange customExchange = mock(Exchange.class);
+
+        when(_exchangeFactory.createExchange(eq(exchangeId),
+                                             eq(CUSTOM_EXCHANGE_NAME),
+                                             eq(HeadersExchange.TYPE.getType()),
+                                             anyBoolean(),
+                                             anyBoolean())).thenReturn(customExchange);
+
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
+
+        _durableConfigurationRecoverer.configuredObject(queueId, Queue.class.getSimpleName(),
+                                                        createQueue("testQueue", exchangeId));
+        _durableConfigurationRecoverer.configuredObject(exchangeId,
+                                                        org.apache.qpid.server.model.Exchange.class.getSimpleName(),
+                                                        createExchange(CUSTOM_EXCHANGE_NAME, HeadersExchange.TYPE));
+
+        _durableConfigurationRecoverer.completeConfigurationRecovery();
+
+        assertEquals(_queueRegistry.getQueue(queueId).getAlternateExchange(), customExchange);
+    }
+
     private void verifyCorrectUpdates(final ConfiguredObjectRecord[] expected) throws AMQStoreException
     {
         doAnswer(new Answer()
@@ -373,4 +450,21 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         return exchange;
 
     }
+
+
+    private Map<String, Object> createQueue(String name, UUID alternateExchangeId)
+    {
+        Map<String, Object> queue = new LinkedHashMap<String, Object>();
+
+        queue.put(Queue.NAME, name);
+        if(alternateExchangeId != null)
+        {
+            queue.put(Queue.ALTERNATE_EXCHANGE, alternateExchangeId.toString());
+        }
+        queue.put(Queue.EXCLUSIVE, false);
+
+        return queue;
+
+    }
+
 }
