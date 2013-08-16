@@ -21,7 +21,7 @@
     <property name="module.test.depends" value="common/tests broker/tests" />
 
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-amqp-1-0-common=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
     <property name="broker-plugins-amqp-1-0-protocol.libs" value="" />
 
     <property name="broker.plugin" value="true"/>
@@ -29,5 +29,12 @@
     <import file="../../module.xml" />
 
     <target name="bundle" depends="bundle-tasks"/>
+
+    <!-- Overrides, but depends on, target in module.xml -->
+    <target name="copy-broker-plugin-jars-deps" depends="module.copy-broker-plugin-jars-deps" if="broker.plugin" description="copy broker plugins dependencies for use in release packaging">
+        <copy todir="${build.scratch.broker.plugins.lib}" failonerror="true" flatten="true">
+            <fileset file="${build.lib}/${project.name}-amqp-1-0-common-${project.version}.jar"/>
+        </copy>
+    </target>
 
 </project>

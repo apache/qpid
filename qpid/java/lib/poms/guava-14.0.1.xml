@@ -16,7 +16,7 @@
    limitations under the License.
 -->
 <dep>
-  <groupId>com.google</groupId>
+  <groupId>com.google.guava</groupId>
   <artifactId>guava</artifactId>
   <version>14.0.1</version>
 </dep>
