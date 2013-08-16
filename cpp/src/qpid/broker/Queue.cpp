@@ -393,6 +393,7 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
     if (!checkNotDeleted(c)) return false;
     QueueListeners::NotificationSet set;
     ScopedAutoDelete autodelete(*this);
+    bool messageFound(false);
     while (true) {
         //TODO: reduce lock scope
         Mutex::ScopedLock locker(messageLock);
@@ -434,7 +435,8 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
                     QPID_LOG(debug, "Message " << msg->getSequence() << " retrieved from '"
                              << name << "'");
                     m = *msg;
-                    return true;
+                    messageFound = true;
+                    break;
                 } else {
                     //message(s) are available but consumer hasn't got enough credit
                     QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
@@ -456,11 +458,12 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
         } else {
             QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
             listeners.addListener(c);
-            return false;
+            break;
         }
+
     }
     set.notify();
-    return false;
+    return messageFound;
 }
 
 void Queue::removeListener(Consumer::shared_ptr c)
