@@ -141,22 +141,6 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
             }
         }).when(_queueRegistry).registerQueue(registeredQueue.capture());
 
-        /* These lines necessary to get queue creation to work because AMQQueueFactory is called directly rather than
-           queue creation being on vhost - yuck! */
-        SecurityManager securityManager = mock(SecurityManager.class);
-        when(_vhost.getSecurityManager()).thenReturn(securityManager);
-        when(securityManager.authoriseCreateQueue(anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),
-                                                  any(AMQShortString.class),anyString())).thenReturn(true);
-        VirtualHostConfiguration configuration = mock(VirtualHostConfiguration.class);
-        when(_vhost.getConfiguration()).thenReturn(configuration);
-        QueueConfiguration queueConfiguration = mock(QueueConfiguration.class);
-        when(configuration.getQueueConfiguration(anyString())).thenReturn(queueConfiguration);
-        LogActor logActor = mock(LogActor.class);
-        CurrentActor.set(logActor);
-        RootMessageLogger rootLogger = mock(RootMessageLogger.class);
-        when(logActor.getRootMessageLogger()).thenReturn(rootLogger);
-        /* end of queue creation mock hackery */
-
         _exchangeFactory = mock(ExchangeFactory.class);
 
         DurableConfiguredObjectRecoverer[] recoverers = {
@@ -372,7 +356,21 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         final UUID queueId = new UUID(1, 0);
         final UUID exchangeId = new UUID(2, 0);
 
-
+        /* These lines necessary to get queue creation to work because AMQQueueFactory is called directly rather than
+           queue creation being on vhost - yuck! */
+        SecurityManager securityManager = mock(SecurityManager.class);
+        when(_vhost.getSecurityManager()).thenReturn(securityManager);
+        when(securityManager.authoriseCreateQueue(anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),
+                                                  any(AMQShortString.class),anyString())).thenReturn(true);
+        VirtualHostConfiguration configuration = mock(VirtualHostConfiguration.class);
+        when(_vhost.getConfiguration()).thenReturn(configuration);
+        QueueConfiguration queueConfiguration = mock(QueueConfiguration.class);
+        when(configuration.getQueueConfiguration(anyString())).thenReturn(queueConfiguration);
+        LogActor logActor = mock(LogActor.class);
+        CurrentActor.set(logActor);
+        RootMessageLogger rootLogger = mock(RootMessageLogger.class);
+        when(logActor.getRootMessageLogger()).thenReturn(rootLogger);
+        /* end of queue creation mock hackery */
 
         final Exchange customExchange = mock(Exchange.class);
 
