@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
@@ -62,21 +64,48 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
 
     private class UnresolvedQueue implements UnresolvedObject<AMQQueue>
     {
+        private final Map<String, Object> _attributes;
+        private final UUID _alternateExchangeId;
+        private final UUID _id;
         private AMQQueue _queue;
+        private List<UnresolvedDependency> _dependencies = new ArrayList<UnresolvedDependency>();
+        private Exchange _alternateExchange;
 
         public UnresolvedQueue(final UUID id,
                                final String type,
-                               final Map<String, Object> attributeMap)
+                               final Map<String, Object> attributes)
         {
-            String queueName = (String) attributeMap.get(Queue.NAME);
-            String owner = (String) attributeMap.get(Queue.OWNER);
-            boolean exclusive = (Boolean) attributeMap.get(Queue.EXCLUSIVE);
-            UUID alternateExchangeId = attributeMap.get(Queue.ALTERNATE_EXCHANGE) == null ? null : UUID.fromString((String)attributeMap.get(Queue.ALTERNATE_EXCHANGE));
+            _attributes = attributes;
+            _alternateExchangeId = _attributes.get(Queue.ALTERNATE_EXCHANGE) == null ? null : UUID.fromString((String) _attributes
+                    .get(Queue.ALTERNATE_EXCHANGE));
+            _id = id;
+            if (_alternateExchangeId != null)
+            {
+                _alternateExchange = _exchangeRegistry.getExchange(_alternateExchangeId);
+                if(_alternateExchange == null)
+                {
+                    _dependencies.add(new AlternateExchangeDependency());
+                }
+            }
+        }
+
+        @Override
+        public UnresolvedDependency[] getUnresolvedDependencies()
+        {
+            return _dependencies.toArray(new UnresolvedDependency[_dependencies.size()]);
+        }
+
+        @Override
+        public AMQQueue resolve()
+        {
+            String queueName = (String) _attributes.get(Queue.NAME);
+            String owner = (String) _attributes.get(Queue.OWNER);
+            boolean exclusive = (Boolean) _attributes.get(Queue.EXCLUSIVE);
             @SuppressWarnings("unchecked")
-            Map<String, Object> queueArgumentsMap = (Map<String, Object>) attributeMap.get(Queue.ARGUMENTS);
+            Map<String, Object> queueArgumentsMap = (Map<String, Object>) _attributes.get(Queue.ARGUMENTS);
             try
             {
-                _queue = _virtualHost.getQueueRegistry().getQueue(id);
+                _queue = _virtualHost.getQueueRegistry().getQueue(_id);
                 if(_queue == null)
                 {
                     _queue = _virtualHost.getQueueRegistry().getQueue(queueName);
@@ -84,38 +113,43 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
 
                 if (_queue == null)
                 {
-                    _queue = AMQQueueFactory.createAMQQueueImpl(id, queueName, true, owner, false, exclusive, _virtualHost,
-                                                           queueArgumentsMap);
+                    _queue = AMQQueueFactory.createAMQQueueImpl(_id, queueName, true, owner, false, exclusive, _virtualHost,
+                                                                queueArgumentsMap);
                     _virtualHost.getQueueRegistry().registerQueue(_queue);
 
-                    if (alternateExchangeId != null)
+                    if (_alternateExchange != null)
                     {
-                        Exchange altExchange = _exchangeRegistry.getExchange(alternateExchangeId);
-                        if (altExchange == null)
-                        {
-                            _logger.error("Unknown exchange id " + alternateExchangeId + ", cannot set alternate exchange on queue with id " + id);
-                            return;
-                        }
-                        _queue.setAlternateExchange(altExchange);
+                        _queue.setAlternateExchange(_alternateExchange);
                     }
                 }
             }
             catch (AMQException e)
             {
-                throw new RuntimeException("Error recovering queue uuid " + id + " name " + queueName, e);
+                throw new RuntimeException("Error recovering queue uuid " + _id + " name " + queueName, e);
             }
-        }
-
-        @Override
-        public UnresolvedDependency[] getUnresolvedDependencies()
-        {
-            return new UnresolvedDependency[0];
-        }
-
-        @Override
-        public AMQQueue resolve()
-        {
             return _queue;
+        }
+
+        private class AlternateExchangeDependency implements UnresolvedDependency
+        {
+            @Override
+            public UUID getId()
+            {
+                return _alternateExchangeId;
+            }
+
+            @Override
+            public String getType()
+            {
+                return "Exchange";
+            }
+
+            @Override
+            public void resolve(final Object dependency)
+            {
+                _alternateExchange = (Exchange) dependency;
+                _dependencies.remove(this);
+            }
         }
     }
 }
