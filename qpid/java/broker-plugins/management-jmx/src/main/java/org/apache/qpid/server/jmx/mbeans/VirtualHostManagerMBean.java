@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 
 @MBeanDescription("This MBean exposes the broker level management features")
 public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<VirtualHost> implements ManagedBroker
@@ -180,7 +181,8 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
             throws IOException, JMException
     {
         final Map<String, Object> createArgs = processNewQueueArguments(queueName, owner, originalArguments);
-        getConfiguredObject().createQueue(queueName, State.ACTIVE, durable, false, LifetimePolicy.PERMANENT, 0l, createArgs);
+        getConfiguredObject().createQueue(queueName, State.ACTIVE, durable, false, LifetimePolicy.PERMANENT, 0l,
+                QueueArgumentsConverter.convertWireArgsToModel(createArgs));
     }
 
 
@@ -196,11 +198,11 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         if (_moveNonExclusiveQueueOwnerToDescription && owner != null)
         {
             argumentsCopy = new HashMap<String, Object>(arguments == null ? new HashMap<String, Object>() : arguments);
-            if (!argumentsCopy.containsKey(AMQQueueFactory.X_QPID_DESCRIPTION))
+            if (!argumentsCopy.containsKey(QueueArgumentsConverter.X_QPID_DESCRIPTION))
             {
-                LOGGER.warn("Non-exclusive owner " + owner + " for new queue " + queueName + " moved to " + AMQQueueFactory.X_QPID_DESCRIPTION);
+                LOGGER.warn("Non-exclusive owner " + owner + " for new queue " + queueName + " moved to " + QueueArgumentsConverter.X_QPID_DESCRIPTION);
 
-                argumentsCopy.put(AMQQueueFactory.X_QPID_DESCRIPTION, owner);
+                argumentsCopy.put(QueueArgumentsConverter.X_QPID_DESCRIPTION, owner);
             }
             else
             {

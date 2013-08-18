@@ -75,7 +75,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testNoRoute() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a*#b", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a*#b", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b",queue, _exchange, null));
 
 
@@ -86,7 +87,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testDirectMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "ab", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "ab", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b",queue, _exchange, null));
 
 
@@ -108,7 +110,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testStarMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a*", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a*", false, null, false, false, false, null);
         _exchange.registerQueue(new Binding(null, "a.*",queue, _exchange, null));
 
 
@@ -139,7 +141,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, false, null);
         _exchange.registerQueue(new Binding(null, "a.#",queue, _exchange, null));
 
 
@@ -190,7 +192,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMidHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b",queue, _exchange, null));
 
         routeMessage("a.c.d.b",0l);
@@ -215,7 +218,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMatchafterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b.c",queue, _exchange, null));
 
 
@@ -253,7 +257,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashAfterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b.c.#.d",queue, _exchange, null));
 
         int queueCount = routeMessage("a.c.b.b.c",0l);
@@ -274,7 +279,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.#.*.#.d",queue, _exchange, null));
 
         int queueCount = routeMessage("a.c.b.b.c",0l);
@@ -295,7 +301,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testSubMatchFails() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b.c.d",queue, _exchange, null));
 
         int queueCount = routeMessage("a.b.c",0l);
@@ -326,7 +333,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMoreRouting() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b",queue, _exchange, null));
 
 
@@ -339,7 +347,8 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMoreQueue() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b",queue, _exchange, null));
 
 

@@ -29,12 +29,12 @@ import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessageHeader;
@@ -65,7 +65,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
     private AMQShortString _routingKey = new AMQShortString("routing key");
     private DirectExchange _exchange;
     private MockSubscription _subscription = new MockSubscription();
-    private FieldTable _arguments = null;
+    private Map<String,Object> _arguments = null;
 
     private MessagePublishInfo info = new MessagePublishInfo()
     {
@@ -103,8 +103,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
-                false, false, _virtualHost, FieldTable.convertToMap(_arguments));
+        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
+                false, false, false, _arguments);
 
         _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME.toString());
     }
@@ -127,8 +127,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
     public void testCreateQueue() throws AMQException
     {
         _queue.stop();
-        try {
-            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), null, false, _owner.asString(), false, false, _virtualHost, FieldTable.convertToMap(_arguments));
+        try
+        {
+            _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), null,
+                                                                         false, _owner.asString(), false,
+                                                                         false, false, _arguments);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -137,7 +140,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
                             e.getMessage().contains("name"));
         }
 
-        try {
+        try
+        {
             _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner, false,false, null, Collections.EMPTY_MAP);
             assertNull("Queue was created", _queue);
         }
@@ -147,8 +151,10 @@ public class SimpleAMQQueueTest extends QpidTestCase
                     e.getMessage().contains("Host"));
         }
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(), false,
-                                                                false, _virtualHost, FieldTable.convertToMap(_arguments));
+        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(),
+                                                                     "differentName", false,
+                                                                     _owner.asString(), false,
+                                                                     false, false, _arguments);
         assertNotNull("Queue was not created", _queue);
     }
 
@@ -1225,12 +1231,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return _subscription;
     }
 
-    public FieldTable getArguments()
+    public Map<String,Object> getArguments()
     {
         return _arguments;
     }
 
-    public void setArguments(FieldTable arguments)
+    public void setArguments(Map<String,Object> arguments)
     {
         _arguments = arguments;
     }

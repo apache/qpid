@@ -469,7 +469,14 @@ public class MockAMQQueue implements AMQQueue
 
     }
 
-    public Map<String, Object> getArguments()
+    @Override
+    public Collection<String> getAvailableAttributes()
+    {
+        return null;
+    }
+
+    @Override
+    public Object getAttribute(String attrName)
     {
         return null;
     }

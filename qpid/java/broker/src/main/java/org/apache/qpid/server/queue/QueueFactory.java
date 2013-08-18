@@ -20,32 +20,19 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 
-public interface QueueRegistry
+public interface QueueFactory
 {
-    VirtualHost getVirtualHost();
-
-    void registerQueue(AMQQueue queue);
-
-    void unregisterQueue(String name);
-
-    Collection<AMQQueue> getQueues();
-
-    AMQQueue getQueue(String queue);
-
-    void addRegistryChangeListener(RegistryChangeListener listener);
-
-    void stopAllAndUnregisterMBeans();
-
-    AMQQueue getQueue(UUID queueId);
-
-    interface RegistryChangeListener
-    {
-        void queueRegistered(AMQQueue queue);
-        void queueUnregistered(AMQQueue queue);
-    }
+    AMQQueue createAMQQueueImpl(UUID id,
+                                String queueName,
+                                boolean durable,
+                                String owner,
+                                boolean autoDelete,
+                                boolean exclusive,
+                                boolean deleteOnNoConsumer,
+                                Map<String, Object> arguments) throws AMQSecurityException, AMQException;
 }

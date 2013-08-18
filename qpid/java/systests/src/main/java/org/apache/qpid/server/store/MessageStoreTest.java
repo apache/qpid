@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
@@ -38,6 +39,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.model.Broker;
@@ -49,7 +51,7 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.protocol.v0_8.IncomingMessage;
-import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -83,17 +85,17 @@ public class MessageStoreTest extends QpidTestCase
     private String directExchangeName = "MST-DirectExchange";
     private String topicExchangeName = "MST-TopicExchange";
 
-    private AMQShortString durablePriorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue-Durable");
-    private AMQShortString durableTopicQueueName = new AMQShortString("MST-TopicQueue-Durable");
-    private AMQShortString priorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue");
-    private AMQShortString topicQueueName = new AMQShortString("MST-TopicQueue");
+    private String durablePriorityTopicQueueName = "MST-PriorityTopicQueue-Durable";
+    private String durableTopicQueueName = "MST-TopicQueue-Durable";
+    private String priorityTopicQueueName = "MST-PriorityTopicQueue";
+    private String topicQueueName = "MST-TopicQueue";
 
-    private AMQShortString durableExclusiveQueueName = new AMQShortString("MST-Queue-Durable-Exclusive");
-    private AMQShortString durablePriorityQueueName = new AMQShortString("MST-PriorityQueue-Durable");
-    private AMQShortString durableLastValueQueueName = new AMQShortString("MST-LastValueQueue-Durable");
-    private AMQShortString durableQueueName = new AMQShortString("MST-Queue-Durable");
-    private AMQShortString priorityQueueName = new AMQShortString("MST-PriorityQueue");
-    private AMQShortString queueName = new AMQShortString("MST-Queue");
+    private String durableExclusiveQueueName = "MST-Queue-Durable-Exclusive";
+    private String durablePriorityQueueName = "MST-PriorityQueue-Durable";
+    private String durableLastValueQueueName = "MST-LastValueQueue-Durable";
+    private String durableQueueName = "MST-Queue-Durable";
+    private String priorityQueueName = "MST-PriorityQueue";
+    private String queueName = "MST-Queue";
 
     private AMQShortString directRouting = new AMQShortString("MST-direct");
     private AMQShortString topicRouting = new AMQShortString("MST-topic");
@@ -202,7 +204,7 @@ public class MessageStoreTest extends QpidTestCase
      */
     public void testQueueExchangeAndBindingCreation() throws Exception
     {
-        assertEquals("Should not be any existing queues", 0,  getVirtualHost().getQueueRegistry().getQueues().size());
+        assertEquals("Should not be any existing queues", 0,  getVirtualHost().getQueues().size());
 
         createAllQueues();
         createAllTopicQueues();
@@ -240,7 +242,7 @@ public class MessageStoreTest extends QpidTestCase
         validateMessageOnTopics(2, true);
 
         assertEquals("Not all queues correctly registered",
-                10, getVirtualHost().getQueueRegistry().getQueues().size());
+                10, getVirtualHost().getQueues().size());
     }
 
     /**
@@ -269,13 +271,11 @@ public class MessageStoreTest extends QpidTestCase
     {
         testMessagePersistence();
 
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
         assertEquals("Incorrect number of queues registered after recovery",
-                6,  queueRegistry.getQueues().size());
+                6,  getVirtualHost().getQueues().size());
 
         //clear the queue
-        queueRegistry.getQueue(durableQueueName).clearQueue();
+        _virtualHost.getQueue(durableQueueName).clearQueue();
 
         //check the messages are gone
         validateMessageOnQueue(durableQueueName, 0);
@@ -294,7 +294,7 @@ public class MessageStoreTest extends QpidTestCase
     public void testQueuePersistence() throws Exception
     {
         assertEquals("Should not be any existing queues",
-                0, getVirtualHost().getQueueRegistry().getQueues().size());
+                0, getVirtualHost().getQueues().size());
 
         //create durable and non durable queues/topics
         createAllQueues();
@@ -303,20 +303,18 @@ public class MessageStoreTest extends QpidTestCase
         //reload the virtual host, prompting recovery of the queues/topics
         reloadVirtualHost();
 
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
         assertEquals("Incorrect number of queues registered after recovery",
-                6,  queueRegistry.getQueues().size());
+                6,  getVirtualHost().getQueues().size());
 
         //Validate the non-Durable Queues were not recovered.
         assertNull("Non-Durable queue still registered:" + priorityQueueName,
-                queueRegistry.getQueue(priorityQueueName));
+                getVirtualHost().getQueue(priorityQueueName));
         assertNull("Non-Durable queue still registered:" + queueName,
-                queueRegistry.getQueue(queueName));
+                getVirtualHost().getQueue(queueName));
         assertNull("Non-Durable queue still registered:" + priorityTopicQueueName,
-                queueRegistry.getQueue(priorityTopicQueueName));
+                getVirtualHost().getQueue(priorityTopicQueueName));
         assertNull("Non-Durable queue still registered:" + topicQueueName,
-                queueRegistry.getQueue(topicQueueName));
+                getVirtualHost().getQueue(topicQueueName));
 
         //Validate normally expected properties of Queues/Topics
         validateDurableQueueProperties();
@@ -336,27 +334,24 @@ public class MessageStoreTest extends QpidTestCase
         //Register Durable Queue
         createQueue(durableQueueName, false, true, false, false);
 
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered before recovery",
-                1,  queueRegistry.getQueues().size());
+                1,  getVirtualHost().getQueues().size());
 
         reloadVirtualHost();
 
-        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered after first recovery",
-                1,  queueRegistry.getQueues().size());
+                1,  getVirtualHost().getQueues().size());
 
         //test that removing the queue means it is not recovered next time
-        final AMQQueue queue = queueRegistry.getQueue(durableQueueName);
+        final AMQQueue queue = getVirtualHost().getQueue(durableQueueName);
         DurableConfigurationStoreHelper.removeQueue(getVirtualHost().getDurableConfigurationStore(),queue);
 
         reloadVirtualHost();
 
-        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered after second recovery",
-                0,  queueRegistry.getQueues().size());
+                0,  getVirtualHost().getQueues().size());
         assertNull("Durable queue was not removed:" + durableQueueName,
-                queueRegistry.getQueue(durableQueueName));
+                getVirtualHost().getQueue(durableQueueName));
     }
 
     /**
@@ -450,34 +445,30 @@ public class MessageStoreTest extends QpidTestCase
      */
     public void testDurableBindingRemoval() throws Exception
     {
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
         //create durable queue and exchange, bind them
         Exchange exch = createExchange(DirectExchange.TYPE, directExchangeName, true);
         createQueue(durableQueueName, false, true, false, false);
-        bindQueueToExchange(exch, directRouting, queueRegistry.getQueue(durableQueueName), false, null);
+        bindQueueToExchange(exch, directRouting, getVirtualHost().getQueue(durableQueueName), false, null);
 
         assertEquals("Incorrect number of bindings registered before recovery",
-                1, queueRegistry.getQueue(durableQueueName).getBindings().size());
+                1, getVirtualHost().getQueue(durableQueueName).getBindings().size());
 
         //verify binding is actually normally recovered
         reloadVirtualHost();
 
-        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of bindings registered after first recovery",
-                1, queueRegistry.getQueue(durableQueueName).getBindings().size());
+                1, getVirtualHost().getQueue(durableQueueName).getBindings().size());
 
         exch = getVirtualHost().getExchange(directExchangeName);
         assertNotNull("Exchange was not recovered", exch);
 
         //remove the binding and verify result after recovery
-        unbindQueueFromExchange(exch, directRouting, queueRegistry.getQueue(durableQueueName), false, null);
+        unbindQueueFromExchange(exch, directRouting, getVirtualHost().getQueue(durableQueueName), false, null);
 
         reloadVirtualHost();
 
-        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of bindings registered after second recovery",
-                0, queueRegistry.getQueue(durableQueueName).getBindings().size());
+                0, getVirtualHost().getQueue(durableQueueName).getBindings().size());
     }
 
     /**
@@ -514,15 +505,14 @@ public class MessageStoreTest extends QpidTestCase
     /** Validates the Durable queues and their properties are as expected following recovery */
     private void validateBindingProperties()
     {
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
-        assertEquals("Incorrect number of (durable) queues following recovery", 6, queueRegistry.getQueues().size());
+        assertEquals("Incorrect number of (durable) queues following recovery", 6, getVirtualHost().getQueues().size());
 
-        validateBindingProperties(queueRegistry.getQueue(durablePriorityQueueName).getBindings(), false);
-        validateBindingProperties(queueRegistry.getQueue(durablePriorityTopicQueueName).getBindings(), true);
-        validateBindingProperties(queueRegistry.getQueue(durableQueueName).getBindings(), false);
-        validateBindingProperties(queueRegistry.getQueue(durableTopicQueueName).getBindings(), true);
-        validateBindingProperties(queueRegistry.getQueue(durableExclusiveQueueName).getBindings(), false);
+        validateBindingProperties(getVirtualHost().getQueue(durablePriorityQueueName).getBindings(), false);
+        validateBindingProperties(getVirtualHost().getQueue(durablePriorityTopicQueueName).getBindings(), true);
+        validateBindingProperties(getVirtualHost().getQueue(durableQueueName).getBindings(), false);
+        validateBindingProperties(getVirtualHost().getQueue(durableTopicQueueName).getBindings(), true);
+        validateBindingProperties(getVirtualHost().getQueue(durableExclusiveQueueName).getBindings(), false);
     }
 
     /**
@@ -550,18 +540,14 @@ public class MessageStoreTest extends QpidTestCase
 
     private void setQueueExclusivity(boolean exclusive) throws AMQException
     {
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
-        AMQQueue queue = queueRegistry.getQueue(durableExclusiveQueueName);
+        AMQQueue queue = getVirtualHost().getQueue(durableExclusiveQueueName);
 
         queue.setExclusive(exclusive);
     }
 
     private void validateQueueExclusivityProperty(boolean expected)
     {
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
-        AMQQueue queue = queueRegistry.getQueue(durableExclusiveQueueName);
+        AMQQueue queue = getVirtualHost().getQueue(durableExclusiveQueueName);
 
         assertEquals("Queue exclusivity was incorrect", queue.isExclusive(), expected);
     }
@@ -569,14 +555,12 @@ public class MessageStoreTest extends QpidTestCase
 
     private void validateDurableQueueProperties()
     {
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
-        validateQueueProperties(queueRegistry.getQueue(durablePriorityQueueName), true, true, false, false);
-        validateQueueProperties(queueRegistry.getQueue(durablePriorityTopicQueueName), true, true, false, false);
-        validateQueueProperties(queueRegistry.getQueue(durableQueueName), false, true, false, false);
-        validateQueueProperties(queueRegistry.getQueue(durableTopicQueueName), false, true, false, false);
-        validateQueueProperties(queueRegistry.getQueue(durableExclusiveQueueName), false, true, true, false);
-        validateQueueProperties(queueRegistry.getQueue(durableLastValueQueueName), false, true, true, true);
+        validateQueueProperties(getVirtualHost().getQueue(durablePriorityQueueName), true, true, false, false);
+        validateQueueProperties(getVirtualHost().getQueue(durablePriorityTopicQueueName), true, true, false, false);
+        validateQueueProperties(getVirtualHost().getQueue(durableQueueName), false, true, false, false);
+        validateQueueProperties(getVirtualHost().getQueue(durableTopicQueueName), false, true, false, false);
+        validateQueueProperties(getVirtualHost().getQueue(durableExclusiveQueueName), false, true, true, false);
+        validateQueueProperties(getVirtualHost().getQueue(durableLastValueQueueName), false, true, true, true);
     }
 
     private void validateQueueProperties(AMQQueue queue, boolean usePriority, boolean durable, boolean exclusive, boolean lastValueQueue)
@@ -724,10 +708,10 @@ public class MessageStoreTest extends QpidTestCase
         createQueue(topicQueueName, false, false, false, false);
     }
 
-    private void createQueue(AMQShortString queueName, boolean usePriority, boolean durable, boolean exclusive, boolean lastValueQueue)
+    private void createQueue(String queueName, boolean usePriority, boolean durable, boolean exclusive, boolean lastValueQueue)
     {
 
-        FieldTable queueArguments = null;
+        Map<String,Object> queueArguments = null;
 
         if(usePriority || lastValueQueue)
         {
@@ -736,14 +720,12 @@ public class MessageStoreTest extends QpidTestCase
 
         if (usePriority)
         {
-            queueArguments = new FieldTable();
-            queueArguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
+            queueArguments = Collections.singletonMap(Queue.PRIORITIES, (Object) DEFAULT_PRIORTY_LEVEL);
         }
 
         if (lastValueQueue)
         {
-            queueArguments = new FieldTable();
-            queueArguments.put(new AMQShortString(AMQQueueFactory.QPID_LAST_VALUE_QUEUE_KEY), LVQ_KEY);
+            queueArguments = Collections.singletonMap(Queue.LVQ_KEY, (Object) LVQ_KEY);
         }
 
         AMQQueue queue = null;
@@ -751,24 +733,16 @@ public class MessageStoreTest extends QpidTestCase
         //Ideally we would be able to use the QueueDeclareHandler here.
         try
         {
-            queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName.asString(), durable, queueOwner.asString(), false, exclusive,
-                    getVirtualHost(), FieldTable.convertToMap(queueArguments));
+            queue = getVirtualHost().createQueue(UUIDGenerator.generateRandomUUID(), queueName, durable, queueOwner.asString(), false, exclusive,
+                    false, queueArguments);
 
             validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
 
-            if (queue.isDurable() && !queue.isAutoDelete())
-            {
-                DurableConfigurationStoreHelper.createQueue(getVirtualHost().getDurableConfigurationStore(),
-                        queue,
-                        queueArguments);
-            }
         }
         catch (AMQException e)
         {
             fail(e.getMessage());
         }
-
-        getVirtualHost().getQueueRegistry().registerQueue(queue);
 
     }
 
@@ -805,28 +779,24 @@ public class MessageStoreTest extends QpidTestCase
     private void bindAllQueuesToExchange(Exchange exchange, AMQShortString routingKey)
     {
         FieldTable queueArguments = new FieldTable();
-        queueArguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
+        queueArguments.put(new AMQShortString(QueueArgumentsConverter.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
 
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durablePriorityQueueName), false, queueArguments);
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durableQueueName), false, null);
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(priorityQueueName), false, queueArguments);
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(queueName), false, null);
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durableExclusiveQueueName), false, null);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityQueueName), false, queueArguments);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableQueueName), false, null);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(priorityQueueName), false, queueArguments);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(queueName), false, null);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableExclusiveQueueName), false, null);
     }
 
     private void bindAllTopicQueuesToExchange(Exchange exchange, AMQShortString routingKey)
     {
         FieldTable queueArguments = new FieldTable();
-        queueArguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
+        queueArguments.put(new AMQShortString(QueueArgumentsConverter.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
 
-        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
-
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durablePriorityTopicQueueName), true, queueArguments);
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durableTopicQueueName), true, null);
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(priorityTopicQueueName), true, queueArguments);
-        bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(topicQueueName), true, null);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityTopicQueueName), true, queueArguments);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableTopicQueueName), true, null);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(priorityTopicQueueName), true, queueArguments);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(topicQueueName), true, null);
     }
 
 
@@ -894,9 +864,9 @@ public class MessageStoreTest extends QpidTestCase
         }
     }
 
-    private void validateMessageOnQueue(AMQShortString queueName, long messageCount)
+    private void validateMessageOnQueue(String queueName, long messageCount)
     {
-        AMQQueue queue = getVirtualHost().getQueueRegistry().getQueue(queueName);
+        AMQQueue queue = getVirtualHost().getQueue(queueName);
 
         assertNotNull("Queue(" + queueName + ") not correctly registered:", queue);
 

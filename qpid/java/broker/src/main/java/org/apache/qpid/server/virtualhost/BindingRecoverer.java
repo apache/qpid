@@ -91,7 +91,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             {
                 _unresolvedDependencies.add(new ExchangeDependency());
             }
-            _queue = _virtualHost.getQueueRegistry().getQueue(_queueId);
+            _queue = _virtualHost.getQueue(_queueId);
             if(_queue == null)
             {
                 _unresolvedDependencies.add(new QueueDependency());

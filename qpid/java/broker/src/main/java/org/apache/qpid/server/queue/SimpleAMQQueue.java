@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +51,7 @@ import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.AssignedSubscriptionMessageGroupManager;
@@ -68,12 +69,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
 
-    public static final String QPID_GROUP_HEADER_KEY = "qpid.group_header_key";
-    public static final String QPID_SHARED_MSG_GROUP = "qpid.shared_msg_group";
     public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
-    private static final String QPID_DEFAULT_MESSAGE_GROUP_ARG = "qpid.default-message-group";
     private static final String QPID_NO_GROUP = "qpid.no-group";
     private static final String DEFAULT_SHARED_MESSAGE_GROUP = System.getProperty(BrokerProperties.PROPERTY_DEFAULT_SHARED_MESSAGE_GROUP, QPID_NO_GROUP);
+
     // TODO - should make this configurable at the vhost / broker level
     private static final int DEFAULT_MAX_GROUPS = 255;
 
@@ -237,7 +236,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         _exclusive = exclusive;
         _virtualHost = virtualHost;
         _entries = entryListFactory.createQueueEntryList(this);
-        _arguments = arguments == null ? new HashMap<String, Object>() : new HashMap<String, Object>(arguments);
+        _arguments = Collections.synchronizedMap(arguments == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(arguments));
 
         _id = id;
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
@@ -255,19 +254,21 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                                                          durable, !durable,
                                                          _entries.getPriorities() > 0));
 
-        if(arguments != null && arguments.containsKey(QPID_GROUP_HEADER_KEY))
+        if(arguments != null && arguments.containsKey(Queue.MESSAGE_GROUP_KEY))
         {
-            if(arguments.containsKey(QPID_SHARED_MSG_GROUP) && String.valueOf(arguments.get(QPID_SHARED_MSG_GROUP)).equals(SHARED_MSG_GROUP_ARG_VALUE))
+            if(arguments.get(Queue.MESSAGE_GROUP_SHARED_GROUPS) != null
+               && (Boolean)(arguments.get(Queue.MESSAGE_GROUP_SHARED_GROUPS)))
             {
-                Object defaultGroup = arguments.get(QPID_DEFAULT_MESSAGE_GROUP_ARG);
+                Object defaultGroup = arguments.get(Queue.MESSAGE_GROUP_DEFAULT_GROUP);
                 _messageGroupManager =
-                        new DefinedGroupMessageGroupManager(String.valueOf(arguments.get(QPID_GROUP_HEADER_KEY)),
+                        new DefinedGroupMessageGroupManager(String.valueOf(arguments.get(Queue.MESSAGE_GROUP_KEY)),
                                 defaultGroup == null ? DEFAULT_SHARED_MESSAGE_GROUP : defaultGroup.toString(),
                                 this);
             }
             else
             {
-                _messageGroupManager = new AssignedSubscriptionMessageGroupManager(String.valueOf(arguments.get(QPID_GROUP_HEADER_KEY)), DEFAULT_MAX_GROUPS);
+                _messageGroupManager = new AssignedSubscriptionMessageGroupManager(String.valueOf(arguments.get(
+                        Queue.MESSAGE_GROUP_KEY)), DEFAULT_MAX_GROUPS);
             }
         }
         else
@@ -358,13 +359,17 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         _alternateExchange = exchange;
     }
 
-    /**
-     * Arguments used to create this queue.  The caller is assured
-     * that null will never be returned.
-     */
-    public Map<String, Object> getArguments()
+
+    @Override
+    public Collection<String> getAvailableAttributes()
     {
-        return _arguments;
+        return new ArrayList<String>(_arguments.keySet());
+    }
+
+    @Override
+    public Object getAttribute(String attrName)
+    {
+        return _arguments.get(attrName);
     }
 
     public boolean isAutoDelete()
@@ -511,7 +516,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                     _logger.info("Auto-deleteing queue:" + this);
                 }
 
-                delete();
+                getVirtualHost().removeQueue(this);
 
                 // we need to manually fire the event to the removed subscription (which was the last one left for this
                 // queue. This is because the delete method uses the subscription set which has just been cleared
@@ -1340,7 +1345,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 }
             }
 
-            _virtualHost.getQueueRegistry().unregisterQueue(_name);
 
             List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
             {
@@ -2282,18 +2286,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     {
         if (description == null)
         {
-            _arguments.remove(AMQQueueFactory.X_QPID_DESCRIPTION);
+            _arguments.remove(Queue.DESCRIPTION);
         }
         else
         {
-            _arguments.put(AMQQueueFactory.X_QPID_DESCRIPTION, description);
+            _arguments.put(Queue.DESCRIPTION, description);
         }
     }
 
     @Override
     public String getDescription()
     {
-        return (String) _arguments.get(AMQQueueFactory.X_QPID_DESCRIPTION);
+        return (String) _arguments.get(Queue.DESCRIPTION);
     }
 
 }

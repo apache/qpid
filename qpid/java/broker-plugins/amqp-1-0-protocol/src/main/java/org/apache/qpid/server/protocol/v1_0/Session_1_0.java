@@ -107,7 +107,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                         source.setAddress(tempQueue.getName());
                     }
                     String addr = source.getAddress();
-                    AMQQueue queue = _vhost.getQueueRegistry().getQueue(addr);
+                    AMQQueue queue = _vhost.getQueue(addr);
                     if(queue != null)
                     {
 
@@ -256,7 +256,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                         }
                         else
                         {
-                            AMQQueue queue = _vhost.getQueueRegistry().getQueue(addr);
+                            AMQQueue queue = _vhost.getQueue(addr);
                             if(queue != null)
                             {
 
@@ -329,14 +329,14 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                                             ? null
                                             : (LifetimePolicy) properties.get(LIFETIME_POLICY);
 
-            final AMQQueue tempQueue = queue = AMQQueueFactory.createAMQQueueImpl( UUIDGenerator.generateQueueUUID(queueName, _vhost.getName()),
-                                                                                   queueName,
-                                                                                   false, // durable
-                                                                                   null, // owner
-                                                                                   false, // autodelete
-                                                                                   false, // exclusive
-                                                                                   _vhost,
-                                                                                   properties);
+            final AMQQueue tempQueue = queue = _vhost.createQueue( UUIDGenerator.generateQueueUUID(queueName, _vhost.getName()),
+                                                                   queueName,
+                                                                   false, // durable
+                                                                   null, // owner
+                                                                   false, // autodelete
+                                                                   false, // exclusive
+                                                                   false,
+                                                                   properties);
 
 
 
@@ -347,11 +347,11 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                         {
                             public void doTask(Connection_1_0 session)
                             {
-                                if (_vhost.getQueueRegistry().getQueue(queueName) == tempQueue)
+                                if (_vhost.getQueue(queueName) == tempQueue)
                                 {
                                     try
                                     {
-                                        tempQueue.delete();
+                                        _vhost.removeQueue(tempQueue);
                                     }
                                     catch (AMQException e)
                                     {

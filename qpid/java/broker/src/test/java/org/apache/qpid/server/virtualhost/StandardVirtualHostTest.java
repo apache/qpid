@@ -244,7 +244,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         VirtualHost vhost = createVirtualHost(vhostName, config);
         assertNotNull("virtualhost should exist", vhost);
 
-        AMQQueue queue = vhost.getQueueRegistry().getQueue(queueName);
+        AMQQueue queue = vhost.getQueue(queueName);
         assertNotNull("queue should exist", queue);
 
         Exchange defaultExch = vhost.getDefaultExchange();

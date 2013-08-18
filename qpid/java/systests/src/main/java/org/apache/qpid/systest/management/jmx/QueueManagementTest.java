@@ -28,6 +28,7 @@ import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.NotificationCheckTest;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueueTest;
 import org.apache.qpid.test.client.destination.AddressBasedDestinationTest;
@@ -168,7 +169,7 @@ public class QueueManagementTest extends QpidBrokerTestCase
     public void testNewQueueWithDescription() throws Exception
     {
         String queueName = getTestQueueName();
-        Map<String, Object> arguments = Collections.singletonMap(AMQQueueFactory.X_QPID_DESCRIPTION, (Object)TEST_QUEUE_DESCRIPTION);
+        Map<String, Object> arguments = Collections.singletonMap(QueueArgumentsConverter.X_QPID_DESCRIPTION, (Object)TEST_QUEUE_DESCRIPTION);
         ((AMQSession<?, ?>)_session).createQueue(AMQShortString.valueOf(queueName), false, true, false, arguments);
 
         final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
@@ -181,7 +182,7 @@ public class QueueManagementTest extends QpidBrokerTestCase
     public void testQueueDescriptionSurvivesRestart() throws Exception
     {
         String queueName = getTestQueueName();
-        Map<String, Object> arguments = Collections.singletonMap(AMQQueueFactory.X_QPID_DESCRIPTION, (Object)TEST_QUEUE_DESCRIPTION);
+        Map<String, Object> arguments = Collections.singletonMap(QueueArgumentsConverter.X_QPID_DESCRIPTION, (Object)TEST_QUEUE_DESCRIPTION);
 
         ((AMQSession<?, ?>)_session).createQueue(AMQShortString.valueOf(queueName), false, true, false, arguments);
 
@@ -195,7 +196,7 @@ public class QueueManagementTest extends QpidBrokerTestCase
     }
 
     /**
-     * Tests queue creation with {@link AMQQueueFactory#X_QPID_MAXIMUM_DELIVERY_COUNT} argument.  Also tests
+     * Tests queue creation with {@link QueueArgumentsConverter#X_QPID_MAXIMUM_DELIVERY_COUNT} argument.  Also tests
      * that the attribute is exposed correctly through {@link ManagedQueue#getMaximumDeliveryCount()}.
      */
     public void testCreateQueueWithMaximumDeliveryCountSet() throws Exception
@@ -204,7 +205,7 @@ public class QueueManagementTest extends QpidBrokerTestCase
         final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
 
         final Integer deliveryCount = 1;
-        final Map<String, Object> arguments = Collections.singletonMap(AMQQueueFactory.X_QPID_MAXIMUM_DELIVERY_COUNT, (Object)deliveryCount);
+        final Map<String, Object> arguments = Collections.singletonMap(QueueArgumentsConverter.X_QPID_MAXIMUM_DELIVERY_COUNT, (Object)deliveryCount);
         managedBroker.createNewQueue(queueName, null, true, arguments);
 
         // Ensure the queue exists
@@ -225,10 +226,10 @@ public class QueueManagementTest extends QpidBrokerTestCase
         final Long maximumQueueDepth = 300l;
         final Long maximumMessageAge = 400l;
         final Map<String, Object> arguments = new HashMap<String, Object>();
-        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_MESSAGE_COUNT, maximumMessageCount);
-        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_MESSAGE_SIZE, maximumMessageSize);
-        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_QUEUE_DEPTH, maximumQueueDepth);
-        arguments.put(AMQQueueFactory.X_QPID_MAXIMUM_MESSAGE_AGE, maximumMessageAge);
+        arguments.put(QueueArgumentsConverter.X_QPID_MAXIMUM_MESSAGE_COUNT, maximumMessageCount);
+        arguments.put(QueueArgumentsConverter.X_QPID_MAXIMUM_MESSAGE_SIZE, maximumMessageSize);
+        arguments.put(QueueArgumentsConverter.X_QPID_MAXIMUM_QUEUE_DEPTH, maximumQueueDepth);
+        arguments.put(QueueArgumentsConverter.X_QPID_MAXIMUM_MESSAGE_AGE, maximumMessageAge);
 
         managedBroker.createNewQueue(queueName, null, true, arguments);
 
@@ -642,7 +643,7 @@ public class QueueManagementTest extends QpidBrokerTestCase
         final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
 
         final Object messageGroupKey = "test";
-        final Map<String, Object> arguments = Collections.singletonMap(SimpleAMQQueue.QPID_GROUP_HEADER_KEY, messageGroupKey);
+        final Map<String, Object> arguments = Collections.singletonMap(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY, messageGroupKey);
         managedBroker.createNewQueue(queueName, null, true, arguments);
 
         final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
@@ -659,8 +660,8 @@ public class QueueManagementTest extends QpidBrokerTestCase
 
         final Object messageGroupKey = "test";
         final Map<String, Object> arguments = new HashMap<String, Object>(2);
-        arguments.put(SimpleAMQQueue.QPID_GROUP_HEADER_KEY, messageGroupKey);
-        arguments.put(SimpleAMQQueue.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
+        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY, messageGroupKey);
+        arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
         managedBroker.createNewQueue(queueName, null, true, arguments);
 
         final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);

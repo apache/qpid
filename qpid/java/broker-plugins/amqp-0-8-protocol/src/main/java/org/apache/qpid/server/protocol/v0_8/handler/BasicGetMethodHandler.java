@@ -74,7 +74,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         else
         {
             channel.sync();
-            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.getQueue());
+            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueue(body.getQueue().toString());
             if (queue == null)
             {
                 _log.info("No queue for '" + body.getQueue() + "'");

@@ -119,7 +119,7 @@ public class VirtualHostConfigRecoveryHandler implements
         }
         for(Transaction.Record record : enqueues)
         {
-            final AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(record.getQueue().getId());
+            final AMQQueue queue = _virtualHost.getQueue(record.getQueue().getId());
             if(queue != null)
             {
                 final long messageId = record.getMessage().getMessageNumber();
@@ -179,7 +179,7 @@ public class VirtualHostConfigRecoveryHandler implements
         }
         for(Transaction.Record record : dequeues)
         {
-            final AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(record.getQueue().getId());
+            final AMQQueue queue = _virtualHost.getQueue(record.getQueue().getId());
             if(queue != null)
             {
                 final long messageId = record.getMessage().getMessageNumber();
@@ -268,7 +268,7 @@ public class VirtualHostConfigRecoveryHandler implements
 
     public void queueEntry(final UUID queueId, long messageId)
     {
-        AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(queueId);
+        AMQQueue queue = _virtualHost.getQueue(queueId);
         try
         {
             if(queue != null)

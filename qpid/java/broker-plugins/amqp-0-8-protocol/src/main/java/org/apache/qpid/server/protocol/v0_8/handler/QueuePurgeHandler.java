@@ -60,7 +60,6 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
     {
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
-        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
         AMQChannel channel = protocolConnection.getChannel(channelId);
         if (channel == null)
@@ -84,7 +83,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         }
         else
         {
-            queue = queueRegistry.getQueue(body.getQueue());
+            queue = virtualHost.getQueue(body.getQueue().toString());
         }
 
         if(queue == null)
