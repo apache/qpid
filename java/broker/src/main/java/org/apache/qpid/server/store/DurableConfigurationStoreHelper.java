@@ -20,11 +20,14 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import java.util.Set;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -41,6 +44,10 @@ public class DurableConfigurationStoreHelper
     private static final String BINDING = Binding.class.getSimpleName();
     private static final String EXCHANGE = Exchange.class.getSimpleName();
     private static final String QUEUE = Queue.class.getSimpleName();
+    private static final Set<String> QUEUE_ARGUMENTS_EXCLUDES = new HashSet<String>(Arrays.asList(Queue.NAME,
+                                                                                                  Queue.OWNER,
+                                                                                                  Queue.EXCLUSIVE,
+                                                                                                  Queue.ALTERNATE_EXCHANGE));
 
     public static void updateQueue(DurableConfigurationStore store, AMQQueue queue) throws AMQStoreException
     {
@@ -58,7 +65,10 @@ public class DurableConfigurationStoreHelper
 
         for(String attrName : availableAttrs)
         {
-            attributesMap.put(attrName, queue.getAttribute(attrName));
+            if(!QUEUE_ARGUMENTS_EXCLUDES.contains(attrName))
+            {
+                attributesMap.put(attrName, queue.getAttribute(attrName));
+            }
         }
 
         store.update(queue.getId(), QUEUE, attributesMap);
@@ -75,9 +85,13 @@ public class DurableConfigurationStoreHelper
         {
             attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
         }
+
         for(String attrName : queue.getAvailableAttributes())
         {
-            attributesMap.put(attrName, queue.getAttribute(attrName));
+            if(!QUEUE_ARGUMENTS_EXCLUDES.contains(attrName))
+            {
+                attributesMap.put(attrName, queue.getAttribute(attrName));
+            }
         }
         store.create(queue.getId(), QUEUE,attributesMap);
     }
