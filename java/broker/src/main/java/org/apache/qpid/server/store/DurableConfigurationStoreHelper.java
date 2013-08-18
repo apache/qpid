@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +33,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 
 public class DurableConfigurationStoreHelper
 {
@@ -46,28 +48,23 @@ public class DurableConfigurationStoreHelper
         attributesMap.put(Queue.NAME, queue.getName());
         attributesMap.put(Queue.OWNER, AMQShortString.toString(queue.getOwner()));
         attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
+
         if (queue.getAlternateExchange() != null)
         {
             attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
         }
-        else
+
+        Collection<String> availableAttrs = queue.getAvailableAttributes();
+
+        for(String attrName : availableAttrs)
         {
-            attributesMap.remove(Queue.ALTERNATE_EXCHANGE);
+            attributesMap.put(attrName, queue.getAttribute(attrName));
         }
-        if (attributesMap.containsKey(Queue.ARGUMENTS))
-        {
-            // We wouldn't need this if createQueueConfiguredObject took only AMQQueue
-            Map<String, Object> currentArgs = (Map<String, Object>) attributesMap.get(Queue.ARGUMENTS);
-            currentArgs.putAll(queue.getArguments());
-        }
-        else
-        {
-            attributesMap.put(Queue.ARGUMENTS, queue.getArguments());
-        }
+
         store.update(queue.getId(), QUEUE, attributesMap);
     }
 
-    public static void createQueue(DurableConfigurationStore store, AMQQueue queue, FieldTable arguments)
+    public static void createQueue(DurableConfigurationStore store, AMQQueue queue)
             throws AMQStoreException
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
@@ -78,11 +75,9 @@ public class DurableConfigurationStoreHelper
         {
             attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
         }
-        // TODO KW i think the arguments could come from the queue itself removing the need for the parameter arguments.
-        // It would also do away with the need for the if/then/else within updateQueueConfiguredObject
-        if (arguments != null)
+        for(String attrName : queue.getAvailableAttributes())
         {
-            attributesMap.put(Queue.ARGUMENTS, FieldTable.convertToMap(arguments));
+            attributesMap.put(attrName, queue.getAttribute(attrName));
         }
         store.create(queue.getId(), QUEUE,attributesMap);
     }

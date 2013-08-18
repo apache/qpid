@@ -181,9 +181,8 @@ public class BrokerTestHelper
 
     public static SimpleAMQQueue createQueue(String queueName, VirtualHost virtualHost) throws AMQException
     {
-        SimpleAMQQueue queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, null,
-                false, false, virtualHost, Collections.<String, Object>emptyMap());
-        virtualHost.getQueueRegistry().registerQueue(queue);
+        SimpleAMQQueue queue = (SimpleAMQQueue) virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, null,
+                false, false, false, Collections.<String, Object>emptyMap());
         return queue;
     }
 

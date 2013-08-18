@@ -73,7 +73,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                               " args:" + body.getArguments());
             }
 
-            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.getQueue().intern());
+            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueue(body.getQueue().intern().toString());
 
             if (queue == null)
             {

@@ -167,11 +167,6 @@ public abstract class AbstractExchange implements Exchange
         return _virtualHost;
     }
 
-    public QueueRegistry getQueueRegistry()
-    {
-        return getVirtualHost().getQueueRegistry();
-    }
-
     public final boolean isBound(AMQShortString routingKey, FieldTable ft, AMQQueue queue)
     {
         return isBound(routingKey == null ? "" : routingKey.asString(), FieldTable.convertToMap(ft), queue);

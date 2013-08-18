@@ -59,8 +59,9 @@ public class DefaultQueueRegistry implements QueueRegistry
         }
     }
 
-    public void unregisterQueue(AMQShortString name)
+    public void unregisterQueue(String nameString)
     {
+        AMQShortString name = new AMQShortString(nameString);
         AMQQueue q = _queueMap.remove(name);
         if(q != null)
         {
@@ -74,14 +75,9 @@ public class DefaultQueueRegistry implements QueueRegistry
         }
     }
 
-    public AMQQueue getQueue(AMQShortString name)
+    private AMQQueue getQueue(AMQShortString name)
     {
         return _queueMap.get(name);
-    }
-
-    public Collection<AMQShortString> getQueueNames()
-    {
-        return _queueMap.keySet();
     }
 
     public Collection<AMQQueue> getQueues()

@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.Collections;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.ArrayList;
+import org.apache.qpid.server.model.Queue;
 
 import static org.mockito.Mockito.when;
 
@@ -38,9 +38,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
     @Override
     public void setUp() throws Exception
     {
-        FieldTable arguments = new FieldTable();
-        arguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), 3);
-        setArguments(arguments);
+        setArguments(Collections.singletonMap(Queue.PRIORITIES,(Object)3));
         super.setUp();
     }
 

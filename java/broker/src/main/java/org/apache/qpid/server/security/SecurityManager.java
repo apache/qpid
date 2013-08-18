@@ -167,12 +167,12 @@ public class SecurityManager implements ConfigurationChangeListener
                 {
                     String pluginTypeName = getPluginTypeName(accessControl);
                     _hostPlugins.put(pluginTypeName, accessControl);
-                    
+
                     if(_logger.isDebugEnabled())
                     {
                         _logger.debug("Added access control to host plugins with name: " + vhostName);
                     }
-                    
+
                     break;
                 }
             }
@@ -366,7 +366,7 @@ public class SecurityManager implements ConfigurationChangeListener
     }
 
     public boolean authoriseCreateQueue(final Boolean autoDelete, final Boolean durable, final Boolean exclusive,
-            final Boolean nowait, final Boolean passive, final AMQShortString queueName, final String owner)
+            final Boolean nowait, final Boolean passive, final String queueName, final String owner)
     {
         return checkAllPlugins(new AccessCheck()
         {

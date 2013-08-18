@@ -20,91 +20,213 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class AMQQueueFactoryTest extends QpidTestCase
 {
     private QueueRegistry _queueRegistry;
     private VirtualHost _virtualHost;
-    private Broker _broker;
+    private AMQQueueFactory _queueFactory;
+    private List<AMQQueue> _queues;
+    private QueueConfiguration _queueConfiguration;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        BrokerTestHelper.setUp();
-        XMLConfiguration configXml = new XMLConfiguration();
-        configXml.addProperty("store.class", TestableMemoryMessageStore.class.getName());
+        _queues = new ArrayList<AMQQueue>();
+
+        _virtualHost = mock(VirtualHost.class);
+
+        VirtualHostConfiguration vhostConfig = mock(VirtualHostConfiguration.class);
+        when(_virtualHost.getConfiguration()).thenReturn(vhostConfig);
+        _queueConfiguration = mock(QueueConfiguration.class);
+        when(vhostConfig.getQueueConfiguration(anyString())).thenReturn(_queueConfiguration);
+        LogActor logActor = mock(LogActor.class);
+        CurrentActor.set(logActor);
+        RootMessageLogger rootLogger = mock(RootMessageLogger.class);
+        when(logActor.getRootMessageLogger()).thenReturn(rootLogger);
+        DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        when(_virtualHost.getDurableConfigurationStore()).thenReturn(store);
+
+        mockExchangeCreation();
+        mockQueueRegistry();
+        delegateVhostQueueCreation();
+
+        when(_virtualHost.getQueues()).thenReturn(_queues);
 
 
-        _broker = BrokerTestHelper.createBrokerMock();
-        if (getName().equals("testDeadLetterQueueDoesNotInheritDLQorMDCSettings"))
+        _queueFactory = new AMQQueueFactory(_virtualHost, _queueRegistry);
+
+
+
+    }
+
+    private void delegateVhostQueueCreation() throws AMQException
+    {
+        final ArgumentCaptor<UUID> id = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> queueName = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<Boolean> durable = ArgumentCaptor.forClass(Boolean.class);
+        final ArgumentCaptor<String> owner = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<Boolean> autoDelete = ArgumentCaptor.forClass(Boolean.class);
+        final ArgumentCaptor<Boolean> exclusive = ArgumentCaptor.forClass(Boolean.class);
+        final ArgumentCaptor<Boolean> deleteOnNoConsumer = ArgumentCaptor.forClass(Boolean.class);
+        final ArgumentCaptor<Map> arguments = ArgumentCaptor.forClass(Map.class);
+
+        when(_virtualHost.createQueue(id.capture(), queueName.capture(), durable.capture(), owner.capture(),
+                autoDelete.capture(), exclusive.capture(), deleteOnNoConsumer.capture(), arguments.capture())).then(
+                new Answer<AMQQueue>()
+                {
+                    @Override
+                    public AMQQueue answer(InvocationOnMock invocation) throws Throwable
+                    {
+                        return _queueFactory.createAMQQueueImpl(id.getValue(),
+                                queueName.getValue(),
+                                durable.getValue(),
+                                owner.getValue(),
+                                autoDelete.getValue(),
+                                exclusive.getValue(),
+                                deleteOnNoConsumer.getValue(),
+                                arguments.getValue());
+                    }
+                }
+        );
+    }
+
+    private void mockQueueRegistry()
+    {
+        _queueRegistry = mock(QueueRegistry.class);
+
+        final ArgumentCaptor<AMQQueue> capturedQueue = ArgumentCaptor.forClass(AMQQueue.class);
+        doAnswer(new Answer()
         {
-            when(_broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(5);
-            when(_broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(true);
-        }
 
-        _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getName(), configXml, _broker));
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                AMQQueue queue = capturedQueue.getValue();
+                when(_queueRegistry.getQueue(eq(queue.getId()))).thenReturn(queue);
+                when(_queueRegistry.getQueue(eq(queue.getName()))).thenReturn(queue);
+                when(_virtualHost.getQueue(eq(queue.getId()))).thenReturn(queue);
+                when(_virtualHost.getQueue(eq(queue.getName()))).thenReturn(queue);
+                _queues.add(queue);
 
-        _queueRegistry = _virtualHost.getQueueRegistry();
+                return null;
+            }
+        }).when(_queueRegistry).registerQueue(capturedQueue.capture());
+    }
 
+    private void mockExchangeCreation() throws AMQException
+    {
+        final ArgumentCaptor<UUID> idCapture = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> exchangeNameCapture = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<String> type = ArgumentCaptor.forClass(String.class);
+
+        when(_virtualHost.createExchange(idCapture.capture(), exchangeNameCapture.capture(), type.capture(),
+                anyBoolean(), anyBoolean(), anyString())).then(
+                new Answer<Exchange>()
+                {
+                    @Override
+                    public Exchange answer(InvocationOnMock invocation) throws Throwable
+                    {
+                        final String name = exchangeNameCapture.getValue();
+                        final UUID id = idCapture.getValue();
+
+                        final Exchange exchange = mock(Exchange.class);
+                        ExchangeType exType = mock(ExchangeType.class);
+
+                        when(exchange.getName()).thenReturn(name);
+                        when(exchange.getId()).thenReturn(id);
+                        when(exchange.getType()).thenReturn(exType);
+                        final String typeName = type.getValue();
+                        when(exType.getType()).thenReturn(typeName);
+                        when(exType.getName()).thenReturn(new AMQShortString(typeName));
+
+                        when(_virtualHost.getExchange(eq(name))).thenReturn(exchange);
+                        when(_virtualHost.getExchange(eq(id))).thenReturn(exchange);
+
+                        final ArgumentCaptor<AMQQueue> queue = ArgumentCaptor.forClass(AMQQueue.class);
+
+                        when(exchange.addBinding(anyString(),queue.capture(),anyMap())).then(new Answer<Boolean>() {
+
+                            @Override
+                            public Boolean answer(InvocationOnMock invocation) throws Throwable
+                            {
+                                when(exchange.isBound(eq(queue.getValue()))).thenReturn(true);
+                                return true;
+                            }
+                        });
+
+                        return exchange;
+                    }
+                }
+        );
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        try
-        {
-            _virtualHost.close();
-        }
-        finally
-        {
-            BrokerTestHelper.tearDown();
-            super.tearDown();
-        }
+        super.tearDown();
     }
 
     private void verifyRegisteredQueueCount(int count)
     {
-        assertEquals("Queue was not registered in virtualhost", count, _queueRegistry.getQueues().size());
+        assertEquals("Queue was not registered in virtualhost", count, _virtualHost.getQueues().size());
     }
 
 
     private void verifyQueueRegistered(String queueName)
     {
-        assertNotNull("Queue " + queueName + " was not created", _queueRegistry.getQueue(queueName));
+        assertNotNull("Queue " + queueName + " was not created", _virtualHost.getQueue(queueName));
     }
 
     public void testPriorityQueueRegistration() throws Exception
     {
-        FieldTable fieldTable = new FieldTable();
-        fieldTable.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), 5);
+        Map<String,Object> attributes = Collections.singletonMap(Queue.PRIORITIES, (Object) 5);
 
 
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testPriorityQueue", false, "owner", false,
-                                           false, _virtualHost, FieldTable.convertToMap(fieldTable));
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testPriorityQueue", false, "owner", false,
+                                           false,
+                false,
+                attributes);
 
         assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());
         verifyQueueRegistered("testPriorityQueue");
@@ -115,43 +237,42 @@ public class AMQQueueFactoryTest extends QpidTestCase
     public void testSimpleQueueRegistration() throws Exception
     {
         String queueName = getName();
-        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+        String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false,
-                                           false, _virtualHost, null);
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false,
+                                           false,
+                false,
+                null);
         assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
         verifyQueueRegistered(queueName);
 
         //verify that no alternate exchange or DLQ were produced
-        QueueRegistry qReg = _virtualHost.getQueueRegistry();
 
         assertNull("Queue should not have an alternate exchange as DLQ wasnt enabled", queue.getAlternateExchange());
-        assertNull("The DLQ should not exist", qReg.getQueue(dlQueueName));
+        assertNull("The DLQ should not exist", _virtualHost.getQueue(dlQueueName));
 
         verifyRegisteredQueueCount(1);
     }
 
     /**
-     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument true does
+     * Tests that setting the {@link QueueArgumentsConverter#X_QPID_DLQ_ENABLED} argument true does
      * cause the alternate exchange to be set and DLQ to be produced.
      * @throws AMQException
      */
     public void testDeadLetterQueueEnabled() throws AMQException
     {
-        FieldTable fieldTable = new FieldTable();
-        fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
+        Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
 
         String queueName = "testDeadLetterQueueEnabled";
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        QueueRegistry qReg = _virtualHost.getQueueRegistry();
-
-        assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
+        assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
-                                           _virtualHost, FieldTable.convertToMap(fieldTable));
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
+                false,
+                attributes);
 
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
@@ -161,7 +282,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
         assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue dlQueue = qReg.getQueue(dlQueueName);
+        AMQQueue dlQueue = _virtualHost.getQueue(dlQueueName);
         assertNotNull("The DLQ was not registered as expected", dlQueue);
         assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
         assertNull("DLQ should have no alternate exchange", dlQueue.getAlternateExchange());
@@ -178,17 +299,20 @@ public class AMQQueueFactoryTest extends QpidTestCase
      */
     public void testDeadLetterQueueDoesNotInheritDLQorMDCSettings() throws Exception
     {
+
         String queueName = "testDeadLetterQueueEnabled";
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        QueueRegistry qReg = _virtualHost.getQueueRegistry();
+        when(_queueConfiguration.getMaxDeliveryCount()).thenReturn(5);
+        when(_queueConfiguration.isDeadLetterQueueEnabled()).thenReturn(true);
 
-        assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
+        assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
-                                           _virtualHost, null);
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
+                false,
+                null);
 
         assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryCount());
         Exchange altExchange = queue.getAlternateExchange();
@@ -199,7 +323,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
         assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue dlQueue = qReg.getQueue(dlQueueName);
+        AMQQueue dlQueue = _virtualHost.getQueue(dlQueueName);
         assertNotNull("The DLQ was not registered as expected", dlQueue);
         assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
         assertNull("DLQ should have no alternate exchange", dlQueue.getAlternateExchange());
@@ -210,81 +334,77 @@ public class AMQQueueFactoryTest extends QpidTestCase
     }
 
     /**
-     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument false does not
+     * Tests that setting the {@link QueueArgumentsConverter#X_QPID_DLQ_ENABLED} argument false does not
      * result in the alternate exchange being set and DLQ being created.
      * @throws AMQException
      */
     public void testDeadLetterQueueDisabled() throws AMQException
     {
-        FieldTable fieldTable = new FieldTable();
-        fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, false);
+        Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) false);
 
         String queueName = "testDeadLetterQueueDisabled";
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        QueueRegistry qReg = _virtualHost.getQueueRegistry();
-
-        assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
+        assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
-                                           _virtualHost, FieldTable.convertToMap(fieldTable));
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
+                false,
+                attributes);
 
         assertNull("Queue should not have an alternate exchange as DLQ is disabled", queue.getAlternateExchange());
         assertNull("The alternate exchange should still not exist", _virtualHost.getExchange(dlExchangeName));
 
-        assertNull("The DLQ should still not exist", qReg.getQueue(dlQueueName));
+        assertNull("The DLQ should still not exist", _virtualHost.getQueue(dlQueueName));
 
         //only 1 queue should have been registered
         verifyRegisteredQueueCount(1);
     }
 
     /**
-     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument true but
+     * Tests that setting the {@link QueueArgumentsConverter#X_QPID_DLQ_ENABLED} argument true but
      * creating an auto-delete queue, does not result in the alternate exchange
      * being set and DLQ being created.
      * @throws AMQException
      */
     public void testDeadLetterQueueNotCreatedForAutodeleteQueues() throws AMQException
     {
-        FieldTable fieldTable = new FieldTable();
-        fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
+        Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
 
         String queueName = "testDeadLetterQueueNotCreatedForAutodeleteQueues";
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        QueueRegistry qReg = _virtualHost.getQueueRegistry();
-
-        assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
+        assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
         //create an autodelete queue
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", true, false,
-                                           _virtualHost, FieldTable.convertToMap(fieldTable));
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", true, false,
+                false,
+                attributes);
         assertTrue("Queue should be autodelete", queue.isAutoDelete());
 
         //ensure that the autodelete property overrides the request to enable DLQ
         assertNull("Queue should not have an alternate exchange as queue is autodelete", queue.getAlternateExchange());
         assertNull("The alternate exchange should not exist as queue is autodelete", _virtualHost.getExchange(dlExchangeName));
-        assertNull("The DLQ should not exist as queue is autodelete", qReg.getQueue(dlQueueName));
+        assertNull("The DLQ should not exist as queue is autodelete", _virtualHost.getQueue(dlQueueName));
 
         //only 1 queue should have been registered
         verifyRegisteredQueueCount(1);
     }
 
     /**
-     * Tests that setting the {@link AMQQueueFactory#X_QPID_MAXIMUM_DELIVERY_COUNT} argument has
+     * Tests that setting the {@link QueueArgumentsConverter#X_QPID_MAXIMUM_DELIVERY_COUNT} argument has
      * the desired effect.
      */
     public void testMaximumDeliveryCount() throws Exception
     {
-        final FieldTable fieldTable = new FieldTable();
-        fieldTable.setInteger(AMQQueueFactory.X_QPID_MAXIMUM_DELIVERY_COUNT, 5);
+        Map<String,Object> attributes = Collections.singletonMap(Queue.MAXIMUM_DELIVERY_ATTEMPTS, (Object) 5);
 
-        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testMaximumDeliveryCount", false, "owner", false, false,
-                                           _virtualHost, FieldTable.convertToMap(fieldTable));
+        final AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testMaximumDeliveryCount", false, "owner", false, false,
+                false,
+                attributes);
 
         assertNotNull("The queue was not registered as expected ", queue);
         assertEquals("Maximum delivery count not as expected", 5, queue.getMaximumDeliveryCount());
@@ -293,13 +413,14 @@ public class AMQQueueFactoryTest extends QpidTestCase
     }
 
     /**
-     * Tests that omitting the {@link AMQQueueFactory#X_QPID_MAXIMUM_DELIVERY_COUNT} argument means
+     * Tests that omitting the {@link QueueArgumentsConverter#X_QPID_MAXIMUM_DELIVERY_COUNT} argument means
      * that queue is created with a default maximumDeliveryCount of zero (unless set in config).
      */
     public void testMaximumDeliveryCountDefault() throws Exception
     {
-        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testMaximumDeliveryCount", false, "owner", false, false,
-                                           _virtualHost, null);
+        final AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testMaximumDeliveryCount", false, "owner", false, false,
+                false,
+                null);
 
         assertNotNull("The queue was not registered as expected ", queue);
         assertEquals("Maximum delivery count not as expected", 0, queue.getMaximumDeliveryCount());
@@ -314,7 +435,9 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         try
         {
-            AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), null, false, "owner", true, false, _virtualHost, null);
+            _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), null, false, "owner", true, false,
+                    false,
+                    null);
             fail("queue with null name can not be created!");
         }
         catch (Exception e)
@@ -336,10 +459,9 @@ public class AMQQueueFactoryTest extends QpidTestCase
             // change DLQ name to make its length bigger than exchange name
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLE");
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQUEUE");
-            FieldTable fieldTable = new FieldTable();
-            fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
-            AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
-                    false, false, _virtualHost, FieldTable.convertToMap(fieldTable));
+            Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
+            _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
+                    false, false, false, attributes);
             fail("queue with DLQ name having more than 255 characters can not be created!");
         }
         catch (Exception e)
@@ -362,10 +484,9 @@ public class AMQQueueFactoryTest extends QpidTestCase
             // change DLQ name to make its length bigger than exchange name
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLEXCHANGE");
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQ");
-            FieldTable fieldTable = new FieldTable();
-            fieldTable.setBoolean(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
-            AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
-                    false, false, _virtualHost, FieldTable.convertToMap(fieldTable));
+            Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
+            _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
+                    false, false, false, attributes);
             fail("queue with DLE name having more than 255 characters can not be created!");
         }
         catch (Exception e)
@@ -379,16 +500,17 @@ public class AMQQueueFactoryTest extends QpidTestCase
     public void testMessageGroupFromConfig() throws Exception
     {
 
-        PropertiesConfiguration queueConfig = new PropertiesConfiguration();
-        queueConfig.addProperty("queues.queue.test.argument", "qpid.group_header_key=mykey");
-        queueConfig.addProperty("queues.queue.test.argument", "qpid.shared_msg_group=1");
+        Map<String,String> arguments = new HashMap<String, String>();
+        arguments.put("qpid.group_header_key","mykey");
+        arguments.put("qpid.shared_msg_group","1");
 
+        QueueConfiguration qConf = mock(QueueConfiguration.class);
+        when(qConf.getArguments()).thenReturn(arguments);
+        when(qConf.getName()).thenReturn("test");
 
-        final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration("test", queueConfig, _broker);;
-        QueueConfiguration qConf = new QueueConfiguration("test", vhostConfig);
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(qConf, _virtualHost);
-        assertEquals("mykey", queue.getArguments().get(SimpleAMQQueue.QPID_GROUP_HEADER_KEY));
-        assertEquals("1", queue.getArguments().get(SimpleAMQQueue.QPID_SHARED_MSG_GROUP));
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(qConf);
+        assertEquals("mykey", queue.getAttribute(Queue.MESSAGE_GROUP_KEY));
+        assertEquals(Boolean.TRUE, queue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS));
     }
 
     private String generateStringWithLength(char ch, int length)

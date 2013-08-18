@@ -45,6 +45,8 @@ import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
@@ -82,7 +84,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     private DurableConfigurationStore _store;
     private ExchangeFactory _exchangeFactory;
     private ExchangeRegistry _exchangeRegistry;
-    private QueueRegistry _queueRegistry;
+    private QueueFactory _queueFactory;
 
     @Override
     public void setUp() throws Exception
@@ -105,6 +107,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         when(_exchangeRegistry.getExchange(eq(DIRECT_EXCHANGE_ID))).thenReturn(_directExchange);
         when(_exchangeRegistry.getExchange(eq(TOPIC_EXCHANGE_ID))).thenReturn(_topicExchange);
 
+        when(_vhost.getQueue(eq(QUEUE_ID))).thenReturn(queue);
 
         final ArgumentCaptor<Exchange> registeredExchange = ArgumentCaptor.forClass(Exchange.class);
         doAnswer(new Answer()
@@ -114,37 +117,68 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
             public Object answer(final InvocationOnMock invocation) throws Throwable
             {
                 Exchange exchange = registeredExchange.getValue();
-                when(_exchangeRegistry.getExchange(exchange.getId())).thenReturn(exchange);
-                when(_exchangeRegistry.getExchange(exchange.getName())).thenReturn(exchange);
+                when(_exchangeRegistry.getExchange(eq(exchange.getId()))).thenReturn(exchange);
+                when(_exchangeRegistry.getExchange(eq(exchange.getName()))).thenReturn(exchange);
                 return null;
             }
         }).when(_exchangeRegistry).registerExchange(registeredExchange.capture());
 
 
 
-        _queueRegistry = mock(QueueRegistry.class);
-        when(_vhost.getQueueRegistry()).thenReturn(_queueRegistry);
+        final ArgumentCaptor<UUID> idArg = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> queueArg = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<Map> argsArg = ArgumentCaptor.forClass(Map.class);
 
-        when(_queueRegistry.getQueue(eq(QUEUE_ID))).thenReturn(queue);
+        _queueFactory = mock(QueueFactory.class);
 
-        final ArgumentCaptor<AMQQueue> registeredQueue = ArgumentCaptor.forClass(AMQQueue.class);
-        doAnswer(new Answer()
-        {
+        when(_queueFactory.createAMQQueueImpl(idArg.capture(), queueArg.capture(),
+                anyBoolean(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(), argsArg.capture())).then(
+                new Answer()
+                {
 
-            @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable
-            {
-                AMQQueue queue = registeredQueue.getValue();
-                when(_queueRegistry.getQueue(queue.getId())).thenReturn(queue);
-                when(_queueRegistry.getQueue(queue.getName())).thenReturn(queue);
-                return null;
-            }
-        }).when(_queueRegistry).registerQueue(registeredQueue.capture());
+                    @Override
+                    public Object answer(final InvocationOnMock invocation) throws Throwable
+                    {
+                        final AMQQueue queue = mock(AMQQueue.class);
+
+                        final String queueName = queueArg.getValue();
+                        final UUID queueId = idArg.getValue();
+
+                        when(queue.getName()).thenReturn(queueName);
+                        when(queue.getId()).thenReturn(queueId);
+                        when(_vhost.getQueue(eq(queueName))).thenReturn(queue);
+                        when(_vhost.getQueue(eq(queueId))).thenReturn(queue);
+
+                        final ArgumentCaptor<Exchange> altExchangeArg = ArgumentCaptor.forClass(Exchange.class);
+                        doAnswer(
+                                new Answer()
+                                {
+                                    @Override
+                                    public Object answer(InvocationOnMock invocation) throws Throwable
+                                    {
+                                        final Exchange value = altExchangeArg.getValue();
+                                        when(queue.getAlternateExchange()).thenReturn(value);
+                                        return null;
+                                    }
+                                }
+                        ).when(queue).setAlternateExchange(altExchangeArg.capture());
+
+                        Map args = argsArg.getValue();
+                        if(args.containsKey(Queue.ALTERNATE_EXCHANGE))
+                        {
+                            final UUID exchangeId = UUID.fromString(args.get(Queue.ALTERNATE_EXCHANGE).toString());
+                            final Exchange exchange = _exchangeRegistry.getExchange(exchangeId);
+                            queue.setAlternateExchange(exchange);
+                        }
+                        return queue;
+                    }
+                });
 
         _exchangeFactory = mock(ExchangeFactory.class);
 
+
         DurableConfiguredObjectRecoverer[] recoverers = {
-                new QueueRecoverer(_vhost, _exchangeRegistry),
+                new QueueRecoverer(_vhost, _exchangeRegistry, _queueFactory),
                 new ExchangeRecoverer(_exchangeRegistry, _exchangeFactory),
                 new BindingRecoverer(_vhost, _exchangeRegistry)
         };
@@ -356,23 +390,10 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         final UUID queueId = new UUID(1, 0);
         final UUID exchangeId = new UUID(2, 0);
 
-        /* These lines necessary to get queue creation to work because AMQQueueFactory is called directly rather than
-           queue creation being on vhost - yuck! */
-        SecurityManager securityManager = mock(SecurityManager.class);
-        when(_vhost.getSecurityManager()).thenReturn(securityManager);
-        when(securityManager.authoriseCreateQueue(anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),anyBoolean(),
-                                                  any(AMQShortString.class),anyString())).thenReturn(true);
-        VirtualHostConfiguration configuration = mock(VirtualHostConfiguration.class);
-        when(_vhost.getConfiguration()).thenReturn(configuration);
-        QueueConfiguration queueConfiguration = mock(QueueConfiguration.class);
-        when(configuration.getQueueConfiguration(anyString())).thenReturn(queueConfiguration);
-        LogActor logActor = mock(LogActor.class);
-        CurrentActor.set(logActor);
-        RootMessageLogger rootLogger = mock(RootMessageLogger.class);
-        when(logActor.getRootMessageLogger()).thenReturn(rootLogger);
-        /* end of queue creation mock hackery */
-
         final Exchange customExchange = mock(Exchange.class);
+
+        when(customExchange.getId()).thenReturn(exchangeId);
+        when(customExchange.getName()).thenReturn(CUSTOM_EXCHANGE_NAME);
 
         when(_exchangeFactory.createExchange(eq(exchangeId),
                                              eq(CUSTOM_EXCHANGE_NAME),
@@ -390,7 +411,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _durableConfigurationRecoverer.completeConfigurationRecovery();
 
-        assertEquals(_queueRegistry.getQueue(queueId).getAlternateExchange(), customExchange);
+        assertEquals(customExchange, _vhost.getQueue(queueId).getAlternateExchange());
     }
 
     private void verifyCorrectUpdates(final ConfiguredObjectRecord[] expected) throws AMQStoreException

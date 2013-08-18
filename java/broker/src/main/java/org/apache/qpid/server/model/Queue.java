@@ -89,6 +89,7 @@ public interface Queue extends ConfiguredObject
     public static final String EXCLUSIVE = "exclusive";
     public static final String MESSAGE_GROUP_KEY = "messageGroupKey";
     public static final String MESSAGE_GROUP_SHARED_GROUPS = "messageGroupSharedGroups";
+    public static final String MESSAGE_GROUP_DEFAULT_GROUP = "messageGroupDefaultGroup";
     public static final String LVQ_KEY = "lvqKey";
     public static final String MAXIMUM_DELIVERY_ATTEMPTS = "maximumDeliveryAttempts";
     public static final String NO_LOCAL = "noLocal";
@@ -100,6 +101,10 @@ public interface Queue extends ConfiguredObject
     public static final String TYPE = "type";
     public static final String PRIORITIES = "priorities";
 
+    public static final String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
+
+    public static final String FEDERATION_EXCLUDES = "federationExcludes";
+    public static final String FEDERATION_ID = "federationId";
 
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
@@ -134,6 +139,7 @@ public interface Queue extends ConfiguredObject
                                   PRIORITIES
                     ));
 
+
     //children
     Collection<Binding> getBindings();
     Collection<Consumer> getConsumers();
@@ -144,6 +150,6 @@ public interface Queue extends ConfiguredObject
     void visit(QueueEntryVisitor visitor);
 
     void delete();
-    
+
     void setNotificationListener(QueueNotificationListener listener);
 }

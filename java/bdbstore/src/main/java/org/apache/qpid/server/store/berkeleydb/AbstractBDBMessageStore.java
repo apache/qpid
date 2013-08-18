@@ -1403,6 +1403,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
+            LOGGER.debug("Storing configured object: " + configuredObject);
             DatabaseEntry key = new DatabaseEntry();
             UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
             keyBinding.objectToEntry(configuredObject.getId(), key);
@@ -1430,6 +1431,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     private OperationStatus removeConfiguredObject(Transaction tx, UUID id) throws AMQStoreException
     {
+
+        LOGGER.debug("Removing configured object: " + id);
         DatabaseEntry key = new DatabaseEntry();
         UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
         uuidBinding.objectToEntry(id, key);

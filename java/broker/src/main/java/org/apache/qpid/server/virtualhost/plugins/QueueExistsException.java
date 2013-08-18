@@ -18,34 +18,23 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.virtualhost.plugins;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.queue.AMQQueue;
 
-import java.util.Collection;
-import java.util.UUID;
-
-public interface QueueRegistry
+public class QueueExistsException extends AMQException
 {
-    VirtualHost getVirtualHost();
+    private final AMQQueue _existing;
 
-    void registerQueue(AMQQueue queue);
-
-    void unregisterQueue(String name);
-
-    Collection<AMQQueue> getQueues();
-
-    AMQQueue getQueue(String queue);
-
-    void addRegistryChangeListener(RegistryChangeListener listener);
-
-    void stopAllAndUnregisterMBeans();
-
-    AMQQueue getQueue(UUID queueId);
-
-    interface RegistryChangeListener
+    public QueueExistsException(String name, AMQQueue existing)
     {
-        void queueRegistered(AMQQueue queue);
-        void queueUnregistered(AMQQueue queue);
+        super(name);
+        _existing = existing;
+    }
+
+    public AMQQueue getExistingQueue()
+    {
+        return _existing;
     }
 }

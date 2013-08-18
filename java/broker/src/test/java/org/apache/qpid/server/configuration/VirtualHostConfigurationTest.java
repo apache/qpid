@@ -113,17 +113,17 @@ public class VirtualHostConfigurationTest extends QpidTestCase
         VirtualHost vhost = createVirtualHost(getName());
 
         // Check that atest was a priority queue with 5 priorities
-        AMQQueue atest = vhost.getQueueRegistry().getQueue(new AMQShortString("atest"));
+        AMQQueue atest = vhost.getQueue("atest");
         assertTrue(atest instanceof AMQPriorityQueue);
         assertEquals(5, ((AMQPriorityQueue) atest).getPriorities());
 
         // Check that ptest was a priority queue with 10 priorities
-        AMQQueue ptest = vhost.getQueueRegistry().getQueue(new AMQShortString("ptest"));
+        AMQQueue ptest = vhost.getQueue("ptest");
         assertTrue(ptest instanceof AMQPriorityQueue);
         assertEquals(10, ((AMQPriorityQueue) ptest).getPriorities());
 
         // Check that ntest wasn't a priority queue
-        AMQQueue ntest = vhost.getQueueRegistry().getQueue(new AMQShortString("ntest"));
+        AMQQueue ntest = vhost.getQueue("ntest");
         assertFalse(ntest instanceof AMQPriorityQueue);
     }
 
@@ -146,13 +146,13 @@ public class VirtualHostConfigurationTest extends QpidTestCase
         VirtualHost vhost = createVirtualHost(getName());
 
         // Check specifically configured values
-        AMQQueue aTest = vhost.getQueueRegistry().getQueue(new AMQShortString("atest"));
+        AMQQueue aTest = vhost.getQueue("atest");
         assertEquals(4, aTest.getMaximumQueueDepth());
         assertEquals(5, aTest.getMaximumMessageSize());
         assertEquals(6, aTest.getMaximumMessageAge());
 
         // Check default values
-        AMQQueue bTest = vhost.getQueueRegistry().getQueue(new AMQShortString("btest"));
+        AMQQueue bTest = vhost.getQueue("btest");
         assertEquals(1, bTest.getMaximumQueueDepth());
         assertEquals(2, bTest.getMaximumMessageSize());
         assertEquals(3, bTest.getMaximumMessageAge());
@@ -214,10 +214,10 @@ public class VirtualHostConfigurationTest extends QpidTestCase
         assertFalse("c3p0 queue DLQ was configured as disabled", extra.getConfiguration().getQueueConfiguration("c3p0").isDeadLetterQueueEnabled());
 
         // Get queues
-        AMQQueue biggles = test.getQueueRegistry().getQueue(new AMQShortString("biggles"));
-        AMQQueue beetle = test.getQueueRegistry().getQueue(new AMQShortString("beetle"));
-        AMQQueue r2d2 = extra.getQueueRegistry().getQueue(new AMQShortString("r2d2"));
-        AMQQueue c3p0 = extra.getQueueRegistry().getQueue(new AMQShortString("c3p0"));
+        AMQQueue biggles = test.getQueue("biggles");
+        AMQQueue beetle = test.getQueue("beetle");
+        AMQQueue r2d2 = extra.getQueue("r2d2");
+        AMQQueue c3p0 = extra.getQueue("c3p0");
 
         // Disabled specifically for this queue, overriding virtualhost setting
         assertNull("Biggles queue should not have alt exchange as DLQ should be configured as disabled: " + biggles.getAlternateExchange(), biggles.getAlternateExchange());

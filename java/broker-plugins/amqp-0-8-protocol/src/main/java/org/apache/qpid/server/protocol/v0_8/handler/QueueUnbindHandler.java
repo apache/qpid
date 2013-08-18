@@ -59,8 +59,6 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
-        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-
 
         final AMQQueue queue;
         final AMQShortString routingKey;
@@ -87,7 +85,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         }
         else
         {
-            queue = queueRegistry.getQueue(body.getQueue());
+            queue = virtualHost.getQueue(body.getQueue().toString());
             routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern();
         }
 

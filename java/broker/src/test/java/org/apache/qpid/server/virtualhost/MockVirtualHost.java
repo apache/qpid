@@ -21,6 +21,7 @@
 package org.apache.qpid.server.virtualhost;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -28,6 +29,7 @@ import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.LinkRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -119,6 +121,43 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
+    public AMQQueue getQueue(String name)
+    {
+        return null;
+    }
+
+    @Override
+    public AMQQueue getQueue(UUID id)
+    {
+        return null;
+    }
+
+    @Override
+    public Collection<AMQQueue> getQueues()
+    {
+        return null;
+    }
+
+    @Override
+    public int removeQueue(AMQQueue queue) throws AMQException
+    {
+        return 0;
+    }
+
+    @Override
+    public AMQQueue createQueue(UUID id,
+                                String queueName,
+                                boolean durable,
+                                String owner,
+                                boolean autoDelete,
+                                boolean exclusive,
+                                boolean deleteOnNoConsumer,
+                                Map<String, Object> arguments) throws AMQException
+    {
+        return null;
+    }
+
+    @Override
     public Exchange createExchange(UUID id,
                                    String exchange,
                                    String type,
@@ -136,6 +175,12 @@ public class MockVirtualHost implements VirtualHost
 
     @Override
     public Exchange getExchange(String name)
+    {
+        return null;
+    }
+
+    @Override
+    public Exchange getExchange(UUID id)
     {
         return null;
     }

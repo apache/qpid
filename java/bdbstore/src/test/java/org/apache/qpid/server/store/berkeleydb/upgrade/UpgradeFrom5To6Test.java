@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.CompoundKey;
@@ -76,6 +77,7 @@ import com.sleepycat.je.Transaction;
 public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
 {
     private static final Logger _logger = Logger.getLogger(UpgradeFrom5To6Test.class);
+    private static final String ARGUMENTS = "arguments";
 
     @Override
     protected String getStoreDirectoryName()
@@ -287,12 +289,12 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         expected.add(createExpectedQueueMap("clientid:myDurSubName", Boolean.TRUE, "clientid", null));
 
         final Map<String, Object> queueWithOwnerArguments = new HashMap<String, Object>();
-        queueWithOwnerArguments.put("x-qpid-priorities", 10);
-        queueWithOwnerArguments.put(AMQQueueFactory.X_QPID_DESCRIPTION, "misused-owner-as-description");
+        queueWithOwnerArguments.put(QueueArgumentsConverter.X_QPID_PRIORITIES, 10);
+        queueWithOwnerArguments.put(QueueArgumentsConverter.X_QPID_DESCRIPTION, "misused-owner-as-description");
         expected.add(createExpectedQueueMap("nonexclusive-with-erroneous-owner", Boolean.FALSE, null,queueWithOwnerArguments));
 
         final Map<String, Object> priorityQueueArguments = new HashMap<String, Object>();
-        priorityQueueArguments.put("x-qpid-priorities", 10);
+        priorityQueueArguments.put(QueueArgumentsConverter.X_QPID_PRIORITIES, 10);
         expected.add(createExpectedQueueMap(PRIORITY_QUEUE_NAME, Boolean.FALSE, null, priorityQueueArguments));
 
         final Map<String, Object> queueWithDLQArguments = new HashMap<String, Object>();
@@ -388,7 +390,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         expectedQueueEntry.put(Queue.OWNER, owner);
         if (argumentMap != null)
         {
-            expectedQueueEntry.put(Queue.ARGUMENTS, argumentMap);
+            expectedQueueEntry.put(ARGUMENTS, argumentMap);
         }
         return expectedQueueEntry;
     }

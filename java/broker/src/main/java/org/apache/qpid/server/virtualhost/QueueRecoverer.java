@@ -20,18 +20,19 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueFactory;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
@@ -41,11 +42,15 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
     private static final Logger _logger = Logger.getLogger(QueueRecoverer.class);
     private final VirtualHost _virtualHost;
     private final ExchangeRegistry _exchangeRegistry;
+    private final QueueFactory _queueFactory;
 
-    public QueueRecoverer(final VirtualHost virtualHost, final ExchangeRegistry exchangeRegistry)
+    public QueueRecoverer(final VirtualHost virtualHost,
+                          final ExchangeRegistry exchangeRegistry,
+                          final QueueFactory queueFactory)
     {
         _virtualHost = virtualHost;
         _exchangeRegistry = exchangeRegistry;
+        _queueFactory = queueFactory;
     }
 
     @Override
@@ -101,26 +106,24 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
             String queueName = (String) _attributes.get(Queue.NAME);
             String owner = (String) _attributes.get(Queue.OWNER);
             boolean exclusive = (Boolean) _attributes.get(Queue.EXCLUSIVE);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> queueArgumentsMap = (Map<String, Object>) _attributes.get(Queue.ARGUMENTS);
+
+            Map<String, Object> queueArgumentsMap = new LinkedHashMap<String, Object>(_attributes);
+            queueArgumentsMap.remove(Queue.NAME);
+            queueArgumentsMap.remove(Queue.OWNER);
+            queueArgumentsMap.remove(Queue.EXCLUSIVE);
+
             try
             {
-                _queue = _virtualHost.getQueueRegistry().getQueue(_id);
+                _queue = _virtualHost.getQueue(_id);
                 if(_queue == null)
                 {
-                    _queue = _virtualHost.getQueueRegistry().getQueue(queueName);
+                    _queue = _virtualHost.getQueue(queueName);
                 }
 
                 if (_queue == null)
                 {
-                    _queue = AMQQueueFactory.createAMQQueueImpl(_id, queueName, true, owner, false, exclusive, _virtualHost,
-                                                                queueArgumentsMap);
-                    _virtualHost.getQueueRegistry().registerQueue(_queue);
-
-                    if (_alternateExchange != null)
-                    {
-                        _queue.setAlternateExchange(_alternateExchange);
-                    }
+                    _queue = _queueFactory.createAMQQueueImpl(_id, queueName, true, owner, false, exclusive,
+                                                              false, queueArgumentsMap);
                 }
             }
             catch (AMQException e)
