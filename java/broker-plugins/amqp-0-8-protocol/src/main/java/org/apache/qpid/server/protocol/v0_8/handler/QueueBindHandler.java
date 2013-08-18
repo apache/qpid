@@ -62,7 +62,6 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
     {
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
-        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         AMQChannel channel = protocolConnection.getChannel(channelId);
 
         if (channel == null)
@@ -73,7 +72,9 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         final AMQQueue queue;
         final AMQShortString routingKey;
 
-        if (body.getQueue() == null)
+        final AMQShortString queueName = body.getQueue();
+
+        if (queueName == null)
         {
 
             queue = channel.getDefaultQueue();
@@ -94,13 +95,13 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         else
         {
-            queue = queueRegistry.getQueue(body.getQueue());
+            queue = virtualHost.getQueue(queueName.toString());
             routingKey = body.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : body.getRoutingKey().intern();
         }
 
         if (queue == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.");
         }
         final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
         final Exchange exch = virtualHost.getExchange(exchangeName);

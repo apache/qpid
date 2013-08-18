@@ -200,8 +200,8 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                                  "{" +
                                      "exclusive: true," +
                                      "arguments: {" +
-                                        "'qpid.max_size': 1000," +
-                                        "'qpid.max_count': 100" +
+                                        "'qpid.alert_size': 1000," +
+                                        "'qpid.alert_count': 100" +
                                      "}" +
                                   "}, " +
                                   "x-bindings: [{exchange : 'amq.direct', key : test}, " +
@@ -401,7 +401,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                                "x-declare: " +
                                "{ " +
                                      "auto-delete: true," +
-                                     "arguments: {'qpid.max_count': 100}" +
+                                     "arguments: {'qpid.alert_count': 100}" +
                                "}, " +
                                "x-bindings: [{exchange : 'amq.direct', key : test}, " +
                                             "{exchange : 'amq.topic', key : 'a.#'}," +
@@ -485,7 +485,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     {
         Hashtable<String,String> map = new Hashtable<String,String>();
         map.put("destination.myQueue1", "ADDR:my-queue/hello; {create: always, node: " +
-                "{x-declare: {auto-delete: true, arguments : {'qpid.max_size': 1000}}}}");
+                "{x-declare: {auto-delete: true, arguments : {'qpid.alert_size': 1000}}}}");
 
         map.put("destination.myQueue2", "ADDR:my-queue2; { create: receiver }");
 
@@ -603,7 +603,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         String addr = "ADDR:amq.direct/x512; {" +
         "link : {name : 'MY.RESP.QUEUE', " +
         "x-declare : { auto-delete: true, exclusive: true, " +
-                     "arguments : {'qpid.max_size': 1000, 'qpid.policy_type': ring} } } }";
+                     "arguments : {'qpid.alert_size': 1000, 'qpid.policy_type': ring} } } }";
         queue = ssn.createQueue(addr);
 
         cons = ssn.createConsumer(queue);
@@ -1403,7 +1403,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         String xDeclareArgs = "x-declare: { exclusive: false, auto-delete: false," +
                                            "alternate-exchange: 'amq.fanout'," +
-                                           "arguments: {'qpid.max_size': 1000,'qpid.max_count': 100}" +
+                                           "arguments: {'qpid.alert_size': 1000,'qpid.alert_count': 100}" +
                                           "}";
 
         String addr = "ADDR:amq.topic/test; {link: {name:my-queue, durable:true," + xDeclareArgs + "}}";

@@ -47,6 +47,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class DefaultExchange implements Exchange
 {
 
+    private final QueueRegistry _queueRegistry;
     private UUID _id;
     private VirtualHost _virtualHost;
     private static final Logger _logger = Logger.getLogger(DefaultExchange.class);
@@ -54,6 +55,11 @@ public class DefaultExchange implements Exchange
 
     private LogSubject _logSubject;
     private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
+
+    public DefaultExchange(QueueRegistry queueRegistry)
+    {
+        _queueRegistry = queueRegistry;
+    }
 
 
     @Override
@@ -82,7 +88,7 @@ public class DefaultExchange implements Exchange
     @Override
     public long getBindingCount()
     {
-        return _virtualHost.getQueueRegistry().getQueues().size();
+        return _virtualHost.getQueues().size();
     }
 
     @Override
@@ -146,7 +152,7 @@ public class DefaultExchange implements Exchange
     @Override
     public Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
     {
-        if(_virtualHost.getQueueRegistry().getQueue(bindingKey) == queue && (arguments == null || arguments.isEmpty()))
+        if(_virtualHost.getQueue(bindingKey) == queue && (arguments == null || arguments.isEmpty()))
         {
             return convertToBinding(queue);
         }
@@ -207,7 +213,7 @@ public class DefaultExchange implements Exchange
     @Override
     public List<AMQQueue> route(InboundMessage message)
     {
-        AMQQueue q = _virtualHost.getQueueRegistry().getQueue(message.getRoutingKey());
+        AMQQueue q = _virtualHost.getQueue(message.getRoutingKey());
         if(q == null)
         {
             List<AMQQueue> noQueues = Collections.emptyList();
@@ -235,13 +241,13 @@ public class DefaultExchange implements Exchange
     @Override
     public boolean isBound(AMQShortString routingKey)
     {
-        return _virtualHost.getQueueRegistry().getQueue(routingKey) != null;
+        return _virtualHost.getQueue(routingKey == null ? null : routingKey.toString()) != null;
     }
 
     @Override
     public boolean isBound(AMQQueue queue)
     {
-        return _virtualHost.getQueueRegistry().getQueue(queue.getName()) == queue;
+        return _virtualHost.getQueue(queue.getName()) == queue;
     }
 
     @Override
@@ -283,7 +289,7 @@ public class DefaultExchange implements Exchange
     @Override
     public boolean isBound(String bindingKey)
     {
-        return _virtualHost.getQueueRegistry().getQueue(bindingKey) != null;
+        return _virtualHost.getQueue(bindingKey) != null;
     }
 
     @Override
@@ -320,7 +326,7 @@ public class DefaultExchange implements Exchange
     public Collection<Binding> getBindings()
     {
         List<Binding> bindings = new ArrayList<Binding>();
-        for(AMQQueue q : _virtualHost.getQueueRegistry().getQueues())
+        for(AMQQueue q : _virtualHost.getQueues())
         {
             bindings.add(convertToBinding(q));
         }
@@ -330,7 +336,7 @@ public class DefaultExchange implements Exchange
     @Override
     public void addBindingListener(BindingListener listener)
     {
-        _virtualHost.getQueueRegistry().addRegistryChangeListener(convertListener(listener));//To change body of implemented methods use File | Settings | File Templates.
+        _queueRegistry.addRegistryChangeListener(convertListener(listener));
     }
 
     private QueueRegistry.RegistryChangeListener convertListener(final BindingListener listener)

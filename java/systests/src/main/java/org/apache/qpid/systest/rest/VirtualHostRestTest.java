@@ -37,6 +37,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -291,7 +292,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Asserts.assertQueue(queueName , "lvq", lvqQueue);
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, lvqQueue.get(Queue.DURABLE));
-        assertEquals("Unexpected lvq key attribute", AMQQueueFactory.QPID_LVQ_KEY, lvqQueue.get(Queue.LVQ_KEY));
+        assertEquals("Unexpected lvq key attribute", AMQQueueFactory.QPID_DEFAULT_LVQ_KEY, lvqQueue.get(Queue.LVQ_KEY));
     }
 
     public void testPutCreateSortedQueueWithoutKey() throws Exception
@@ -460,7 +461,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String queueName = getTestQueueName();
 
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
 
         //verify the starting state
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");

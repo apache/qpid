@@ -110,10 +110,12 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         if(destination instanceof QueueDestination)
         {
             queue = ((QueueDestination) _destination).getQueue();
-            if(queue.getArguments() != null && queue.getArguments().containsKey("topic"))
+
+            if(queue.getAvailableAttributes().contains("topic"))
             {
                 source.setDistributionMode(StdDistMode.COPY);
             }
+
             qd = (QueueDestination) destination;
 
             Map<Symbol,Filter> filters = source.getFilter();
@@ -194,19 +196,19 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     name = UUID.randomUUID().toString();
                 }
 
-                queue = _vhost.getQueueRegistry().getQueue(name);
+                queue = _vhost.getQueue(name);
                 Exchange exchange = exchangeDestination.getExchange();
 
                 if(queue == null)
                 {
-                    queue = AMQQueueFactory.createAMQQueueImpl(
+                    queue = _vhost.createQueue(
                                 UUIDGenerator.generateQueueUUID(name, _vhost.getName()),
                                 name,
                                 isDurable,
                                 null,
                                 true,
                                 true,
-                                _vhost,
+                                true,
                                 Collections.EMPTY_MAP);
                 }
                 else
@@ -309,11 +311,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                             {
                                                 public void doTask(Connection_1_0 session)
                                                 {
-                                                    if (_vhost.getQueueRegistry().getQueue(queueName) == tempQueue)
+                                                    if (_vhost.getQueue(queueName) == tempQueue)
                                                     {
                                                         try
                                                         {
-                                                            tempQueue.delete();
+                                                            _vhost.removeQueue(tempQueue);
                                                         }
                                                         catch (AMQException e)
                                                         {
@@ -417,7 +419,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             {
                 try
                 {
-                    queue.delete();
+                    queue.getVirtualHost().removeQueue(queue);
                 }
                 catch(AMQException e)
                 {

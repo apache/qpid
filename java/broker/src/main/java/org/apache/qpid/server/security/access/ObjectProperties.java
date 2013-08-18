@@ -212,7 +212,7 @@ public class ObjectProperties
     }
 
     public ObjectProperties(Boolean autoDelete, Boolean durable, Boolean exclusive, Boolean nowait, Boolean passive,
-            AMQShortString queueName, String owner)
+            String queueName, String owner)
     {
         super();
 

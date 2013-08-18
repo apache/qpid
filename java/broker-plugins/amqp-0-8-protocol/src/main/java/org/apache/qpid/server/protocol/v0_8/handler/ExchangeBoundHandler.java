@@ -70,7 +70,6 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
-        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MethodRegistry methodRegistry = session.getMethodRegistry();
 
         final AMQChannel channel = session.getChannel(channelId);
@@ -115,7 +114,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             else
             {
 
-                AMQQueue queue = queueRegistry.getQueue(queueName);
+                AMQQueue queue = virtualHost.getQueue(queueName.toString());
                 if (queue == null)
                 {
 
@@ -141,7 +140,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         }
         else if (queueName != null)
         {
-            AMQQueue queue = queueRegistry.getQueue(queueName);
+            AMQQueue queue = virtualHost.getQueue(queueName.toString());
             if (queue == null)
             {
 

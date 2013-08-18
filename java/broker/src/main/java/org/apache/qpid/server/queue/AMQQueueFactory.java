@@ -29,42 +29,31 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class AMQQueueFactory
+public class AMQQueueFactory implements QueueFactory
 {
-    public static final String X_QPID_FLOW_RESUME_CAPACITY = "x-qpid-flow-resume-capacity";
-    public static final String X_QPID_CAPACITY = "x-qpid-capacity";
-    public static final String X_QPID_MINIMUM_ALERT_REPEAT_GAP = "x-qpid-minimum-alert-repeat-gap";
-    public static final String X_QPID_MAXIMUM_MESSAGE_COUNT = "x-qpid-maximum-message-count";
-    public static final String X_QPID_MAXIMUM_MESSAGE_SIZE = "x-qpid-maximum-message-size";
-    public static final String X_QPID_MAXIMUM_MESSAGE_AGE = "x-qpid-maximum-message-age";
-    public static final String X_QPID_MAXIMUM_QUEUE_DEPTH = "x-qpid-maximum-queue-depth";
+    public static final String QPID_DEFAULT_LVQ_KEY = "qpid.LVQ_key";
 
-    public static final String X_QPID_PRIORITIES = "x-qpid-priorities";
-    public static final String X_QPID_DESCRIPTION = "x-qpid-description";
-    public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
-    public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
-    public static final String QPID_LAST_VALUE_QUEUE_KEY = "qpid.last_value_queue_key";
-    public static final String QPID_QUEUE_SORT_KEY = "qpid.queue_sort_key";
 
-    public static final String DLQ_ROUTING_KEY = "dlq";
-    public static final String X_QPID_DLQ_ENABLED = "x-qpid-dlq-enabled";
-    public static final String X_QPID_MAXIMUM_DELIVERY_COUNT = "x-qpid-maximum-delivery-count";
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
+    public static final String DLQ_ROUTING_KEY = "dlq";
 
-    private AMQQueueFactory()
+    private final VirtualHost _virtualHost;
+    private final QueueRegistry _queueRegistry;
+
+    public AMQQueueFactory(VirtualHost virtualHost, QueueRegistry queueRegistry)
     {
+        _virtualHost = virtualHost;
+        _queueRegistry = queueRegistry;
     }
 
     private abstract static class QueueProperty
@@ -129,56 +118,56 @@ public class AMQQueueFactory
     }
 
     private static final QueueProperty[] DECLAREABLE_PROPERTIES = {
-            new QueueLongProperty(X_QPID_MAXIMUM_MESSAGE_AGE)
+            new QueueLongProperty(Queue.ALERT_THRESHOLD_MESSAGE_AGE)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMaximumMessageAge(value);
                 }
             },
-            new QueueLongProperty(X_QPID_MAXIMUM_MESSAGE_SIZE)
+            new QueueLongProperty(Queue.ALERT_THRESHOLD_MESSAGE_SIZE)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMaximumMessageSize(value);
                 }
             },
-            new QueueLongProperty(X_QPID_MAXIMUM_MESSAGE_COUNT)
+            new QueueLongProperty(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMaximumMessageCount(value);
                 }
             },
-            new QueueLongProperty(X_QPID_MAXIMUM_QUEUE_DEPTH)
+            new QueueLongProperty(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMaximumQueueDepth(value);
                 }
             },
-            new QueueLongProperty(X_QPID_MINIMUM_ALERT_REPEAT_GAP)
+            new QueueLongProperty(Queue.ALERT_REPEAT_GAP)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setMinimumAlertRepeatGap(value);
                 }
             },
-            new QueueLongProperty(X_QPID_CAPACITY)
+            new QueueLongProperty(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setCapacity(value);
                 }
             },
-            new QueueLongProperty(X_QPID_FLOW_RESUME_CAPACITY)
+            new QueueLongProperty(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
                 {
                     queue.setFlowResumeCapacity(value);
                 }
             },
-            new QueueIntegerProperty(X_QPID_MAXIMUM_DELIVERY_COUNT)
+            new QueueIntegerProperty(Queue.MAXIMUM_DELIVERY_ATTEMPTS)
             {
                 public void setPropertyValue(AMQQueue queue, int value)
                 {
@@ -189,13 +178,17 @@ public class AMQQueueFactory
 
     /**
      * @param id the id to use.
+     * @param deleteOnNoConsumer
      */
-    public static AMQQueue createAMQQueueImpl(UUID id,
-                                              String queueName,
-                                              boolean durable,
-                                              String owner,
-                                              boolean autoDelete,
-                                              boolean exclusive, VirtualHost virtualHost, Map<String, Object> arguments) throws AMQSecurityException, AMQException
+    @Override
+    public AMQQueue createAMQQueueImpl(UUID id,
+                                       String queueName,
+                                       boolean durable,
+                                       String owner,
+                                       boolean autoDelete,
+                                       boolean exclusive,
+                                       boolean deleteOnNoConsumer,
+                                       Map<String, Object> arguments) throws AMQSecurityException, AMQException
     {
         if (id == null)
         {
@@ -206,16 +199,11 @@ public class AMQQueueFactory
             throw new IllegalArgumentException("Queue name must not be null");
         }
 
-        // Access check
-        if (!virtualHost.getSecurityManager().authoriseCreateQueue(autoDelete, durable, exclusive, null, null, new AMQShortString(queueName), owner))
-        {
-            String description = "Permission denied: queue-name '" + queueName + "'";
-            throw new AMQSecurityException(description);
-        }
 
-        QueueConfiguration queueConfiguration = virtualHost.getConfiguration().getQueueConfiguration(queueName);
-        boolean isDLQEnabled = isDLQEnabled(autoDelete, arguments, queueConfiguration);
-        if (isDLQEnabled)
+        QueueConfiguration queueConfiguration = _virtualHost.getConfiguration().getQueueConfiguration(queueName);
+
+        boolean createDLQ = createDLQ(autoDelete, arguments, queueConfiguration);
+        if (createDLQ)
         {
             validateDLNames(queueName);
         }
@@ -226,17 +214,17 @@ public class AMQQueueFactory
 
         if(arguments != null)
         {
-            if(arguments.containsKey(QPID_LAST_VALUE_QUEUE) || arguments.containsKey(QPID_LAST_VALUE_QUEUE_KEY))
+            if(arguments.containsKey(Queue.LVQ_KEY))
             {
-                conflationKey = (String) arguments.get(QPID_LAST_VALUE_QUEUE_KEY);
+                conflationKey = (String) arguments.get(Queue.LVQ_KEY);
                 if(conflationKey == null)
                 {
-                    conflationKey = QPID_LVQ_KEY;
+                    conflationKey = QPID_DEFAULT_LVQ_KEY;
                 }
             }
-            else if(arguments.containsKey(X_QPID_PRIORITIES))
+            else if(arguments.containsKey(Queue.PRIORITIES))
             {
-                Object prioritiesObj = arguments.get(X_QPID_PRIORITIES);
+                Object prioritiesObj = arguments.get(Queue.PRIORITIES);
                 if(prioritiesObj instanceof Number)
                 {
                     priorities = ((Number)prioritiesObj).intValue();
@@ -257,33 +245,36 @@ public class AMQQueueFactory
                     // TODO - should warn here of invalid format
                 }
             }
-            else if(arguments.containsKey(QPID_QUEUE_SORT_KEY))
+            else if(arguments.containsKey(Queue.SORT_KEY))
             {
-                sortingKey = (String)arguments.get(QPID_QUEUE_SORT_KEY);
+                sortingKey = (String)arguments.get(Queue.SORT_KEY);
             }
         }
 
         AMQQueue q;
         if(sortingKey != null)
         {
-            q = new SortedQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, sortingKey);
+            q = new SortedQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments, sortingKey);
         }
         else if(conflationKey != null)
         {
-            q = new ConflationQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, conflationKey);
+            q = new ConflationQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments, conflationKey);
         }
         else if(priorities > 1)
         {
-            q = new AMQPriorityQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, priorities);
+            q = new AMQPriorityQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments, priorities);
         }
         else
         {
-            q = new SimpleAMQQueue(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments);
+            q = new SimpleAMQQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments);
         }
 
+        q.setDeleteOnNoConsumers(deleteOnNoConsumer);
+
         //Register the new queue
-        virtualHost.getQueueRegistry().registerQueue(q);
-        q.configure(virtualHost.getConfiguration().getQueueConfiguration(queueName));
+        _queueRegistry.registerQueue(q);
+
+        q.configure(_virtualHost.getConfiguration().getQueueConfiguration(queueName));
 
         if(arguments != null)
         {
@@ -294,21 +285,25 @@ public class AMQQueueFactory
                     p.setPropertyValue(q, arguments.get(p.getArgumentName().toString()));
                 }
             }
+
+            if(arguments.get(Queue.NO_LOCAL) instanceof Boolean)
+            {
+                q.setNoLocal((Boolean)arguments.get(Queue.NO_LOCAL));
+            }
+
         }
 
-        if(isDLQEnabled)
+        if(createDLQ)
         {
             final String dlExchangeName = getDeadLetterExchangeName(queueName);
             final String dlQueueName = getDeadLetterQueueName(queueName);
 
-            final QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-
             Exchange dlExchange = null;
-            final UUID dlExchangeId = UUIDGenerator.generateExchangeUUID(dlExchangeName, virtualHost.getName());
+            final UUID dlExchangeId = UUIDGenerator.generateExchangeUUID(dlExchangeName, _virtualHost.getName());
 
             try
             {
-                dlExchange = virtualHost.createExchange(dlExchangeId,
+                dlExchange = _virtualHost.createExchange(dlExchangeId,
                                                                 dlExchangeName,
                                                                 ExchangeDefaults.FANOUT_EXCHANGE_CLASS.toString(),
                                                                 true, false, null);
@@ -321,23 +316,19 @@ public class AMQQueueFactory
 
             AMQQueue dlQueue = null;
 
-            synchronized(queueRegistry)
+            synchronized(_queueRegistry)
             {
-                dlQueue = queueRegistry.getQueue(dlQueueName);
+                dlQueue = _queueRegistry.getQueue(dlQueueName);
 
                 if(dlQueue == null)
                 {
                     //set args to disable DLQ'ing/MDC from the DLQ itself, preventing loops etc
                     final Map<String, Object> args = new HashMap<String, Object>();
-                    args.put(X_QPID_DLQ_ENABLED, false);
-                    args.put(X_QPID_MAXIMUM_DELIVERY_COUNT, 0);
+                    args.put(Queue.CREATE_DLQ_ON_CREATION, false);
+                    args.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0);
 
-                    dlQueue = createAMQQueueImpl(UUIDGenerator.generateQueueUUID(dlQueueName, virtualHost.getName()), dlQueueName, true, owner, false, exclusive, virtualHost, args);
-
-                    //enter the dlq in the persistent store
-                    DurableConfigurationStoreHelper.createQueue(virtualHost.getDurableConfigurationStore(),
-                            dlQueue,
-                            FieldTable.convertToFieldTable(args));
+                    dlQueue = _virtualHost.createQueue(UUIDGenerator.generateQueueUUID(dlQueueName, _virtualHost.getName()), dlQueueName, true, owner, false, exclusive,
+                            false, args);
                 }
             }
 
@@ -350,11 +341,31 @@ public class AMQQueueFactory
             }
             q.setAlternateExchange(dlExchange);
         }
+        else if(arguments != null && arguments.get(Queue.ALTERNATE_EXCHANGE) instanceof String)
+        {
+
+            final String altExchangeAttr = (String) arguments.get(Queue.ALTERNATE_EXCHANGE);
+            Exchange altExchange;
+            try
+            {
+                altExchange = _virtualHost.getExchange(UUID.fromString(altExchangeAttr));
+            }
+            catch(IllegalArgumentException e)
+            {
+                altExchange = _virtualHost.getExchange(altExchangeAttr);
+            }
+            q.setAlternateExchange(altExchange);
+        }
+
+        if (q.isDurable() && !q.isAutoDelete())
+        {
+            DurableConfigurationStoreHelper.createQueue(_virtualHost.getDurableConfigurationStore(), q);
+        }
 
         return q;
     }
 
-    public static AMQQueue createAMQQueueImpl(QueueConfiguration config, VirtualHost host) throws AMQException
+    public AMQQueue createAMQQueueImpl(QueueConfiguration config) throws AMQException
     {
         String queueName = config.getName();
 
@@ -365,9 +376,9 @@ public class AMQQueueFactory
         Map<String, Object> arguments = createQueueArgumentsFromConfig(config);
 
         // we need queues that are defined in config to have deterministic ids.
-        UUID id = UUIDGenerator.generateQueueUUID(queueName, host.getName());
+        UUID id = UUIDGenerator.generateQueueUUID(queueName, _virtualHost.getName());
 
-        AMQQueue q = createAMQQueueImpl(id, queueName, durable, owner, autodelete, exclusive, host, arguments);
+        AMQQueue q = createAMQQueueImpl(id, queueName, durable, owner, autodelete, exclusive, false, arguments);
         q.configure(config);
         return q;
     }
@@ -414,21 +425,23 @@ public class AMQQueueFactory
      *            queue configuration
      * @return true if DLQ enabled
      */
-    protected static boolean isDLQEnabled(boolean autoDelete, Map<String, Object> arguments, QueueConfiguration qConfig)
+    protected static boolean createDLQ(boolean autoDelete, Map<String, Object> arguments, QueueConfiguration qConfig)
     {
         //feature is not to be enabled for temporary queues or when explicitly disabled by argument
-        if (!autoDelete)
+        if (!(autoDelete || (arguments != null && arguments.containsKey(Queue.ALTERNATE_EXCHANGE))))
         {
-            boolean dlqArgumentPresent = arguments != null && arguments.containsKey(X_QPID_DLQ_ENABLED);
+            boolean dlqArgumentPresent = arguments != null
+                                         && arguments.containsKey(Queue.CREATE_DLQ_ON_CREATION);
             if (dlqArgumentPresent || qConfig.isDeadLetterQueueEnabled())
             {
                 boolean dlqEnabled = true;
                 if (dlqArgumentPresent)
                 {
-                    Object argument = arguments.get(X_QPID_DLQ_ENABLED);
-                    dlqEnabled = argument instanceof Boolean && ((Boolean)argument).booleanValue();
+                    Object argument = arguments.get(Queue.CREATE_DLQ_ON_CREATION);
+                    dlqEnabled = (argument instanceof Boolean && ((Boolean)argument).booleanValue())
+                                || (argument instanceof String && Boolean.parseBoolean(argument.toString()));
                 }
-                return dlqEnabled;
+                return dlqEnabled ;
             }
         }
         return false;
@@ -464,31 +477,30 @@ public class AMQQueueFactory
 
         if(config.getArguments() != null && !config.getArguments().isEmpty())
         {
-            arguments.putAll(config.getArguments());
+            arguments.putAll(QueueArgumentsConverter.convertWireArgsToModel(new HashMap<String, Object>(config.getArguments())));
         }
 
         if(config.isLVQ() || config.getLVQKey() != null)
         {
-            arguments.put(QPID_LAST_VALUE_QUEUE, 1);
-            arguments.put(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
+            arguments.put(Queue.LVQ_KEY, config.getLVQKey() == null ? QPID_DEFAULT_LVQ_KEY : config.getLVQKey());
         }
         else if (config.getPriority() || config.getPriorities() > 0)
         {
-            arguments.put(X_QPID_PRIORITIES, config.getPriorities() < 0 ? 10 : config.getPriorities());
+            arguments.put(Queue.PRIORITIES, config.getPriorities() < 0 ? 10 : config.getPriorities());
         }
         else if (config.getQueueSortKey() != null && !"".equals(config.getQueueSortKey()))
         {
-            arguments.put(QPID_QUEUE_SORT_KEY, config.getQueueSortKey());
+            arguments.put(Queue.SORT_KEY, config.getQueueSortKey());
         }
 
         if (!config.getAutoDelete() && config.isDeadLetterQueueEnabled())
         {
-            arguments.put(X_QPID_DLQ_ENABLED, true);
+            arguments.put(Queue.CREATE_DLQ_ON_CREATION, true);
         }
 
         if (config.getDescription() != null && !"".equals(config.getDescription()))
         {
-            arguments.put(X_QPID_DESCRIPTION, config.getDescription());
+            arguments.put(Queue.DESCRIPTION, config.getDescription());
         }
 
         if (arguments.isEmpty())

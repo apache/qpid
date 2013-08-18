@@ -30,6 +30,7 @@ import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStoreUpgrader;
@@ -60,6 +61,9 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 currentUpgrader = addUpgrader(currentUpgrader, new Version0Upgrader());
             case 1:
                 currentUpgrader = addUpgrader(currentUpgrader, new Version1Upgrader());
+            case 2:
+                currentUpgrader = addUpgrader(currentUpgrader, new Version2Upgrader());
+
             case CURRENT_CONFIG_VERSION:
                 currentUpgrader = addUpgrader(currentUpgrader, new NullUpgrader(recoverer));
                 break;
@@ -213,7 +217,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
             UUID queueId = UUID.fromString(queueIdString);
             ConfiguredObjectRecord localRecord = getUpdateMap().get(queueId);
             return !((localRecord != null  && localRecord.getType().equals(Queue.class.getSimpleName()))
-                     || _virtualHost.getQueueRegistry().getQueue(queueId) != null);
+                     || _virtualHost.getQueue(queueId) != null);
         }
 
         private boolean isBinding(final String type)
@@ -223,5 +227,40 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
 
     }
+
+        /*
+         * Convert the storage of queue attributes to remove the separate "ARGUMENT" attribute, and flatten the
+         * attributes into the map using the model attribute names rather than the wire attribute names
+         */
+        private class Version2Upgrader extends NonNullUpgrader
+        {
+
+            private static final String ARGUMENTS = "arguments";
+
+            @Override
+            public void configuredObject(UUID id, String type, Map<String, Object> attributes)
+            {
+                if(Queue.class.getSimpleName().equals(type))
+                {
+                    Map<String, Object> newAttributes = new LinkedHashMap<String, Object>();
+                    if(attributes.get(ARGUMENTS) instanceof Map)
+                    {
+                        newAttributes.putAll(QueueArgumentsConverter.convertWireArgsToModel((Map<String, Object>) attributes
+                                .get(ARGUMENTS)));
+                    }
+                    newAttributes.putAll(attributes);
+                    attributes = newAttributes;
+                    getUpdateMap().put(id, new ConfiguredObjectRecord(id,type,attributes));
+                }
+
+                getNextUpgrader().configuredObject(id,type,attributes);
+            }
+
+            @Override
+            public void complete()
+            {
+                getNextUpgrader().complete();
+            }
+        }
 
 }

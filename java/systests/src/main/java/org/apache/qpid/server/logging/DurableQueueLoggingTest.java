@@ -97,7 +97,7 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
 
         String clientID = _connection.getClientID();
         assertNotNull("clientID should not be null", clientID);
-        
+
         validateQueueProperties(results, false, false, clientID);
     }
 
@@ -256,7 +256,7 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
 
         validateQueueProperties(results, true, true, null);
     }
-    
+
     private List<String> waitForMesssage() throws IOException
     {
         // Validation
@@ -267,14 +267,14 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());
-        
+
         return results;
     }
 
     public void validateQueueProperties(List<String> results, boolean hasPriority, boolean hasAutodelete, String clientID)
     {
         String log = getLogMessage(results, 0);
-        
+
         // Message Should be a QUE-1001
         validateMessageID("QUE-1001", log);
 
@@ -290,7 +290,7 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
                 fromMessage(log).contains("Priority: " + PRIORITIES));
 
         // Queue is AutoDelete
-        assertEquals("Unexpected AutoDelete status:" + fromMessage(log), hasAutodelete, 
+        assertEquals("Unexpected AutoDelete status:" + fromMessage(log), hasAutodelete,
                 fromMessage(log).contains("AutoDelete"));
 
         if(clientID != null)
