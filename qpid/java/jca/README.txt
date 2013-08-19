@@ -97,7 +97,7 @@ UseConnectionPerHandler
     The Apache C++ Broker multiplexes on the physical connection rather than the session. As a result, performance
     improvements can be gained by allocating and assigning a connection per inbound listener. The alternative is
     to share a connection across each handler for a given endpoint (MDB).
-Default:true
+Default:false
 
 The ManagedConnectionFactory JavaBean
 =====================================
