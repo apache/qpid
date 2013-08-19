@@ -521,8 +521,13 @@
     </jar>
   </target>
 
-  <target name="copy-broker-plugin-jars" if="broker.plugin" description="copy broker plugins for use in release packaging">
+  <target name="copy-broker-plugin-jars" depends="copy-broker-plugin-jars-deps" if="broker.plugin" description="copy broker plugins for use in release packaging">
     <copy file="${module.jar}" todir="${build.scratch.broker.plugins.lib}" failonerror="true"/>
+  </target>
+
+  <!-- Overridden in broker-plugins/amqp-1-0-protocol, bdbstore, and bdbstore/jmx modules -->
+  <target name="copy-broker-plugin-jars-deps" if="broker.plugin" description="copy broker plugins dependencies for use in release packaging">
+    <copylist todir="${build.scratch.broker.plugins.lib}" dir="${project.root}" files="${module.libs}"/>
   </target>
 
   <target name="copy-files-to-module-metainf" depends="copy-project-resources-metainf, copy-module-resources-metainf, copy-module-src-resources-metainf"/>

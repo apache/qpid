@@ -22,6 +22,8 @@
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-broker-plugins-amqp-0-8-protocol=provided -Sje=provided"/>
 
+    <property name="broker.plugin" value="true"/>
+
     <import file="../module.xml" />
 
     <condition property="download.bdb.jar">
@@ -78,5 +80,10 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
     </target>
 
     <target name="build" depends="check-request-props, bdb-jar-required, module.build" />
+
+    <!-- Overrides, target in module.xml -->
+    <target name="copy-broker-plugin-jars-deps" if="broker.plugin" description="copy broker plugins dependencies for use in release packaging">
+        <!-- NO-OP, we explicitly do not want to copy the dependencies for this optional functionality as we can't distribute them -->
+    </target>
 
 </project>

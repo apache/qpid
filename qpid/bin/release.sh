@@ -248,8 +248,8 @@ if [ "JAVA" == "$JAVA" ] ; then
 
   # now generate the binary packages, with the glue for optional features
   pushd qpid-${VER}/java
-  ant build release-bin -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx" -Ddownload-bdb=true
-  ant release-mvn -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx,broker-plugins/jdbc-provider-bone" -Ddownload-bonecp=true -Dmaven.snapshot=false
+  ant build release-bin -Dsvnversion.output=${REV} -Doptional=true
+  ant release-mvn -Dsvnversion.output=${REV} -Doptional=true -Dmaven.snapshot=false
   popd
 
   cp qpid-${VER}/java/broker/release/*.tar.gz artifacts/qpid-java-broker-${VER}.tar.gz
