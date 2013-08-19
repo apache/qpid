@@ -116,7 +116,7 @@ public class QueueArgumentsConverter
             if(wireArguments.containsKey(QPID_SHARED_MSG_GROUP))
             {
                 modelArguments.put(Queue.MESSAGE_GROUP_SHARED_GROUPS,
-                        SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE.equals(wireArguments.get(QPID_SHARED_MSG_GROUP)));
+                        SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE.equals(String.valueOf(wireArguments.get(QPID_SHARED_MSG_GROUP))));
             }
             if(wireArguments.get(X_QPID_DLQ_ENABLED) != null)
             {
