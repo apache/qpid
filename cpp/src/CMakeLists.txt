@@ -578,6 +578,9 @@ if (BUILD_SASL)
       qpid/sys/cyrus/CyrusSecurityLayer.cpp
      )
   set(qpidcommon_sasl_lib sasl2)
+else (BUILD_SASL)
+  set(HAVE_SASL OFF)
+  set(BROKER_SASL_NAME "qpidd" CACHE STRING "SASL app name for the qpid broker")
 endif (BUILD_SASL)
 
 # Optional SSL/TLS support. Requires Netscape Portable Runtime on Linux.
@@ -979,6 +982,7 @@ set (qpidcommon_SOURCES
      qpid/StringUtils.cpp
      qpid/Url.cpp
      qpid/UrlArray.cpp
+     qpid/NullSaslClient.cpp
      qpid/NullSaslServer.cpp
      qpid/amqp_0_10/SessionHandler.cpp
      qpid/framing/AccumulatedAck.cpp

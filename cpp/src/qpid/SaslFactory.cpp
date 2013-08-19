@@ -20,6 +20,7 @@
  */
 #include "qpid/SaslFactory.h"
 #include "qpid/SaslServer.h"
+#include "qpid/NullSaslClient.h"
 #include "qpid/NullSaslServer.h"
 #include <map>
 #include <string.h>
@@ -48,7 +49,8 @@ SaslFactory& SaslFactory::getInstance()
 
 std::auto_ptr<Sasl> SaslFactory::create( const std::string &, const std::string &, const std::string &, const std::string &, int, int, bool )
 {
-    return std::auto_ptr<Sasl>();
+    std::auto_ptr<Sasl> client(new NullSaslClient);
+    return client;
 }
 
 std::auto_ptr<SaslServer> SaslFactory::createServer(const std::string& realm, bool /*encryptionRequired*/, const qpid::sys::SecuritySettings&)
