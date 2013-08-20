@@ -406,8 +406,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _messageStore = createMessageStore();
         _configStore = createConfigStore();
 
-        _configStore.configureConfigStore(_storeName, _recoveryHandler, _virtualHost);
-        _messageStore.configureMessageStore(_storeName, _messageStoreRecoveryHandler, _logRecoveryHandler);
+        _configStore.configureConfigStore(_virtualHost, _recoveryHandler);
+        _messageStore.configureMessageStore(_virtualHost, _messageStoreRecoveryHandler, _logRecoveryHandler);
         _messageStore.activate();
     }
 

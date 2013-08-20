@@ -660,6 +660,18 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                 _logger.error("Failed to close message store", e);
             }
         }
+        if (getDurableConfigurationStore() != null)
+        {
+            //Remove MessageStore Interface should not throw Exception
+            try
+            {
+                getDurableConfigurationStore().close();
+            }
+            catch (Exception e)
+            {
+                _logger.error("Failed to close message store", e);
+            }
+        }
     }
 
 

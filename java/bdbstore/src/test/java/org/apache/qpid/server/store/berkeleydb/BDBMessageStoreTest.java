@@ -230,7 +230,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         messageStore.close();
 
         AbstractBDBMessageStore newStore = new BDBMessageStore();
-        newStore.configure("", getVirtualHostModel());
+        newStore.configure(getVirtualHostModel(),true);
 
         newStore.startWithNoRecover();
 

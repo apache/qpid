@@ -139,6 +139,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     private String _storeLocation;
 
     private Map<String, String> _envConfigMap;
+    private VirtualHost _virtualHost;
 
     public AbstractBDBMessageStore()
     {
@@ -151,34 +152,58 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _eventManager.addEventListener(eventListener, events);
     }
 
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
 
         _configRecoveryHandler = recoveryHandler;
-
-        configure(name, virtualHost);
+        _virtualHost = virtualHost;
     }
 
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler messageRecoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
+        if(_stateManager.isInState(State.INITIAL))
+        {
+            // Is acting as a message store, but not a durable config store
+            _stateManager.attainState(State.INITIALISING);
+        }
+
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
+        _virtualHost = virtualHost;
+
+        completeInitialisation();
+    }
+
+    private void completeInitialisation() throws Exception
+    {
+        configure(_virtualHost);
 
         _stateManager.attainState(State.INITIALISED);
     }
 
     public synchronized void activate() throws Exception
     {
+        // check if acting as a durable config store, but not a message store
+        if(_stateManager.isInState(State.INITIALISING))
+        {
+            completeInitialisation();
+        }
         _stateManager.attainState(State.ACTIVATING);
 
-        recoverConfig(_configRecoveryHandler);
-        recoverMessages(_messageRecoveryHandler);
-        recoverQueueEntries(_tlogRecoveryHandler);
+        if(_configRecoveryHandler != null)
+        {
+            recoverConfig(_configRecoveryHandler);
+        }
+        if(_messageRecoveryHandler != null)
+        {
+            recoverMessages(_messageRecoveryHandler);
+        }
+        if(_tlogRecoveryHandler != null)
+        {
+            recoverQueueEntries(_tlogRecoveryHandler);
+        }
 
         _stateManager.attainState(State.ACTIVE);
     }
@@ -192,23 +217,38 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      * Called after instantiation in order to configure the message store.
      *
      *
-     * @param name The name of the virtual host using this store
-     * @param virtualHost
+     *
+     * @param virtualHost The virtual host using this store
      * @return whether a new store environment was created or not (to indicate whether recovery is necessary)
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    public void configure(String name, VirtualHost virtualHost) throws Exception
+    public void configure(VirtualHost virtualHost) throws Exception
     {
+        configure(virtualHost, _messageRecoveryHandler != null);
+    }
 
-
+    public void configure(VirtualHost virtualHost, boolean isMessageStore) throws Exception
+    {
+        String name = virtualHost.getName();
         final String defaultPath = System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name;
 
-
-        String storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
-        if(storeLocation == null)
+        String storeLocation;
+        if(isMessageStore)
         {
-            storeLocation = defaultPath;
+            storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+            if(storeLocation == null)
+            {
+                storeLocation = defaultPath;
+            }
+        }
+        else // we are acting only as the durable config store
+        {
+            storeLocation = (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
+            if(storeLocation == null)
+            {
+                storeLocation = defaultPath;
+            }
         }
 
         Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);

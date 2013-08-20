@@ -24,10 +24,12 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 
-public class JDBCMessageStoreFactory implements MessageStoreFactory
+public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConfigurationStoreFactory
 {
 
     @Override
@@ -38,6 +40,12 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory
 
     @Override
     public MessageStore createMessageStore()
+    {
+        return new JDBCMessageStore();
+    }
+
+    @Override
+    public DurableConfigurationStore createDurableConfigurationStore()
     {
         return new JDBCMessageStore();
     }
@@ -67,15 +75,32 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        Object connectionURL = attributes.get(JDBCMessageStore.CONNECTION_URL);
-        if(!(connectionURL instanceof String))
+        if(getType().equals(attributes.get(VirtualHost.STORE_TYPE)))
         {
-            Object storePath = attributes.get(VirtualHost.STORE_PATH);
-            if(!(storePath instanceof String))
+            Object connectionURL = attributes.get(JDBCMessageStore.CONNECTION_URL);
+            if(!(connectionURL instanceof String))
             {
-                throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONNECTION_URL
-                                                               +"' is required and must be of type String.");
+                Object storePath = attributes.get(VirtualHost.STORE_PATH);
+                if(!(storePath instanceof String))
+                {
+                    throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONNECTION_URL
+                                                                   +"' is required and must be of type String.");
 
+                }
+            }
+        }
+        if(getType().equals(attributes.get(VirtualHost.CONFIG_STORE_TYPE)))
+        {
+            Object connectionURL = attributes.get(JDBCMessageStore.CONFIG_CONNECTION_URL);
+            if(!(connectionURL instanceof String))
+            {
+                Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
+                if(!(storePath instanceof String))
+                {
+                    throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONFIG_CONNECTION_URL
+                                                                   +"' is required and must be of type String.");
+
+                }
             }
         }
     }

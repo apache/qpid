@@ -66,11 +66,13 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
         VirtualHost vhost = mock(VirtualHost.class);
         when(vhost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storeLocation.getAbsolutePath());
+        when(vhost.getName()).thenReturn("test");
+
         applyStoreSpecificConfiguration(vhost);
 
         _store = createStore();
-        ((DurableConfigurationStore)_store).configureConfigStore("test", null, vhost);
-        _store.configureMessageStore("test", null, null);
+        ((DurableConfigurationStore)_store).configureConfigStore(vhost, null);
+        _store.configureMessageStore(vhost, null, null);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();

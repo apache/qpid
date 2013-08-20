@@ -132,7 +132,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         _driverClass = (Class<Driver>) Class.forName(SQL_DRIVER_NAME);
 
         String defaultPath = System.getProperty("QPID_WORK") + File.separator + "derbyDB";
-        String databasePath = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+        String databasePath = isConfigStoreOnly() ? (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH) : (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
         if(databasePath == null)
         {
             databasePath = defaultPath;
