@@ -48,11 +48,9 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
     // ***** MessageStore Interface.
 
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
     {
-        _logger.info("Starting SlowMessageStore on Virtualhost:" + name);
+        _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
 
         Object delaysAttr = virtualHost.getAttribute("slowMessageStoreDelays");
 
@@ -84,7 +82,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
                 _durableConfigurationStore = (DurableConfigurationStore)o;
             }
         }
-        _durableConfigurationStore.configureConfigStore(name, recoveryHandler, virtualHost);
+        _durableConfigurationStore.configureConfigStore(virtualHost, recoveryHandler);
 
     }
 
@@ -153,11 +151,10 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
 
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler messageRecoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
-        _realStore.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler);
+        _realStore.configureMessageStore(virtualHost, messageRecoveryHandler, tlogRecoveryHandler);
     }
 
     public void close() throws Exception

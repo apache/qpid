@@ -48,9 +48,7 @@ public class
     }
 
     @Override
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost)
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
             throws Exception
     {
         Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
@@ -77,7 +75,7 @@ public class
     }
 
     @Override
-    public void configureMessageStore(String name, MessageStoreRecoveryHandler recoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISED);

@@ -169,6 +169,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
     private ConfigurationRecoveryHandler _configRecoveryHandler;
+    private VirtualHost _virtualHost;
 
     public AbstractJDBCMessageStore()
     {
@@ -176,24 +177,33 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler configRecoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
         _configRecoveryHandler = configRecoveryHandler;
-
-        commonConfiguration(name, virtualHost);
+        _virtualHost = virtualHost;
 
     }
 
     @Override
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler recoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
+        if(_stateManager.isInState(State.INITIAL))
+        {
+            _stateManager.attainState(State.INITIALISING);
+        }
+
+        _virtualHost = virtualHost;
         _tlogRecoveryHandler = tlogRecoveryHandler;
         _messageRecoveryHandler = recoveryHandler;
+
+        completeInitialisation();
+    }
+
+    private void completeInitialisation() throws ClassNotFoundException, SQLException, AMQStoreException
+    {
+        commonConfiguration();
 
         _stateManager.attainState(State.INITIALISED);
     }
@@ -201,21 +211,35 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void activate() throws Exception
     {
+        if(_stateManager.isInState(State.INITIALISING))
+        {
+            completeInitialisation();
+        }
         _stateManager.attainState(State.ACTIVATING);
 
         // this recovers durable exchanges, queues, and bindings
-        recoverConfiguration(_configRecoveryHandler);
-        recoverMessages(_messageRecoveryHandler);
-        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
-        recoverXids(dtxrh);
+        if(_configRecoveryHandler != null)
+        {
+            recoverConfiguration(_configRecoveryHandler);
+        }
+        if(_messageRecoveryHandler != null)
+        {
+            recoverMessages(_messageRecoveryHandler);
+        }
+        if(_tlogRecoveryHandler != null)
+        {
+            TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
+            recoverXids(dtxrh);
+
+        }
 
         _stateManager.attainState(State.ACTIVE);
     }
 
-    private void commonConfiguration(String name, VirtualHost virtualHost)
+    private void commonConfiguration()
             throws ClassNotFoundException, SQLException, AMQStoreException
     {
-        implementationSpecificConfiguration(name, virtualHost);
+        implementationSpecificConfiguration(_virtualHost.getName(), _virtualHost);
         createOrOpenDatabase();
         upgradeIfNecessary();
     }
@@ -1069,6 +1093,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             throw new AMQStoreException("Error writing xid ", e);
         }
 
+    }
+
+    protected boolean isConfigStoreOnly()
+    {
+        return _messageRecoveryHandler == null;
     }
 
     private static final class ConnectionWrapper

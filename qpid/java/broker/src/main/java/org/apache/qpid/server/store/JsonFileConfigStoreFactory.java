@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,28 +18,35 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.ConfigurationException;
+import java.util.Map;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 
-import static org.mockito.Mockito.mock;
-
-public class HAMessageStoreSmokeTest extends QpidTestCase
+public class JsonFileConfigStoreFactory implements DurableConfigurationStoreFactory
 {
-    private final BDBHAMessageStore _store = new BDBHAMessageStore();
-
-    public void testMissingHAConfigThrowsException() throws Exception
+    @Override
+    public String getType()
     {
-        try
+        return JsonFileConfigStore.TYPE;
+    }
+
+    @Override
+    public DurableConfigurationStore createDurableConfigurationStore()
+    {
+        return new JsonFileConfigStore();
+    }
+
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
+    {
+        Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
+        if(!(storePath instanceof String))
         {
-            _store.configure(mock(VirtualHost.class));
-            fail("Expected an exception to be thrown");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertTrue(ce.getMessage().contains("BDB HA configuration key not found"));
+            throw new IllegalArgumentException("Attribute '"+ VirtualHost.CONFIG_STORE_PATH
+                                                           +"' is required and must be of type String.");
+
         }
     }
 }

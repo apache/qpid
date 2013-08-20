@@ -80,24 +80,30 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
     }
 
     @Override
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler recoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
+        if(_stateManager.isInState(State.INITIAL))
+        {
+            _stateManager.attainState(State.INITIALISING);
+        }
         _stateManager.attainState(State.INITIALISED);
     }
 
     @Override
     public void activate() throws Exception
     {
+
+        if(_stateManager.isInState(State.INITIALISING))
+        {
+            _stateManager.attainState(State.INITIALISED);
+        }
         _stateManager.attainState(State.ACTIVATING);
 
         _stateManager.attainState(State.ACTIVE);

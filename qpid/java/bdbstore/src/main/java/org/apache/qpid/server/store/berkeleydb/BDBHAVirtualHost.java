@@ -77,12 +77,12 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                 new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
                                                   new DefaultUpgraderProvider(this, getExchangeRegistry()));
 
-        _messageStore.configureConfigStore(getName(),
-                configRecoverer,
-                virtualHost);
+        _messageStore.configureConfigStore(
+                virtualHost, configRecoverer
+        );
 
-        _messageStore.configureMessageStore(getName(),
-                recoveryHandler,
+        _messageStore.configureMessageStore(
+                virtualHost, recoveryHandler,
                 recoveryHandler
         );
     }

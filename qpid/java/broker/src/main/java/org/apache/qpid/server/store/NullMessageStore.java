@@ -27,9 +27,7 @@ import org.apache.qpid.server.model.VirtualHost;
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
     @Override
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
     {
     }
 
@@ -66,8 +64,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler recoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
     }

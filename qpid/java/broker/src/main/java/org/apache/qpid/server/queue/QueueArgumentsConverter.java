@@ -42,9 +42,7 @@ public class QueueArgumentsConverter
     public static final String X_QPID_PRIORITIES = "x-qpid-priorities";
 
     public static final String X_QPID_DESCRIPTION = "x-qpid-description";
-    /*  public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
-    public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
-  */
+
     public static final String QPID_LAST_VALUE_QUEUE_KEY = "qpid.last_value_queue_key";
 
     public static final String QPID_QUEUE_SORT_KEY = "qpid.queue_sort_key";
