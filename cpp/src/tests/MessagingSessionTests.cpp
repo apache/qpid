@@ -1352,6 +1352,32 @@ QPID_AUTO_TEST_CASE(testReleaseOnPriorityQueue)
     fix.session.acknowledge();
 }
 
+QPID_AUTO_TEST_CASE(testRollbackWithFullPrefetch)
+{
+    QueueFixture fix;
+    std::string first("first");
+    std::string second("second");
+    Sender sender = fix.session.createSender(fix.queue);
+    for (uint i = 0; i < 10; ++i) {
+        sender.send(Message((boost::format("MSG_%1%") % (i+1)).str()));
+    }
+    Session txsession = fix.connection.createTransactionalSession();
+    Receiver receiver = txsession.createReceiver(fix.queue);
+    receiver.setCapacity(9);
+    Message msg;
+    for (uint i = 0; i < 10; ++i) {
+        if (receiver.fetch(msg, Duration::SECOND)) {
+            BOOST_CHECK_EQUAL(msg.getContent(), std::string("MSG_1"));
+            txsession.rollback();
+        } else {
+            BOOST_FAIL("Released message not redelivered as expected.");
+            break;
+        }
+    }
+    txsession.acknowledge();
+    txsession.commit();
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
