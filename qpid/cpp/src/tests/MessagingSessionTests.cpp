@@ -1332,6 +1332,26 @@ QPID_AUTO_TEST_CASE(testReroutingRingQueue)
     }
 }
 
+QPID_AUTO_TEST_CASE(testReleaseOnPriorityQueue)
+{
+    MessagingFixture fix;
+    std::string queue("queue; {create:always, node:{x-declare:{auto-delete:True, arguments:{qpid.priorities:10}}}}");
+    std::string text("my message");
+    Sender sender = fix.session.createSender(queue);
+    sender.send(Message(text));
+    Receiver receiver = fix.session.createReceiver(queue);
+    Message msg;
+    for (uint i = 0; i < 10; ++i) {
+        if (receiver.fetch(msg, Duration::SECOND)) {
+            BOOST_CHECK_EQUAL(msg.getContent(), text);
+            fix.session.release(msg);
+        } else {
+            BOOST_FAIL("Released message not redelivered as expected.");
+        }
+    }
+    fix.session.acknowledge();
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
