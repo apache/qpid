@@ -135,7 +135,12 @@ void PriorityQueue::publish(const Message& published)
 Message* PriorityQueue::release(const QueueCursor& cursor)
 {
     MessagePointer* ptr = fifo.release(cursor);
-    return ptr ? &(ptr->holder->message) : 0;
+    if (ptr) {
+        messages[ptr->holder->priority].resetCursors();
+        return &(ptr->holder->message);
+    } else {
+        return 0;
+    }
 }
 
 void PriorityQueue::foreach(Functor f)
