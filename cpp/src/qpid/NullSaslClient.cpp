@@ -19,6 +19,7 @@
  *
  */
 #include "NullSaslClient.h"
+#include "qpid/sys/SecurityLayer.h"
 #include "Exception.h"
 
 namespace qpid {
