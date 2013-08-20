@@ -84,6 +84,7 @@ void ReceiverImpl::start()
     if (state == STOPPED) {
         state = STARTED;
         startFlow(l);
+        session.sendCompletion();
     }
 }
 
