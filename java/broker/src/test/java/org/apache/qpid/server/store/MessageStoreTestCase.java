@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,16 +52,18 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         _dtxRecordRecoveryHandler = mock(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler.class);
         _virtualHost = mock(VirtualHost.class);
 
+
         when(_messageStoreRecoveryHandler.begin()).thenReturn(_storedMessageRecoveryHandler);
         when(_logRecoveryHandler.begin(any(MessageStore.class))).thenReturn(_queueEntryRecoveryHandler);
         when(_queueEntryRecoveryHandler.completeQueueEntryRecovery()).thenReturn(_dtxRecordRecoveryHandler);
 
         setUpStoreConfiguration(_virtualHost);
+        when(_virtualHost.getName()).thenReturn(getTestName());
 
         _store = createMessageStore();
-        ((DurableConfigurationStore)_store).configureConfigStore(getTestName(), _recoveryHandler, _virtualHost);
+        ((DurableConfigurationStore)_store).configureConfigStore(_virtualHost, _recoveryHandler);
 
-        _store.configureMessageStore(getTestName(), _messageStoreRecoveryHandler, _logRecoveryHandler);
+        _store.configureMessageStore(_virtualHost, _messageStoreRecoveryHandler, _logRecoveryHandler);
     }
 
     protected abstract void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception;

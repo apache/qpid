@@ -45,14 +45,13 @@ public interface DurableConfigurationStore
      *
      *
      *
-     * @param name             The name to be used by this store
-     * @param recoveryHandler  Handler to be called as the store recovers on start up
+     *
+     *
      * @param virtualHost
+     * @param recoveryHandler  Handler to be called as the store recovers on start up
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configureConfigStore(String name,
-                              ConfigurationRecoveryHandler recoveryHandler,
-                              VirtualHost virtualHost) throws Exception;
+    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception;
 
 
     /**
@@ -96,4 +95,5 @@ public interface DurableConfigurationStore
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException;
 
 
+    void close() throws Exception;
 }

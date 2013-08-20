@@ -24,16 +24,24 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 
-public class DerbyMessageStoreFactory implements MessageStoreFactory
+public class DerbyMessageStoreFactory implements MessageStoreFactory, DurableConfigurationStoreFactory
 {
 
     @Override
     public String getType()
     {
         return DerbyMessageStore.TYPE;
+    }
+
+    @Override
+    public DurableConfigurationStore createDurableConfigurationStore()
+    {
+        return new DerbyMessageStore();
     }
 
     @Override
@@ -52,12 +60,25 @@ public class DerbyMessageStoreFactory implements MessageStoreFactory
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        Object storePath = attributes.get(VirtualHost.STORE_PATH);
-        if(!(storePath instanceof String))
+        if(getType().equals(attributes.get(VirtualHost.STORE_TYPE)))
         {
-            throw new IllegalArgumentException("Attribute '"+ VirtualHost.STORE_PATH
-                                                           +"' is required and must be of type String.");
+            Object storePath = attributes.get(VirtualHost.STORE_PATH);
+            if(!(storePath instanceof String))
+            {
+                throw new IllegalArgumentException("Attribute '"+ VirtualHost.STORE_PATH
+                                                               +"' is required and must be of type String.");
 
+            }
+        }
+        if(getType().equals(attributes.get(VirtualHost.CONFIG_STORE_TYPE)))
+        {
+            Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
+            if(!(storePath instanceof String))
+            {
+                throw new IllegalArgumentException("Attribute '"+ VirtualHost.CONFIG_STORE_PATH
+                                                               +"' is required and must be of type String.");
+
+            }
         }
     }
 

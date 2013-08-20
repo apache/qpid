@@ -25,6 +25,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
@@ -78,7 +79,14 @@ public class StandardVirtualHost extends AbstractVirtualHost
     private DurableConfigurationStore initialiseConfigurationStore(VirtualHost virtualHost) throws Exception
     {
         DurableConfigurationStore configurationStore;
-        if(getMessageStore() instanceof DurableConfigurationStore)
+        final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.CONFIG_STORE_TYPE);
+        String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
+
+        if(storeType != null)
+        {
+            configurationStore = new DurableConfigurationStoreCreator().createMessageStore(storeType);
+        }
+        else if(getMessageStore() instanceof DurableConfigurationStore)
         {
             configurationStore = (DurableConfigurationStore) getMessageStore();
         }
@@ -100,10 +108,10 @@ public class StandardVirtualHost extends AbstractVirtualHost
         DurableConfigurationRecoverer configRecoverer =
                 new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
                                                   new DefaultUpgraderProvider(this, getExchangeRegistry()));
-        _durableConfigurationStore.configureConfigStore(getName(), configRecoverer, virtualHost);
+        _durableConfigurationStore.configureConfigStore(virtualHost, configRecoverer);
 
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getExchangeRegistry(), getExchangeFactory());
-        _messageStore.configureMessageStore(getName(), recoveryHandler, recoveryHandler);
+        _messageStore.configureMessageStore(virtualHost, recoveryHandler, recoveryHandler);
 
         initialiseModel(hostConfig);
 
@@ -111,25 +119,6 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
         attainActivation();
     }
-
-
-    protected void closeStorage()
-    {
-        //Close MessageStore
-        if (_messageStore != null)
-        {
-            //Remove MessageStore Interface should not throw Exception
-            try
-            {
-                getMessageStore().close();
-            }
-            catch (Exception e)
-            {
-                getLogger().error("Failed to close message store", e);
-            }
-        }
-    }
-
 
     @Override
     public MessageStore getMessageStore()

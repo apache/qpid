@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,28 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.plugin;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.test.utils.QpidTestCase;
+import java.util.Map;
+import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.MessageStore;
 
-import static org.mockito.Mockito.mock;
-
-public class HAMessageStoreSmokeTest extends QpidTestCase
+public interface DurableConfigurationStoreFactory extends Pluggable
 {
-    private final BDBHAMessageStore _store = new BDBHAMessageStore();
+    String getType();
 
-    public void testMissingHAConfigThrowsException() throws Exception
-    {
-        try
-        {
-            _store.configure(mock(VirtualHost.class));
-            fail("Expected an exception to be thrown");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertTrue(ce.getMessage().contains("BDB HA configuration key not found"));
-        }
-    }
+    DurableConfigurationStore createDurableConfigurationStore();
+
+    void validateAttributes(Map<String, Object> attributes);
 }
