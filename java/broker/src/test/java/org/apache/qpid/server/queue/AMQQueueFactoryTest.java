@@ -116,7 +116,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
                     @Override
                     public AMQQueue answer(InvocationOnMock invocation) throws Throwable
                     {
-                        return _queueFactory.createAMQQueueImpl(id.getValue(),
+                        return _queueFactory.createQueue(id.getValue(),
                                 queueName.getValue(),
                                 durable.getValue(),
                                 owner.getValue(),
@@ -222,8 +222,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
         Map<String,Object> attributes = Collections.singletonMap(Queue.PRIORITIES, (Object) 5);
 
 
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testPriorityQueue", false, "owner", false,
-                                           false,
+        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
+                "testPriorityQueue",
+                false,
+                "owner",
+                false,
+                false,
                 false,
                 attributes);
 
@@ -238,8 +242,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
         String queueName = getName();
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false,
-                                           false,
+        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false,
+                false,
                 false,
                 null);
         assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
@@ -269,7 +273,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
+        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
+                queueName,
+                false,
+                "owner",
+                false,
+                false,
                 false,
                 attributes);
 
@@ -309,7 +318,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
+        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
+                queueName,
+                false,
+                "owner",
+                false,
+                false,
                 false,
                 null);
 
@@ -348,7 +362,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false, false,
+        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
+                queueName,
+                false,
+                "owner",
+                false,
+                false,
                 false,
                 attributes);
 
@@ -379,7 +398,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
         //create an autodelete queue
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", true, false,
+        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
+                queueName,
+                false,
+                "owner",
+                true,
+                false,
                 false,
                 attributes);
         assertTrue("Queue should be autodelete", queue.isAutoDelete());
@@ -401,7 +425,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         Map<String,Object> attributes = Collections.singletonMap(Queue.MAXIMUM_DELIVERY_ATTEMPTS, (Object) 5);
 
-        final AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testMaximumDeliveryCount", false, "owner", false, false,
+        final AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
+                "testMaximumDeliveryCount",
+                false,
+                "owner",
+                false,
+                false,
                 false,
                 attributes);
 
@@ -417,7 +446,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
      */
     public void testMaximumDeliveryCountDefault() throws Exception
     {
-        final AMQQueue queue = _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "testMaximumDeliveryCount", false, "owner", false, false,
+        final AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
+                "testMaximumDeliveryCount",
+                false,
+                "owner",
+                false,
+                false,
                 false,
                 null);
 
@@ -434,7 +468,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         try
         {
-            _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), null, false, "owner", true, false,
+            _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), null, false, "owner", true, false,
                     false,
                     null);
             fail("queue with null name can not be created!");
@@ -459,7 +493,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLE");
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQUEUE");
             Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
-            _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
+            _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
                     false, false, false, attributes);
             fail("queue with DLQ name having more than 255 characters can not be created!");
         }
@@ -484,7 +518,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLEXCHANGE");
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQ");
             Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
-            _queueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
+            _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
                     false, false, false, attributes);
             fail("queue with DLE name having more than 255 characters can not be created!");
         }
