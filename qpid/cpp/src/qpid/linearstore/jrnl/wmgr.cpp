@@ -19,15 +19,15 @@
  *
  */
 
-#include "qpid/legacystore/jrnl/wmgr.h"
+#include "qpid/linearstore/jrnl/wmgr.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include "qpid/legacystore/jrnl/file_hdr.h"
-#include "qpid/legacystore/jrnl/jcntl.h"
-#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/utils/file_hdr.h"
+#include "qpid/linearstore/jrnl/jcntl.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
 #include <sstream>
 #include <stdint.h>
 
@@ -36,9 +36,9 @@ namespace mrg
 namespace journal
 {
 
-wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, wrfc& wrfc):
+wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, wrfc& wrfc*/):
         pmgr(jc, emap, tmap),
-        _wrfc(wrfc),
+//        _wrfc(wrfc),
         _max_dtokpp(0),
         _max_io_wait_us(0),
         _fhdr_base_ptr(0),
@@ -55,10 +55,10 @@ wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, wrfc& wrfc):
         _txn_pending_set()
 {}
 
-wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, wrfc& wrfc,
+wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, wrfc& wrfc*/,
         const uint32_t max_dtokpp, const uint32_t max_iowait_us):
         pmgr(jc, emap, tmap /* , dtoklp */),
-        _wrfc(wrfc),
+//        _wrfc(wrfc),
         _max_dtokpp(max_dtokpp),
         _max_io_wait_us(max_iowait_us),
         _fhdr_base_ptr(0),
@@ -138,8 +138,8 @@ wmgr::enqueue(const void* const data_buff, const std::size_t tot_data_len,
         }
     }
 
-    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
-    _enq_rec.reset(rid, data_buff, tot_data_len, xid_ptr, xid_len, _wrfc.owi(), transient,
+    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : /*_wrfc.get_incr_rid()*/0; // TODO: replace for linearstore: _wrfc
+    _enq_rec.reset(rid, data_buff, tot_data_len, xid_ptr, xid_len/*, _wrfc.owi()*/, transient,
             external);
     if (!cont)
     {
@@ -161,8 +161,9 @@ wmgr::enqueue(const void* const data_buff, const std::size_t tot_data_len,
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
-        if (data_offs_dblks == 0)
-            dtokp->set_fid(_wrfc.index());
+        // TODO: replace for linearstore: _wrfc
+//        if (data_offs_dblks == 0)
+//            dtokp->set_fid(_wrfc.index());
         _pg_offset_dblks += ret;
         _cached_offset_dblks += ret;
         dtokp->incr_dblocks_written(ret);
@@ -179,7 +180,7 @@ wmgr::enqueue(const void* const data_buff, const std::size_t tot_data_len,
             // long multi-page messages have their token on the page containing the END of the
             // message. AIO callbacks will then only process this token when entire message is
             // enqueued.
-            _wrfc.incr_enqcnt(dtokp->fid());
+            //_wrfc.incr_enqcnt(dtokp->fid()); // TODO: replace for linearstore: _wrfc
 
             if (xid_len) // If part of transaction, add to transaction map
             {
@@ -237,9 +238,9 @@ wmgr::dequeue(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_
     }
 
     const bool ext_rid = dtokp->external_rid();
-    uint64_t rid = (ext_rid | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
+    uint64_t rid = (ext_rid | cont) ? dtokp->rid() : /*_wrfc.get_incr_rid()*/0; // TODO: replace for linearstore: _wrfc
     uint64_t dequeue_rid = (ext_rid | cont) ? dtokp->dequeue_rid() : dtokp->rid();
-    _deq_rec.reset(rid, dequeue_rid, xid_ptr, xid_len, _wrfc.owi(), txn_coml_commit);
+    _deq_rec.reset(rid, dequeue_rid, xid_ptr, xid_len/*, _wrfc.owi()*/, txn_coml_commit);
     if (!cont)
     {
 	    if (!ext_rid)
@@ -265,8 +266,9 @@ wmgr::dequeue(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
-        if (data_offs_dblks == 0)
-            dtokp->set_fid(_wrfc.index());
+        // TODO: replace for linearstore: _wrfc
+//        if (data_offs_dblks == 0)
+//            dtokp->set_fid(_wrfc.index());
         _pg_offset_dblks += ret;
         _cached_offset_dblks += ret;
         dtokp->incr_dblocks_written(ret);
@@ -304,7 +306,7 @@ wmgr::dequeue(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_
                         throw jexception(jerrno::JERR_MAP_LOCKED, oss.str(), "wmgr", "dequeue");
                     }
                 }
-                _wrfc.decr_enqcnt(fid);
+//                _wrfc.decr_enqcnt(fid); // TODO: replace for linearstore: _wrfc
             }
 
             done = true;
@@ -346,8 +348,8 @@ wmgr::abort(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_le
         }
     }
 
-    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
-    _txn_rec.reset(RHM_JDAT_TXA_MAGIC, rid, xid_ptr, xid_len, _wrfc.owi());
+    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() :/* _wrfc.get_incr_rid()*/0; // TODO: replace for linearstore: _wrfc
+    _txn_rec.reset(QLS_TXA_MAGIC, rid, xid_ptr, xid_len/*, _wrfc.owi()*/);
     if (!cont)
     {
         dtokp->set_rid(rid);
@@ -366,8 +368,9 @@ wmgr::abort(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_le
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
-        if (data_offs_dblks == 0)
-            dtokp->set_fid(_wrfc.index());
+        // TODO: replace for linearstore: _wrfc
+//        if (data_offs_dblks == 0)
+//            dtokp->set_fid(_wrfc.index());
         _pg_offset_dblks += ret;
         _cached_offset_dblks += ret;
         dtokp->incr_dblocks_written(ret);
@@ -386,8 +389,9 @@ wmgr::abort(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_le
             {
 				if (!itr->_enq_flag)
 				    _emap.unlock(itr->_drid); // ignore rid not found error
-                if (itr->_enq_flag)
-                    _wrfc.decr_enqcnt(itr->_pfid);
+				 // TODO: replace for linearstore: _wrfc
+//                if (itr->_enq_flag)
+//                    _wrfc.decr_enqcnt(itr->_pfid);
             }
             std::pair<std::set<std::string>::iterator, bool> res = _txn_pending_set.insert(xid);
             if (!res.second)
@@ -436,8 +440,8 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
         }
     }
 
-    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
-    _txn_rec.reset(RHM_JDAT_TXC_MAGIC, rid, xid_ptr, xid_len, _wrfc.owi());
+    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : /*_wrfc.get_incr_rid()*/0;  // TODO: replace for linearstore: _wrfc
+    _txn_rec.reset(QLS_TXC_MAGIC, rid, xid_ptr, xid_len/*, _wrfc.owi()*/);
     if (!cont)
     {
         dtokp->set_rid(rid);
@@ -456,8 +460,9 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
-        if (data_offs_dblks == 0)
-            dtokp->set_fid(_wrfc.index());
+        // TODO: replace for linearstore: _wrfc
+//        if (data_offs_dblks == 0)
+//            dtokp->set_fid(_wrfc.index());
         _pg_offset_dblks += ret;
         _cached_offset_dblks += ret;
         dtokp->incr_dblocks_written(ret);
@@ -502,7 +507,7 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
                             throw jexception(jerrno::JERR_MAP_LOCKED, oss.str(), "wmgr", "dequeue");
                         }
                     }
-                    _wrfc.decr_enqcnt(fid);
+//                    _wrfc.decr_enqcnt(fid); // TODO: replace for linearstore: _wrfc
                 }
             }
             std::pair<std::set<std::string>::iterator, bool> res = _txn_pending_set.insert(xid);
@@ -527,10 +532,12 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
 }
 
 void
-wmgr::file_header_check(const uint64_t rid, const bool cont, const uint32_t rec_dblks_rem)
+wmgr::file_header_check(const uint64_t /*rid*/, const bool /*cont*/, const uint32_t /*rec_dblks_rem*/)
 {
     // Has the file header been written (i.e. write pointers still at 0)?
-    if (_wrfc.is_void())
+    // TODO: replace for linearstore: _wrfc
+/*
+    if (_wrfc.is_void()) // TODO: replace for linearstore: _wrfc
     {
         bool file_fit = rec_dblks_rem <= _jfsize_dblks;
         bool file_full = rec_dblks_rem == _jfsize_dblks;
@@ -542,8 +549,9 @@ wmgr::file_header_check(const uint64_t rid, const bool cont, const uint32_t rec_
         }
         else
             fro = JRNL_SBLK_SIZE * JRNL_DBLK_SIZE;
-        write_fhdr(rid, _wrfc.index(), _wrfc.index(), fro);
+        write_fhdr(rid, _wrfc.index(), _wrfc.index(), fro); // TODO: replace for linearstore: _wrfc
     }
+*/
 }
 
 void
@@ -595,6 +603,7 @@ iores
 wmgr::write_flush()
 {
     iores res = RHM_IORES_SUCCESS;
+/*
     // Don't bother flushing an empty page or one that is still in state AIO_PENDING
     if (_cached_offset_dblks)
     {
@@ -640,16 +649,21 @@ wmgr::write_flush()
     get_events(UNUSED, 0);
     if (_page_cb_arr[_pg_index]._state == UNUSED)
         _page_cb_arr[_pg_index]._state = IN_USE;
+*/
     return res;
 }
 
 iores
 wmgr::rotate_file()
 {
+    // TODO: replace for linearstore: _wrfc
+/*
     _pg_cntr = 0;
     iores res = _wrfc.rotate();
     _jc->chk_wr_frot();
     return res;
+*/
+    return RHM_IORES_SUCCESS;
 }
 
 int32_t
@@ -692,8 +706,9 @@ wmgr::get_events(page_state state, timespec* const timeout, bool flush)
                 oss << "pg=" << pcbp->_index;
             else
             {
-                file_hdr* fhp = (file_hdr*)aiocbp->u.c.buf;
-                oss << "fid=" << fhp->_pfid;
+                // TODO: replace for linearstore: fhp->_pfid
+//                file_hdr_t* fhp = (file_hdr_t*)aiocbp->u.c.buf;
+//                oss << "fid=" << fhp->_pfid;
             }
             oss << " size=" << aiocbp->u.c.nbytes;
             oss << " offset=" << aiocbp->u.c.offset << " fh=" << aiocbp->aio_fildes << "]";
@@ -778,8 +793,9 @@ wmgr::get_events(page_state state, timespec* const timeout, bool flush)
             // Increment the completed write offset
             // NOTE: We cannot use _wrfc here, as it may have rotated since submitting count.
             // Use stored pointer to fcntl in the pcb instead.
-            pcbp->_wfh->add_wr_cmpl_cnt_dblks(pcbp->_wdblks);
-            pcbp->_wfh->decr_aio_cnt();
+            // TODO: replace for linearstore:  pcbp->_wfh
+//            pcbp->_wfh->add_wr_cmpl_cnt_dblks(pcbp->_wdblks);
+//            pcbp->_wfh->decr_aio_cnt();
             _jc->instr_decr_outstanding_aio_cnt();
 
             // Clean up this pcb's data_tok list
@@ -793,12 +809,15 @@ wmgr::get_events(page_state state, timespec* const timeout, bool flush)
         else // File header writes have no pcb
         {
             // get lfid from original file header record, update info for that lfid
-            file_hdr* fhp = (file_hdr*)aiocbp->u.c.buf;
+            // TODO: replace for linearstore: lfid
+/*
+            file_hdr_t* fhp = (file_hdr*)aiocbp->u.c.buf;
             uint32_t lfid = fhp->_lfid;
             fcntl* fcntlp = _jc->get_fcntlp(lfid);
             fcntlp->add_wr_cmpl_cnt_dblks(JRNL_SBLK_SIZE);
             fcntlp->decr_aio_cnt();
             fcntlp->set_wr_fhdr_aio_outstanding(false);
+*/
         }
     }
 
@@ -821,8 +840,8 @@ wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks, co
 {
     pmgr::initialize(cbp, wcache_pgsize_sblks, wcache_num_pages);
     wmgr::clean();
-    _num_jfiles = _jc->num_jfiles();
-    if (::posix_memalign(&_fhdr_base_ptr, _sblksize, _sblksize * _num_jfiles))
+    /*_num_jfiles = _jc->num_jfiles();*/ // TODO: replace for linearstore: _jc->num_jfiles()
+    if (::posix_memalign(&_fhdr_base_ptr, _sblksize, _sblksize /** _num_jfiles*/))
     {
         wmgr::clean();
         std::ostringstream oss;
@@ -848,15 +867,18 @@ wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks, co
 
 iores
 wmgr::pre_write_check(const _op_type op, const data_tok* const dtokp,
-        const std::size_t xidsize, const std::size_t dsize, const bool external
+        const std::size_t /*xidsize*/, const std::size_t /*dsize*/, const bool /*external*/
         ) const
 {
     // Check status of current file
+    // TODO: replace for linearstore: _wrfc
+/*
     if (!_wrfc.is_wr_reset())
     {
         if (!_wrfc.wr_reset())
             return RHM_IORES_FULL;
     }
+*/
 
     // Check status of current page is ok for writing
     if (_page_cb_arr[_pg_index]._state != IN_USE)
@@ -880,10 +902,12 @@ wmgr::pre_write_check(const _op_type op, const data_tok* const dtokp,
         case WMGR_ENQUEUE:
             {
                 // Check for enqueue reaching cutoff threshold
-                uint32_t size_dblks = jrec::size_dblks(enq_rec::rec_size(xidsize, dsize,
-                        external));
+                // TODO: replace for linearstore: _wrfc
+/*
+                uint32_t size_dblks = jrec::size_dblks(enq_rec::rec_size(xidsize, dsize, external));
                 if (!_enq_busy && _wrfc.enq_threshold(_cached_offset_dblks + size_dblks))
                     return RHM_IORES_ENQCAPTHRESH;
+*/
                 if (!dtokp->is_writable())
                 {
                     std::ostringstream oss;
@@ -946,7 +970,7 @@ wmgr::dequeue_check(const std::string& xid, const uint64_t drid)
 void
 wmgr::dblk_roundup()
 {
-    const uint32_t xmagic = RHM_JDAT_EMPTY_MAGIC;
+    const uint32_t xmagic = QLS_EMPTY_MAGIC;
     uint32_t wdblks = jrec::size_blks(_cached_offset_dblks, JRNL_SBLK_SIZE) * JRNL_SBLK_SIZE;
     while (_cached_offset_dblks < wdblks)
     {
@@ -961,21 +985,25 @@ wmgr::dblk_roundup()
 }
 
 void
-wmgr::write_fhdr(uint64_t rid, uint16_t fid, uint16_t lid, std::size_t fro)
+wmgr::write_fhdr(uint64_t rid, uint16_t fid, uint16_t /*lid*/, std::size_t fro)
 {
-    file_hdr fhdr(RHM_JDAT_FILE_MAGIC, RHM_JDAT_VERSION, rid, fid, lid, fro, _wrfc.owi(), true);
+    file_hdr_t fhdr/*(QLS_FILE_MAGIC, QLS_JRNL_VERSION, rid, fid, lid, fro, _wrfc.owi(), true)*/;
+    /*int err =*/ ::file_hdr_init(&fhdr, QLS_FILE_MAGIC, QLS_JRNL_VERSION, 0, rid, fro, 0, 0, 0);
     std::memcpy(_fhdr_ptr_arr[fid], &fhdr, sizeof(fhdr));
 #ifdef RHM_CLEAN
     std::memset((char*)_fhdr_ptr_arr[fid] + sizeof(fhdr), RHM_CLEAN_CHAR, _sblksize - sizeof(fhdr));
 #endif
     aio_cb* aiocbp = _fhdr_aio_cb_arr[fid];
-    aio::prep_pwrite(aiocbp, _wrfc.fh(), _fhdr_ptr_arr[fid], _sblksize, 0);
+//    aio::prep_pwrite(aiocbp, _wrfc.fh(), _fhdr_ptr_arr[fid], _sblksize, 0); // TODO: replace for linearstore: _wrfc
     if (aio::submit(_ioctx, 1, &aiocbp) < 0)
         throw jexception(jerrno::JERR__AIO, "wmgr", "write_fhdr");
     _aio_evt_rem++;
+    // TODO: replace for linearstore: _wrfc
+/*
     _wrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE);
     _wrfc.incr_aio_cnt();
     _wrfc.file_controller()->set_wr_fhdr_aio_outstanding(true);
+*/
 }
 
 void
@@ -1029,7 +1057,7 @@ wmgr::status_str() const
             default:            oss << _page_cb_arr[i]._state;
         }
     }
-    oss << "] " << _wrfc.status_str();
+    oss << "] " /*<< _wrfc.status_str()*/; // TODO: replace for linearstore: _wrfc
     return oss.str();
 }
 

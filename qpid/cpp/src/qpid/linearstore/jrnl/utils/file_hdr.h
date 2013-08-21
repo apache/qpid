@@ -78,9 +78,9 @@ typedef struct file_hdr_t {
     uint16_t  _name_length;	/**< Length of the queue name in octets, which follows this struct in the header */
 } file_hdr_t;
 
-void file_hdr_init(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                   const uint64_t rid, const uint64_t fro, const uint64_t ts_sec, const uint64_t ts_nsec,
-                   const uint32_t file_count, const uint64_t file_size, const uint64_t file_number);
+int file_hdr_init(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
+                   const uint64_t rid, const uint64_t fro, const uint32_t file_count, const uint64_t file_size,
+                   const uint64_t file_number);
 void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src);
 int  set_time_now(file_hdr_t *fh);
 void set_time(file_hdr_t *fh, struct timespec *ts);

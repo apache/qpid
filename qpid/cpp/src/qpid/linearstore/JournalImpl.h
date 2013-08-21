@@ -23,17 +23,17 @@
 #define QPID_LEGACYSTORE_JOURNALIMPL_H
 
 #include <set>
-#include "qpid/legacystore/jrnl/enums.h"
-#include "qpid/legacystore/jrnl/jcntl.h"
-#include "qpid/legacystore/DataTokenImpl.h"
-#include "qpid/legacystore/PreparedTransaction.h"
+#include "qpid/linearstore/jrnl/enums.h"
+#include "qpid/linearstore/jrnl/jcntl.h"
+#include "qpid/linearstore/DataTokenImpl.h"
+#include "qpid/linearstore/PreparedTransaction.h"
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/sys/Time.h"
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include "qpid/management/Manageable.h"
-#include "qmf/org/apache/qpid/legacystore/Journal.h"
+#include "qmf/org/apache/qpid/linearstore/Journal.h"
 
 namespace qpid { namespace sys {
 class Timer;
@@ -98,7 +98,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
     bool _external;
 
     qpid::management::ManagementAgent* _agent;
-    qmf::org::apache::qpid::legacystore::Journal::shared_ptr _mgmtObject;
+    qmf::org::apache::qpid::linearstore::Journal::shared_ptr _mgmtObject;
     DeleteCallback deleteCallback;
 
   public:
@@ -116,28 +116,28 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
 
     void initManagement(qpid::management::ManagementAgent* agent);
 
-    void initialize(const u_int16_t num_jfiles,
+    void initialize(/*const u_int16_t num_jfiles,
                     const bool auto_expand,
                     const u_int16_t ae_max_jfiles,
-                    const u_int32_t jfsize_sblks,
+                    const u_int32_t jfsize_sblks,*/
                     const u_int16_t wcache_num_pages,
                     const u_int32_t wcache_pgsize_sblks,
                     mrg::journal::aio_callback* const cbp);
 
-    inline void initialize(const u_int16_t num_jfiles,
+    inline void initialize(/*const u_int16_t num_jfiles,
                            const bool auto_expand,
                            const u_int16_t ae_max_jfiles,
-                           const u_int32_t jfsize_sblks,
+                           const u_int32_t jfsize_sblks,*/
                            const u_int16_t wcache_num_pages,
                            const u_int32_t wcache_pgsize_sblks) {
-        initialize(num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks, wcache_num_pages, wcache_pgsize_sblks,
+        initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
                    this);
     }
 
-    void recover(const u_int16_t num_jfiles,
+    void recover(/*const u_int16_t num_jfiles,
                  const bool auto_expand,
                  const u_int16_t ae_max_jfiles,
-                 const u_int32_t jfsize_sblks,
+                 const u_int32_t jfsize_sblks,*/
                  const u_int16_t wcache_num_pages,
                  const u_int32_t wcache_pgsize_sblks,
                  mrg::journal::aio_callback* const cbp,
@@ -145,16 +145,16 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
                  u_int64_t& highest_rid,
                  u_int64_t queue_id);
 
-    inline void recover(const u_int16_t num_jfiles,
+    inline void recover(/*const u_int16_t num_jfiles,
                         const bool auto_expand,
                         const u_int16_t ae_max_jfiles,
-                        const u_int32_t jfsize_sblks,
+                        const u_int32_t jfsize_sblks,*/
                         const u_int16_t wcache_num_pages,
                         const u_int32_t wcache_pgsize_sblks,
                         boost::ptr_list<msgstore::PreparedTransaction>* prep_tx_list_ptr,
                         u_int64_t& highest_rid,
                         u_int64_t queue_id) {
-        recover(num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks, wcache_num_pages, wcache_pgsize_sblks,
+        recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
                 this, prep_tx_list_ptr, highest_rid, queue_id);
     }
 

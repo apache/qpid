@@ -19,24 +19,24 @@
  *
  */
 
-#include "qpid/legacystore/MessageStoreImpl.h"
+#include "qpid/linearstore/MessageStoreImpl.h"
 
 #include "qpid/broker/QueueSettings.h"
-#include "qpid/legacystore/BindingDbt.h"
-#include "qpid/legacystore/BufferValue.h"
-#include "qpid/legacystore/IdDbt.h"
-#include "qpid/legacystore/jrnl/txn_map.h"
+#include "qpid/linearstore/BindingDbt.h"
+#include "qpid/linearstore/BufferValue.h"
+#include "qpid/linearstore/IdDbt.h"
+#include "qpid/linearstore/jrnl/txn_map.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
-#include "qmf/org/apache/qpid/legacystore/Package.h"
-#include "qpid/legacystore/StoreException.h"
+#include "qmf/org/apache/qpid/linearstore/Package.h"
+#include "qpid/linearstore/StoreException.h"
 #include <dirent.h>
 #include <db.h>
 
 #define MAX_AIO_SLEEPS 100000 // tot: ~1 sec
 #define AIO_SLEEP_TIME_US  10 // 0.01 ms
 
-namespace _qmf = qmf::org::apache::qpid::legacystore;
+namespace _qmf = qmf::org::apache::qpid::linearstore;
 
 namespace mrg {
 namespace msgstore {
@@ -78,6 +78,7 @@ MessageStoreImpl::MessageStoreImpl(qpid::broker::Broker* broker_, const char* en
                                    agent(0)
 {}
 
+/*
 u_int16_t MessageStoreImpl::chkJrnlNumFilesParam(const u_int16_t param, const std::string paramName)
 {
     if (param < JRNL_MIN_NUM_FILES || param > JRNL_MAX_NUM_FILES) {
@@ -87,7 +88,9 @@ u_int16_t MessageStoreImpl::chkJrnlNumFilesParam(const u_int16_t param, const st
     }
     return param;
 }
+*/
 
+/*
 u_int32_t MessageStoreImpl::chkJrnlFileSizeParam(const u_int32_t param, const std::string paramName, const u_int32_t wCachePgSizeSblks)
 {
     if (param < (JRNL_MIN_FILE_SIZE / JRNL_RMGR_PAGE_SIZE) || (param > JRNL_MAX_FILE_SIZE / JRNL_RMGR_PAGE_SIZE)) {
@@ -102,16 +105,17 @@ u_int32_t MessageStoreImpl::chkJrnlFileSizeParam(const u_int32_t param, const st
     }
     return param;
 }
+*/
 
-u_int32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const u_int32_t param, const std::string paramName, const u_int16_t jrnlFsizePgs)
+u_int32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const u_int32_t param, const std::string paramName/*, const u_int16_t jrnlFsizePgs*/)
 {
     u_int32_t p = param;
 
-    if (jrnlFsizePgs == 1 && p > 64 ) {
+/*    if (jrnlFsizePgs == 1 && p > 64 ) {
         p =  64;
         QPID_LOG(warning, "parameter " << paramName << " (" << param << ") cannot set a page size greater than the journal file size; changing this parameter to the journal file size (" << p << ")");
     }
-    else if (p == 0) {
+    else*/ if (p == 0) {
         // For zero value, use default
         p = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_DBLK_SIZE * JRNL_SBLK_SIZE / 1024;
         QPID_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to default value (" << p << ")");
@@ -149,6 +153,7 @@ u_int16_t MessageStoreImpl::getJrnlWrNumPages(const u_int32_t wrPageSizeKib)
     }
 }
 
+/*
 void MessageStoreImpl::chkJrnlAutoExpandOptions(const StoreOptions* opts,
                                                 bool& autoJrnlExpand,
                                                 u_int16_t& autoJrnlExpandMaxFiles,
@@ -198,6 +203,7 @@ void MessageStoreImpl::chkJrnlAutoExpandOptions(const StoreOptions* opts,
     autoJrnlExpand = true;
     autoJrnlExpandMaxFiles = p;
 }
+*/
 
 void MessageStoreImpl::initManagement ()
 {
@@ -233,45 +239,46 @@ bool MessageStoreImpl::init(const qpid::Options* options)
 {
     // Extract and check options
     const StoreOptions* opts = static_cast<const StoreOptions*>(options);
-    u_int16_t numJrnlFiles = chkJrnlNumFilesParam(opts->numJrnlFiles, "num-jfiles");
-    u_int32_t jrnlFsizePgs = chkJrnlFileSizeParam(opts->jrnlFsizePgs, "jfile-size-pgs");
-    u_int32_t jrnlWrCachePageSizeKib = chkJrnlWrPageCacheSize(opts->wCachePageSizeKib, "wcache-page-size", jrnlFsizePgs);
-    u_int16_t tplNumJrnlFiles = chkJrnlNumFilesParam(opts->tplNumJrnlFiles, "tpl-num-jfiles");
-    u_int32_t tplJrnlFSizePgs = chkJrnlFileSizeParam(opts->tplJrnlFsizePgs, "tpl-jfile-size-pgs");
-    u_int32_t tplJrnlWrCachePageSizeKib = chkJrnlWrPageCacheSize(opts->tplWCachePageSizeKib, "tpl-wcache-page-size", tplJrnlFSizePgs);
-    bool      autoJrnlExpand;
-    u_int16_t autoJrnlExpandMaxFiles;
-    chkJrnlAutoExpandOptions(opts, autoJrnlExpand, autoJrnlExpandMaxFiles, "auto-expand-max-jfiles", numJrnlFiles, "num-jfiles");
+//    u_int16_t numJrnlFiles = chkJrnlNumFilesParam(opts->numJrnlFiles, "num-jfiles");
+//    u_int32_t jrnlFsizePgs = chkJrnlFileSizeParam(opts->jrnlFsizePgs, "jfile-size-pgs");
+    u_int32_t jrnlWrCachePageSizeKib = chkJrnlWrPageCacheSize(opts->wCachePageSizeKib, "wcache-page-size"/*, jrnlFsizePgs*/);
+//    u_int16_t tplNumJrnlFiles = chkJrnlNumFilesParam(opts->tplNumJrnlFiles, "tpl-num-jfiles");
+//    u_int32_t tplJrnlFSizePgs = chkJrnlFileSizeParam(opts->tplJrnlFsizePgs, "tpl-jfile-size-pgs");
+    u_int32_t tplJrnlWrCachePageSizeKib = chkJrnlWrPageCacheSize(opts->tplWCachePageSizeKib, "tpl-wcache-page-size"/*, tplJrnlFSizePgs*/);
+//    bool      autoJrnlExpand;
+//    u_int16_t autoJrnlExpandMaxFiles;
+//    chkJrnlAutoExpandOptions(opts, autoJrnlExpand, autoJrnlExpandMaxFiles, "auto-expand-max-jfiles", numJrnlFiles, "num-jfiles");
 
     // Pass option values to init(...)
-    return init(opts->storeDir, numJrnlFiles, jrnlFsizePgs, opts->truncateFlag, jrnlWrCachePageSizeKib, tplNumJrnlFiles, tplJrnlFSizePgs, tplJrnlWrCachePageSizeKib, autoJrnlExpand, autoJrnlExpandMaxFiles);
+    return init(opts->storeDir, /*numJrnlFiles, jrnlFsizePgs,*/ opts->truncateFlag, jrnlWrCachePageSizeKib,
+                    /*tplNumJrnlFiles, tplJrnlFSizePgs,*/ tplJrnlWrCachePageSizeKib/*, autoJrnlExpand, autoJrnlExpandMaxFiles*/);
 }
 
 // These params, taken from options, are assumed to be correct and verified
 bool MessageStoreImpl::init(const std::string& dir,
-                           u_int16_t jfiles,
-                           u_int32_t jfileSizePgs,
+                           /*u_int16_t jfiles,
+                           u_int32_t jfileSizePgs,*/
                            const bool truncateFlag,
                            u_int32_t wCachePageSizeKib,
-                           u_int16_t tplJfiles,
-                           u_int32_t tplJfileSizePgs,
-                           u_int32_t tplWCachePageSizeKib,
+                           /*u_int16_t tplJfiles,
+                           u_int32_t tplJfileSizePgs,*/
+                           u_int32_t tplWCachePageSizeKib/*,
                            bool      autoJExpand,
-                           u_int16_t autoJExpandMaxFiles)
+                           u_int16_t autoJExpandMaxFiles*/)
 {
     if (isInit) return true;
 
     // Set geometry members (converting to correct units where req'd)
-    numJrnlFiles = jfiles;
-    jrnlFsizeSblks = jfileSizePgs * JRNL_RMGR_PAGE_SIZE;
+//    numJrnlFiles = jfiles;
+//    jrnlFsizeSblks = jfileSizePgs * JRNL_RMGR_PAGE_SIZE;
     wCachePgSizeSblks = wCachePageSizeKib * 1024 / JRNL_DBLK_SIZE / JRNL_SBLK_SIZE; // convert from KiB to number sblks
     wCacheNumPages = getJrnlWrNumPages(wCachePageSizeKib);
-    tplNumJrnlFiles = tplJfiles;
-    tplJrnlFsizeSblks = tplJfileSizePgs * JRNL_RMGR_PAGE_SIZE;
+//    tplNumJrnlFiles = tplJfiles;
+//    tplJrnlFsizeSblks = tplJfileSizePgs * JRNL_RMGR_PAGE_SIZE;
     tplWCachePgSizeSblks = tplWCachePageSizeKib * 1024 / JRNL_DBLK_SIZE / JRNL_SBLK_SIZE; // convert from KiB to number sblks
     tplWCacheNumPages = getJrnlWrNumPages(tplWCachePageSizeKib);
-    autoJrnlExpand = autoJExpand;
-    autoJrnlExpandMaxFiles = autoJExpandMaxFiles;
+//    autoJrnlExpand = autoJExpand;
+//    autoJrnlExpandMaxFiles = autoJExpandMaxFiles;
     if (dir.size()>0) storeDir = dir;
 
     if (truncateFlag)
@@ -280,15 +287,15 @@ bool MessageStoreImpl::init(const std::string& dir,
         init();
 
     QPID_LOG(notice, "Store module initialized; store-dir=" << dir);
-    QPID_LOG(info,   "> Default files per journal: " << jfiles);
+//    QPID_LOG(info,   "> Default files per journal: " << jfiles);
 // TODO: Uncomment these lines when auto-expand is enabled.
 //     QPID_LOG(info,   "> Auto-expand " << (autoJrnlExpand ? "enabled" : "disabled"));
 //     if (autoJrnlExpand) QPID_LOG(info,   "> Max auto-expand journal files: " << autoJrnlExpandMaxFiles);
-    QPID_LOG(info,   "> Default journal file size: " << jfileSizePgs << " (wpgs)");
+//    QPID_LOG(info,   "> Default journal file size: " << jfileSizePgs << " (wpgs)");
     QPID_LOG(info,   "> Default write cache page size: " << wCachePageSizeKib << " (KiB)");
     QPID_LOG(info,   "> Default number of write cache pages: " << wCacheNumPages);
-    QPID_LOG(info,   "> TPL files per journal: " << tplNumJrnlFiles);
-    QPID_LOG(info,   "> TPL journal file size: " << tplJfileSizePgs << " (wpgs)");
+//    QPID_LOG(info,   "> TPL files per journal: " << tplNumJrnlFiles);
+//    QPID_LOG(info,   "> TPL journal file size: " << tplJfileSizePgs << " (wpgs)");
     QPID_LOG(info,   "> TPL write cache page size: " << tplWCachePageSizeKib << " (KiB)");
     QPID_LOG(info,   "> TPL number of write cache pages: " << tplWCacheNumPages);
 
@@ -424,7 +431,7 @@ void MessageStoreImpl::chkTplStoreInit()
     qpid::sys::Mutex::ScopedLock sl(tplInitLock);
     if (!tplStorePtr->is_ready()) {
         journal::jdir::create_dir(getTplBaseDir());
-        tplStorePtr->initialize(tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks, tplWCacheNumPages, tplWCachePgSizeSblks);
+        tplStorePtr->initialize(/*tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks,*/ tplWCacheNumPages, tplWCachePgSizeSblks);
         if (mgmtObject.get() != 0) mgmtObject->set_tplIsInitialized(true);
     }
 }
@@ -468,7 +475,7 @@ MessageStoreImpl::~MessageStoreImpl()
 }
 
 void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
-                             const qpid::framing::FieldTable& args)
+                             const qpid::framing::FieldTable& /*args*/)
 {
     checkInit();
     if (queue.getPersistenceId()) {
@@ -477,6 +484,7 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
     JournalImpl* jQueue = 0;
     qpid::framing::FieldTable::ValuePtr value;
 
+/*
     u_int16_t localFileCount = numJrnlFiles;
     bool      localAutoExpandFlag = autoJrnlExpand;
     u_int16_t localAutoExpandMaxFileCount = autoJrnlExpandMaxFiles;
@@ -489,6 +497,7 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
     value = args.get("qpid.file_size");
     if (value.get() != 0 && !value->empty() && value->convertsTo<int>())
         localFileSizeSblks = chkJrnlFileSizeParam((u_int32_t) value->get<int>(), "qpid.file_size", wCachePgSizeSblks) * JRNL_RMGR_PAGE_SIZE;
+*/
 
     if (queue.getName().size() == 0)
     {
@@ -504,6 +513,7 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
         journalList[queue.getName()]=jQueue;
     }
 
+/*
     value = args.get("qpid.auto_expand");
     if (value.get() != 0 && !value->empty() && value->convertsTo<bool>())
         localAutoExpandFlag = (bool) value->get<bool>();
@@ -511,11 +521,12 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
     value = args.get("qpid.auto_expand_max_jfiles");
     if (value.get() != 0 && !value->empty() && value->convertsTo<int>())
         localAutoExpandMaxFileCount = (u_int16_t) value->get<int>();
+*/
 
     queue.setExternalQueueStore(dynamic_cast<qpid::broker::ExternalQueueStore*>(jQueue));
     try {
         // init will create the deque's for the init...
-        jQueue->initialize(localFileCount, localAutoExpandFlag, localAutoExpandMaxFileCount, localFileSizeSblks, wCacheNumPages, wCachePgSizeSblks);
+        jQueue->initialize(/*localFileCount, localAutoExpandFlag, localAutoExpandMaxFileCount, localFileSizeSblks,*/ wCacheNumPages, wCachePgSizeSblks);
     } catch (const journal::jexception& e) {
         THROW_STORE_EXCEPTION(std::string("Queue ") + queue.getName() + ": create() failed: " + e.what());
     }
@@ -796,8 +807,10 @@ void MessageStoreImpl::recoverQueues(TxnCtxt& txn,
             long rcnt = 0L;     // recovered msg count
             long idcnt = 0L;    // in-doubt msg count
             u_int64_t thisHighestRid = 0ULL;
-            jQueue->recover(numJrnlFiles, autoJrnlExpand, autoJrnlExpandMaxFiles, jrnlFsizeSblks, wCacheNumPages, wCachePgSizeSblks, &prepared, thisHighestRid, key.id); // start recovery
+            jQueue->recover(/*numJrnlFiles, autoJrnlExpand, autoJrnlExpandMaxFiles, jrnlFsizeSblks,*/ wCacheNumPages,
+                            wCachePgSizeSblks, &prepared, thisHighestRid, key.id); // start recovery
 
+/*
             // Check for changes to queue store settings qpid.file_count and qpid.file_size resulting
             // from recovery of a store that has had its size changed externally by the resize utility.
             // If so, update the queue store settings so that QMF queries will reflect the new values.
@@ -811,6 +824,7 @@ void MessageStoreImpl::recoverQueues(TxnCtxt& txn,
             if (value.get() != 0 && !value->empty() && value->convertsTo<int>() && (u_int32_t)value->get<int>() != jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE) {
                 queue->addArgument("qpid.file_size", jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE);
             }
+*/
 
             if (highestRid == 0ULL)
                 highestRid = thisHighestRid;
@@ -1172,7 +1186,7 @@ void MessageStoreImpl::recoverTplStore()
 {
     if (journal::jdir::exists(tplStorePtr->jrnl_dir() + tplStorePtr->base_filename() + ".jinf")) {
         u_int64_t thisHighestRid = 0ULL;
-        tplStorePtr->recover(tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks, tplWCachePgSizeSblks, tplWCacheNumPages, 0, thisHighestRid, 0);
+        tplStorePtr->recover(/*tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks,*/ tplWCachePgSizeSblks, tplWCacheNumPages, 0, thisHighestRid, 0);
         if (highestRid == 0ULL)
             highestRid = thisHighestRid;
         else if (thisHighestRid - highestRid  < 0x8000000000000000ULL) // RFC 1982 comparison for unsigned 64-bit
@@ -1675,16 +1689,17 @@ void MessageStoreImpl::journalDeleted(JournalImpl& j) {
 
 MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name) :
                                              qpid::Options(name),
-                                             numJrnlFiles(defNumJrnlFiles),
+                                             /*numJrnlFiles(defNumJrnlFiles),
                                              autoJrnlExpand(defAutoJrnlExpand),
                                              autoJrnlExpandMaxFiles(defAutoJrnlExpandMaxFiles),
-                                             jrnlFsizePgs(defJrnlFileSizePgs),
+                                             jrnlFsizePgs(defJrnlFileSizePgs),*/
                                              truncateFlag(defTruncateFlag),
                                              wCachePageSizeKib(defWCachePageSize),
-                                             tplNumJrnlFiles(defTplNumJrnlFiles),
-                                             tplJrnlFsizePgs(defTplJrnlFileSizePgs),
+                                             /*tplNumJrnlFiles(defTplNumJrnlFiles),
+                                             tplJrnlFsizePgs(defTplJrnlFileSizePgs),*/
                                              tplWCachePageSizeKib(defTplWCachePageSize)
 {
+/*
     std::ostringstream oss1;
     oss1 << "Default number of files for each journal instance (queue). [Allowable values: " <<
                     JRNL_MIN_NUM_FILES << " - " << JRNL_MAX_NUM_FILES << "]";
@@ -1697,12 +1712,13 @@ MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name) :
     std::ostringstream oss4;
     oss4 << "Size of each transaction prepared list journal file in multiples of read pages (1 read page = 64KiB) [Allowable values: " <<
                     JRNL_MIN_FILE_SIZE / JRNL_RMGR_PAGE_SIZE << " - " << JRNL_MAX_FILE_SIZE / JRNL_RMGR_PAGE_SIZE << "]";
+*/
     addOptions()
         ("store-dir", qpid::optValue(storeDir, "DIR"),
                 "Store directory location for persistence (instead of using --data-dir value). "
                 "Required if --no-data-dir is also used.")
-        ("num-jfiles", qpid::optValue(numJrnlFiles, "N"), oss1.str().c_str())
-        ("jfile-size-pgs", qpid::optValue(jrnlFsizePgs, "N"), oss2.str().c_str())
+//        ("num-jfiles", qpid::optValue(numJrnlFiles, "N"), oss1.str().c_str())
+//        ("jfile-size-pgs", qpid::optValue(jrnlFsizePgs, "N"), oss2.str().c_str())
 // TODO: Uncomment these lines when auto-expand is enabled.
 //         ("auto-expand", qpid::optValue(autoJrnlExpand, "yes|no"),
 //                 "If yes|true|1, allows journal to auto-expand by adding additional journal files as needed. "
@@ -1716,8 +1732,8 @@ MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name) :
                 "Size of the pages in the write page cache in KiB. "
                 "Allowable values - powers of 2: 1, 2, 4, ... , 128. "
                 "Lower values decrease latency at the expense of throughput.")
-        ("tpl-num-jfiles", qpid::optValue(tplNumJrnlFiles, "N"), oss3.str().c_str())
-        ("tpl-jfile-size-pgs", qpid::optValue(tplJrnlFsizePgs, "N"), oss4.str().c_str())
+//        ("tpl-num-jfiles", qpid::optValue(tplNumJrnlFiles, "N"), oss3.str().c_str())
+//        ("tpl-jfile-size-pgs", qpid::optValue(tplJrnlFsizePgs, "N"), oss4.str().c_str())
         ("tpl-wcache-page-size", qpid::optValue(tplWCachePageSizeKib, "N"),
                 "Size of the pages in the transaction prepared list write page cache in KiB. "
                 "Allowable values - powers of 2: 1, 2, 4, ... , 128. "

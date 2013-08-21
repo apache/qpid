@@ -22,7 +22,7 @@
 #ifndef QPID_LEGACYSTORE_STOREEXCEPTION_H
 #define QPID_LEGACYSTORE_STOREEXCEPTION_H
 
-#include "qpid/legacystore/IdDbt.h"
+#include "qpid/linearstore/IdDbt.h"
 #include <boost/format.hpp>
 
 namespace mrg{

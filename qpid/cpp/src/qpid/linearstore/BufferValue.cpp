@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpid/legacystore/BufferValue.h"
+#include "qpid/linearstore/BufferValue.h"
 
 namespace mrg {
 namespace msgstore {

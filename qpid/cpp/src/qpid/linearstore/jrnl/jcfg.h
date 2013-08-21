@@ -59,8 +59,8 @@
 #define JRNL_RMGR_PAGE_SIZE     128         ///< Journal page size in softblocks
 #define JRNL_RMGR_PAGES         16          ///< Number of pages to use in wmgr
 //
-//#define JRNL_WMGR_DEF_PAGE_SIZE 64          ///< Journal write page size in softblocks (default)
-//#define JRNL_WMGR_DEF_PAGES     32          ///< Number of pages to use in wmgr (default)
+#define JRNL_WMGR_DEF_PAGE_SIZE 64          ///< Journal write page size in softblocks (default)
+#define JRNL_WMGR_DEF_PAGES     32          ///< Number of pages to use in wmgr (default)
 //
 #define JRNL_WMGR_MAXDTOKPP     1024        ///< Max. dtoks (data blocks) per page in wmgr
 #define JRNL_WMGR_MAXWAITUS     100         ///< Max. wait time (us) before submitting AIO

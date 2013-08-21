@@ -21,16 +21,15 @@
 
 #include "file_hdr.h"
 
-void file_hdr_init(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                   const uint64_t rid, const uint64_t fro, const uint64_t ts_sec, const uint64_t ts_nsec,
-                   const uint32_t file_count, const uint64_t file_size, const uint64_t file_number) {
+int file_hdr_init(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
+                   const uint64_t rid, const uint64_t fro, const uint32_t file_count, const uint64_t file_size,
+                   const uint64_t file_number) {
     rec_hdr_init(&dest->_rhdr, magic, version, uflag, rid);
     dest->_fro = fro;
-    dest->_ts_sec = ts_sec;
-    dest->_ts_nsec = ts_nsec;
     dest->_file_count = file_count;
     dest->_file_size = file_size;
     dest->_file_number = file_number;
+    return set_time_now(dest);
 }
 
 void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src) {

@@ -1,4 +1,4 @@
-<schema package="org.apache.qpid.legacystore">
+<schema package="org.apache.qpid.linearstore">
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one

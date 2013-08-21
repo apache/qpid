@@ -27,9 +27,9 @@
 #include <set>
 #include <string>
 
-#include "qpid/legacystore/DataTokenImpl.h"
-#include "qpid/legacystore/IdSequence.h"
-#include "qpid/legacystore/JournalImpl.h"
+#include "qpid/linearstore/DataTokenImpl.h"
+#include "qpid/linearstore/IdSequence.h"
+#include "qpid/linearstore/JournalImpl.h"
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/sys/Mutex.h"

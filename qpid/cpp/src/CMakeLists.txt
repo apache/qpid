@@ -210,6 +210,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
+                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/linearstore/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)

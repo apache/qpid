@@ -25,17 +25,17 @@
 #include <string>
 
 #include "db-inc.h"
-#include "qpid/legacystore/Cursor.h"
-#include "qpid/legacystore/IdDbt.h"
-#include "qpid/legacystore/IdSequence.h"
-#include "qpid/legacystore/JournalImpl.h"
-#include "qpid/legacystore/jrnl/jcfg.h"
-#include "qpid/legacystore/PreparedTransaction.h"
+#include "qpid/linearstore/Cursor.h"
+#include "qpid/linearstore/IdDbt.h"
+#include "qpid/linearstore/IdSequence.h"
+#include "qpid/linearstore/JournalImpl.h"
+#include "qpid/linearstore/jrnl/jcfg.h"
+#include "qpid/linearstore/PreparedTransaction.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/management/Manageable.h"
-#include "qmf/org/apache/qpid/legacystore/Store.h"
-#include "qpid/legacystore/TxnCtxt.h"
+#include "qmf/org/apache/qpid/linearstore/Store.h"
+#include "qpid/linearstore/TxnCtxt.h"
 
 // Assume DB_VERSION_MAJOR == 4
 #if (DB_VERSION_MINOR == 2)
@@ -63,14 +63,14 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
         StoreOptions(const std::string& name="Store Options");
         std::string clusterName;
         std::string storeDir;
-        u_int16_t numJrnlFiles;
-        bool      autoJrnlExpand;
-        u_int16_t autoJrnlExpandMaxFiles;
-        u_int32_t jrnlFsizePgs;
+//        u_int16_t numJrnlFiles;
+//        bool      autoJrnlExpand;
+//        u_int16_t autoJrnlExpandMaxFiles;
+//        u_int32_t jrnlFsizePgs;
         bool      truncateFlag;
         u_int32_t wCachePageSizeKib;
-        u_int16_t tplNumJrnlFiles;
-        u_int32_t tplJrnlFsizePgs;
+//        u_int16_t tplNumJrnlFiles;
+//        u_int32_t tplJrnlFsizePgs;
         u_int32_t tplWCachePageSizeKib;
     };
 
@@ -99,16 +99,16 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     typedef JournalListMap::iterator JournalListMapItr;
 
     // Default store settings
-    static const u_int16_t defNumJrnlFiles = 8;
-    static const u_int32_t defJrnlFileSizePgs = 24;
+//    static const u_int16_t defNumJrnlFiles = 8;
+//    static const u_int32_t defJrnlFileSizePgs = 24;
     static const bool      defTruncateFlag = false;
     static const u_int32_t defWCachePageSize = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_DBLK_SIZE * JRNL_SBLK_SIZE / 1024;
-    static const u_int16_t defTplNumJrnlFiles = 8;
-    static const u_int32_t defTplJrnlFileSizePgs = 24;
+//    static const u_int16_t defTplNumJrnlFiles = 8;
+//    static const u_int32_t defTplJrnlFileSizePgs = 24;
     static const u_int32_t defTplWCachePageSize = defWCachePageSize / 8;
     // TODO: set defAutoJrnlExpand to true and defAutoJrnlExpandMaxFiles to 16 when auto-expand comes on-line
-    static const bool      defAutoJrnlExpand = false;
-    static const u_int16_t defAutoJrnlExpandMaxFiles = 0;
+//    static const bool      defAutoJrnlExpand = false;
+//    static const u_int16_t defAutoJrnlExpandMaxFiles = 0;
 
     static const std::string storeTopLevelDir;
     static qpid::sys::Duration defJournalGetEventsTimeout;
@@ -152,26 +152,26 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     const char* envPath;
     qpid::broker::Broker* broker;
 
-    qmf::org::apache::qpid::legacystore::Store::shared_ptr mgmtObject;
+    qmf::org::apache::qpid::linearstore::Store::shared_ptr mgmtObject;
     qpid::management::ManagementAgent* agent;
 
 
     // Parameter validation and calculation
-    static u_int16_t chkJrnlNumFilesParam(const u_int16_t param,
-                                          const std::string paramName);
-    static u_int32_t chkJrnlFileSizeParam(const u_int32_t param,
-                                          const std::string paramName,
-                                          const u_int32_t wCachePgSizeSblks = 0);
+//    static u_int16_t chkJrnlNumFilesParam(const u_int16_t param,
+//                                          const std::string paramName);
+//    static u_int32_t chkJrnlFileSizeParam(const u_int32_t param,
+//                                          const std::string paramName,
+//                                          const u_int32_t wCachePgSizeSblks = 0);
     static u_int32_t chkJrnlWrPageCacheSize(const u_int32_t param,
-                                            const std::string paramName,
-                                            const u_int16_t jrnlFsizePgs);
+                                            const std::string paramName/*,
+                                            const u_int16_t jrnlFsizePgs*/);
     static u_int16_t getJrnlWrNumPages(const u_int32_t wrPageSizeKib);
-    void chkJrnlAutoExpandOptions(const MessageStoreImpl::StoreOptions* opts,
-                                  bool& autoJrnlExpand,
-                                  u_int16_t& autoJrnlExpandMaxFiles,
-                                  const std::string& autoJrnlExpandMaxFilesParamName,
-                                  const u_int16_t numJrnlFiles,
-                                  const std::string& numJrnlFilesParamName);
+//    void chkJrnlAutoExpandOptions(const MessageStoreImpl::StoreOptions* opts,
+//                                  bool& autoJrnlExpand,
+//                                  u_int16_t& autoJrnlExpandMaxFiles,
+//                                  const std::string& autoJrnlExpandMaxFilesParamName,
+//                                  const u_int16_t numJrnlFiles,
+//                                  const std::string& numJrnlFilesParamName);
 
     void init();
 
@@ -280,15 +280,15 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     bool init(const qpid::Options* options);
 
     bool init(const std::string& dir,
-              u_int16_t jfiles = defNumJrnlFiles,
-              u_int32_t jfileSizePgs = defJrnlFileSizePgs,
+              /*u_int16_t jfiles = defNumJrnlFiles,
+              u_int32_t jfileSizePgs = defJrnlFileSizePgs,*/
               const bool truncateFlag = false,
               u_int32_t wCachePageSize = defWCachePageSize,
-              u_int16_t tplJfiles = defTplNumJrnlFiles,
-              u_int32_t tplJfileSizePgs = defTplJrnlFileSizePgs,
-              u_int32_t tplWCachePageSize = defTplWCachePageSize,
+              /*u_int16_t tplJfiles = defTplNumJrnlFiles,
+              u_int32_t tplJfileSizePgs = defTplJrnlFileSizePgs,*/
+              u_int32_t tplWCachePageSize = defTplWCachePageSize/*,
               bool      autoJExpand = defAutoJrnlExpand,
-              u_int16_t autoJExpandMaxFiles = defAutoJrnlExpandMaxFiles);
+              u_int16_t autoJExpandMaxFiles = defAutoJrnlExpandMaxFiles*/);
 
     void truncateInit(const bool saveStoreContent = false);
 

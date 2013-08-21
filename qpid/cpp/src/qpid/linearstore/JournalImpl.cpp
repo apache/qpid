@@ -19,25 +19,25 @@
  *
  */
 
-#include "qpid/legacystore/JournalImpl.h"
+#include "qpid/linearstore/JournalImpl.h"
 
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jexception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
-#include "qmf/org/apache/qpid/legacystore/ArgsJournalExpand.h"
-#include "qmf/org/apache/qpid/legacystore/EventCreated.h"
-#include "qmf/org/apache/qpid/legacystore/EventEnqThresholdExceeded.h"
-#include "qmf/org/apache/qpid/legacystore/EventFull.h"
-#include "qmf/org/apache/qpid/legacystore/EventRecovered.h"
+#include "qmf/org/apache/qpid/linearstore/ArgsJournalExpand.h"
+#include "qmf/org/apache/qpid/linearstore/EventCreated.h"
+#include "qmf/org/apache/qpid/linearstore/EventEnqThresholdExceeded.h"
+#include "qmf/org/apache/qpid/linearstore/EventFull.h"
+#include "qmf/org/apache/qpid/linearstore/EventRecovered.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Timer.h"
-#include "qpid/legacystore/StoreException.h"
+#include "qpid/linearstore/StoreException.h"
 
 using namespace mrg::msgstore;
 using namespace mrg::journal;
 using qpid::management::ManagementAgent;
-namespace _qmf = qmf::org::apache::qpid::legacystore;
+namespace _qmf = qmf::org::apache::qpid::linearstore;
 
 InactivityFireEvent::InactivityFireEvent(JournalImpl* p, const qpid::sys::Duration timeout):
     qpid::sys::TimerTask(timeout, "JournalInactive:"+p->id()), _parent(p) {}
@@ -132,22 +132,24 @@ JournalImpl::initManagement(qpid::management::ManagementAgent* a)
 
 
 void
-JournalImpl::initialize(const u_int16_t num_jfiles,
+JournalImpl::initialize(/*const u_int16_t num_jfiles,
                         const bool auto_expand,
                         const u_int16_t ae_max_jfiles,
-                        const u_int32_t jfsize_sblks,
+                        const u_int32_t jfsize_sblks,*/
                         const u_int16_t wcache_num_pages,
                         const u_int32_t wcache_pgsize_sblks,
                         mrg::journal::aio_callback* const cbp)
 {
     std::ostringstream oss;
-    oss << "Initialize; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
+//    oss << "Initialize; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
+    oss << "Initialize;";
     oss << " wcache_pgsize_sblks=" << wcache_pgsize_sblks;
     oss << " wcache_num_pages=" << wcache_num_pages;
     log(LOG_DEBUG, oss.str());
-    jcntl::initialize(num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks, wcache_num_pages, wcache_pgsize_sblks, cbp);
+    jcntl::initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks, cbp);
     log(LOG_DEBUG, "Initialization complete");
-
+    // TODO: replace for linearstore: _lpmgr
+/*
     if (_mgmtObject.get() != 0)
     {
         _mgmtObject->set_initialFileCount(_lpmgr.num_jfiles());
@@ -159,15 +161,16 @@ JournalImpl::initialize(const u_int16_t num_jfiles,
         _mgmtObject->set_writePages(wcache_num_pages);
     }
     if (_agent != 0)
-        _agent->raiseEvent(qmf::org::apache::qpid::legacystore::EventCreated(_jid, _jfsize_sblks * JRNL_SBLK_SIZE * JRNL_DBLK_SIZE, _lpmgr.num_jfiles()),
+        _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventCreated(_jid, _jfsize_sblks * JRNL_SBLK_SIZE * JRNL_DBLK_SIZE, _lpmgr.num_jfiles()),
                            qpid::management::ManagementAgent::SEV_NOTE);
+*/
 }
 
 void
-JournalImpl::recover(const u_int16_t num_jfiles,
+JournalImpl::recover(/*const u_int16_t num_jfiles,
                      const bool auto_expand,
                      const u_int16_t ae_max_jfiles,
-                     const u_int32_t jfsize_sblks,
+                     const u_int32_t jfsize_sblks,*/
                      const u_int16_t wcache_num_pages,
                      const u_int32_t wcache_pgsize_sblks,
                      mrg::journal::aio_callback* const cbp,
@@ -176,12 +179,14 @@ JournalImpl::recover(const u_int16_t num_jfiles,
                      u_int64_t queue_id)
 {
     std::ostringstream oss1;
-    oss1 << "Recover; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
+//    oss1 << "Recover; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
+    oss1 << "Recover;";
     oss1 << " queue_id = 0x" << std::hex << queue_id << std::dec;
     oss1 << " wcache_pgsize_sblks=" << wcache_pgsize_sblks;
     oss1 << " wcache_num_pages=" << wcache_num_pages;
     log(LOG_DEBUG, oss1.str());
-
+    // TODO: replace for linearstore: _lpmgr
+/*
     if (_mgmtObject.get() != 0)
     {
         _mgmtObject->set_initialFileCount(_lpmgr.num_jfiles());
@@ -192,6 +197,7 @@ JournalImpl::recover(const u_int16_t num_jfiles,
         _mgmtObject->set_writePageSize(wcache_pgsize_sblks * JRNL_SBLK_SIZE * JRNL_DBLK_SIZE);
         _mgmtObject->set_writePages(wcache_num_pages);
     }
+*/
 
     if (prep_tx_list_ptr) {
         // Create list of prepared xids
@@ -200,10 +206,10 @@ JournalImpl::recover(const u_int16_t num_jfiles,
             prep_xid_list.push_back(i->xid);
         }
 
-        jcntl::recover(num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks, wcache_num_pages, wcache_pgsize_sblks,
+        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
                 cbp, &prep_xid_list, highest_rid);
     } else {
-        jcntl::recover(num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks, wcache_num_pages, wcache_pgsize_sblks,
+        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
                 cbp, 0, highest_rid);
     }
 
@@ -242,9 +248,12 @@ JournalImpl::recover_complete()
 {
     jcntl::recover_complete();
     log(LOG_DEBUG, "Recover phase 2 complete; journal now writable.");
+    // TODO: replace for linearstore: _lpmgr
+/*
     if (_agent != 0)
-        _agent->raiseEvent(qmf::org::apache::qpid::legacystore::EventRecovered(_jid, _jfsize_sblks * JRNL_SBLK_SIZE * JRNL_DBLK_SIZE, _lpmgr.num_jfiles(),
+        _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventRecovered(_jid, _jfsize_sblks * JRNL_SBLK_SIZE * JRNL_DBLK_SIZE, _lpmgr.num_jfiles(),
                         _emap.size(), _tmap.size(), _tmap.enq_cnt(), _tmap.deq_cnt()), qpid::management::ManagementAgent::SEV_NOTE);
+*/
 }
 
 //#define MAX_AIO_SLEEPS 1000000 // tot: ~10 sec
@@ -589,7 +598,7 @@ JournalImpl::handleIoResult(const iores r)
                 oss << "Enqueue capacity threshold exceeded on queue \"" << _jid << "\".";
                 log(LOG_WARN, oss.str());
                 if (_agent != 0)
-                    _agent->raiseEvent(qmf::org::apache::qpid::legacystore::EventEnqThresholdExceeded(_jid, "Journal enqueue capacity threshold exceeded"),
+                    _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventEnqThresholdExceeded(_jid, "Journal enqueue capacity threshold exceeded"),
                                        qpid::management::ManagementAgent::SEV_WARN);
                 THROW_STORE_FULL_EXCEPTION(oss.str());
             }
@@ -599,7 +608,7 @@ JournalImpl::handleIoResult(const iores r)
                 oss << "Journal full on queue \"" << _jid << "\".";
                 log(LOG_CRITICAL, oss.str());
                 if (_agent != 0)
-                    _agent->raiseEvent(qmf::org::apache::qpid::legacystore::EventFull(_jid, "Journal full"), qpid::management::ManagementAgent::SEV_ERROR);
+                    _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventFull(_jid, "Journal full"), qpid::management::ManagementAgent::SEV_ERROR);
                 THROW_STORE_FULL_EXCEPTION(oss.str());
             }
         default:

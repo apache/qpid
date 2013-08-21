@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpid/legacystore/DataTokenImpl.h"
+#include "qpid/linearstore/DataTokenImpl.h"
 
 using namespace mrg::msgstore;
 

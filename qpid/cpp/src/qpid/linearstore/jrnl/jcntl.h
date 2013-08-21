@@ -190,8 +190,8 @@ namespace journal
         *
         * \exception TODO
         */
-        void initialize(const uint16_t num_jfiles/*, const bool auto_expand, const uint16_t ae_max_jfiles*/,
-                const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
+        void initialize(/*const uint16_t num_jfiles, const bool auto_expand, const uint16_t ae_max_jfiles,
+                const uint32_t jfsize_sblks,*/ const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
                 aio_callback* const cbp);
 
         /**
@@ -227,8 +227,8 @@ namespace journal
         *
         * \exception TODO
         */
-        void recover(const uint16_t num_jfiles/*, const bool auto_expand, const uint16_t ae_max_jfiles*/,
-                const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
+        void recover(/*const uint16_t num_jfiles, const bool auto_expand, const uint16_t ae_max_jfiles,
+                const uint32_t jfsize_sblks,*/ const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
                 aio_callback* const cbp, const std::vector<std::string>* prep_txn_list_ptr, uint64_t& highest_rid);
 
         /**
@@ -654,7 +654,7 @@ namespace journal
         /**
         * /brief Static function for creating new fcntl objects for use with obj_arr.
         */
-        static fcntl* new_fcntl(jcntl* const jcp, const uint16_t lid, const uint16_t fid, const rcvdat* const rdp);
+//        static fcntl* new_fcntl(jcntl* const jcp, const uint16_t lid, const uint16_t fid, const rcvdat* const rdp);
 
     protected:
         static bool _init;

@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpid/legacystore/IdSequence.h"
+#include "qpid/linearstore/IdSequence.h"
 
 using namespace mrg::msgstore;
 using qpid::sys::Mutex;

@@ -31,9 +31,9 @@ class wmgr;
 }
 
 #include <cstring>
-#include "qpid/legacystore/jrnl/enums.h"
-#include "qpid/legacystore/jrnl/pmgr.h"
-#include "qpid/legacystore/jrnl/wrfc.h"
+#include "qpid/linearstore/jrnl/enums.h"
+#include "qpid/linearstore/jrnl/pmgr.h"
+//#include "qpid/linearstore/jrnl/wrfc.h"
 #include <set>
 
 namespace mrg

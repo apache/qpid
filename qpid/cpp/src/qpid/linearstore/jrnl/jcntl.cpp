@@ -90,8 +90,8 @@ jcntl::~jcntl()
 }
 
 void
-jcntl::initialize(const uint16_t num_jfiles/*, const bool ae, const uint16_t ae_max_jfiles*/,
-        const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
+jcntl::initialize(/*const uint16_t num_jfiles, const bool ae, const uint16_t ae_max_jfiles,
+        const uint32_t jfsize_sblks,*/ const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
         aio_callback* const cbp)
 {
     _init_flag = false;
@@ -106,12 +106,12 @@ jcntl::initialize(const uint16_t num_jfiles/*, const bool ae, const uint16_t ae_
     // Set new file geometry parameters
 //    assert(num_jfiles >= JRNL_MIN_NUM_FILES);
 //    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
-    _emap.set_num_jfiles(num_jfiles);
-    _tmap.set_num_jfiles(num_jfiles);
+//    _emap.set_num_jfiles(num_jfiles);
+//    _tmap.set_num_jfiles(num_jfiles);
 
 //    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
 //    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
-    _jfsize_sblks = jfsize_sblks;
+//    _jfsize_sblks = jfsize_sblks;
 
     // Clear any existing journal files
     _jdir.clear_dir();
@@ -130,8 +130,8 @@ jcntl::initialize(const uint16_t num_jfiles/*, const bool ae, const uint16_t ae_
 }
 
 void
-jcntl::recover(const uint16_t num_jfiles/*, const bool ae, const uint16_t ae_max_jfiles*/,
-        const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
+jcntl::recover(/*const uint16_t num_jfiles, const bool ae, const uint16_t ae_max_jfiles,
+        const uint32_t jfsize_sblks,*/ const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
 //         const rd_aio_cb rd_cb, const wr_aio_cb wr_cb, const std::vector<std::string>* prep_txn_list_ptr,
         aio_callback* const cbp, const std::vector<std::string>* prep_txn_list_ptr,
         uint64_t& highest_rid)
@@ -149,11 +149,11 @@ jcntl::recover(const uint16_t num_jfiles/*, const bool ae, const uint16_t ae_max
 //    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
 //    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
 //    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
-    _jfsize_sblks = jfsize_sblks;
+//    _jfsize_sblks = jfsize_sblks;
 
     // Verify journal dir and journal files
     _jdir.verify_dir();
-    _rcvdat.reset(num_jfiles/*, ae, ae_max_jfiles*/);
+//    _rcvdat.reset(num_jfiles/*, ae, ae_max_jfiles*/);
 
     rcvr_janalyze(_rcvdat, prep_txn_list_ptr);
     highest_rid = _rcvdat._h_rid;
@@ -444,6 +444,7 @@ jcntl::fhdr_wr_sync(const uint16_t /*lid*/)
 */
 }
 
+/*
 fcntl*
 jcntl::new_fcntl(jcntl* const jcp, const uint16_t lid, const uint16_t fid, const rcvdat* const rdp)
 {
@@ -452,6 +453,7 @@ jcntl::new_fcntl(jcntl* const jcp, const uint16_t lid, const uint16_t fid, const
     oss << jcp->jrnl_dir() << "/" << jcp->base_filename();
     return new fcntl(oss.str(), fid, lid, jcp->jfsize_sblks(), rdp);
 }
+*/
 
 // Protected/Private functions
 
