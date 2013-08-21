@@ -38,5 +38,6 @@ public interface ExchangeFactory
     Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
 
     Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
+    Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete) throws AMQException;
 
 }

@@ -27,12 +27,21 @@ import org.apache.qpid.AMQSecurityException;
 
 public interface QueueFactory
 {
-    AMQQueue createAMQQueueImpl(UUID id,
-                                String queueName,
-                                boolean durable,
-                                String owner,
-                                boolean autoDelete,
-                                boolean exclusive,
-                                boolean deleteOnNoConsumer,
-                                Map<String, Object> arguments) throws AMQSecurityException, AMQException;
+    AMQQueue createQueue(UUID id,
+                         String queueName,
+                         boolean durable,
+                         String owner,
+                         boolean autoDelete,
+                         boolean exclusive,
+                         boolean deleteOnNoConsumer,
+                         Map<String, Object> arguments) throws AMQSecurityException, AMQException;
+
+    AMQQueue restoreQueue(UUID id,
+                          String queueName,
+                          String owner,
+                          boolean autoDelete,
+                          boolean exclusive,
+                          boolean deleteOnNoConsumer,
+                          Map<String, Object> arguments) throws AMQSecurityException, AMQException;
+
 }
