@@ -19,23 +19,11 @@
  *
  */
 
-/**
- * \file aio.h
- *
- * Qpid asynchronous store plugin library
- *
- * This file contains an encapsulation of the libaio interface used
- * by the journal.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_AIO_H
 #define QPID_LEGACYSTORE_JRNL_AIO_H
 
 #include <libaio.h>
 #include <cstring>
-#include <sys/types.h>
 #include <string.h>
 
 namespace mrg

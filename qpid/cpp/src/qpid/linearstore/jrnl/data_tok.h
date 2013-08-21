@@ -19,17 +19,6 @@
  *
  */
 
-/**
- * \file data_tok.h
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::data_tok (data block token).
- * See class documentation for details.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_DATA_TOK_H
 #define QPID_LEGACYSTORE_JRNL_DATA_TOK_H
 
@@ -43,10 +32,9 @@ class data_tok;
 
 #include <cassert>
 #include <cstddef>
-#include "qpid/legacystore/jrnl/smutex.h"
+#include "qpid/linearstore/jrnl/smutex.h"
 #include <pthread.h>
 #include <string>
-#include <sys/types.h>
 
 namespace mrg
 {
@@ -96,25 +84,25 @@ namespace journal
 
     protected:
         static smutex _mutex;
-        static u_int64_t _cnt;
-        u_int64_t   _icnt;
+        static uint64_t _cnt;
+        uint64_t    _icnt;
         write_state _wstate;        ///< Enqueued / dequeued state of data
         read_state  _rstate;        ///< Read state of data
         std::size_t _dsize;         ///< Data size in bytes
-        u_int32_t   _dblks_written; ///< Data blocks read/written
-        u_int32_t   _dblks_read;    ///< Data blocks read/written
-        u_int32_t   _pg_cnt;        ///< Page counter - incr for each page containing part of data
-        u_int16_t   _fid;           ///< FID containing header of enqueue record
-        u_int64_t   _rid;           ///< RID of data set by enqueue operation
+        uint32_t    _dblks_written; ///< Data blocks read/written
+        uint32_t    _dblks_read;    ///< Data blocks read/written
+        uint32_t    _pg_cnt;        ///< Page counter - incr for each page containing part of data
+        uint16_t    _fid;           ///< FID containing header of enqueue record
+        uint64_t    _rid;           ///< RID of data set by enqueue operation
         std::string _xid;           ///< XID set by enqueue operation
-        u_int64_t   _dequeue_rid;   ///< RID of data set by dequeue operation
+        uint64_t    _dequeue_rid;   ///< RID of data set by dequeue operation
         bool        _external_rid;  ///< Flag to indicate external setting of rid
 
     public:
         data_tok();
         virtual ~data_tok();
 
-        inline u_int64_t id() const { return _icnt; }
+        inline uint64_t id() const { return _icnt; }
         inline write_state wstate() const { return _wstate; }
         const char* wstate_str() const;
         static const char* wstate_str(write_state wstate);
@@ -131,25 +119,25 @@ namespace journal
         inline std::size_t dsize() const { return _dsize; }
         inline void set_dsize(std::size_t dsize) { _dsize = dsize; }
 
-        inline u_int32_t dblocks_written() const { return _dblks_written; }
-        inline void incr_dblocks_written(u_int32_t dblks_written)
+        inline uint32_t dblocks_written() const { return _dblks_written; }
+        inline void incr_dblocks_written(uint32_t dblks_written)
                 { _dblks_written += dblks_written; }
-        inline void set_dblocks_written(u_int32_t dblks_written) { _dblks_written = dblks_written; }
+        inline void set_dblocks_written(uint32_t dblks_written) { _dblks_written = dblks_written; }
 
-        inline u_int32_t dblocks_read() const { return _dblks_read; }
-        inline void incr_dblocks_read(u_int32_t dblks_read) { _dblks_read += dblks_read; }
-        inline void set_dblocks_read(u_int32_t dblks_read) { _dblks_read = dblks_read; }
+        inline uint32_t dblocks_read() const { return _dblks_read; }
+        inline void incr_dblocks_read(uint32_t dblks_read) { _dblks_read += dblks_read; }
+        inline void set_dblocks_read(uint32_t dblks_read) { _dblks_read = dblks_read; }
 
-        inline u_int32_t pg_cnt() const { return _pg_cnt; }
-        inline u_int32_t incr_pg_cnt() { return ++_pg_cnt; }
-        inline u_int32_t decr_pg_cnt() { assert(_pg_cnt != 0); return --_pg_cnt; }
+        inline uint32_t pg_cnt() const { return _pg_cnt; }
+        inline uint32_t incr_pg_cnt() { return ++_pg_cnt; }
+        inline uint32_t decr_pg_cnt() { assert(_pg_cnt != 0); return --_pg_cnt; }
 
-        inline u_int16_t fid() const { return _fid; }
-        inline void set_fid(const u_int16_t fid) { _fid = fid; }
-        inline u_int64_t rid() const { return _rid; }
-        inline void set_rid(const u_int64_t rid) { _rid = rid; }
-        inline u_int64_t dequeue_rid() const {return _dequeue_rid; }
-        inline void set_dequeue_rid(const u_int64_t rid) { _dequeue_rid = rid; }
+        inline uint16_t fid() const { return _fid; }
+        inline void set_fid(const uint16_t fid) { _fid = fid; }
+        inline uint64_t rid() const { return _rid; }
+        inline void set_rid(const uint64_t rid) { _rid = rid; }
+        inline uint64_t dequeue_rid() const {return _dequeue_rid; }
+        inline void set_dequeue_rid(const uint64_t rid) { _dequeue_rid = rid; }
         inline bool external_rid() const { return _external_rid; }
         inline void set_external_rid(const bool external_rid) { _external_rid = external_rid; }
 

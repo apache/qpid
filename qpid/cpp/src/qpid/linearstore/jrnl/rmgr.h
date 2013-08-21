@@ -19,17 +19,6 @@
  *
  */
 
-/**
- * \file rmgr.h
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::rmgr (read manager). See
- * class documentation for details.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_RMGR_H
 #define QPID_LEGACYSTORE_JRNL_RMGR_H
 
@@ -42,11 +31,12 @@ class rmgr;
 }
 
 #include <cstring>
-#include "qpid/legacystore/jrnl/enums.h"
-#include "qpid/legacystore/jrnl/file_hdr.h"
-#include "qpid/legacystore/jrnl/pmgr.h"
-#include "qpid/legacystore/jrnl/rec_hdr.h"
-#include "qpid/legacystore/jrnl/rrfc.h"
+#include "qpid/linearstore/jrnl/enums.h"
+//#include "qpid/linearstore/jrnl/file_hdr.h"
+#include "qpid/linearstore/jrnl/pmgr.h"
+//#include "qpid/linearstore/jrnl/rec_hdr.h"
+//#include "qpid/linearstore/jrnl/rrfc.h"
+#include "qpid/linearstore/jrnl/utils/file_hdr.h"
 
 namespace mrg
 {
@@ -62,16 +52,16 @@ namespace journal
     class rmgr : public pmgr
     {
     private:
-        rrfc& _rrfc;                ///< Ref to read rotating file controller
-        rec_hdr _hdr;               ///< Header used to determind record type
+        //rrfc& _rrfc;              ///< Ref to read rotating file controller
+        rec_hdr_t _hdr;             ///< Header used to determind record type
 
         void* _fhdr_buffer;         ///< Buffer used for fhdr reads
         aio_cb* _fhdr_aio_cb_ptr;   ///< iocb pointer for fhdr reads
-        file_hdr _fhdr;             ///< file header instance for reading file headers
+        file_hdr_t _fhdr;           ///< file header instance for reading file headers
         bool _fhdr_rd_outstanding;  ///< true if a fhdr read is outstanding
 
     public:
-        rmgr(jcntl* jc, enq_map& emap, txn_map& tmap, rrfc& rrfc);
+        rmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, rrfc& rrfc*/);
         virtual ~rmgr();
 
         using pmgr::initialize;
@@ -81,12 +71,12 @@ namespace journal
                 bool ignore_pending_txns);
         int32_t get_events(page_state state, timespec* const timeout, bool flush = false);
         void recover_complete();
-        inline iores synchronize() { if (_rrfc.is_valid()) return RHM_IORES_SUCCESS; return aio_cycle(); }
+        inline iores synchronize() { /*if (_rrfc.is_valid()) return RHM_IORES_SUCCESS;*/ return aio_cycle(); }
         void invalidate();
-        bool wait_for_validity(timespec* const timeout, const bool throw_on_timeout = false);
+//        bool wait_for_validity(timespec* const timeout, const bool throw_on_timeout = false);
 
         /* TODO (if required)
-        const iores get(const u_int64_t& rid, const std::size_t& dsize, const std::size_t& dsize_avail,
+        const iores get(const uint64_t& rid, const std::size_t& dsize, const std::size_t& dsize_avail,
                 const void** const data, bool auto_discard);
         const iores discard(data_tok* dtok);
         */
@@ -95,14 +85,14 @@ namespace journal
         void clean();
         void flush(timespec* timeout);
         iores pre_read_check(data_tok* dtokp);
-        iores read_enq(rec_hdr& h, void* rptr, data_tok* dtokp);
-        void consume_xid_rec(rec_hdr& h, void* rptr, data_tok* dtokp);
+        iores read_enq(rec_hdr_t& h, void* rptr, data_tok* dtokp);
+        void consume_xid_rec(rec_hdr_t& h, void* rptr, data_tok* dtokp);
         void consume_filler();
         iores skip(data_tok* dtokp);
         iores aio_cycle();
-        iores init_aio_reads(const int16_t first_uninit, const u_int16_t num_uninit);
+        iores init_aio_reads(const int16_t first_uninit, const uint16_t num_uninit);
         void rotate_page();
-        u_int32_t dblks_rem() const;
+        uint32_t dblks_rem() const;
         void set_params_null(void** const datapp, std::size_t& dsize, void** const xidpp,
                 std::size_t& xidsize);
         void init_file_header_read();

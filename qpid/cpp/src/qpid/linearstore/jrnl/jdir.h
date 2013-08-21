@@ -19,18 +19,6 @@
  *
  */
 
-/**
- * \file jdir.h
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::jdir (%journal data
- * directory), used for controlling and manipulating %journal data
- * directories and files. See class documentation for details.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_JDIR_H
 #define QPID_LEGACYSTORE_JRNL_JDIR_H
 
@@ -42,8 +30,9 @@ class jdir;
 }
 }
 
-#include "qpid/legacystore/jrnl/jinf.h"
+//#include "qpid/linearstore/jrnl/jinf.h"
 #include <dirent.h>
+#include <string>
 
 namespace mrg
 {

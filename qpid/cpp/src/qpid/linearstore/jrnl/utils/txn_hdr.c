@@ -19,15 +19,15 @@
  *
  */
 
-/**
- * \file slock.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::slock (scoped lock). See
- * comments in file slock.h for details.
- *
- * \author Kim van der Riet
- */
+#include "txn_hdr.h"
 
-#include "qpid/legacystore/jrnl/slock.h"
+void txn_hdr_init(txn_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
+                  const uint64_t rid, const uint64_t xidsize) {
+    rec_hdr_init(&dest->_rhdr, magic, version, uflag, rid);
+    dest->_xidsize = xidsize;
+}
+
+void txn_hdr_copy(txn_hdr_t* dest, const txn_hdr_t* src) {
+    rec_hdr_copy(&dest->_rhdr, &src->_rhdr);
+    dest->_xidsize = src->_xidsize;
+}

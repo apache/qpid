@@ -19,22 +19,11 @@
  *
  */
 
-/**
- * \file aio_callback.h
- *
- * Qpid asynchronous store plugin library
- *
- * This file contains the definition for the AIO callback function
- * pointer.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H
 #define QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H
 
+#include <stdint.h>
 #include <vector>
-#include <sys/types.h>
 
 namespace mrg
 {
@@ -48,7 +37,7 @@ namespace journal
     public:
         virtual ~aio_callback() {}
         virtual void wr_aio_cb(std::vector<data_tok*>& dtokl) = 0;
-        virtual void rd_aio_cb(std::vector<u_int16_t>& pil) = 0;
+        virtual void rd_aio_cb(std::vector<uint16_t>& pil) = 0;
     };
 
 } // namespace journal

@@ -19,19 +19,6 @@
  *
  */
 
-/**
- * \file jexception.h
- *
- * Qpid asynchronous store plugin library
- *
- * Generic journal exception class mrg::journal::jexception (derived
- * from class std::exception). Intended to serve as a common exception
- * class for all more speicalized exceptions in the message journal. See
- * class documentation for details.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
 #define QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
 
@@ -48,10 +35,9 @@ class jexception;
 #include <cstdlib>
 #include <cstring>
 #include <exception>
-#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
 #include <sstream>
 #include <string>
-#include <sys/types.h>
 
 // Macro for formatting commom system errors
 #define FORMAT_SYSERR(errno) " errno=" << errno << " (" << std::strerror(errno) << ")"
@@ -96,7 +82,7 @@ namespace journal
     class jexception : public std::exception
     {
     private:
-        u_int32_t _err_code;
+        uint32_t _err_code;
         std::string _additional_info;
         std::string _throwing_class;
         std::string _throwing_fn;
@@ -106,28 +92,28 @@ namespace journal
     public:
         jexception() throw ();
 
-        jexception(const u_int32_t err_code) throw ();
+        jexception(const uint32_t err_code) throw ();
 
         jexception(const char* additional_info) throw ();
         jexception(const std::string& additional_info) throw ();
 
-        jexception(const u_int32_t err_code, const char* additional_info) throw ();
-        jexception(const u_int32_t err_code, const std::string& additional_info) throw ();
+        jexception(const uint32_t err_code, const char* additional_info) throw ();
+        jexception(const uint32_t err_code, const std::string& additional_info) throw ();
 
-        jexception(const u_int32_t err_code, const char* throwing_class, const char* throwing_fn)
+        jexception(const uint32_t err_code, const char* throwing_class, const char* throwing_fn)
                 throw ();
-        jexception(const u_int32_t err_code, const std::string& throwing_class,
+        jexception(const uint32_t err_code, const std::string& throwing_class,
                 const std::string& throwing_fn) throw ();
 
-        jexception(const u_int32_t err_code, const char* additional_info,
+        jexception(const uint32_t err_code, const char* additional_info,
                 const char* throwing_class, const char* throwing_fn) throw ();
-        jexception(const u_int32_t err_code, const std::string& additional_info,
+        jexception(const uint32_t err_code, const std::string& additional_info,
                 const std::string& throwing_class, const std::string& throwing_fn) throw ();
 
         virtual ~jexception() throw ();
         virtual const char* what() const throw (); // override std::exception::what()
 
-        inline u_int32_t err_code() const throw () { return _err_code; }
+        inline uint32_t err_code() const throw () { return _err_code; }
         inline const std::string additional_info() const throw () { return _additional_info; }
         inline const std::string throwing_class() const throw () { return _throwing_class; }
         inline const std::string throwing_fn() const throw () { return _throwing_fn; }

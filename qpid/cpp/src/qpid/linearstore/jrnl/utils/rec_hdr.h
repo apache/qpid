@@ -21,21 +21,7 @@
  *
  */
 
-/**
- * \file rec_hdr.h
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::rec_hdr (record header),
- * which is a common initial header used for all journal record structures
- * except the record tail (rec_tail).
- *
- * \author Kim van der Riet
- */
-
 #include <stdint.h>
-/*#include "qpid/legacystore/jrnl/jcfg.h"*/
-/*#include <sys/types.h>*/
 
 #pragma pack(1)
 
@@ -48,28 +34,26 @@
  * <pre>
  *   0                           7
  * +---+---+---+---+---+---+---+---+
- * |     magic     | v | 0 | flags |
+ * |     magic     |  ver  | flags |
  * +---+---+---+---+---+---+---+---+
  * |              rid              |
  * +---+---+---+---+---+---+---+---+
- * v = file version (If the format or encoding of this file changes, then this
- *     number should be incremented)
- * 0 = reserved
- * </pre>
  *
- * Note that journal files should be transferable between 32- and 64-bit
- * hardware of the same endianness, but not between hardware of opposite
- * entianness without some sort of binary conversion utility. Thus buffering
- * will be needed for types that change size between 32- and 64-bit compiles.
+ * ver = file version (If the format or encoding of this file changes, then this
+ *       number should be incremented)
+ * rid = Record ID
+ * </pre>
  */
 typedef struct rec_hdr_t {
-    uint32_t _magic;       ///< File type identifier (magic number)
-    uint8_t  _version;     ///< File encoding version
-    uint8_t  _zero;        ///< Flag for determining endianness
-    uint16_t _uflag;       ///< User-defined flags
-    uint64_t _rid;         ///< Record ID (rotating 64-bit counter)
+    uint32_t _magic;		/**< File type identifier (magic number) */
+    uint16_t _version;		/**< File encoding version */
+    uint16_t _uflag;		/**< User-defined flags */
+    uint64_t _rid;			/**< Record ID (rotating 64-bit counter) */
 } rec_hdr_t;
+
+void rec_hdr_init(rec_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag, const uint64_t rid);
+void rec_hdr_copy(rec_hdr_t* dest, const rec_hdr_t* src);
 
 #pragma pack()
 
-#endif // ifndef QPID_LINEARSTORE_JRNL_UTILS_REC_HDR_H
+#endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_REC_HDR_H */

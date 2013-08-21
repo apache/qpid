@@ -19,25 +19,14 @@
  *
  */
 
-/**
- * \file pmgr.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::pmgr (page manager). See
- * comments in file pmgr.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/pmgr.h"
+#include "qpid/linearstore/jrnl/pmgr.h"
 
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include "qpid/legacystore/jrnl/jcfg.h"
-#include "qpid/legacystore/jrnl/jcntl.h"
-#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jcfg.h"
+#include "qpid/linearstore/jrnl/jcntl.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
 #include <sstream>
 
 
@@ -46,14 +35,14 @@ namespace mrg
 namespace journal
 {
 
-pmgr::page_cb::page_cb(u_int16_t index):
+pmgr::page_cb::page_cb(uint16_t index):
         _index(index),
         _state(UNUSED),
         _wdblks(0),
         _rdblks(0),
         _pdtokl(0),
-        _wfh(0),
-        _rfh(0),
+//        _wfh(0),
+//        _rfh(0),
         _pbuff(0)
 {}
 
@@ -74,7 +63,7 @@ pmgr::page_cb::state_str() const
     return "<unknown>";
 }
 
-const u_int32_t pmgr::_sblksize = JRNL_SBLK_SIZE * JRNL_DBLK_SIZE;
+const uint32_t pmgr::_sblksize = JRNL_SBLK_SIZE * JRNL_DBLK_SIZE;
 
 pmgr::pmgr(jcntl* jc, enq_map& emap, txn_map& tmap):
         _cache_pgsize_sblks(0),
@@ -104,7 +93,7 @@ pmgr::~pmgr()
 }
 
 void
-pmgr::initialize(aio_callback* const cbp, const u_int32_t cache_pgsize_sblks, const u_int16_t cache_num_pages)
+pmgr::initialize(aio_callback* const cbp, const uint32_t cache_pgsize_sblks, const uint16_t cache_num_pages)
 {
     // As static use of this class keeps old values around, clean up first...
     pmgr::clean();
@@ -140,7 +129,7 @@ pmgr::initialize(aio_callback* const cbp, const u_int32_t cache_pgsize_sblks, co
     MALLOC_CHK(_aio_cb_arr, "_aio_cb_arr", "pmgr", "initialize");
 
     // 6. Set page pointers in _page_ptr_arr, _page_cb_arr and iocbs to pages within page block
-    for (u_int16_t i=0; i<_cache_num_pages; i++)
+    for (uint16_t i=0; i<_cache_num_pages; i++)
     {
         _page_ptr_arr[i] = (void*)((char*)_page_base_ptr + _cache_pgsize_sblks * _sblksize * i);
         _page_cb_arr[i]._index = i;
@@ -152,7 +141,7 @@ pmgr::initialize(aio_callback* const cbp, const u_int32_t cache_pgsize_sblks, co
     }
 
     // 7. Allocate io_event array, max one event per cache page plus one for each file
-    const u_int16_t max_aio_evts = _cache_num_pages + _jc->num_jfiles();
+    const uint16_t max_aio_evts = _cache_num_pages /*+ _jc->num_jfiles()*/; // TODO find replacement here for linear store
     _aio_event_arr = (aio_event*)std::malloc(max_aio_evts * sizeof(aio_event));
     MALLOC_CHK(_aio_event_arr, "_aio_event_arr", "pmgr", "initialize");
 

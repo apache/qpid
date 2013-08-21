@@ -19,23 +19,12 @@
  *
  */
 
-/**
- * \file txn_map.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::txn_map (transaction map). See
- * comments in file txn_map.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/txn_map.h"
+#include "qpid/linearstore/jrnl/txn_map.h"
 
 #include <iomanip>
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jexception.h"
-#include "qpid/legacystore/jrnl/slock.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/slock.h"
 #include <sstream>
 
 namespace mrg
@@ -50,7 +39,7 @@ int16_t txn_map::TMAP_OK = 0;
 int16_t txn_map::TMAP_NOT_SYNCED = 0;
 int16_t txn_map::TMAP_SYNCED = 1;
 
-txn_data_struct::txn_data_struct(const u_int64_t rid, const u_int64_t drid, const u_int16_t pfid,
+txn_data_struct::txn_data_struct(const uint64_t rid, const uint64_t drid, const uint16_t pfid,
 		const bool enq_flag, const bool commit_flag):
         _rid(rid),
         _drid(drid),
@@ -68,13 +57,13 @@ txn_map::txn_map():
 txn_map::~txn_map() {}
 
 void
-txn_map::set_num_jfiles(const u_int16_t num_jfiles)
+txn_map::set_num_jfiles(const uint16_t num_jfiles)
 {
     _pfid_txn_cnt.resize(num_jfiles, 0);
 }
 
-u_int32_t
-txn_map::get_txn_pfid_cnt(const u_int16_t pfid) const
+uint32_t
+txn_map::get_txn_pfid_cnt(const uint16_t pfid) const
 {
     return _pfid_txn_cnt.at(pfid);
 }
@@ -137,23 +126,23 @@ txn_map::in_map(const std::string& xid)
     return itr != _map.end();
 }
 
-u_int32_t
+uint32_t
 txn_map::enq_cnt()
 {
     return cnt(true);
 }
 
-u_int32_t
+uint32_t
 txn_map::deq_cnt()
 {
     return cnt(true);
 }
 
-u_int32_t
+uint32_t
 txn_map::cnt(const bool enq_flag)
 {
     slock s(_mutex);
-    u_int32_t c = 0;
+    uint32_t c = 0;
     for (xmap_itr i = _map.begin(); i != _map.end(); i++)
     {
         for (tdl_itr j = i->second.begin(); j < i->second.end(); j++)
@@ -185,7 +174,7 @@ txn_map::is_txn_synced(const std::string& xid)
 }
 
 int16_t
-txn_map::set_aio_compl(const std::string& xid, const u_int64_t rid)
+txn_map::set_aio_compl(const std::string& xid, const uint64_t rid)
 {
     slock s(_mutex);
     xmap_itr itr = _map.find(xid);
@@ -204,7 +193,7 @@ txn_map::set_aio_compl(const std::string& xid, const u_int64_t rid)
 }
 
 bool
-txn_map::data_exists(const std::string& xid, const u_int64_t rid)
+txn_map::data_exists(const std::string& xid, const uint64_t rid)
 {
     bool found = false;
     {
@@ -221,7 +210,7 @@ txn_map::data_exists(const std::string& xid, const u_int64_t rid)
 }
 
 bool
-txn_map::is_enq(const u_int64_t rid)
+txn_map::is_enq(const uint64_t rid)
 {
     bool found = false;
     {

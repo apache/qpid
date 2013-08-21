@@ -21,23 +21,36 @@
 
 #include "enq_hdr.h"
 
-static const uint16_t ENQ_HDR_TRANSIENT_MASK = 0x10;
-static const uint16_t ENQ_HDR_EXTERNAL_MASK = 0x20;
+//static const uint16_t ENQ_HDR_TRANSIENT_MASK = 0x10;
+//static const uint16_t ENQ_HDR_EXTERNAL_MASK = 0x20;
 
-bool is_transient(enq_hdr_t *eh) {
+void enq_hdr_init(enq_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
+                  const uint64_t rid, const uint64_t xidsize, const uint64_t dsize) {
+    rec_hdr_init(&dest->_rhdr, magic, version, uflag, rid);
+    dest->_xidsize = xidsize;
+    dest->_dsize = dsize;
+}
+
+void enq_hdr_copy(enq_hdr_t* dest, const enq_hdr_t* src) {
+    rec_hdr_copy(&dest->_rhdr, &src->_rhdr);
+    dest->_xidsize = src->_xidsize;
+    dest->_dsize = src->_dsize;
+}
+
+bool is_enq_transient(const enq_hdr_t *eh) {
     return eh->_rhdr._uflag & ENQ_HDR_TRANSIENT_MASK;
 }
 
-void set_transient(enq_hdr_t *eh, const bool transient) {
+void set_enq_transient(enq_hdr_t *eh, const bool transient) {
     eh->_rhdr._uflag = transient ? eh->_rhdr._uflag | ENQ_HDR_TRANSIENT_MASK :
                                    eh->_rhdr._uflag & (~ENQ_HDR_TRANSIENT_MASK);
 }
 
-bool is_external(enq_hdr_t *eh) {
+bool is_enq_external(const enq_hdr_t *eh) {
     return eh->_rhdr._uflag & ENQ_HDR_EXTERNAL_MASK;
 }
 
-void set_external(enq_hdr_t *eh, const bool external) {
+void set_enq_external(enq_hdr_t *eh, const bool external) {
     eh->_rhdr._uflag = external ? eh->_rhdr._uflag | ENQ_HDR_EXTERNAL_MASK :
                                   eh->_rhdr._uflag & (~ENQ_HDR_EXTERNAL_MASK);
 }

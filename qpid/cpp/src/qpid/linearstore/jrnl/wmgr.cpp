@@ -19,17 +19,6 @@
  *
  */
 
-/**
- * \file wmgr.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::wmgr (write manager). See
- * comments in file wmgr.h for details.
- *
- * \author Kim van der Riet
- */
-
 #include "qpid/legacystore/jrnl/wmgr.h"
 
 #include <cassert>
@@ -40,6 +29,7 @@
 #include "qpid/legacystore/jrnl/jcntl.h"
 #include "qpid/legacystore/jrnl/jerrno.h"
 #include <sstream>
+#include <stdint.h>
 
 namespace mrg
 {
@@ -66,7 +56,7 @@ wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, wrfc& wrfc):
 {}
 
 wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, wrfc& wrfc,
-        const u_int32_t max_dtokpp, const u_int32_t max_iowait_us):
+        const uint32_t max_dtokpp, const uint32_t max_iowait_us):
         pmgr(jc, emap, tmap /* , dtoklp */),
         _wrfc(wrfc),
         _max_dtokpp(max_dtokpp),
@@ -91,8 +81,8 @@ wmgr::~wmgr()
 }
 
 void
-wmgr::initialize(aio_callback* const cbp, const u_int32_t wcache_pgsize_sblks,
-        const u_int16_t wcache_num_pages, const u_int32_t max_dtokpp, const u_int32_t max_iowait_us,
+wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks,
+        const uint16_t wcache_num_pages, const uint32_t max_dtokpp, const uint32_t max_iowait_us,
         std::size_t eo)
 {
     _enq_busy = false;
@@ -110,8 +100,8 @@ wmgr::initialize(aio_callback* const cbp, const u_int32_t wcache_pgsize_sblks,
 
     if (eo)
     {
-        const u_int32_t wr_pg_size_dblks = _cache_pgsize_sblks * JRNL_SBLK_SIZE;
-        u_int32_t data_dblks = (eo / JRNL_DBLK_SIZE) - 4; // 4 dblks for file hdr
+        const uint32_t wr_pg_size_dblks = _cache_pgsize_sblks * JRNL_SBLK_SIZE;
+        uint32_t data_dblks = (eo / JRNL_DBLK_SIZE) - 4; // 4 dblks for file hdr
         _pg_cntr = data_dblks / wr_pg_size_dblks;
         _pg_offset_dblks = data_dblks - (_pg_cntr * wr_pg_size_dblks);
     }
@@ -148,7 +138,7 @@ wmgr::enqueue(const void* const data_buff, const std::size_t tot_data_len,
         }
     }
 
-    u_int64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
+    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
     _enq_rec.reset(rid, data_buff, tot_data_len, xid_ptr, xid_len, _wrfc.owi(), transient,
             external);
     if (!cont)
@@ -166,8 +156,8 @@ wmgr::enqueue(const void* const data_buff, const std::size_t tot_data_len,
     {
         assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
-        u_int32_t data_offs_dblks = dtokp->dblocks_written();
-        u_int32_t ret = _enq_rec.encode(wptr, data_offs_dblks,
+        uint32_t data_offs_dblks = dtokp->dblocks_written();
+        uint32_t ret = _enq_rec.encode(wptr, data_offs_dblks,
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
@@ -247,8 +237,8 @@ wmgr::dequeue(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_
     }
 
     const bool ext_rid = dtokp->external_rid();
-    u_int64_t rid = (ext_rid | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
-    u_int64_t dequeue_rid = (ext_rid | cont) ? dtokp->dequeue_rid() : dtokp->rid();
+    uint64_t rid = (ext_rid | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
+    uint64_t dequeue_rid = (ext_rid | cont) ? dtokp->dequeue_rid() : dtokp->rid();
     _deq_rec.reset(rid, dequeue_rid, xid_ptr, xid_len, _wrfc.owi(), txn_coml_commit);
     if (!cont)
     {
@@ -270,8 +260,8 @@ wmgr::dequeue(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_
     {
         assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
-        u_int32_t data_offs_dblks = dtokp->dblocks_written();
-        u_int32_t ret = _deq_rec.encode(wptr, data_offs_dblks,
+        uint32_t data_offs_dblks = dtokp->dblocks_written();
+        uint32_t ret = _deq_rec.encode(wptr, data_offs_dblks,
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
@@ -356,7 +346,7 @@ wmgr::abort(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_le
         }
     }
 
-    u_int64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
+    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
     _txn_rec.reset(RHM_JDAT_TXA_MAGIC, rid, xid_ptr, xid_len, _wrfc.owi());
     if (!cont)
     {
@@ -371,8 +361,8 @@ wmgr::abort(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_le
     {
         assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
-        u_int32_t data_offs_dblks = dtokp->dblocks_written();
-        u_int32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
+        uint32_t data_offs_dblks = dtokp->dblocks_written();
+        uint32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
@@ -446,7 +436,7 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
         }
     }
 
-    u_int64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
+    uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _wrfc.get_incr_rid();
     _txn_rec.reset(RHM_JDAT_TXC_MAGIC, rid, xid_ptr, xid_len, _wrfc.owi());
     if (!cont)
     {
@@ -461,8 +451,8 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
     {
         assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
-        u_int32_t data_offs_dblks = dtokp->dblocks_written();
-        u_int32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
+        uint32_t data_offs_dblks = dtokp->dblocks_written();
+        uint32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
                 (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
@@ -537,7 +527,7 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
 }
 
 void
-wmgr::file_header_check(const u_int64_t rid, const bool cont, const u_int32_t rec_dblks_rem)
+wmgr::file_header_check(const uint64_t rid, const bool cont, const uint32_t rec_dblks_rem)
 {
     // Has the file header been written (i.e. write pointers still at 0)?
     if (_wrfc.is_void())
@@ -711,10 +701,10 @@ wmgr::get_events(page_state state, timespec* const timeout, bool flush)
         }
         if (pcbp) // Page writes have pcb
         {
-            u_int32_t s = pcbp->_pdtokl->size();
+            uint32_t s = pcbp->_pdtokl->size();
             std::vector<data_tok*> dtokl;
             dtokl.reserve(s);
-            for (u_int32_t k=0; k<s; k++)
+            for (uint32_t k=0; k<s; k++)
             {
                 data_tok* dtokp = pcbp->_pdtokl->at(k);
                 if (dtokp->decr_pg_cnt() == 0)
@@ -804,7 +794,7 @@ wmgr::get_events(page_state state, timespec* const timeout, bool flush)
         {
             // get lfid from original file header record, update info for that lfid
             file_hdr* fhp = (file_hdr*)aiocbp->u.c.buf;
-            u_int32_t lfid = fhp->_lfid;
+            uint32_t lfid = fhp->_lfid;
             fcntl* fcntlp = _jc->get_fcntlp(lfid);
             fcntlp->add_wr_cmpl_cnt_dblks(JRNL_SBLK_SIZE);
             fcntlp->decr_aio_cnt();
@@ -827,7 +817,7 @@ wmgr::is_txn_synced(const std::string& xid)
 }
 
 void
-wmgr::initialize(aio_callback* const cbp, const u_int32_t wcache_pgsize_sblks, const u_int16_t wcache_num_pages)
+wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks, const uint16_t wcache_num_pages)
 {
     pmgr::initialize(cbp, wcache_pgsize_sblks, wcache_num_pages);
     wmgr::clean();
@@ -845,7 +835,7 @@ wmgr::initialize(aio_callback* const cbp, const u_int32_t wcache_pgsize_sblks, c
     _fhdr_aio_cb_arr = (aio_cb**)std::malloc(sizeof(aio_cb*) * _num_jfiles);
     MALLOC_CHK(_fhdr_aio_cb_arr, "_fhdr_aio_cb_arr", "wmgr", "initialize");
     std::memset(_fhdr_aio_cb_arr, 0, sizeof(aio_cb*) * _num_jfiles);
-    for (u_int16_t i=0; i<_num_jfiles; i++)
+    for (uint16_t i=0; i<_num_jfiles; i++)
     {
         _fhdr_ptr_arr[i] = (void*)((char*)_fhdr_base_ptr + _sblksize * i);
         _fhdr_aio_cb_arr[i] = new aio_cb;
@@ -890,7 +880,7 @@ wmgr::pre_write_check(const _op_type op, const data_tok* const dtokp,
         case WMGR_ENQUEUE:
             {
                 // Check for enqueue reaching cutoff threshold
-                u_int32_t size_dblks = jrec::size_dblks(enq_rec::rec_size(xidsize, dsize,
+                uint32_t size_dblks = jrec::size_dblks(enq_rec::rec_size(xidsize, dsize,
                         external));
                 if (!_enq_busy && _wrfc.enq_threshold(_cached_offset_dblks + size_dblks))
                     return RHM_IORES_ENQCAPTHRESH;
@@ -924,7 +914,7 @@ wmgr::pre_write_check(const _op_type op, const data_tok* const dtokp,
 }
 
 void
-wmgr::dequeue_check(const std::string& xid, const u_int64_t drid)
+wmgr::dequeue_check(const std::string& xid, const uint64_t drid)
 {
     // First check emap
     bool found = false;
@@ -956,8 +946,8 @@ wmgr::dequeue_check(const std::string& xid, const u_int64_t drid)
 void
 wmgr::dblk_roundup()
 {
-    const u_int32_t xmagic = RHM_JDAT_EMPTY_MAGIC;
-    u_int32_t wdblks = jrec::size_blks(_cached_offset_dblks, JRNL_SBLK_SIZE) * JRNL_SBLK_SIZE;
+    const uint32_t xmagic = RHM_JDAT_EMPTY_MAGIC;
+    uint32_t wdblks = jrec::size_blks(_cached_offset_dblks, JRNL_SBLK_SIZE) * JRNL_SBLK_SIZE;
     while (_cached_offset_dblks < wdblks)
     {
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
@@ -971,7 +961,7 @@ wmgr::dblk_roundup()
 }
 
 void
-wmgr::write_fhdr(u_int64_t rid, u_int16_t fid, u_int16_t lid, std::size_t fro)
+wmgr::write_fhdr(uint64_t rid, uint16_t fid, uint16_t lid, std::size_t fro)
 {
     file_hdr fhdr(RHM_JDAT_FILE_MAGIC, RHM_JDAT_VERSION, rid, fid, lid, fro, _wrfc.owi(), true);
     std::memcpy(_fhdr_ptr_arr[fid], &fhdr, sizeof(fhdr));
@@ -1012,7 +1002,7 @@ wmgr::clean()
 
     if (_fhdr_aio_cb_arr)
     {
-        for (u_int32_t i=0; i<_num_jfiles; i++)
+        for (uint32_t i=0; i<_num_jfiles; i++)
             delete _fhdr_aio_cb_arr[i];
         std::free(_fhdr_aio_cb_arr);
         _fhdr_aio_cb_arr = 0;

@@ -75,37 +75,33 @@ if (BUILD_LINEARSTORE)
     endif (NOT HAVE_UUID_H)
 
     # Journal source files
-    set (legacy_jrnl_SOURCES
-        qpid/linearstore/jrnl/aio.cpp
-        qpid/linearstore/jrnl/cvar.cpp
+    set (linear_jrnl_SOURCES
         qpid/linearstore/jrnl/data_tok.cpp
         qpid/linearstore/jrnl/deq_rec.cpp
         qpid/linearstore/jrnl/enq_map.cpp
         qpid/linearstore/jrnl/enq_rec.cpp
-        qpid/linearstore/jrnl/fcntl.cpp
+        #qpid/linearstore/jrnl/fcntl.cpp
         qpid/linearstore/jrnl/jcntl.cpp
         qpid/linearstore/jrnl/jdir.cpp
         qpid/linearstore/jrnl/jerrno.cpp
         qpid/linearstore/jrnl/jexception.cpp
-        qpid/linearstore/jrnl/jinf.cpp
+        #qpid/linearstore/jrnl/jinf.cpp
         qpid/linearstore/jrnl/jrec.cpp
-        qpid/linearstore/jrnl/lp_map.cpp
-        qpid/linearstore/jrnl/lpmgr.cpp
+        #qpid/linearstore/jrnl/lp_map.cpp
+        #qpid/linearstore/jrnl/lpmgr.cpp
         qpid/linearstore/jrnl/pmgr.cpp
         qpid/linearstore/jrnl/rmgr.cpp
-        qpid/linearstore/jrnl/rfc.cpp
-        qpid/linearstore/jrnl/rrfc.cpp
-        qpid/linearstore/jrnl/slock.cpp
-        qpid/linearstore/jrnl/smutex.cpp
+        #qpid/linearstore/jrnl/rfc.cpp
+        #qpid/linearstore/jrnl/rrfc.cpp
         qpid/linearstore/jrnl/time_ns.cpp
         qpid/linearstore/jrnl/txn_map.cpp
         qpid/linearstore/jrnl/txn_rec.cpp
         qpid/linearstore/jrnl/wmgr.cpp
-        qpid/linearstore/jrnl/wrfc.cpp
+        #qpid/linearstore/jrnl/wrfc.cpp
     )
 
     # linearstore source files
-    set (legacy_store_SOURCES
+    set (linear_store_SOURCES
         qpid/linearstore/StorePlugin.cpp
         qpid/linearstore/BindingDbt.cpp
         qpid/linearstore/BufferValue.cpp
@@ -119,14 +115,17 @@ if (BUILD_LINEARSTORE)
     )
 
     set (util_SOURCES
-        qpid/linearstore/jrnl/utils/file_hdr.c
-        qpid/linearstore/jrnl/utils/enq_hdr.c
         qpid/linearstore/jrnl/utils/deq_hdr.c
+        qpid/linearstore/jrnl/utils/enq_hdr.c
+        qpid/linearstore/jrnl/utils/file_hdr.c
+	qpid/linearstore/jrnl/utils/rec_hdr.c
+	qpid/linearstore/jrnl/utils/rec_tail.c
+	qpid/linearstore/jrnl/utils/txn_hdr.c
     )
 
     # linearstore include directories
     get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-    set (legacy_include_DIRECTORIES
+    set (linear_include_DIRECTORIES
         ${dirs}
         ${CMAKE_CURRENT_SOURCE_DIR}/qpid/linearstore
     )
@@ -147,16 +146,16 @@ if (BUILD_LINEARSTORE)
     )
 
     add_library (linearstore MODULE
-        ${legacy_jrnl_SOURCES}
-        ${legacy_store_SOURCES}
-        ${legacy_qmf_SOURCES}
+        ${linear_jrnl_SOURCES}
+        ${linear_store_SOURCES}
+        ${linear_qmf_SOURCES}
     )
 
     set_target_properties (linearstore PROPERTIES
         PREFIX ""
         COMPILE_DEFINITIONS _IN_QPID_BROKER
         OUTPUT_NAME linearstore
-        INCLUDE_DIRECTORIES "${legacy_include_DIRECTORIES}"
+        INCLUDE_DIRECTORIES "${linear_include_DIRECTORIES}"
     )
 
     target_link_libraries (linearstore

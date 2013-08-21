@@ -19,27 +19,15 @@
  *
  */
 
-/**
- * \file jdir.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::jdir (journal data
- * directory), used for controlling and manipulating journal data
- * direcories and files. See comments in file jdir.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/jdir.h"
+#include "qpid/linearstore/jrnl/jdir.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
 #include <iomanip>
-#include "qpid/legacystore/jrnl/jcfg.h"
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/jcfg.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jexception.h"
 #include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -225,7 +213,7 @@ jdir::verify_dir(const char* dirname, const char* base_filename)
 
 
 void
-jdir::verify_dir(const std::string& dirname, const std::string& base_filename)
+jdir::verify_dir(const std::string& dirname, const std::string& /*base_filename*/)
 {
     if (!is_dir(dirname))
     {
@@ -235,16 +223,16 @@ jdir::verify_dir(const std::string& dirname, const std::string& base_filename)
     }
 
     // Read jinf file, then verify all journal files are present
-    jinf ji(dirname + "/" + base_filename + "." + JRNL_INFO_EXTENSION, true);
-    for (u_int16_t fnum=0; fnum < ji.num_jfiles(); fnum++)
-    {
-        std::ostringstream oss;
-        oss << dirname << "/" << base_filename << ".";
-        oss << std::setw(4) << std::setfill('0') << std::hex << fnum;
-        oss << "." << JRNL_DATA_EXTENSION;
-        if (!exists(oss.str()))
-            throw jexception(jerrno::JERR_JDIR_NOSUCHFILE, oss.str(), "jdir", "verify_dir");
-    }
+//    jinf ji(dirname + "/" + base_filename + "." + QLS_JRNL_FILE_EXTENSION, true);
+//    for (uint16_t fnum=0; fnum < ji.num_jfiles(); fnum++)
+//    {
+//        std::ostringstream oss;
+//        oss << dirname << "/" << base_filename << ".";
+//        oss << std::setw(4) << std::setfill('0') << std::hex << fnum;
+//        oss << "." << QLS_JRNL_FILE_EXTENSION;
+//        if (!exists(oss.str()))
+//            throw jexception(jerrno::JERR_JDIR_NOSUCHFILE, oss.str(), "jdir", "verify_dir");
+//    }
 }
 
 

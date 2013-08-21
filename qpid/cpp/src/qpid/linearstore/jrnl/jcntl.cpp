@@ -19,19 +19,7 @@
  *
  */
 
-/**
- * \file jcntl.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * Messaging journal top-level control and interface class
- * mrg::journal::jcntl.  See comments in file jcntl.h for details.
- *
- * \author Kim van der Riet
- */
-
-
-#include "qpid/legacystore/jrnl/jcntl.h"
+#include "qpid/linearstore/jrnl/jcntl.h"
 
 #include <algorithm>
 #include <cassert>
@@ -41,9 +29,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include "qpid/legacystore/jrnl/file_hdr.h"
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jinf.h"
+//#include "qpid/linearstore/jrnl/file_hdr.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+//#include "qpid/linearstore/jrnl/jinf.h"
 #include <limits>
 #include <sstream>
 #include <unistd.h>
@@ -83,13 +71,13 @@ jcntl::jcntl(const std::string& jid, const std::string& jdir, const std::string&
     _readonly_flag(false),
     _autostop(true),
     _jfsize_sblks(0),
-    _lpmgr(),
+//    _lpmgr(),
     _emap(),
     _tmap(),
-    _rrfc(&_lpmgr),
-    _wrfc(&_lpmgr),
-    _rmgr(this, _emap, _tmap, _rrfc),
-    _wmgr(this, _emap, _tmap, _wrfc),
+//    _rrfc(&_lpmgr),
+//    _wrfc(&_lpmgr),
+    _rmgr(this, _emap, _tmap/*, _rrfc*/),
+    _wmgr(this, _emap, _tmap/*, _wrfc*/),
     _rcvdat()
 {}
 
@@ -98,12 +86,12 @@ jcntl::~jcntl()
     if (_init_flag && !_stop_flag)
         try { stop(true); }
         catch (const jexception& e) { std::cerr << e << std::endl; }
-    _lpmgr.finalize();
+//    _lpmgr.finalize();
 }
 
 void
-jcntl::initialize(const u_int16_t num_jfiles, const bool ae, const u_int16_t ae_max_jfiles,
-        const u_int32_t jfsize_sblks, const u_int16_t wcache_num_pages, const u_int32_t wcache_pgsize_sblks,
+jcntl::initialize(const uint16_t num_jfiles/*, const bool ae, const uint16_t ae_max_jfiles*/,
+        const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
         aio_callback* const cbp)
 {
     _init_flag = false;
@@ -113,40 +101,40 @@ jcntl::initialize(const u_int16_t num_jfiles, const bool ae, const u_int16_t ae_
     _emap.clear();
     _tmap.clear();
 
-    _lpmgr.finalize();
+//    _lpmgr.finalize();
 
     // Set new file geometry parameters
-    assert(num_jfiles >= JRNL_MIN_NUM_FILES);
-    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
+//    assert(num_jfiles >= JRNL_MIN_NUM_FILES);
+//    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
     _emap.set_num_jfiles(num_jfiles);
     _tmap.set_num_jfiles(num_jfiles);
 
-    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
-    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
+//    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
+//    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
     _jfsize_sblks = jfsize_sblks;
 
     // Clear any existing journal files
     _jdir.clear_dir();
-    _lpmgr.initialize(num_jfiles, ae, ae_max_jfiles, this, &new_fcntl);
+//    _lpmgr.initialize(num_jfiles, ae, ae_max_jfiles, this, &new_fcntl);
 
-    _wrfc.initialize(_jfsize_sblks);
-    _rrfc.initialize();
-    _rrfc.set_findex(0);
+//    _wrfc.initialize(_jfsize_sblks);
+//    _rrfc.initialize();
+//    _rrfc.set_findex(0);
     _rmgr.initialize(cbp);
     _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, JRNL_WMGR_MAXDTOKPP, JRNL_WMGR_MAXWAITUS);
 
     // Write info file (<basename>.jinf) to disk
-    write_infofile();
+//    write_infofile();
 
     _init_flag = true;
 }
 
 void
-jcntl::recover(const u_int16_t num_jfiles, const bool ae, const u_int16_t ae_max_jfiles,
-        const u_int32_t jfsize_sblks, const u_int16_t wcache_num_pages, const u_int32_t wcache_pgsize_sblks,
+jcntl::recover(const uint16_t num_jfiles/*, const bool ae, const uint16_t ae_max_jfiles*/,
+        const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
 //         const rd_aio_cb rd_cb, const wr_aio_cb wr_cb, const std::vector<std::string>* prep_txn_list_ptr,
         aio_callback* const cbp, const std::vector<std::string>* prep_txn_list_ptr,
-        u_int64_t& highest_rid)
+        uint64_t& highest_rid)
 {
     _init_flag = false;
     _stop_flag = false;
@@ -155,17 +143,17 @@ jcntl::recover(const u_int16_t num_jfiles, const bool ae, const u_int16_t ae_max
     _emap.clear();
     _tmap.clear();
 
-    _lpmgr.finalize();
+//    _lpmgr.finalize();
 
-    assert(num_jfiles >= JRNL_MIN_NUM_FILES);
-    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
-    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
-    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
+//    assert(num_jfiles >= JRNL_MIN_NUM_FILES);
+//    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
+//    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
+//    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
     _jfsize_sblks = jfsize_sblks;
 
     // Verify journal dir and journal files
     _jdir.verify_dir();
-    _rcvdat.reset(num_jfiles, ae, ae_max_jfiles);
+    _rcvdat.reset(num_jfiles/*, ae, ae_max_jfiles*/);
 
     rcvr_janalyze(_rcvdat, prep_txn_list_ptr);
     highest_rid = _rcvdat._h_rid;
@@ -173,11 +161,11 @@ jcntl::recover(const u_int16_t num_jfiles, const bool ae, const u_int16_t ae_max
         throw jexception(jerrno::JERR_JCNTL_RECOVERJFULL, "jcntl", "recover");
     this->log(LOG_DEBUG, _rcvdat.to_log(_jid));
 
-    _lpmgr.recover(_rcvdat, this, &new_fcntl);
+//    _lpmgr.recover(_rcvdat, this, &new_fcntl);
 
-    _wrfc.initialize(_jfsize_sblks, &_rcvdat);
-    _rrfc.initialize();
-    _rrfc.set_findex(_rcvdat.ffid());
+//    _wrfc.initialize(_jfsize_sblks, &_rcvdat);
+//    _rrfc.initialize();
+//    _rrfc.set_findex(_rcvdat.ffid());
     _rmgr.initialize(cbp);
     _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, JRNL_WMGR_MAXDTOKPP, JRNL_WMGR_MAXWAITUS,
             (_rcvdat._lffull ? 0 : _rcvdat._eo));
@@ -191,11 +179,11 @@ jcntl::recover_complete()
 {
     if (!_readonly_flag)
         throw jexception(jerrno::JERR_JCNTL_NOTRECOVERED, "jcntl", "recover_complete");
-    for (u_int16_t i=0; i<_lpmgr.num_jfiles(); i++)
-        _lpmgr.get_fcntlp(i)->reset(&_rcvdat);
-    _wrfc.initialize(_jfsize_sblks, &_rcvdat);
-    _rrfc.initialize();
-    _rrfc.set_findex(_rcvdat.ffid());
+//    for (uint16_t i=0; i<_lpmgr.num_jfiles(); i++)
+//        _lpmgr.get_fcntlp(i)->reset(&_rcvdat);
+//    _wrfc.initialize(_jfsize_sblks, &_rcvdat);
+//    _rrfc.initialize();
+//    _rrfc.set_findex(_rcvdat.ffid());
     _rmgr.recover_complete();
     _readonly_flag = false;
 }
@@ -265,7 +253,7 @@ jcntl::enqueue_extern_txn_data_record(const std::size_t tot_data_len, data_tok* 
 
 /* TODO
 iores
-jcntl::get_data_record(const u_int64_t& rid, const std::size_t& dsize, const std::size_t& dsize_avail,
+jcntl::get_data_record(const uint64_t& rid, const std::size_t& dsize, const std::size_t& dsize_avail,
         const void** const data, bool auto_discard)
 {
     check_rstatus("get_data_record");
@@ -292,7 +280,8 @@ jcntl::read_data_record(void** const datapp, std::size_t& dsize, void** const xi
         iores sres = _rmgr.synchronize(); // flushes all outstanding read events
         if (sres != RHM_IORES_SUCCESS)
             return sres;
-        _rmgr.wait_for_validity(&_aio_cmpl_timeout, true); // throw if timeout occurs
+        // TODO: Does linear store need this?
+//        _rmgr.wait_for_validity(&_aio_cmpl_timeout, true); // throw if timeout occurs
         res = _rmgr.read(datapp, dsize, xidpp, xidsize, transient, external, dtokp, ignore_pending_txns);
     }
     return res;
@@ -380,15 +369,16 @@ jcntl::stop(const bool block_till_aio_cmpl)
     _stop_flag = true;
     if (!_readonly_flag)
         flush(block_till_aio_cmpl);
-    _rrfc.finalize();
-    _lpmgr.finalize();
+//    _rrfc.finalize();
+//    _lpmgr.finalize();
 }
 
-u_int16_t
+/*
+uint16_t
 jcntl::get_earliest_fid()
 {
-    u_int16_t ffid = _wrfc.earliest_index();
-    u_int16_t fid = _wrfc.index();
+    uint16_t ffid = _wrfc.earliest_index();
+    uint16_t fid = _wrfc.index();
     while ( _emap.get_enq_cnt(ffid) == 0 && _tmap.get_txn_pfid_cnt(ffid) == 0 && ffid != fid)
     {
         if (++ffid >= _lpmgr.num_jfiles())
@@ -398,6 +388,7 @@ jcntl::get_earliest_fid()
         _rrfc.set_findex(ffid);
     return ffid;
 }
+*/
 
 iores
 jcntl::flush(const bool block_till_aio_cmpl)
@@ -431,26 +422,30 @@ jcntl::log(log_level ll, const char* const log_stmt) const
     }
 }
 
+/*
 void
 jcntl::chk_wr_frot()
 {
     if (_wrfc.index() == _rrfc.index())
         _rmgr.invalidate();
 }
+*/
 
 void
-jcntl::fhdr_wr_sync(const u_int16_t lid)
+jcntl::fhdr_wr_sync(const uint16_t /*lid*/)
 {
+/*
     fcntl* fcntlp = _lpmgr.get_fcntlp(lid);
     while (fcntlp->wr_fhdr_aio_outstanding())
     {
         if (get_wr_events(&_aio_cmpl_timeout) == jerrno::AIO_TIMEOUT)
             throw jexception(jerrno::JERR_JCNTL_AIOCMPLWAIT, "jcntl", "fhdr_wr_sync");
     }
+*/
 }
 
 fcntl*
-jcntl::new_fcntl(jcntl* const jcp, const u_int16_t lid, const u_int16_t fid, const rcvdat* const rdp)
+jcntl::new_fcntl(jcntl* const jcp, const uint16_t lid, const uint16_t fid, const rcvdat* const rdp)
 {
     if (!jcp) return 0;
     std::ostringstream oss;
@@ -480,6 +475,7 @@ jcntl::check_rstatus(const char* fn_name) const
         throw jexception(jerrno::JERR_JCNTL_STOPPED, "jcntl", fn_name);
 }
 
+/*
 void
 jcntl::write_infofile() const
 {
@@ -494,6 +490,7 @@ jcntl::write_infofile() const
             _jfsize_sblks, _wmgr.cache_pgsize_sblks(), _wmgr.cache_num_pages(), ts);
     ji.write();
 }
+*/
 
 void
 jcntl::aio_cmpl_wait()
@@ -501,7 +498,7 @@ jcntl::aio_cmpl_wait()
     //while (_wmgr.get_aio_evt_rem())
     while (true)
     {
-        u_int32_t aer;
+        uint32_t aer;
         {
             slock s(_wr_mutex);
             aer = _wmgr.get_aio_evt_rem();
@@ -532,17 +529,17 @@ jcntl::handle_aio_wait(const iores res, iores& resout, const data_tok* dtp)
     }
     else if (res == RHM_IORES_FILE_AIOWAIT)
     {
-        while (_wmgr.curr_file_blocked())
-        {
-            if (_wmgr.get_events(pmgr::UNUSED, &_aio_cmpl_timeout) == jerrno::AIO_TIMEOUT)
-            {
-                std::ostringstream oss;
-                oss << "get_events() returned JERR_JCNTL_AIOCMPLWAIT; wmgr_status: " << _wmgr.status_str();
-                this->log(LOG_CRITICAL, oss.str());
-                throw jexception(jerrno::JERR_JCNTL_AIOCMPLWAIT, "jcntl", "handle_aio_wait");
-            }
-        }
-        _wrfc.wr_reset();
+//        while (_wmgr.curr_file_blocked())
+//        {
+//            if (_wmgr.get_events(pmgr::UNUSED, &_aio_cmpl_timeout) == jerrno::AIO_TIMEOUT)
+//            {
+//                std::ostringstream oss;
+//                oss << "get_events() returned JERR_JCNTL_AIOCMPLWAIT; wmgr_status: " << _wmgr.status_str();
+//                this->log(LOG_CRITICAL, oss.str());
+//                throw jexception(jerrno::JERR_JCNTL_AIOCMPLWAIT, "jcntl", "handle_aio_wait");
+//            }
+//        }
+//        _wrfc.wr_reset();
         resout = RHM_IORES_SUCCESS;
         data_tok::write_state ws = dtp->wstate();
         return ws == data_tok::ENQ_PART || ws == data_tok::DEQ_PART || ws == data_tok::ABORT_PART ||
@@ -552,8 +549,9 @@ jcntl::handle_aio_wait(const iores res, iores& resout, const data_tok* dtp)
 }
 
 void
-jcntl::rcvr_janalyze(rcvdat& rd, const std::vector<std::string>* prep_txn_list_ptr)
+jcntl::rcvr_janalyze(rcvdat& /*rd*/, const std::vector<std::string>* /*prep_txn_list_ptr*/)
 {
+/*
     jinf ji(_jdir.dirname() + "/" + _base_filename + "." + JRNL_INFO_EXTENSION, true);
 
     // If the number of files does not tie up with the jinf file from the journal being recovered,
@@ -604,7 +602,7 @@ jcntl::rcvr_janalyze(rcvdat& rd, const std::vector<std::string>* prep_txn_list_p
     // Restore all read and write pointers and transactions
     if (!rd._jempty)
     {
-        u_int16_t fid = rd._ffid;
+        uint16_t fid = rd._ffid;
         std::ifstream ifs;
         bool lowi = rd._owi; // local copy of owi to be used during analysis
         while (rcvr_get_next_record(fid, &ifs, lowi, rd)) ;
@@ -647,17 +645,18 @@ jcntl::rcvr_janalyze(rcvdat& rd, const std::vector<std::string>* prep_txn_list_p
         rd._lffull = rd._eo == (1 + _jfsize_sblks) * JRNL_SBLK_SIZE * JRNL_DBLK_SIZE;
 
         // Check for journal full condition
-        u_int16_t next_wr_fid = (rd._lfid + 1) % rd._njf;
+        uint16_t next_wr_fid = (rd._lfid + 1) % rd._njf;
         rd._jfull = rd._ffid == next_wr_fid && rd._enq_cnt_list[next_wr_fid] && rd._lffull;
     }
+*/
 }
 
 bool
-jcntl::rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcvdat& rd)
+jcntl::rcvr_get_next_record(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& rd)
 {
     std::size_t cum_size_read = 0;
     void* xidp = 0;
-    rec_hdr h;
+    rec_hdr_t h;
 
     bool hdr_ok = false;
     std::streampos file_pos;
@@ -665,27 +664,27 @@ jcntl::rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcv
     {
         if (!ifsp->is_open())
         {
-            if (!jfile_cycle(fid, ifsp, lowi, rd, true))
+            if (!jfile_cycle(fid, ifsp/*, lowi*/, rd, true))
                 return false;
         }
         file_pos = ifsp->tellg();
-        ifsp->read((char*)&h, sizeof(rec_hdr));
-        if (ifsp->gcount() == sizeof(rec_hdr))
+        ifsp->read((char*)&h, sizeof(rec_hdr_t));
+        if (ifsp->gcount() == sizeof(rec_hdr_t))
             hdr_ok = true;
         else
         {
-            if (!jfile_cycle(fid, ifsp, lowi, rd, true))
+            if (!jfile_cycle(fid, ifsp/*, lowi*/, rd, true))
                 return false;
         }
     }
 
     switch(h._magic)
     {
-        case RHM_JDAT_ENQ_MAGIC:
+        case QLS_ENQ_MAGIC:
             {
                 enq_rec er;
-                u_int16_t start_fid = fid; // fid may increment in decode() if record folds over file boundary
-                if (!decode(er, fid, ifsp, cum_size_read, h, lowi, rd, file_pos))
+                uint16_t start_fid = fid; // fid may increment in decode() if record folds over file boundary
+                if (!decode(er, fid, ifsp, cum_size_read, h/*, lowi*/, rd, file_pos))
                     return false;
                 if (!er.is_transient()) // Ignore transient msgs
                 {
@@ -717,11 +716,11 @@ jcntl::rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcv
                 }
             }
             break;
-        case RHM_JDAT_DEQ_MAGIC:
+        case QLS_DEQ_MAGIC:
             {
                 deq_rec dr;
-                u_int16_t start_fid = fid; // fid may increment in decode() if record folds over file boundary
-                if (!decode(dr, fid, ifsp, cum_size_read, h, lowi, rd, file_pos))
+                uint16_t start_fid = fid; // fid may increment in decode() if record folds over file boundary
+                if (!decode(dr, fid, ifsp, cum_size_read, h/*, lowi*/, rd, file_pos))
                     return false;
                 if (dr.xid_size())
                 {
@@ -748,10 +747,10 @@ jcntl::rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcv
                 }
             }
             break;
-        case RHM_JDAT_TXA_MAGIC:
+        case QLS_TXA_MAGIC:
             {
                 txn_rec ar;
-                if (!decode(ar, fid, ifsp, cum_size_read, h, lowi, rd, file_pos))
+                if (!decode(ar, fid, ifsp, cum_size_read, h/*, lowi*/, rd, file_pos))
                     return false;
                 // Delete this txn from tmap, unlock any locked records in emap
                 ar.get_xid(&xidp);
@@ -768,10 +767,10 @@ jcntl::rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcv
                 std::free(xidp);
             }
             break;
-        case RHM_JDAT_TXC_MAGIC:
+        case QLS_TXC_MAGIC:
             {
                 txn_rec cr;
-                if (!decode(cr, fid, ifsp, cum_size_read, h, lowi, rd, file_pos))
+                if (!decode(cr, fid, ifsp, cum_size_read, h/*, lowi*/, rd, file_pos))
                     return false;
                 // Delete this txn from tmap, process records into emap
                 cr.get_xid(&xidp);
@@ -800,12 +799,12 @@ jcntl::rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcv
                 std::free(xidp);
             }
             break;
-        case RHM_JDAT_EMPTY_MAGIC:
+        case QLS_EMPTY_MAGIC:
             {
-                u_int32_t rec_dblks = jrec::size_dblks(sizeof(rec_hdr));
-                ifsp->ignore(rec_dblks * JRNL_DBLK_SIZE - sizeof(rec_hdr));
+                uint32_t rec_dblks = jrec::size_dblks(sizeof(rec_hdr_t));
+                ifsp->ignore(rec_dblks * JRNL_DBLK_SIZE - sizeof(rec_hdr_t));
                 assert(!ifsp->fail() && !ifsp->bad());
-                if (!jfile_cycle(fid, ifsp, lowi, rd, false))
+                if (!jfile_cycle(fid, ifsp/*, lowi*/, rd, false))
                     return false;
             }
             break;
@@ -821,13 +820,13 @@ jcntl::rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcv
 }
 
 bool
-jcntl::decode(jrec& rec, u_int16_t& fid, std::ifstream* ifsp, std::size_t& cum_size_read,
-        rec_hdr& h, bool& lowi, rcvdat& rd, std::streampos& file_offs)
+jcntl::decode(jrec& rec, uint16_t& fid, std::ifstream* ifsp, std::size_t& cum_size_read,
+        rec_hdr_t& h/*, bool& lowi*/, rcvdat& rd, std::streampos& file_offs)
 {
-    u_int16_t start_fid = fid;
+    uint16_t start_fid = fid;
     std::streampos start_file_offs = file_offs;
-    if (!check_owi(fid, h, lowi, rd, file_offs))
-        return false;
+//    if (!check_owi(fid, h, lowi, rd, file_offs))
+//        return false;
     bool done = false;
     while (!done)
     {
@@ -844,7 +843,7 @@ jcntl::decode(jrec& rec, u_int16_t& fid, std::ifstream* ifsp, std::size_t& cum_s
 //             rd._lfid = start_fid;
             return false;
         }
-        if (!done && !jfile_cycle(fid, ifsp, lowi, rd, false))
+        if (!done && !jfile_cycle(fid, ifsp/*, lowi*/, rd, false))
         {
             check_journal_alignment(start_fid, start_file_offs, rd);
             return false;
@@ -854,7 +853,7 @@ jcntl::decode(jrec& rec, u_int16_t& fid, std::ifstream* ifsp, std::size_t& cum_s
 }
 
 bool
-jcntl::jfile_cycle(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcvdat& rd, const bool jump_fro)
+jcntl::jfile_cycle(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& rd, const bool jump_fro)
 {
     if (ifsp->is_open())
     {
@@ -867,7 +866,7 @@ jcntl::jfile_cycle(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcvdat& rd, 
             if (++fid >= rd._njf)
             {
                 fid = 0;
-                lowi = !lowi; // Flip local owi
+//                lowi = !lowi; // Flip local owi
             }
             if (fid == rd._ffid) // used up all journal files
                 return false;
@@ -877,19 +876,19 @@ jcntl::jfile_cycle(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcvdat& rd, 
     {
         std::ostringstream oss;
         oss << _jdir.dirname() << "/" << _base_filename << ".";
-        oss << std::hex << std::setfill('0') << std::setw(4) << fid << "." << JRNL_DATA_EXTENSION;
+        oss << std::hex << std::setfill('0') << std::setw(4) << fid << "." << QLS_JRNL_FILE_EXTENSION;
         ifsp->clear(); // clear eof flag, req'd for older versions of c++
         ifsp->open(oss.str().c_str(), std::ios_base::in | std::ios_base::binary);
         if (!ifsp->good())
             throw jexception(jerrno::JERR__FILEIO, oss.str(), "jcntl", "jfile_cycle");
 
         // Read file header
-        file_hdr fhdr;
+        file_hdr_t fhdr;
         ifsp->read((char*)&fhdr, sizeof(fhdr));
         assert(ifsp->good());
-        if (fhdr._magic == RHM_JDAT_FILE_MAGIC)
+        if (fhdr._rhdr._magic == QLS_FILE_MAGIC)
         {
-            assert(fhdr._lfid == fid);
+//            assert(fhdr._lfid == fid);
             if (!rd._fro)
                 rd._fro = fhdr._fro;
             std::streamoff foffs = jump_fro ? fhdr._fro : JRNL_DBLK_SIZE * JRNL_SBLK_SIZE;
@@ -904,12 +903,14 @@ jcntl::jfile_cycle(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcvdat& rd, 
     return true;
 }
 
+
+/*
 bool
-jcntl::check_owi(const u_int16_t fid, rec_hdr& h, bool& lowi, rcvdat& rd, std::streampos& file_pos)
+jcntl::check_owi(const uint16_t fid, rec_hdr& h, bool& lowi, rcvdat& rd, std::streampos& file_pos)
 {
     if (rd._ffid ? h.get_owi() == lowi : h.get_owi() != lowi) // Overwrite indicator changed
     {
-        u_int16_t expected_fid = rd._ffid ? rd._ffid - 1 : rd._njf - 1;
+        uint16_t expected_fid = rd._ffid ? rd._ffid - 1 : rd._njf - 1;
         if (fid == expected_fid)
         {
             check_journal_alignment(fid, file_pos, rd);
@@ -929,10 +930,11 @@ jcntl::check_owi(const u_int16_t fid, rec_hdr& h, bool& lowi, rcvdat& rd, std::s
         rd._h_rid = h._rid;
     return true;
 }
+*/
 
 
 void
-jcntl::check_journal_alignment(const u_int16_t fid, std::streampos& file_pos, rcvdat& rd)
+jcntl::check_journal_alignment(const uint16_t fid, std::streampos& file_pos, rcvdat& rd)
 {
     unsigned sblk_offs = file_pos % (JRNL_DBLK_SIZE * JRNL_SBLK_SIZE);
     if (sblk_offs)
@@ -944,10 +946,10 @@ jcntl::check_journal_alignment(const u_int16_t fid, std::streampos& file_pos, rc
             oss << (JRNL_SBLK_SIZE - (sblk_offs/JRNL_DBLK_SIZE)) << " filler record(s) required.";
             this->log(LOG_WARN, oss.str());
         }
-        const u_int32_t xmagic = RHM_JDAT_EMPTY_MAGIC;
+        const uint32_t xmagic = QLS_EMPTY_MAGIC;
         std::ostringstream oss;
         oss << _jdir.dirname() << "/" << _base_filename << ".";
-        oss << std::hex << std::setfill('0') << std::setw(4) << fid << "." << JRNL_DATA_EXTENSION;
+        oss << std::hex << std::setfill('0') << std::setw(4) << fid << "." << QLS_JRNL_FILE_EXTENSION;
         std::ofstream ofsp(oss.str().c_str(),
                 std::ios_base::in | std::ios_base::out | std::ios_base::binary);
         if (!ofsp.good())
@@ -959,7 +961,7 @@ jcntl::check_journal_alignment(const u_int16_t fid, std::streampos& file_pos, rc
         // Normally, RHM_CLEAN must be set before these fills are done, but this is a recover
         // situation (i.e. performance is not an issue), and it makes the location of the write
         // clear should inspection of the file be required.
-        std::memset((char*)buff + sizeof(xmagic), RHM_CLEAN_CHAR, JRNL_DBLK_SIZE - sizeof(xmagic));
+        std::memset((char*)buff + sizeof(xmagic), QLS_CLEAN_CHAR, JRNL_DBLK_SIZE - sizeof(xmagic));
 
         while (file_pos % (JRNL_DBLK_SIZE * JRNL_SBLK_SIZE))
         {
@@ -973,8 +975,8 @@ jcntl::check_journal_alignment(const u_int16_t fid, std::streampos& file_pos, rc
         ofsp.close();
         std::free(buff);
         rd._lfid = fid;
-        if (!rd._frot)
-            rd._ffid = (fid + 1) % rd._njf;
+//        if (!rd._frot)
+//            rd._ffid = (fid + 1) % rd._njf;
         this->log(LOG_INFO, "Bad record alignment fixed.");
     }
     rd._eo = file_pos;

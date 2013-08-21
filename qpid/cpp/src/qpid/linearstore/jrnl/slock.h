@@ -19,22 +19,11 @@
  *
  */
 
-/**
- * \file slock.h
- *
- * Qpid asynchronous store plugin library
- *
- * Messaging journal scoped lock class mrg::journal::slock and scoped try-lock
- * class mrg::journal::stlock.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_SLOCK_H
 #define QPID_LEGACYSTORE_JRNL_SLOCK_H
 
-#include "qpid/legacystore/jrnl/jexception.h"
-#include "qpid/legacystore/jrnl/smutex.h"
+#include "qpid/linearstore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/smutex.h"
 #include <pthread.h>
 
 namespace mrg

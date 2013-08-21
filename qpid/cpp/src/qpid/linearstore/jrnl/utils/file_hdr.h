@@ -21,18 +21,6 @@
  *
  */
 
-/**
- * \file file_hdr.h
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::file_hdr (file
- * record header), used to start a journal file. It contains some
- * file metadata and information to aid journal recovery.
- *
- * \author Kim van der Riet
- */
-
 #include <time.h>
 #include "rec_hdr.h"
 
@@ -47,12 +35,12 @@
  * block in the file. The record ID and offset are updated on each overwrite of the
  * file.
  *
- * File header info in binary format (48 bytes):
+ * File header info in binary format (66 bytes + size of file name in octets):
  * <pre>
  *   0                           7
  * +---+---+---+---+---+---+---+---+  -+
- * |     magic     | v | 0 | flags |   |
- * +---+---+---+---+---+---+---+---+   | struct hdr
+ * |     magic     |  ver  | flags |   |
+ * +---+---+---+---+---+---+---+---+   | struct rec_hdr_t
  * |       first rid in file       |   |
  * +---+---+---+---+---+---+---+---+  -+
  * |              fro              |
@@ -67,40 +55,36 @@
  * +---+---+---+---+---+---+---+---+
  * |          file-number          |
  * +---+---+---+---+---+---+---+---+
- * | n-len |  File Name...         |
+ * | n-len |  Queue Name...        |
  * +-------+                       |
  * |                               |
  * +---+---+---+---+---+---+---+---+
  *
- * v = file version (If the format or encoding of this file changes, then this
- *     number should be incremented)
- * fro = First record offset, offset from start of file to first record header
- * file-count  = Number of files in use for the journal at the time this header is written
- * file-size   = Size of the file in octets
- * file-number = Incrementing serial number indicating file order within a journal
+ * ver = file version (If the format or encoding of this file changes, then this
+ *       number should be incremented)
+ * fro = First Record Offset
  * n-len = Length of the queue name in octets.
  * </pre>
- *
- * Note that journal files should be transferable between 32- and 64-bit
- * hardware of the same endianness, but not between hardware of opposite
- * entianness without some sort of binary conversion utility. Thus buffering
- * will be needed for types that change size between 32- and 64-bit compiles.
  */
 typedef struct file_hdr_t {
-    rec_hdr_t _rhdr;
-    uint64_t  _fro;
-    uint64_t  _ts_sec;
-    uint64_t  _ts_nsec;
-    uint32_t  _file_count;
+    rec_hdr_t _rhdr;		/**< Common record header struct, but rid field is used for rid of first compete record in file */
+    uint64_t  _fro;			/**< First Record Offset (FRO) */
+    uint64_t  _ts_sec;		/**< Time stamp (seconds part) */
+    uint64_t  _ts_nsec;		/**< Time stamp (nanoseconds part) */
+    uint32_t  _file_count;	/**< Total number of files in linear sequence at time of writing this file */
     uint32_t  _reserved;
-    uint64_t  _file_size;
-    uint64_t  _file_number;
-    uint16_t  _name_length;
+    uint64_t  _file_size;	/**< Size of this file in octets, including header sblk */
+    uint64_t  _file_number; /**< The logical number of this file in a monotonically increasing sequence */
+    uint16_t  _name_length;	/**< Length of the queue name in octets, which follows this struct in the header */
 } file_hdr_t;
 
+void file_hdr_init(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
+                   const uint64_t rid, const uint64_t fro, const uint64_t ts_sec, const uint64_t ts_nsec,
+                   const uint32_t file_count, const uint64_t file_size, const uint64_t file_number);
+void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src);
 int  set_time_now(file_hdr_t *fh);
 void set_time(file_hdr_t *fh, struct timespec *ts);
 
 #pragma pack()
 
-#endif // ifndef QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H
+#endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H */

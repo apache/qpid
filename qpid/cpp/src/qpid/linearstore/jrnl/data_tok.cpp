@@ -19,23 +19,12 @@
  *
  */
 
-/**
- * \file data_tok.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::data_tok (data block token).
- * See comments in file data_tok.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/data_tok.h"
+#include "qpid/linearstore/jrnl/data_tok.h"
 
 #include <iomanip>
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jexception.h"
-#include "qpid/legacystore/jrnl/slock.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/slock.h"
 #include <sstream>
 
 namespace mrg
@@ -45,7 +34,7 @@ namespace journal
 
 // Static members
 
-u_int64_t data_tok::_cnt = 0;
+uint64_t data_tok::_cnt = 0;
 smutex data_tok::_mutex;
 
 data_tok::data_tok():

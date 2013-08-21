@@ -21,9 +21,22 @@
 
 #include "deq_hdr.h"
 
-static const uint16_t DEQ_HDR_TXNCMPLCOMMIT_MASK = 0x10;
+/*static const uint16_t DEQ_HDR_TXNCMPLCOMMIT_MASK = 0x10;*/
 
-bool is_txn_coml_commit(deq_hdr_t *dh) {
+void deq_hdr_init(deq_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag, const uint64_t
+                  rid, const uint64_t deq_rid, const uint64_t xidsize) {
+    rec_hdr_init(&dest->_rhdr, magic, version, uflag, rid);
+    dest->_deq_rid = deq_rid;
+    dest->_xidsize = xidsize;
+}
+
+void deq_hdr_copy(deq_hdr_t* dest, const deq_hdr_t* src) {
+    rec_hdr_copy(&dest->_rhdr, &src->_rhdr);
+    dest->_deq_rid = src->_deq_rid;
+    dest->_xidsize = src->_xidsize;
+}
+
+bool is_txn_coml_commit(const deq_hdr_t *dh) {
     return dh->_rhdr._uflag & DEQ_HDR_TXNCMPLCOMMIT_MASK;
 }
 

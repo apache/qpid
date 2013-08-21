@@ -19,26 +19,15 @@
  *
  */
 
-/**
- * \file txn_rec.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * This file contains the code for the mrg::journal::txn_rec (journal dequeue
- * record) class. See comments in file txn_rec.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/txn_rec.h"
+#include "qpid/linearstore/jrnl/txn_rec.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <iomanip>
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg
@@ -47,21 +36,25 @@ namespace journal
 {
 
 txn_rec::txn_rec():
-        _txn_hdr(),
+//        _txn_hdr(),
         _xidp(0),
-        _buff(0),
-        _txn_tail()
+        _buff(0)
+//        _txn_tail()
 {
-    _txn_hdr._version = RHM_JDAT_VERSION;
+    ::txn_hdr_init(&_txn_hdr, 0, QLS_JRNL_VERSION, 0, 0, 0);
+    ::rec_tail_init(&_txn_tail, 0, 0, 0);
 }
 
-txn_rec::txn_rec(const u_int32_t magic, const u_int64_t rid, const void* const xidp,
-        const std::size_t xidlen, const bool owi):
-        _txn_hdr(magic, RHM_JDAT_VERSION, rid, xidlen, owi),
+txn_rec::txn_rec(const uint32_t magic, const uint64_t rid, const void* const xidp,
+        const std::size_t xidlen/*, const bool owi*/):
+//        _txn_hdr(magic, RHM_JDAT_VERSION, rid, xidlen, owi),
         _xidp(xidp),
-        _buff(0),
-        _txn_tail(_txn_hdr)
-{}
+        _buff(0)
+//        _txn_tail(_txn_hdr)
+{
+    ::txn_hdr_init(&_txn_hdr, magic, QLS_JRNL_VERSION, 0, rid, xidlen);
+    ::rec_tail_copy(&_txn_tail, &_txn_hdr._rhdr, 0);
+}
 
 txn_rec::~txn_rec()
 {
@@ -69,10 +62,10 @@ txn_rec::~txn_rec()
 }
 
 void
-txn_rec::reset(const u_int32_t magic)
+txn_rec::reset(const uint32_t magic)
 {
-    _txn_hdr._magic = magic;
-    _txn_hdr._rid = 0;
+    _txn_hdr._rhdr._magic = magic;
+    _txn_hdr._rhdr._rid = 0;
     _txn_hdr._xidsize = 0;
     _xidp = 0;
     _buff = 0;
@@ -81,12 +74,12 @@ txn_rec::reset(const u_int32_t magic)
 }
 
 void
-txn_rec::reset(const u_int32_t magic, const  u_int64_t rid, const void* const xidp,
-        const std::size_t xidlen, const bool owi)
+txn_rec::reset(const uint32_t magic, const  uint64_t rid, const void* const xidp,
+        const std::size_t xidlen/*, const bool owi*/)
 {
-    _txn_hdr._magic = magic;
-    _txn_hdr._rid = rid;
-    _txn_hdr.set_owi(owi);
+    _txn_hdr._rhdr._magic = magic;
+    _txn_hdr._rhdr._rid = rid;
+//    _txn_hdr.set_owi(owi);
     _txn_hdr._xidsize = xidlen;
     _xidp = xidp;
     _buff = 0;
@@ -94,8 +87,8 @@ txn_rec::reset(const u_int32_t magic, const  u_int64_t rid, const void* const xi
     _txn_tail._rid = rid;
 }
 
-u_int32_t
-txn_rec::encode(void* wptr, u_int32_t rec_offs_dblks, u_int32_t max_size_dblks)
+uint32_t
+txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
 {
     assert(wptr != 0);
     assert(max_size_dblks > 0);
@@ -108,7 +101,7 @@ txn_rec::encode(void* wptr, u_int32_t rec_offs_dblks, u_int32_t max_size_dblks)
     {
         if (size_dblks(rec_size()) - rec_offs_dblks > max_size_dblks) // Further split required
         {
-            rec_offs -= sizeof(_txn_hdr);
+            rec_offs -= sizeof(txn_hdr_t);
             std::size_t wsize = _txn_hdr._xidsize > rec_offs ? _txn_hdr._xidsize - rec_offs : 0;
             std::size_t wsize2 = wsize;
             if (wsize)
@@ -139,7 +132,7 @@ txn_rec::encode(void* wptr, u_int32_t rec_offs_dblks, u_int32_t max_size_dblks)
         }
         else // No further split required
         {
-            rec_offs -= sizeof(_txn_hdr);
+            rec_offs -= sizeof(txn_hdr_t);
             std::size_t wsize = _txn_hdr._xidsize > rec_offs ? _txn_hdr._xidsize - rec_offs : 0;
             if (wsize)
             {
@@ -165,12 +158,12 @@ txn_rec::encode(void* wptr, u_int32_t rec_offs_dblks, u_int32_t max_size_dblks)
     else // Start at beginning of data record
     {
         // Assumption: the header will always fit into the first dblk
-        std::memcpy(wptr, (void*)&_txn_hdr, sizeof(_txn_hdr));
-        wr_cnt = sizeof(_txn_hdr);
+        std::memcpy(wptr, (void*)&_txn_hdr, sizeof(txn_hdr_t));
+        wr_cnt = sizeof(txn_hdr_t);
         if (size_dblks(rec_size()) > max_size_dblks) // Split required
         {
             std::size_t wsize;
-            rem -= sizeof(_txn_hdr);
+            rem -= sizeof(txn_hdr_t);
             if (rem)
             {
                 wsize = rem >= _txn_hdr._xidsize ? _txn_hdr._xidsize : rem;
@@ -202,8 +195,8 @@ txn_rec::encode(void* wptr, u_int32_t rec_offs_dblks, u_int32_t max_size_dblks)
     return size_dblks(wr_cnt);
 }
 
-u_int32_t
-txn_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_size_dblks)
+uint32_t
+txn_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
 {
     assert(rptr != 0);
     assert(max_size_dblks > 0);
@@ -211,18 +204,17 @@ txn_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
     std::size_t rd_cnt = 0;
     if (rec_offs_dblks) // Continuation of record on new page
     {
-        const u_int32_t hdr_xid_dblks = size_dblks(txn_hdr::size() + _txn_hdr._xidsize);
-        const u_int32_t hdr_xid_tail_dblks = size_dblks(txn_hdr::size() +  _txn_hdr._xidsize +
-                rec_tail::size());
+        const uint32_t hdr_xid_dblks = size_dblks(sizeof(txn_hdr_t) + _txn_hdr._xidsize);
+        const uint32_t hdr_xid_tail_dblks = size_dblks(sizeof(txn_hdr_t) +  _txn_hdr._xidsize + sizeof(rec_tail_t));
         const std::size_t rec_offs = rec_offs_dblks * JRNL_DBLK_SIZE;
 
         if (hdr_xid_tail_dblks - rec_offs_dblks <= max_size_dblks)
         {
             // Remainder of xid fits within this page
-            if (rec_offs - txn_hdr::size() < _txn_hdr._xidsize)
+            if (rec_offs - sizeof(txn_hdr_t) < _txn_hdr._xidsize)
             {
                 // Part of xid still outstanding, copy remainder of xid and tail
-                const std::size_t xid_offs = rec_offs - txn_hdr::size();
+                const std::size_t xid_offs = rec_offs - sizeof(txn_hdr_t);
                 const std::size_t xid_rem = _txn_hdr._xidsize - xid_offs;
                 std::memcpy((char*)_buff + xid_offs, rptr, xid_rem);
                 rd_cnt = xid_rem;
@@ -233,8 +225,8 @@ txn_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
             else
             {
                 // Tail or part of tail only outstanding, complete tail
-                const std::size_t tail_offs = rec_offs - txn_hdr::size() - _txn_hdr._xidsize;
-                const std::size_t tail_rem = rec_tail::size() - tail_offs;
+                const std::size_t tail_offs = rec_offs - sizeof(txn_hdr_t) - _txn_hdr._xidsize;
+                const std::size_t tail_rem = sizeof(rec_tail_t) - tail_offs;
                 std::memcpy((char*)&_txn_tail + tail_offs, rptr, tail_rem);
                 chk_tail();
                 rd_cnt = tail_rem;
@@ -243,7 +235,7 @@ txn_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
         else if (hdr_xid_dblks - rec_offs_dblks <= max_size_dblks)
         {
             // Remainder of xid fits within this page, tail split
-            const std::size_t xid_offs = rec_offs - txn_hdr::size();
+            const std::size_t xid_offs = rec_offs - sizeof(txn_hdr_t);
             const std::size_t xid_rem = _txn_hdr._xidsize - xid_offs;
             std::memcpy((char*)_buff + xid_offs, rptr, xid_rem);
             rd_cnt += xid_rem;
@@ -258,26 +250,27 @@ txn_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
         {
             // Remainder of xid split
             const std::size_t xid_cp_size = (max_size_dblks * JRNL_DBLK_SIZE);
-            std::memcpy((char*)_buff + rec_offs - txn_hdr::size(), rptr, xid_cp_size);
+            std::memcpy((char*)_buff + rec_offs - sizeof(txn_hdr_t), rptr, xid_cp_size);
             rd_cnt += xid_cp_size;
         }
     }
     else // Start of record
     {
         // Get and check header
-        _txn_hdr.hdr_copy(h);
-        rd_cnt = sizeof(rec_hdr);
+        //_txn_hdr.hdr_copy(h);
+        ::rec_hdr_copy(&_txn_hdr._rhdr, &h);
+        rd_cnt = sizeof(rec_hdr_t);
 #if defined(JRNL_BIG_ENDIAN) && defined(JRNL_32_BIT)
-        rd_cnt += sizeof(u_int32_t); // Filler 0
+        rd_cnt += sizeof(uint32_t); // Filler 0
 #endif
         _txn_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
-        rd_cnt = _txn_hdr.size();
+        rd_cnt = sizeof(txn_hdr_t);
         chk_hdr();
         _buff = std::malloc(_txn_hdr._xidsize);
         MALLOC_CHK(_buff, "_buff", "txn_rec", "decode");
-        const u_int32_t hdr_xid_dblks = size_dblks(txn_hdr::size() + _txn_hdr._xidsize);
-        const u_int32_t hdr_xid_tail_dblks = size_dblks(txn_hdr::size() + _txn_hdr._xidsize +
-                rec_tail::size());
+        const uint32_t hdr_xid_dblks = size_dblks(sizeof(txn_hdr_t) + _txn_hdr._xidsize);
+        const uint32_t hdr_xid_tail_dblks = size_dblks(sizeof(txn_hdr_t) + _txn_hdr._xidsize +
+                sizeof(rec_tail_t));
 
         // Check if record (header + xid + tail) fits within this page, we can check the
         // tail before the expense of copying data to memory
@@ -314,27 +307,28 @@ txn_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
 }
 
 bool
-txn_rec::rcv_decode(rec_hdr h, std::ifstream* ifsp, std::size_t& rec_offs)
+txn_rec::rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs)
 {
     if (rec_offs == 0)
     {
         // Read header, allocate for xid
-        _txn_hdr.hdr_copy(h);
+        //_txn_hdr.hdr_copy(h);
+        ::rec_hdr_copy(&_txn_hdr._rhdr, &h);
 #if defined(JRNL_BIG_ENDIAN) && defined(JRNL_32_BIT)
-        ifsp->ignore(sizeof(u_int32_t)); // _filler0
+        ifsp->ignore(sizeof(uint32_t)); // _filler0
 #endif
         ifsp->read((char*)&_txn_hdr._xidsize, sizeof(std::size_t));
 #if defined(JRNL_LITTLE_ENDIAN) && defined(JRNL_32_BIT)
-        ifsp->ignore(sizeof(u_int32_t)); // _filler0
+        ifsp->ignore(sizeof(uint32_t)); // _filler0
 #endif
-        rec_offs = sizeof(_txn_hdr);
+        rec_offs = sizeof(txn_hdr_t);
         _buff = std::malloc(_txn_hdr._xidsize);
         MALLOC_CHK(_buff, "_buff", "txn_rec", "rcv_decode");
     }
-    if (rec_offs < sizeof(_txn_hdr) + _txn_hdr._xidsize)
+    if (rec_offs < sizeof(txn_hdr_t) + _txn_hdr._xidsize)
     {
         // Read xid (or continue reading xid)
-        std::size_t offs = rec_offs - sizeof(_txn_hdr);
+        std::size_t offs = rec_offs - sizeof(txn_hdr_t);
         ifsp->read((char*)_buff + offs, _txn_hdr._xidsize - offs);
         std::size_t size_read = ifsp->gcount();
         rec_offs += size_read;
@@ -347,14 +341,14 @@ txn_rec::rcv_decode(rec_hdr h, std::ifstream* ifsp, std::size_t& rec_offs)
             return false;
         }
     }
-    if (rec_offs < sizeof(_txn_hdr) + _txn_hdr._xidsize + sizeof(rec_tail))
+    if (rec_offs < sizeof(txn_hdr_t) + _txn_hdr._xidsize + sizeof(rec_tail_t))
     {
         // Read tail (or continue reading tail)
-        std::size_t offs = rec_offs - sizeof(_txn_hdr) - _txn_hdr._xidsize;
-        ifsp->read((char*)&_txn_tail + offs, sizeof(rec_tail) - offs);
+        std::size_t offs = rec_offs - sizeof(txn_hdr_t) - _txn_hdr._xidsize;
+        ifsp->read((char*)&_txn_tail + offs, sizeof(rec_tail_t) - offs);
         std::size_t size_read = ifsp->gcount();
         rec_offs += size_read;
-        if (size_read < sizeof(rec_tail) - offs)
+        if (size_read < sizeof(rec_tail_t) - offs)
         {
             assert(ifsp->eof());
             // As we may have read past eof, turn off fail bit
@@ -385,12 +379,12 @@ std::string&
 txn_rec::str(std::string& str) const
 {
     std::ostringstream oss;
-    if (_txn_hdr._magic == RHM_JDAT_TXA_MAGIC)
-        oss << "dtxa_rec: m=" << _txn_hdr._magic;
+    if (_txn_hdr._rhdr._magic == QLS_TXA_MAGIC)
+        oss << "dtxa_rec: m=" << _txn_hdr._rhdr._magic;
     else
-        oss << "dtxc_rec: m=" << _txn_hdr._magic;
-    oss << " v=" << (int)_txn_hdr._version;
-    oss << " rid=" << _txn_hdr._rid;
+        oss << "dtxc_rec: m=" << _txn_hdr._rhdr._magic;
+    oss << " v=" << (int)_txn_hdr._rhdr._version;
+    oss << " rid=" << _txn_hdr._rhdr._rid;
     oss << " xid=\"" << _xidp << "\"";
     str.append(oss.str());
     return str;
@@ -405,36 +399,36 @@ txn_rec::xid_size() const
 std::size_t
 txn_rec::rec_size() const
 {
-    return txn_hdr::size() + _txn_hdr._xidsize + rec_tail::size();
+    return sizeof(txn_hdr_t) + _txn_hdr._xidsize + sizeof(rec_tail_t);
 }
 
 void
 txn_rec::chk_hdr() const
 {
-    jrec::chk_hdr(_txn_hdr);
-    if (_txn_hdr._magic != RHM_JDAT_TXA_MAGIC && _txn_hdr._magic != RHM_JDAT_TXC_MAGIC)
+    jrec::chk_hdr(_txn_hdr._rhdr);
+    if (_txn_hdr._rhdr._magic != QLS_TXA_MAGIC && _txn_hdr._rhdr._magic != QLS_TXC_MAGIC)
     {
         std::ostringstream oss;
         oss << std::hex << std::setfill('0');
-        oss << "dtx magic: rid=0x" << std::setw(16) << _txn_hdr._rid;
-        oss << ": expected=(0x" << std::setw(8) << RHM_JDAT_TXA_MAGIC;
-        oss << " or 0x" << RHM_JDAT_TXC_MAGIC;
-        oss << ") read=0x" << std::setw(2) << (int)_txn_hdr._magic;
+        oss << "dtx magic: rid=0x" << std::setw(16) << _txn_hdr._rhdr._rid;
+        oss << ": expected=(0x" << std::setw(8) << QLS_TXA_MAGIC;
+        oss << " or 0x" << QLS_TXC_MAGIC;
+        oss << ") read=0x" << std::setw(2) << (int)_txn_hdr._rhdr._magic;
         throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "txn_rec", "chk_hdr");
     }
 }
 
 void
-txn_rec::chk_hdr(u_int64_t rid) const
+txn_rec::chk_hdr(uint64_t rid) const
 {
     chk_hdr();
-    jrec::chk_rid(_txn_hdr, rid);
+    jrec::chk_rid(_txn_hdr._rhdr, rid);
 }
 
 void
 txn_rec::chk_tail() const
 {
-    jrec::chk_tail(_txn_tail, _txn_hdr);
+    jrec::chk_tail(_txn_tail, _txn_hdr._rhdr);
 }
 
 void

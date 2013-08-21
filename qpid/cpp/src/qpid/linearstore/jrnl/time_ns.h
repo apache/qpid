@@ -19,17 +19,6 @@
  *
  */
 
-/**
- * \file time_ns.h
- *
- * Qpid asynchronous store plugin library
- *
- * Messaging journal time struct mrg::journal::time_ns, derived from
- * the timespec struct and provided with helper functions.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_TIME_NS_H
 #define QPID_LEGACYSTORE_JRNL_TIME_NS_H
 

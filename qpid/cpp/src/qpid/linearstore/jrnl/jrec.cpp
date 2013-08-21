@@ -19,22 +19,11 @@
  *
  */
 
-/**
- * \file jrec.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing source code for class mrg::journal::jrec (abstract journal
- * jrecord). See comments in file jrec.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/jrec.h"
+#include "qpid/linearstore/jrnl/jrec.h"
 
 #include <iomanip>
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jexception.h"
 #include <sstream>
 
 namespace mrg
@@ -46,7 +35,7 @@ jrec::jrec() {}
 jrec::~jrec() {}
 
 void
-jrec::chk_hdr(const rec_hdr& hdr)
+jrec::chk_hdr(const rec_hdr_t& hdr)
 {
     if (hdr._magic == 0)
     {
@@ -55,33 +44,33 @@ jrec::chk_hdr(const rec_hdr& hdr)
         oss << "enq magic NULL: rid=0x" << hdr._rid;
         throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
     }
-    if (hdr._version != RHM_JDAT_VERSION)
+    if (hdr._version != QLS_JRNL_VERSION)
     {
         std::ostringstream oss;
         oss << std::hex << std::setfill('0');
         oss << "version: rid=0x" << hdr._rid;
-        oss << ": expected=0x" << std::setw(2) << (int)RHM_JDAT_VERSION;
+        oss << ": expected=0x" << std::setw(2) << (int)QLS_JRNL_VERSION;
         oss << " read=0x" << std::setw(2) << (int)hdr._version;
         throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
     }
-#if defined (JRNL_LITTLE_ENDIAN)
-    u_int8_t endian_flag = RHM_LENDIAN_FLAG;
-#else
-    u_int8_t endian_flag = RHM_BENDIAN_FLAG;
-#endif
-    if (hdr._eflag != endian_flag)
-    {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "endian_flag: rid=" << hdr._rid;
-        oss << ": expected=0x" << std::setw(2) << (int)endian_flag;
-        oss << " read=0x" << std::setw(2) << (int)hdr._eflag;
-        throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
-    }
+//#if defined (JRNL_LITTLE_ENDIAN)
+//    uint8_t endian_flag = RHM_LENDIAN_FLAG;
+//#else
+//    uint8_t endian_flag = RHM_BENDIAN_FLAG;
+//#endif
+//    if (hdr._eflag != endian_flag)
+//    {
+//        std::ostringstream oss;
+//        oss << std::hex << std::setfill('0');
+//        oss << "endian_flag: rid=" << hdr._rid;
+//        oss << ": expected=0x" << std::setw(2) << (int)endian_flag;
+//        oss << " read=0x" << std::setw(2) << (int)hdr._eflag;
+//        throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
+//    }
 }
 
 void
-jrec::chk_rid(const rec_hdr& hdr, const u_int64_t rid)
+jrec::chk_rid(const rec_hdr_t& hdr, const uint64_t rid)
 {
     if (hdr._rid != rid)
     {
@@ -94,7 +83,7 @@ jrec::chk_rid(const rec_hdr& hdr, const u_int64_t rid)
 }
 
 void
-jrec::chk_tail(const rec_tail& tail, const rec_hdr& hdr)
+jrec::chk_tail(const rec_tail_t& tail, const rec_hdr_t& hdr)
 {
     if (tail._xmagic != ~hdr._magic)
     {

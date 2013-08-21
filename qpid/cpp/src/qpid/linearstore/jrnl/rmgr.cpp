@@ -19,24 +19,13 @@
  *
  */
 
-/**
- * \file rmgr.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::rmgr (read manager). See
- * comments in file rmgr.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/rmgr.h"
+#include "qpid/linearstore/jrnl/rmgr.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
-#include "qpid/legacystore/jrnl/jcntl.h"
-#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jcntl.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
 #include <sstream>
 
 namespace mrg
@@ -44,9 +33,9 @@ namespace mrg
 namespace journal
 {
 
-rmgr::rmgr(jcntl* jc, enq_map& emap, txn_map& tmap, rrfc& rrfc):
+rmgr::rmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, rrfc& rrfc*/):
         pmgr(jc, emap, tmap),
-        _rrfc(rrfc),
+//        _rrfc(rrfc),
         _hdr(),
         _fhdr_buffer(0),
         _fhdr_aio_cb_ptr(0),
@@ -126,14 +115,15 @@ rmgr::read(void** const datapp, std::size_t& dsize, void** const xidpp, std::siz
     }
 
     set_params_null(datapp, dsize, xidpp, xidsize);
-    _hdr.reset();
+    //_hdr.reset();
+    ::rec_hdr_init(&_hdr, 0, 0, 0, 0);
     // Read header, determine next record type
     while (true)
     {
-        if(dblks_rem() == 0 && _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding())
+        if(dblks_rem() == 0 /*&& _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding()*/) // TODO: replace for linear store
         {
             aio_cycle();   // check if rd AIOs returned; initiate new reads if possible
-            if(dblks_rem() == 0 && _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding())
+            if(dblks_rem() == 0 /*&& _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding()*/) // TODO: replace for linear store
             {
                 if (_jc->unflushed_dblks() > 0)
                     _jc->flush();
@@ -147,10 +137,10 @@ rmgr::read(void** const datapp, std::size_t& dsize, void** const xidpp, std::siz
             return RHM_IORES_PAGE_AIOWAIT;
         }
         void* rptr = (void*)((char*)_page_ptr_arr[_pg_index] + (_pg_offset_dblks * JRNL_DBLK_SIZE));
-        std::memcpy(&_hdr, rptr, sizeof(rec_hdr));
+        std::memcpy(&_hdr, rptr, sizeof(rec_hdr_t));
         switch (_hdr._magic)
         {
-            case RHM_JDAT_ENQ_MAGIC:
+            case QLS_ENQ_MAGIC:
             {
                 _enq_rec.reset(); // sets enqueue rec size
                 // Check if RID of this rec is still enqueued, if so read it, else skip
@@ -211,16 +201,16 @@ rmgr::read(void** const datapp, std::size_t& dsize, void** const xidpp, std::siz
                     consume_xid_rec(_hdr, rptr, dtokp);
                 break;
             }
-            case RHM_JDAT_DEQ_MAGIC:
+            case QLS_DEQ_MAGIC:
                 consume_xid_rec(_hdr, rptr, dtokp);
                 break;
-            case RHM_JDAT_TXA_MAGIC:
+            case QLS_TXA_MAGIC:
                 consume_xid_rec(_hdr, rptr, dtokp);
                 break;
-            case RHM_JDAT_TXC_MAGIC:
+            case QLS_TXC_MAGIC:
                 consume_xid_rec(_hdr, rptr, dtokp);
                 break;
-            case RHM_JDAT_EMPTY_MAGIC:
+            case QLS_EMPTY_MAGIC:
                 consume_filler();
                 break;
             default:
@@ -230,7 +220,7 @@ rmgr::read(void** const datapp, std::size_t& dsize, void** const xidpp, std::siz
 }
 
 int32_t
-rmgr::get_events(page_state state, timespec* const timeout, bool flush)
+rmgr::get_events(page_state /*state*/, timespec* const timeout, bool flush)
 {
     if (_aio_evt_rem == 0) // no events to get
         return 0;
@@ -247,7 +237,7 @@ rmgr::get_events(page_state state, timespec* const timeout, bool flush)
     if (ret == 0 && timeout)
         return jerrno::AIO_TIMEOUT;
 
-    std::vector<u_int16_t> pil;
+    std::vector<uint16_t> pil;
     pil.reserve(ret);
     for (int i=0; i<ret; i++) // Index of returned AIOs
     {
@@ -274,6 +264,8 @@ rmgr::get_events(page_state state, timespec* const timeout, bool flush)
 
         if (pcbp) // Page reads have pcb
         {
+            // TODO: replace for linear store: _rfh
+/*
             if (pcbp->_rfh->rd_subm_cnt_dblks() >= JRNL_SBLK_SIZE) // Detects if write reset of this fcntl obj has occurred.
             {
                 // Increment the completed read offset
@@ -284,25 +276,27 @@ rmgr::get_events(page_state state, timespec* const timeout, bool flush)
                 pcbp->_state = state;
                 pil[i] = pcbp->_index;
             }
+*/
         }
         else // File header reads have no pcb
         {
-            std::memcpy(&_fhdr, _fhdr_buffer, sizeof(file_hdr));
-            _rrfc.add_cmpl_cnt_dblks(JRNL_SBLK_SIZE);
+            std::memcpy(&_fhdr, _fhdr_buffer, sizeof(file_hdr_t));
+            /*_rrfc.add_cmpl_cnt_dblks(JRNL_SBLK_SIZE);*/ // TODO: replace for linear store: _rrfc
 
-            u_int32_t fro_dblks = (_fhdr._fro / JRNL_DBLK_SIZE) - JRNL_SBLK_SIZE;
+            uint32_t fro_dblks = (_fhdr._fro / JRNL_DBLK_SIZE) - JRNL_SBLK_SIZE;
             // Check fro_dblks does not exceed the write pointers which can happen in some corrupted journal recoveries
-            if (fro_dblks > _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE)
-                fro_dblks = _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE;
+            // TODO: replace for linear store: _fhdr._pfid, _rrfc
+//            if (fro_dblks > _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE)
+//                fro_dblks = _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE;
             _pg_cntr = fro_dblks / (JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE);
-            u_int32_t tot_pg_offs_dblks = _pg_cntr * JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE;
+            uint32_t tot_pg_offs_dblks = _pg_cntr * JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE;
             _pg_index = _pg_cntr % JRNL_RMGR_PAGES;
             _pg_offset_dblks = fro_dblks - tot_pg_offs_dblks;
-            _rrfc.add_subm_cnt_dblks(tot_pg_offs_dblks);
-            _rrfc.add_cmpl_cnt_dblks(tot_pg_offs_dblks);
+//            _rrfc.add_subm_cnt_dblks(tot_pg_offs_dblks);
+//            _rrfc.add_cmpl_cnt_dblks(tot_pg_offs_dblks);
 
             _fhdr_rd_outstanding = false;
-            _rrfc.set_valid();
+//            _rrfc.set_valid();
         }
     }
 
@@ -319,8 +313,9 @@ rmgr::recover_complete()
 void
 rmgr::invalidate()
 {
-    if (_rrfc.is_valid())
-        _rrfc.set_invalid();
+    // TODO: replace for linear store: _rrfc
+//    if (_rrfc.is_valid())
+//        _rrfc.set_invalid();
 }
 
 void
@@ -339,11 +334,13 @@ rmgr::flush(timespec* timeout)
     // Reset all read states and pointers
     for (int i=0; i<_cache_num_pages; i++)
         _page_cb_arr[i]._state = UNUSED;
-    _rrfc.unset_findex();
+    // TODO: replace for linear store: _rrfc
+//    _rrfc.unset_findex();
     _pg_index = 0;
     _pg_offset_dblks = 0;
 }
 
+/*
 bool
 rmgr::wait_for_validity(timespec* timeout, const bool throw_on_timeout)
 {
@@ -356,6 +353,7 @@ rmgr::wait_for_validity(timespec* timeout, const bool throw_on_timeout)
     }
     return _rrfc.is_valid();
 }
+*/
 
 iores
 rmgr::pre_read_check(data_tok* dtokp)
@@ -363,17 +361,18 @@ rmgr::pre_read_check(data_tok* dtokp)
     if (_aio_evt_rem)
         get_events(AIO_COMPLETE, 0);
 
-    if (!_rrfc.is_valid())
-        return RHM_IORES_RCINVALID;
+    // TODO: replace for linear store: _rrfc
+//    if (!_rrfc.is_valid())
+//        return RHM_IORES_RCINVALID;
 
     // block reads until outstanding file header read completes as fro is needed to read
     if (_fhdr_rd_outstanding)
         return RHM_IORES_PAGE_AIOWAIT;
 
-    if(dblks_rem() == 0 && _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding())
+    if(dblks_rem() == 0 /*&& _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding()*/)// TODO: replace for linear store: _rrfc
     {
         aio_cycle();   // check if any AIOs have returned
-        if(dblks_rem() == 0 && _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding())
+        if(dblks_rem() == 0 /*&& _rrfc.is_compl() && !_rrfc.is_wr_aio_outstanding()*/)// TODO: replace for linear store: _rrfc
         {
             if (_jc->unflushed_dblks() > 0)
                 _jc->flush();
@@ -400,7 +399,7 @@ rmgr::pre_read_check(data_tok* dtokp)
 }
 
 iores
-rmgr::read_enq(rec_hdr& h, void* rptr, data_tok* dtokp)
+rmgr::read_enq(rec_hdr_t& h, void* rptr, data_tok* dtokp)
 {
     if (_page_cb_arr[_pg_index]._state != AIO_COMPLETE)
     {
@@ -409,7 +408,7 @@ rmgr::read_enq(rec_hdr& h, void* rptr, data_tok* dtokp)
     }
 
     // Read data from this page, first block will have header and data size.
-    u_int32_t dblks_rd = _enq_rec.decode(h, rptr, dtokp->dblocks_read(), dblks_rem());
+    uint32_t dblks_rd = _enq_rec.decode(h, rptr, dtokp->dblocks_read(), dblks_rem());
     dtokp->incr_dblocks_read(dblks_rd);
 
     _pg_offset_dblks += dblks_rd;
@@ -442,31 +441,31 @@ rmgr::read_enq(rec_hdr& h, void* rptr, data_tok* dtokp)
 }
 
 void
-rmgr::consume_xid_rec(rec_hdr& h, void* rptr, data_tok* dtokp)
+rmgr::consume_xid_rec(rec_hdr_t& h, void* rptr, data_tok* dtokp)
 {
-    if (h._magic == RHM_JDAT_ENQ_MAGIC)
+    if (h._magic == QLS_ENQ_MAGIC)
     {
-        enq_hdr ehdr;
-        std::memcpy(&ehdr, rptr, sizeof(enq_hdr));
-        if (ehdr.is_external())
-            dtokp->set_dsize(ehdr._xidsize + sizeof(enq_hdr) + sizeof(rec_tail));
+        enq_hdr_t ehdr;
+        std::memcpy(&ehdr, rptr, sizeof(enq_hdr_t));
+        if (::is_enq_external(&ehdr))
+            dtokp->set_dsize(ehdr._xidsize + sizeof(enq_hdr_t) + sizeof(rec_tail_t));
         else
-            dtokp->set_dsize(ehdr._xidsize + ehdr._dsize + sizeof(enq_hdr) + sizeof(rec_tail));
+            dtokp->set_dsize(ehdr._xidsize + ehdr._dsize + sizeof(enq_hdr_t) + sizeof(rec_tail_t));
     }
-    else if (h._magic == RHM_JDAT_DEQ_MAGIC)
+    else if (h._magic == QLS_DEQ_MAGIC)
     {
-        deq_hdr dhdr;
-        std::memcpy(&dhdr, rptr, sizeof(deq_hdr));
+        deq_hdr_t dhdr;
+        std::memcpy(&dhdr, rptr, sizeof(deq_hdr_t));
         if (dhdr._xidsize)
-            dtokp->set_dsize(dhdr._xidsize + sizeof(deq_hdr) + sizeof(rec_tail));
+            dtokp->set_dsize(dhdr._xidsize + sizeof(deq_hdr_t) + sizeof(rec_tail_t));
         else
-            dtokp->set_dsize(sizeof(deq_hdr));
+            dtokp->set_dsize(sizeof(deq_hdr_t));
     }
-    else if (h._magic == RHM_JDAT_TXA_MAGIC || h._magic == RHM_JDAT_TXC_MAGIC)
+    else if (h._magic == QLS_TXA_MAGIC || h._magic == QLS_TXC_MAGIC)
     {
-        txn_hdr thdr;
-        std::memcpy(&thdr, rptr, sizeof(txn_hdr));
-        dtokp->set_dsize(thdr._xidsize + sizeof(txn_hdr) + sizeof(rec_tail));
+        txn_hdr_t thdr;
+        std::memcpy(&thdr, rptr, sizeof(txn_hdr_t));
+        dtokp->set_dsize(thdr._xidsize + sizeof(txn_hdr_t) + sizeof(rec_tail_t));
     }
     else
     {
@@ -490,11 +489,11 @@ rmgr::consume_filler()
 iores
 rmgr::skip(data_tok* dtokp)
 {
-    u_int32_t dsize_dblks = jrec::size_dblks(dtokp->dsize());
-    u_int32_t tot_dblk_cnt = dtokp->dblocks_read();
+    uint32_t dsize_dblks = jrec::size_dblks(dtokp->dsize());
+    uint32_t tot_dblk_cnt = dtokp->dblocks_read();
     while (true)
     {
-        u_int32_t this_dblk_cnt = 0;
+        uint32_t this_dblk_cnt = 0;
         if (dsize_dblks - tot_dblk_cnt > dblks_rem())
             this_dblk_cnt = dblks_rem();
         else
@@ -537,6 +536,8 @@ rmgr::aio_cycle()
     // Perform validity checks
     if (_fhdr_rd_outstanding) // read of file header still outstanding in aio
         return RHM_IORES_SUCCESS;
+    // TODO: replace for linear store: _rrfc
+/*
     if (!_rrfc.is_valid())
     {
         // Flush and reset all read states and pointers
@@ -549,14 +550,15 @@ rmgr::aio_cycle()
         init_file_header_read(); // send off AIO read request for file header
         return RHM_IORES_SUCCESS;
     }
+*/
 
     int16_t first_uninit = -1;
-    u_int16_t num_uninit = 0;
-    u_int16_t num_compl = 0;
+    uint16_t num_uninit = 0;
+    uint16_t num_compl = 0;
     bool outstanding = false;
     // Index must start with current buffer and cycle around so that first
     // uninitialized buffer is initialized first
-    for (u_int16_t i=_pg_index; i<_pg_index+_cache_num_pages; i++)
+    for (uint16_t i=_pg_index; i<_pg_index+_cache_num_pages; i++)
     {
         int16_t ci = i % _cache_num_pages;
         switch (_page_cb_arr[ci]._state)
@@ -588,8 +590,10 @@ rmgr::aio_cycle()
 }
 
 iores
-rmgr::init_aio_reads(const int16_t first_uninit, const u_int16_t num_uninit)
+rmgr::init_aio_reads(const int16_t /*first_uninit*/, const uint16_t /*num_uninit*/)
 {
+    // TODO: replace for linear store: _rrfc
+/*
     for (int16_t i=0; i<num_uninit; i++)
     {
         if (_rrfc.is_void()) // Nothing to do; this file not yet written to
@@ -604,10 +608,10 @@ rmgr::init_aio_reads(const int16_t first_uninit, const u_int16_t num_uninit)
         // TODO: Future perf improvement: Do a single AIO read for all available file
         // space into all contiguous empty pages in one AIO operation.
 
-        u_int32_t file_rem_dblks = _rrfc.remaining_dblks();
+        uint32_t file_rem_dblks = _rrfc.remaining_dblks();
         file_rem_dblks -= file_rem_dblks % JRNL_SBLK_SIZE; // round down to closest sblk boundary
-        u_int32_t pg_size_dblks = JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE;
-        u_int32_t rd_size = file_rem_dblks > pg_size_dblks ? pg_size_dblks : file_rem_dblks;
+        uint32_t pg_size_dblks = JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE;
+        uint32_t rd_size = file_rem_dblks > pg_size_dblks ? pg_size_dblks : file_rem_dblks;
         if (rd_size)
         {
             int16_t pi = (i + first_uninit) % _cache_num_pages;
@@ -627,6 +631,7 @@ rmgr::init_aio_reads(const int16_t first_uninit, const u_int16_t num_uninit)
         if (_rrfc.file_rotate())
             _rrfc.rotate();
     }
+*/
     return RHM_IORES_SUCCESS;
 }
 
@@ -651,7 +656,7 @@ rmgr::rotate_page()
         _pg_cntr = 0;
 }
 
-u_int32_t
+uint32_t
 rmgr::dblks_rem() const
 {
     return _page_cb_arr[_pg_index]._rdblks - _pg_offset_dblks;
@@ -669,6 +674,8 @@ rmgr::set_params_null(void** const datapp, std::size_t& dsize, void** const xidp
 void
 rmgr::init_file_header_read()
 {
+    // TODO: replace for linear store: _rrfc
+/*
     _jc->fhdr_wr_sync(_rrfc.index()); // wait if the file header write is outstanding
     int rfh = _rrfc.fh();
     aio::prep_pread_2(_fhdr_aio_cb_ptr, rfh, _fhdr_buffer, _sblksize, 0);
@@ -677,11 +684,12 @@ rmgr::init_file_header_read()
     _aio_evt_rem++;
     _rrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE);
     _fhdr_rd_outstanding = true;
+*/
 }
 
 /* TODO (sometime in the future)
 const iores
-rmgr::get(const u_int64_t& rid, const std::size_t& dsize, const std::size_t& dsize_avail,
+rmgr::get(const uint64_t& rid, const std::size_t& dsize, const std::size_t& dsize_avail,
         const void** const data, bool auto_discard)
 {
     return RHM_IORES_SUCCESS;

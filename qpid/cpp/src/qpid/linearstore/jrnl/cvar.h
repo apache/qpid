@@ -19,24 +19,14 @@
  *
  */
 
-/**
- * \file cvar.h
- *
- * Qpid asynchronous store plugin library
- *
- * This file contains a posix condition variable class.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_CVAR_H
 #define QPID_LEGACYSTORE_JRNL_CVAR_H
 
 #include <cstring>
-#include "qpid/legacystore/jrnl/jerrno.h"
-#include "qpid/legacystore/jrnl/jexception.h"
-#include "qpid/legacystore/jrnl/smutex.h"
-#include "qpid/legacystore/jrnl/time_ns.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/smutex.h"
+#include "qpid/linearstore/jrnl/time_ns.h"
 #include <pthread.h>
 #include <sstream>
 

@@ -19,17 +19,6 @@
  *
  */
 
-/**
- * \file deq_rec.h
- *
- * Qpid asynchronous store plugin library
- *
- * This file contains the code for the mrg::journal::deq_rec (journal dequeue
- * record) class. See class documentation for details.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
 #define QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
 
@@ -42,8 +31,8 @@ class deq_rec;
 }
 
 #include <cstddef>
-#include "qpid/legacystore/jrnl/deq_hdr.h"
-#include "qpid/legacystore/jrnl/jrec.h"
+#include "qpid/linearstore/jrnl/utils/deq_hdr.h"
+#include "qpid/linearstore/jrnl/jrec.h"
 
 namespace mrg
 {
@@ -57,33 +46,33 @@ namespace journal
     class deq_rec : public jrec
     {
     private:
-        deq_hdr _deq_hdr;           ///< Dequeue header
+        deq_hdr_t _deq_hdr;           ///< Dequeue header
         const void* _xidp;          ///< xid pointer for encoding (writing to disk)
         void* _buff;                ///< Pointer to buffer to receive data read from disk
-        rec_tail _deq_tail;         ///< Record tail, only encoded if XID is present
+        rec_tail_t _deq_tail;         ///< Record tail, only encoded if XID is present
 
     public:
         // constructor used for read operations and xid will have memory allocated
         deq_rec();
         // constructor used for write operations, where xid already exists
-        deq_rec(const u_int64_t rid, const u_int64_t drid, const void* const xidp,
-                const std::size_t xidlen, const bool owi, const bool txn_coml_commit);
+        deq_rec(const uint64_t rid, const uint64_t drid, const void* const xidp,
+                const std::size_t xidlen, const bool txn_coml_commit);
         virtual ~deq_rec();
 
         // Prepare instance for use in reading data from journal
         void reset();
         // Prepare instance for use in writing data to journal
-        void reset(const  u_int64_t rid, const  u_int64_t drid, const void* const xidp,
-                const std::size_t xidlen, const bool owi, const bool txn_coml_commit);
-        u_int32_t encode(void* wptr, u_int32_t rec_offs_dblks, u_int32_t max_size_dblks);
-        u_int32_t decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks,
-                u_int32_t max_size_dblks);
+        void reset(const  uint64_t rid, const  uint64_t drid, const void* const xidp,
+                const std::size_t xidlen, const bool txn_coml_commit);
+        uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
+        uint32_t decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks,
+                uint32_t max_size_dblks);
         // Decode used for recover
-        bool rcv_decode(rec_hdr h, std::ifstream* ifsp, std::size_t& rec_offs);
+        bool rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs);
 
-        inline bool is_txn_coml_commit() const { return _deq_hdr.is_txn_coml_commit(); }
-        inline u_int64_t rid() const { return _deq_hdr._rid; }
-        inline u_int64_t deq_rid() const { return _deq_hdr._deq_rid; }
+        inline bool is_txn_coml_commit() const { return ::is_txn_coml_commit(&_deq_hdr); }
+        inline uint64_t rid() const { return _deq_hdr._rhdr._rid; }
+        inline uint64_t deq_rid() const { return _deq_hdr._deq_rid; }
         std::size_t get_xid(void** const xidpp);
         std::string& str(std::string& str) const;
         inline std::size_t data_size() const { return 0; } // This record never carries data
@@ -92,7 +81,7 @@ namespace journal
 
     private:
         virtual void chk_hdr() const;
-        virtual void chk_hdr(u_int64_t rid) const;
+        virtual void chk_hdr(uint64_t rid) const;
         virtual void chk_tail() const;
         virtual void clean();
     }; // class deq_rec

@@ -19,17 +19,6 @@
  *
  */
 
-/**
- * \file jrec.h
- *
- * Qpid asynchronous store plugin library
- *
- * File containing source code for class mrg::journal::jrec (abstract journal
- * jrecord). See class documentation for details.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_JREC_H
 #define QPID_LEGACYSTORE_JRNL_JREC_H
 
@@ -43,10 +32,10 @@ class jrec;
 
 #include <cstddef>
 #include <fstream>
-#include "qpid/legacystore/jrnl/rec_hdr.h"
-#include "qpid/legacystore/jrnl/rec_tail.h"
+#include "qpid/linearstore/jrnl/jcfg.h"
+#include "qpid/linearstore/jrnl/utils/rec_hdr.h"
+#include "qpid/linearstore/jrnl/utils/rec_tail.h"
 #include <string>
-#include <sys/types.h>
 
 namespace mrg
 {
@@ -116,8 +105,8 @@ namespace journal
         * \param max_size_dblks Maximum number of data-blocks to write to pointer wptr.
         * \returns Number of data-blocks encoded.
         */
-        virtual u_int32_t encode(void* wptr, u_int32_t rec_offs_dblks,
-                u_int32_t max_size_dblks) = 0;
+        virtual uint32_t encode(void* wptr, uint32_t rec_offs_dblks,
+                uint32_t max_size_dblks) = 0;
 
         /**
         * \brief Decode into this instance of jrec from the read buffer at the disk-block-aligned
@@ -149,31 +138,31 @@ namespace journal
         * \param max_size_dblks Maximum number of data-blocks to read from pointer rptr.
         * \returns Number of data-blocks read (consumed).
         */
-        virtual u_int32_t decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks,
-                u_int32_t max_size_dblks) = 0;
+        virtual uint32_t decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks,
+                uint32_t max_size_dblks) = 0;
 
-        virtual bool rcv_decode(rec_hdr h, std::ifstream* ifsp, std::size_t& rec_offs) = 0;
+        virtual bool rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs) = 0;
 
         virtual std::string& str(std::string& str) const = 0;
         virtual std::size_t data_size() const = 0;
         virtual std::size_t xid_size() const = 0;
         virtual std::size_t rec_size() const = 0;
-        inline virtual u_int32_t rec_size_dblks() const { return size_dblks(rec_size()); }
-        static inline u_int32_t size_dblks(const std::size_t size)
+        inline virtual uint32_t rec_size_dblks() const { return size_dblks(rec_size()); }
+        static inline uint32_t size_dblks(const std::size_t size)
                 { return size_blks(size, JRNL_DBLK_SIZE); }
-        static inline u_int32_t size_sblks(const std::size_t size)
+        static inline uint32_t size_sblks(const std::size_t size)
                 { return size_blks(size, JRNL_DBLK_SIZE * JRNL_SBLK_SIZE); }
-        static inline u_int32_t size_blks(const std::size_t size, const std::size_t blksize)
+        static inline uint32_t size_blks(const std::size_t size, const std::size_t blksize)
                 { return (size + blksize - 1)/blksize; }
-        virtual u_int64_t rid() const = 0;
+        virtual uint64_t rid() const = 0;
 
     protected:
         virtual void chk_hdr() const = 0;
-        virtual void chk_hdr(u_int64_t rid) const = 0;
+        virtual void chk_hdr(uint64_t rid) const = 0;
         virtual void chk_tail() const = 0;
-        static void chk_hdr(const rec_hdr& hdr);
-        static void chk_rid(const rec_hdr& hdr, u_int64_t rid);
-        static void chk_tail(const rec_tail& tail, const rec_hdr& hdr);
+        static void chk_hdr(const rec_hdr_t& hdr);
+        static void chk_rid(const rec_hdr_t& hdr, uint64_t rid);
+        static void chk_tail(const rec_tail_t& tail, const rec_hdr_t& hdr);
         virtual void clean() = 0;
     }; // class jrec
 

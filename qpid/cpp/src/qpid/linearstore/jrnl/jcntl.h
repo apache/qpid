@@ -19,17 +19,6 @@
  *
  */
 
-/**
- * \file jcntl.h
- *
- * Qpid asynchronous store plugin library
- *
- * Messaging journal top-level control and interface class
- * mrg::journal::jcntl. See class documentation for details.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_JCNTL_H
 #define QPID_LEGACYSTORE_JRNL_JCNTL_H
 
@@ -43,15 +32,15 @@ namespace journal
 
 #include <cstddef>
 #include <deque>
-#include "qpid/legacystore/jrnl/jdir.h"
-#include "qpid/legacystore/jrnl/fcntl.h"
-#include "qpid/legacystore/jrnl/lpmgr.h"
-#include "qpid/legacystore/jrnl/rcvdat.h"
-#include "qpid/legacystore/jrnl/slock.h"
-#include "qpid/legacystore/jrnl/smutex.h"
-#include "qpid/legacystore/jrnl/rmgr.h"
-#include "qpid/legacystore/jrnl/wmgr.h"
-#include "qpid/legacystore/jrnl/wrfc.h"
+#include "qpid/linearstore/jrnl/jdir.h"
+//#include "qpid/linearstore/jrnl/fcntl.h"
+//#include "qpid/linearstore/jrnl/lpmgr.h"
+#include "qpid/linearstore/jrnl/rcvdat.h"
+#include "qpid/linearstore/jrnl/slock.h"
+#include "qpid/linearstore/jrnl/smutex.h"
+#include "qpid/linearstore/jrnl/rmgr.h"
+#include "qpid/linearstore/jrnl/wmgr.h"
+//#include "qpid/linearstore/jrnl/wrfc.h"
 
 namespace mrg
 {
@@ -136,12 +125,12 @@ namespace journal
         bool _autostop;             ///< Autostop flag - stops journal when overrun occurs
 
         // Journal control structures
-        u_int32_t _jfsize_sblks;    ///< Journal file size in sblks
-        lpmgr _lpmgr;               ///< LFID-PFID manager tracks inserted journal files
+        uint32_t _jfsize_sblks;    ///< Journal file size in sblks
+        //lpmgr _lpmgr;               ///< LFID-PFID manager tracks inserted journal files
         enq_map _emap;              ///< Enqueue map for low water mark management
         txn_map _tmap;              ///< Transaction map open transactions
-        rrfc _rrfc;                 ///< Read journal rotating file controller
-        wrfc _wrfc;                 ///< Write journal rotating file controller
+        //rrfc _rrfc;                 ///< Read journal rotating file controller
+        //wrfc _wrfc;                 ///< Write journal rotating file controller
         rmgr _rmgr;                 ///< Read page manager which manages AIO
         wmgr _wmgr;                 ///< Write page manager which manages AIO
         rcvdat _rcvdat;             ///< Recovery data used for recovery
@@ -201,8 +190,8 @@ namespace journal
         *
         * \exception TODO
         */
-        void initialize(const u_int16_t num_jfiles, const bool auto_expand, const u_int16_t ae_max_jfiles,
-                const u_int32_t jfsize_sblks, const u_int16_t wcache_num_pages, const u_int32_t wcache_pgsize_sblks,
+        void initialize(const uint16_t num_jfiles/*, const bool auto_expand, const uint16_t ae_max_jfiles*/,
+                const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
                 aio_callback* const cbp);
 
         /**
@@ -238,9 +227,9 @@ namespace journal
         *
         * \exception TODO
         */
-        void recover(const u_int16_t num_jfiles, const bool auto_expand, const u_int16_t ae_max_jfiles,
-                const u_int32_t jfsize_sblks, const u_int16_t wcache_num_pages, const u_int32_t wcache_pgsize_sblks,
-                aio_callback* const cbp, const std::vector<std::string>* prep_txn_list_ptr, u_int64_t& highest_rid);
+        void recover(const uint16_t num_jfiles/*, const bool auto_expand, const uint16_t ae_max_jfiles*/,
+                const uint32_t jfsize_sblks, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
+                aio_callback* const cbp, const std::vector<std::string>* prep_txn_list_ptr, uint64_t& highest_rid);
 
         /**
         * \brief Notification to the journal that recovery is complete and that normal operation
@@ -385,7 +374,7 @@ namespace journal
         * \exception TODO
         *
         // *** NOT YET IMPLEMENTED ***
-        iores get_data_record(const u_int64_t& rid, const std::size_t& dsize,
+        iores get_data_record(const uint64_t& rid, const std::size_t& dsize,
                 const std::size_t& dsize_avail, const void** const data, bool auto_discard = false);
         */
 
@@ -562,40 +551,40 @@ namespace journal
         */
         iores flush(const bool block_till_aio_cmpl = false);
 
-        inline u_int32_t get_enq_cnt() const { return _emap.size(); }
+        inline uint32_t get_enq_cnt() const { return _emap.size(); }
 
-        inline u_int32_t get_wr_aio_evt_rem() const { slock l(_wr_mutex); return _wmgr.get_aio_evt_rem(); }
+        inline uint32_t get_wr_aio_evt_rem() const { slock l(_wr_mutex); return _wmgr.get_aio_evt_rem(); }
 
-        inline u_int32_t get_rd_aio_evt_rem() const { return _rmgr.get_aio_evt_rem(); }
+        inline uint32_t get_rd_aio_evt_rem() const { return _rmgr.get_aio_evt_rem(); }
 
-        inline u_int32_t get_wr_outstanding_aio_dblks() const
-                { return _wrfc.aio_outstanding_dblks(); }
+        inline uint32_t get_wr_outstanding_aio_dblks() const;
+                /*{ return _wrfc.aio_outstanding_dblks(); }*/
 
-        inline u_int32_t get_wr_outstanding_aio_dblks(u_int16_t lfid) const
-                { return _lpmgr.get_fcntlp(lfid)->wr_aio_outstanding_dblks(); }
+//        inline uint32_t get_wr_outstanding_aio_dblks(uint16_t lfid) const;
+//                { return _lpmgr.get_fcntlp(lfid)->wr_aio_outstanding_dblks(); }
 
-        inline u_int32_t get_rd_outstanding_aio_dblks() const
-                { return _rrfc.aio_outstanding_dblks(); }
+        inline uint32_t get_rd_outstanding_aio_dblks() const;
+//                { return _rrfc.aio_outstanding_dblks(); }
 
-        inline u_int32_t get_rd_outstanding_aio_dblks(u_int16_t lfid) const
-                { return _lpmgr.get_fcntlp(lfid)->rd_aio_outstanding_dblks(); }
+//        inline uint32_t get_rd_outstanding_aio_dblks(uint16_t lfid) const;
+//                { return _lpmgr.get_fcntlp(lfid)->rd_aio_outstanding_dblks(); }
 
-        inline u_int16_t get_rd_fid() const { return _rrfc.index(); }
-        inline u_int16_t get_wr_fid() const { return _wrfc.index(); }
-        u_int16_t get_earliest_fid();
+//        inline uint16_t get_rd_fid() const { return _rrfc.index(); }
+//        inline uint16_t get_wr_fid() const { return _wrfc.index(); }
+//        uint16_t get_earliest_fid();
 
         /**
         * \brief Check if a particular rid is enqueued. Note that this function will return
         *     false if the rid is transactionally enqueued and is not committed, or if it is
         *     locked (i.e. transactionally dequeued, but the dequeue has not been committed).
         */
-        inline bool is_enqueued(const u_int64_t rid, bool ignore_lock = false)
+        inline bool is_enqueued(const uint64_t rid, bool ignore_lock = false)
                 { return _emap.is_enqueued(rid, ignore_lock); }
-        inline bool is_locked(const u_int64_t rid)
+        inline bool is_locked(const uint64_t rid)
                 { if (_emap.is_enqueued(rid, true) < enq_map::EMAP_OK) return false; return _emap.is_locked(rid) == enq_map::EMAP_TRUE; }
-        inline void enq_rid_list(std::vector<u_int64_t>& rids) { _emap.rid_list(rids); }
+        inline void enq_rid_list(std::vector<uint64_t>& rids) { _emap.rid_list(rids); }
         inline void enq_xid_list(std::vector<std::string>& xids) { _tmap.xid_list(xids); }
-        inline u_int32_t get_open_txn_cnt() const { return _tmap.size(); }
+        inline uint32_t get_open_txn_cnt() const { return _tmap.size(); }
         // TODO Make this a const, but txn_map must support const first.
         inline txn_map& get_txn_map() { return _tmap; }
 
@@ -642,21 +631,21 @@ namespace journal
         */
         inline const std::string& base_filename() const { return _base_filename; }
 
-        inline u_int16_t num_jfiles() const { return _lpmgr.num_jfiles(); }
+//        inline uint16_t num_jfiles() const; { return _lpmgr.num_jfiles(); }
 
-        inline fcntl* get_fcntlp(const u_int16_t lfid) const { return _lpmgr.get_fcntlp(lfid); }
+//        inline fcntl* get_fcntlp(const uint16_t lfid) const { return _lpmgr.get_fcntlp(lfid); }
 
-        inline u_int32_t jfsize_sblks() const { return _jfsize_sblks; }
+        inline uint32_t jfsize_sblks() const { return _jfsize_sblks; }
 
         // Logging
         virtual void log(log_level level, const std::string& log_stmt) const;
         virtual void log(log_level level, const char* const log_stmt) const;
 
         // FIXME these are _rmgr to _wmgr interactions, remove when _rmgr contains ref to _wmgr:
-        void chk_wr_frot();
-        inline u_int32_t unflushed_dblks() { return _wmgr.unflushed_dblks(); }
-        void fhdr_wr_sync(const u_int16_t lid);
-        inline u_int32_t wr_subm_cnt_dblks(const u_int16_t lfid) const { return _lpmgr.get_fcntlp(lfid)->wr_subm_cnt_dblks(); }
+        //void chk_wr_frot();
+        inline uint32_t unflushed_dblks() { return _wmgr.unflushed_dblks(); }
+        void fhdr_wr_sync(const uint16_t lid);
+        inline uint32_t wr_subm_cnt_dblks(const uint16_t lfid) const; /*{ return _lpmgr.get_fcntlp(lfid)->wr_subm_cnt_dblks(); }*/
 
         // Management instrumentation callbacks
         inline virtual void instr_incr_outstanding_aio_cnt() {}
@@ -665,7 +654,7 @@ namespace journal
         /**
         * /brief Static function for creating new fcntl objects for use with obj_arr.
         */
-        static fcntl* new_fcntl(jcntl* const jcp, const u_int16_t lid, const u_int16_t fid, const rcvdat* const rdp);
+        static fcntl* new_fcntl(jcntl* const jcp, const uint16_t lid, const uint16_t fid, const rcvdat* const rdp);
 
     protected:
         static bool _init;
@@ -684,7 +673,7 @@ namespace journal
         /**
         * \brief Write info file &lt;basefilename&gt;.jinf to disk
         */
-        void write_infofile() const;
+//        void write_infofile() const;
 
         /**
         * \brief Call that blocks while waiting for all outstanding AIOs to complete
@@ -702,18 +691,18 @@ namespace journal
         */
         void rcvr_janalyze(rcvdat& rd, const std::vector<std::string>* prep_txn_list_ptr);
 
-        bool rcvr_get_next_record(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcvdat& rd);
+        bool rcvr_get_next_record(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& rd);
 
-        bool decode(jrec& rec, u_int16_t& fid, std::ifstream* ifsp, std::size_t& cum_size_read,
-                rec_hdr& h, bool& lowi, rcvdat& rd, std::streampos& rec_offset);
+        bool decode(jrec& rec, uint16_t& fid, std::ifstream* ifsp, std::size_t& cum_size_read,
+                rec_hdr_t& h/*, bool& lowi*/, rcvdat& rd, std::streampos& rec_offset);
 
-        bool jfile_cycle(u_int16_t& fid, std::ifstream* ifsp, bool& lowi, rcvdat& rd,
+        bool jfile_cycle(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& rd,
                 const bool jump_fro);
 
-        bool check_owi(const u_int16_t fid, rec_hdr& h, bool& lowi, rcvdat& rd,
-                std::streampos& read_pos);
+        //bool check_owi(const uint16_t fid, rec_hdr_t& h, bool& lowi, rcvdat& rd,
+        //        std::streampos& read_pos);
 
-        void check_journal_alignment(const u_int16_t fid, std::streampos& rec_offset, rcvdat& rd);
+        void check_journal_alignment(const uint16_t fid, std::streampos& rec_offset, rcvdat& rd);
     };
 
 } // namespace journal

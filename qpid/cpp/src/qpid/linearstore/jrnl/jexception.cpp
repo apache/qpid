@@ -19,22 +19,11 @@
  *
  */
 
-/**
- * \file jexception.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * Generic journal exception class mrg::journal::jexception. See comments
- * in file jexception.h for details.
- *
- * \author Kim van der Riet
- */
-
-#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/jexception.h"
 
 #include <iomanip>
 #include <sstream>
-#include "qpid/legacystore/jrnl/jerrno.h"
+#include "qpid/linearstore/jrnl/jerrno.h"
 
 #define CATLEN(p) MAX_MSG_SIZE - std::strlen(p) - 1
 
@@ -50,7 +39,7 @@ jexception::jexception() throw ():
     format();
 }
 
-jexception::jexception(const u_int32_t err_code) throw ():
+jexception::jexception(const uint32_t err_code) throw ():
         std::exception(),
         _err_code(err_code)
 {
@@ -73,7 +62,7 @@ jexception::jexception(const std::string& additional_info) throw ():
     format();
 }
 
-jexception::jexception(const u_int32_t err_code, const char* additional_info) throw ():
+jexception::jexception(const uint32_t err_code, const char* additional_info) throw ():
         std::exception(),
         _err_code(err_code),
         _additional_info(additional_info)
@@ -81,7 +70,7 @@ jexception::jexception(const u_int32_t err_code, const char* additional_info) th
     format();
 }
 
-jexception::jexception(const u_int32_t err_code, const std::string& additional_info) throw ():
+jexception::jexception(const uint32_t err_code, const std::string& additional_info) throw ():
         std::exception(),
         _err_code(err_code),
         _additional_info(additional_info)
@@ -89,7 +78,7 @@ jexception::jexception(const u_int32_t err_code, const std::string& additional_i
     format();
 }
 
-jexception::jexception(const u_int32_t err_code, const char* throwing_class,
+jexception::jexception(const uint32_t err_code, const char* throwing_class,
         const char* throwing_fn) throw ():
         std::exception(),
         _err_code(err_code),
@@ -99,7 +88,7 @@ jexception::jexception(const u_int32_t err_code, const char* throwing_class,
     format();
 }
 
-jexception::jexception(const u_int32_t err_code, const std::string& throwing_class,
+jexception::jexception(const uint32_t err_code, const std::string& throwing_class,
         const std::string& throwing_fn) throw ():
         std::exception(),
         _err_code(err_code),
@@ -109,7 +98,7 @@ jexception::jexception(const u_int32_t err_code, const std::string& throwing_cla
     format();
 }
 
-jexception::jexception(const u_int32_t err_code, const char* additional_info,
+jexception::jexception(const uint32_t err_code, const char* additional_info,
         const char* throwing_class, const char* throwing_fn) throw ():
         std::exception(),
         _err_code(err_code),
@@ -120,7 +109,7 @@ jexception::jexception(const u_int32_t err_code, const char* additional_info,
     format();
 }
 
-jexception::jexception(const u_int32_t err_code, const std::string& additional_info,
+jexception::jexception(const uint32_t err_code, const std::string& additional_info,
         const std::string& throwing_class, const std::string& throwing_fn) throw ():
         std::exception(),
         _err_code(err_code),

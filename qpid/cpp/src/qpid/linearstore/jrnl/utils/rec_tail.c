@@ -19,15 +19,16 @@
  *
  */
 
-/**
- * \file smutex.cpp
- *
- * Qpid asynchronous store plugin library
- *
- * File containing code for class mrg::journal::smutex (scoped mutex). See
- * comments in file smutex.h for details.
- *
- * \author Kim van der Riet
- */
+#include "rec_tail.h"
 
-#include "qpid/legacystore/jrnl/smutex.h"
+void rec_tail_init(rec_tail_t* dest, const uint32_t xmagic, const uint32_t checksum, const uint64_t rid) {
+    dest->_xmagic = xmagic;
+    dest->_checksum = checksum;
+    dest->_rid = rid;
+}
+
+void rec_tail_copy(rec_tail_t* dest, const rec_hdr_t* src, const uint32_t checksum) {
+    dest->_xmagic = ~(src->_magic);
+    dest->_checksum = checksum;
+    dest->_rid = src->_rid;
+}

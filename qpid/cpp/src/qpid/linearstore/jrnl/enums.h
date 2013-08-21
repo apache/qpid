@@ -19,16 +19,6 @@
  *
  */
 
-/**
- * \file enums.h
- *
- * Qpid asynchronous store plugin library
- *
- * File containing definitions for namespace mrg::journal enums.
- *
- * \author Kim van der Riet
- */
-
 #ifndef QPID_LEGACYSTORE_JRNL_ENUMS_H
 #define QPID_LEGACYSTORE_JRNL_ENUMS_H
 

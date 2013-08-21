@@ -19,21 +19,10 @@
  *
  */
 
-/**
- * \file smutex.h
- *
- * Qpid asynchronous store plugin library
- *
- * Messaging journal scoped mutex class mrg::journal::smutex.
- *
- * \author Kim van der Riet
- */
-
-
 #ifndef QPID_LEGACYSTORE_JRNL_SMUTEX_H
 #define QPID_LEGACYSTORE_JRNL_SMUTEX_H
 
-#include "qpid/legacystore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/jexception.h"
 #include <pthread.h>
 
 namespace mrg
