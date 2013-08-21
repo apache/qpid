@@ -79,11 +79,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             {
                 throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
             }
-            else if (!exchange.getTypeShortString().equals(body.getType()) && !(body.getType() == null || body.getType().length() ==0))
+            else if (!(body.getType() == null || body.getType().length() ==0) && !exchange.getTypeName().equals(body.getType().asString()))
             {
 
                 throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " +
-                                  exchangeName + " of type " + exchange.getTypeShortString()
+                                  exchangeName + " of type " + exchange.getTypeName()
                                   + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
             }
 
@@ -110,11 +110,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             catch(ExchangeExistsException e)
             {
                 exchange = e.getExistingExchange();
-                if(!exchange.getTypeShortString().equals(body.getType()))
+                if(!new AMQShortString(exchange.getTypeName()).equals(body.getType()))
                 {
                     throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
                                                                               + exchangeName + " of type "
-                                                                              + exchange.getTypeShortString()
+                                                                              + exchange.getTypeName()
                                                                               + " to " + body.getType() +".",
                                                      body.getClazz(), body.getMethod(),
                                                      body.getMajor(), body.getMinor(),null);

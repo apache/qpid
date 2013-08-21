@@ -80,8 +80,8 @@ public class StructureRestTest extends QpidRestTestCase
                 Map<String, Object> exchange = getRestTestHelper().find("name", exchangeName, exchanges);
                 assertNotNull("Exchange " + exchangeName + " is not found ", exchange);
                 assertNode(exchange, exchangeName);
-                if (ExchangeDefaults.DIRECT_EXCHANGE_NAME.asString().equalsIgnoreCase(exchangeName) ||
-                    ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equalsIgnoreCase(exchangeName))
+                if (ExchangeDefaults.DIRECT_EXCHANGE_NAME.equalsIgnoreCase(exchangeName) ||
+                    ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equalsIgnoreCase(exchangeName))
                 {
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> bindings = (List<Map<String, Object>>) exchange.get("bindings");

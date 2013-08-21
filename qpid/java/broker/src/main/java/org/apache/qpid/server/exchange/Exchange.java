@@ -23,8 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -39,7 +37,7 @@ import java.util.UUID;
 
 public interface Exchange extends ExchangeReferrer
 {
-    void initialise(UUID id, VirtualHost host, AMQShortString name, boolean durable, boolean autoDelete)
+    void initialise(UUID id, VirtualHost host, String name, boolean durable, boolean autoDelete)
             throws AMQException;
 
 
@@ -47,11 +45,9 @@ public interface Exchange extends ExchangeReferrer
 
     String getName();
 
-    AMQShortString getNameShortString();
-
     ExchangeType getType();
 
-    AMQShortString getTypeShortString();
+    String getTypeName();
 
     boolean isDurable();
 
@@ -107,30 +103,32 @@ public interface Exchange extends ExchangeReferrer
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments
-     * @param routingKey
+     * @param bindingKey
      * @param arguments
      * @param queue
      * @return
      * @throws AMQException
      */
-    boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue);
+
+    boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key
-     * @param routingKey
+     * @param bindingKey
      * @param queue
      * @return
      * @throws AMQException
      */
-    boolean isBound(AMQShortString routingKey, AMQQueue queue);
+
+    boolean isBound(String bindingKey, AMQQueue queue);
 
     /**
      * Determines whether a message is routing to any queue using a specific _routing key
-     * @param routingKey
+     * @param bindingKey
      * @return
      * @throws AMQException
      */
-    boolean isBound(AMQShortString routingKey);
+    boolean isBound(String bindingKey);
 
     /**
      * Returns true if this exchange has at least one binding associated with it.
@@ -141,19 +139,13 @@ public interface Exchange extends ExchangeReferrer
 
     Collection<Binding> getBindings();
 
-    boolean isBound(String bindingKey);
-
     boolean isBound(AMQQueue queue);
 
     boolean isBound(Map<String, Object> arguments);
 
-    boolean isBound(String bindingKey, AMQQueue queue);
-
     boolean isBound(String bindingKey, Map<String, Object> arguments);
 
     boolean isBound(Map<String, Object> arguments, AMQQueue queue);
-
-    boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
 
     void removeReference(ExchangeReferrer exchange);
 

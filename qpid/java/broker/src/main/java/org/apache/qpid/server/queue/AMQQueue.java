@@ -76,7 +76,7 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     boolean isAutoDelete();
 
-    AMQShortString getOwner();
+    String getOwner();
     AuthorizationHolder getAuthorizationHolder();
     void setAuthorizationHolder(AuthorizationHolder principalHolder);
 

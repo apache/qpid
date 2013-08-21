@@ -126,7 +126,7 @@ public class AcknowledgeTest extends QpidTestCase
         BrokerTestHelper_0_8.publishMessages(getChannel(),
                 sendMessageCount,
                 _queueName,
-                ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString());
+                ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
 
         if (getChannel().isTransactional())
         {

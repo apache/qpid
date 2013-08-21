@@ -34,7 +34,7 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
 {
 
     private AMQQueue _queue;
-    private AMQShortString _routingKey;
+    private String _routingKey;
     private Exchange _exchange;
     private VirtualHost _testVhost;
 
@@ -44,12 +44,12 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
         super.setUp();
 
         _testVhost = BrokerTestHelper.createVirtualHost("test");
-        _routingKey = new AMQShortString("RoutingKey");
+        _routingKey = "RoutingKey";
         _exchange = _testVhost.getExchange("amq.direct");
         _queue = new MockAMQQueue("BindingLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
-        _subject = new BindingLogSubject(String.valueOf(_routingKey), _exchange, _queue);
+        _subject = new BindingLogSubject(_routingKey, _exchange, _queue);
     }
 
     @Override

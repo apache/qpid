@@ -479,6 +479,12 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                 boolean deleteOnNoConsumer,
                                 Map<String, Object> arguments) throws AMQException
     {
+
+        if (queueName == null)
+        {
+            throw new IllegalArgumentException("Queue name must not be null");
+        }
+
                 // Access check
         if (!getSecurityManager().authoriseCreateQueue(autoDelete,
                                                        durable,
@@ -610,7 +616,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         for(ExchangeType type : getExchangeTypes())
         {
-            if(type.getDefaultExchangeName().toString().equals( exchange.getName() ))
+            if(type.getDefaultExchangeName().equals( exchange.getName() ))
             {
                 throw new RequiredExchangeException(exchange.getName());
             }
@@ -890,8 +896,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                     q.checkMessageStatus();
                 } catch (Exception e)
                 {
-                    _logger.error("Exception in housekeeping for queue: "
-                            + q.getNameShortString().toString(), e);
+                    _logger.error("Exception in housekeeping for queue: " + q.getName(), e);
                     //Don't throw exceptions as this will stop the
                     // house keeping task from running.
                 }

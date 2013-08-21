@@ -182,11 +182,6 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
         return _deliveryProps == null ? null : _deliveryProps.getRoutingKey();
     }
 
-    public AMQShortString getRoutingKeyShortString()
-    {
-        return AMQShortString.valueOf(getRoutingKey());
-    }
-
     public AMQMessageHeader getMessageHeader()
     {
         return _messageHeader;

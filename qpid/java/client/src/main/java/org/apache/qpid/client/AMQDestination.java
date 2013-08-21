@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class AMQDestination implements Destination, Referenceable
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQDestination.class);
-    
+
     private AMQShortString _exchangeName;
 
     private AMQShortString _exchangeClass;
@@ -65,7 +65,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     private boolean _isAutoDelete;
 
     private boolean _browseOnly;
-    
+
     private AtomicLong _addressResolved = new AtomicLong(0);
 
     private AMQShortString _queueName;
@@ -113,10 +113,10 @@ public abstract class AMQDestination implements Destination, Referenceable
     }
 
     // ----- Fields required to support new address syntax -------
-    
-    public enum DestSyntax {        
+
+    public enum DestSyntax {
       BURL,ADDR;
-      
+
       public static DestSyntax getSyntaxType(String s)
       {
           if (("BURL").equals(s))
@@ -133,11 +133,11 @@ public abstract class AMQDestination implements Destination, Referenceable
                                                  " should be one of {BURL|ADDR}");
           }
       }
-    } 
-    
-    public enum AddressOption { 
-      ALWAYS, NEVER, SENDER, RECEIVER; 
-        
+    }
+
+    public enum AddressOption {
+      ALWAYS, NEVER, SENDER, RECEIVER;
+
       public static AddressOption getOption(String str)
       {
           if ("always".equals(str))
@@ -162,9 +162,9 @@ public abstract class AMQDestination implements Destination, Referenceable
           }
       }
     }
-    
+
     private final static DestSyntax defaultDestSyntax;
-    
+
     private DestSyntax _destSyntax = DestSyntax.ADDR;
 
     private AddressHelper _addrHelper;
@@ -179,25 +179,25 @@ public abstract class AMQDestination implements Destination, Referenceable
     private Node _node;
     private Link _link;
 
-        
+
     // ----- / Fields required to support new address syntax -------
-    
+
     static
     {
         defaultDestSyntax = DestSyntax.getSyntaxType(
                      System.getProperty(ClientProperties.DEST_SYNTAX,
                                         DestSyntax.ADDR.toString()));
-        
-        
+
+
     }
-    
+
     public static DestSyntax getDefaultDestSyntax()
     {
         return defaultDestSyntax;
     }
 
     protected AMQDestination()
-    {  
+    {
     }
 
     protected AMQDestination(Address address) throws Exception
@@ -207,10 +207,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         _destSyntax = DestSyntax.ADDR;
         _logger.debug("Based on " + address + " the selected destination syntax is " + _destSyntax);
     }
-    
+
     public  static DestSyntax getDestType(String str)
     {
-        if (str.startsWith("BURL:") || 
+        if (str.startsWith("BURL:") ||
                 (!str.startsWith("ADDR:") && defaultDestSyntax == DestSyntax.BURL))
         {
             return DestSyntax.BURL;
@@ -220,7 +220,7 @@ public abstract class AMQDestination implements Destination, Referenceable
             return DestSyntax.ADDR;
         }
     }
-    
+
     public static String stripSyntaxPrefix(String str)
     {
         if (str.startsWith("BURL:") || str.startsWith("ADDR:"))
@@ -232,7 +232,7 @@ public abstract class AMQDestination implements Destination, Referenceable
             return str;
         }
     }
-    
+
     protected AMQDestination(String str) throws URISyntaxException
     {
         parseDestinationString(str);
@@ -243,8 +243,8 @@ public abstract class AMQDestination implements Destination, Referenceable
         _destSyntax = getDestType(str);
         str = stripSyntaxPrefix(str);
         if (_destSyntax == DestSyntax.BURL)
-        {    
-            getInfoFromBindingURL(new AMQBindingURL(str));            
+        {
+            getInfoFromBindingURL(new AMQBindingURL(str));
         }
         else
         {
@@ -262,7 +262,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         }
         _logger.debug("Based on " + str + " the selected destination syntax is " + _destSyntax);
     }
-    
+
     //retained for legacy support
     protected AMQDestination(BindingURL binding)
     {
@@ -331,8 +331,8 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
                              boolean isAutoDelete, AMQShortString queueName, boolean isDurable,AMQShortString[] bindingKeys, boolean browseOnly)
     {
-        if ( (ExchangeDefaults.DIRECT_EXCHANGE_CLASS.equals(exchangeClass) || 
-              ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(exchangeClass))  
+        if ( (AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS).equals(exchangeClass) ||
+              AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS).equals(exchangeClass))
               && routingKey == null)
         {
             throw new IllegalArgumentException("routing/binding key  must not be null");
@@ -376,16 +376,16 @@ public abstract class AMQDestination implements Destination, Referenceable
         return toString();
     }
 
-    public DestSyntax getDestSyntax() 
+    public DestSyntax getDestSyntax()
     {
         return _destSyntax;
     }
-    
+
     protected void setDestSyntax(DestSyntax syntax)
     {
         _destSyntax = syntax;
     }
-    
+
     public AMQShortString getEncodedName()
     {
         if(_urlAsShortString == null)
@@ -431,12 +431,12 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     public boolean isTopic()
     {
-        return ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(_exchangeClass);
+        return AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS).equals(_exchangeClass);
     }
 
     public boolean isQueue()
     {
-        return ExchangeDefaults.DIRECT_EXCHANGE_CLASS.equals(_exchangeClass);
+        return AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS).equals(_exchangeClass);
     }
 
     public String getQueueName()
@@ -481,7 +481,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         return _isExclusive;
     }
-    
+
     public boolean isAutoDelete()
     {
         return _isAutoDelete;
@@ -720,15 +720,15 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         AMQShortString type = binding.getExchangeClass();
 
-        if (type.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+        if (type.equals(AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS)))
         {
             return new AMQQueue(binding);
         }
-        else if (type.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        else if (type.equals(AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS)))
         {
             return new AMQTopic(binding);
         }
-        else if (type.equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS))
+        else if (type.equals(AMQShortString.valueOf(ExchangeDefaults.HEADERS_EXCHANGE_CLASS)))
         {
             return new AMQHeadersExchange(binding);
         }
@@ -743,8 +743,8 @@ public abstract class AMQDestination implements Destination, Referenceable
          DestSyntax syntax = getDestType(str);
          str = stripSyntaxPrefix(str);
          if (syntax == DestSyntax.BURL)
-         {          
-             return createDestination(new AMQBindingURL(str));         
+         {
+             return createDestination(new AMQBindingURL(str));
          }
          else
          {
@@ -752,16 +752,16 @@ public abstract class AMQDestination implements Destination, Referenceable
              return new AMQAnyDestination(address);
          }
     }
-    
+
     // ----- new address syntax -----------
-    
+
     public static class Binding
     {
         private String exchange;
         private String bindingKey;
         private String queue;
         private Map<String,Object> args;
-        
+
         public Binding(String exchange,
                        String queue,
                        String bindingKey,
@@ -772,36 +772,36 @@ public abstract class AMQDestination implements Destination, Referenceable
             this.bindingKey = bindingKey;
             this.args = args;
         }
-        
-        public String getExchange() 
+
+        public String getExchange()
         {
             return exchange;
         }
 
-        public String getQueue() 
+        public String getQueue()
         {
             return queue;
         }
-        
-        public String getBindingKey() 
+
+        public String getBindingKey()
         {
             return bindingKey;
         }
-        
-        public Map<String, Object> getArgs() 
+
+        public Map<String, Object> getArgs()
         {
             return args;
         }
     }
-    
+
     public Address getAddress() {
         return _address;
     }
-    
+
     protected void setAddress(Address addr) {
         _address = addr;
     }
-    
+
     public int getAddressType(){
         return _addressType;
     }
@@ -809,11 +809,11 @@ public abstract class AMQDestination implements Destination, Referenceable
     public void setAddressType(int addressType){
         _addressType = addressType;
     }
-    
+
     public String getAddressName() {
         return _name;
     }
-    
+
     public void setAddressName(String name){
         _name = name;
     }
@@ -825,15 +825,15 @@ public abstract class AMQDestination implements Destination, Referenceable
     public void setSubject(String subject) {
         _subject = subject;
     }
-    
+
     public AddressOption getCreate() {
         return _create;
     }
-    
+
     public void setCreate(AddressOption option) {
         _create = option;
     }
-   
+
     public AddressOption getAssert() {
         return _assert;
     }
@@ -841,7 +841,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     public void setAssert(AddressOption option) {
         _assert = option;
     }
-    
+
     public AddressOption getDelete() {
         return _delete;
     }
@@ -869,22 +869,22 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         _link = link;
     }
-    
+
     public void setExchangeName(AMQShortString name)
     {
         this._exchangeName = name;
     }
-    
+
     public void setExchangeClass(AMQShortString type)
     {
         this._exchangeClass = type;
     }
-    
+
     public void setRoutingKey(AMQShortString rk)
     {
         this._routingKey = rk;
     }
-    
+
     public boolean isAddressResolved()
     {
         return _addressResolved.get() > 0;
@@ -894,80 +894,80 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         _addressResolved.set(addressResolved);
     }
-    
+
     private static Address createAddressFromString(String str)
     {
         return Address.parse(str);
     }
-    
+
     private void getInfoFromAddress() throws Exception
     {
         _name = _address.getName();
         _subject = _address.getSubject();
-        
+
         _addrHelper = new AddressHelper(_address);
-        
+
         _create = _addrHelper.getCreate() != null ?
                  AddressOption.getOption(_addrHelper.getCreate()):AddressOption.NEVER;
-                
+
         _assert = _addrHelper.getAssert() != null ?
                  AddressOption.getOption(_addrHelper.getAssert()):AddressOption.NEVER;
 
         _delete = _addrHelper.getDelete() != null ?
                  AddressOption.getOption(_addrHelper.getDelete()):AddressOption.NEVER;
-                 
+
         _browseOnly = _addrHelper.isBrowseOnly();
-                        
+
         _addressType = _addrHelper.getNodeType();
         _node =  _addrHelper.getNode();
-        _link = _addrHelper.getLink();       
+        _link = _addrHelper.getLink();
     }
-    
-    // ----- / new address syntax -----------    
+
+    // ----- / new address syntax -----------
 
     public boolean isBrowseOnly()
     {
         return _browseOnly;
     }
-    
+
     private void setBrowseOnly(boolean b)
     {
         _browseOnly = b;
     }
-    
+
     public AMQDestination copyDestination()
     {
-        AMQDestination dest = 
+        AMQDestination dest =
             new AMQAnyDestination(_exchangeName,
                                   _exchangeClass,
                                   _routingKey,
-                                  _isExclusive, 
+                                  _isExclusive,
                                   _isAutoDelete,
-                                  _queueName, 
+                                  _queueName,
                                   _isDurable,
                                   _bindingKeys
                                   );
-        
+
         dest.setDestSyntax(_destSyntax);
         dest.setAddress(_address);
         dest.setAddressName(_name);
         dest.setSubject(_subject);
-        dest.setCreate(_create); 
-        dest.setAssert(_assert); 
-        dest.setDelete(_delete); 
+        dest.setCreate(_create);
+        dest.setAssert(_assert);
+        dest.setDelete(_delete);
         dest.setBrowseOnly(_browseOnly);
         dest.setAddressType(_addressType);
         dest.setNode(_node);
         dest.setLink(_link);
         dest.setAddressResolved(_addressResolved.get());
-        return dest;        
+        return dest;
     }
-    
+
     protected void setAutoDelete(boolean b)
     {
         _isAutoDelete = b;
     }
-    
+
     protected void setDurable(boolean b)
     {
         _isDurable = b;

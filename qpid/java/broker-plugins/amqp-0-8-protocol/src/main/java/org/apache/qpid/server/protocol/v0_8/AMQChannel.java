@@ -1396,7 +1396,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                                                               _message,
                                                               _channelId,
                                                               _errorCode.getCode(),
-                                                              AMQShortString.valueOf(_description, true, true));
+                                                              AMQShortString.validValueOf(_description));
             }
             catch (AMQException e)
             {
@@ -1449,7 +1449,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             if(_blocking.compareAndSet(false,true))
             {
-                _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getNameShortString().toString()));
+                _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getName()));
                 flow(false);
             }
         }
@@ -1568,7 +1568,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             //output operational logging for each delivery post commit
             for (final BaseQueue destinationQueue : destinationQueues)
             {
-                _actor.message(_logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getNameShortString().asString()));
+                _actor.message(_logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getName()));
             }
 
         }

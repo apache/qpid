@@ -38,7 +38,7 @@ public class AMQQueue extends AMQDestination implements Queue
     {
         super(address);
     }
-    
+
     /**
      * Create a reference to a non temporary queue using a BindingURL object.
      * Note this does not actually imply the queue exists.
@@ -70,13 +70,13 @@ public class AMQQueue extends AMQDestination implements Queue
 
     public AMQQueue(AMQShortString exchangeName, AMQShortString routingKey, AMQShortString queueName)
     {
-        super(exchangeName, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, routingKey, false,
+        super(exchangeName, AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS), routingKey, false,
               false, queueName, false);
     }
 
     public AMQQueue(AMQShortString exchangeName, AMQShortString routingKey, AMQShortString queueName,AMQShortString[] bindingKeys)
     {
-        super(exchangeName, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, routingKey, false,
+        super(exchangeName, AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS), routingKey, false,
               false, queueName, false,bindingKeys);
     }
 
@@ -149,7 +149,7 @@ public class AMQQueue extends AMQDestination implements Queue
 
     public AMQQueue(AMQShortString exchangeName, AMQShortString routingKey, AMQShortString queueName, boolean exclusive, boolean autoDelete, boolean durable,AMQShortString[] bindingKeys)
     {
-        super(exchangeName, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, routingKey, exclusive,
+        super(exchangeName, AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS), routingKey, exclusive,
               autoDelete, queueName, durable, bindingKeys);
     }
 

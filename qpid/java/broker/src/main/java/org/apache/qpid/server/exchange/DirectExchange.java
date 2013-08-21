@@ -180,10 +180,9 @@ public class DirectExchange extends AbstractExchange
     {
         String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getQueue();
-        AMQShortString routingKey = AMQShortString.valueOf(bindingKey);
 
         assert queue != null;
-        assert routingKey != null;
+        assert bindingKey != null;
 
         BindingSet bindings = _bindingsByKey.get(bindingKey);
 

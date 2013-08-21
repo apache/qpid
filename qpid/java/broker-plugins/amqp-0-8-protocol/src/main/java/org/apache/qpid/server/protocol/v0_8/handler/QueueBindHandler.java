@@ -30,6 +30,8 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
@@ -86,7 +88,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
             if (body.getRoutingKey() == null)
             {
-                routingKey = queue.getNameShortString();
+                routingKey = AMQShortString.valueOf(queue.getName());
             }
             else
             {
@@ -119,16 +121,17 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
                 if (session == null || session.getConnectionModel() != protocolConnection)
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
                 }
             }
 
-            if (!exch.isBound(routingKey, body.getArguments(), queue))
-            {
-                String bindingKey = String.valueOf(routingKey);
-                Map<String,Object> arguments = FieldTable.convertToMap(body.getArguments());
+            Map<String,Object> arguments = FieldTable.convertToMap(body.getArguments());
+            String bindingKey = String.valueOf(routingKey);
 
-                if(!exch.addBinding(bindingKey, queue, arguments) && ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(exch.getTypeShortString()))
+            if (!exch.isBound(bindingKey, arguments, queue))
+            {
+
+                if(!exch.addBinding(bindingKey, queue, arguments) && TopicExchange.TYPE.equals(exch.getType()))
                 {
                     Binding oldBinding = exch.getBinding(bindingKey, queue, arguments);
 

@@ -33,15 +33,10 @@ public class HeadersExchangeType implements ExchangeType<HeadersExchange>
     @Override
     public String getType()
     {
-        return getName().toString();
-    }
-
-    public AMQShortString getName()
-    {
         return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
     }
 
-    public HeadersExchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable,
+    public HeadersExchange newInstance(UUID id, VirtualHost host, String name, boolean durable,
                                        boolean autoDelete) throws AMQException
     {
         HeadersExchange exch = new HeadersExchange();
@@ -50,7 +45,7 @@ public class HeadersExchangeType implements ExchangeType<HeadersExchange>
         return exch;
     }
 
-    public AMQShortString getDefaultExchangeName()
+    public String getDefaultExchangeName()
     {
 
         return ExchangeDefaults.HEADERS_EXCHANGE_NAME;

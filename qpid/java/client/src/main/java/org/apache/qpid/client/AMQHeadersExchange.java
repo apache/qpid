@@ -41,7 +41,7 @@ public class AMQHeadersExchange extends AMQDestination
 
     public AMQHeadersExchange(AMQShortString queueName)
     {
-        super(queueName, ExchangeDefaults.HEADERS_EXCHANGE_CLASS, queueName, true, true, null);
+        super(queueName, AMQShortString.valueOf(ExchangeDefaults.HEADERS_EXCHANGE_CLASS), queueName, true, true, null);
     }
 
     public boolean isNameRequired()

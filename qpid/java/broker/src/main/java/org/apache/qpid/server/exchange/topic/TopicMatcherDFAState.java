@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.exchange.topic;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.AMQShortStringTokenizer;
+import java.util.Arrays;
+import java.util.Iterator;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +44,7 @@ public class TopicMatcherDFAState
 
     private final Collection<TopicMatcherResult> _results;
     private final Map<TopicWord, TopicMatcherDFAState> _nextStateMap;
-    private static final byte TOPIC_DELIMITTER = (byte)'.';
+    private static final String TOPIC_DELIMITTER = "\\.";
 
 
     public TopicMatcherDFAState(Map<TopicWord, TopicMatcherDFAState> nextStateMap,
@@ -67,19 +67,19 @@ public class TopicMatcherDFAState
     }
 
 
-    public Collection<TopicMatcherResult> parse(TopicWordDictionary dictionary, AMQShortString routingKey)
+    public Collection<TopicMatcherResult> parse(TopicWordDictionary dictionary, String routingKey)
     {
-        return parse(dictionary, routingKey.tokenize(TOPIC_DELIMITTER));
+        return parse(dictionary, Arrays.asList(routingKey.split(TOPIC_DELIMITTER)).iterator());
     }
 
     private Collection<TopicMatcherResult> parse(final TopicWordDictionary dictionary,
-                                                 final AMQShortStringTokenizer tokens)
+                                                 final Iterator<String> tokens)
     {
-        if(!tokens.hasMoreTokens())
+        if(!tokens.hasNext())
         {
             return _results;
         }
-        TopicWord word = dictionary.getWord(tokens.nextToken());
+        TopicWord word = dictionary.getWord(tokens.next());
         TopicMatcherDFAState nextState = _nextStateMap.get(word);
         if(nextState == null && word != TopicWord.ANY_WORD)
         {
@@ -96,7 +96,7 @@ public class TopicMatcherDFAState
         }
 
         return nextState.parse(dictionary, tokens);
-        
+
     }
 
 

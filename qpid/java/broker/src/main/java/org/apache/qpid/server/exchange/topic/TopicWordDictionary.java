@@ -20,27 +20,20 @@
 */
 package org.apache.qpid.server.exchange.topic;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TopicWordDictionary
 {
-    private final ConcurrentHashMap<AMQShortString,TopicWord> _dictionary =
-            new ConcurrentHashMap<AMQShortString,TopicWord>();
-
-
+    private final ConcurrentHashMap<String,TopicWord> _dictionary =
+            new ConcurrentHashMap<String,TopicWord>();
 
     public TopicWordDictionary()
     {
-        _dictionary.put(new AMQShortString("*"), TopicWord.ANY_WORD);
-        _dictionary.put(new AMQShortString("#"), TopicWord.WILDCARD_WORD);
+        _dictionary.put("*", TopicWord.ANY_WORD);
+        _dictionary.put("#", TopicWord.WILDCARD_WORD);
     }
 
-
-
-
-    public TopicWord getOrCreateWord(AMQShortString name)
+    public TopicWord getOrCreateWord(String name)
     {
         TopicWord word = _dictionary.putIfAbsent(name, new TopicWord(name));
         if(word == null)
@@ -51,7 +44,7 @@ public class TopicWordDictionary
     }
 
 
-    public TopicWord getWord(AMQShortString name)
+    public TopicWord getWord(String name)
     {
         TopicWord word = _dictionary.get(name);
         if(word == null)

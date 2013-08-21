@@ -108,7 +108,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                 if (queue.isExclusive() && !queue.isDurable() && (session == null || session.getConnectionModel() != protocolConnection))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
                 }
 
                 int purged = virtualHost.removeQueue(queue);

@@ -68,7 +68,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _defaultExchange = new DefaultExchange(_queueRegistry);
 
         UUID defaultExchangeId =
-                UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(), _host.getName());
+                UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME, _host.getName());
 
         _defaultExchange.initialise(defaultExchangeId, _host, ExchangeDefaults.DEFAULT_EXCHANGE_NAME,false, false);
 
@@ -81,7 +81,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void registerExchange(Exchange exchange) throws AMQException
     {
-        _exchangeMap.put(exchange.getNameShortString().toString(), exchange);
+        _exchangeMap.put(exchange.getName(), exchange);
         synchronized (_listeners)
         {
             for(RegistryChangeListener listener : _listeners)
@@ -201,7 +201,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public boolean isReservedExchangeName(String name)
     {
-        if (name == null || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(name)
+        if (name == null || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equals(name)
                 || name.startsWith("amq.") || name.startsWith("qpid."))
         {
             return true;
@@ -209,7 +209,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         Collection<ExchangeType<? extends Exchange>> registeredTypes = _host.getExchangeTypes();
         for (ExchangeType<? extends Exchange> type : registeredTypes)
         {
-            if (type.getDefaultExchangeName().toString().equals(name))
+            if (type.getDefaultExchangeName().equals(name))
             {
                 return true;
             }

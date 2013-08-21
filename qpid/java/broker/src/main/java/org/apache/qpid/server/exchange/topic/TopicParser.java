@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.exchange.topic;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.AMQShortStringTokenizer;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TopicParser
 {
-    private static final byte TOPIC_DELIMITER = (byte)'.';
+    private static final String TOPIC_DELIMITER = "\\.";
 
     private final TopicWordDictionary _dictionary = new TopicWordDictionary();
     private final AtomicReference<TopicMatcherDFAState> _stateMachine = new AtomicReference<TopicMatcherDFAState>();
@@ -98,7 +95,7 @@ public class TopicParser
     }
 
 
-    public void addBinding(AMQShortString bindingKey, TopicMatcherResult result)
+    public void addBinding(String bindingKey, TopicMatcherResult result)
     {
 
         TopicMatcherDFAState startingStateMachine;
@@ -121,7 +118,7 @@ public class TopicParser
 
     }
 
-    public Collection<TopicMatcherResult> parse(AMQShortString routingKey)
+    public Collection<TopicMatcherResult> parse(String routingKey)
     {
         TopicMatcherDFAState stateMachine = _stateMachine.get();
         if(stateMachine == null)
@@ -135,7 +132,7 @@ public class TopicParser
     }
 
 
-    TopicMatcherDFAState createStateMachine(AMQShortString bindingKey, TopicMatcherResult result)
+    TopicMatcherDFAState createStateMachine(String bindingKey, TopicMatcherResult result)
     {
         List<TopicWord> wordList = createTopicWordList(bindingKey);
         int wildCards = 0;
@@ -422,16 +419,16 @@ public class TopicParser
 
     }
 
-    private List<TopicWord> createTopicWordList(final AMQShortString bindingKey)
+    private List<TopicWord> createTopicWordList(final String bindingKey)
     {
-        AMQShortStringTokenizer tokens = bindingKey.tokenize(TOPIC_DELIMITER);
+        String[] tokens = bindingKey.split(TOPIC_DELIMITER);
         TopicWord previousWord = null;
 
         List<TopicWord> wordList = new ArrayList<TopicWord>();
 
-        while(tokens.hasMoreTokens())
+        for(String token : tokens)
         {
-            TopicWord nextWord = _dictionary.getOrCreateWord(tokens.nextToken());
+            TopicWord nextWord = _dictionary.getOrCreateWord(token);
             if(previousWord == TopicWord.WILDCARD_WORD)
             {
 

@@ -26,7 +26,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -39,7 +38,6 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -57,7 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class AbstractExchange implements Exchange
 {
     private static final Logger _logger = Logger.getLogger(AbstractExchange.class);
-    private AMQShortString _name;
+    private String _name;
     private final AtomicBoolean _closed = new AtomicBoolean();
 
     private Exchange _alternateExchange;
@@ -98,19 +96,15 @@ public abstract class AbstractExchange implements Exchange
         _type = type;
     }
 
-    public AMQShortString getNameShortString()
+    @Override
+    public String getTypeName()
     {
-        return _name;
-    }
-
-    public final AMQShortString getTypeShortString()
-    {
-        return _type.getName();
+        return _type.getType();
     }
 
     public void initialise(UUID id,
                            VirtualHost host,
-                           AMQShortString name,
+                           String name,
                            boolean durable,
                            boolean autoDelete)
             throws AMQException
@@ -124,7 +118,7 @@ public abstract class AbstractExchange implements Exchange
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
         // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
+        CurrentActor.get().message(ExchangeMessages.CREATED(getType().getType(), name, durable));
     }
 
     public boolean isDurable()
@@ -159,17 +153,12 @@ public abstract class AbstractExchange implements Exchange
 
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + getNameShortString() +"]";
+        return getClass().getSimpleName() + "[" + getName() +"]";
     }
 
     public VirtualHost getVirtualHost()
     {
         return _virtualHost;
-    }
-
-    public final boolean isBound(AMQShortString routingKey, FieldTable ft, AMQQueue queue)
-    {
-        return isBound(routingKey == null ? "" : routingKey.asString(), FieldTable.convertToMap(ft), queue);
     }
 
     public final boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue)
@@ -186,11 +175,6 @@ public abstract class AbstractExchange implements Exchange
         return false;
     }
 
-    public final boolean isBound(AMQShortString routingKey, AMQQueue queue)
-    {
-        return isBound(routingKey==null ? "" : routingKey.asString(), queue);
-    }
-
     public final boolean isBound(String bindingKey, AMQQueue queue)
     {
         for(Binding b : _bindings)
@@ -201,11 +185,6 @@ public abstract class AbstractExchange implements Exchange
             }
         }
         return false;
-    }
-
-    public final boolean isBound(AMQShortString routingKey)
-    {
-        return isBound(routingKey == null ? "" : routingKey.asString());
     }
 
     public final boolean isBound(String bindingKey)
@@ -415,7 +394,7 @@ public abstract class AbstractExchange implements Exchange
                 }
                 if(_logger.isDebugEnabled())
                 {
-                    _logger.debug("Exchange: " + getName() + " - attempt to enqueue message onto deleted queue " + String.valueOf(q.getNameShortString()));
+                    _logger.debug("Exchange: " + getName() + " - attempt to enqueue message onto deleted queue " + q.getName());
                 }
                 queues.remove(q);
             }
@@ -531,7 +510,7 @@ public abstract class AbstractExchange implements Exchange
         // all operations on it to succeed. It is up to the broker to prevent illegal
         // attempts at binding to this exchange, not the ACLs.
         // Check access
-        if (!_virtualHost.getSecurityManager().authoriseUnbind(this, new AMQShortString(bindingKey), queue))
+        if (!_virtualHost.getSecurityManager().authoriseUnbind(this, bindingKey, queue))
         {
             throw new AMQSecurityException("Permission denied: unbinding " + bindingKey);
         }
@@ -596,7 +575,7 @@ public abstract class AbstractExchange implements Exchange
         }
 
         //Perform ACLs
-        if (!_virtualHost.getSecurityManager().authoriseBind(AbstractExchange.this, queue, new AMQShortString(bindingKey)))
+        if (!_virtualHost.getSecurityManager().authoriseBind(AbstractExchange.this, queue, bindingKey))
         {
             throw new AMQSecurityException("Permission denied: binding " + bindingKey);
         }

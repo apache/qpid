@@ -129,11 +129,6 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
         return _messagePublishInfo.getExchange();
     }
 
-    public AMQShortString getRoutingKeyShortString()
-    {
-        return _messagePublishInfo.getRoutingKey();
-    }
-
     public String getRoutingKey()
     {
         return _messagePublishInfo.getRoutingKey() == null ? null : _messagePublishInfo.getRoutingKey().toString();

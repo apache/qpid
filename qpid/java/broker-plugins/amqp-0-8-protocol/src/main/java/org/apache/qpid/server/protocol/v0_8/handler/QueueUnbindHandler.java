@@ -80,13 +80,13 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
                 throw body.getChannelException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null");
             }
 
-            routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern();
+            routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern(false);
 
         }
         else
         {
             queue = virtualHost.getQueue(body.getQueue().toString());
-            routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern();
+            routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern(false);
         }
 
         if (queue == null)

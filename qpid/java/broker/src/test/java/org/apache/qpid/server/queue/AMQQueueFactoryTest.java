@@ -39,7 +39,6 @@ import java.util.UUID;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -51,7 +50,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -176,9 +174,10 @@ public class AMQQueueFactoryTest extends QpidTestCase
                         when(exchange.getName()).thenReturn(name);
                         when(exchange.getId()).thenReturn(id);
                         when(exchange.getType()).thenReturn(exType);
+
                         final String typeName = type.getValue();
                         when(exType.getType()).thenReturn(typeName);
-                        when(exType.getName()).thenReturn(new AMQShortString(typeName));
+                        when(exchange.getTypeName()).thenReturn(typeName);
 
                         when(_virtualHost.getExchange(eq(name))).thenReturn(exchange);
                         when(_virtualHost.getExchange(eq(id))).thenReturn(exchange);
@@ -277,7 +276,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
         assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
-        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType().getName());
+        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getTypeName());
 
         assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
         assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));
@@ -318,7 +317,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
         assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
-        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType().getName());
+        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getTypeName());
 
         assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
         assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));

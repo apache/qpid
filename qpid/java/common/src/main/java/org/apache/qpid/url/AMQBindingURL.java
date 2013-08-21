@@ -34,9 +34,9 @@ public class AMQBindingURL implements BindingURL
     private static final Logger _logger = LoggerFactory.getLogger(AMQBindingURL.class);
 
     private String _url;
-    private AMQShortString _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+    private AMQShortString _exchangeClass = AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
     private AMQShortString _exchangeName = new AMQShortString("");
-    private AMQShortString _destinationName = new AMQShortString("");;
+    private AMQShortString _destinationName = new AMQShortString("");
     private AMQShortString _queueName = new AMQShortString("");
     private AMQShortString[] _bindingKeys = new AMQShortString[0];
     private HashMap<String, String> _options;
@@ -93,7 +93,7 @@ public class AMQBindingURL implements BindingURL
     {
 
         _exchangeClass = exchangeClass;
-        if (exchangeClass.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        if (exchangeClass.equals(AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS)))
         {
             setOption(BindingURL.OPTION_EXCLUSIVE, "true");
         }
@@ -147,11 +147,11 @@ public class AMQBindingURL implements BindingURL
 
     public AMQShortString getRoutingKey()
     {
-        if (_exchangeClass.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+        if (_exchangeClass.equals(AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS)))
         {
             if (containsOption(BindingURL.OPTION_ROUTING_KEY))
             {
-                return new AMQShortString((String)getOption(OPTION_ROUTING_KEY));
+                return new AMQShortString(getOption(OPTION_ROUTING_KEY));
             }
             else
             {
@@ -161,7 +161,7 @@ public class AMQBindingURL implements BindingURL
 
         if (containsOption(BindingURL.OPTION_ROUTING_KEY))
         {
-            return new AMQShortString((String)getOption(OPTION_ROUTING_KEY));
+            return new AMQShortString(getOption(OPTION_ROUTING_KEY));
         }
 
         return getDestinationName();
@@ -191,7 +191,7 @@ public class AMQBindingURL implements BindingURL
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append(_exchangeClass);
         sb.append("://");
@@ -207,7 +207,7 @@ public class AMQBindingURL implements BindingURL
         if (getRoutingKey() == null || getRoutingKey().toString().equals(""))
         {
 
-            if (sb.toString().indexOf("?") == -1)
+            if (!sb.toString().contains("?"))
             {
                 sb.append("?");
             }

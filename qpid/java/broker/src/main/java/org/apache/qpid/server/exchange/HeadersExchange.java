@@ -89,7 +89,7 @@ public class HeadersExchange extends AbstractExchange
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Exchange " + getNameShortString() + ": routing message with headers " + payload.getMessageHeader());
+            _logger.debug("Exchange " + getName() + ": routing message with headers " + payload.getMessageHeader());
         }
 
         LinkedHashSet<BaseQueue> queues = new LinkedHashSet<BaseQueue>();
@@ -104,8 +104,8 @@ public class HeadersExchange extends AbstractExchange
 
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Exchange " + getNameShortString() + ": delivering message with headers " +
-                                  payload.getMessageHeader() + " to " + b.getQueue().getNameShortString());
+                    _logger.debug("Exchange " + getName() + ": delivering message with headers " +
+                                  payload.getMessageHeader() + " to " + b.getQueue().getName());
                 }
                 queues.add(b.getQueue());
             }
@@ -118,11 +118,10 @@ public class HeadersExchange extends AbstractExchange
     {
         String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getQueue();
-        AMQShortString routingKey = AMQShortString.valueOf(bindingKey);
         Map<String,Object> args = binding.getArguments();
 
         assert queue != null;
-        assert routingKey != null;
+        assert bindingKey != null;
 
         CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
 
@@ -138,7 +137,7 @@ public class HeadersExchange extends AbstractExchange
 
         if(_logger.isDebugEnabled())
         {
-            _logger.debug("Exchange " + getNameShortString() + ": Binding " + queue.getNameShortString() +
+            _logger.debug("Exchange " + getName() + ": Binding " + queue.getName() +
                           " with binding key '" +bindingKey + "' and args: " + args);
         }
 

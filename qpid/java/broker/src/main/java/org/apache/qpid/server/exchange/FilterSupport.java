@@ -43,13 +43,6 @@ public class FilterSupport
     private static final Map<String, WeakReference<JMSSelectorFilter>> _selectorCache =
             Collections.synchronizedMap(new WeakHashMap<String, WeakReference<JMSSelectorFilter>>());
 
-    static MessageFilter createJMSSelectorFilter(FieldTable args) throws AMQInvalidArgumentException
-    {
-        final String selectorString = args.getString(AMQPFilterTypes.JMS_SELECTOR.getValue());
-        return getMessageFilter(selectorString);
-    }
-
-
     static MessageFilter createJMSSelectorFilter(Map<String, Object> args) throws AMQInvalidArgumentException
     {
         final String selectorString = (String) args.get(AMQPFilterTypes.JMS_SELECTOR.toString());
@@ -85,12 +78,6 @@ public class FilterSupport
         return selector;
     }
 
-    static boolean argumentsContainFilter(final FieldTable args)
-    {
-        return argumentsContainNoLocal(args) || argumentsContainJMSSelector(args);
-    }
-
-
     public static boolean argumentsContainFilter(final Map<String, Object> args)
     {
         return argumentsContainNoLocal(args) || argumentsContainJMSSelector(args);
@@ -112,48 +99,13 @@ public class FilterSupport
                 && Boolean.TRUE.equals(args.get(AMQPFilterTypes.NO_LOCAL.toString()));
     }
 
-
-    static boolean argumentsContainNoLocal(final FieldTable args)
-    {
-        return args != null
-                && args.containsKey(AMQPFilterTypes.NO_LOCAL.getValue())
-                && Boolean.TRUE.equals(args.get(AMQPFilterTypes.NO_LOCAL.getValue()));
-    }
-
-
     static boolean argumentsContainJMSSelector(final Map<String,Object> args)
     {
         return args != null && (args.get(AMQPFilterTypes.JMS_SELECTOR.toString()) instanceof String)
                        && ((String)args.get(AMQPFilterTypes.JMS_SELECTOR.toString())).trim().length() != 0;
     }
 
-
-    static boolean argumentsContainJMSSelector(final FieldTable args)
-    {
-        return args != null && (args.containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue())
-                       && args.getString(AMQPFilterTypes.JMS_SELECTOR.getValue()).trim().length() != 0);
-    }
-
-
     static MessageFilter createMessageFilter(final Map<String,Object> args, AMQQueue queue) throws AMQInvalidArgumentException
-    {
-        if(argumentsContainNoLocal(args))
-        {
-            MessageFilter filter = new NoLocalFilter(queue);
-
-            if(argumentsContainJMSSelector(args))
-            {
-                filter = new CompoundFilter(filter, createJMSSelectorFilter(args));
-            }
-            return filter;
-        }
-        else
-        {
-            return createJMSSelectorFilter(args);
-        }
-    }
-
-    static MessageFilter createMessageFilter(final FieldTable args, AMQQueue queue) throws AMQInvalidArgumentException
     {
         if(argumentsContainNoLocal(args))
         {

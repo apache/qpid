@@ -14,9 +14,9 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.filter;
 
@@ -35,7 +35,7 @@ import java.util.Map;
 
 public class FilterManagerFactory
 {
- 
+
     private final static Logger _logger = Logger.getLogger(FilterManagerFactory.class);
 
     private FilterManagerFactory()
@@ -44,25 +44,23 @@ public class FilterManagerFactory
 
     //fixme move to a common class so it can be refered to from client code.
 
-    public static FilterManager createManager(FieldTable filters) throws AMQException
+    public static FilterManager createManager(Map<String,Object> filters) throws AMQException
     {
         FilterManager manager = null;
 
         if (filters != null)
         {
 
-
-
-            if(filters.containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue()))
+            if(filters.containsKey(AMQPFilterTypes.JMS_SELECTOR.toString()))
             {
-                String selector =  filters.getString(AMQPFilterTypes.JMS_SELECTOR.getValue());
+                Object selector = filters.get(AMQPFilterTypes.JMS_SELECTOR.toString());
 
-                if (selector != null && !selector.equals(""))
+                if (selector instanceof String && !selector.equals(""))
                 {
                     manager = new SimpleFilterManager();
                     try
                     {
-                        manager.add(new JMSSelectorFilter(selector));
+                        manager.add(new JMSSelectorFilter((String)selector));
                     }
                     catch (ParseException e)
                     {
@@ -91,9 +89,5 @@ public class FilterManagerFactory
         return manager;
 
     }
-    
-    public static FilterManager createManager(Map<String,Object> map) throws AMQException
-    {
-        return createManager(FieldTable.convertToFieldTable(map));
-    }
+
 }

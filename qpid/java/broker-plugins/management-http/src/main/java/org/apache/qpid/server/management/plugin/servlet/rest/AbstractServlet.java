@@ -219,14 +219,7 @@ public abstract class AbstractServlet extends HttpServlet
         }
         finally
         {
-            try
-            {
-                SecurityManager.setThreadSubject(null);
-            }
-            finally
-            {
-                AMQShortString.clearLocalCache();
-            }
+            SecurityManager.setThreadSubject(null);
         }
     }
 
