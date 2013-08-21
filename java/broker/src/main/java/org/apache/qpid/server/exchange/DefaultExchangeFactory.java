@@ -136,4 +136,10 @@ public class DefaultExchangeFactory implements ExchangeFactory
         Exchange e = exchType.newInstance(id, _host, exchange, durable, autoDelete);
         return e;
     }
+
+    @Override
+    public Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete) throws AMQException
+    {
+        return createExchange(id, exchange, type, true, autoDelete);
+    }
 }

@@ -518,8 +518,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             {
                 throw new QueueExistsException("Queue with id " + id + " already exists", _queueRegistry.getQueue(queueName));
             }
-            return _queueFactory.createAMQQueueImpl(id, queueName, durable, owner, autoDelete, exclusive, deleteOnNoConsumer,
-                            arguments);
+            return _queueFactory.createQueue(id, queueName, durable, owner, autoDelete, exclusive, deleteOnNoConsumer,
+                    arguments);
         }
 
     }

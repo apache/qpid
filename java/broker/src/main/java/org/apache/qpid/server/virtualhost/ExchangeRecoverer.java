@@ -77,7 +77,7 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
                 }
                 if (_exchange == null)
                 {
-                    _exchange = _exchangeFactory.createExchange(id, exchangeName, exchangeType, true, autoDelete);
+                    _exchange = _exchangeFactory.restoreExchange(id, exchangeName, exchangeType, autoDelete);
                     _exchangeRegistry.registerExchange(_exchange);
                 }
             }

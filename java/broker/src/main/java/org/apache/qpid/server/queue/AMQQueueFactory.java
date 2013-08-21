@@ -28,7 +28,6 @@ import java.util.UUID;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
@@ -177,19 +176,45 @@ public class AMQQueueFactory implements QueueFactory
             }
     };
 
+    @Override
+    public AMQQueue restoreQueue(UUID id,
+                                 String queueName,
+                                 String owner,
+                                 boolean autoDelete,
+                                 boolean exclusive,
+                                 boolean deleteOnNoConsumer,
+                                 Map<String, Object> arguments) throws AMQSecurityException, AMQException
+    {
+        return createOrRestoreQueue(id, queueName, true, owner, autoDelete, exclusive, deleteOnNoConsumer, arguments, false);
+
+    }
+
     /**
      * @param id the id to use.
      * @param deleteOnNoConsumer
      */
     @Override
-    public AMQQueue createAMQQueueImpl(UUID id,
-                                       String queueName,
-                                       boolean durable,
-                                       String owner,
-                                       boolean autoDelete,
-                                       boolean exclusive,
-                                       boolean deleteOnNoConsumer,
-                                       Map<String, Object> arguments) throws AMQSecurityException, AMQException
+    public AMQQueue createQueue(UUID id,
+                                String queueName,
+                                boolean durable,
+                                String owner,
+                                boolean autoDelete,
+                                boolean exclusive,
+                                boolean deleteOnNoConsumer,
+                                Map<String, Object> arguments) throws AMQSecurityException, AMQException
+    {
+        return createOrRestoreQueue(id, queueName, durable, owner, autoDelete, exclusive, deleteOnNoConsumer, arguments, true);
+    }
+
+    private AMQQueue createOrRestoreQueue(UUID id,
+                                          String queueName,
+                                          boolean durable,
+                                          String owner,
+                                          boolean autoDelete,
+                                          boolean exclusive,
+                                          boolean deleteOnNoConsumer,
+                                          Map<String, Object> arguments,
+                                          boolean createInStore) throws AMQSecurityException, AMQException
     {
         if (id == null)
         {
@@ -358,7 +383,7 @@ public class AMQQueueFactory implements QueueFactory
             q.setAlternateExchange(altExchange);
         }
 
-        if (q.isDurable() && !q.isAutoDelete())
+        if (createInStore && q.isDurable() && !q.isAutoDelete())
         {
             DurableConfigurationStoreHelper.createQueue(_virtualHost.getDurableConfigurationStore(), q);
         }
@@ -379,7 +404,7 @@ public class AMQQueueFactory implements QueueFactory
         // we need queues that are defined in config to have deterministic ids.
         UUID id = UUIDGenerator.generateQueueUUID(queueName, _virtualHost.getName());
 
-        AMQQueue q = createAMQQueueImpl(id, queueName, durable, owner, autodelete, exclusive, false, arguments);
+        AMQQueue q = createQueue(id, queueName, durable, owner, autodelete, exclusive, false, arguments);
         q.configure(config);
         return q;
     }

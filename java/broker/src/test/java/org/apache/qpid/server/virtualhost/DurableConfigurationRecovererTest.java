@@ -28,10 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
@@ -39,17 +36,12 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueFactory;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.security.*;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -131,7 +123,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _queueFactory = mock(QueueFactory.class);
 
-        when(_queueFactory.createAMQQueueImpl(idArg.capture(), queueArg.capture(),
+        when(_queueFactory.createQueue(idArg.capture(), queueArg.capture(),
                 anyBoolean(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(), argsArg.capture())).then(
                 new Answer()
                 {

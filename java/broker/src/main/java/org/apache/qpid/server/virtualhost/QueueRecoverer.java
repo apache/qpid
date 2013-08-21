@@ -31,7 +31,6 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueFactory;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
@@ -122,8 +121,8 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
 
                 if (_queue == null)
                 {
-                    _queue = _queueFactory.createAMQQueueImpl(_id, queueName, true, owner, false, exclusive,
-                                                              false, queueArgumentsMap);
+                    _queue = _queueFactory.restoreQueue(_id, queueName, owner, false, exclusive,
+                            false, queueArgumentsMap);
                 }
             }
             catch (AMQException e)
