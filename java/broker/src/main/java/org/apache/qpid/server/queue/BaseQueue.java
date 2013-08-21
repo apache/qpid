@@ -40,5 +40,5 @@ public interface BaseQueue extends TransactionLogResource
     boolean isDurable();
     boolean isDeleted();
 
-    AMQShortString getNameShortString();
+    String getName();
 }

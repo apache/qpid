@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -31,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultQueueRegistry implements QueueRegistry
 {
-    private ConcurrentMap<AMQShortString, AMQQueue> _queueMap = new ConcurrentHashMap<AMQShortString, AMQQueue>();
+    private ConcurrentMap<String, AMQQueue> _queueMap = new ConcurrentHashMap<String, AMQQueue>();
 
     private final VirtualHost _virtualHost;
     private final Collection<RegistryChangeListener> _listeners =
@@ -49,7 +48,7 @@ public class DefaultQueueRegistry implements QueueRegistry
 
     public void registerQueue(AMQQueue queue)
     {
-        _queueMap.put(queue.getNameShortString(), queue);
+        _queueMap.put(queue.getName(), queue);
         synchronized (_listeners)
         {
             for(RegistryChangeListener listener : _listeners)
@@ -59,9 +58,8 @@ public class DefaultQueueRegistry implements QueueRegistry
         }
     }
 
-    public void unregisterQueue(String nameString)
+    public void unregisterQueue(String name)
     {
-        AMQShortString name = new AMQShortString(nameString);
         AMQQueue q = _queueMap.remove(name);
         if(q != null)
         {
@@ -75,10 +73,6 @@ public class DefaultQueueRegistry implements QueueRegistry
         }
     }
 
-    private AMQQueue getQueue(AMQShortString name)
-    {
-        return _queueMap.get(name);
-    }
 
     public Collection<AMQQueue> getQueues()
     {
@@ -87,7 +81,7 @@ public class DefaultQueueRegistry implements QueueRegistry
 
     public AMQQueue getQueue(String queue)
     {
-        return getQueue(new AMQShortString(queue));
+        return _queueMap.get(queue);
     }
 
     public void addRegistryChangeListener(RegistryChangeListener listener)

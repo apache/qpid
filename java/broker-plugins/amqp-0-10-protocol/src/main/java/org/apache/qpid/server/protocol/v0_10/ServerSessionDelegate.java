@@ -37,12 +37,9 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -701,11 +698,11 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if (!exchange.getTypeShortString().toString().equals(method.getType())
+                if (!exchange.getTypeName().equals(method.getType())
                         && (method.getType() != null && method.getType().length() > 0))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: "
-                            + exchangeName + " of type " + exchange.getTypeShortString() + " to " + method.getType() + ".");
+                            + exchangeName + " of type " + exchange.getTypeName() + " to " + method.getType() + ".");
                 }
             }
         }
@@ -738,11 +735,11 @@ public class ServerSessionDelegate extends SessionDelegate
             catch(ExchangeExistsException e)
             {
                 Exchange exchange = e.getExistingExchange();
-                if(!exchange.getTypeShortString().toString().equals(method.getType()))
+                if(!exchange.getTypeName().equals(method.getType()))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
                             "Attempt to redeclare exchange: " + exchangeName
-                                    + " of type " + exchange.getTypeShortString()
+                                    + " of type " + exchange.getTypeName()
                                     + " to " + method.getType() +".");
                 }
                 else if(method.hasAlternateExchange()
@@ -891,7 +888,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         for(ExchangeType type : registeredTypes)
         {
-            if(type.getDefaultExchangeName().toString().equals( exchange.getName() ))
+            if(type.getDefaultExchangeName().equals( exchange.getName() ))
             {
                 return true;
             }
@@ -910,7 +907,7 @@ public class ServerSessionDelegate extends SessionDelegate
         if(exchange != null)
         {
             result.setDurable(exchange.isDurable());
-            result.setType(exchange.getTypeShortString().toString());
+            result.setType(exchange.getTypeName());
             result.setNotFound(false);
         }
         else
@@ -953,9 +950,9 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 exception(session, method, ExecutionErrorCode.NOT_FOUND, "Exchange: '" + method.getExchange() + "' not found");
             }
-            else if(exchange.getTypeShortString().equals(HeadersExchange.TYPE.getName()) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
+            else if(exchange.getType().equals(HeadersExchange.TYPE) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
             {
-                exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getName() + " require an x-match header");
+                exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getType() + " require an x-match header");
             }
             else
             {
@@ -1422,7 +1419,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         if(queue != null)
         {
-            result.setQueue(queue.getNameShortString().toString());
+            result.setQueue(queue.getName());
             result.setDurable(queue.isDurable());
             result.setExclusive(queue.isExclusive());
             result.setAutoDelete(queue.isAutoDelete());

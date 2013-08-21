@@ -67,13 +67,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -767,7 +765,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
         for(ExchangeType<? extends org.apache.qpid.server.exchange.Exchange> type : types)
         {
-            exchangeTypes.add(type.getName().asString());
+            exchangeTypes.add(type.getType());
         }
         return Collections.unmodifiableCollection(exchangeTypes);
     }
@@ -921,7 +919,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             List<String> types = new ArrayList<String>();
             for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeTypes())
             {
-                types.add(type.getName().asString());
+                types.add(type.getType());
             }
             return Collections.unmodifiableCollection(types);
         }

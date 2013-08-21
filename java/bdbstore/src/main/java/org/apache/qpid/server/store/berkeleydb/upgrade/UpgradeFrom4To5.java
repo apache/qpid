@@ -148,7 +148,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
                     // if the queue name is in the gathered list then inspect its binding arguments
                     // only topic exchange should have a JMS selector key in binding
                     if (potentialDurableSubs.contains(queueName)
-                            && exchangeName.equals(ExchangeDefaults.TOPIC_EXCHANGE_NAME))
+                            && exchangeName.equals(AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_NAME)))
                     {
                         if (arguments == null)
                         {
@@ -342,11 +342,11 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
 
                 FieldTable emptyArguments = new FieldTable();
                 addBindingToDatabase(bindingTuple, newBindingsDatabase, transaction, queueNameAMQ,
-                        ExchangeDefaults.DIRECT_EXCHANGE_NAME, queueNameAMQ, emptyArguments);
+                        AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_NAME), queueNameAMQ, emptyArguments);
 
                 // TODO QPID-3490 we should not persist a default exchange binding
                 addBindingToDatabase(bindingTuple, newBindingsDatabase, transaction, queueNameAMQ,
-                        ExchangeDefaults.DEFAULT_EXCHANGE_NAME, queueNameAMQ, emptyArguments);
+                        AMQShortString.valueOf(ExchangeDefaults.DEFAULT_EXCHANGE_NAME), queueNameAMQ, emptyArguments);
             }
         };
         new DatabaseTemplate(environment, NEW_QUEUE_DB_NAME, NEW_BINDINGS_DB_NAME, transaction).run(queueCreateOperation);
@@ -364,7 +364,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
                     DatabaseEntry key, DatabaseEntry value)
             {
                 ExchangeRecord record = binding.entryToObject(value);
-                if (ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(record.getType()))
+                if (AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS).equals(record.getType()))
                 {
                     topicExchanges.add(record.getName());
                 }

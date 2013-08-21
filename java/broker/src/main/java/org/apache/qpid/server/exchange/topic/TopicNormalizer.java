@@ -20,46 +20,36 @@
  */
 package org.apache.qpid.server.exchange.topic;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.AMQShortStringTokenizer;
-
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TopicNormalizer
 {
-    private static final byte TOPIC_SEPARATOR = (byte)'.';
-    private static final byte HASH_BYTE = (byte)'#';
-    private static final byte STAR_BYTE = (byte)'*';
 
-    private static final AMQShortString TOPIC_SEPARATOR_AS_SHORTSTRING = new AMQShortString(".");
-    private static final AMQShortString AMQP_STAR_TOKEN = new AMQShortString("*");
-    private static final AMQShortString AMQP_HASH_TOKEN = new AMQShortString("#");
+    private static final String STAR_TOKEN = "*";
+    private static final String HASH_TOKEN = "#";
+    private static final String SEPARATOR = ".";
+
 
     private TopicNormalizer()
     {
     }
 
-    public static AMQShortString normalize(AMQShortString routingKey)
+    public static String normalize(String routingKey)
     {
         if(routingKey == null)
         {
-            return AMQShortString.EMPTY_STRING;
+            return "";
         }
-        else if(!(routingKey.contains(HASH_BYTE) || routingKey.contains(STAR_BYTE)))
+        else if(!(routingKey.contains(HASH_TOKEN) || !routingKey.contains(STAR_TOKEN)))
         {
             return routingKey;
         }
         else
         {
-            AMQShortStringTokenizer routingTokens = routingKey.tokenize(TOPIC_SEPARATOR);
-
-            List<AMQShortString> subscriptionList = new ArrayList<AMQShortString>();
-
-            while (routingTokens.hasMoreTokens())
-            {
-                subscriptionList.add(routingTokens.nextToken());
-            }
+            List<String> subscriptionList = new ArrayList<String>(Arrays.asList(routingKey.split("\\.")));
 
             int size = subscriptionList.size();
 
@@ -68,9 +58,9 @@ public class TopicNormalizer
                 // if there are more levels
                 if ((index + 1) < size)
                 {
-                    if (subscriptionList.get(index).equals(AMQP_HASH_TOKEN))
+                    if (subscriptionList.get(index).equals(HASH_TOKEN))
                     {
-                        if (subscriptionList.get(index + 1).equals(AMQP_HASH_TOKEN))
+                        if (subscriptionList.get(index + 1).equals(HASH_TOKEN))
                         {
                             // we don't need #.# delete this one
                             subscriptionList.remove(index);
@@ -79,7 +69,7 @@ public class TopicNormalizer
                             index--;
                         }
 
-                        if (subscriptionList.get(index + 1).equals(AMQP_STAR_TOKEN))
+                        if (subscriptionList.get(index + 1).equals(STAR_TOKEN))
                         {
                             // we don't want #.* swap to *.#
                             // remove it and put it in at index + 1
@@ -89,11 +79,14 @@ public class TopicNormalizer
                 } // if we have more levels
             }
 
-
-
-            AMQShortString normalizedString = AMQShortString.join(subscriptionList, TOPIC_SEPARATOR_AS_SHORTSTRING);
-
-            return normalizedString;
+            Iterator<String> iter = subscriptionList.iterator();
+            StringBuilder builder = new StringBuilder(iter.next());
+            while(iter.hasNext())
+            {
+                builder.append(SEPARATOR).append(iter.next());
+            }
+            return builder.toString();
         }
     }
+
 }

@@ -95,7 +95,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         }
         catch (IllegalStateException e)
         {
-            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _directExchangeType.getName(), e.getMessage());
+            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _directExchangeType.getType(), e.getMessage());
         }
     }
 
@@ -112,7 +112,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         }
         catch (IllegalStateException e)
         {
-            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _topicExchangeType.getName(), e.getMessage());
+            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _topicExchangeType.getType(), e.getMessage());
         }
     }
 
@@ -129,7 +129,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         }
         catch (IllegalStateException e)
         {
-            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _fanoutExchangeType.getName(), e.getMessage());
+            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _fanoutExchangeType.getType(), e.getMessage());
         }
     }
 
@@ -146,7 +146,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         }
         catch (IllegalStateException e)
         {
-            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _headersExchangeType.getName(), e.getMessage());
+            assertEquals("Unexpected exception message", "Did not find expected exchange type: " + _headersExchangeType.getType(), e.getMessage());
         }
     }
 
@@ -163,7 +163,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         catch (IllegalStateException e)
         {
             assertTrue( "Unexpected exception message", e.getMessage().contains("ExchangeType with type name '"
-                    + _directExchangeType.getName() + "' is already registered using class '"
+                    + _directExchangeType.getType() + "' is already registered using class '"
                     + DirectExchangeType.class.getName()));
         }
     }
@@ -175,24 +175,18 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
             @Override
             public String getType()
             {
-                return getName().toString();
+                return "my-custom-exchange";
             }
 
             @Override
-            public AMQShortString getName()
-            {
-                return new AMQShortString("my-custom-exchange");
-            }
-
-            @Override
-            public Exchange newInstance(UUID id, VirtualHost host, AMQShortString name, boolean durable,
+            public Exchange newInstance(UUID id, VirtualHost host, String name, boolean durable,
                                         boolean autoDelete) throws AMQException
             {
                 return null;
             }
 
             @Override
-            public AMQShortString getDefaultExchangeName()
+            public String getDefaultExchangeName()
             {
                 return null;
             }

@@ -30,8 +30,9 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public interface ExchangeType<T extends Exchange> extends Pluggable
 {
     public String getType();
-    public AMQShortString getName();
-    public T newInstance(UUID id, VirtualHost host, AMQShortString name,
+
+    public T newInstance(UUID id, VirtualHost host, String name,
                          boolean durable, boolean autoDelete) throws AMQException;
-    public AMQShortString getDefaultExchangeName();
+
+    public String getDefaultExchangeName();
 }

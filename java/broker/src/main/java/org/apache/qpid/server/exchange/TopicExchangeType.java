@@ -33,16 +33,11 @@ public class TopicExchangeType implements ExchangeType<TopicExchange>
     @Override
     public String getType()
     {
-        return getName().toString();
-    }
-
-    public AMQShortString getName()
-    {
         return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
     }
 
     public TopicExchange newInstance(UUID id, VirtualHost host,
-                                     AMQShortString name,
+                                     String name,
                                      boolean durable,
                                      boolean autoDelete) throws AMQException
     {
@@ -51,7 +46,7 @@ public class TopicExchangeType implements ExchangeType<TopicExchange>
         return exch;
     }
 
-    public AMQShortString getDefaultExchangeName()
+    public String getDefaultExchangeName()
     {
         return ExchangeDefaults.TOPIC_EXCHANGE_NAME;
     }

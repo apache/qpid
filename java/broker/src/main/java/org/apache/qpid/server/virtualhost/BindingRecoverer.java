@@ -114,7 +114,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             {
                 if(_exchange.getBinding(_bindingName, _queue, _bindingArgumentsMap) == null)
                 {
-                    _logger.info("Restoring binding: (Exchange: " + _exchange.getNameShortString() + ", Queue: " + _queue.getName()
+                    _logger.info("Restoring binding: (Exchange: " + _exchange.getName() + ", Queue: " + _queue.getName()
                                  + ", Routing Key: " + _bindingName + ", Arguments: " + _bindingArgumentsMap + ")");
 
                     _exchange.restoreBinding(_bindingId, _bindingName, _queue, _bindingArgumentsMap);

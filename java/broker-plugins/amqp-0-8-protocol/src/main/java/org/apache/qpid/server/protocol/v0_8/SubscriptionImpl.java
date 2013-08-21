@@ -349,7 +349,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _noLocal = noLocal;
 
 
-        _filters = FilterManagerFactory.createManager(arguments);
+        _filters = FilterManagerFactory.createManager(FieldTable.convertToMap(arguments));
 
         _deliveryMethod = deliveryMethod;
         _recordMethod = recordMethod;

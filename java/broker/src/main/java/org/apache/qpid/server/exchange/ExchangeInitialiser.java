@@ -22,7 +22,6 @@ package org.apache.qpid.server.exchange;
 
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -33,7 +32,7 @@ public class ExchangeInitialiser
     {
         for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
         {
-            define (registry, factory, type.getDefaultExchangeName().toString(), type.getName().toString(), store);
+            define (registry, factory, type.getDefaultExchangeName(), type.getType(), store);
         }
 
     }

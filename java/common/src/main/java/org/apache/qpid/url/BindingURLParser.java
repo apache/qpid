@@ -204,14 +204,14 @@ public class BindingURLParser
         // "myQueue?durable='true'" use case
         else if (nextChar == QUESTION_MARK_CHAR)
         {
-            _bindingURL.setExchangeClass(ExchangeDefaults.DIRECT_EXCHANGE_CLASS.asString());
+            _bindingURL.setExchangeClass(ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
             _bindingURL.setExchangeName("");
             _bindingURL.setQueueName(builder.toString());
             return BindingURLParserState.QUESTION_MARK_CHAR;
         }
         else
         {
-            _bindingURL.setExchangeClass(ExchangeDefaults.DIRECT_EXCHANGE_CLASS.asString());
+            _bindingURL.setExchangeClass(ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
             _bindingURL.setExchangeName("");
             _bindingURL.setQueueName(builder.toString());
             return BindingURLParserState.BINDING_URL_END;

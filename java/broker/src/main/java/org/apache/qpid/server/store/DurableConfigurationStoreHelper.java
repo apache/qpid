@@ -53,7 +53,7 @@ public class DurableConfigurationStoreHelper
     {
         Map<String, Object> attributesMap = new LinkedHashMap<String, Object>();
         attributesMap.put(Queue.NAME, queue.getName());
-        attributesMap.put(Queue.OWNER, AMQShortString.toString(queue.getOwner()));
+        attributesMap.put(Queue.OWNER, queue.getOwner());
         attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
 
         if (queue.getAlternateExchange() != null)
@@ -79,7 +79,7 @@ public class DurableConfigurationStoreHelper
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Queue.NAME, queue.getName());
-        attributesMap.put(Queue.OWNER, AMQShortString.toString(queue.getOwner()));
+        attributesMap.put(Queue.OWNER, queue.getOwner());
         attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
         if (queue.getAlternateExchange() != null)
         {
@@ -106,7 +106,7 @@ public class DurableConfigurationStoreHelper
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Exchange.NAME, exchange.getName());
-        attributesMap.put(Exchange.TYPE, AMQShortString.toString(exchange.getTypeShortString()));
+        attributesMap.put(Exchange.TYPE, exchange.getTypeName());
         attributesMap.put(Exchange.LIFETIME_POLICY, exchange.isAutoDelete() ? LifetimePolicy.AUTO_DELETE.name()
                 : LifetimePolicy.PERMANENT.name());
         store.create(exchange.getId(), EXCHANGE, attributesMap);

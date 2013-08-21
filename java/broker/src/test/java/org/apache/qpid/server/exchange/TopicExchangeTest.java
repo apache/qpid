@@ -316,7 +316,6 @@ public class TopicExchangeTest extends QpidTestCase
     {
         InboundMessage inboundMessage = mock(InboundMessage.class);
         when(inboundMessage.getRoutingKey()).thenReturn(routingKey);
-        when(inboundMessage.getRoutingKeyShortString()).thenReturn(new AMQShortString(routingKey));
         List<? extends BaseQueue> queues = _exchange.route(inboundMessage);
         ServerMessage message = mock(ServerMessage.class);
         MessageReference ref = mock(MessageReference.class);

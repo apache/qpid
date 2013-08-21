@@ -97,11 +97,6 @@ public class Message_1_0 implements ServerMessage<MessageMetaData_1_0>, InboundM
         }
     }
 
-    public AMQShortString getRoutingKeyShortString()
-    {
-        return AMQShortString.valueOf(getRoutingKey());
-    }
-
     private MessageMetaData_1_0 getMessageMetaData()
     {
         return _storedMessage.getMetaData();

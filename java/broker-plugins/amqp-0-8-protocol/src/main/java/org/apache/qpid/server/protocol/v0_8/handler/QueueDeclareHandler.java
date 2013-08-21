@@ -102,7 +102,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     && (owningSession == null || owningSession.getConnectionModel() != protocolConnection))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
                 }
 
                 //set this as the default queue on the channel:
@@ -153,13 +153,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 if (queue.isExclusive() && !queue.isDurable() && (owningSession == null || owningSession.getConnectionModel() != protocolConnection))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
                 }
                 else if(queue.isExclusive() != body.getExclusive())
                 {
 
                     throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
-                            "Cannot re-declare queue '" + queue.getNameShortString() + "' with different exclusivity (was: "
+                            "Cannot re-declare queue '" + queue.getName() + "' with different exclusivity (was: "
                             + queue.isExclusive() + " requested " + body.getExclusive() + ")");
                 }
                 else if (body.getExclusive() && !(queue.isDurable() ? String.valueOf(queue.getOwner()).equals(session.getClientID()) : (owningSession == null || owningSession.getConnectionModel() == protocolConnection)))
@@ -173,13 +173,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 else if(queue.isAutoDelete() != body.getAutoDelete())
                 {
                     throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
-                                                      "Cannot re-declare queue '" + queue.getNameShortString() + "' with different auto-delete (was: "
+                                                      "Cannot re-declare queue '" + queue.getName() + "' with different auto-delete (was: "
                                                         + queue.isAutoDelete() + " requested " + body.getAutoDelete() + ")");
                 }
                 else if(queue.isDurable() != body.getDurable())
                 {
                     throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
-                                                      "Cannot re-declare queue '" + queue.getNameShortString() + "' with different durability (was: "
+                                                      "Cannot re-declare queue '" + queue.getName() + "' with different durability (was: "
                                                         + queue.isDurable() + " requested " + body.getDurable() + ")");
                 }
 

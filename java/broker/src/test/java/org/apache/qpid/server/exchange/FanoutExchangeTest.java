@@ -22,11 +22,13 @@ package org.apache.qpid.server.exchange;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySet;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import junit.framework.TestCase;
@@ -61,22 +63,22 @@ public class FanoutExchangeTest extends TestCase
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
-        when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), any(AMQShortString.class))).thenReturn(true);
-        when(securityManager.authoriseUnbind(any(Exchange.class), any(AMQShortString.class), any(AMQQueue.class))).thenReturn(true);
+        when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), anyString())).thenReturn(true);
+        when(securityManager.authoriseUnbind(any(Exchange.class), anyString(), any(AMQQueue.class))).thenReturn(true);
 
-        _exchange.initialise(UUID.randomUUID(), _virtualHost, AMQShortString.valueOf("test"), false, false);
+        _exchange.initialise(UUID.randomUUID(), _virtualHost, "test", false, false);
     }
 
-    public void testIsBoundAMQShortStringFieldTableAMQQueueWhenQueueIsNull()
+    public void testIsBoundStringMapAMQQueueWhenQueueIsNull()
     {
         assertFalse("calling isBound(AMQShortString,FieldTable,AMQQueue) with null queue should return false",
-                _exchange.isBound((AMQShortString) null, (FieldTable) null, (AMQQueue) null));
+                _exchange.isBound((String) null, (Map) null, (AMQQueue) null));
     }
 
-    public void testIsBoundAMQShortStringAMQQueueWhenQueueIsNull()
+    public void testIsBoundStringAMQQueueWhenQueueIsNull()
     {
         assertFalse("calling isBound(AMQShortString,AMQQueue) with null queue should return false",
-                _exchange.isBound((AMQShortString) null, (AMQQueue) null));
+                _exchange.isBound((String) null, (AMQQueue) null));
     }
 
     public void testIsBoundAMQQueueWhenQueueIsNull()
@@ -84,18 +86,18 @@ public class FanoutExchangeTest extends TestCase
         assertFalse("calling isBound(AMQQueue) with null queue should return false", _exchange.isBound((AMQQueue) null));
     }
 
-    public void testIsBoundAMQShortStringFieldTableAMQQueue() throws AMQSecurityException, AMQInternalException
+    public void testIsBoundStringMapAMQQueue() throws AMQSecurityException, AMQInternalException
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
-                _exchange.isBound(new AMQShortString("matters"), (FieldTable) null, queue));
+                _exchange.isBound("matters", null, queue));
     }
 
-    public void testIsBoundAMQShortStringAMQQueue() throws AMQSecurityException, AMQInternalException
+    public void testIsBoundStringAMQQueue() throws AMQSecurityException, AMQInternalException
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
-                _exchange.isBound(new AMQShortString("matters"), queue));
+                _exchange.isBound("matters", queue));
     }
 
     public void testIsBoundAMQQueue() throws AMQSecurityException, AMQInternalException

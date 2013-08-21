@@ -57,7 +57,7 @@ public enum NotificationCheck
                 if (messageSize >= maximumMessageSize)
                 {
                     String notificationMsg = messageSize + "b : Maximum message size threshold ("+ maximumMessageSize +") breached. [Message ID=" + msg.getMessageNumber() + "]";
-                    
+
                     logNotification(this, queue, notificationMsg);
                     listener.notifyClients(this, queue, notificationMsg);
                     return true;
@@ -81,7 +81,7 @@ public enum NotificationCheck
                 if (queueDepth >= maximumQueueDepth)
                 {
                     String notificationMsg = (queueDepth>>10) + "Kb : Maximum queue depth threshold ("+(maximumQueueDepth>>10)+"Kb) breached.";
-                    
+
                     logNotification(this, queue, notificationMsg);
                     listener.notifyClients(this, queue, notificationMsg);
                     return true;
@@ -107,7 +107,7 @@ public enum NotificationCheck
                 {
                     long oldestAge = currentTime - firstArrivalTime;
                     String notificationMsg = (oldestAge/1000) + "s : Maximum age on queue threshold ("+(maxMessageAge /1000)+"s) breached.";
-                    
+
                     logNotification(this, queue, notificationMsg);
                     listener.notifyClients(this, queue, notificationMsg);
 
@@ -115,7 +115,7 @@ public enum NotificationCheck
                 }
             }
             return false;
-                    
+
         }
 
     }
@@ -145,6 +145,6 @@ public enum NotificationCheck
     //A bit of a hack, only for use until we do the logging listener
     private static void logNotification(NotificationCheck notification, AMQQueue queue, String notificationMsg)
     {
-        LOGGER.info(notification.name() + " On Queue " + queue.getNameShortString() + " - " + notificationMsg);
+        LOGGER.info(notification.name() + " On Queue " + queue.getName() + " - " + notificationMsg);
     }
 }

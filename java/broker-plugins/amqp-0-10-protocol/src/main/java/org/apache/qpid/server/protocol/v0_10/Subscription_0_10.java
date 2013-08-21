@@ -600,7 +600,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 //output operational logging for each delivery post commit
                 for (final BaseQueue destinationQueue : destinationQueues)
                 {
-                    logActor.message( ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getNameShortString().asString()));
+                    logActor.message( ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getName()));
                 }
             }
         }
@@ -875,7 +875,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public String toLogString()
     {
         String queueInfo = MessageFormat.format(QUEUE_FORMAT, _queue.getVirtualHost().getName(),
-                  _queue.getNameShortString());
+                  _queue.getName());
         String result = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getSubscriptionID()) + "("
                 // queueString is "vh(/{0})/qu({1}) " so need to trim
                 + queueInfo.substring(0, queueInfo.length() - 1) + ")" + "] ";

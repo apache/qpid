@@ -92,8 +92,8 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
 
                 Exchange exchange = vhost.getExchange(exchangeName);
                 String exchangeClass = exchange == null
-                                            ? ExchangeDefaults.DIRECT_EXCHANGE_CLASS.asString()
-                                            : exchange.getType().getName().asString();
+                                            ? ExchangeDefaults.DIRECT_EXCHANGE_CLASS
+                                            : exchange.getTypeName();
                 props.setReplyTo(exchangeClass + "://" + exchangeName + "//?routingkey='" + (routingKey == null
                                                                                              ? ""
                                                                                              : routingKey + "'"));
