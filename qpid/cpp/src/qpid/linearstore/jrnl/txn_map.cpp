@@ -27,9 +27,9 @@
 #include "qpid/linearstore/jrnl/slock.h"
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 // return/error codes
@@ -241,5 +241,4 @@ txn_map::xid_list(std::vector<std::string>& xv)
     }
 }
 
-} // namespace journal
-} // namespace mrg
+}}

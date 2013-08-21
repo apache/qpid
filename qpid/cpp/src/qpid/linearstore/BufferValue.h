@@ -26,8 +26,8 @@
 #include "qpid/broker/Persistable.h"
 #include "qpid/framing/Buffer.h"
 
-namespace mrg{
-namespace msgstore{
+namespace qpid{
+namespace linearstore{
 
 class BufferValue : public Dbt
 {

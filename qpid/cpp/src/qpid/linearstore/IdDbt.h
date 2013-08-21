@@ -24,8 +24,8 @@
 
 #include "db-inc.h"
 
-namespace mrg{
-namespace msgstore{
+namespace qpid{
+namespace linearstore{
 
 class IdDbt : public Dbt
 {

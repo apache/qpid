@@ -47,8 +47,8 @@ namespace qpid { namespace sys {
 class Timer;
 }}
 
-namespace mrg {
-namespace msgstore {
+namespace qpid{
+namespace linearstore{
 
 /**
  * An implementation of the MessageStore interface based on Berkeley DB

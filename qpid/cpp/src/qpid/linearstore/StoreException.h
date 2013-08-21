@@ -25,8 +25,8 @@
 #include "qpid/linearstore/IdDbt.h"
 #include <boost/format.hpp>
 
-namespace mrg{
-namespace msgstore{
+namespace qpid{
+namespace linearstore{
 
 class StoreException : public std::exception
 {

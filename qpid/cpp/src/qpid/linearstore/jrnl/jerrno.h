@@ -22,21 +22,20 @@
 #ifndef QPID_LEGACYSTORE_JRNL_JERRNO_H
 #define QPID_LEGACYSTORE_JRNL_JERRNO_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class jerrno;
-}
-}
+}}
 
 #include <map>
 #include <stdint.h>
 #include <string>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -156,7 +155,6 @@ namespace journal
         static bool __init();
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_JERRNO_H

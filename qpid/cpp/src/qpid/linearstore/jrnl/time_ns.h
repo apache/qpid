@@ -26,9 +26,9 @@
 #include <ctime>
 #include <string>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 struct time_ns : public timespec
@@ -88,7 +88,6 @@ struct time_ns : public timespec
        { if(tv_sec == rhs.tv_sec) return tv_nsec <= rhs.tv_nsec; return tv_sec <= rhs.tv_sec; }
 };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_TIME_NS_H

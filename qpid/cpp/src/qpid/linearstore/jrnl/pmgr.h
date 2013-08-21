@@ -22,14 +22,13 @@
 #ifndef QPID_LEGACYSTORE_JRNL_PMGR_H
 #define QPID_LEGACYSTORE_JRNL_PMGR_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
     class pmgr;
     class jcntl;
-}
-}
+}}
 
 #include <deque>
 #include "qpid/linearstore/jrnl/aio.h"
@@ -42,9 +41,9 @@ namespace journal
 #include "qpid/linearstore/jrnl/txn_map.h"
 #include "qpid/linearstore/jrnl/txn_rec.h"
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -125,7 +124,6 @@ namespace journal
         virtual void clean();
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_PMGR_H

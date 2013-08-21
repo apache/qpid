@@ -28,9 +28,9 @@
 #include "qpid/linearstore/jrnl/jerrno.h"
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 rmgr::rmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, rrfc& rrfc*/):
@@ -702,5 +702,4 @@ rmgr::discard(data_tok* dtokp)
 }
 */
 
-} // namespace journal
-} // namespace mrg
+}}

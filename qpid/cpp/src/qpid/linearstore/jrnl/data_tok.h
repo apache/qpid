@@ -22,13 +22,12 @@
 #ifndef QPID_LEGACYSTORE_JRNL_DATA_TOK_H
 #define QPID_LEGACYSTORE_JRNL_DATA_TOK_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class data_tok;
-}
-}
+}}
 
 #include <cassert>
 #include <cstddef>
@@ -36,10 +35,9 @@ class data_tok;
 #include <pthread.h>
 #include <string>
 
-namespace mrg
+namespace qpid
 {
-
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -154,7 +152,7 @@ namespace journal
         std::string status_str() const;
     };
 
-} // namespace journal
-} // namespace mrg
+} // namespace qls_jrnl
+} // namespace jrnl
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_DATA_TOK_H

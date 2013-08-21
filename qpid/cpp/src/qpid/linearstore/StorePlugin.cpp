@@ -26,7 +26,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/linearstore/MessageStoreImpl.h"
 
-using mrg::msgstore::MessageStoreImpl;
+using qpid::linearstore::MessageStoreImpl;
 
 namespace qpid {
 namespace broker {

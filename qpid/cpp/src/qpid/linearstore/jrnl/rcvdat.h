@@ -30,9 +30,9 @@
 #include <stdint.h>
 #include <vector>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
         struct rcvdat
@@ -165,7 +165,6 @@ namespace journal
                 return oss.str();
             }
         };
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_RCVDAT_H

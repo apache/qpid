@@ -28,8 +28,8 @@
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FieldTable.h"
 
-namespace mrg{
-namespace msgstore{
+namespace qpid{
+namespace linearstore{
 
 class BindingDbt : public Dbt
 {

@@ -21,8 +21,8 @@
 
 #include "qpid/linearstore/BufferValue.h"
 
-namespace mrg {
-namespace msgstore {
+namespace qpid {
+namespace linearstore {
 
 
 

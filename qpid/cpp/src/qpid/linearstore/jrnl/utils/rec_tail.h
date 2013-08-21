@@ -24,6 +24,10 @@
 #include <stdint.h>
 #include "rec_hdr.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #pragma pack(1)
 
 /**
@@ -59,5 +63,9 @@ void rec_tail_init(rec_tail_t* dest, const uint32_t xmagic, const uint32_t check
 void rec_tail_copy(rec_tail_t* dest, const rec_hdr_t* src, const uint32_t checksum);
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifnedf QPID_LEGACYSTORE_JRNL_UTILS_REC_TAIL_H */

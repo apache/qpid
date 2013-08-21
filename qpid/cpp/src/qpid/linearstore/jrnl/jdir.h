@@ -22,21 +22,20 @@
 #ifndef QPID_LEGACYSTORE_JRNL_JDIR_H
 #define QPID_LEGACYSTORE_JRNL_JDIR_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class jdir;
-}
-}
+}}
 
 //#include "qpid/linearstore/jrnl/jinf.h"
 #include <dirent.h>
 #include <string>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -362,7 +361,6 @@ namespace journal
         static void close_dir(DIR* dir, const std::string& dir_name, const std::string& fn_name);
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_JDIR_H

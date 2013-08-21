@@ -23,6 +23,10 @@
 
 #include "rec_hdr.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #pragma pack(1)
 
 /**
@@ -58,5 +62,9 @@ void txn_hdr_init(txn_hdr_t* dest, const uint32_t magic, const uint16_t version,
 void txn_hdr_copy(txn_hdr_t* dest, const txn_hdr_t* src);
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_TXN_HDR_H */

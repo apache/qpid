@@ -24,6 +24,10 @@
 #include <time.h>
 #include "rec_hdr.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #pragma pack(1)
 
 /**
@@ -86,5 +90,9 @@ int  set_time_now(file_hdr_t *fh);
 void set_time(file_hdr_t *fh, struct timespec *ts);
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H */

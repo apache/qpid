@@ -35,12 +35,13 @@
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/linearstore/Journal.h"
 
-namespace qpid { namespace sys {
+namespace qpid {
+namespace sys {
 class Timer;
 }}
 
-namespace mrg {
-namespace msgstore {
+namespace qpid{
+namespace linearstore{
 
 class JournalImpl;
 
@@ -68,7 +69,7 @@ class GetEventsFireEvent : public qpid::sys::TimerTask
     inline void cancel() { qpid::sys::Mutex::ScopedLock sl(_gefe_lock); _parent = 0; }
 };
 
-class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal::jcntl, public mrg::journal::aio_callback
+class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jrnl::jcntl, public qpid::qls_jrnl::aio_callback
 {
   public:
     typedef boost::function<void (JournalImpl&)> DeleteCallback;
@@ -94,7 +95,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
     void* _xidp;
     void* _datap;
     size_t _dlen;
-    mrg::journal::data_tok _dtok;
+    qpid::qls_jrnl::data_tok _dtok;
     bool _external;
 
     qpid::management::ManagementAgent* _agent;
@@ -122,7 +123,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
                     const u_int32_t jfsize_sblks,*/
                     const u_int16_t wcache_num_pages,
                     const u_int32_t wcache_pgsize_sblks,
-                    mrg::journal::aio_callback* const cbp);
+                    qpid::qls_jrnl::aio_callback* const cbp);
 
     inline void initialize(/*const u_int16_t num_jfiles,
                            const bool auto_expand,
@@ -140,8 +141,8 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
                  const u_int32_t jfsize_sblks,*/
                  const u_int16_t wcache_num_pages,
                  const u_int32_t wcache_pgsize_sblks,
-                 mrg::journal::aio_callback* const cbp,
-                 boost::ptr_list<msgstore::PreparedTransaction>* prep_tx_list_ptr,
+                 qpid::qls_jrnl::aio_callback* const cbp,
+                 boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
                  u_int64_t& highest_rid,
                  u_int64_t queue_id);
 
@@ -151,7 +152,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
                         const u_int32_t jfsize_sblks,*/
                         const u_int16_t wcache_num_pages,
                         const u_int32_t wcache_pgsize_sblks,
-                        boost::ptr_list<msgstore::PreparedTransaction>* prep_tx_list_ptr,
+                        boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
                         u_int64_t& highest_rid,
                         u_int64_t queue_id) {
         recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
@@ -167,42 +168,42 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
 
     // Overrides for write inactivity timer
     void enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
-                             const size_t this_data_len, mrg::journal::data_tok* dtokp,
+                             const size_t this_data_len, qpid::qls_jrnl::data_tok* dtokp,
                              const bool transient = false);
 
-    void enqueue_extern_data_record(const size_t tot_data_len, mrg::journal::data_tok* dtokp,
+    void enqueue_extern_data_record(const size_t tot_data_len, qpid::qls_jrnl::data_tok* dtokp,
                                     const bool transient = false);
 
     void enqueue_txn_data_record(const void* const data_buff, const size_t tot_data_len,
-                                 const size_t this_data_len, mrg::journal::data_tok* dtokp, const std::string& xid,
+                                 const size_t this_data_len, qpid::qls_jrnl::data_tok* dtokp, const std::string& xid,
                                  const bool transient = false);
 
-    void enqueue_extern_txn_data_record(const size_t tot_data_len, mrg::journal::data_tok* dtokp,
+    void enqueue_extern_txn_data_record(const size_t tot_data_len, qpid::qls_jrnl::data_tok* dtokp,
                                         const std::string& xid, const bool transient = false);
 
-    void dequeue_data_record(mrg::journal::data_tok* const dtokp, const bool txn_coml_commit = false);
+    void dequeue_data_record(qpid::qls_jrnl::data_tok* const dtokp, const bool txn_coml_commit = false);
 
-    void dequeue_txn_data_record(mrg::journal::data_tok* const dtokp, const std::string& xid, const bool txn_coml_commit = false);
+    void dequeue_txn_data_record(qpid::qls_jrnl::data_tok* const dtokp, const std::string& xid, const bool txn_coml_commit = false);
 
-    void txn_abort(mrg::journal::data_tok* const dtokp, const std::string& xid);
+    void txn_abort(qpid::qls_jrnl::data_tok* const dtokp, const std::string& xid);
 
-    void txn_commit(mrg::journal::data_tok* const dtokp, const std::string& xid);
+    void txn_commit(qpid::qls_jrnl::data_tok* const dtokp, const std::string& xid);
 
     void stop(bool block_till_aio_cmpl = false);
 
     // Logging
-    void log(mrg::journal::log_level level, const std::string& log_stmt) const;
-    void log(mrg::journal::log_level level, const char* const log_stmt) const;
+    void log(qpid::qls_jrnl::log_level level, const std::string& log_stmt) const;
+    void log(qpid::qls_jrnl::log_level level, const char* const log_stmt) const;
 
     // Overrides for get_events timer
-    mrg::journal::iores flush(const bool block_till_aio_cmpl = false);
+    qpid::qls_jrnl::iores flush(const bool block_till_aio_cmpl = false);
 
     // TimerTask callback
     void getEventsFire();
     void flushFire();
 
     // AIO callbacks
-    virtual void wr_aio_cb(std::vector<mrg::journal::data_tok*>& dtokl);
+    virtual void wr_aio_cb(std::vector<qpid::qls_jrnl::data_tok*>& dtokl);
     virtual void rd_aio_cb(std::vector<u_int16_t>& pil);
 
     qpid::management::ManagementObject::shared_ptr GetManagementObject (void) const
@@ -223,7 +224,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public mrg::journal
         timer.add(getEventsFireEventsPtr);
         getEventsTimerSetFlag = true;
     }
-    void handleIoResult(const mrg::journal::iores r);
+    void handleIoResult(const qpid::qls_jrnl::iores r);
 
     // Management instrumentation callbacks overridden from jcntl
     inline void instr_incr_outstanding_aio_cnt() {
@@ -251,9 +252,9 @@ class TplJournalImpl : public JournalImpl
     virtual ~TplJournalImpl() {}
 
     // Special version of read_data_record that ignores transactions - needed when reading the TPL
-    inline mrg::journal::iores read_data_record(void** const datapp, std::size_t& dsize,
+    inline qpid::qls_jrnl::iores read_data_record(void** const datapp, std::size_t& dsize,
                                                 void** const xidpp, std::size_t& xidsize, bool& transient, bool& external,
-                                                mrg::journal::data_tok* const dtokp) {
+                                                qpid::qls_jrnl::data_tok* const dtokp) {
         return JournalImpl::read_data_record(datapp, dsize, xidpp, xidsize, transient, external, dtokp, true);
     }
     inline void read_reset() { _rmgr.invalidate(); }

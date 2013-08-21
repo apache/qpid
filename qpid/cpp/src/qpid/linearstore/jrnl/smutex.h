@@ -25,9 +25,9 @@
 #include "qpid/linearstore/jrnl/jexception.h"
 #include <pthread.h>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     // Ultra-simple scoped mutex class that allows a posix mutex to be initialized and destroyed with error checks
@@ -47,7 +47,6 @@ namespace journal
         inline pthread_mutex_t* get() const { return &_m; }
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_SMUTEX_H

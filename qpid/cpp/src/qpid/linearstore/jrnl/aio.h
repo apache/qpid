@@ -26,9 +26,9 @@
 #include <cstring>
 #include <string.h>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 typedef iocb aio_cb;
@@ -135,7 +135,6 @@ public:
     }
 };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_AIO_H

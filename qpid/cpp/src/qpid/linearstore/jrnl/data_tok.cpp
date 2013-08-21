@@ -27,9 +27,9 @@
 #include "qpid/linearstore/jrnl/slock.h"
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 // Static members
@@ -179,5 +179,4 @@ data_tok::status_str() const
     return oss.str();
 }
 
-} // namespace journal
-} // namespace mrg
+}}

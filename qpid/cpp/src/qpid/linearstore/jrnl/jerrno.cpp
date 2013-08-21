@@ -21,9 +21,9 @@
 
 #include "qpid/linearstore/jrnl/jerrno.h"
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 std::map<uint32_t, const char*> jerrno::_err_map;
@@ -236,5 +236,4 @@ jerrno::err_msg(const uint32_t err_no) throw ()
     return _err_map_itr->second;
 }
 
-} // namespace journal
-} // namespace mrg
+}}

@@ -22,21 +22,20 @@
 #ifndef QPID_LEGACYSTORE_JRNL_ENQ_REC_H
 #define QPID_LEGACYSTORE_JRNL_ENQ_REC_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class enq_rec;
-}
-}
+}}
 
 #include <cstddef>
 #include "qpid/linearstore/jrnl/utils/enq_hdr.h"
 #include "qpid/linearstore/jrnl/jrec.h"
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -100,7 +99,6 @@ namespace journal
         virtual void clean();
     }; // class enq_rec
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_ENQ_REC_H

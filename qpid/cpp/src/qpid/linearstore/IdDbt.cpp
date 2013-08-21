@@ -21,7 +21,7 @@
 
 #include "qpid/linearstore/IdDbt.h"
 
-using namespace mrg::msgstore;
+using namespace qpid::linearstore;
 
 IdDbt::IdDbt() : id(0)
 {

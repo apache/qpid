@@ -22,13 +22,12 @@
 #ifndef QPID_LEGACYSTORE_JRNL_RMGR_H
 #define QPID_LEGACYSTORE_JRNL_RMGR_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class rmgr;
-}
-}
+}}
 
 #include <cstring>
 #include "qpid/linearstore/jrnl/enums.h"
@@ -38,9 +37,9 @@ class rmgr;
 //#include "qpid/linearstore/jrnl/rrfc.h"
 #include "qpid/linearstore/jrnl/utils/file_hdr.h"
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -98,7 +97,6 @@ namespace journal
         void init_file_header_read();
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_RMGR_H

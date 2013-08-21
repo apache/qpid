@@ -30,9 +30,9 @@
 #include "qpid/linearstore/jrnl/jexception.h"
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 // Constructor used for read operations, where buf contains preallocated space to receive data.
@@ -618,5 +618,4 @@ enq_rec::clean()
     // clean up allocated memory here
 }
 
-} // namespace journal
-} // namespace mrg
+}}

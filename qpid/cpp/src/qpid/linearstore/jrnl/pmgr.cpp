@@ -30,9 +30,9 @@
 #include <sstream>
 
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 pmgr::page_cb::page_cb(uint16_t index):
@@ -200,5 +200,4 @@ pmgr::page_state_str(page_state ps)
     return "<page_state unknown>";
 }
 
-} // namespace journal
-} // namespace mrg
+}}

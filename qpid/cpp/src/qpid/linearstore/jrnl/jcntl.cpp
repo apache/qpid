@@ -36,9 +36,9 @@
 #include <sstream>
 #include <unistd.h>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 #define AIO_CMPL_TIMEOUT_SEC   5
@@ -984,5 +984,4 @@ jcntl::check_journal_alignment(const uint16_t fid, std::streampos& file_pos, rcv
     rd._eo = file_pos;
 }
 
-} // namespace journal
-} // namespace mrg
+}}

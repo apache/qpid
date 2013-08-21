@@ -23,9 +23,9 @@
 
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 const std::string
@@ -40,5 +40,4 @@ time_ns::str(int precision) const
 }
 
 
-} // namespace journal
-} // namespace mrg
+}}

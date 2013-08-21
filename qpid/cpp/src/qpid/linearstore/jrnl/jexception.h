@@ -22,13 +22,12 @@
 #ifndef QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
 #define QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class jexception;
-}
-}
+}}
 
 #include <cerrno>
 #include <cstdio>
@@ -71,9 +70,9 @@ class jexception;
     ::abort(); \
     }
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
     /**
     * \class jexception
@@ -122,7 +121,6 @@ namespace journal
         friend std::ostream& operator<<(std::ostream& os, const jexception* jePtr);
     }; // class jexception
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_JEXCEPTION_H

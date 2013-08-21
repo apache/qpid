@@ -25,9 +25,9 @@
 #include <stdint.h>
 #include <vector>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     class data_tok;
@@ -40,7 +40,6 @@ namespace journal
         virtual void rd_aio_cb(std::vector<uint16_t>& pil) = 0;
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H

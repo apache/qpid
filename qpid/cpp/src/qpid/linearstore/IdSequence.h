@@ -26,8 +26,8 @@
 #include "qpid/sys/Mutex.h"
 #include <sys/types.h>
 
-namespace mrg{
-namespace msgstore{
+namespace qpid{
+namespace linearstore{
 
 class IdSequence
 {

@@ -22,7 +22,7 @@
 #include "qpid/linearstore/PreparedTransaction.h"
 #include <algorithm>
 
-using namespace mrg::msgstore;
+using namespace qpid::linearstore;
 using std::string;
 
 void LockedMappings::add(queue_id queue, message_id message)

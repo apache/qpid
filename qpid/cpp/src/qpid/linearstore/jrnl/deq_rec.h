@@ -22,21 +22,20 @@
 #ifndef QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
 #define QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class deq_rec;
-}
-}
+}}
 
 #include <cstddef>
 #include "qpid/linearstore/jrnl/utils/deq_hdr.h"
 #include "qpid/linearstore/jrnl/jrec.h"
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**

@@ -21,8 +21,8 @@
 
 #include "qpid/linearstore/BindingDbt.h"
 
-namespace mrg {
-namespace msgstore {
+namespace qpid {
+namespace linearstore {
 
 BindingDbt::BindingDbt(const qpid::broker::PersistableExchange& e, const qpid::broker::PersistableQueue& q, const std::string& k, const qpid::framing::FieldTable& a)
   : data(new char[encodedSize(e, q, k, a)]),

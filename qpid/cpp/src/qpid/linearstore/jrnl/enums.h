@@ -22,9 +22,9 @@
 #ifndef QPID_LEGACYSTORE_JRNL_ENUMS_H
 #define QPID_LEGACYSTORE_JRNL_ENUMS_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     // TODO: Change this to flags, as multiple of these conditions may exist simultaneously
@@ -92,7 +92,6 @@ namespace journal
     }
 
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_ENUMS_H

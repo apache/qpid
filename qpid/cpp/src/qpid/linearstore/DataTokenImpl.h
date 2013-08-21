@@ -26,10 +26,10 @@
 #include "qpid/broker/PersistableMessage.h"
 #include <boost/intrusive_ptr.hpp>
 
-namespace mrg {
-namespace msgstore {
+namespace qpid{
+namespace linearstore{
 
-class DataTokenImpl : public journal::data_tok, public qpid::RefCounted
+class DataTokenImpl : public qpid::qls_jrnl::data_tok, public qpid::RefCounted
 {
   private:
     boost::intrusive_ptr<qpid::broker::PersistableMessage> sourceMsg;

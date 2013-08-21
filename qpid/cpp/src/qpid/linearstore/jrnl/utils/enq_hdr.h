@@ -24,6 +24,10 @@
 #include <stdbool.h>
 #include "rec_hdr.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #pragma pack(1)
 
 /**
@@ -68,5 +72,9 @@ bool is_enq_external(const enq_hdr_t *eh);
 void set_enq_external(enq_hdr_t *eh, const bool external);
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_ENQ_HDR_H */

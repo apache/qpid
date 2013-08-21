@@ -32,9 +32,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 jdir::jdir(const std::string& dirname, const std::string& _base_filename):
@@ -447,5 +447,4 @@ operator<<(std::ostream& os, const jdir* jdirPtr)
     return os;
 }
 
-} // namespace journal
-} // namespace mrg
+}}

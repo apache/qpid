@@ -30,9 +30,9 @@
 #include "qpid/linearstore/jrnl/jexception.h"
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 txn_rec::txn_rec():
@@ -437,5 +437,4 @@ txn_rec::clean()
     // clean up allocated memory here
 }
 
-} // namespace journal
-} // namespace mrg
+}}

@@ -29,8 +29,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 
-namespace mrg{
-namespace msgstore{
+namespace qpid{
+namespace linearstore{
 
 typedef u_int64_t queue_id;
 typedef u_int64_t message_id;

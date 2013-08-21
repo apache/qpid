@@ -26,9 +26,9 @@
 #include "qpid/linearstore/jrnl/smutex.h"
 #include <pthread.h>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     // Ultra-simple scoped lock class, auto-releases mutex when it goes out-of-scope
@@ -68,7 +68,6 @@ namespace journal
         inline bool locked() const { return _locked; }
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_SLOCK_H

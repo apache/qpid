@@ -24,6 +24,10 @@
 #include <stdbool.h>
 #include "rec_hdr.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #pragma pack(1)
 
 /**
@@ -69,5 +73,9 @@ bool is_txn_coml_commit(const deq_hdr_t *dh);
 void set_txn_coml_commit(deq_hdr_t *dh, const bool commit);
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_DEQ_HDR_H */

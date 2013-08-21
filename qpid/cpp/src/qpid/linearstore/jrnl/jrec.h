@@ -22,13 +22,12 @@
 #ifndef QPID_LEGACYSTORE_JRNL_JREC_H
 #define QPID_LEGACYSTORE_JRNL_JREC_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 class jrec;
-}
-}
+}}
 
 #include <cstddef>
 #include <fstream>
@@ -37,9 +36,9 @@ class jrec;
 #include "qpid/linearstore/jrnl/utils/rec_tail.h"
 #include <string>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -166,7 +165,6 @@ namespace journal
         virtual void clean() = 0;
     }; // class jrec
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_JREC_H

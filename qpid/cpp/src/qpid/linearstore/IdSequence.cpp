@@ -21,7 +21,7 @@
 
 #include "qpid/linearstore/IdSequence.h"
 
-using namespace mrg::msgstore;
+using namespace qpid::linearstore;
 using qpid::sys::Mutex;
 
 IdSequence::IdSequence() : id(1) {}

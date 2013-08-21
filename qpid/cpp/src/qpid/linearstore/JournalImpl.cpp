@@ -34,8 +34,8 @@
 #include "qpid/sys/Timer.h"
 #include "qpid/linearstore/StoreException.h"
 
-using namespace mrg::msgstore;
-using namespace mrg::journal;
+using namespace qpid::qls_jrnl;
+using namespace qpid::linearstore;
 using qpid::management::ManagementAgent;
 namespace _qmf = qmf::org::apache::qpid::linearstore;
 
@@ -138,7 +138,7 @@ JournalImpl::initialize(/*const u_int16_t num_jfiles,
                         const u_int32_t jfsize_sblks,*/
                         const u_int16_t wcache_num_pages,
                         const u_int32_t wcache_pgsize_sblks,
-                        mrg::journal::aio_callback* const cbp)
+                        qpid::qls_jrnl::aio_callback* const cbp)
 {
     std::ostringstream oss;
 //    oss << "Initialize; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
@@ -173,8 +173,8 @@ JournalImpl::recover(/*const u_int16_t num_jfiles,
                      const u_int32_t jfsize_sblks,*/
                      const u_int16_t wcache_num_pages,
                      const u_int32_t wcache_pgsize_sblks,
-                     mrg::journal::aio_callback* const cbp,
-                     boost::ptr_list<msgstore::PreparedTransaction>* prep_tx_list_ptr,
+                     qpid::qls_jrnl::aio_callback* const cbp,
+                     boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
                      u_int64_t& highest_rid,
                      u_int64_t queue_id)
 {
@@ -202,7 +202,7 @@ JournalImpl::recover(/*const u_int16_t num_jfiles,
     if (prep_tx_list_ptr) {
         // Create list of prepared xids
         std::vector<std::string> prep_xid_list;
-        for (msgstore::PreparedTransaction::list::iterator i = prep_tx_list_ptr->begin(); i != prep_tx_list_ptr->end(); i++) {
+        for (PreparedTransaction::list::iterator i = prep_tx_list_ptr->begin(); i != prep_tx_list_ptr->end(); i++) {
             prep_xid_list.push_back(i->xid);
         }
 
@@ -216,7 +216,7 @@ JournalImpl::recover(/*const u_int16_t num_jfiles,
     // Populate PreparedTransaction lists from _tmap
     if (prep_tx_list_ptr)
     {
-        for (msgstore::PreparedTransaction::list::iterator i = prep_tx_list_ptr->begin(); i != prep_tx_list_ptr->end(); i++) {
+        for (PreparedTransaction::list::iterator i = prep_tx_list_ptr->begin(); i != prep_tx_list_ptr->end(); i++) {
             txn_data_list tdl = _tmap.get_tdata_list(i->xid); // tdl will be empty if xid not found
             for (tdl_itr tdl_itr = tdl.begin(); tdl_itr < tdl.end(); tdl_itr++) {
                 if (tdl_itr->_enq_flag) { // enqueue op
@@ -298,7 +298,7 @@ JournalImpl::loadMsgContent(u_int64_t rid, std::string& data, size_t length, siz
         while (!done) {
             iores res = read_data_record(&_datap, _dlen, &_xidp, xlen, transient, _external, &_dtok);
             switch (res) {
-                case mrg::journal::RHM_IORES_SUCCESS:
+                case qpid::qls_jrnl::RHM_IORES_SUCCESS:
                     if (_dtok.rid() != rid) {
                         // Check if this is an out-of-order rid that may impact next read
                         if (_dtok.rid() > rid)
@@ -315,19 +315,19 @@ JournalImpl::loadMsgContent(u_int64_t rid, std::string& data, size_t length, siz
                         done = true;
                     }
                     break;
-                case mrg::journal::RHM_IORES_PAGE_AIOWAIT:
-                    if (get_wr_events(&_aio_cmpl_timeout) == journal::jerrno::AIO_TIMEOUT) {
+                case qpid::qls_jrnl::RHM_IORES_PAGE_AIOWAIT:
+                    if (get_wr_events(&_aio_cmpl_timeout) == qpid::qls_jrnl::jerrno::AIO_TIMEOUT) {
                         std::stringstream ss;
-                        ss << "read_data_record() returned " << mrg::journal::iores_str(res);
+                        ss << "read_data_record() returned " << qpid::qls_jrnl::iores_str(res);
                         ss << "; timed out waiting for page to be processed.";
-                        throw jexception(mrg::journal::jerrno::JERR__TIMEOUT, ss.str().c_str(), "JournalImpl",
+                        throw jexception(qpid::qls_jrnl::jerrno::JERR__TIMEOUT, ss.str().c_str(), "JournalImpl",
                             "loadMsgContent");
                     }
                     break;
                 default:
                     std::stringstream ss;
-                    ss << "read_data_record() returned " << mrg::journal::iores_str(res);
-                    throw jexception(mrg::journal::jerrno::JERR__UNEXPRESPONSE, ss.str().c_str(), "JournalImpl",
+                    ss << "read_data_record() returned " << qpid::qls_jrnl::iores_str(res);
+                    throw jexception(qpid::qls_jrnl::jerrno::JERR__UNEXPRESPONSE, ss.str().c_str(), "JournalImpl",
                         "loadMsgContent");
             }
         }
@@ -336,7 +336,7 @@ JournalImpl::loadMsgContent(u_int64_t rid, std::string& data, size_t length, siz
             ss << "read_data_record() was unable to find rid 0x" << std::hex << rid << std::dec;
             ss << " (" << rid << "); last rid found was 0x" << std::hex << _dtok.rid() << std::dec;
             ss << " (" << _dtok.rid() << ")";
-            throw jexception(mrg::journal::jerrno::JERR__RECNFOUND, ss.str().c_str(), "JournalImpl", "loadMsgContent");
+            throw jexception(qpid::qls_jrnl::jerrno::JERR__RECNFOUND, ss.str().c_str(), "JournalImpl", "loadMsgContent");
         }
     }
 
@@ -493,13 +493,13 @@ JournalImpl::flush(const bool block_till_aio_cmpl)
 }
 
 void
-JournalImpl::log(mrg::journal::log_level ll, const std::string& log_stmt) const
+JournalImpl::log(qpid::qls_jrnl::log_level ll, const std::string& log_stmt) const
 {
     log(ll, log_stmt.c_str());
 }
 
 void
-JournalImpl::log(mrg::journal::log_level ll, const char* const log_stmt) const
+JournalImpl::log(qpid::qls_jrnl::log_level ll, const char* const log_stmt) const
 {
     switch (ll)
     {
@@ -590,9 +590,9 @@ JournalImpl::handleIoResult(const iores r)
     writeActivityFlag = true;
     switch (r)
     {
-        case mrg::journal::RHM_IORES_SUCCESS:
+        case qpid::qls_jrnl::RHM_IORES_SUCCESS:
             return;
-        case mrg::journal::RHM_IORES_ENQCAPTHRESH:
+        case qpid::qls_jrnl::RHM_IORES_ENQCAPTHRESH:
             {
                 std::ostringstream oss;
                 oss << "Enqueue capacity threshold exceeded on queue \"" << _jid << "\".";
@@ -602,7 +602,7 @@ JournalImpl::handleIoResult(const iores r)
                                        qpid::management::ManagementAgent::SEV_WARN);
                 THROW_STORE_FULL_EXCEPTION(oss.str());
             }
-        case mrg::journal::RHM_IORES_FULL:
+        case qpid::qls_jrnl::RHM_IORES_FULL:
             {
                 std::ostringstream oss;
                 oss << "Journal full on queue \"" << _jid << "\".";
@@ -614,7 +614,7 @@ JournalImpl::handleIoResult(const iores r)
         default:
             {
                 std::ostringstream oss;
-                oss << "Unexpected I/O response (" << mrg::journal::iores_str(r) << ") on queue " << _jid << "\".";
+                oss << "Unexpected I/O response (" << qpid::qls_jrnl::iores_str(r) << ") on queue " << _jid << "\".";
                 log(LOG_ERROR, oss.str());
                 THROW_STORE_FULL_EXCEPTION(oss.str());
             }

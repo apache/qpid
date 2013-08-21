@@ -23,6 +23,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #pragma pack(1)
 
 /**
@@ -55,5 +59,9 @@ void rec_hdr_init(rec_hdr_t* dest, const uint32_t magic, const uint16_t version,
 void rec_hdr_copy(rec_hdr_t* dest, const rec_hdr_t* src);
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_REC_HDR_H */

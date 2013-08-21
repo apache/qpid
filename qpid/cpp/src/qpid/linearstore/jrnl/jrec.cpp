@@ -26,9 +26,9 @@
 #include "qpid/linearstore/jrnl/jexception.h"
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 jrec::jrec() {}
@@ -104,5 +104,4 @@ jrec::chk_tail(const rec_tail_t& tail, const rec_hdr_t& hdr)
     }
 }
 
-} // namespace journal
-} // namespace mrg
+}}

@@ -22,13 +22,12 @@
 #ifndef QPID_LEGACYSTORE_JRNL_JCNTL_H
 #define QPID_LEGACYSTORE_JRNL_JCNTL_H
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
     class jcntl;
-}
-}
+}}
 
 #include <cstddef>
 #include <deque>
@@ -42,9 +41,9 @@ namespace journal
 #include "qpid/linearstore/jrnl/wmgr.h"
 //#include "qpid/linearstore/jrnl/wrfc.h"
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     /**
@@ -705,7 +704,6 @@ namespace journal
         void check_journal_alignment(const uint16_t fid, std::streampos& rec_offset, rcvdat& rd);
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_JCNTL_H

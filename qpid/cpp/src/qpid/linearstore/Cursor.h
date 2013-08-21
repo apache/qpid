@@ -25,8 +25,8 @@
 #include <boost/shared_ptr.hpp>
 #include "db-inc.h"
 
-namespace mrg{
-namespace msgstore{
+namespace qpid{
+namespace linearstore{
 
 class Cursor
 {

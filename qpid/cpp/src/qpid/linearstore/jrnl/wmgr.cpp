@@ -31,9 +31,9 @@
 #include <sstream>
 #include <stdint.h>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, wrfc& wrfc*/):
@@ -1065,5 +1065,4 @@ wmgr::status_str() const
 
 const char* wmgr::_op_str[] = {"enqueue", "dequeue", "abort", "commit"};
 
-} // namespace journal
-} // namespace mrg
+}}

@@ -21,7 +21,7 @@
 
 #include "qpid/linearstore/DataTokenImpl.h"
 
-using namespace mrg::msgstore;
+using namespace qpid::linearstore;
 
 DataTokenImpl::DataTokenImpl():data_tok() {}
 

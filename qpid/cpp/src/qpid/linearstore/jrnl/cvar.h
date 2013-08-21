@@ -30,9 +30,9 @@
 #include <pthread.h>
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
     // Ultra-simple thread condition variable class
@@ -71,7 +71,6 @@ namespace journal
         }
     };
 
-} // namespace journal
-} // namespace mrg
+}}
 
 #endif // ifndef QPID_LEGACYSTORE_JRNL_CVAR_H

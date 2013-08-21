@@ -43,9 +43,9 @@
 #include "qpid/linearstore/jrnl/jexception.h"
 #include <sstream>
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 deq_rec::deq_rec():

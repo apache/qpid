@@ -27,9 +27,9 @@
 #include <sstream>
 
 
-namespace mrg
+namespace qpid
 {
-namespace journal
+namespace qls_jrnl
 {
 
 // static return/error codes
@@ -168,5 +168,4 @@ enq_map::pfid_list(std::vector<uint16_t>& fv)
     }
 }
 
-} // namespace journal
-} // namespace mrg
+}}

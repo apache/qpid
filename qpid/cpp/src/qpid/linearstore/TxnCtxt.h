@@ -37,8 +37,8 @@
 
 #include <boost/intrusive_ptr.hpp>
 
-namespace mrg {
-namespace msgstore {
+namespace qpid{
+namespace linearstore{
 
 class TxnCtxt : public qpid::broker::TransactionContext
 {
