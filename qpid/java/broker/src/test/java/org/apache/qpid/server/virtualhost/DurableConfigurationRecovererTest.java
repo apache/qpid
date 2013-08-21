@@ -123,8 +123,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _queueFactory = mock(QueueFactory.class);
 
-        when(_queueFactory.createQueue(idArg.capture(), queueArg.capture(),
-                anyBoolean(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(), argsArg.capture())).then(
+        when(_queueFactory.restoreQueue(idArg.capture(), queueArg.capture(),
+                anyString(), anyBoolean(), anyBoolean(), anyBoolean(), argsArg.capture())).then(
                 new Answer()
                 {
 
@@ -270,10 +270,9 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         final Exchange customExchange = mock(Exchange.class);
 
-        when(_exchangeFactory.createExchange(eq(customExchangeId),
+        when(_exchangeFactory.restoreExchange(eq(customExchangeId),
                                              eq(CUSTOM_EXCHANGE_NAME),
                                              eq(HeadersExchange.TYPE.getType()),
-                                             anyBoolean(),
                                              anyBoolean())).thenReturn(customExchange);
 
         final ConfiguredObjectRecord[] expected = {
@@ -387,10 +386,9 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         when(customExchange.getId()).thenReturn(exchangeId);
         when(customExchange.getName()).thenReturn(CUSTOM_EXCHANGE_NAME);
 
-        when(_exchangeFactory.createExchange(eq(exchangeId),
+        when(_exchangeFactory.restoreExchange(eq(exchangeId),
                                              eq(CUSTOM_EXCHANGE_NAME),
                                              eq(HeadersExchange.TYPE.getType()),
-                                             anyBoolean(),
                                              anyBoolean())).thenReturn(customExchange);
 
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
