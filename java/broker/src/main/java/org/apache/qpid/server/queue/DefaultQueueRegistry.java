@@ -81,7 +81,7 @@ public class DefaultQueueRegistry implements QueueRegistry
 
     public AMQQueue getQueue(String queue)
     {
-        return _queueMap.get(queue);
+        return queue == null ? null : _queueMap.get(queue);
     }
 
     public void addRegistryChangeListener(RegistryChangeListener listener)
