@@ -149,7 +149,8 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             }
             else
             {
-                if (exchange.isBound(body.getRoutingKey(), queue))
+                String bindingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().asString();
+                if (exchange.isBound(bindingKey, queue))
                 {
 
                     response = methodRegistry.createExchangeBoundOkBody(OK,	// replyCode
@@ -172,7 +173,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         }
         else
         {
-            if (exchange.isBound(body.getRoutingKey()))
+            if (exchange.isBound(body.getRoutingKey() == null ? "" : body.getRoutingKey().asString()))
             {
 
                 response = methodRegistry.createExchangeBoundOkBody(OK,	// replyCode

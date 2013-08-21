@@ -60,40 +60,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     private SimpleAMQQueue _queue;
     private VirtualHost _virtualHost;
-    private AMQShortString _qname = new AMQShortString("qname");
-    private AMQShortString _owner = new AMQShortString("owner");
-    private AMQShortString _routingKey = new AMQShortString("routing key");
+    private String _qname = "qname";
+    private String _owner = "owner";
+    private String _routingKey = "routing key";
     private DirectExchange _exchange;
     private MockSubscription _subscription = new MockSubscription();
     private Map<String,Object> _arguments = null;
-
-    private MessagePublishInfo info = new MessagePublishInfo()
-    {
-
-        public AMQShortString getExchange()
-        {
-            return null;
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-        }
-
-        public boolean isImmediate()
-        {
-            return false;
-        }
-
-        public boolean isMandatory()
-        {
-            return false;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return null;
-        }
-    };
 
     @Override
     public void setUp() throws Exception
@@ -103,10 +75,10 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
 
-        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
+        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner,
                 false, false, false, _arguments);
 
-        _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME.toString());
+        _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
 
     @Override
@@ -130,7 +102,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         try
         {
             _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), null,
-                                                                         false, _owner.asString(), false,
+                                                                         false, _owner, false,
                                                                          false, false, _arguments);
             assertNull("Queue was created", _queue);
         }
@@ -153,7 +125,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(),
                                                                      "differentName", false,
-                                                                     _owner.asString(), false,
+                                                                     _owner, false,
                                                                      false, false, _arguments);
         assertNotNull("Queue was not created", _queue);
     }
@@ -165,7 +137,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public void testBinding() throws AMQSecurityException, AMQInternalException
     {
-        _exchange.addBinding(String.valueOf(_routingKey), _queue, Collections.EMPTY_MAP);
+        _exchange.addBinding(_routingKey, _queue, Collections.EMPTY_MAP);
 
         assertTrue("Routing key was not bound",
                         _exchange.isBound(_routingKey));
@@ -173,12 +145,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
                     _exchange.isBound(_routingKey,_queue));
         assertEquals("Exchange binding count", 1,
                 _queue.getBindings().size());
-        assertEquals("Wrong exchange bound", String.valueOf(_routingKey),
+        assertEquals("Wrong exchange bound", _routingKey,
                 _queue.getBindings().get(0).getBindingKey());
         assertEquals("Wrong exchange bound", _exchange,
                 _queue.getBindings().get(0).getExchange());
 
-        _exchange.removeBinding(String.valueOf(_routingKey), _queue, Collections.EMPTY_MAP);
+        _exchange.removeBinding(_routingKey, _queue, Collections.EMPTY_MAP);
         assertFalse("Routing key was still bound",
                 _exchange.isBound(_routingKey));
 
@@ -873,8 +845,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         int dequeueMessageIndex = 1;
 
         // create queue with overridden method deliverAsync
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("test"),
-                false, new AMQShortString("testOwner"), false, false, _virtualHost, null)
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "test",
+                false, "testOwner", false, false, _virtualHost, null)
         {
             @Override
             public void deliverAsync(Subscription sub)
@@ -944,8 +916,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
     public void testEnqueueDequeuedEntry()
     {
         // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("test"), false,
-                new AMQShortString("testOwner"), false, false, _virtualHost, new QueueEntryListFactory()
+        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "test", false,
+                "testOwner", false, false, _virtualHost, new QueueEntryListFactory()
                 {
                     public QueueEntryList createQueueEntryList(AMQQueue queue)
                     {
@@ -1022,8 +994,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public void testActiveConsumerCount() throws Exception
     {
-        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("testActiveConsumerCount"), false,
-                new AMQShortString("testOwner"), false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
+        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "testActiveConsumerCount", false,
+                "testOwner", false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
 
         //verify adding an active subscription increases the count
         final MockSubscription subscription1 = new MockSubscription();

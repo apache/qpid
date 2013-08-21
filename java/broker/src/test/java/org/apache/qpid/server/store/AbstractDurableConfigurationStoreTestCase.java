@@ -38,8 +38,6 @@ import java.util.UUID;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueableMessage;
@@ -80,7 +78,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private Exchange _exchange = mock(Exchange.class);
     private static final String ROUTING_KEY = "routingKey";
     private static final String QUEUE_NAME = "queueName";
-    private FieldTable _bindingArgs;
+    private Map<String,Object> _bindingArgs;
     private UUID _queueId;
     private UUID _exchangeId;
     private DurableConfigurationStore _configStore;
@@ -108,14 +106,15 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(_messageStoreRecoveryHandler.begin()).thenReturn(_storedMessageRecoveryHandler);
         when(_logRecoveryHandler.begin(any(MessageStore.class))).thenReturn(_queueEntryRecoveryHandler);
         when(_queueEntryRecoveryHandler.completeQueueEntryRecovery()).thenReturn(_dtxRecordRecoveryHandler);
-        when(_exchange.getNameShortString()).thenReturn(AMQShortString.valueOf(EXCHANGE_NAME));
+        when(_exchange.getName()).thenReturn(EXCHANGE_NAME);
+
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
                 _storePath);
         when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
 
-        _bindingArgs = new FieldTable();
-        AMQShortString argKey = AMQPFilterTypes.JMS_SELECTOR.getValue();
+        _bindingArgs = new HashMap<String, Object>();
+        String argKey = AMQPFilterTypes.JMS_SELECTOR.toString();
         String argValue = "some selector expression";
         _bindingArgs.put(argKey, argValue);
 
@@ -183,7 +182,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
         Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                _exchange, FieldTable.convertToMap(_bindingArgs));
+                _exchange, _bindingArgs);
         DurableConfigurationStoreHelper.createBinding(_configStore, binding);
 
         reopenStore();
@@ -192,7 +191,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         map.put(org.apache.qpid.server.model.Binding.EXCHANGE, _exchange.getId().toString());
         map.put(org.apache.qpid.server.model.Binding.QUEUE, queue.getId().toString());
         map.put(org.apache.qpid.server.model.Binding.NAME, ROUTING_KEY);
-        map.put(org.apache.qpid.server.model.Binding.ARGUMENTS,FieldTable.convertToMap(_bindingArgs));
+        map.put(org.apache.qpid.server.model.Binding.ARGUMENTS,_bindingArgs);
 
         verify(_recoveryHandler).configuredObject(eq(binding.getId()), eq(BINDING),
                 eq(map));
@@ -202,7 +201,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
         Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                _exchange, FieldTable.convertToMap(_bindingArgs));
+                _exchange, _bindingArgs);
         DurableConfigurationStoreHelper.createBinding(_configStore, binding);
 
         DurableConfigurationStoreHelper.removeBinding(_configStore, binding);
@@ -363,8 +362,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getName()).thenReturn(queueName);
-        when(queue.getNameShortString()).thenReturn(AMQShortString.valueOf(queueName));
-        when(queue.getOwner()).thenReturn(AMQShortString.valueOf(queueOwner));
+        when(queue.getOwner()).thenReturn(queueOwner);
         when(queue.isExclusive()).thenReturn(exclusive);
         when(queue.getId()).thenReturn(_queueId);
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
@@ -391,9 +389,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private Exchange createTestExchange()
     {
         Exchange exchange = mock(Exchange.class);
-        when(exchange.getNameShortString()).thenReturn(AMQShortString.valueOf(getName()));
         when(exchange.getName()).thenReturn(getName());
-        when(exchange.getTypeShortString()).thenReturn(AMQShortString.valueOf(getName() + "Type"));
+        when(exchange.getTypeName()).thenReturn(getName() + "Type");
         when(exchange.isAutoDelete()).thenReturn(true);
         when(exchange.getId()).thenReturn(_exchangeId);
         return exchange;

@@ -53,10 +53,10 @@ public class ExchangeManagementTest extends QpidBrokerTestCase
         _managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
         _testQueueName = getTestName();
         _managedBroker.createNewQueue(_testQueueName, null, true);
-        _directExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME.asString());
-        _topicExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME.asString());
-        _fanoutExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.FANOUT_EXCHANGE_NAME.asString());
-        _headersExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.HEADERS_EXCHANGE_NAME.asString());
+        _directExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+        _topicExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
+        _fanoutExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.FANOUT_EXCHANGE_NAME);
+        _headersExchange = _jmxUtils.getManagedExchange(ExchangeDefaults.HEADERS_EXCHANGE_NAME);
 
         _connection = getConnection();
         _connection.start();

@@ -38,7 +38,7 @@ import java.util.List;
 /**
  * An implementation of ServerTransaction where each enqueue/dequeue
  * operation takes place within it own transaction.
- * 
+ *
  * Since there is no long-lived transaction, the commit and rollback methods of
  * this implementation are empty.
  */
@@ -98,13 +98,13 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getNameShortString());
+                    _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
                 }
 
                 txn = _messageStore.newTransaction();
                 txn.dequeueMessage(queue, message);
                 future = txn.commitTranAsync();
-                
+
                 txn = null;
             }
             else
@@ -172,7 +172,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                 {
                     if (_logger.isDebugEnabled())
                     {
-                        _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getNameShortString());
+                        _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
                     }
 
                     if(txn == null)
@@ -220,7 +220,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getNameShortString());
+                    _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getName());
                 }
 
                 txn = _messageStore.newTransaction();
@@ -262,19 +262,19 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                     {
                         if (_logger.isDebugEnabled())
                         {
-                            _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getNameShortString());
+                            _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getName());
                         }
                         if (txn == null)
                         {
                             txn = _messageStore.newTransaction();
                         }
-                        
+
                         txn.enqueueMessage(queue, message);
 
 
                     }
                 }
-                
+
             }
             StoreFuture future;
             if (txn != null)
@@ -320,8 +320,8 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                 }
             });
         }
-    }    
-    
+    }
+
     public void commit()
     {
     }

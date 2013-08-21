@@ -117,7 +117,7 @@ public class QueueConfiguration extends AbstractConfiguration
 
     public String getExchange()
     {
-        return getStringValue("exchange", ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString());
+        return getStringValue("exchange", ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
     }
 
     public List getRoutingKeys()

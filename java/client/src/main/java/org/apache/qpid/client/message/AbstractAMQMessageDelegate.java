@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
 {
 
-    private static Map<String, Integer> _exchangeTypeToDestinationType = new ConcurrentHashMap<String, Integer>();    
+    private static Map<String, Integer> _exchangeTypeToDestinationType = new ConcurrentHashMap<String, Integer>();
     private static Map<String,ExchangeInfo> _exchangeMap = new  ConcurrentHashMap<String, ExchangeInfo>();
 
     /**
@@ -55,32 +55,32 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
     static
     {
         _exchangeTypeToDestinationType.put("", AMQDestination.QUEUE_TYPE);
-        _exchangeTypeToDestinationType.put(ExchangeDefaults.DIRECT_EXCHANGE_CLASS.toString(), AMQDestination.QUEUE_TYPE);
-        _exchangeTypeToDestinationType.put(ExchangeDefaults.TOPIC_EXCHANGE_CLASS.toString(), AMQDestination.TOPIC_TYPE);
-        _exchangeTypeToDestinationType.put(ExchangeDefaults.FANOUT_EXCHANGE_CLASS.toString(), AMQDestination.TOPIC_TYPE);
-        _exchangeTypeToDestinationType.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS.toString(), AMQDestination.QUEUE_TYPE);
-        
+        _exchangeTypeToDestinationType.put(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, AMQDestination.QUEUE_TYPE);
+        _exchangeTypeToDestinationType.put(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, AMQDestination.TOPIC_TYPE);
+        _exchangeTypeToDestinationType.put(ExchangeDefaults.FANOUT_EXCHANGE_CLASS, AMQDestination.TOPIC_TYPE);
+        _exchangeTypeToDestinationType.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS, AMQDestination.QUEUE_TYPE);
+
         _exchangeMap.put("", new ExchangeInfo("","",AMQDestination.QUEUE_TYPE));
-        
-        _exchangeMap.put(ExchangeDefaults.DIRECT_EXCHANGE_NAME.toString(),
-                         new ExchangeInfo(ExchangeDefaults.DIRECT_EXCHANGE_NAME.toString(),
-                                          ExchangeDefaults.DIRECT_EXCHANGE_CLASS.toString(),
+
+        _exchangeMap.put(ExchangeDefaults.DIRECT_EXCHANGE_NAME,
+                         new ExchangeInfo(ExchangeDefaults.DIRECT_EXCHANGE_NAME,
+                                          ExchangeDefaults.DIRECT_EXCHANGE_CLASS,
                                           AMQDestination.QUEUE_TYPE));
-        
-        _exchangeMap.put(ExchangeDefaults.TOPIC_EXCHANGE_NAME.toString(),
-                         new ExchangeInfo(ExchangeDefaults.TOPIC_EXCHANGE_NAME.toString(),
-                                          ExchangeDefaults.TOPIC_EXCHANGE_CLASS.toString(),
+
+        _exchangeMap.put(ExchangeDefaults.TOPIC_EXCHANGE_NAME,
+                         new ExchangeInfo(ExchangeDefaults.TOPIC_EXCHANGE_NAME,
+                                          ExchangeDefaults.TOPIC_EXCHANGE_CLASS,
                                           AMQDestination.TOPIC_TYPE));
-        
-        _exchangeMap.put(ExchangeDefaults.FANOUT_EXCHANGE_NAME.toString(),
-                         new ExchangeInfo(ExchangeDefaults.FANOUT_EXCHANGE_NAME.toString(),
-                                          ExchangeDefaults.FANOUT_EXCHANGE_CLASS.toString(),
+
+        _exchangeMap.put(ExchangeDefaults.FANOUT_EXCHANGE_NAME,
+                         new ExchangeInfo(ExchangeDefaults.FANOUT_EXCHANGE_NAME,
+                                          ExchangeDefaults.FANOUT_EXCHANGE_CLASS,
                                           AMQDestination.TOPIC_TYPE));
-        
-        _exchangeMap.put(ExchangeDefaults.HEADERS_EXCHANGE_NAME.toString(),
-                         new ExchangeInfo(ExchangeDefaults.HEADERS_EXCHANGE_NAME.toString(),
-                                          ExchangeDefaults.HEADERS_EXCHANGE_CLASS.toString(),
-                                          AMQDestination.QUEUE_TYPE));        
+
+        _exchangeMap.put(ExchangeDefaults.HEADERS_EXCHANGE_NAME,
+                         new ExchangeInfo(ExchangeDefaults.HEADERS_EXCHANGE_NAME,
+                                          ExchangeDefaults.HEADERS_EXCHANGE_CLASS,
+                                          AMQDestination.QUEUE_TYPE));
     }
 
     /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
@@ -115,19 +115,19 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
     {
         AMQDestination dest;
         ExchangeInfo exchangeInfo = _exchangeMap.get(exchange.asString());
-        
+
         if (exchangeInfo == null)
         {
             exchangeInfo = new ExchangeInfo(exchange.asString(),"",AMQDestination.UNKNOWN_TYPE);
         }
-        
+
         if ("topic".equals(exchangeInfo.getExchangeType()))
         {
             dest = new AMQTopic(exchange, routingKey, null);
         }
         else if ("direct".equals(exchangeInfo.getExchangeType()))
         {
-            dest = new AMQQueue(exchange, routingKey, routingKey); 
+            dest = new AMQQueue(exchange, routingKey, routingKey);
         }
         else
         {
@@ -161,7 +161,7 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
         {
             type = AMQDestination.UNKNOWN_TYPE;
         }
-        
+
         _exchangeMap.put(exchange, new ExchangeInfo(exchange,newtype,type));
     }
 
@@ -226,7 +226,7 @@ class ExchangeInfo
     private String exchangeName;
     private String exchangeType;
     private int destType = AMQDestination.QUEUE_TYPE;
-    
+
     public ExchangeInfo(String exchangeName, String exchangeType,
                         int destType)
     {

@@ -60,12 +60,12 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQTopic(AMQShortString exchange, AMQShortString routingKey, AMQShortString queueName)
     {
-        super(exchange, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, routingKey, true, true, queueName, false);
+        super(exchange, AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS), routingKey, true, true, queueName, false);
     }
 
     public AMQTopic(AMQShortString exchange, AMQShortString routingKey, AMQShortString queueName,AMQShortString[] bindingKeys)
     {
-        super(exchange, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, routingKey, true, true, queueName, false,bindingKeys);
+        super(exchange, AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS), routingKey, true, true, queueName, false,bindingKeys);
     }
 
     public AMQTopic(AMQConnection conn, String routingKey)
@@ -73,6 +73,10 @@ public class AMQTopic extends AMQDestination implements Topic
         this(conn.getDefaultTopicExchangeName(), new AMQShortString(routingKey));
     }
 
+    public AMQTopic(String exchangeName, String routingKey)
+    {
+        this(AMQShortString.valueOf(exchangeName), new AMQShortString(routingKey));
+    }
 
     public AMQTopic(AMQShortString exchangeName, String routingKey)
     {
@@ -86,7 +90,7 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQTopic(AMQShortString exchangeName, AMQShortString name, boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
     {
-        super(exchangeName, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete, queueName, isDurable);
+        super(exchangeName, AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS), name, true, isAutoDelete, queueName, isDurable);
     }
 
 

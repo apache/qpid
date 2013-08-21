@@ -274,11 +274,11 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     {
         if (value instanceof AMQShortString)
         {
-            return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, (AMQShortString) value);
+            return new AMQQueue(AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_NAME), (AMQShortString) value);
         }
         else if (value instanceof String)
         {
-            return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, new AMQShortString((String) value));
+            return new AMQQueue(AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_NAME), new AMQShortString((String) value));
         }
         else if (value instanceof BindingURL)
         {
@@ -295,7 +295,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     {
         if (value instanceof AMQShortString)
         {
-            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, (AMQShortString) value);
+            return new AMQTopic(AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_NAME), (AMQShortString) value);
         }
         else if (value instanceof String)
         {
@@ -309,7 +309,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             }
             // The Destination has a dual nature. If this was used for a producer the key is used
             // for the routing key. If it was used for the consumer it becomes the bindingKey
-            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME,bindings[0],null,bindings);
+            return new AMQTopic(AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_NAME),bindings[0],null,bindings);
         }
         else if (value instanceof BindingURL)
         {

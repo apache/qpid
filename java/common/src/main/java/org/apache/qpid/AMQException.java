@@ -39,7 +39,7 @@ public class AMQException extends Exception
 {
     /** Holds the AMQ error code constant associated with this exception. */
     private AMQConstant _errorCode;
-   
+
     private boolean _isHardError;
 
     /**
@@ -75,13 +75,13 @@ public class AMQException extends Exception
      * Deprecated constructors brought from M2.1
      */
     @Deprecated
-    public AMQException(String msg) 
+    public AMQException(String msg)
     {
         this(null, (msg == null) ? "" : msg);
     }
-    
-    @Deprecated 
-    public AMQException(AMQConstant errorCode, String msg) 
+
+    @Deprecated
+    public AMQException(AMQConstant errorCode, String msg)
     {
         this(errorCode, (msg == null) ? "" : msg, null);
     }
@@ -97,7 +97,7 @@ public class AMQException extends Exception
     {
         return getClass().getName() + ": " + getMessage() + (_errorCode == null ? "" : " [error code " + _errorCode + "]");
     }
-    
+
     /**
      * Gets the AMQ protocol exception code associated with this exception.
      *
@@ -141,14 +141,4 @@ public class AMQException extends Exception
         return newAMQE;
     }
 
-    /**
-     * Truncates the exception message to 255 characters if its length exceeds 255.
-     *
-     * @return exception message
-     */
-    public AMQShortString getMessageAsShortString()
-    {
-        String message = getMessage();
-        return AMQShortString.valueOf(message, true, true);
-    }
 }

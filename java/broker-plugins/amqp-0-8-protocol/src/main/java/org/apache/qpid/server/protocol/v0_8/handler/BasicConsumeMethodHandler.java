@@ -102,13 +102,13 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     if (session == null || session.getConnectionModel() != protocolConnection)
                     {
                         throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                          "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                                                          "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
                     }
                 }
 
                 if (body.getConsumerTag() != null)
                 {
-                    consumerTagName = body.getConsumerTag().intern();
+                    consumerTagName = body.getConsumerTag().intern(false);
                 }
                 else
                 {
@@ -160,14 +160,14 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
-                                                   + queue.getNameShortString()
+                                                   + queue.getName()
                                                    + " as it already has an existing exclusive consumer");
                 }
                 catch (AMQQueue.ExistingSubscriptionPreventsExclusive e)
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
-                                                   + queue.getNameShortString()
+                                                   + queue.getName()
                                                    + " exclusively as it already has a consumer");
                 }
 

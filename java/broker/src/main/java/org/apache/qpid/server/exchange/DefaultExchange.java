@@ -32,7 +32,6 @@ import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -65,7 +64,7 @@ public class DefaultExchange implements Exchange
     @Override
     public void initialise(UUID id,
                            VirtualHost host,
-                           AMQShortString name,
+                           String name,
                            boolean durable,
                            boolean autoDelete) throws AMQException
     {
@@ -76,7 +75,7 @@ public class DefaultExchange implements Exchange
     @Override
     public String getName()
     {
-        return ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString();
+        return ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
     }
 
     @Override
@@ -167,7 +166,7 @@ public class DefaultExchange implements Exchange
     {
         String queueName = queue.getName();
 
-        UUID exchangeId = UUIDGenerator.generateBindingUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(),
+        UUID exchangeId = UUIDGenerator.generateBindingUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME,
                                                             queueName,
                                                             queueName,
                                                             _virtualHost.getName());
@@ -176,15 +175,9 @@ public class DefaultExchange implements Exchange
     }
 
     @Override
-    public AMQShortString getNameShortString()
+    public String getTypeName()
     {
-        return AMQShortString.EMPTY_STRING;
-    }
-
-    @Override
-    public AMQShortString getTypeShortString()
-    {
-        return getType().getName();
+        return getType().getType();
     }
 
     @Override
@@ -224,24 +217,6 @@ public class DefaultExchange implements Exchange
             return Collections.singletonList(q);
         }
 
-    }
-
-    @Override
-    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
-    {
-        return isBound(routingKey, queue) && (arguments == null || arguments.isEmpty());
-    }
-
-    @Override
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
-    {
-        return isBound(routingKey) && isBound(queue) && queue.getNameShortString().equals(routingKey);  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public boolean isBound(AMQShortString routingKey)
-    {
-        return _virtualHost.getQueue(routingKey == null ? null : routingKey.toString()) != null;
     }
 
     @Override

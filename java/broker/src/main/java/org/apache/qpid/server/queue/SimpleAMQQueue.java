@@ -78,10 +78,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private final VirtualHost _virtualHost;
 
-    private final AMQShortString _name;
+    private final String _name;
 
     /** null means shared */
-    private final AMQShortString _owner;
+    private final String _owner;
 
     private AuthorizationHolder _authorizationHolder;
 
@@ -194,25 +194,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private AMQQueue.NotificationListener _notificationListener;
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
-    protected SimpleAMQQueue(UUID id, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
-    {
-        this(id, name, durable, owner, autoDelete, exclusive,virtualHost, new SimpleQueueEntryList.Factory(), arguments);
-    }
 
     public SimpleAMQQueue(UUID id, String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String, Object> arguments)
     {
         this(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, new SimpleQueueEntryList.Factory(), arguments);
     }
 
-    public SimpleAMQQueue(UUID id, String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
-    {
-        this(id, queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner), autoDelete, exclusive, virtualHost, entryListFactory, arguments);
-    }
-
     protected SimpleAMQQueue(UUID id,
-                             AMQShortString name,
+                             String name,
                              boolean durable,
-                             AMQShortString owner,
+                             String owner,
                              boolean autoDelete,
                              boolean exclusive,
                              VirtualHost virtualHost,
@@ -311,11 +302,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         }
     }
 
-    public AMQShortString getNameShortString()
-    {
-        return _name;
-    }
-
     public void setNoLocal(boolean nolocal)
     {
         _nolocal = nolocal;
@@ -377,7 +363,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         return _autoDelete;
     }
 
-    public AMQShortString getOwner()
+    public String getOwner()
     {
         return _owner;
     }
@@ -400,7 +386,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public String getName()
     {
-        return getNameShortString().toString();
+        return _name;
     }
 
     // ------ Manage Subscriptions
@@ -1066,7 +1052,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public int compareTo(final AMQQueue o)
     {
-        return _name.compareTo(o.getNameShortString());
+        return _name.compareTo(o.getName());
     }
 
     public AtomicInteger getAtomicQueueCount()
@@ -2196,7 +2182,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     @Override
     public String toString()
     {
-        return String.valueOf(getNameShortString());
+        return getName();
     }
 
     public long getUnackedMessageCountHigh()

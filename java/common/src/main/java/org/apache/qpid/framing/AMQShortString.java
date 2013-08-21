@@ -21,18 +21,15 @@
 
 package org.apache.qpid.framing;
 
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * A short string is a representation of an AMQ Short String
@@ -64,7 +61,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         {
             if(_count == -1)
             {
-                _count = 1 + AMQShortString.this.occurences(_delim);
+                _count = 1 + AMQShortString.this.occurrences(_delim);
             }
             return _count;
         }
@@ -100,40 +97,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return new AMQShortString(_data, from+_offset, to-from);
     }
 
-
-    private static final int LOCAL_INTERN_CACHE_SIZE = 2048;
-
-    private static final ThreadLocal<Map<AMQShortString, AMQShortString>> _localInternMap =
-            new ThreadLocal<Map<AMQShortString, AMQShortString>>()
-            {
-                protected Map<AMQShortString, AMQShortString> initialValue()
-                {
-                    return new LinkedHashMap<AMQShortString, AMQShortString>()
-                    {
-                        @Override
-                        protected boolean removeEldestEntry(Map.Entry<AMQShortString, AMQShortString> eldest)
-                        {
-                            return size() > LOCAL_INTERN_CACHE_SIZE;
-                        }
-                    };
-                };
-            };
-
-    private static final Map<AMQShortString, WeakReference<AMQShortString>> _globalInternMap =
-            new WeakHashMap<AMQShortString, WeakReference<AMQShortString>>();
-
-
-    private static final ThreadLocal<Map<String, WeakReference<AMQShortString>>> _localStringMap =
-            new ThreadLocal<Map<String, WeakReference<AMQShortString>>>()
-            {
-                protected Map<String, WeakReference<AMQShortString>> initialValue()
-                {
-                    return new WeakHashMap<String, WeakReference<AMQShortString>>();
-                };
-            };
-
-    private static final Map<String, WeakReference<AMQShortString>> _globalStringMap =
-            new WeakHashMap<String, WeakReference<AMQShortString>>();
+    private static final ConcurrentHashMap<AMQShortString, AMQShortString> _globalInternMap =
+            new ConcurrentHashMap<AMQShortString, AMQShortString>();
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQShortString.class);
 
@@ -443,7 +408,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     {
         if (_asString == null)
         {
-            AMQShortString intern = intern();
+            AMQShortString intern = intern(false);
 
             if(intern == this)
             {
@@ -641,35 +606,9 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     public AMQShortString intern(boolean keep)
     {
 
-        hashCode();
+        AMQShortString internString = keep ? _globalInternMap.putIfAbsent(this,this) : _globalInternMap.get(this);
 
-        Map<AMQShortString, AMQShortString> localMap =
-                _localInternMap.get();
-
-        AMQShortString internString = localMap.get(this);
-
-
-        if(internString != null)
-        {
-            return internString;
-        }
-
-
-        WeakReference<AMQShortString> ref;
-        synchronized(_globalInternMap)
-        {
-
-            ref = _globalInternMap.get(this);
-            if((ref == null) || ((internString = ref.get()) == null))
-            {
-                internString = keep ? shrink() : copy();
-                ref = new WeakReference(internString);
-                _globalInternMap.put(internString, ref);
-            }
-
-        }
-        localMap.put(internString, internString);
-        return internString;
+        return internString == null ? this : internString;
 
     }
 
@@ -680,7 +619,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return new AMQShortString(dataBytes,0,_length);
     }
 
-    private int occurences(final byte delim)
+    private int occurrences(final byte delim)
     {
         int count = 0;
         final int end = _offset + _length;
@@ -794,7 +733,12 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return false;  //To change body of created methods use File | Settings | File Templates.
     }
 
-    public static AMQShortString valueOf(Object obj, boolean truncate, boolean nullAsEmptyString)
+    public static AMQShortString validValueOf(Object obj)
+    {
+        return valueOf(obj,true,true);
+    }
+
+    static AMQShortString valueOf(Object obj, boolean truncate, boolean nullAsEmptyString)
     {
         if (obj == null)
         {
@@ -826,48 +770,16 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         {
             return null;
         }
-
-        Map<String, WeakReference<AMQShortString>> localMap =
-                _localStringMap.get();
-
-        WeakReference<AMQShortString> ref = localMap.get(obj);
-        AMQShortString internString;
-
-        if(ref != null)
+        else
         {
-            internString = ref.get();
-            if(internString != null)
-            {
-                return internString;
-            }
+            return new AMQShortString(obj);
         }
 
-
-        synchronized(_globalStringMap)
-        {
-
-            ref = _globalStringMap.get(obj);
-            if((ref == null) || ((internString = ref.get()) == null))
-            {
-                internString = (new AMQShortString(obj)).intern();
-                ref = new WeakReference<AMQShortString>(internString);
-                _globalStringMap.put(obj, ref);
-            }
-
-        }
-        localMap.put(obj, ref);
-        return internString;
     }
 
     public static String toString(AMQShortString amqShortString)
     {
         return amqShortString == null ? null : amqShortString.asString();
-    }
-
-    public static void clearLocalCache()
-    {
-        _localInternMap.remove();
-        _localStringMap.remove();
     }
 
 }

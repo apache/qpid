@@ -33,15 +33,10 @@ public class FanoutExchangeType implements ExchangeType<FanoutExchange>
     @Override
     public String getType()
     {
-        return getName().toString();
-    }
-
-    public AMQShortString getName()
-    {
         return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
     }
 
-    public FanoutExchange newInstance(UUID id, VirtualHost host, AMQShortString name,
+    public FanoutExchange newInstance(UUID id, VirtualHost host, String name,
                                       boolean durable, boolean autoDelete)
                                      throws AMQException
     {
@@ -50,7 +45,7 @@ public class FanoutExchangeType implements ExchangeType<FanoutExchange>
         return exch;
     }
 
-    public AMQShortString getDefaultExchangeName()
+    public String getDefaultExchangeName()
     {
         return ExchangeDefaults.FANOUT_EXCHANGE_NAME;
     }

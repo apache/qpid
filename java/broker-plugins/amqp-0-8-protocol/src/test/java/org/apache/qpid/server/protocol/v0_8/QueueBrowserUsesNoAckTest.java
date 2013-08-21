@@ -99,7 +99,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         BrokerTestHelper_0_8.publishMessages(getChannel(),
                 sendMessageCount,
                 _queueName,
-                ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString());
+                ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
 
         //Ensure they are stored
         checkStoreContents(sendMessageCount);

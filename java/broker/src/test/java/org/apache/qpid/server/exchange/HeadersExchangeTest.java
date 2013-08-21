@@ -65,10 +65,10 @@ public class HeadersExchangeTest extends TestCase
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
-        when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), any(AMQShortString.class))).thenReturn(true);
-        when(securityManager.authoriseUnbind(any(Exchange.class), any(AMQShortString.class), any(AMQQueue.class))).thenReturn(true);
+        when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), anyString())).thenReturn(true);
+        when(securityManager.authoriseUnbind(any(Exchange.class), anyString(), any(AMQQueue.class))).thenReturn(true);
 
-        _exchange.initialise(UUID.randomUUID(), _virtualHost, AMQShortString.valueOf("test"), false, false);
+        _exchange.initialise(UUID.randomUUID(), _virtualHost, "test", false, false);
 
     }
 

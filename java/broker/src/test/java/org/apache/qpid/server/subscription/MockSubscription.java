@@ -47,7 +47,7 @@ public class MockSubscription implements Subscription
 {
 
     private boolean _closed = false;
-    private AMQShortString tag = new AMQShortString("mocktag");
+    private String tag = "mocktag";
     private AMQQueue queue = null;
     private StateListener _listener = null;
     private volatile AMQQueue.Context _queueContext = null;
@@ -84,7 +84,7 @@ public class MockSubscription implements Subscription
 
     public String getConsumerName()
     {
-        return tag == null ? null : tag.asString();
+        return tag;
     }
 
     public long getSubscriptionID()

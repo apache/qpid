@@ -52,11 +52,6 @@ public class MessageTransferMessage extends AbstractServerMessageImpl<MessageMet
         return getMetaData().getRoutingKey();
     }
 
-    public AMQShortString getRoutingKeyShortString()
-    {
-        return AMQShortString.valueOf(getRoutingKey());
-    }
-
     public AMQMessageHeader getMessageHeader()
     {
         return getMetaData().getMessageHeader();

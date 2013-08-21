@@ -33,16 +33,11 @@ public class DirectExchangeType implements ExchangeType<DirectExchange>
     @Override
     public String getType()
     {
-        return getName().toString();
-    }
-
-    public AMQShortString getName()
-    {
         return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
     }
 
     public DirectExchange newInstance(UUID id, VirtualHost host,
-                                      AMQShortString name,
+                                      String name,
                                       boolean durable,
                                       boolean autoDelete) throws AMQException
     {
@@ -51,7 +46,7 @@ public class DirectExchangeType implements ExchangeType<DirectExchange>
         return exch;
     }
 
-    public AMQShortString getDefaultExchangeName()
+    public String getDefaultExchangeName()
     {
         return ExchangeDefaults.DIRECT_EXCHANGE_NAME;
     }

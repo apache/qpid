@@ -21,7 +21,6 @@
 package org.apache.qpid.server.logging.subjects;
 
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
@@ -146,14 +145,14 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
      * @param message    The message to check
      * @param routingKey The routing key to check against
      */
-    protected void verifyRoutingKey(String message, AMQShortString routingKey)
+    protected void verifyRoutingKey(String message, String routingKey)
     {
         String routingKeySlice = getSlice("rk", message);
 
-        assertNotNull("Routing Key not found:" + message, routingKey);
+        assertNotNull("Routing Key not found:" + message, routingKeySlice);
 
         assertEquals("Routing key not correct",
-                     routingKey.toString(), routingKeySlice);
+                     routingKey, routingKeySlice);
     }
 
     /**
@@ -169,7 +168,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
         assertNotNull("Queue not found:" + message, queueSlice);
 
         assertEquals("Queue name not correct",
-                     queue.getNameShortString().toString(), queueSlice);
+                     queue.getName(), queueSlice);
     }
 
     /**
@@ -191,10 +190,10 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
                      exchangeParts.length);
 
         assertEquals("Exchange type not correct",
-                     exchange.getTypeShortString().toString(), exchangeParts[0]);
+                     exchange.getType().getType(), exchangeParts[0]);
 
         assertEquals("Exchange name not correct",
-                     exchange.getNameShortString().toString(), exchangeParts[1]);
+                     exchange.getName(), exchangeParts[1]);
 
     }
 

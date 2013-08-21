@@ -101,7 +101,7 @@ public class AMQExceptionTest extends TestCase
             sb.append("message [" + i + "]");
         }
         AMQException e = new AMQException(AMQConstant.INTERNAL_ERROR, sb.toString(), null);
-        AMQShortString message = e.getMessageAsShortString();
+        AMQShortString message = AMQShortString.validValueOf(e.getMessage());
         assertEquals(sb.substring(0, AMQShortString.MAX_LENGTH - 3) + "...", message.toString());
     }
 

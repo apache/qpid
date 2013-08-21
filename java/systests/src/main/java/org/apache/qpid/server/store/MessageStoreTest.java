@@ -47,7 +47,6 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.protocol.v0_8.IncomingMessage;
@@ -97,10 +96,10 @@ public class MessageStoreTest extends QpidTestCase
     private String priorityQueueName = "MST-PriorityQueue";
     private String queueName = "MST-Queue";
 
-    private AMQShortString directRouting = new AMQShortString("MST-direct");
-    private AMQShortString topicRouting = new AMQShortString("MST-topic");
+    private String directRouting = "MST-direct";
+    private String topicRouting = "MST-topic";
 
-    private AMQShortString queueOwner = new AMQShortString("MST");
+    private String queueOwner = "MST";
 
     private PropertiesConfiguration _config;
 
@@ -448,7 +447,7 @@ public class MessageStoreTest extends QpidTestCase
         //create durable queue and exchange, bind them
         Exchange exch = createExchange(DirectExchange.TYPE, directExchangeName, true);
         createQueue(durableQueueName, false, true, false, false);
-        bindQueueToExchange(exch, directRouting, getVirtualHost().getQueue(durableQueueName), false, null);
+        bindQueueToExchange(exch, directRouting, getVirtualHost().getQueue(durableQueueName), false);
 
         assertEquals("Incorrect number of bindings registered before recovery",
                 1, getVirtualHost().getQueue(durableQueueName).getBindings().size());
@@ -463,7 +462,7 @@ public class MessageStoreTest extends QpidTestCase
         assertNotNull("Exchange was not recovered", exch);
 
         //remove the binding and verify result after recovery
-        unbindQueueFromExchange(exch, directRouting, getVirtualHost().getQueue(durableQueueName), false, null);
+        unbindQueueFromExchange(exch, directRouting, getVirtualHost().getQueue(durableQueueName), false);
 
         reloadVirtualHost();
 
@@ -604,7 +603,7 @@ public class MessageStoreTest extends QpidTestCase
         }
     }
 
-    private void sendMessageOnExchange(Exchange exchange, AMQShortString routingKey, boolean deliveryMode)
+    private void sendMessageOnExchange(Exchange exchange, String routingKey, boolean deliveryMode)
     {
         //Set MessagePersistence
         BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
@@ -733,7 +732,7 @@ public class MessageStoreTest extends QpidTestCase
         //Ideally we would be able to use the QueueDeclareHandler here.
         try
         {
-            queue = getVirtualHost().createQueue(UUIDGenerator.generateRandomUUID(), queueName, durable, queueOwner.asString(), false, exclusive,
+            queue = getVirtualHost().createQueue(UUIDGenerator.generateRandomUUID(), queueName, durable, queueOwner, false, exclusive,
                     false, queueArguments);
 
             validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
@@ -766,7 +765,7 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            exchange = getVirtualHost().createExchange(null, name, type.getName().toString(), durable, false, null);
+            exchange = getVirtualHost().createExchange(null, name, type.getType(), durable, false, null);
         }
         catch (AMQException e)
         {
@@ -776,43 +775,40 @@ public class MessageStoreTest extends QpidTestCase
         return exchange;
     }
 
-    private void bindAllQueuesToExchange(Exchange exchange, AMQShortString routingKey)
+    private void bindAllQueuesToExchange(Exchange exchange, String routingKey)
     {
-        FieldTable queueArguments = new FieldTable();
-        queueArguments.put(new AMQShortString(QueueArgumentsConverter.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
-
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityQueueName), false, queueArguments);
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableQueueName), false, null);
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(priorityQueueName), false, queueArguments);
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(queueName), false, null);
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableExclusiveQueueName), false, null);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityQueueName), false);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableQueueName), false);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(priorityQueueName), false);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(queueName), false);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableExclusiveQueueName), false);
     }
 
-    private void bindAllTopicQueuesToExchange(Exchange exchange, AMQShortString routingKey)
+    private void bindAllTopicQueuesToExchange(Exchange exchange, String routingKey)
     {
-        FieldTable queueArguments = new FieldTable();
-        queueArguments.put(new AMQShortString(QueueArgumentsConverter.X_QPID_PRIORITIES), DEFAULT_PRIORTY_LEVEL);
 
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityTopicQueueName), true, queueArguments);
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableTopicQueueName), true, null);
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(priorityTopicQueueName), true, queueArguments);
-        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(topicQueueName), true, null);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityTopicQueueName), true);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableTopicQueueName), true);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(priorityTopicQueueName), true);
+        bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(topicQueueName), true);
     }
 
 
-    protected void bindQueueToExchange(Exchange exchange, AMQShortString routingKey, AMQQueue queue, boolean useSelector, FieldTable queueArguments)
+    protected void bindQueueToExchange(Exchange exchange,
+                                       String routingKey,
+                                       AMQQueue queue,
+                                       boolean useSelector)
     {
-        FieldTable bindArguments = null;
+        Map<String,Object> bindArguments = new HashMap<String, Object>();
 
         if (useSelector)
         {
-            bindArguments = new FieldTable();
-            bindArguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), SELECTOR_VALUE );
+            bindArguments.put(AMQPFilterTypes.JMS_SELECTOR.toString(), SELECTOR_VALUE );
         }
 
         try
         {
-            exchange.addBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(bindArguments));
+            exchange.addBinding(routingKey, queue, bindArguments);
         }
         catch (Exception e)
         {
@@ -820,19 +816,21 @@ public class MessageStoreTest extends QpidTestCase
         }
     }
 
-    protected void unbindQueueFromExchange(Exchange exchange, AMQShortString routingKey, AMQQueue queue, boolean useSelector, FieldTable queueArguments)
+    protected void unbindQueueFromExchange(Exchange exchange,
+                                           String routingKey,
+                                           AMQQueue queue,
+                                           boolean useSelector)
     {
-        FieldTable bindArguments = null;
+        Map<String,Object> bindArguments = new HashMap<String, Object>();
 
         if (useSelector)
         {
-            bindArguments = new FieldTable();
-            bindArguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), SELECTOR_VALUE );
+            bindArguments.put(AMQPFilterTypes.JMS_SELECTOR.toString(), SELECTOR_VALUE );
         }
 
         try
         {
-            exchange.removeBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(bindArguments));
+            exchange.removeBinding(routingKey, queue, bindArguments);
         }
         catch (Exception e)
         {
@@ -879,9 +877,9 @@ public class MessageStoreTest extends QpidTestCase
         Exchange _exchange;
         boolean _immediate;
         boolean _mandatory;
-        AMQShortString _routingKey;
+        String _routingKey;
 
-        TestMessagePublishInfo(Exchange exchange, boolean immediate, boolean mandatory, AMQShortString routingKey)
+        TestMessagePublishInfo(Exchange exchange, boolean immediate, boolean mandatory, String routingKey)
         {
             _exchange = exchange;
             _immediate = immediate;
@@ -891,7 +889,7 @@ public class MessageStoreTest extends QpidTestCase
 
         public AMQShortString getExchange()
         {
-            return _exchange.getNameShortString();
+            return new AMQShortString(_exchange.getName());
         }
 
         public void setExchange(AMQShortString exchange)
@@ -911,7 +909,7 @@ public class MessageStoreTest extends QpidTestCase
 
         public AMQShortString getRoutingKey()
         {
-            return _routingKey;
+            return new AMQShortString(_routingKey);
         }
     }
 }

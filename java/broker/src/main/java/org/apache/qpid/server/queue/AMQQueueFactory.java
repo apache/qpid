@@ -46,6 +46,7 @@ public class AMQQueueFactory implements QueueFactory
 
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
     public static final String DLQ_ROUTING_KEY = "dlq";
+    private static final int MAX_LENGTH = 255;
 
     private final VirtualHost _virtualHost;
     private final QueueRegistry _queueRegistry;
@@ -59,15 +60,15 @@ public class AMQQueueFactory implements QueueFactory
     private abstract static class QueueProperty
     {
 
-        private final AMQShortString _argumentName;
+        private final String _argumentName;
 
 
         public QueueProperty(String argumentName)
         {
-            _argumentName = new AMQShortString(argumentName);
+            _argumentName = argumentName;
         }
 
-        public AMQShortString getArgumentName()
+        public String getArgumentName()
         {
             return _argumentName;
         }
@@ -280,9 +281,9 @@ public class AMQQueueFactory implements QueueFactory
         {
             for(QueueProperty p : DECLAREABLE_PROPERTIES)
             {
-                if(arguments.containsKey(p.getArgumentName().toString()))
+                if(arguments.containsKey(p.getArgumentName()))
                 {
-                    p.setPropertyValue(q, arguments.get(p.getArgumentName().toString()));
+                    p.setPropertyValue(q, arguments.get(p.getArgumentName()));
                 }
             }
 
@@ -305,7 +306,7 @@ public class AMQQueueFactory implements QueueFactory
             {
                 dlExchange = _virtualHost.createExchange(dlExchangeId,
                                                                 dlExchangeName,
-                                                                ExchangeDefaults.FANOUT_EXCHANGE_CLASS.toString(),
+                                                                ExchangeDefaults.FANOUT_EXCHANGE_CLASS,
                                                                 true, false, null);
             }
             catch(ExchangeExistsException e)
@@ -401,16 +402,16 @@ public class AMQQueueFactory implements QueueFactory
     {
         // check if DLQ name and DLQ exchange name do not exceed 255
         String exchangeName = getDeadLetterExchangeName(name);
-        if (exchangeName.length() > AMQShortString.MAX_LENGTH)
+        if (exchangeName.length() > MAX_LENGTH)
         {
             throw new IllegalArgumentException("DL exchange name '" + exchangeName
-                    + "' length exceeds limit of " + AMQShortString.MAX_LENGTH + " characters for queue " + name);
+                    + "' length exceeds limit of " + MAX_LENGTH + " characters for queue " + name);
         }
         String queueName = getDeadLetterQueueName(name);
-        if (queueName.length() > AMQShortString.MAX_LENGTH)
+        if (queueName.length() > MAX_LENGTH)
         {
             throw new IllegalArgumentException("DLQ queue name '" + queueName + "' length exceeds limit of "
-                    + AMQShortString.MAX_LENGTH + " characters for queue " + name);
+                    + MAX_LENGTH + " characters for queue " + name);
         }
     }
 
