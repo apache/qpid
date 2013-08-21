@@ -84,8 +84,8 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
                                  final Map<String, Object> attributeMap)
         {
             _bindingId = id;
-            _exchangeId = UUID.fromString((String)attributeMap.get(org.apache.qpid.server.model.Binding.EXCHANGE));
-            _queueId = UUID.fromString((String) attributeMap.get(org.apache.qpid.server.model.Binding.QUEUE));
+            _exchangeId = UUID.fromString(String.valueOf(attributeMap.get(org.apache.qpid.server.model.Binding.EXCHANGE)));
+            _queueId = UUID.fromString(String.valueOf(attributeMap.get(org.apache.qpid.server.model.Binding.QUEUE)));
             _exchange = _exchangeRegistry.getExchange(_exchangeId);
             if(_exchange == null)
             {
