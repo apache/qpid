@@ -145,6 +145,13 @@ MACRO (add_msvc_version verProject verProjectType verProjectFileExt)
     endif (MSVC)
 ENDMACRO (add_msvc_version)
 
+# Add a test to check the exported library API against expected API symbols
+MACRO (add_api_test libname)
+  if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+    add_test(api_check_${libname} ${CMAKE_CURRENT_SOURCE_DIR}/check-abi ${CMAKE_CURRENT_BINARY_DIR}/lib${libname}.so ${CMAKE_CURRENT_SOURCE_DIR}/lib${libname}-api-symbols.txt)
+  endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+ENDMACRO (add_api_test libname)
+
 
 #
 # Install optional windows version settings. Override variables are specified in a file.
@@ -1118,6 +1125,8 @@ install(TARGETS qpidtypes
   COMPONENT ${QPID_COMPONENT_COMMON})
 install_pdb (qpidtypes ${QPID_COMPONENT_COMMON})
 
+add_api_test(qpidtypes)
+
 set (qpidclient_SOURCES
      ${rgen_client_srcs}
      ${qpidclient_platform_SOURCES}
@@ -1242,6 +1251,7 @@ install (TARGETS qpidmessaging
          COMPONENT ${QPID_COMPONENT_CLIENT})
 install_pdb (qpidmessaging ${QPID_COMPONENT_CLIENT})
 
+add_api_test(qpidmessaging)
 
 if (MSVC)
     # Install the DtcPlugin project and call it qpidxarm.
