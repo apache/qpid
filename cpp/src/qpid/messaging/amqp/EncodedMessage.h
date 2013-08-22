@@ -21,6 +21,9 @@
  * under the License.
  *
  */
+
+#include "qpid/messaging/ImportExport.h"
+
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/MessageId.h"
 #include "qpid/amqp/MessageReader.h"
@@ -71,17 +74,17 @@ namespace amqp {
 class EncodedMessage
 {
   public:
-    EncodedMessage();
-    EncodedMessage(size_t);
-    EncodedMessage(const EncodedMessage&);
-    ~EncodedMessage();
+    QPID_MESSAGING_EXTERN EncodedMessage();
+    QPID_MESSAGING_EXTERN EncodedMessage(size_t);
+    QPID_MESSAGING_EXTERN EncodedMessage(const EncodedMessage&);
+    QPID_MESSAGING_EXTERN ~EncodedMessage();
 
 
-    size_t getSize() const;
-    char* getData();
-    const char* getData() const;
-    void trim(size_t);
-    void resize(size_t);
+    QPID_MESSAGING_EXTERN size_t getSize() const;
+    QPID_MESSAGING_EXTERN char* getData();
+    QPID_MESSAGING_EXTERN const char* getData() const;
+    QPID_MESSAGING_EXTERN void trim(size_t);
+    QPID_MESSAGING_EXTERN void resize(size_t);
 
     void getReplyTo(qpid::messaging::Address&) const;
     void getSubject(std::string&) const;
@@ -92,11 +95,10 @@ class EncodedMessage
     void populate(qpid::types::Variant::Map&) const;
     void getBody(std::string&, qpid::types::Variant&) const;
 
-    void init(qpid::messaging::MessageImpl&);
-    qpid::amqp::CharSequence getBareMessage() const;
+    QPID_MESSAGING_EXTERN void init(qpid::messaging::MessageImpl&);
+    QPID_MESSAGING_EXTERN qpid::amqp::CharSequence getBareMessage() const;
     qpid::amqp::CharSequence getBody() const;
-    bool hasHeaderChanged(const qpid::messaging::MessageImpl&) const;
-
+    QPID_MESSAGING_EXTERN bool hasHeaderChanged(const qpid::messaging::MessageImpl&) const;
   private:
     size_t size;
     char* data;
