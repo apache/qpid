@@ -290,6 +290,11 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    endif (GCC_VERSION VERSION_EQUAL 4.1.2)
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
+if (CMAKE_SYSTEM_NAME STREQUAL Linux)
+  set (QPID_LINKMAP ${CMAKE_CURRENT_SOURCE_DIR}/qpid.linkmap)
+  set (LINK_VERSION_SCRIPT_FLAG "-Wl,--version-script=${QPID_LINKMAP}")
+endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (COMPILER_FLAGS "-library=stlport4 -mt")
   set (WARNING_FLAGS "+w")
@@ -300,9 +305,9 @@ endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   # Allow MSVC user to select 'WinXP-SP3/Windows Server 2003' as build target version
   set (win32_winnt_default OFF)
-    if (MSVC)
-      set (win32_winnt_default ON)
-    endif (MSVC)
+  if (MSVC)
+    set (win32_winnt_default ON)
+  endif (MSVC)
   option(SET_WIN32_WINNT "In Windows-MSVC build: define _WIN32_WINNT=0x0502 to select target version: Windows XP with SP3" ${win32_winnt_default})
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
@@ -1104,7 +1109,7 @@ add_msvc_version (qpidtypes library dll)
 add_library(qpidtypes SHARED ${qpidtypes_SOURCES})
 target_link_libraries(qpidtypes ${qpidtypes_platform_LIBS})
 set_target_properties (qpidtypes PROPERTIES
-                       LINK_FLAGS "${HIDE_SYMBOL_FLAGS}"
+                       LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        VERSION ${qpidtypes_version}
                        SOVERSION ${qpidtypes_version_major})
 
@@ -1229,7 +1234,7 @@ add_msvc_version (qpidmessaging library dll)
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
 target_link_libraries (qpidmessaging qpidclient)
 set_target_properties (qpidmessaging PROPERTIES
-                       LINK_FLAGS "${HIDE_SYMBOL_FLAGS}"
+                       LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        VERSION ${qpidmessaging_version}
                        SOVERSION ${qpidmessaging_version_major})
 install (TARGETS qpidmessaging
