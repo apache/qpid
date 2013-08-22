@@ -1095,12 +1095,19 @@ set(qpidtypes_SOURCES
   qpid/types/Variant.cpp
   ${qpidtypes_platform_SOURCES}
 )
+set_source_files_properties(
+     ${qpidtypes_SOURCES}
+     PROPERTIES
+     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
+
 add_msvc_version (qpidtypes library dll)
 add_library(qpidtypes SHARED ${qpidtypes_SOURCES})
 target_link_libraries(qpidtypes ${qpidtypes_platform_LIBS})
 set_target_properties (qpidtypes PROPERTIES
+                       LINK_FLAGS "${HIDE_SYMBOL_FLAGS}"
                        VERSION ${qpidtypes_version}
                        SOVERSION ${qpidtypes_version_major})
+
 install(TARGETS qpidtypes
   DESTINATION ${QPID_INSTALL_LIBDIR}
   COMPONENT ${QPID_COMPONENT_COMMON})
@@ -1212,11 +1219,17 @@ set (qpidmessaging_SOURCES
      qpid/messaging/amqp/EncodedMessage.h
      qpid/messaging/amqp/EncodedMessage.cpp
 )
+set_source_files_properties(
+     ${qpidmessaging_SOURCES}
+     PROPERTIES
+     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
+
 add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
 target_link_libraries (qpidmessaging qpidclient)
 set_target_properties (qpidmessaging PROPERTIES
+                       LINK_FLAGS "${HIDE_SYMBOL_FLAGS}"
                        VERSION ${qpidmessaging_version}
                        SOVERSION ${qpidmessaging_version_major})
 install (TARGETS qpidmessaging
