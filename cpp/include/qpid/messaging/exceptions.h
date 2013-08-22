@@ -40,9 +40,6 @@ struct QPID_MESSAGING_CLASS_EXTERN MessagingException : public qpid::types::Exce
 {
     QPID_MESSAGING_EXTERN MessagingException(const std::string& msg);
     QPID_MESSAGING_EXTERN virtual ~MessagingException() throw();
-
-    qpid::types::Variant::Map detail;
-    //TODO: override what() to include detail if present
 };
 
 /**
