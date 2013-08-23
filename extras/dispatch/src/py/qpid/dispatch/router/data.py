@@ -21,7 +21,7 @@
 try:
   from dispatch import *
 except ImportError:
-  from stubs import *
+  from ..stubs import *
 
 
 def getMandatory(data, key, cls=None):

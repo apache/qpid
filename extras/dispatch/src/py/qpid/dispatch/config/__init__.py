@@ -17,6 +17,4 @@
 # under the License.
 #
 
-from stubs.logadapter import * 
-from stubs.ioadapter  import *
-
+from parser import DXConfig

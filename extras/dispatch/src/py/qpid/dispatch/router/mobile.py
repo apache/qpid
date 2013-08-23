@@ -22,7 +22,7 @@ from data import MessageRA, MessageMAR, MessageMAU
 try:
   from dispatch import *
 except ImportError:
-  from stubs import *
+  from ..stubs import *
 
 class MobileAddressEngine(object):
   """
