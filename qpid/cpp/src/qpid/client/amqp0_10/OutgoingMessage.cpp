@@ -21,6 +21,7 @@
 #include "qpid/client/amqp0_10/OutgoingMessage.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/types/encodings.h"
 #include "qpid/types/Variant.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
@@ -45,6 +46,7 @@ const std::string SUBJECT("qpid.subject");
 const std::string X_APP_ID("x-amqp-0-10.app-id");
 const std::string X_ROUTING_KEY("x-amqp-0-10.routing-key");
 const std::string X_CONTENT_ENCODING("x-amqp-0-10.content-encoding");
+const std::string TEXT_PLAIN("text/plain");
 }
 
 void OutgoingMessage::convert(const qpid::messaging::Message& from)
@@ -60,6 +62,10 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
         qpid::amqp_0_10::ListCodec::encode(from.getContentObject().asList(), content);
         message.getMessageProperties().setContentType(qpid::amqp_0_10::ListCodec::contentType);
         message.setData(content);
+    } else if (from.getContentObject().getType() == qpid::types::VAR_STRING &&
+               (from.getContentObject().getEncoding() == qpid::types::encodings::UTF8 || from.getContentObject().getEncoding() == qpid::types::encodings::ASCII)) {
+        message.getMessageProperties().setContentType(TEXT_PLAIN);
+        message.setData(from.getContent());
     } else {
         message.setData(from.getContent());
         message.getMessageProperties().setContentType(from.getContentType());
