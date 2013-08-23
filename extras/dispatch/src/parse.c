@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -60,7 +60,7 @@ static char *get_type_info(dx_field_iterator_t *iter, uint8_t *tag, uint32_t *le
         *length += ((unsigned int) dx_field_iterator_octet(iter)) << 16;
         *length += ((unsigned int) dx_field_iterator_octet(iter)) << 8;
         // fall through to the next case
-        
+
     case 0xA0:
     case 0xC0:
     case 0xE0:
@@ -81,7 +81,7 @@ static char *get_type_info(dx_field_iterator_t *iter, uint8_t *tag, uint32_t *le
         *count += ((unsigned int) dx_field_iterator_octet(iter)) << 8;
         *clen = 3;
         // fall through to the next case
-        
+
     case 0xC0:
     case 0xE0:
         if (dx_field_iterator_end(iter))
@@ -383,4 +383,3 @@ dx_parsed_field_t *dx_parse_value_by_key(dx_parsed_field_t *field, const char *k
 
     return 0;
 }
-
