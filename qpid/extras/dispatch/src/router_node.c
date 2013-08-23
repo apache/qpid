@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -290,7 +290,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
         dx_routed_event_t *re    = new_dx_routed_event_t();
 
         DEQ_ITEM_INIT(re);
-        re->delivery    = 0; 
+        re->delivery    = 0;
         re->message     = msg;
         re->settle      = false;
         re->disposition = 0;
