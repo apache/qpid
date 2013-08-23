@@ -20,7 +20,7 @@
 try:
   from dispatch import *
 except ImportError:
-  from stubs import *
+  from ..stubs import *
 
 
 class BindingEngine(object):
@@ -66,7 +66,7 @@ class BindingEngine(object):
           new_keys[next_hop] = []
         new_keys[next_hop].extend(value)
     return new_keys
-      
+
 
   def _compress_keys(self, keys):
     trees = {}
@@ -131,6 +131,3 @@ class TopicElementList(object):
     for token, (_t,_el) in self.elements.items():
       if _t: keys.append("%s.%s" % (prefix, token))
       _el.build_list("%s.%s" % (prefix, token), keys)
-    
-
-

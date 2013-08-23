@@ -23,7 +23,7 @@ from time import time
 try:
   from dispatch import *
 except ImportError:
-  from stubs import *
+  from ..stubs import *
 
 class LinkStateEngine(object):
   """
