@@ -6,9 +6,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,6 +24,7 @@ include(CheckLibraryExists)
 include(CheckSymbolExists)
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
+include(FindPythonInterp)
 include(FindPythonLibs)
 
 enable_testing()
@@ -51,6 +52,14 @@ set(LIB_INSTALL_DIR "lib${LIB_SUFFIX}" CACHE PATH "Library object file directory
 set(SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
 set(SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
 set(MAN_INSTALL_DIR share/man CACHE PATH "Manpage directory")
+
+# determine the location for installing the python packages
+if (PYTHONLIBS_FOUND)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE}
+                    -c "from distutils.sysconfig import get_python_lib; print get_python_lib(False)"
+                    OUTPUT_VARIABLE PYTHON_SITELIB_PACKAGES
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif (PYTHONLIBS_FOUND)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -108,6 +117,51 @@ file(GLOB headers "include/qpid/dispatch/*.h")
 install(FILES ${headers} DESTINATION ${INCLUDE_INSTALL_DIR}/qpid/dispatch)
 install(FILES include/qpid/dispatch.h DESTINATION ${INCLUDE_INSTALL_DIR}/qpid)
 
+##
+## Python modules installation
+##
+set(PYTHON_STUBS_SOURCES
+    src/py/qpid/dispatch/stubs/__init__.py
+    src/py/qpid/dispatch/stubs/ioadapter.py
+    src/py/qpid/dispatch/stubs/logadapter.py
+)
+
+set(PYTHON_ROUTER_SOURCES
+    src/py/qpid/dispatch/router/link.py
+    src/py/qpid/dispatch/router/router_engine.py
+    src/py/qpid/dispatch/router/__init__.py
+    src/py/qpid/dispatch/router/adapter.py
+    src/py/qpid/dispatch/router/mobile.py
+    src/py/qpid/dispatch/router/node.py
+    src/py/qpid/dispatch/router/routing.py
+    src/py/qpid/dispatch/router/data.py
+    src/py/qpid/dispatch/router/configuration.py
+    src/py/qpid/dispatch/router/neighbor.py
+    src/py/qpid/dispatch/router/path.py
+    src/py/qpid/dispatch/router/binding.py
+)
+
+set(PYTHON_CONFIG_SOURCES
+    src/py/qpid/dispatch/config/parser.py
+    src/py/qpid/dispatch/config/__init__.py
+    src/py/qpid/dispatch/config/schema.py
+    src/py/qpid/dispatch/__init__.py
+)
+
+install(FILES ${PYTHON_STUBS_SOURCES}
+        DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch/stubs)
+
+install(FILES ${PYTHON_ROUTER_SOURCES}
+        DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch/router)
+
+install(FILES ${PYTHON_CONFIG_SOURCES}
+        DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch/config)
+
+install(FILES src/py/qpid/__init__.py
+        DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid)
+
+install(FILES src/py/qpid/dispatch/__init__.py
+        DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch)
 ##
 ## Build Tests
 ##
