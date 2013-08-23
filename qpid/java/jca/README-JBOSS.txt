@@ -101,7 +101,7 @@ provides two such objects
          name="qpid.jca:name=HelloQueue">
      <attribute name="JNDIName">Hello</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-<ra-version>.rar'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidQueue/attribute>
      <attribute name="Properties">
         DestinationAddress=amq.direct
      </attribute>
@@ -118,7 +118,7 @@ can be customized for your environment. Please see the Qpid Java Client document
          name="qpid.jca:name=HelloTopic">
      <attribute name="JNDIName">HelloTopic</attribute>
      <depends optional-attribute-name="RARName">jboss.jca:service=RARDeployment,name='qpid-ra-<ra-version>.rar'</depends>
-     <attribute name="Type">javax.jms.Destination</attribute>
+     <attribute name="Type">org.apache.qpid.ra.admin.QpidTopic</attribute>
      <attribute name="Properties">
         DestinationAddress=amq.topic
      </attribute>
