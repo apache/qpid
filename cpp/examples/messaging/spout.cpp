@@ -142,13 +142,14 @@ int main(int argc, char** argv)
 
             Message message;
             options.setProperties(message);
+            Variant& obj = message.getContentObject();
             if (options.entries.size()) {
                 Variant::Map content;
                 options.setEntries(content);
-                message.getContentObject() = content;
+                obj = content;
             } else if (options.content.size()) {
-                message.setContent(options.content);
-                message.setContentType("text/plain");
+                obj = options.content;
+                obj.setEncoding("utf8");
             }
             std::time_t start = std::time(0);
             for (int count = 0; 
