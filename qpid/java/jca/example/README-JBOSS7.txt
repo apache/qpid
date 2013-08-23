@@ -64,8 +64,6 @@ deploy this file copy the file to:
 
 JBOSS_HOME/standalone/configuration
 
-directory.
-
 Prior to deploying any application component, the JBoss application server
 should be started and available for requests. In order to use the qpid-standalone.xml
 file generated in the previous step, when starting JBoss AS 7 invoke the following:
@@ -100,7 +98,22 @@ will attempt to deploy the Qpid JCA example EAR into the JBoss AS 7 environment.
 Once the above command executes successfully, the Qpid JCA example application is
 deployed, configured and ready for use.
 
-Note, currently there is an issue with 'hot-deployment' in the JBoss AS 7 environment.
+If you choose to use the standalone 'thin' EJB3 client example, you will need to configure
+the security realm for your application. Please see
+
+http://www.mastertheboss.com/jboss-as-7/jboss-as-7-remote-ejb-client-tutorial
+
+on instructions for how to do this in the JBoss7 environment. Once this is done you
+will need to change the conf/jboss-ejb-client.properties file to use your recently
+configured username/password for your application:
+
+remote.connection.default.username=CHANGEME
+remote.connection.default.password=CHANGEME
+
+Modify these properties to use the username/password you configured in the
+above step.
+
+Currently there is an issue with 'hot-deployment' in the JBoss AS 7 environment.
 If you need to re-deploy the EAR file, restarting JBoss AS 7 is required.
 
 The build-jboss7-properties.xml file contains JBoss AS 7 specific configuration options
