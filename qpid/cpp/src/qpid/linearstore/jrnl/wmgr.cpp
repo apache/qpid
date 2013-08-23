@@ -94,13 +94,13 @@ wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks,
 
     initialize(cbp, wcache_pgsize_sblks, wcache_num_pages);
 
-    _jfsize_dblks = _jc->jfsize_sblks() * JRNL_SBLK_SIZE;
+    _jfsize_dblks = _jc->jfsize_sblks() * JRNL_SBLK_SIZE_DBLKS;
     _jfsize_pgs = _jc->jfsize_sblks() / _cache_pgsize_sblks;
     assert(_jc->jfsize_sblks() % JRNL_RMGR_PAGE_SIZE == 0);
 
     if (eo)
     {
-        const uint32_t wr_pg_size_dblks = _cache_pgsize_sblks * JRNL_SBLK_SIZE;
+        const uint32_t wr_pg_size_dblks = _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS;
         uint32_t data_dblks = (eo / JRNL_DBLK_SIZE) - 4; // 4 dblks for file hdr
         _pg_cntr = data_dblks / wr_pg_size_dblks;
         _pg_offset_dblks = data_dblks - (_pg_cntr * wr_pg_size_dblks);
@@ -154,11 +154,11 @@ wmgr::enqueue(const void* const data_buff, const std::size_t tot_data_len,
     bool done = false;
     while (!done)
     {
-        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
+        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _enq_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
         // TODO: replace for linearstore: _wrfc
@@ -259,11 +259,11 @@ wmgr::dequeue(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_
     bool done = false;
     while (!done)
     {
-        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
+        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _deq_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
         // TODO: replace for linearstore: _wrfc
@@ -361,11 +361,11 @@ wmgr::abort(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_le
     bool done = false;
     while (!done)
     {
-        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
+        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
         // TODO: replace for linearstore: _wrfc
@@ -453,11 +453,11 @@ wmgr::commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_l
     bool done = false;
     while (!done)
     {
-        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE);
+        assert(_pg_offset_dblks < _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * JRNL_SBLK_SIZE) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
 
         // Remember fid which contains the record header in case record is split over several files
         // TODO: replace for linearstore: _wrfc
@@ -545,10 +545,10 @@ wmgr::file_header_check(const uint64_t /*rid*/, const bool /*cont*/, const uint3
         if (cont)
         {
             if (file_fit && !file_full)
-                fro = (rec_dblks_rem + JRNL_SBLK_SIZE) * JRNL_DBLK_SIZE;
+                fro = (rec_dblks_rem + JRNL_SBLK_SIZE_DBLKS) * JRNL_DBLK_SIZE;
         }
         else
-            fro = JRNL_SBLK_SIZE * JRNL_DBLK_SIZE;
+            fro = JRNL_SBLK_SIZE;
         write_fhdr(rid, _wrfc.index(), _wrfc.index(), fro); // TODO: replace for linearstore: _wrfc
     }
 */
@@ -558,7 +558,7 @@ void
 wmgr::flush_check(iores& res, bool& cont, bool& done)
 {
     // Is page is full, flush
-    if (_pg_offset_dblks >= _cache_pgsize_sblks * JRNL_SBLK_SIZE)
+    if (_pg_offset_dblks >= _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS)
     {
         res = write_flush();
         assert(res == RHM_IORES_SUCCESS);
@@ -814,7 +814,7 @@ wmgr::get_events(page_state state, timespec* const timeout, bool flush)
             file_hdr_t* fhp = (file_hdr*)aiocbp->u.c.buf;
             uint32_t lfid = fhp->_lfid;
             fcntl* fcntlp = _jc->get_fcntlp(lfid);
-            fcntlp->add_wr_cmpl_cnt_dblks(JRNL_SBLK_SIZE);
+            fcntlp->add_wr_cmpl_cnt_dblks(JRNL_SBLK_SIZE_DBLKS);
             fcntlp->decr_aio_cnt();
             fcntlp->set_wr_fhdr_aio_outstanding(false);
 */
@@ -971,7 +971,7 @@ void
 wmgr::dblk_roundup()
 {
     const uint32_t xmagic = QLS_EMPTY_MAGIC;
-    uint32_t wdblks = jrec::size_blks(_cached_offset_dblks, JRNL_SBLK_SIZE) * JRNL_SBLK_SIZE;
+    uint32_t wdblks = jrec::size_blks(_cached_offset_dblks, JRNL_SBLK_SIZE_DBLKS) * JRNL_SBLK_SIZE_DBLKS;
     while (_cached_offset_dblks < wdblks)
     {
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * JRNL_DBLK_SIZE);
@@ -1000,7 +1000,7 @@ wmgr::write_fhdr(uint64_t rid, uint16_t fid, uint16_t /*lid*/, std::size_t fro)
     _aio_evt_rem++;
     // TODO: replace for linearstore: _wrfc
 /*
-    _wrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE);
+    _wrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE_DBLKS);
     _wrfc.incr_aio_cnt();
     _wrfc.file_controller()->set_wr_fhdr_aio_outstanding(true);
 */
@@ -1010,7 +1010,7 @@ void
 wmgr::rotate_page()
 {
     _page_cb_arr[_pg_index]._state = AIO_PENDING;
-    if (_pg_offset_dblks >= _cache_pgsize_sblks * JRNL_SBLK_SIZE)
+    if (_pg_offset_dblks >= _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS)
     {
         _pg_offset_dblks = 0;
         _pg_cntr++;

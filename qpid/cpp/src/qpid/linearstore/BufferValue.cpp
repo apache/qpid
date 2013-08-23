@@ -26,7 +26,7 @@ namespace linearstore {
 
 
 
-BufferValue::BufferValue(u_int32_t size, u_int64_t offset)
+BufferValue::BufferValue(uint32_t size, uint64_t offset)
     : data(new char[size]),
       buffer(data, size)
 {

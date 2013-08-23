@@ -25,6 +25,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <stdint.h>
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
@@ -32,8 +33,8 @@
 namespace qpid{
 namespace linearstore{
 
-typedef u_int64_t queue_id;
-typedef u_int64_t message_id;
+typedef uint64_t queue_id;
+typedef uint64_t message_id;
 
 class LockedMappings
 {

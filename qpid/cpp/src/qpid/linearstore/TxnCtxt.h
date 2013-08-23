@@ -95,7 +95,7 @@ class TxnCtxt : public qpid::broker::TransactionContext
     bool impactedQueuesEmpty();
     DataTokenImpl* getDtok();
     void incrDtokRef();
-    void recoverDtok(const u_int64_t rid, const std::string xid);
+    void recoverDtok(const uint64_t rid, const std::string xid);
 };
 
 

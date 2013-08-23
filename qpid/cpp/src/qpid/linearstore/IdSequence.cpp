@@ -26,7 +26,7 @@ using qpid::sys::Mutex;
 
 IdSequence::IdSequence() : id(1) {}
 
-u_int64_t IdSequence::next()
+uint64_t IdSequence::next()
 {
     Mutex::ScopedLock guard(lock);
     if (!id) id++; // avoid 0 when folding around

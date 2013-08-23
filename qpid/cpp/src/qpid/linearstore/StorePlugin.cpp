@@ -23,7 +23,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/DataDir.h"
-#include "qpid/log/Statement.h"
+#include "qpid/linearstore/Log.h"
 #include "qpid/linearstore/MessageStoreImpl.h"
 
 using qpid::linearstore::MessageStoreImpl;
@@ -49,7 +49,7 @@ struct StorePlugin : public Plugin {
         if (options.storeDir.empty ())
         {
             if (!dataDir.isEnabled ())
-                throw Exception ("msgstore: If --data-dir is blank or --no-data-dir is specified, --store-dir must be present.");
+                throw Exception ("linearstore: If broker option --data-dir is blank or --no-data-dir is specified, linearstore option --store-dir must be present.");
 
             options.storeDir = dataDir.getPath ();
         }
@@ -64,7 +64,7 @@ struct StorePlugin : public Plugin {
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
         if (!store) return;
-        QPID_LOG(info, "Enabling management instrumentation for the store.");
+        QLS_LOG(info, "Enabling management instrumentation.");
         store->initManagement();
     }
 

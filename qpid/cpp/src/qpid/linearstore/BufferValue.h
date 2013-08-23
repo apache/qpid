@@ -36,7 +36,7 @@ class BufferValue : public Dbt
 public:
     qpid::framing::Buffer buffer;
 
-    BufferValue(u_int32_t size, u_int64_t offset);
+    BufferValue(uint32_t size, uint64_t offset);
     BufferValue(const qpid::broker::Persistable& p);
     virtual ~BufferValue();
 };

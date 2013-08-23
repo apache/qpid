@@ -266,7 +266,7 @@ rmgr::get_events(page_state /*state*/, timespec* const timeout, bool flush)
         {
             // TODO: replace for linear store: _rfh
 /*
-            if (pcbp->_rfh->rd_subm_cnt_dblks() >= JRNL_SBLK_SIZE) // Detects if write reset of this fcntl obj has occurred.
+            if (pcbp->_rfh->rd_subm_cnt_dblks() >= JRNL_SBLK_SIZE_DBLKS) // Detects if write reset of this fcntl obj has occurred.
             {
                 // Increment the completed read offset
                 // NOTE: We cannot use _rrfc here, as it may have rotated since submitting count.
@@ -281,15 +281,15 @@ rmgr::get_events(page_state /*state*/, timespec* const timeout, bool flush)
         else // File header reads have no pcb
         {
             std::memcpy(&_fhdr, _fhdr_buffer, sizeof(file_hdr_t));
-            /*_rrfc.add_cmpl_cnt_dblks(JRNL_SBLK_SIZE);*/ // TODO: replace for linear store: _rrfc
+            /*_rrfc.add_cmpl_cnt_dblks(JRNL_SBLK_SIZE_DBLKS);*/ // TODO: replace for linear store: _rrfc
 
-            uint32_t fro_dblks = (_fhdr._fro / JRNL_DBLK_SIZE) - JRNL_SBLK_SIZE;
+            uint32_t fro_dblks = (_fhdr._fro / JRNL_DBLK_SIZE) - JRNL_SBLK_SIZE_DBLKS;
             // Check fro_dblks does not exceed the write pointers which can happen in some corrupted journal recoveries
             // TODO: replace for linear store: _fhdr._pfid, _rrfc
-//            if (fro_dblks > _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE)
-//                fro_dblks = _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE;
-            _pg_cntr = fro_dblks / (JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE);
-            uint32_t tot_pg_offs_dblks = _pg_cntr * JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE;
+//            if (fro_dblks > _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE_DBLKS)
+//                fro_dblks = _jc->wr_subm_cnt_dblks(_fhdr._pfid) - JRNL_SBLK_SIZE_DBLKS;
+            _pg_cntr = fro_dblks / (JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE_DBLKS);
+            uint32_t tot_pg_offs_dblks = _pg_cntr * JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE_DBLKS;
             _pg_index = _pg_cntr % JRNL_RMGR_PAGES;
             _pg_offset_dblks = fro_dblks - tot_pg_offs_dblks;
 //            _rrfc.add_subm_cnt_dblks(tot_pg_offs_dblks);
@@ -601,16 +601,16 @@ rmgr::init_aio_reads(const int16_t /*first_uninit*/, const uint16_t /*num_uninit
 
         if (_rrfc.subm_offs() == 0)
         {
-            _rrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE);
-            _rrfc.add_cmpl_cnt_dblks(JRNL_SBLK_SIZE);
+            _rrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE_DBLKS);
+            _rrfc.add_cmpl_cnt_dblks(JRNL_SBLK_SIZE_DBLKS);
         }
 
         // TODO: Future perf improvement: Do a single AIO read for all available file
         // space into all contiguous empty pages in one AIO operation.
 
         uint32_t file_rem_dblks = _rrfc.remaining_dblks();
-        file_rem_dblks -= file_rem_dblks % JRNL_SBLK_SIZE; // round down to closest sblk boundary
-        uint32_t pg_size_dblks = JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE;
+        file_rem_dblks -= file_rem_dblks % JRNL_SBLK_SIZE_DBLKS; // round down to closest sblk boundary
+        uint32_t pg_size_dblks = JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE_DBLKS;
         uint32_t rd_size = file_rem_dblks > pg_size_dblks ? pg_size_dblks : file_rem_dblks;
         if (rd_size)
         {
@@ -618,7 +618,7 @@ rmgr::init_aio_reads(const int16_t /*first_uninit*/, const uint16_t /*num_uninit
             // TODO: For perf, combine contiguous pages into single read
             //   1 or 2 AIOs needed depending on whether read block folds
             aio_cb* aiocbp = &_aio_cb_arr[pi];
-            aio::prep_pread_2(aiocbp, _rrfc.fh(), _page_ptr_arr[pi], rd_size * JRNL_DBLK_SIZE, _rrfc.subm_offs());
+            aio::prep_pread_2(aiocbp, _rrfc.fh(), _page_ptr_arr[pi], rd_size * JRNL_DBLK_SIZE_DBLKS, _rrfc.subm_offs());
             if (aio::submit(_ioctx, 1, &aiocbp) < 0)
                 throw jexception(jerrno::JERR__AIO, "rmgr", "init_aio_reads");
             _rrfc.add_subm_cnt_dblks(rd_size);
@@ -640,7 +640,7 @@ rmgr::rotate_page()
 {
     _page_cb_arr[_pg_index]._rdblks = 0;
     _page_cb_arr[_pg_index]._state = UNUSED;
-    if (_pg_offset_dblks >= JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE)
+    if (_pg_offset_dblks >= JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE_DBLKS)
     {
         _pg_offset_dblks = 0;
         _pg_cntr++;
@@ -682,7 +682,7 @@ rmgr::init_file_header_read()
     if (aio::submit(_ioctx, 1, &_fhdr_aio_cb_ptr) < 0)
         throw jexception(jerrno::JERR__AIO, "rmgr", "init_file_header_read");
     _aio_evt_rem++;
-    _rrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE);
+    _rrfc.add_subm_cnt_dblks(JRNL_SBLK_SIZE_DBLKS);
     _fhdr_rd_outstanding = true;
 */
 }

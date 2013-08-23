@@ -76,7 +76,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
 
   private:
 //    static qpid::sys::Mutex _static_lock;
-//    static u_int32_t cnt;
+//    static uint32_t cnt;
 
     qpid::sys::Timer& timer;
     bool getEventsTimerSetFlag;
@@ -84,8 +84,8 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     qpid::sys::Mutex _getf_lock;
     qpid::sys::Mutex _read_lock;
 
-    u_int64_t lastReadRid; // rid of last read msg for loadMsgContent() - detects out-of-order read requests
-    std::vector<u_int64_t> oooRidList; // list of out-of-order rids (greater than current rid) encountered during read sequence
+    uint64_t lastReadRid; // rid of last read msg for loadMsgContent() - detects out-of-order read requests
+    std::vector<uint64_t> oooRidList; // list of out-of-order rids (greater than current rid) encountered during read sequence
 
     bool writeActivityFlag;
     bool flushTriggeredFlag;
@@ -117,44 +117,44 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
 
     void initManagement(qpid::management::ManagementAgent* agent);
 
-    void initialize(/*const u_int16_t num_jfiles,
+    void initialize(/*const uint16_t num_jfiles,
                     const bool auto_expand,
-                    const u_int16_t ae_max_jfiles,
-                    const u_int32_t jfsize_sblks,*/
-                    const u_int16_t wcache_num_pages,
-                    const u_int32_t wcache_pgsize_sblks,
+                    const uint16_t ae_max_jfiles,
+                    const uint32_t jfsize_sblks,*/
+                    const uint16_t wcache_num_pages,
+                    const uint32_t wcache_pgsize_sblks,
                     qpid::qls_jrnl::aio_callback* const cbp);
 
-    inline void initialize(/*const u_int16_t num_jfiles,
+    inline void initialize(/*const uint16_t num_jfiles,
                            const bool auto_expand,
-                           const u_int16_t ae_max_jfiles,
-                           const u_int32_t jfsize_sblks,*/
-                           const u_int16_t wcache_num_pages,
-                           const u_int32_t wcache_pgsize_sblks) {
+                           const uint16_t ae_max_jfiles,
+                           const uint32_t jfsize_sblks,*/
+                           const uint16_t wcache_num_pages,
+                           const uint32_t wcache_pgsize_sblks) {
         initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
                    this);
     }
 
-    void recover(/*const u_int16_t num_jfiles,
+    void recover(/*const uint16_t num_jfiles,
                  const bool auto_expand,
-                 const u_int16_t ae_max_jfiles,
-                 const u_int32_t jfsize_sblks,*/
-                 const u_int16_t wcache_num_pages,
-                 const u_int32_t wcache_pgsize_sblks,
+                 const uint16_t ae_max_jfiles,
+                 const uint32_t jfsize_sblks,*/
+                 const uint16_t wcache_num_pages,
+                 const uint32_t wcache_pgsize_sblks,
                  qpid::qls_jrnl::aio_callback* const cbp,
                  boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
-                 u_int64_t& highest_rid,
-                 u_int64_t queue_id);
+                 uint64_t& highest_rid,
+                 uint64_t queue_id);
 
-    inline void recover(/*const u_int16_t num_jfiles,
+    inline void recover(/*const uint16_t num_jfiles,
                         const bool auto_expand,
-                        const u_int16_t ae_max_jfiles,
-                        const u_int32_t jfsize_sblks,*/
-                        const u_int16_t wcache_num_pages,
-                        const u_int32_t wcache_pgsize_sblks,
+                        const uint16_t ae_max_jfiles,
+                        const uint32_t jfsize_sblks,*/
+                        const uint16_t wcache_num_pages,
+                        const uint32_t wcache_pgsize_sblks,
                         boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
-                        u_int64_t& highest_rid,
-                        u_int64_t queue_id) {
+                        uint64_t& highest_rid,
+                        uint64_t queue_id) {
         recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
                 this, prep_tx_list_ptr, highest_rid, queue_id);
     }
@@ -164,7 +164,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     // Temporary fn to read and save last msg read from journal so it can be assigned
     // in chunks. To be replaced when coding to do this direct from the journal is ready.
     // Returns true if the record is extern, false if local.
-    bool loadMsgContent(u_int64_t rid, std::string& data, size_t length, size_t offset = 0);
+    bool loadMsgContent(uint64_t rid, std::string& data, size_t length, size_t offset = 0);
 
     // Overrides for write inactivity timer
     void enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
@@ -192,8 +192,8 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     void stop(bool block_till_aio_cmpl = false);
 
     // Logging
-    void log(qpid::qls_jrnl::log_level level, const std::string& log_stmt) const;
-    void log(qpid::qls_jrnl::log_level level, const char* const log_stmt) const;
+//    void log(qpid::qls_jrnl::log_level level, const std::string& log_stmt) const;
+//    void log(qpid::qls_jrnl::log_level level, const char* const log_stmt) const;
 
     // Overrides for get_events timer
     qpid::qls_jrnl::iores flush(const bool block_till_aio_cmpl = false);
@@ -204,7 +204,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
 
     // AIO callbacks
     virtual void wr_aio_cb(std::vector<qpid::qls_jrnl::data_tok*>& dtokl);
-    virtual void rd_aio_cb(std::vector<u_int16_t>& pil);
+    virtual void rd_aio_cb(std::vector<uint16_t>& pil);
 
     qpid::management::ManagementObject::shared_ptr GetManagementObject (void) const
     { return _mgmtObject; }

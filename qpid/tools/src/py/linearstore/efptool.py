@@ -99,7 +99,8 @@ class EfpArgParser(argparse.ArgumentParser):
                                          'size it contains in kb, and followed by the letter \'k\'. (eg a pool '
                                          'containing 160 kb files is named \'160k\'.)')
         self.add_argument('store_directory', metavar='STORE-DIR',
-                          help='Use store directory DIR to create pool (required)')
+                          help='Use store directory DIR (required), Usually ends with \'qls\' and contains '
+                               'partition(s) \'p000\', \'p001\', ...')
         self.add_argument('-a', '--add', action='store_true',
                           help='Add new pool of NF files sized FS in partition PN. Must be used with --partition, '
                                '--size and --num-files')
@@ -119,6 +120,8 @@ class EfpArgParser(argparse.ArgumentParser):
         self.add_argument('-n', '--num-files', metavar='NF',
                           help='Set the number of files for the add or freshen action to NF')
         self.add_argument('-v', '--version', action='version', version='%(prog)s 0.8')
+        self.add_argument('-V', '--verbose', action='store_true',
+                          help='Verbose output, helps with troubleshooting')
     @staticmethod
     def validate_args(args):
         ''' Static validation function which checks that required dependent args are present as well as no mutually
@@ -255,9 +258,12 @@ class Partition:
         return s
     def validate_efp_directory(self):
         ''' Check that the partition directory is valid '''
+        if os.path.exists(self.efp_directory):
+            if not os.path.isdir(self.efp_directory):
+                raise InvalidPartitionDirectoryError
+        else:
+            os.mkdir(self.efp_directory)
         # TODO: Add checks for permissions to write and sufficient space
-        if not os.path.exists(self.efp_directory) or not os.path.isdir(self.efp_directory):
-            raise InvalidPartitionDirectoryError
     def read(self):
         ''' Read the partition, identifying EFP directories. Read each EFP directory found. '''
         for dir_entry in os.listdir(self.efp_directory):
@@ -291,10 +297,13 @@ class EmptyFilePoolManager:
         self.total_num_files = 0
         self.total_cum_file_size = 0
         self.current_partition = None
-        print 'Reading store directory', self.store_directory
+        if self.args.verbose:
+            print 'Reading store directory', self.store_directory
         for dir_entry in os.listdir(self.store_directory):
             if len(dir_entry) == 4 and dir_entry[0] == 'p':
                 pn = int(dir_entry[1:])
+                if self.args.verbose:
+                    print '  Found %s (partition %d)' % (dir_entry, pn)
                 try:
                     self.partitions.append(Partition(os.path.join(self.store_directory, dir_entry), pn,
                                                      DEFAULT_EFP_DIR_NAME))
@@ -342,7 +351,8 @@ class EmptyFilePoolManager:
                     print 'ERROR: --partition/-p: Partition %s does not exist' % self.args.partition
                     valid = False
             except ValueError:
-                print 'ERROR: --partition/-p: Partition %s does not exist' % self.args.partition
+                print 'ERROR: --partition/-p: \'%s\': Invalid partition name (must be pNNN, where NNN is the ' \
+                      'partition number)' % self.args.partition
                 valid = False
         if not self.current_partition is None:
             if self.args.add:

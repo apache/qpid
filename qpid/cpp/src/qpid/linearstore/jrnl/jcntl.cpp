@@ -644,7 +644,7 @@ jcntl::rcvr_janalyze(rcvdat& /*rd*/, const std::vector<std::string>* /*prep_txn_
         }
 
         // Check for file full condition - add one to _jfsize_sblks to account for file header
-        rd._lffull = rd._eo == (1 + _jfsize_sblks) * JRNL_SBLK_SIZE * JRNL_DBLK_SIZE;
+        rd._lffull = rd._eo == (1 + _jfsize_sblks) * JRNL_SBLK_SIZE;
 
         // Check for journal full condition
         uint16_t next_wr_fid = (rd._lfid + 1) % rd._njf;
@@ -893,7 +893,7 @@ jcntl::jfile_cycle(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& r
 //            assert(fhdr._lfid == fid);
             if (!rd._fro)
                 rd._fro = fhdr._fro;
-            std::streamoff foffs = jump_fro ? fhdr._fro : JRNL_DBLK_SIZE * JRNL_SBLK_SIZE;
+            std::streamoff foffs = jump_fro ? fhdr._fro : JRNL_SBLK_SIZE;
             ifsp->seekg(foffs);
         }
         else
@@ -938,14 +938,14 @@ jcntl::check_owi(const uint16_t fid, rec_hdr& h, bool& lowi, rcvdat& rd, std::st
 void
 jcntl::check_journal_alignment(const uint16_t fid, std::streampos& file_pos, rcvdat& rd)
 {
-    unsigned sblk_offs = file_pos % (JRNL_DBLK_SIZE * JRNL_SBLK_SIZE);
+    unsigned sblk_offs = file_pos % JRNL_SBLK_SIZE;
     if (sblk_offs)
     {
         {
             std::ostringstream oss;
             oss << std::hex << "Bad record alignment found at fid=0x" << fid;
             oss << " offs=0x" << file_pos << " (likely journal overwrite boundary); " << std::dec;
-            oss << (JRNL_SBLK_SIZE - (sblk_offs/JRNL_DBLK_SIZE)) << " filler record(s) required.";
+            oss << (JRNL_SBLK_SIZE_DBLKS - (sblk_offs/JRNL_DBLK_SIZE)) << " filler record(s) required.";
             this->log(LOG_WARN, oss.str());
         }
         const uint32_t xmagic = QLS_EMPTY_MAGIC;
@@ -965,7 +965,7 @@ jcntl::check_journal_alignment(const uint16_t fid, std::streampos& file_pos, rcv
         // clear should inspection of the file be required.
         std::memset((char*)buff + sizeof(xmagic), QLS_CLEAN_CHAR, JRNL_DBLK_SIZE - sizeof(xmagic));
 
-        while (file_pos % (JRNL_DBLK_SIZE * JRNL_SBLK_SIZE))
+        while (file_pos % JRNL_SBLK_SIZE)
         {
             ofsp.write((const char*)buff, JRNL_DBLK_SIZE);
             assert(!ofsp.fail());

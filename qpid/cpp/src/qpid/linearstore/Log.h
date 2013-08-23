@@ -1,4 +1,4 @@
-/*
+ /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,25 +19,12 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_IDSEQUENCE_H
-#define QPID_LEGACYSTORE_IDSEQUENCE_H
+#ifndef QPID_LEGACYSTORE_LOG_H
+#define QPID_LEGACYSTORE_LOG_H
 
-#include "qpid/framing/amqp_types.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/log/Statement.h"
 
-namespace qpid{
-namespace linearstore{
+#define QLS_LOG(level, msg) QPID_LOG(level, "Linear Store: " << msg)
+#define QLS_LOG2(level, queue, msg) QPID_LOG(level, "Linear Store: Journal \'" << queue << "\":" << msg)
 
-class IdSequence
-{
-    qpid::sys::Mutex lock;
-    uint64_t id;
-public:
-    IdSequence();
-    uint64_t next();
-    void reset(uint64_t value);
-};
-
-}}
-
-#endif // ifndef QPID_LEGACYSTORE_IDSEQUENCE_H
+#endif // QPID_LEGACYSTORE_LOG_H

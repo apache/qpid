@@ -38,6 +38,7 @@ namespace qls_jrnl
 pmgr::page_cb::page_cb(uint16_t index):
         _index(index),
         _state(UNUSED),
+        _frid(0),
         _wdblks(0),
         _rdblks(0),
         _pdtokl(0),
@@ -63,7 +64,7 @@ pmgr::page_cb::state_str() const
     return "<unknown>";
 }
 
-const uint32_t pmgr::_sblksize = JRNL_SBLK_SIZE * JRNL_DBLK_SIZE;
+const uint32_t pmgr::_sblksize = JRNL_SBLK_SIZE;
 
 pmgr::pmgr(jcntl* jc, enq_map& emap, txn_map& tmap):
         _cache_pgsize_sblks(0),

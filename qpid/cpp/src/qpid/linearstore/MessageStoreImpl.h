@@ -60,35 +60,31 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     typedef boost::shared_ptr<DbEnv> dbEnv_ptr;
 
     struct StoreOptions : public qpid::Options {
-        StoreOptions(const std::string& name="Store Options");
+        StoreOptions(const std::string& name="Linear Store Options");
         std::string clusterName;
         std::string storeDir;
-//        u_int16_t numJrnlFiles;
-//        bool      autoJrnlExpand;
-//        u_int16_t autoJrnlExpandMaxFiles;
-//        u_int32_t jrnlFsizePgs;
-        bool      truncateFlag;
-        u_int32_t wCachePageSizeKib;
-//        u_int16_t tplNumJrnlFiles;
-//        u_int32_t tplJrnlFsizePgs;
-        u_int32_t tplWCachePageSizeKib;
+        bool truncateFlag;
+        uint32_t wCachePageSizeKib;
+        uint32_t tplWCachePageSizeKib;
+        uint16_t efpPartition;
+        uint64_t efpFileSize;
     };
 
   protected:
-    typedef std::map<u_int64_t, qpid::broker::RecoverableQueue::shared_ptr> queue_index;
-    typedef std::map<u_int64_t, qpid::broker::RecoverableExchange::shared_ptr> exchange_index;
-    typedef std::map<u_int64_t, qpid::broker::RecoverableMessage::shared_ptr> message_index;
+    typedef std::map<uint64_t, qpid::broker::RecoverableQueue::shared_ptr> queue_index;
+    typedef std::map<uint64_t, qpid::broker::RecoverableExchange::shared_ptr> exchange_index;
+    typedef std::map<uint64_t, qpid::broker::RecoverableMessage::shared_ptr> message_index;
 
     typedef LockedMappings::map txn_lock_map;
     typedef boost::ptr_list<PreparedTransaction> txn_list;
 
     // Structs for Transaction Recover List (TPL) recover state
     struct TplRecoverStruct {
-        u_int64_t rid; // rid of TPL record
+        uint64_t rid; // rid of TPL record
         bool deq_flag;
         bool commit_flag;
         bool tpc_flag;
-        TplRecoverStruct(const u_int64_t _rid, const bool _deq_flag, const bool _commit_flag, const bool _tpc_flag);
+        TplRecoverStruct(const uint64_t _rid, const bool _deq_flag, const bool _commit_flag, const bool _tpc_flag);
     };
     typedef TplRecoverStruct TplRecover;
     typedef std::pair<std::string, TplRecover> TplRecoverMapPair;
@@ -99,16 +95,11 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     typedef JournalListMap::iterator JournalListMapItr;
 
     // Default store settings
-//    static const u_int16_t defNumJrnlFiles = 8;
-//    static const u_int32_t defJrnlFileSizePgs = 24;
-    static const bool      defTruncateFlag = false;
-    static const u_int32_t defWCachePageSize = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_DBLK_SIZE * JRNL_SBLK_SIZE / 1024;
-//    static const u_int16_t defTplNumJrnlFiles = 8;
-//    static const u_int32_t defTplJrnlFileSizePgs = 24;
-    static const u_int32_t defTplWCachePageSize = defWCachePageSize / 8;
-    // TODO: set defAutoJrnlExpand to true and defAutoJrnlExpandMaxFiles to 16 when auto-expand comes on-line
-//    static const bool      defAutoJrnlExpand = false;
-//    static const u_int16_t defAutoJrnlExpandMaxFiles = 0;
+    static const bool defTruncateFlag = false;
+    static const uint32_t defWCachePageSize = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_SBLK_SIZE / 1024;
+    static const uint32_t defTplWCachePageSize = defWCachePageSize / 8;
+    static const uint16_t defEfpPartition = 0;
+    static const uint64_t defEfpFileSize = 512 * JRNL_SBLK_SIZE;
 
     static const std::string storeTopLevelDir;
     static qpid::sys::Duration defJournalGetEventsTimeout;
@@ -136,18 +127,18 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     IdSequence generalIdSequence;
     IdSequence messageIdSequence;
     std::string storeDir;
-    u_int16_t numJrnlFiles;
+    uint16_t numJrnlFiles;
     bool      autoJrnlExpand;
-    u_int16_t autoJrnlExpandMaxFiles;
-    u_int32_t jrnlFsizeSblks;
+    uint16_t autoJrnlExpandMaxFiles;
+    uint32_t jrnlFsizeSblks;
     bool      truncateFlag;
-    u_int32_t wCachePgSizeSblks;
-    u_int16_t wCacheNumPages;
-    u_int16_t tplNumJrnlFiles;
-    u_int32_t tplJrnlFsizeSblks;
-    u_int32_t tplWCachePgSizeSblks;
-    u_int16_t tplWCacheNumPages;
-    u_int64_t highestRid;
+    uint32_t wCachePgSizeSblks;
+    uint16_t wCacheNumPages;
+    uint16_t tplNumJrnlFiles;
+    uint32_t tplJrnlFsizeSblks;
+    uint32_t tplWCachePgSizeSblks;
+    uint16_t tplWCacheNumPages;
+    uint64_t highestRid;
     bool isInit;
     const char* envPath;
     qpid::broker::Broker* broker;
@@ -157,21 +148,10 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
 
     // Parameter validation and calculation
-//    static u_int16_t chkJrnlNumFilesParam(const u_int16_t param,
-//                                          const std::string paramName);
-//    static u_int32_t chkJrnlFileSizeParam(const u_int32_t param,
-//                                          const std::string paramName,
-//                                          const u_int32_t wCachePgSizeSblks = 0);
-    static u_int32_t chkJrnlWrPageCacheSize(const u_int32_t param,
+    static uint32_t chkJrnlWrPageCacheSize(const uint32_t param,
                                             const std::string paramName/*,
-                                            const u_int16_t jrnlFsizePgs*/);
-    static u_int16_t getJrnlWrNumPages(const u_int32_t wrPageSizeKib);
-//    void chkJrnlAutoExpandOptions(const MessageStoreImpl::StoreOptions* opts,
-//                                  bool& autoJrnlExpand,
-//                                  u_int16_t& autoJrnlExpandMaxFiles,
-//                                  const std::string& autoJrnlExpandMaxFilesParamName,
-//                                  const u_int16_t numJrnlFiles,
-//                                  const std::string& numJrnlFilesParamName);
+                                            const uint16_t jrnlFsizePgs*/);
+    static uint16_t getJrnlWrNumPages(const uint32_t wrPageSizeKib);
 
     void init();
 
@@ -213,7 +193,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     void recoverTplStore();
     void recoverLockedMappings(txn_list& txns);
     TxnCtxt* check(qpid::broker::TransactionContext* ctxt);
-    u_int64_t msgEncode(std::vector<char>& buff, const boost::intrusive_ptr<qpid::broker::PersistableMessage>& message);
+    uint64_t msgEncode(std::vector<char>& buff, const boost::intrusive_ptr<qpid::broker::PersistableMessage>& message);
     void store(const qpid::broker::PersistableQueue* queue,
                TxnCtxt* txn,
                const boost::intrusive_ptr<qpid::broker::PersistableMessage>& message,
@@ -245,7 +225,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     // journal functions
     void createJrnlQueue(const qpid::broker::PersistableQueue& queue);
-    u_int32_t bHash(const std::string str);
+    uint32_t bHash(const std::string str);
     std::string getJrnlDir(const qpid::broker::PersistableQueue& queue); //for exmaple /var/rhm/ + queueDir/
     std::string getJrnlHashDir(const std::string& queueName);
     std::string getJrnlBaseDir();
@@ -280,15 +260,9 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     bool init(const qpid::Options* options);
 
     bool init(const std::string& dir,
-              /*u_int16_t jfiles = defNumJrnlFiles,
-              u_int32_t jfileSizePgs = defJrnlFileSizePgs,*/
               const bool truncateFlag = false,
-              u_int32_t wCachePageSize = defWCachePageSize,
-              /*u_int16_t tplJfiles = defTplNumJrnlFiles,
-              u_int32_t tplJfileSizePgs = defTplJrnlFileSizePgs,*/
-              u_int32_t tplWCachePageSize = defTplWCachePageSize/*,
-              bool      autoJExpand = defAutoJrnlExpand,
-              u_int16_t autoJExpandMaxFiles = defAutoJrnlExpandMaxFiles*/);
+              uint32_t wCachePageSize = defWCachePageSize,
+              uint32_t tplWCachePageSize = defTplWCachePageSize);
 
     void truncateInit(const bool saveStoreContent = false);
 
@@ -345,7 +319,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     void flush(const qpid::broker::PersistableQueue& queue);
 
-    u_int32_t outstandingQueueAIO(const qpid::broker::PersistableQueue& queue);
+    uint32_t outstandingQueueAIO(const qpid::broker::PersistableQueue& queue);
 
     void collectPreparedXids(std::set<std::string>& xids);
 
@@ -364,7 +338,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     qpid::management::ManagementObject::shared_ptr GetManagementObject (void) const
         { return mgmtObject; }
 
-    inline qpid::management::Manageable::status_t ManagementMethod (u_int32_t, qpid::management::Args&, std::string&)
+    inline qpid::management::Manageable::status_t ManagementMethod (uint32_t, qpid::management::Args&, std::string&)
         { return qpid::management::Manageable::STATUS_OK; }
 
     std::string getStoreDir() const;

@@ -49,7 +49,8 @@
 * (The disk softblock size is 512 for Linux kernels >= 2.6)
 */
 #define JRNL_DBLK_SIZE          128         /**< Data block size in bytes (CANNOT BE LESS THAN 32!) */
-#define JRNL_SBLK_SIZE          32          /**< Disk softblock size in multiples of JRNL_DBLK_SIZE */
+#define JRNL_SBLK_SIZE_DBLKS    32          /**< Disk softblock size in multiples of JRNL_DBLK_SIZE */
+#define JRNL_SBLK_SIZE          JRNL_SBLK_SIZE_DBLKS * JRNL_DBLK_SIZE        /**< Disk softblock size in bytes */
 //#define JRNL_MIN_FILE_SIZE      128         ///< Min. jrnl file size in sblks (excl. file_hdr)
 //#define JRNL_MAX_FILE_SIZE      4194176     ///< Max. jrnl file size in sblks (excl. file_hdr)
 //#define JRNL_MIN_NUM_FILES      4           ///< Min. number of journal files

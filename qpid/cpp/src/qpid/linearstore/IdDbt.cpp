@@ -28,7 +28,7 @@ IdDbt::IdDbt() : id(0)
     init();
 }
 
-IdDbt::IdDbt(u_int64_t _id) : id(_id)
+IdDbt::IdDbt(uint64_t _id) : id(_id)
 {
     init();
 }
@@ -36,7 +36,7 @@ IdDbt::IdDbt(u_int64_t _id) : id(_id)
 void IdDbt::init()
 {
     set_data(&id);
-    set_size(sizeof(u_int64_t));
-    set_ulen(sizeof(u_int64_t));
+    set_size(sizeof(uint64_t));
+    set_ulen(sizeof(uint64_t));
     set_flags(DB_DBT_USERMEM);
 }

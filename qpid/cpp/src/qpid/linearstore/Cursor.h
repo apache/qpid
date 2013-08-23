@@ -37,7 +37,7 @@ public:
     Cursor() : cursor(0) {}
     virtual ~Cursor() { if(cursor) cursor->close(); }
 
-    void open(db_ptr db, DbTxn* txn, u_int32_t flags = 0) { db->cursor(txn, &cursor, flags); }
+    void open(db_ptr db, DbTxn* txn, uint32_t flags = 0) { db->cursor(txn, &cursor, flags); }
     void close() { if(cursor) cursor->close(); cursor = 0; }
     Dbc* get() { return cursor; }
     Dbc* operator->() { return cursor; }

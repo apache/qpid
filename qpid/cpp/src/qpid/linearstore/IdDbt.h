@@ -31,9 +31,9 @@ class IdDbt : public Dbt
 {
     void init();
 public:
-    u_int64_t id;
+    uint64_t id;
 
-    IdDbt(u_int64_t id);
+    IdDbt(uint64_t id);
     IdDbt();
 };
 

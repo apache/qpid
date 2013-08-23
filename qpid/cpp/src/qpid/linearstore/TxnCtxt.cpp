@@ -78,15 +78,15 @@ TxnCtxt::TxnCtxt(IdSequence* _loggedtx) : loggedtx(_loggedtx), dtokp(new DataTok
 //         // Human-readable tid: 53 bytes
 //         // uuit_t is a char[16]
 //         tid.reserve(53);
-//         u_int64_t* u1 = (u_int64_t*)uuid;
-//         u_int64_t* u2 = (u_int64_t*)(uuid + sizeof(u_int64_t));
+//         uint64_t* u1 = (uint64_t*)uuid;
+//         uint64_t* u2 = (uint64_t*)(uuid + sizeof(uint64_t));
 //         std::stringstream s;
 //         s << "tid:" << std::hex << std::setfill('0') << std::setw(16) << uuidSeq.next() << ":" << std::setw(16) << *u1 << std::setw(16) << *u2;
 //         tid.assign(s.str());
 
         // Binary tid: 24 bytes
         tid.reserve(24);
-        u_int64_t c = uuidSeq.next();
+        uint64_t c = uuidSeq.next();
         tid.append((char*)&c, sizeof(c));
         tid.append((char*)&uuid, sizeof(uuid));
     }
@@ -172,7 +172,7 @@ DataTokenImpl* TxnCtxt::getDtok() { return dtokp.get(); }
 
 void TxnCtxt::incrDtokRef() { dtokp->addRef(); }
 
-void TxnCtxt::recoverDtok(const u_int64_t rid, const std::string xid) {
+void TxnCtxt::recoverDtok(const uint64_t rid, const std::string xid) {
     dtokp->set_rid(rid);
     dtokp->set_wstate(DataTokenImpl::ENQ);
     dtokp->set_xid(xid);
