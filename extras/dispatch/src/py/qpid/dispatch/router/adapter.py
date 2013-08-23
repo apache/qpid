@@ -20,7 +20,7 @@
 try:
   from dispatch import *
 except ImportError:
-  from stubs import *
+  from ..stubs import *
 
 ENTRY_OLD     = 1
 ENTRY_CURRENT = 2

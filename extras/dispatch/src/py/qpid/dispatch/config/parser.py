@@ -84,10 +84,8 @@ class ConfigMain:
               for ek,ev in ref_section.values.items():
                 if ref_section.schema_section.expand_copy(ek):
                   sec.values[ek] = ev
-      
 
 
-    
 SECTION_SINGLETON = 0
 SECTION_VALUES    = 1
 
@@ -333,5 +331,3 @@ class DXConfig:
       if str(value) != "no":
         return True
     return None
-
-

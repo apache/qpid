@@ -23,7 +23,7 @@ from time import time
 try:
   from dispatch import *
 except ImportError:
-  from stubs import *
+  from ..stubs import *
 
 
 class NeighborEngine(object):
@@ -81,5 +81,3 @@ class NeighborEngine(object):
         self.link_state_changed = True
         self.container.lost_neighbor(key)
         self.container.log(LOG_INFO, "Neighbor lost: %s" % key)
-        
-      

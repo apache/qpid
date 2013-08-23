@@ -38,7 +38,7 @@ from node import NodeTracker
 try:
   from dispatch import *
 except ImportError:
-  from stubs import *
+  from ..stubs import *
 
 
 class RouterEngine:

@@ -17,4 +17,4 @@
 # under the License.
 #
 
-from config.parser import DXConfig
+from .router_engine import *
