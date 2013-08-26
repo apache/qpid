@@ -147,14 +147,19 @@ bool ConnectionContext::isOpen() const
 void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    //wait for outstanding sends to settle
-    while (!ssn->settled()) {
-        QPID_LOG(debug, "Waiting for sends to settle before closing");
-        wait(ssn);//wait until message has been confirmed
+    if (pn_session_state(ssn->session) & PN_REMOTE_ACTIVE) {
+        //wait for outstanding sends to settle
+        while (!ssn->settled()) {
+            QPID_LOG(debug, "Waiting for sends to settle before closing");
+            wait(ssn);//wait until message has been confirmed
+        }
     }
 
-    pn_session_close(ssn->session);
-    //TODO: need to destroy session and remove context from map
+    if (pn_session_state(ssn->session) & PN_REMOTE_ACTIVE) {
+        pn_session_close(ssn->session);
+    }
+    sessions.erase(ssn->getName());
+
     wakeupDriver();
 }
 
@@ -290,6 +295,31 @@ void ConnectionContext::acknowledge(boost::shared_ptr<SessionContext> ssn, qpid:
     wakeupDriver();
 }
 
+void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    if (pn_link_state(lnk->sender) & PN_LOCAL_ACTIVE) {
+        lnk->close();
+    }
+    wakeupDriver();
+    while (pn_link_state(lnk->sender) & PN_REMOTE_ACTIVE) {
+        wait();
+    }
+    ssn->removeSender(lnk->getName());
+}
+
+void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    if (pn_link_state(lnk->receiver) & PN_LOCAL_ACTIVE) {
+        lnk->close();
+    }
+    wakeupDriver();
+    while (pn_link_state(lnk->receiver) & PN_REMOTE_ACTIVE) {
+        wait();
+    }
+    ssn->removeReceiver(lnk->getName());
+}
 
 void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk)
 {
@@ -521,13 +551,14 @@ boost::shared_ptr<SessionContext> ConnectionContext::newSession(bool transaction
     SessionMap::const_iterator i = sessions.find(name);
     if (i == sessions.end()) {
         boost::shared_ptr<SessionContext> s(new SessionContext(connection));
+        s->setName(name);
         s->session = pn_session(connection);
         pn_session_open(s->session);
-        sessions[name] = s;
         wakeupDriver();
         while (pn_session_state(s->session) & PN_REMOTE_UNINIT) {
             wait();
         }
+        sessions[name] = s;
         return s;
     } else {
         throw qpid::messaging::KeyError(std::string("Session already exists: ") + name);
