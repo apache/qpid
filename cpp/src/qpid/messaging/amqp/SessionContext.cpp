@@ -79,14 +79,14 @@ boost::shared_ptr<ReceiverContext> SessionContext::getReceiver(const std::string
     }
 }
 
-void SessionContext::closeReceiver(const std::string&)
+void SessionContext::removeReceiver(const std::string& n)
 {
-
+    receivers.erase(n);
 }
 
-void SessionContext::closeSender(const std::string&)
+void SessionContext::removeSender(const std::string& n)
 {
-
+    senders.erase(n);
 }
 
 boost::shared_ptr<ReceiverContext> SessionContext::nextReceiver(qpid::messaging::Duration /*timeout*/)
@@ -153,4 +153,14 @@ bool SessionContext::settled()
     }
     return result;
 }
+
+void SessionContext::setName(const std::string& n)
+{
+    name = n;
+}
+std::string SessionContext::getName() const
+{
+    return name;
+}
+
 }}} // namespace qpid::messaging::amqp

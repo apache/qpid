@@ -84,7 +84,7 @@ uint32_t ReceiverHandle::getUnsettled()
 
 void ReceiverHandle::close()
 {
-    session->closeReceiver(getName());
+    connection->detach(session, receiver);
 }
 
 const std::string& ReceiverHandle::getName() const

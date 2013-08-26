@@ -84,15 +84,25 @@ void SessionHandle::sync(bool /*block*/)
 qpid::messaging::Sender SessionHandle::createSender(const qpid::messaging::Address& address)
 {
     boost::shared_ptr<SenderContext> sender = session->createSender(address);
-    connection->attach(session, sender);
-    return qpid::messaging::Sender(new SenderHandle(connection, session, sender));
+    try {
+        connection->attach(session, sender);
+        return qpid::messaging::Sender(new SenderHandle(connection, session, sender));
+    } catch (...) {
+        session->removeSender(sender->getName());
+        throw;
+    }
 }
 
 qpid::messaging::Receiver SessionHandle::createReceiver(const qpid::messaging::Address& address)
 {
     boost::shared_ptr<ReceiverContext> receiver = session->createReceiver(address);
-    connection->attach(session, receiver);
-    return qpid::messaging::Receiver(new ReceiverHandle(connection, session, receiver));
+    try {
+        connection->attach(session, receiver);
+        return qpid::messaging::Receiver(new ReceiverHandle(connection, session, receiver));
+    } catch (...) {
+        session->removeReceiver(receiver->getName());
+        throw;
+    }
 }
 
 bool SessionHandle::nextReceiver(Receiver& receiver, Duration timeout)

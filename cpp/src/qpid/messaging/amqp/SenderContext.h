@@ -89,7 +89,7 @@ class SenderContext
     Deliveries deliveries;
     uint32_t capacity;
 
-    uint32_t processUnsettled();
+    uint32_t processUnsettled(bool silent);
     void configure(pn_terminus_t*);
 };
 }}} // namespace qpid::messaging::amqp
