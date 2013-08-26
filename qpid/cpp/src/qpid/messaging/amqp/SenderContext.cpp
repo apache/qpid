@@ -67,7 +67,7 @@ uint32_t SenderContext::getCapacity()
 
 uint32_t SenderContext::getUnsettled()
 {
-    return processUnsettled();
+    return processUnsettled(true/*always allow retrieval of unsettled count, even if link has failed*/);
 }
 
 const std::string& SenderContext::getName() const
@@ -82,7 +82,7 @@ const std::string& SenderContext::getTarget() const
 
 SenderContext::Delivery* SenderContext::send(const qpid::messaging::Message& message)
 {
-    if (processUnsettled() < capacity && pn_link_credit(sender)) {
+    if (processUnsettled(false) < capacity && pn_link_credit(sender)) {
         deliveries.push_back(Delivery(nextId++));
         Delivery& delivery = deliveries.back();
         delivery.encode(MessageImplAccess::get(message), address);
@@ -108,11 +108,13 @@ void SenderContext::check()
     }
 }
 
-uint32_t SenderContext::processUnsettled()
+uint32_t SenderContext::processUnsettled(bool silent)
 {
-    check();
+    if (!silent) {
+        check();
+    }
     //remove messages from front of deque once peer has confirmed receipt
-    while (!deliveries.empty() && deliveries.front().delivered()) {
+    while (!deliveries.empty() && deliveries.front().delivered() && !(pn_link_state(sender) & PN_REMOTE_CLOSED)) {
         deliveries.front().settle();
         deliveries.pop_front();
     }
@@ -529,7 +531,7 @@ void SenderContext::configure(pn_terminus_t* target)
 
 bool SenderContext::settled()
 {
-    return processUnsettled() == 0;
+    return processUnsettled(false) == 0;
 }
 
 Address SenderContext::getAddress() const
