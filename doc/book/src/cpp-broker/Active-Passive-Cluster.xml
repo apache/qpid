@@ -113,12 +113,12 @@ under the License.
 	been replicated to a backup, then it doesn't need to be replicated.
       </para>
       <variablelist>
-	<title>Status of a HA broker</title>
+	<title>HA Broker States</title>
 	<varlistentry>
 	  <term>Joining</term>
 	  <listitem>
 	    <para>
-	      Initial status of a new broker that has not yet connected to the primary.
+	      Initial state of a new broker that has not yet connected to the primary.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -499,9 +499,8 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       <command>qpidd</command> broker to primary status.
     </para>
     <para>
-      The <literal>resources</literal> section also defines a pair of virtual IP
-      addresses on different sub-nets. One will be used for broker-to-broker
-      communication, the other for client-to-broker.
+      The <literal>resources</literal> section also defines a virtual IP
+      address for clients.
     </para>
     <para>
       To take advantage of the virtual IP addresses, <filename>qpidd.conf</filename>
