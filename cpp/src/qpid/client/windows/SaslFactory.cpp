@@ -26,6 +26,7 @@
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/log/Statement.h"
+#include "qpid/NullSaslServer.h"
 
 #include "boost/tokenizer.hpp"
 
@@ -105,6 +106,12 @@ std::auto_ptr<Sasl> SaslFactory::create( const std::string & username, const std
 {
     std::auto_ptr<Sasl> sasl(new WindowsSasl( username, password, serviceName, hostName, minSsf, maxSsf ));
     return sasl;
+}
+
+std::auto_ptr<SaslServer> SaslFactory::createServer( const std::string& realm, bool /*encryptionRequired*/, const qpid::sys::SecuritySettings& )
+{
+    std::auto_ptr<SaslServer> server(new NullSaslServer(realm));
+    return server;
 }
 
 namespace {
