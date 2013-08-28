@@ -44,9 +44,10 @@ void Outgoing::wakeup()
     session.wakeup();
 }
 
-OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session, qpid::sys::OutputControl& o, bool e, bool p)
+OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session,
+                                     qpid::sys::OutputControl& o, SubscriptionType type, bool e, bool p)
     : Outgoing(broker, session, source, target, pn_link_name(l)),
-      Consumer(pn_link_name(l), /*FIXME*/CONSUMER),
+      Consumer(pn_link_name(l), type),
       exclusive(e),
       isControllingUser(p),
       queue(q), deliveries(5000), link(l), out(o),

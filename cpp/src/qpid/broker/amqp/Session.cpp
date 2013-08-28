@@ -36,6 +36,7 @@
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueCursor.h"
 #include "qpid/broker/Selector.h"
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/amqp/Filter.h"
@@ -319,7 +320,8 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
 
     if (node.queue) {
         authorise.outgoing(node.queue);
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, false, node.properties.trackControllingLink()));
+        SubscriptionType type = pn_terminus_get_distribution_mode(source) == PN_DIST_MODE_COPY ? BROWSER : CONSUMER;
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, type, false, node.properties.trackControllingLink()));
         q->init();
         filter.apply(q);
         outgoing[link] = q;
@@ -354,7 +356,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         if (!shared) queue->setExclusiveOwner(this);
         authorise.outgoing(node.exchange, queue, filter);
         filter.bind(node.exchange, queue);
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, queue, link, *this, out, !shared, false));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, queue, link, *this, out, CONSUMER, !shared, false));
         q->init();
         outgoing[link] = q;
     } else if (node.relay) {
