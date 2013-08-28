@@ -45,10 +45,11 @@ struct Delivery
 class BufferedTransfer
 {
   public:
+    BufferedTransfer();
     void initIn(pn_link_t* link, pn_delivery_t* d);
     bool settle();
     void initOut(pn_link_t* link);
-    pn_disposition_t updated();
+    uint64_t updated();
     bool write(pn_link_t*);
   private:
     std::vector<char> data;
@@ -56,7 +57,7 @@ class BufferedTransfer
     Delivery out;
     pn_delivery_tag_t dt;
     std::vector<char> tag;
-    pn_disposition_t disposition;
+    uint64_t disposition;
 };
 
 /**
