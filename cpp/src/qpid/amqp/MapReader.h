@@ -68,36 +68,36 @@ class MapReader : public Reader
 
 
     //this class implements the Reader interface, thus acting as a transformer into a more map oriented scheme
-    void onNull(const Descriptor*);
-    void onBoolean(bool, const Descriptor*);
-    void onUByte(uint8_t, const Descriptor*);
-    void onUShort(uint16_t, const Descriptor*);
-    void onUInt(uint32_t, const Descriptor*);
-    void onULong(uint64_t, const Descriptor*);
-    void onByte(int8_t, const Descriptor*);
-    void onShort(int16_t, const Descriptor*);
-    void onInt(int32_t, const Descriptor*);
-    void onLong(int64_t, const Descriptor*);
-    void onFloat(float, const Descriptor*);
-    void onDouble(double, const Descriptor*);
-    void onUuid(const CharSequence&, const Descriptor*);
-    void onTimestamp(int64_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onNull(const Descriptor*);
+    QPID_COMMON_EXTERN void onBoolean(bool, const Descriptor*);
+    QPID_COMMON_EXTERN void onUByte(uint8_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onUShort(uint16_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onUInt(uint32_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onULong(uint64_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onByte(int8_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onShort(int16_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onInt(int32_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onLong(int64_t, const Descriptor*);
+    QPID_COMMON_EXTERN void onFloat(float, const Descriptor*);
+    QPID_COMMON_EXTERN void onDouble(double, const Descriptor*);
+    QPID_COMMON_EXTERN void onUuid(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onTimestamp(int64_t, const Descriptor*);
 
-    void onBinary(const CharSequence&, const Descriptor*);
-    void onString(const CharSequence&, const Descriptor*);
-    void onSymbol(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onBinary(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onString(const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN void onSymbol(const CharSequence&, const Descriptor*);
 
-    bool onStartList(uint32_t /*count*/, const CharSequence&, const Descriptor*);
-    bool onStartMap(uint32_t /*count*/, const CharSequence&, const Descriptor*);
-    bool onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*);
-    void onEndList(uint32_t /*count*/, const Descriptor*);
-    void onEndMap(uint32_t /*count*/, const Descriptor*);
-    void onEndArray(uint32_t /*count*/, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t /*count*/, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartMap(uint32_t /*count*/, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*);
+    QPID_COMMON_EXTERN void onEndList(uint32_t /*count*/, const Descriptor*);
+    QPID_COMMON_EXTERN void onEndMap(uint32_t /*count*/, const Descriptor*);
+    QPID_COMMON_EXTERN void onEndArray(uint32_t /*count*/, const Descriptor*);
 
-    MapReader();
-    static const int SYMBOL_KEY;
-    static const int STRING_KEY;
-    void setAllowedKeyType(int);
+    QPID_COMMON_EXTERN MapReader();
+    QPID_COMMON_EXTERN static const int SYMBOL_KEY;
+    QPID_COMMON_EXTERN static const int STRING_KEY;
+    QPID_COMMON_EXTERN void setAllowedKeyType(int);
   private:
     CharSequence key;
     size_t level;

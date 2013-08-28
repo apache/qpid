@@ -38,7 +38,7 @@ class Queue;
 class IngressCompletion : public AsyncCompletion
 {
   public:
-    virtual ~IngressCompletion();
+    QPID_BROKER_EXTERN virtual ~IngressCompletion();
 
     void enqueueAsync(boost::shared_ptr<Queue>);
     void flush();

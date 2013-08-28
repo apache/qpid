@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include <qpid/CommonImportExport.h>
 #include "qpid/amqp/Sasl.h"
 
 namespace qpid {
@@ -33,19 +34,19 @@ namespace amqp {
 class SaslClient : public Sasl
 {
   public:
-    SaslClient(const std::string& id);
-    virtual ~SaslClient();
-    virtual void mechanisms(const std::string&) = 0;
-    virtual void challenge(const std::string&) = 0;
-    virtual void challenge() = 0; //null != empty string
-    virtual void outcome(uint8_t result, const std::string&) = 0;
-    virtual void outcome(uint8_t result) = 0;
+    QPID_COMMON_EXTERN SaslClient(const std::string& id);
+    QPID_COMMON_EXTERN virtual ~SaslClient();
+    QPID_COMMON_EXTERN virtual void mechanisms(const std::string&) = 0;
+    QPID_COMMON_EXTERN virtual void challenge(const std::string&) = 0;
+    QPID_COMMON_EXTERN virtual void challenge() = 0; //null != empty string
+    QPID_COMMON_EXTERN virtual void outcome(uint8_t result, const std::string&) = 0;
+    QPID_COMMON_EXTERN virtual void outcome(uint8_t result) = 0;
 
-    void init(const std::string& mechanism, const std::string* response, const std::string* hostname);
-    void response(const std::string*);
+    QPID_COMMON_EXTERN void init(const std::string& mechanism, const std::string* response, const std::string* hostname);
+    QPID_COMMON_EXTERN void response(const std::string*);
 
   private:
-    bool onStartList(uint32_t count, const CharSequence& arguments, const Descriptor* descriptor);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t count, const CharSequence& arguments, const Descriptor* descriptor);
 
 };
 
