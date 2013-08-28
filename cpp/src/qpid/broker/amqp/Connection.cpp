@@ -182,12 +182,9 @@ void Connection::open()
 
 void Connection::readPeerProperties()
 {
-    /**
-     * TODO: enable when proton 0.5 has been released:
     qpid::types::Variant::Map properties;
     DataReader::read(pn_connection_remote_properties(connection), properties);
     setPeerProperties(properties);
-    */
 }
 
 void Connection::closed()

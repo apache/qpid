@@ -105,14 +105,14 @@ void Relay::detached(Outgoing*)
 {
     out = 0;
     isDetached = true;
-    std::cerr << "Outgoing link detached from relay" << std::endl;
+    QPID_LOG(info, "Outgoing link detached from relay [" << this << "]");
     if (in) in->wakeup();
 }
 void Relay::detached(Incoming*)
 {
     in = 0;
     isDetached = true;
-    std::cerr << "Incoming link detached from relay" << std::endl;
+    QPID_LOG(info, "Incoming link detached from relay [" << this << "]");
     if (out) out->wakeup();
 }
 
@@ -139,13 +139,13 @@ void OutgoingFromRelay::handle(pn_delivery_t* delivery)
     if (pn_delivery_writable(delivery)) {
         if (transfer->write(link)) {
             outgoingMessageSent();
-            QPID_LOG(debug, "Sent relayed message " << name);
+            QPID_LOG(debug, "Sent relayed message " << name << " [" << relay.get() << "]");
         } else {
-            QPID_LOG(error, "Failed to send relayed message " << name);
+            QPID_LOG(error, "Failed to send relayed message " << name << " [" << relay.get() << "]");
         }
     }
     if (pn_delivery_updated(delivery)) {
-        pn_disposition_t d = transfer->updated();
+        uint64_t d = transfer->updated();
         switch (d) {
           case PN_ACCEPTED:
             outgoingMessageAccepted();
@@ -226,6 +226,7 @@ void IncomingToRelay::detached()
     relay->detached(this);
 }
 
+BufferedTransfer::BufferedTransfer() : disposition(0) {}
 void BufferedTransfer::initIn(pn_link_t* link, pn_delivery_t* d)
 {
     in.handle = d;
@@ -264,7 +265,7 @@ void BufferedTransfer::initOut(pn_link_t* link)
     pn_delivery_set_context(out.handle, this);
 }
 
-pn_disposition_t BufferedTransfer::updated()
+uint64_t BufferedTransfer::updated()
 {
     disposition = pn_delivery_remote_state(out.handle);
     if (disposition) {

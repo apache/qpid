@@ -773,10 +773,6 @@ pn_bytes_t convert(const std::string& s)
 }
 void ConnectionContext::setProperties()
 {
-    /**
-     * Enable when proton 0.5 is released and qpidc has been updated
-     * to use it
-     *
     pn_data_t* data = pn_connection_properties(connection);
     pn_data_put_map(data);
     pn_data_enter(data);
@@ -791,7 +787,6 @@ void ConnectionContext::setProperties()
     pn_data_put_symbol(data, convert(CLIENT_PPID));
     pn_data_put_int(data, sys::SystemInfo::getParentProcessId());
     pn_data_exit(data);
-    **/
 }
 
 const qpid::sys::SecuritySettings* ConnectionContext::getTransportSecuritySettings()
