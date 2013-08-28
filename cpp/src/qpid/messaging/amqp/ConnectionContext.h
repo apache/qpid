@@ -110,7 +110,6 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
 
   private:
     typedef std::map<std::string, boost::shared_ptr<SessionContext> > SessionMap;
-    qpid::Url url;
 
     boost::shared_ptr<DriverImpl> driver;
     boost::shared_ptr<Transport> transport;
@@ -129,17 +128,6 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
         CONNECTED
     } state;
     std::auto_ptr<Sasl> sasl;
-    class CodecSwitch : public qpid::sys::Codec
-    {
-      public:
-        CodecSwitch(ConnectionContext&);
-        std::size_t decode(const char* buffer, std::size_t size);
-        std::size_t encode(char* buffer, std::size_t size);
-        bool canEncode();
-      private:
-        ConnectionContext& parent;
-    };
-    CodecSwitch codecSwitch;
 
     void check();
     void wait();
@@ -155,7 +143,19 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
     void checkClosed(boost::shared_ptr<SessionContext>, pn_link_t*);
     void wakeupDriver();
-    void attach(pn_session_t*, pn_link_t*, int credit=0);
+    void attach(pn_link_t*, int credit=0);
+    void reconnect();
+    bool tryConnect();
+    bool tryConnect(const std::string& url);
+    bool tryConnect(const qpid::Url& url);
+    bool tryConnect(const qpid::Address& address);
+    void reset();
+    bool restartSessions();
+    void restartSession(boost::shared_ptr<SessionContext>);
+
+    std::size_t decodePlain(const char* buffer, std::size_t size);
+    std::size_t encodePlain(char* buffer, std::size_t size);
+    bool canEncodePlain();
 
     std::size_t readProtocolHeader(const char* buffer, std::size_t size);
     std::size_t writeProtocolHeader(char* buffer, std::size_t size);
