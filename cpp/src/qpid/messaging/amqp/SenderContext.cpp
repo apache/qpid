@@ -42,7 +42,7 @@ SenderContext::SenderContext(pn_session_t* session, const std::string& n, const 
   : name(n),
     address(a),
     helper(address),
-    sender(pn_sender(session, n.c_str())), capacity(1000) {}
+    sender(pn_sender(session, n.c_str())), capacity(1000), unreliable(helper.isUnreliable()) {}
 
 SenderContext::~SenderContext()
 {
@@ -80,16 +80,25 @@ const std::string& SenderContext::getTarget() const
     return address.getName();
 }
 
-SenderContext::Delivery* SenderContext::send(const qpid::messaging::Message& message)
+bool SenderContext::send(const qpid::messaging::Message& message, SenderContext::Delivery** out)
 {
     if (processUnsettled(false) < capacity && pn_link_credit(sender)) {
-        deliveries.push_back(Delivery(nextId++));
-        Delivery& delivery = deliveries.back();
-        delivery.encode(MessageImplAccess::get(message), address);
-        delivery.send(sender);
-        return &delivery;
+        if (unreliable) {
+            Delivery delivery(nextId++);
+            delivery.encode(MessageImplAccess::get(message), address);
+            delivery.send(sender, unreliable);
+            *out = 0;
+            return true;
+        } else {
+            deliveries.push_back(Delivery(nextId++));
+            Delivery& delivery = deliveries.back();
+            delivery.encode(MessageImplAccess::get(message), address);
+            delivery.send(sender, unreliable);
+            *out = &delivery;
+            return true;
+        }
     } else {
-        return 0;
+        return false;
     }
 }
 
@@ -474,13 +483,14 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
         //write footer (no annotations yet supported)
     }
 }
-void SenderContext::Delivery::send(pn_link_t* sender)
+void SenderContext::Delivery::send(pn_link_t* sender, bool unreliable)
 {
     pn_delivery_tag_t tag;
     tag.size = sizeof(id);
     tag.bytes = reinterpret_cast<const char*>(&id);
     token = pn_delivery(sender, tag);
     pn_link_send(sender, encoded.getData(), encoded.getSize());
+    if (unreliable) pn_delivery_settle(token);
     pn_link_advance(sender);
 }
 
@@ -520,7 +530,7 @@ void SenderContext::configure()
 }
 void SenderContext::configure(pn_terminus_t* target)
 {
-    helper.configure(target, AddressHelper::FOR_SENDER);
+    helper.configure(sender, target, AddressHelper::FOR_SENDER);
     std::string option;
     if (helper.getLinkSource(option)) {
         pn_terminus_set_address(pn_link_source(sender), option.c_str());

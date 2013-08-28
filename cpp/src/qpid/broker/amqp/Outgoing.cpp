@@ -52,7 +52,8 @@ OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, 
       isControllingUser(p),
       queue(q), deliveries(5000), link(l), out(o),
       current(0), outstanding(0),
-      buffer(1024)/*used only for header at present*/
+      buffer(1024)/*used only for header at present*/,
+      unreliable(pn_link_remote_snd_settle_mode(link) == PN_SND_SETTLED)
 {
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         deliveries[i].init(i);
@@ -105,6 +106,7 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
         write(&buffer[0], encoder.getPosition());
         Translation t(r.msg);
         t.write(*this);
+        if (unreliable) pn_delivery_settle(delivery);
         if (pn_link_advance(link)) {
             --outstanding;
             outgoingMessageSent();
@@ -113,7 +115,10 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
             QPID_LOG(error, "Failed to send message " << r.msg.getSequence() << " from " << queue->getName() << ", index=" << r.index);
         }
     }
-    if (pn_delivery_updated(delivery)) {
+    if (unreliable) {
+        if (preAcquires()) queue->dequeue(0, r.cursor);
+        r.reset();
+    } else if (pn_delivery_updated(delivery)) {
         assert(r.delivery == delivery);
         r.disposition = pn_delivery_remote_state(delivery);
         if (r.disposition) {

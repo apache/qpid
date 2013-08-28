@@ -52,7 +52,7 @@ class SenderContext
       public:
         Delivery(int32_t id);
         void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&);
-        void send(pn_link_t*);
+        void send(pn_link_t*, bool unreliable);
         bool delivered();
         bool accepted();
         bool rejected();
@@ -71,7 +71,7 @@ class SenderContext
     uint32_t getUnsettled();
     const std::string& getName() const;
     const std::string& getTarget() const;
-    Delivery* send(const qpid::messaging::Message& message);
+    bool send(const qpid::messaging::Message& message, Delivery**);
     void configure();
     void verify(pn_terminus_t*);
     void check();
@@ -88,6 +88,7 @@ class SenderContext
     int32_t nextId;
     Deliveries deliveries;
     uint32_t capacity;
+    bool unreliable;
 
     uint32_t processUnsettled(bool silent);
     void configure(pn_terminus_t*);
