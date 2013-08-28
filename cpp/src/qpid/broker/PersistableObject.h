@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/broker/BrokerImportExport.h"
 #include "PersistableConfig.h"
 #include "qpid/types/Variant.h"
 #include <vector>
@@ -37,13 +38,13 @@ class RecoverableConfig;
 class PersistableObject : public PersistableConfig
 {
   public:
-    PersistableObject(const std::string& name, const std::string& type, const qpid::types::Variant::Map properties);
-    virtual ~PersistableObject();
-    const std::string& getName() const;
-    void setPersistenceId(uint64_t id) const;
-    uint64_t getPersistenceId() const;
-    void encode(framing::Buffer& buffer) const;
-    uint32_t encodedSize() const;
+    QPID_BROKER_EXTERN PersistableObject(const std::string& name, const std::string& type, const qpid::types::Variant::Map properties);
+    QPID_BROKER_EXTERN virtual ~PersistableObject();
+    QPID_BROKER_EXTERN const std::string& getName() const;
+    QPID_BROKER_EXTERN void setPersistenceId(uint64_t id) const;
+    QPID_BROKER_EXTERN uint64_t getPersistenceId() const;
+    QPID_BROKER_EXTERN void encode(framing::Buffer& buffer) const;
+    QPID_BROKER_EXTERN uint32_t encodedSize() const;
   friend class RecoveredObjects;
   private:
     std::string name;

@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <string>
+#include "qpid/CommonImportExport.h"
 #include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
@@ -53,7 +54,7 @@ class Sasl
     virtual std::string getMechanism() = 0;
     virtual std::string getUserId() = 0;
     virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize) = 0;    
-    virtual ~Sasl() {}
+    QPID_COMMON_EXTERN virtual ~Sasl() {}
 };
 } // namespace qpid
 

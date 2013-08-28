@@ -42,13 +42,13 @@ struct Descriptor
         SYMBOLIC
     } type;
 
-    Descriptor(uint64_t code);
-    Descriptor(const CharSequence& symbol);
-    bool match(const std::string&, uint64_t) const;
-    size_t getSize() const;
+    QPID_COMMON_EXTERN Descriptor(uint64_t code);
+    QPID_COMMON_EXTERN Descriptor(const CharSequence& symbol);
+    QPID_COMMON_EXTERN bool match(const std::string&, uint64_t) const;
+    QPID_COMMON_EXTERN size_t getSize() const;
 };
 
-std::ostream& operator<<(std::ostream& os, const Descriptor& d);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const Descriptor& d);
 
 }} // namespace qpid::amqp
 

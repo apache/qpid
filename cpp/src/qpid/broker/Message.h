@@ -104,7 +104,7 @@ public:
     sys::AbsTime getExpiration() const { return expiration; }
     void setExpiration(sys::AbsTime exp) { expiration = exp; }
     uint64_t getTtl() const;
-    bool getTtl(uint64_t) const;
+    QPID_BROKER_EXTERN bool getTtl(uint64_t) const;
 
     /** set the timestamp delivery property to the current time-of-day */
     QPID_BROKER_EXTERN void setTimestamp();
@@ -136,7 +136,7 @@ public:
 
     QPID_BROKER_EXTERN qpid::types::Variant getAnnotation(const std::string& key) const;
     QPID_BROKER_EXTERN const qpid::types::Variant::Map& getAnnotations() const;
-    std::string getUserId() const;
+    QPID_BROKER_EXTERN std::string getUserId() const;
 
     QPID_BROKER_EXTERN std::string getContent() const;//Used for ha, management, when content needs to be decoded
 

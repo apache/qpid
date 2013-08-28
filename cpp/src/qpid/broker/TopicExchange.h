@@ -81,7 +81,7 @@ class TopicExchange : public virtual Exchange {
     };
 
 public:
-    static const std::string typeName;
+    QPID_BROKER_EXTERN static const std::string typeName;
 
     static QPID_BROKER_EXTERN std::string normalize(const std::string& pattern);
 
