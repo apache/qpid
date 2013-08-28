@@ -73,6 +73,12 @@ const std::string SUBJECT_FILTER("subject-filter");
 const std::string SOURCE("sender-source");
 const std::string TARGET("receiver-target");
 
+//reliability options:
+const std::string UNRELIABLE("unreliable");
+const std::string AT_MOST_ONCE("at-most-once");
+const std::string AT_LEAST_ONCE("at-least-once");
+const std::string EXACTLY_ONCE("exactly-once");
+
 //distribution modes:
 const std::string MOVE("move");
 const std::string COPY("copy");
@@ -293,6 +299,7 @@ AddressHelper::AddressHelper(const Address& address) :
     bind(address, LINK, link);
     bind(node, PROPERTIES, properties);
     bind(node, CAPABILITIES, capabilities);
+    bind(link, RELIABILITY, reliability);
     durableNode = test(node, DURABLE);
     durableLink = test(link, DURABLE);
     timeout = get(link, TIMEOUT, durableLink ? DEFAULT_DURABLE_TIMEOUT : DEFAULT_TIMEOUT);
@@ -506,6 +513,11 @@ bool AddressHelper::enabled(const std::string& policy, CheckMode mode) const
     return result;
 }
 
+bool AddressHelper::isUnreliable() const
+{
+    return reliability == AT_MOST_ONCE || reliability == UNRELIABLE;
+}
+
 const qpid::types::Variant::Map& AddressHelper::getNodeProperties() const
 {
     return node;
@@ -536,7 +548,7 @@ bool AddressHelper::getLinkOption(const std::string& name, std::string& out) con
     }
 }
 
-void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
+void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMode mode)
 {
     bool createOnDemand(false);
     if (isTemporary) {
@@ -581,7 +593,9 @@ void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
             pn_data_exit(filter);
         }
     }
-
+    if (isUnreliable()) {
+        pn_link_set_snd_settle_mode(link, PN_SND_SETTLED);
+    }
 }
 
 void AddressHelper::setCapabilities(pn_terminus_t* terminus, bool create)

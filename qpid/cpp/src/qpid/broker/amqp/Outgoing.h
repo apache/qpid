@@ -135,6 +135,7 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
     std::vector<char> buffer;
     std::string subjectFilter;
     boost::scoped_ptr<Selector> selector;
+    bool unreliable;
 };
 }}} // namespace qpid::broker::amqp
 

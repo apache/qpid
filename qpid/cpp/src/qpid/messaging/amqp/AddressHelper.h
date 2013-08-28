@@ -24,6 +24,7 @@
 #include "qpid/types/Variant.h"
 #include <vector>
 
+struct pn_link_t;
 struct pn_terminus_t;
 
 namespace qpid {
@@ -36,9 +37,10 @@ class AddressHelper
     enum CheckMode {FOR_RECEIVER, FOR_SENDER};
 
     AddressHelper(const Address& address);
-    void configure(pn_terminus_t* terminus, CheckMode mode);
+    void configure(pn_link_t* link, pn_terminus_t* terminus, CheckMode mode);
     void checkAssertion(pn_terminus_t* terminus, CheckMode mode);
 
+    bool isUnreliable() const;
     const qpid::types::Variant::Map& getNodeProperties() const;
     bool getLinkSource(std::string& out) const;
     bool getLinkTarget(std::string& out) const;
@@ -68,6 +70,7 @@ class AddressHelper
     qpid::types::Variant::List capabilities;
     std::string name;
     std::string type;
+    std::string reliability;
     bool durableNode;
     bool durableLink;
     uint32_t timeout;

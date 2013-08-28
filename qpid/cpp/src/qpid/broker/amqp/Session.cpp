@@ -317,7 +317,6 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         target = targetAddress;
     }
 
-
     if (node.queue) {
         authorise.outgoing(node.queue);
         SubscriptionType type = pn_terminus_get_distribution_mode(source) == PN_DIST_MODE_COPY ? BROWSER : CONSUMER;

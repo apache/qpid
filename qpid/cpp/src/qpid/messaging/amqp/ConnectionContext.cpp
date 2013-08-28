@@ -377,12 +377,12 @@ void ConnectionContext::send(boost::shared_ptr<SessionContext> ssn, boost::share
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     checkClosed(ssn);
     SenderContext::Delivery* delivery(0);
-    while (!(delivery = snd->send(message))) {
+    while (!snd->send(message, &delivery)) {
         QPID_LOG(debug, "Waiting for capacity...");
         wait(ssn, snd);//wait for capacity
     }
     wakeupDriver();
-    if (sync) {
+    if (sync && delivery) {
         while (!delivery->accepted()) {
             QPID_LOG(debug, "Waiting for confirmation...");
             wait(ssn, snd);//wait until message has been confirmed

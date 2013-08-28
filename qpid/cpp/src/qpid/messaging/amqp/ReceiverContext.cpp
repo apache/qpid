@@ -99,7 +99,7 @@ void ReceiverContext::configure()
 }
 void ReceiverContext::configure(pn_terminus_t* source)
 {
-    helper.configure(source, AddressHelper::FOR_RECEIVER);
+    helper.configure(receiver, source, AddressHelper::FOR_RECEIVER);
     std::string option;
     if (helper.getLinkTarget(option)) {
         pn_terminus_set_address(pn_link_target(receiver), option.c_str());
