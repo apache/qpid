@@ -72,7 +72,7 @@ class ProtocolRegistry : public Protocol
     QPID_BROKER_EXTERN Message decode(qpid::framing::Buffer&);
 
     QPID_BROKER_EXTERN ~ProtocolRegistry();
-    void add(const std::string&, Protocol*);
+    QPID_BROKER_EXTERN void add(const std::string&, Protocol*);
   private:
     //name may be useful for descriptive purposes or even for some
     //limited manipulation of ordering

@@ -62,8 +62,8 @@ class PersistableMessage : public Persistable
     mutable uint64_t persistenceId;
 
   public:
-    virtual ~PersistableMessage();
-    PersistableMessage();
+    QPID_BROKER_EXTERN virtual ~PersistableMessage();
+    QPID_BROKER_EXTERN PersistableMessage();
 
     virtual QPID_BROKER_EXTERN bool isPersistent() const = 0;
 

@@ -39,7 +39,7 @@ class MessageEncoder : public Encoder
         virtual ~Header() {}
         virtual bool isDurable() const = 0;
         virtual uint8_t getPriority() const = 0;
-        virtual bool hasTtl() const = 0;
+        QPID_COMMON_EXTERN virtual bool hasTtl() const = 0;
         virtual uint32_t getTtl() const = 0;
         virtual bool isFirstAcquirer() const = 0;
         virtual uint32_t getDeliveryCount() const = 0;
@@ -84,25 +84,25 @@ class MessageEncoder : public Encoder
         virtual void handle(MapHandler&) const = 0;
     };
 
-    MessageEncoder(char* d, size_t s) : Encoder(d, s), optimise(true) {}
-    void writeHeader(const Header&);
-    void writeProperties(const Properties&);
-    void writeApplicationProperties(const ApplicationProperties&);
-    void writeApplicationProperties(const qpid::types::Variant::Map& properties);
-    void writeApplicationProperties(const qpid::types::Variant::Map& properties, bool useLargeMap);
+    QPID_COMMON_EXTERN MessageEncoder(char* d, size_t s) : Encoder(d, s), optimise(true) {}
+    QPID_COMMON_EXTERN void writeHeader(const Header&);
+    QPID_COMMON_EXTERN void writeProperties(const Properties&);
+    QPID_COMMON_EXTERN void writeApplicationProperties(const ApplicationProperties&);
+    QPID_COMMON_EXTERN void writeApplicationProperties(const qpid::types::Variant::Map& properties);
+    QPID_COMMON_EXTERN void writeApplicationProperties(const qpid::types::Variant::Map& properties, bool useLargeMap);
 
-    static size_t getEncodedSize(const Header&);
-    static size_t getEncodedSize(const Properties&);
-    static size_t getEncodedSize(const ApplicationProperties&);
+    QPID_COMMON_EXTERN static size_t getEncodedSize(const Header&);
+    QPID_COMMON_EXTERN static size_t getEncodedSize(const Properties&);
+    QPID_COMMON_EXTERN static size_t getEncodedSize(const ApplicationProperties&);
 
-    static size_t getEncodedSize(const qpid::types::Variant::List&, bool useLargeList);
-    static size_t getEncodedSize(const qpid::types::Variant::Map&, bool useLargeMap);
+    QPID_COMMON_EXTERN static size_t getEncodedSize(const qpid::types::Variant::List&, bool useLargeList);
+    QPID_COMMON_EXTERN static size_t getEncodedSize(const qpid::types::Variant::Map&, bool useLargeMap);
 
-    static size_t getEncodedSizeForValue(const qpid::types::Variant& value);
-    static size_t getEncodedSizeForContent(const std::string&);
+    QPID_COMMON_EXTERN static size_t getEncodedSizeForValue(const qpid::types::Variant& value);
+    QPID_COMMON_EXTERN static size_t getEncodedSizeForContent(const std::string&);
 
     //used in translating 0-10 content to 1.0, to determine buffer space needed
-    static size_t getEncodedSize(const Properties&, const qpid::types::Variant::Map&, const std::string&);
+    QPID_COMMON_EXTERN static size_t getEncodedSize(const Properties&, const qpid::types::Variant::Map&, const std::string&);
 
   private:
     bool optimise;

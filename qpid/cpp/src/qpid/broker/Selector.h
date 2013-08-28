@@ -64,7 +64,7 @@ public:
      * @param msg message to filter against selector
      * @return true if msg meets the selector specification
      */
-    bool filter(const Message& msg);
+    QPID_BROKER_EXTERN bool filter(const Message& msg);
 };
 
 /**

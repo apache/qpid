@@ -42,7 +42,7 @@ class DirectExchange : public virtual Exchange {
     qpid::sys::Mutex lock;
 
 public:
-    static const std::string typeName;
+    QPID_BROKER_EXTERN static const std::string typeName;
         
     QPID_BROKER_EXTERN DirectExchange(const std::string& name,
                                       management::Manageable* parent = 0, Broker* broker = 0);

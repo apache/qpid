@@ -33,17 +33,17 @@ namespace amqp {
 class SaslServer : public Sasl
 {
   public:
-    SaslServer(const std::string& id);
-    virtual ~SaslServer();
+    QPID_COMMON_EXTERN SaslServer(const std::string& id);
+    QPID_COMMON_EXTERN virtual ~SaslServer();
     virtual void init(const std::string& mechanism, const std::string* response, const std::string* hostname) = 0;
     virtual void response(const std::string*) = 0;
 
-    void mechanisms(const std::string& mechanisms);
-    void challenge(const std::string*);
-    void completed(bool succeeded);
+    QPID_COMMON_EXTERN void mechanisms(const std::string& mechanisms);
+    QPID_COMMON_EXTERN void challenge(const std::string*);
+    QPID_COMMON_EXTERN void completed(bool succeeded);
 
   private:
-    bool onStartList(uint32_t count, const CharSequence& arguments, const Descriptor* descriptor);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t count, const CharSequence& arguments, const Descriptor* descriptor);
 };
 }} // namespace qpid::amqp
 

@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/CommonImportExport.h"
 #include "qpid/Sasl.h"
 #include "qpid/sys/Mutex.h"
 #include <memory>

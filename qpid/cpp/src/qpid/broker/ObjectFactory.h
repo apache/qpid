@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/types/Variant.h"
 #include <vector>
 
@@ -56,7 +57,7 @@ class ObjectFactoryRegistry : public ObjectFactory
     bool recoverObject(Broker&, const std::string& type, const std::string& name, const qpid::types::Variant::Map& properties,  uint64_t persistenceId);
 
     ~ObjectFactoryRegistry();
-    void add(ObjectFactory*);
+    QPID_BROKER_EXTERN void add(ObjectFactory*);
   private:
     typedef std::vector<ObjectFactory*> Factories;
     Factories factories;
