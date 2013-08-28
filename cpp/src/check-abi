@@ -1,5 +1,35 @@
 #! /bin/bash
 
+# Ask the compiler the implementation specific type for a standard typedeffed type
+# (int64_t, size_t etc.). Operates by test compiling and using the demangling ABI call.
+#
+# This works for gcc and clang on Unix.
+full_type_of () {
+    prog=$(mktemp)
+    trap "rm $prog" EXIT
+
+    ${CXX:-g++} -x c++ -o $prog - <<END-FILE
+#include <stdint.h>
+#include <stdlib.h>
+#include <cxxabi.h>
+#include <iostream>
+#include <typeinfo>
+
+int main() {
+  int status;
+  char* printable_type =
+    __cxxabiv1::__cxa_demangle(typeid($1).name(), 0, 0, &status);
+  if (printable_type) {
+    std::cout << printable_type;
+  } else {
+    std::cout << "$1";
+  }
+  ::free(printable_type);
+}
+END-FILE
+$prog
+}
+
 rc=0
 syms_desired=$(mktemp)
 syms_library=$(mktemp)
@@ -8,25 +38,28 @@ syms_extra=$(mktemp)
 
 trap 'rm $syms_desired $syms_library $syms_missing $syms_extra' EXIT
 
+CXX=$1
+export CXX
+
 # Extract exported symbols from library
-nm -DC --defined-only -f s $1 | cut -f1 -d'|' -s | sort -u > $syms_library
+nm -DC --defined-only -f s $2 | cut -f1 -d'|' -s | sort -u > $syms_library
 
 # Process API syms (substitute in some typedefs etc.)
-sed $2 -e '
-    s/uint64_t/unsigned long/
+sed $3 -e "
+    s/uint64_t/$(full_type_of uint64_t)/
     s/uint32_t/unsigned int/
     s/uint16_t/unsigned short/
     s/uint8_t/unsigned char/
-    s/size_t/unsigned long/
-    s/int64_t/long/
+    s/size_t/$(full_type_of size_t)/
+    s/int64_t/$(full_type_of int64_t)/
     s/int32_t/int/
     s/int16_t/short/
     s/int8_t/signed char/
     s/qpid::types::Variant::Map/std::map<std::string, qpid::types::Variant, std::less<std::string>, std::allocator<std::pair<std::string const, qpid::types::Variant> > >/
     s/qpid::types::Variant::List/std::list<qpid::types::Variant, std::allocator<qpid::types::Variant> >/
-    /^$/d
-    /^#.*$/d
-' | sort -u > $syms_desired
+    /^\$/d
+    /^#.*\$/d
+" | sort -u > $syms_desired
 
 comm -23 $syms_desired $syms_library > $syms_missing
 comm -13 $syms_desired $syms_library > $syms_extra
