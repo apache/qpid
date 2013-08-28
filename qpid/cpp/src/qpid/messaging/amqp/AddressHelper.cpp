@@ -300,7 +300,6 @@ AddressHelper::AddressHelper(const Address& address) :
     if (bind(address, MODE, mode)) {
         if (mode == BROWSE) {
             browse = true;
-            throw qpid::messaging::AddressError("Browse mode not yet supported over AMQP 1.0.");
         } else if (mode != CONSUME) {
             throw qpid::messaging::AddressError("Invalid value for mode; must be 'browse' or 'consume'.");
         }
@@ -560,7 +559,7 @@ void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
     if (mode == FOR_RECEIVER) {
         if (timeout) pn_terminus_set_timeout(terminus, timeout);
         if (browse) {
-            //when PROTON-139 is resolved, set the required delivery-mode
+            pn_terminus_set_distribution_mode(terminus, PN_DIST_MODE_COPY);
         }
         //set filter(s):
         if (!filters.empty()) {

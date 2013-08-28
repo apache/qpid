@@ -44,3 +44,25 @@ class GeneralTests (VersionTest):
         assert response.content == "response" and response.correlation_id == "a1", response
 
         self.ssn.acknowledge()
+
+
+    def test_browse(self):
+        snd = self.ssn.sender("#")
+        rcv = self.ssn.receiver("%s; {mode: browse}" % snd.target)
+
+        msgs = [Message(content=s, subject = s) for s in ['a','b','c','d']]
+
+        for m in msgs: snd.send(m)
+
+        for expected in msgs:
+            msg = rcv.fetch(0)
+            assert msg.content == expected.content
+            self.ssn.acknowledge(msg)
+        rcv.close()
+
+        rcv = self.ssn.receiver(snd.target)
+        for expected in msgs:
+            msg = rcv.fetch(0)
+            assert msg.content == expected.content
+            self.ssn.acknowledge(msg)
+
