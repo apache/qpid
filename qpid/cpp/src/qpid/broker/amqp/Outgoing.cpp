@@ -118,20 +118,19 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
         if (r.disposition) {
             switch (r.disposition) {
               case PN_ACCEPTED:
-                //TODO: only if consuming
-                queue->dequeue(0, r.cursor);
+                if (preAcquires()) queue->dequeue(0, r.cursor);
                 outgoingMessageAccepted();
                 break;
               case PN_REJECTED:
-                queue->reject(r.cursor);
+                if (preAcquires()) queue->reject(r.cursor);
                 outgoingMessageRejected();
                 break;
               case PN_RELEASED:
-                queue->release(r.cursor, false);//TODO: for PN_RELEASED, delivery count should not be incremented
+                if (preAcquires()) queue->release(r.cursor, false);//TODO: for PN_RELEASED, delivery count should not be incremented
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               case PN_MODIFIED:
-                queue->release(r.cursor, true);//TODO: proper handling of modified
+                if (preAcquires()) queue->release(r.cursor, true);//TODO: proper handling of modified
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               default:

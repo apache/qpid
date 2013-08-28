@@ -86,8 +86,6 @@ const std::string DELETE_IF_EMPTY("delete-if-empty");
 const std::string DELETE_IF_UNUSED_AND_EMPTY("delete-if-unused-and-empty");
 const std::string CREATE_ON_DEMAND("create-on-demand");
 
-const std::string DUMMY(".");
-
 const std::string X_DECLARE("x-declare");
 const std::string X_BINDINGS("x-bindings");
 const std::string X_SUBSCRIBE("x-subscribe");
@@ -544,7 +542,6 @@ void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
     bool createOnDemand(false);
     if (isTemporary) {
         //application expects a name to be generated
-        pn_terminus_set_address(terminus, DUMMY.c_str());//workaround for PROTON-277
         pn_terminus_set_dynamic(terminus, true);
         setNodeProperties(terminus);
     } else {
