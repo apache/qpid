@@ -163,4 +163,15 @@ std::string SessionContext::getName() const
     return name;
 }
 
+void SessionContext::reset(pn_connection_t* connection)
+{
+    session = pn_session(connection);
+    unacked.clear();
+    for (SessionContext::SenderMap::iterator i = senders.begin(); i != senders.end(); ++i) {
+        i->second->reset(session);
+    }
+    for (SessionContext::ReceiverMap::iterator i = receivers.begin(); i != receivers.end(); ++i) {
+        i->second->reset(session);
+    }
+}
 }}} // namespace qpid::messaging::amqp

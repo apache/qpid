@@ -89,8 +89,18 @@ const std::string& ReceiverContext::getSource() const
 {
     return address.getName();
 }
-void ReceiverContext::verify(pn_terminus_t* source)
+void ReceiverContext::verify()
 {
+    pn_terminus_t* source = pn_link_remote_source(receiver);
+    if (!pn_terminus_get_address(source)) {
+        std::string msg("No such source : ");
+        msg += getSource();
+        QPID_LOG(debug, msg);
+        throw qpid::messaging::NotFound(msg);
+    } else if (AddressImpl::isTemporary(address)) {
+        address.setName(pn_terminus_get_address(source));
+        QPID_LOG(debug, "Dynamic source name set to " << address.getName());
+    }
     helper.checkAssertion(source, AddressHelper::FOR_RECEIVER);
 }
 void ReceiverContext::configure()
@@ -118,6 +128,10 @@ bool ReceiverContext::isClosed() const
     return false;//TODO
 }
 
-
+void ReceiverContext::reset(pn_session_t* session)
+{
+    receiver = pn_receiver(session, name.c_str());
+    configure();
+}
 
 }}} // namespace qpid::messaging::amqp

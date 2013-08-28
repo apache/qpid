@@ -82,6 +82,7 @@ const std::string& SenderContext::getTarget() const
 
 bool SenderContext::send(const qpid::messaging::Message& message, SenderContext::Delivery** out)
 {
+    resend();//if there are any messages needing to be resent at the front of the queue, send them first
     if (processUnsettled(false) < capacity && pn_link_credit(sender)) {
         if (unreliable) {
             Delivery delivery(nextId++);
@@ -424,7 +425,12 @@ bool changedSubject(const qpid::messaging::MessageImpl& msg, const qpid::messagi
 
 }
 
-SenderContext::Delivery::Delivery(int32_t i) : id(i), token(0) {}
+SenderContext::Delivery::Delivery(int32_t i) : id(i), token(0), presettled(false) {}
+
+void SenderContext::Delivery::reset()
+{
+    token = 0;
+}
 
 void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, const qpid::messaging::Address& address)
 {
@@ -490,13 +496,20 @@ void SenderContext::Delivery::send(pn_link_t* sender, bool unreliable)
     tag.bytes = reinterpret_cast<const char*>(&id);
     token = pn_delivery(sender, tag);
     pn_link_send(sender, encoded.getData(), encoded.getSize());
-    if (unreliable) pn_delivery_settle(token);
+    if (unreliable) {
+        pn_delivery_settle(token);
+        presettled = true;
+    }
     pn_link_advance(sender);
 }
 
+bool SenderContext::Delivery::sent() const
+{
+    return presettled || token;
+}
 bool SenderContext::Delivery::delivered()
 {
-    if (pn_delivery_remote_state(token) || pn_delivery_settled(token)) {
+    if (presettled || (token && (pn_delivery_remote_state(token) || pn_delivery_settled(token)))) {
         //TODO: need a better means for signalling outcomes other than accepted
         if (rejected()) {
             QPID_LOG(warning, "delivery " << id << " was rejected by peer");
@@ -520,8 +533,19 @@ void SenderContext::Delivery::settle()
 {
     pn_delivery_settle(token);
 }
-void SenderContext::verify(pn_terminus_t* target)
+void SenderContext::verify()
 {
+    pn_terminus_t* target = pn_link_remote_target(sender);
+    if (!pn_terminus_get_address(target)) {
+        std::string msg("No such target : ");
+        msg += getTarget();
+        QPID_LOG(debug, msg);
+        throw qpid::messaging::NotFound(msg);
+    } else if (AddressImpl::isTemporary(address)) {
+        address.setName(pn_terminus_get_address(target));
+        QPID_LOG(debug, "Dynamic target name set to " << address.getName());
+    }
+
     helper.checkAssertion(target, AddressHelper::FOR_SENDER);
 }
 void SenderContext::configure()
@@ -547,6 +571,24 @@ bool SenderContext::settled()
 Address SenderContext::getAddress() const
 {
     return address;
+}
+
+
+void SenderContext::reset(pn_session_t* session)
+{
+    sender = pn_sender(session, name.c_str());
+    configure();
+
+    for (Deliveries::iterator i = deliveries.begin(); i != deliveries.end(); ++i) {
+        i->reset();
+    }
+}
+
+void SenderContext::resend()
+{
+    for (Deliveries::iterator i = deliveries.begin(); i != deliveries.end() && pn_link_credit(sender) && !i->sent(); ++i) {
+        i->send(sender, false/*only resend reliable transfers*/);
+    }
 }
 
 }}} // namespace qpid::messaging::amqp
