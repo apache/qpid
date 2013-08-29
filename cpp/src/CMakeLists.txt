@@ -303,7 +303,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    if (GCC_VERSION VERSION_EQUAL 4.1.2)
      message (STATUS "Cannot use -fvisibility=hidden on gcc 4.1.2")
    else (GCC_VERSION VERSION_EQUAL 4.1.2)
-     set (HIDE_SYMBOL_FLAGS "-fvisibility=hidden")
+     set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden -fvisibility=hidden")
    endif (GCC_VERSION VERSION_EQUAL 4.1.2)
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
