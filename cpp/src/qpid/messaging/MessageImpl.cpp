@@ -47,6 +47,27 @@ MessageImpl::MessageImpl(const char* chars, size_t count) :
     contentDecoded(false),
     internalId(0) {}
 
+void MessageImpl::clear()
+{
+    replyTo = Address();
+    subject = std::string();
+    contentType = std::string();
+    messageId = std::string();
+    userId= std::string();
+    correlationId = std::string();
+    priority = 0;
+    ttl = 0;
+    durable = false;
+    redelivered = false;
+    headers = qpid::types::Variant::Map();
+
+    bytes = std::string();
+    content = qpid::types::Variant();
+    contentDecoded = false;
+    encoded = boost::shared_ptr<const qpid::messaging::amqp::EncodedMessage>();
+    internalId = 0;
+}
+
 void MessageImpl::setReplyTo(const Address& d)
 {
     replyTo = d;
