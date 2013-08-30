@@ -102,6 +102,9 @@ class BrokerReplicator : public broker::Exchange,
     class ConnectionObserver;
 
     void connected(broker::Bridge&, broker::SessionHandler&);
+    void existingQueue(const boost::shared_ptr<broker::Queue>&);
+    void existingExchange(const boost::shared_ptr<broker::Exchange>&);
+    void disconnectedQueue(const boost::shared_ptr<broker::Queue>&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);

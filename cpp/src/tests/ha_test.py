@@ -48,8 +48,23 @@ class QmfAgent(object):
             address, client_properties={"qpid.ha-admin":1}, **kwargs)
         self._agent = BrokerAgent(self._connection)
 
-    def get_queues(self):
+    def queues(self):
         return [q.values['name'] for q in self._agent.getAllQueues()]
+
+    def repsub_queue(self, sub):
+        """If QMF subscription sub is a replicating subscription return
+        the name of the replicated queue, else return None"""
+        session_name = self.getSession(sub.sessionRef).name
+        m = re.search("qpid.ha-q:(.*)\.", session_name)
+        return m and m.group(1)
+
+    def repsub_queues(self):
+        """Return queue names for all replicating subscriptions"""
+        return filter(None, [self.repsub_queue(s) for s in self.getAllSubscriptions()])
+
+    def tx_queues(self):
+        """Return names of all tx-queues"""
+        return [q for q in self.queues() if q.startswith("qpid.ha-tx")]
 
     def __getattr__(self, name):
         a = getattr(self._agent, name)
