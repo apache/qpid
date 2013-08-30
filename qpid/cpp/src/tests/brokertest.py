@@ -415,6 +415,10 @@ class BrokerTest(TestCase):
     Provides a well-known working directory for each test.
     """
 
+    def __init__(self, *args, **kwargs):
+        self.longMessage = True # Enable long messages for assert*(..., msg=xxx)
+        TestCase.__init__(self, *args, **kwargs)
+
     # Environment settings.
     qpidd_exec = os.path.abspath(checkenv("QPIDD_EXEC"))
     ha_lib = os.getenv("HA_LIB")

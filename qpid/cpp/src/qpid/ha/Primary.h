@@ -30,6 +30,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/unordered_map.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <string>
 
@@ -54,6 +55,7 @@ class ReplicatingSubscription;
 class RemoteBackup;
 class QueueGuard;
 class Membership;
+class PrimaryTxObserver;
 
 /**
  * State associated with a primary broker:
@@ -113,6 +115,9 @@ class Primary : public Role
     typedef sys::unordered_map<UuidQueue, ReplicatingSubscription*,
                                Hasher<UuidQueue> > ReplicaMap;
 
+    // Map of PrimaryTxObservers by tx-queue name
+    typedef sys::unordered_map<std::string, boost::weak_ptr<PrimaryTxObserver> > TxMap;
+
     RemoteBackupPtr backupConnect(const BrokerInfo&, broker::Connection&, sys::Mutex::ScopedLock&);
     void backupDisconnect(RemoteBackupPtr, sys::Mutex::ScopedLock&);
 
@@ -121,6 +126,7 @@ class Primary : public Role
     void checkReady(RemoteBackupPtr);
     void setCatchupQueues(const RemoteBackupPtr&, bool createGuards);
     void deduplicate();
+    boost::shared_ptr<PrimaryTxObserver> makeTxObserver();
 
     mutable sys::Mutex lock;
     HaBroker& haBroker;
@@ -143,6 +149,7 @@ class Primary : public Role
     boost::shared_ptr<broker::BrokerObserver> brokerObserver;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     ReplicaMap replicas;
+    TxMap txMap;
 };
 }} // namespace qpid::ha
 
