@@ -185,15 +185,14 @@ void EncodedMessage::getCorrelationId(std::string& s) const
 }
 void EncodedMessage::getBody(std::string& raw, qpid::types::Variant& c) const
 {
-    //TODO: based on section type, populate content
     if (!content.isVoid()) {
         c = content;//integer types, floats, bool etc
         //TODO: populate raw data?
     } else {
         if (bodyType.empty()
             || bodyType == qpid::amqp::typecodes::BINARY_NAME
-            || bodyType == qpid::amqp::typecodes::STRING_NAME
-            || bodyType == qpid::amqp::typecodes::SYMBOL_NAME)
+            || bodyType == qpid::types::encodings::UTF8
+            || bodyType == qpid::types::encodings::ASCII)
         {
             c = std::string(body.data, body.size);
             c.setEncoding(bodyType);

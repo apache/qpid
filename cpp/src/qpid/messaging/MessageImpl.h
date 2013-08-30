@@ -61,6 +61,7 @@ class MessageImpl
     MessageImpl(const std::string& c);
     MessageImpl(const char* chars, size_t count);
 
+    void clear();
     void setReplyTo(const Address& d);
     QPID_MESSAGING_EXTERN const Address& getReplyTo() const;
 
