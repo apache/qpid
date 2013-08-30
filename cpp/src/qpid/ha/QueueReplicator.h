@@ -68,7 +68,8 @@ class QueueReplicator : public broker::Exchange,
 
     ~QueueReplicator();
 
-    void activate();    // Must be called immediately after constructor.
+    void activate();        // Must be called immediately after constructor.
+    void disconnect();      // Called when we are disconnected from the primary.
 
     std::string getType() const;
 
@@ -93,6 +94,7 @@ class QueueReplicator : public broker::Exchange,
 
     virtual void deliver(const broker::Message&);
     virtual void destroy();             // Called when the queue is destroyed.
+    void cancel(sys::Mutex::ScopedLock&);
 
     sys::Mutex lock;
     HaBroker& haBroker;

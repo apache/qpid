@@ -41,6 +41,7 @@ class Consumer;
 
 namespace ha {
 class HaBroker;
+class ReplicatingSubscription;
 
 /**
  * Observe events in the lifecycle of a transaction.
@@ -74,6 +75,10 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     void rollback();
 
     types::Uuid getId() const { return id; }
+    QueuePtr getTxQueue() const { return txQueue; }
+
+    // Notify that a backup subscription has been cancelled.
+    void cancel(const ReplicatingSubscription&);
 
   private:
     class Exchange;
@@ -82,11 +87,10 @@ class PrimaryTxObserver : public broker::TransactionObserver,
 
     void membership(const BrokerInfo::Map&);
     void deduplicate(sys::Mutex::ScopedLock&);
+    void end(sys::Mutex::ScopedLock&);
     void txPrepareOkEvent(const std::string& data);
     void txPrepareFailEvent(const std::string& data);
-    void consumerRemoved(const broker::Consumer&);
-    bool isPrepared(sys::Mutex::ScopedLock&);
-    void destroy();
+
 
     sys::Monitor lock;
     std::string logPrefix;
@@ -96,8 +100,10 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     QueuePtr txQueue;
     QueueIdsMap enqueues;
     bool failed;
-    UuidSet members;
-    UuidSet prepared;
+
+    UuidSet members;            // All members of transaction.
+    UuidSet unprepared;         // Members that have not yet responded to prepare.
+    UuidSet unfinished;         // Members that have not yet disconnected.
 };
 
 }} // namespace qpid::ha

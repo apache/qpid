@@ -79,6 +79,7 @@ TxReplicator::TxReplicator(
     txBuffer(new broker::TxBuffer),
     store(hb.getBroker().hasStore() ? &hb.getBroker().getStore() : 0),
     channel(link->nextChannel()),
+    complete(false),
     dequeueState(hb.getBroker().getQueues())
 {
     string id(getTxId(txQueue->getName()));
@@ -200,16 +201,18 @@ void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock& l) {
     }
 }
 
-void TxReplicator::commit(const string&, sys::Mutex::ScopedLock&) {
+void TxReplicator::commit(const string&, sys::Mutex::ScopedLock& l) {
     QPID_LOG(debug, logPrefix << "Commit");
     if (context.get()) store->commit(*context);
     txBuffer->commit();
+    end(l);
 }
 
-void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock&) {
+void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock& l) {
     QPID_LOG(debug, logPrefix << "Rollback");
     if (context.get()) store->abort(*context);
     txBuffer->rollback();
+    end(l);
 }
 
 void TxReplicator::members(const string& data, sys::Mutex::ScopedLock&) {
@@ -221,6 +224,17 @@ void TxReplicator::members(const string& data, sys::Mutex::ScopedLock&) {
         // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
         haBroker.deleteQueue(getQueue()->getName());
     }
+}
+
+void TxReplicator::end(sys::Mutex::ScopedLock& l) {
+    complete = true;
+    cancel(l);
+}
+
+void TxReplicator::destroy() {
+    QueueReplicator::destroy();
+    sys::Mutex::ScopedLock l(lock);
+    if (!complete) rollback(string(), l);
 }
 
 }} // namespace qpid::ha

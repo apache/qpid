@@ -214,6 +214,8 @@ void Primary::readyReplica(const ReplicatingSubscription& rs) {
 }
 
 void Primary::addReplica(ReplicatingSubscription& rs) {
+    // Note this is called before the ReplicatingSubscription has been activated
+    // on the queue.
     sys::Mutex::ScopedLock l(lock);
     replicas[make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue())] = &rs;
 }
@@ -231,6 +233,12 @@ void Primary::skip(
 void Primary::removeReplica(const ReplicatingSubscription& rs) {
     sys::Mutex::ScopedLock l(lock);
     replicas.erase(make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue()));
+
+    TxMap::const_iterator i = txMap.find(rs.getQueue()->getName());
+    if (i != txMap.end()) {
+        boost::shared_ptr<PrimaryTxObserver> tx = i->second.lock();
+        if (tx) tx->cancel(rs);
+    }
 }
 
 // NOTE: Called with queue registry lock held.
@@ -387,16 +395,19 @@ void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards)
     backup->startCatchup();
 }
 
-void Primary::startTx(const boost::shared_ptr<broker::TxBuffer>& tx) {
+shared_ptr<PrimaryTxObserver> Primary::makeTxObserver() {
     shared_ptr<PrimaryTxObserver> observer(new PrimaryTxObserver(haBroker));
     observer->initialize();
-    tx->setObserver(observer);
+    txMap[observer->getTxQueue()->getName()] = observer;
+    return observer;
+}
+
+void Primary::startTx(const boost::shared_ptr<broker::TxBuffer>& tx) {
+    tx->setObserver(makeTxObserver());
 }
 
 void Primary::startDtx(const boost::shared_ptr<broker::DtxBuffer>& dtx) {
-    shared_ptr<PrimaryTxObserver> observer(new PrimaryTxObserver(haBroker));
-    observer->initialize();
-    dtx->setObserver(observer);
+    dtx->setObserver(makeTxObserver());
 }
 
 }} // namespace qpid::ha

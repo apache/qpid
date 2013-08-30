@@ -169,6 +169,11 @@ void QueueReplicator::activate() {
         boost::shared_ptr<QueueObserver>(new QueueObserver(shared_from_this())));
 }
 
+void QueueReplicator::disconnect() {
+    Mutex::ScopedLock l(lock);
+    sessionHandler = 0;
+}
+
 QueueReplicator::~QueueReplicator() {}
 
 // Called from Queue::destroyed()
@@ -218,6 +223,14 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     link->getRemoteAddress(primary);
     QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
     QPID_LOG(trace, logPrefix << "Subscription arguments: " << arguments);
+}
+
+void QueueReplicator::cancel(Mutex::ScopedLock&) {
+    if (sessionHandler) {
+        // Cancel the replicating subscription.
+        AMQP_ServerProxy peer(sessionHandler->out);
+        peer.getMessage().cancel(getName());
+    }
 }
 
 namespace {
