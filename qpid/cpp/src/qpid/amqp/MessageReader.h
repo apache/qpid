@@ -24,7 +24,6 @@
 
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/Reader.h"
-#include "qpid/amqp/ListReader.h"
 #include "qpid/types/Variant.h"
 #include "qpid/CommonImportExport.h"
 
@@ -40,11 +39,11 @@ class MessageReader : public Reader
     QPID_COMMON_EXTERN MessageReader();
 
     //header, properties, amqp-sequence, amqp-value
-    QPID_COMMON_EXTERN bool onStartList(uint32_t, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t, const CharSequence&, const CharSequence&, const Descriptor*);
     QPID_COMMON_EXTERN void onEndList(uint32_t, const Descriptor*);
 
     //delivery-annotations, message-annotations, application-headers, amqp-value
-    QPID_COMMON_EXTERN bool onStartMap(uint32_t, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartMap(uint32_t, const CharSequence&, const CharSequence&, const Descriptor*);
     QPID_COMMON_EXTERN void onEndMap(uint32_t, const Descriptor*);
 
     //data, amqp-value
@@ -95,16 +94,16 @@ class MessageReader : public Reader
     virtual void onGroupSequence(uint32_t) = 0;
     virtual void onReplyToGroupId(const CharSequence&) = 0;
 
-    virtual void onApplicationProperties(const CharSequence&) = 0;
-    virtual void onDeliveryAnnotations(const CharSequence&) = 0;
-    virtual void onMessageAnnotations(const CharSequence&) = 0;
+    virtual void onApplicationProperties(const CharSequence& /*values*/, const CharSequence& /*full*/) = 0;
+    virtual void onDeliveryAnnotations(const CharSequence& /*values*/, const CharSequence& /*full*/) = 0;
+    virtual void onMessageAnnotations(const CharSequence& /*values*/, const CharSequence& /*full*/) = 0;
 
     virtual void onData(const CharSequence&) = 0;
     virtual void onAmqpSequence(const CharSequence&) = 0;
     virtual void onAmqpValue(const CharSequence&, const std::string& type) = 0;
     virtual void onAmqpValue(const qpid::types::Variant&) = 0;
 
-    virtual void onFooter(const CharSequence&) = 0;
+    virtual void onFooter(const CharSequence& /*values*/, const CharSequence& /*full*/) = 0;
 
     QPID_COMMON_EXTERN CharSequence getBareMessage() const;
 

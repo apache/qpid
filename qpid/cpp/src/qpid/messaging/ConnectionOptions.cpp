@@ -115,6 +115,8 @@ void ConnectionOptions::set(const std::string& name, const qpid::types::Variant&
         reconnectOnLimitExceeded = value;
     } else if (name == "container-id" || name == "container_id") {
         identifier = value.asString();
+    } else if (name == "nest-annotations" || name == "nest_annotations") {
+        nestAnnotations = value;
     } else {
         throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
     }

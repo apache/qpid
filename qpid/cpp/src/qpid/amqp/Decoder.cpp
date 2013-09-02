@@ -22,6 +22,7 @@
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/Constructor.h"
 #include "qpid/amqp/Descriptor.h"
+#include "qpid/amqp/MapBuilder.h"
 #include "qpid/amqp/Reader.h"
 #include "qpid/amqp/typecodes.h"
 #include "qpid/types/Uuid.h"
@@ -34,121 +35,13 @@ namespace amqp {
 
 using namespace qpid::amqp::typecodes;
 
-Decoder::Decoder(const char* d, size_t s) : start(d), size(s), position(0) {}
+Decoder::Decoder(const char* d, size_t s) : start(d), size(s), position(0), current(0) {}
 
-namespace {
-class MapBuilder : public Reader
-{
-  public:
-    void onNull(const Descriptor*)
-    {
-        qpid::types::Variant v;
-        handle(v, NULL_NAME);
-    }
-    void onBoolean(bool v, const Descriptor*)
-    {
-        handle(v, BOOLEAN_NAME);
-    }
-    void onUByte(uint8_t v, const Descriptor*)
-    {
-        handle(v, UBYTE_NAME);
-    }
-    void onUShort(uint16_t v, const Descriptor*)
-    {
-        handle(v, USHORT_NAME);
-    }
-    void onUInt(uint32_t v, const Descriptor*)
-    {
-        handle(v, UINT_NAME);
-    }
-    void onULong(uint64_t v, const Descriptor*)
-    {
-        handle(v, ULONG_NAME);
-    }
-    void onByte(int8_t v, const Descriptor*)
-    {
-        handle(v, BYTE_NAME);
-    }
-    void onShort(int16_t v, const Descriptor*)
-    {
-        handle(v, SHORT_NAME);
-    }
-    void onInt(int32_t v, const Descriptor*)
-    {
-        handle(v, INT_NAME);
-    }
-    void onLong(int64_t v, const Descriptor*)
-    {
-        handle(v, LONG_NAME);
-    }
-    void onFloat(float v, const Descriptor*)
-    {
-        handle(v, FLOAT_NAME);
-    }
-    void onDouble(double v, const Descriptor*)
-    {
-        handle(v, DOUBLE_NAME);
-    }
-    void onUuid(const CharSequence& v, const Descriptor*)
-    {
-        handle(v, UUID_NAME);
-    }
-    void onTimestamp(int64_t v, const Descriptor*)
-    {
-        handle(v, TIMESTAMP_NAME);
-    }
-    void onBinary(const CharSequence& v, const Descriptor*)
-    {
-        handle(v);
-    }
-    void onString(const CharSequence& v, const Descriptor*)
-    {
-        handle(v);
-    }
-    void onSymbol(const CharSequence& v, const Descriptor*)
-    {
-        handle(v);
-    }
-    MapBuilder(qpid::types::Variant::Map& m) : map(m), state(KEY) {}
-  private:
-    qpid::types::Variant::Map& map;
-    enum {KEY, SKIP, VALUE} state;
-    std::string key;
-
-    template <typename T> void handle(T value, const std::string& name)
-    {
-        switch (state) {
-          case KEY:
-            QPID_LOG(warning, "Ignoring key of type " << name);
-            state = SKIP;
-            break;
-          case VALUE:
-            map[key] = value;
-          case SKIP:
-            state = KEY;
-            break;
-        }
-    }
-    void handle(const CharSequence& value)
-    {
-        switch (state) {
-          case KEY:
-            key = value.str();
-            state = VALUE;
-            break;
-          case VALUE:
-            map[key] = value.str();
-          case SKIP:
-            state = KEY;
-            break;
-        }
-    }
-};
-}
 void Decoder::readMap(qpid::types::Variant::Map& map)
 {
-    MapBuilder builder(map);
+    MapBuilder builder;
     read(builder);
+    map = builder.getMap();
 }
 
 qpid::types::Variant::Map Decoder::readMap()
@@ -168,6 +61,7 @@ void Decoder::read(Reader& reader)
 void Decoder::readOne(Reader& reader)
 {
     const char* temp = start + position;
+    current = position;
     Constructor c = readConstructor();
     if (c.isDescribed) reader.onDescriptor(c.descriptor, temp);
     readValue(reader, c.code, c.isDescribed ? &c.descriptor : 0);
@@ -263,7 +157,7 @@ void Decoder::readValue(Reader& reader, uint8_t code, const Descriptor* descript
         break;
 
       case LIST0:
-        reader.onStartList(0, CharSequence::create(), descriptor);
+        reader.onStartList(0, CharSequence::create(), getCurrent(0), descriptor);
         reader.onEndList(0, descriptor);
         break;
       case LIST8:
@@ -333,7 +227,7 @@ void Decoder::readArray32(Reader& reader, const Descriptor* descriptor)
 
 void Decoder::readList(Reader& reader, uint32_t size, uint32_t count, const Descriptor* descriptor)
 {
-    if (reader.onStartList(count, CharSequence::create(data(), size), descriptor)) {
+    if (reader.onStartList(count, CharSequence::create(data(), size), getCurrent(size), descriptor)) {
         for (uint32_t i = 0; i < count; ++i) {
             readOne(reader);
         }
@@ -345,7 +239,7 @@ void Decoder::readList(Reader& reader, uint32_t size, uint32_t count, const Desc
 }
 void Decoder::readMap(Reader& reader, uint32_t size, uint32_t count, const Descriptor* descriptor)
 {
-    if (reader.onStartMap(count, CharSequence::create(data(), size), descriptor)) {
+    if (reader.onStartMap(count, CharSequence::create(data(), size), getCurrent(size), descriptor)) {
         for (uint32_t i = 0; i < count; ++i) {
             readOne(reader);
         }
@@ -401,7 +295,7 @@ Descriptor Decoder::readDescriptor()
       case ULONG_ZERO:
         return Descriptor((uint64_t) 0);
       default:
-        throw qpid::Exception(QPID_MSG("Expected descriptor of type ulong or symbol; found " << code));
+        throw qpid::Exception(QPID_MSG("Expected descriptor of type ulong or symbol; found " << (int)code));
     }
 }
 
@@ -542,4 +436,10 @@ CharSequence Decoder::readRawUuid()
 size_t Decoder::getPosition() const { return position; }
 size_t Decoder::getSize() const { return size; }
 void Decoder::resetSize(size_t s) { size = s; }
+
+CharSequence Decoder::getCurrent(size_t remaining) const
+{
+    return CharSequence::create(start + current, (position-current)+remaining);
+}
+
 }} // namespace qpid::amqp

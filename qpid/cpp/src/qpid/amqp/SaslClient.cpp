@@ -116,7 +116,7 @@ class SaslOutcomeReader : public Reader
 };
 }
 
-bool SaslClient::onStartList(uint32_t count, const CharSequence& arguments, const Descriptor* descriptor)
+bool SaslClient::onStartList(uint32_t count, const CharSequence& arguments, const CharSequence& /*full raw data*/, const Descriptor* descriptor)
 {
     if (!descriptor) {
         QPID_LOG(error, "Expected described type in SASL negotiation but got no descriptor");

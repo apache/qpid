@@ -63,8 +63,8 @@ class Reader
      * @return true to get elements of the compound value, false
      * to skip over it
      */
-    virtual bool onStartList(uint32_t /*count*/, const CharSequence&, const Descriptor*) { return true; }
-    virtual bool onStartMap(uint32_t /*count*/, const CharSequence&, const Descriptor*) { return true; }
+    virtual bool onStartList(uint32_t /*count*/, const CharSequence& /*elements*/, const CharSequence& /*complete*/, const Descriptor*) { return true; }
+    virtual bool onStartMap(uint32_t /*count*/, const CharSequence& /*elements*/, const CharSequence& /*complete*/, const Descriptor*) { return true; }
     virtual bool onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*) { return true; }
     virtual void onEndList(uint32_t /*count*/, const Descriptor*) {}
     virtual void onEndMap(uint32_t /*count*/, const Descriptor*) {}
