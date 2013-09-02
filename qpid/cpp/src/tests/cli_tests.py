@@ -69,47 +69,39 @@ class CliTests(TestBase010):
         self.startBrokerAccess()
         queue1 = self.makeQueue("test_queue_params1", "--limit-policy none")
         queue2 = self.makeQueue("test_queue_params2", "--limit-policy reject")
-        queue3 = self.makeQueue("test_queue_params3", "--limit-policy flow-to-disk")
-        queue4 = self.makeQueue("test_queue_params4", "--limit-policy ring")
-        queue5 = self.makeQueue("test_queue_params5", "--limit-policy ring-strict")
+        queue3 = self.makeQueue("test_queue_params3", "--limit-policy ring")
 
         LIMIT = "qpid.policy_type"
         assert LIMIT not in queue1.arguments
         self.assertEqual(queue2.arguments[LIMIT], "reject")
-        self.assertEqual(queue3.arguments[LIMIT], "flow_to_disk")
-        self.assertEqual(queue4.arguments[LIMIT], "ring")
-        self.assertEqual(queue5.arguments[LIMIT], "ring_strict")
+        self.assertEqual(queue3.arguments[LIMIT], "ring")
 
-        queue6 = self.makeQueue("test_queue_params6", "--lvq-key lkey")
+        queue4 = self.makeQueue("test_queue_params4", "--lvq-key lkey")
 
         LVQKEY = "qpid.last_value_queue_key"
 
-        assert LVQKEY not in queue5.arguments
-        assert LVQKEY     in queue6.arguments
-        assert queue6.arguments[LVQKEY] == "lkey"
+        assert LVQKEY not in queue3.arguments
+        assert LVQKEY     in queue4.arguments
+        assert queue4.arguments[LVQKEY] == "lkey"
 
     def test_queue_params_api(self):
         self.startBrokerAccess()
         queue1 = self.makeQueue("test_queue_params_api1", "--limit-policy none", True)
         queue2 = self.makeQueue("test_queue_params_api2", "--limit-policy reject", True)
-        queue3 = self.makeQueue("test_queue_params_api3", "--limit-policy flow-to-disk", True)
-        queue4 = self.makeQueue("test_queue_params_api4", "--limit-policy ring", True)
-        queue5 = self.makeQueue("test_queue_params_api5", "--limit-policy ring-strict", True)
+        queue3 = self.makeQueue("test_queue_params_api3", "--limit-policy ring", True)
 
         LIMIT = "qpid.policy_type"
         assert LIMIT not in queue1.arguments
         self.assertEqual(queue2.arguments[LIMIT], "reject")
-        self.assertEqual(queue3.arguments[LIMIT], "flow_to_disk")
-        self.assertEqual(queue4.arguments[LIMIT], "ring")
-        self.assertEqual(queue5.arguments[LIMIT], "ring_strict")
+        self.assertEqual(queue3.arguments[LIMIT], "ring")
 
-        queue6 = self.makeQueue("test_queue_params_api6", "--lvq-key lkey")
+        queue4 = self.makeQueue("test_queue_params_api4", "--lvq-key lkey")
 
         LVQKEY = "qpid.last_value_queue_key"
 
-        assert LVQKEY not in queue5.arguments
-        assert LVQKEY     in queue6.arguments
-        assert queue6.arguments[LVQKEY] == "lkey"
+        assert LVQKEY not in queue3.arguments
+        assert LVQKEY     in queue4.arguments
+        assert queue4.arguments[LVQKEY] == "lkey"
 
 
     def test_qpid_config(self):
