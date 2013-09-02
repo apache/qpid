@@ -187,10 +187,10 @@ void MessageReader::PropertiesReader::onNull(const Descriptor*)
 }
 
 //header, properties, amqp-sequence, amqp-value
-bool MessageReader::onStartList(uint32_t count, const CharSequence& raw, const Descriptor* descriptor)
+bool MessageReader::onStartList(uint32_t count, const CharSequence& elements, const CharSequence& raw, const Descriptor* descriptor)
 {
     if (delegate) {
-        return delegate->onStartList(count, raw, descriptor);
+        return delegate->onStartList(count, elements, raw, descriptor);
     } else {
         if (!descriptor) {
             QPID_LOG(warning, "Expected described type but got no descriptor for list.");
@@ -205,7 +205,7 @@ bool MessageReader::onStartList(uint32_t count, const CharSequence& raw, const D
             onAmqpSequence(raw);
             return false;
         } else if (descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(raw, qpid::amqp::typecodes::LIST_NAME);
+            onAmqpValue(elements, qpid::amqp::typecodes::LIST_NAME);
             return false;
         } else {
             QPID_LOG(warning, "Unexpected described list: " << *descriptor);
@@ -225,28 +225,28 @@ void MessageReader::onEndList(uint32_t count, const Descriptor* descriptor)
 }
 
 //delivery-annotations, message-annotations, application-properties, amqp-value
-bool MessageReader::onStartMap(uint32_t count, const CharSequence& raw, const Descriptor* descriptor)
+bool MessageReader::onStartMap(uint32_t count, const CharSequence& elements, const CharSequence& raw, const Descriptor* descriptor)
 {
     if (delegate) {
-        return delegate->onStartMap(count, raw, descriptor);
+        return delegate->onStartMap(count, elements, raw, descriptor);
     } else {
         if (!descriptor) {
             QPID_LOG(warning, "Expected described type but got no descriptor for map.");
             return false;
         } else if (descriptor->match(DELIVERY_ANNOTATIONS_SYMBOL, DELIVERY_ANNOTATIONS_CODE)) {
-            onDeliveryAnnotations(raw);
+            onDeliveryAnnotations(elements, raw);
             return false;
         } else if (descriptor->match(MESSAGE_ANNOTATIONS_SYMBOL, MESSAGE_ANNOTATIONS_CODE)) {
-            onMessageAnnotations(raw);
+            onMessageAnnotations(elements, raw);
             return false;
         } else if (descriptor->match(FOOTER_SYMBOL, FOOTER_CODE)) {
-            onFooter(raw);
+            onFooter(elements, raw);
             return false;
         } else if (descriptor->match(APPLICATION_PROPERTIES_SYMBOL, APPLICATION_PROPERTIES_CODE)) {
-            onApplicationProperties(raw);
+            onApplicationProperties(elements, raw);
             return false;
         } else if (descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(raw, qpid::amqp::typecodes::MAP_NAME);
+            onAmqpValue(elements, qpid::amqp::typecodes::MAP_NAME);
             return false;
         } else {
             QPID_LOG(warning, "Unexpected described map: " << *descriptor);

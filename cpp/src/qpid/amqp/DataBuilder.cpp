@@ -158,7 +158,7 @@ bool DataBuilder::nest(const qpid::types::Variant& n)
     return true;
 }
 
-bool DataBuilder::onStartList(uint32_t, const CharSequence&, const Descriptor*)
+bool DataBuilder::onStartList(uint32_t, const CharSequence&, const CharSequence&, const Descriptor*)
 {
     return nest(qpid::types::Variant::List());
 }
@@ -166,7 +166,7 @@ void DataBuilder::onEndList(uint32_t /*count*/, const Descriptor*)
 {
     nested.pop();
 }
-bool DataBuilder::onStartMap(uint32_t /*count*/, const CharSequence&, const Descriptor*)
+bool DataBuilder::onStartMap(uint32_t /*count*/, const CharSequence&, const CharSequence&, const Descriptor*)
 {
     return nest(qpid::types::Variant::Map());
 }
@@ -176,7 +176,7 @@ void DataBuilder::onEndMap(uint32_t /*count*/, const Descriptor*)
 }
 bool DataBuilder::onStartArray(uint32_t count, const CharSequence&, const Constructor&, const Descriptor*)
 {
-    return onStartList(count, CharSequence::create(), 0);
+    return onStartList(count, CharSequence::create(), CharSequence::create(), 0);
 }
 void DataBuilder::onEndArray(uint32_t count, const Descriptor*)
 {

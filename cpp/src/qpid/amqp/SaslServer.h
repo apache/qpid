@@ -43,7 +43,7 @@ class SaslServer : public Sasl
     QPID_COMMON_EXTERN void completed(bool succeeded);
 
   private:
-    QPID_COMMON_EXTERN bool onStartList(uint32_t count, const CharSequence& arguments, const Descriptor* descriptor);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t count, const CharSequence& arguments, const CharSequence&, const Descriptor* descriptor);
 };
 }} // namespace qpid::amqp
 

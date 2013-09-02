@@ -140,7 +140,7 @@ class SequenceNumberTests(Base):
         return self.conn.session()
 
     def setup_sender(self, name="ring-sequence-queue", key="qpid.queue_msg_sequence"):
-        addr = "%s; {create:sender, delete:always, node: {x-declare: {arguments: {'qpid.queue_msg_sequence':'%s', 'qpid.policy_type':'ring', 'qpid.max_count':4}}}}"  % (name, key)
+        addr = "%s; {create:sender, node: {x-declare: {auto-delete: True, arguments: {'qpid.queue_msg_sequence':'%s', 'qpid.policy_type':'ring', 'qpid.max_count':4}}}}"  % (name, key)
         sender = self.ssn.sender(addr)
         return sender
 
@@ -202,3 +202,4 @@ class SequenceNumberTests(Base):
             txt = "Unexpected sequence number. Should be 3. Received (%s)" % seqNo
             self.fail(txt)
         receiver.close()
+

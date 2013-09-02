@@ -140,16 +140,16 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     void onGroupSequence(uint32_t);
     void onReplyToGroupId(const qpid::amqp::CharSequence&);
 
-    void onApplicationProperties(const qpid::amqp::CharSequence&);
-    void onDeliveryAnnotations(const qpid::amqp::CharSequence&);
-    void onMessageAnnotations(const qpid::amqp::CharSequence&);
+    void onApplicationProperties(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&);
+    void onDeliveryAnnotations(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&);
+    void onMessageAnnotations(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&);
 
     void onData(const qpid::amqp::CharSequence&);
     void onAmqpSequence(const qpid::amqp::CharSequence&);
     void onAmqpValue(const qpid::amqp::CharSequence&, const std::string& type);
     void onAmqpValue(const qpid::types::Variant&);
 
-    void onFooter(const qpid::amqp::CharSequence&);
+    void onFooter(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&);
 };
 }}} // namespace qpid::broker::amqp
 

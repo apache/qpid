@@ -273,10 +273,11 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
 
 void Translation::write(OutgoingFromQueue& out)
 {
-    const Message* message = dynamic_cast<const Message*>(&original.getEncoding());
+    const Message* message = dynamic_cast<const Message*>(original.getPersistentContext().get());
+    //persistent context will contain any newly added annotations
+    if (!message) message = dynamic_cast<const Message*>(&original.getEncoding());
     if (message) {
         //write annotations
-        //TODO: merge in any newly added annotations
         qpid::amqp::CharSequence deliveryAnnotations = message->getDeliveryAnnotations();
         qpid::amqp::CharSequence messageAnnotations = message->getMessageAnnotations();
         if (deliveryAnnotations.size) out.write(deliveryAnnotations.data, deliveryAnnotations.size);

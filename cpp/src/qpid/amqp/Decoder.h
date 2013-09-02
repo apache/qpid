@@ -77,6 +77,7 @@ class Decoder
     const char* const start;
     size_t size;
     size_t position;
+    size_t current;
 
     void readOne(Reader& reader);
     void readValue(Reader& reader, uint8_t code, const Descriptor* descriptor);
@@ -92,7 +93,7 @@ class Decoder
     CharSequence readRawUuid();
     Constructor readConstructor();
     const char* data();
-
+    CharSequence getCurrent(size_t remaining) const;
 };
 }} // namespace qpid::amqp
 
