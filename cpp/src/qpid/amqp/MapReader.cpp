@@ -219,7 +219,7 @@ void MapReader::onSymbol(const CharSequence& v, const Descriptor* d)
     }
 }
 
-bool MapReader::onStartList(uint32_t count, const CharSequence&, const Descriptor* d)
+bool MapReader::onStartList(uint32_t count, const CharSequence&, const CharSequence&, const Descriptor* d)
 {
     if (!level) throw qpid::Exception(QPID_MSG("Expecting map as top level datum"));
     if (key) {
@@ -232,7 +232,7 @@ bool MapReader::onStartList(uint32_t count, const CharSequence&, const Descripto
     return true;
 }
 
-bool MapReader::onStartMap(uint32_t count, const CharSequence&, const Descriptor* d)
+bool MapReader::onStartMap(uint32_t count, const CharSequence&, const CharSequence&, const Descriptor* d)
 {
     if (level++) {
         if (key) {

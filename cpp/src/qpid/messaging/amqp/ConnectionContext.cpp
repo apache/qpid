@@ -203,6 +203,7 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
         if (current) {
             qpid::messaging::MessageImpl& impl = MessageImplAccess::get(message);
             boost::shared_ptr<EncodedMessage> encoded(new EncodedMessage(pn_delivery_pending(current)));
+            encoded->setNestAnnotationsOption(nestAnnotations);
             ssize_t read = pn_link_recv(lnk->receiver, encoded->getData(), encoded->getSize());
             if (read < 0) throw qpid::messaging::MessagingException("Failed to read message");
             encoded->trim((size_t) read);

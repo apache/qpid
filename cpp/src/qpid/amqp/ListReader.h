@@ -53,10 +53,10 @@ class ListReader : public Reader
     virtual void onString(const CharSequence& v, const Descriptor* descriptor) { getReader().onString(v, descriptor); }
     virtual void onSymbol(const CharSequence& v, const Descriptor* descriptor) { getReader().onSymbol(v, descriptor); }
 
-    virtual bool onStartList(uint32_t count, const CharSequence& v, const Descriptor* descriptor)
+    virtual bool onStartList(uint32_t count, const CharSequence& elements, const CharSequence& all, const Descriptor* descriptor)
     {
         ++level;
-        getReader().onStartList(count, v, descriptor);
+        getReader().onStartList(count, elements, all, descriptor);
         return false;
     }
     virtual void onEndList(uint32_t count, const Descriptor* descriptor)
@@ -64,10 +64,10 @@ class ListReader : public Reader
         --level;
         getReader().onEndList(count, descriptor);
     }
-    virtual bool onStartMap(uint32_t count, const CharSequence& v, const Descriptor* descriptor)
+    virtual bool onStartMap(uint32_t count, const CharSequence& elements, const CharSequence& all, const Descriptor* descriptor)
     {
         ++level;
-        getReader().onStartMap(count, v, descriptor);
+        getReader().onStartMap(count, elements, all, descriptor);
         return false;
     }
     virtual void onEndMap(uint32_t count, const Descriptor* descriptor)

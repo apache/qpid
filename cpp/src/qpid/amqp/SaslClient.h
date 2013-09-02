@@ -46,7 +46,7 @@ class SaslClient : public Sasl
     QPID_COMMON_EXTERN void response(const std::string*);
 
   private:
-    QPID_COMMON_EXTERN bool onStartList(uint32_t count, const CharSequence& arguments, const Descriptor* descriptor);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t count, const CharSequence& arguments, const CharSequence&, const Descriptor* descriptor);
 
 };
 

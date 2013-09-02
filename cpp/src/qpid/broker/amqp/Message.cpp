@@ -125,8 +125,8 @@ namespace {
             }
         }
 
-        bool onStartList(uint32_t, const CharSequence&, const Descriptor*) { return false; }
-        bool onStartMap(uint32_t, const CharSequence&, const Descriptor*) { return false; }
+        bool onStartList(uint32_t, const CharSequence&, const CharSequence&, const Descriptor*) { return false; }
+        bool onStartMap(uint32_t, const CharSequence&, const CharSequence&, const Descriptor*) { return false; }
         bool onStartArray(uint32_t, const CharSequence&, const Constructor&, const Descriptor*) { return false; }
 
     public:
@@ -257,9 +257,9 @@ void Message::onGroupId(const qpid::amqp::CharSequence&) {}
 void Message::onGroupSequence(uint32_t) {}
 void Message::onReplyToGroupId(const qpid::amqp::CharSequence&) {}
 
-void Message::onApplicationProperties(const qpid::amqp::CharSequence& v) { applicationProperties = v; }
-void Message::onDeliveryAnnotations(const qpid::amqp::CharSequence& v) { deliveryAnnotations = v; }
-void Message::onMessageAnnotations(const qpid::amqp::CharSequence& v) { messageAnnotations = v; }
+void Message::onApplicationProperties(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { applicationProperties = v; }
+void Message::onDeliveryAnnotations(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence& v) { deliveryAnnotations = v; }
+void Message::onMessageAnnotations(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence& v) { messageAnnotations = v; }
 
 void Message::onData(const qpid::amqp::CharSequence& v) { body = v; }
 void Message::onAmqpSequence(const qpid::amqp::CharSequence& v) { body = v; bodyType = qpid::amqp::typecodes::LIST_NAME; }
@@ -278,7 +278,7 @@ void Message::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& 
 }
 void Message::onAmqpValue(const qpid::types::Variant& v) { typedBody = v; }
 
-void Message::onFooter(const qpid::amqp::CharSequence& v) { footer = v; }
+void Message::onFooter(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence& v) { footer = v; }
 
 bool Message::isTypedBody() const
 {
@@ -338,31 +338,41 @@ void Message::decodeHeader(framing::Buffer& buffer)
 }
 void Message::decodeContent(framing::Buffer& /*buffer*/) {}
 
-boost::intrusive_ptr<PersistableMessage> Message::merge(const std::map<std::string, qpid::types::Variant>& annotations) const
+boost::intrusive_ptr<PersistableMessage> Message::merge(const std::map<std::string, qpid::types::Variant>& added) const
 {
     //message- or delivery- annotations? would have to determine that from the name, for now assume always message-annotations
-    size_t extra = 0;
+    std::map<std::string, qpid::types::Variant> combined;
+    const std::map<std::string, qpid::types::Variant>* annotations(0);
     if (messageAnnotations) {
-        //TODO: actual merge required
+        //combine existing and added annotations (TODO: this could be
+        //optimised by avoiding the decode and simply 'editing' the
+        //size and count in the raw data, then appending the new
+        //elements).
+        qpid::amqp::MapBuilder builder;
+        qpid::amqp::Decoder decoder(messageAnnotations.data, messageAnnotations.size);
+        decoder.read(builder);
+        combined = builder.getMap();
+        for (std::map<std::string, qpid::types::Variant>::const_iterator i = added.begin(); i != added.end(); ++i) {
+            combined[i->first] = i->second;
+        }
+        annotations = &combined;
     } else {
-        //add whole new section
-        extra = qpid::amqp::MessageEncoder::getEncodedSize(annotations, true);
+        //additions form a whole new section
+        annotations = &added;
     }
-    boost::intrusive_ptr<Message> copy(new Message(data.size()+extra));
+    size_t annotationsSize = qpid::amqp::MessageEncoder::getEncodedSize(*annotations, true) + 3/*descriptor*/;
+
+    boost::intrusive_ptr<Message> copy(new Message(bareMessage.size+footer.size+deliveryAnnotations.size+annotationsSize));
     size_t position(0);
-    if (deliveryAnnotations) {
+    if (deliveryAnnotations.size) {
         ::memcpy(&copy->data[position], deliveryAnnotations.data, deliveryAnnotations.size);
         position += deliveryAnnotations.size;
     }
-    if (messageAnnotations) {
-        //TODO: actual merge required
-        ::memcpy(&copy->data[position], messageAnnotations.data, messageAnnotations.size);
-        position += messageAnnotations.size;
-    } else {
-        qpid::amqp::MessageEncoder encoder(&copy->data[position], extra);
-        encoder.writeMap(annotations, &qpid::amqp::message::MESSAGE_ANNOTATIONS, true);
-        position += extra;
-    }
+
+    qpid::amqp::Encoder encoder(&copy->data[position], annotationsSize);
+    encoder.writeMap(*annotations, &qpid::amqp::message::MESSAGE_ANNOTATIONS, true);
+    position += encoder.getPosition();
+
     if (bareMessage) {
         ::memcpy(&copy->data[position], bareMessage.data, bareMessage.size);
         position += bareMessage.size;
@@ -371,7 +381,18 @@ boost::intrusive_ptr<PersistableMessage> Message::merge(const std::map<std::stri
         ::memcpy(&copy->data[position], footer.data, footer.size);
         position += footer.size;
     }
+    copy->data.resize(position);//annotationsSize may be slightly bigger than needed if optimisations are used (e.g. smallint)
     copy->scan();
+    {
+        qpid::amqp::MapBuilder builder;
+        qpid::amqp::Decoder decoder(copy->messageAnnotations.data, copy->messageAnnotations.size);
+        decoder.read(builder);
+        QPID_LOG(notice, "Merged annotations are now: " << builder.getMap() << " raw=" << std::hex << std::string(copy->messageAnnotations.data, copy->messageAnnotations.size) << " " << copy->messageAnnotations.size << " bytes");
+    }
+    assert(copy->messageAnnotations);
+    assert(copy->bareMessage.size == bareMessage.size);
+    assert(copy->footer.size == footer.size);
+    assert(copy->deliveryAnnotations.size == deliveryAnnotations.size);
     return copy;
 }
 

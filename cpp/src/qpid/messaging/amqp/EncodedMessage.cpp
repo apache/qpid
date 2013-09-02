@@ -36,17 +36,17 @@ namespace messaging {
 namespace amqp {
 using namespace qpid::amqp;
 
-EncodedMessage::EncodedMessage(size_t s) : size(s), data(size ? new char[size] : 0)
+EncodedMessage::EncodedMessage(size_t s) : size(s), data(size ? new char[size] : 0), nestAnnotations(false)
 {
     init();
 }
 
-EncodedMessage::EncodedMessage() : size(0), data(0)
+EncodedMessage::EncodedMessage() : size(0), data(0), nestAnnotations(false)
 {
     init();
 }
 
-EncodedMessage::EncodedMessage(const EncodedMessage& other) : size(other.size), data(size ? new char[size] : 0)
+EncodedMessage::EncodedMessage(const EncodedMessage& other) : size(other.size), data(size ? new char[size] : 0), nestAnnotations(false)
 {
     init();
 }
@@ -110,6 +110,8 @@ void EncodedMessage::init(qpid::messaging::MessageImpl& impl)
     }
 
 }
+void EncodedMessage::setNestAnnotationsOption(bool b) { nestAnnotations = b; }
+
 void EncodedMessage::populate(qpid::types::Variant::Map& map) const
 {
     //decode application properties
@@ -144,14 +146,20 @@ void EncodedMessage::populate(qpid::types::Variant::Map& map) const
     }
     //add in any annotations
     if (deliveryAnnotations) {
-        qpid::types::Variant::Map& annotations = map["x-amqp-delivery-annotations"].asMap();
         qpid::amqp::Decoder decoder(deliveryAnnotations.data, deliveryAnnotations.size);
-        decoder.readMap(annotations);
+        if (nestAnnotations) {
+            map["x-amqp-delivery-annotations"] = decoder.readMap();
+        } else {
+            decoder.readMap(map);
+        }
     }
     if (messageAnnotations) {
-        qpid::types::Variant::Map& annotations = map["x-amqp-message-annotations"].asMap();
         qpid::amqp::Decoder decoder(messageAnnotations.data, messageAnnotations.size);
-        decoder.readMap(annotations);
+        if (nestAnnotations) {
+            map["x-amqp-message-annotations"] = decoder.readMap();
+        } else {
+            decoder.readMap(map);
+        }
     }
 }
 qpid::amqp::CharSequence EncodedMessage::getBareMessage() const
@@ -284,9 +292,9 @@ void EncodedMessage::InitialScan::onGroupId(const qpid::amqp::CharSequence& v) {
 void EncodedMessage::InitialScan::onGroupSequence(uint32_t i) { em.groupSequence = i; }
 void EncodedMessage::InitialScan::onReplyToGroupId(const qpid::amqp::CharSequence& v) { em.replyToGroupId = v; }
 
-void EncodedMessage::InitialScan::onApplicationProperties(const qpid::amqp::CharSequence& v) { em.applicationProperties = v; }
-void EncodedMessage::InitialScan::onDeliveryAnnotations(const qpid::amqp::CharSequence& v) { em.deliveryAnnotations = v; }
-void EncodedMessage::InitialScan::onMessageAnnotations(const qpid::amqp::CharSequence& v) { em.messageAnnotations = v; }
+void EncodedMessage::InitialScan::onApplicationProperties(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.applicationProperties = v; }
+void EncodedMessage::InitialScan::onDeliveryAnnotations(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.deliveryAnnotations = v; }
+void EncodedMessage::InitialScan::onMessageAnnotations(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.messageAnnotations = v; }
 
 void EncodedMessage::InitialScan::onData(const qpid::amqp::CharSequence& v)
 {
@@ -313,6 +321,6 @@ void EncodedMessage::InitialScan::onAmqpValue(const qpid::types::Variant& v)
     em.content = v;
 }
 
-void EncodedMessage::InitialScan::onFooter(const qpid::amqp::CharSequence& v) { em.footer = v; }
+void EncodedMessage::InitialScan::onFooter(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.footer = v; }
 
 }}} // namespace qpid::messaging::amqp

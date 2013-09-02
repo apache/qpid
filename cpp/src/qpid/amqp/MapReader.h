@@ -87,8 +87,8 @@ class MapReader : public Reader
     QPID_COMMON_EXTERN void onString(const CharSequence&, const Descriptor*);
     QPID_COMMON_EXTERN void onSymbol(const CharSequence&, const Descriptor*);
 
-    QPID_COMMON_EXTERN bool onStartList(uint32_t /*count*/, const CharSequence&, const Descriptor*);
-    QPID_COMMON_EXTERN bool onStartMap(uint32_t /*count*/, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartList(uint32_t /*count*/, const CharSequence&, const CharSequence&, const Descriptor*);
+    QPID_COMMON_EXTERN bool onStartMap(uint32_t /*count*/, const CharSequence&, const CharSequence&, const Descriptor*);
     QPID_COMMON_EXTERN bool onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*);
     QPID_COMMON_EXTERN void onEndList(uint32_t /*count*/, const Descriptor*);
     QPID_COMMON_EXTERN void onEndMap(uint32_t /*count*/, const Descriptor*);
