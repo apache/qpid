@@ -66,9 +66,7 @@ Queue Limit Actions:
 
     none (default) - Use broker's default policy
     reject         - Reject enqueued messages
-    flow-to-disk   - Page messages to disk
     ring           - Replace oldest unacquired message with new
-    ring-strict    - Replace oldest message, reject if oldest is acquired
 
 Replication levels:
 
@@ -198,7 +196,7 @@ def OptionsAndArguments(argv):
     group3.add_option("--file-size", action="store", type="int", metavar="<n>", help="File size in pages (64KiB/page)")
     group3.add_option("--max-queue-size", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as bytes")
     group3.add_option("--max-queue-count", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as a number of messages")
-    group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="<policy>", help="Action to take when queue limit is reached")
+    group3.add_option("--limit-policy", action="store", choices=["none", "reject", "ring", "ring-strict"], metavar="<policy>", help="Action to take when queue limit is reached")
     group3.add_option("--lvq-key", action="store", metavar="<key>", help="Last Value Queue key")
     group3.add_option("--generate-queue-events", action="store", type="int", metavar="<n>", help="If set to 1, every enqueue will generate an event that can be processed by registered listeners (e.g. for replication). If set to 2, events will be generated for enqueues and dequeues.")
     group3.add_option("--flow-stop-size", action="store", type="int", metavar="<n>",
@@ -597,12 +595,8 @@ class BrokerManager:
                 pass
             elif config._limitPolicy == "reject":
                 declArgs[POLICY_TYPE] = "reject"
-            elif config._limitPolicy == "flow-to-disk":
-                declArgs[POLICY_TYPE] = "flow_to_disk"
             elif config._limitPolicy == "ring":
                 declArgs[POLICY_TYPE] = "ring"
-            elif config._limitPolicy == "ring-strict":
-                declArgs[POLICY_TYPE] = "ring_strict"
 
         if config._clusterDurable:
             declArgs[CLUSTER_DURABLE] = 1
