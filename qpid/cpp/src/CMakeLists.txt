@@ -279,6 +279,9 @@ if (ENABLE_VALGRIND AND NOT VALGRIND)
   message(STATUS "Can't locate the valgrind command; no run-time error detection")
 endif (ENABLE_VALGRIND AND NOT VALGRIND)
 
+# Do not keep on linking against transitive library dependencies
+set (CMAKE_LINK_INTERFACE_LIBRARIES "")
+
 if (CMAKE_COMPILER_IS_GNUCXX)
    # Warnings: Enable as many as possible, keep the code clean. Please
    # do not disable warnings or remove -Werror without discussing on
@@ -295,12 +298,13 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
       set (CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-   set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
+   set (COMPILER_FLAGS "-fvisibility-inlines-hidden -Wl,--as-needed")
    # gcc 4.1.2 on RHEL 5 needs -Wno-attributes to avoid an error that's fixed
    # in later gcc versions.
    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                    OUTPUT_VARIABLE GCC_VERSION)
    if (GCC_VERSION VERSION_EQUAL 4.1.2)
+     set (COMPILER_FLAGS "-Wl,--as-needed")
      message (STATUS "Cannot use -fvisibility=hidden on gcc 4.1.2")
    else (GCC_VERSION VERSION_EQUAL 4.1.2)
      set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden -fvisibility=hidden")
@@ -534,13 +538,15 @@ include_directories( ${CMAKE_CURRENT_BINARY_DIR}/../include )
 
 link_directories( ${Boost_LIBRARY_DIRS} )
 
-CHECK_LIBRARY_EXISTS (rt clock_gettime "" CLOCK_GETTIME_IN_RT)
-if (NOT CLOCK_GETTIME_IN_RT)
-  CHECK_FUNCTION_EXISTS (clock_gettime QPID_HAS_CLOCK_GETTIME)
-else (NOT CLOCK_GETTIME_IN_RT)
-  set(CMAKE_REQUIRED_LIBS ${CMAKE_REQUIRED_LIBS} rt)
-  set(QPID_HAS_CLOCK_GETTIME YES CACHE BOOL "Platform has clock_gettime")
-endif (NOT CLOCK_GETTIME_IN_RT)
+CHECK_FUNCTION_EXISTS (clock_gettime CLOCK_GETTIME_IN_LIBC)
+if (NOT CLOCK_GETTIME_IN_LIBC)
+  CHECK_LIBRARY_EXISTS (rt clock_gettime "" CLOCK_GETTIME_IN_RT)
+  if (CLOCK_GETTIME_IN_RT)
+    set(clock_gettime_LIB "rt")
+  else ()
+    message(FATAL_ERROR "Cannot find clock_gettime()")
+  endif (CLOCK_GETTIME_IN_RT)
+endif (NOT CLOCK_GETTIME_IN_LIBC)
 
 # Check for header file for dtrace static probes
 check_include_files(sys/sdt.h HAVE_SYS_SDT_H)
@@ -572,6 +578,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (NOT HAVE_UUID AND NOT HAVE_UUID_H)
     message(FATAL_ERROR "Uuid library and/or header file not found")
   endif (NOT HAVE_UUID AND NOT HAVE_UUID_H)
+  set (uuid_LIB "uuid")
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # See if Cyrus SASL is desired and available
@@ -599,7 +606,7 @@ if (BUILD_SASL)
       qpid/sys/cyrus/CyrusSecurityLayer.h
       qpid/sys/cyrus/CyrusSecurityLayer.cpp
      )
-  set(qpidcommon_sasl_lib sasl2)
+  set(sasl_LIB sasl2)
 else (BUILD_SASL)
   set(HAVE_SASL OFF)
   set(BROKER_SASL_NAME "qpidd" CACHE STRING "SASL app name for the qpid broker")
@@ -628,26 +635,20 @@ if (BUILD_SSL)
     set (sslcommon_SOURCES
          qpid/sys/windows/SslAsynchIO.cpp
     )
+
     set (ssl_SOURCES
          qpid/broker/windows/SslProtocolFactory.cpp
     )
+
     set (sslconnector_SOURCES
          qpid/client/windows/SslConnector.cpp
     )
-    set (windows_ssl_libs Secur32.lib)
-    set (windows_ssl_server_libs Crypt32.lib)
+    set (ssl_LIBS Secur32.lib)
+    set (ssl_server_LIBS Crypt32.lib Secur32.lib)
   else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     if (NOT NSS_FOUND)
       message(FATAL_ERROR "nss/nspr not found, required for ssl support")
     endif (NOT NSS_FOUND)
-
-    foreach(f ${NSS_CFLAGS})
-      set (NSS_COMPILE_FLAGS "${NSS_COMPILE_FLAGS} ${f}")
-    endforeach(f)
-
-    foreach(f ${NSS_LDFLAGS})
-      set (NSS_LINK_FLAGS "${NSS_LINK_FLAGS} ${f}")
-    endforeach(f)
 
     set (sslcommon_SOURCES
          qpid/sys/ssl/check.h
@@ -667,13 +668,9 @@ if (BUILD_SSL)
          qpid/messaging/amqp/SslTransport.cpp
     )
 
-    set_source_files_properties (
-      ${sslcommon_SOURCES}
-      ${ssl_SOURCES}
-      ${sslconnector_SOURCES}
-      PROPERTIES
-      COMPILE_FLAGS "${NSS_COMPILE_FLAGS}"
-    )
+    set (ssl_INCLUDES "${NSS_INCLUDE_DIRS}")
+    set (ssl_LIBS "${NSS_LIBRARIES}")
+    set (ssl_server_LIBS "${NSS_LIBRARIES}")
   endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (BUILD_SSL)
 
@@ -714,7 +711,7 @@ if (BUILD_XML)
                qpid/xml/XmlExchange.cpp
                qpid/xml/XmlExchange.h
                qpid/xml/XmlExchangePlugin.cpp)
-  target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
+  target_link_libraries (xml xerces-c xqilla qpidbroker qpidcommon)
   set_target_properties (xml PROPERTIES
                          PREFIX ""
                          COMPILE_DEFINITIONS _IN_QPID_BROKER
@@ -805,13 +802,13 @@ if (BUILD_HA)
     )
 
     add_library (ha MODULE ${ha_SOURCES})
-    set_target_properties (ha PROPERTIES PREFIX "" COMPILE_DEFINITIONS _IN_QPID_BROKER)
-    target_link_libraries (ha qpidtypes qpidcommon qpidbroker qpidmessaging)
-    if (CMAKE_COMPILER_IS_GNUCXX)
-      set_target_properties (ha PROPERTIES
-                             PREFIX ""
-                             LINK_FLAGS -Wl,--no-undefined)
-    endif (CMAKE_COMPILER_IS_GNUCXX)
+    target_link_libraries (ha
+                           qpidtypes qpidcommon qpidbroker qpidmessaging
+                           "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+    set_target_properties (ha PROPERTIES
+                           PREFIX ""
+                           COMPILE_DEFINITIONS _IN_QPID_BROKER
+                           LINK_FLAGS "${CATCH_UNDEFINED}")
     install (TARGETS ha
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
@@ -861,19 +858,19 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidcommon_platform_LIBS
-    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
+    ${Boost_THREAD_LIBRARY}
+    ${Boost_DATE_TIME_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+    ws2_32
+  )
+
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
   )
-  set (qpidbroker_platform_LIBS
-    ${windows_ssl_libs} ${windows_ssl_server_libs}
-  )
+
   set (qpidclient_platform_SOURCES
     qpid/client/windows/ClientDllMain.cpp
-  )
-  set (qpidclient_platform_LIBS
-    ${windows_ssl_libs}
   )
 
   set (qpidd_platform_SOURCES
@@ -935,8 +932,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidtypes_platform_SOURCES)
   set (qpidtypes_platform_LIBS
-       uuid
-       ${Boost_SYSTEM_LIBRARY}
+    "${uuid_LIB}"
   )
 
   set (qpidcommon_platform_SOURCES
@@ -961,9 +957,11 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${qpid_system_module}
     ${qpid_poller_module}
   )
+
   set (qpidcommon_platform_LIBS
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${CMAKE_DL_LIBS}
+    "${CMAKE_DL_LIBS}"
+    "${clock_gettime_LIB}"
+    "${uuid_LIB}"
   )
 
   set (qpidbroker_platform_SOURCES
@@ -1092,20 +1090,21 @@ set (qpidcommon_SOURCES
 add_msvc_version (qpidcommon library dll)
 
 add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
-if (CLOCK_GETTIME_IN_RT)
-  set (qpidcommon_platform_LIBS ${qpidcommon_platform_LIBS} rt)
-endif (CLOCK_GETTIME_IN_RT)
-# Not all platforms have NSS_LINK_FLAGS
-if (NSS_LINK_FLAGS)
-  set (qpidcommon_LINK_FLAGS LINK_FLAGS ${NSS_LINK_FLAGS})
-endif (NSS_LINK_FLAGS)
+
 target_link_libraries (qpidcommon qpidtypes
                        ${qpidcommon_platform_LIBS}
-                       ${qpidcommon_sasl_lib})
+                       ${Boost_PROGRAM_OPTIONS_LIBRARY}
+                       "${sasl_LIB}"
+                       "${ssl_LIBS}")
+
+get_target_property(qpidcommon_includes qpidcommon INCLUDE_DIRECTORIES)
+list(APPEND qpidcommon_includes ${ssl_INCLUDES})
 set_target_properties (qpidcommon PROPERTIES
+                       INCLUDE_DIRECTORIES "${qpidcommon_includes}"
                        VERSION ${qpidcommon_version}
-                       SOVERSION ${qpidcommon_version_major}
-                       ${qpidcommon_LINK_FLAGS})
+                       SOVERSION ${qpidcommon_version_major})
+unset(qpidcommon_includes)
+
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
@@ -1178,9 +1177,19 @@ set (qpidclient_SOURCES
 add_msvc_version (qpidclient library dll)
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
-target_link_libraries (qpidclient qpidcommon ${qpidclient_platform_LIBS})
-set_target_properties (qpidclient PROPERTIES VERSION ${qpidclient_version}
-SOVERSION ${qpidclient_version_major})
+
+target_link_libraries (qpidclient qpidcommon
+                       ${Boost_PROGRAM_OPTIONS_LIBRARY}
+                       "${ssl_LIBS}")
+
+get_target_property(qpidclient_includes qpidclient INCLUDE_DIRECTORIES)
+list(APPEND qpidclient_includes ${ssl_INCLUDES})
+set_target_properties (qpidclient PROPERTIES
+                       INCLUDE_DIRECTORIES "${qpidclient_includes}"
+                       VERSION ${qpidclient_version}
+                       SOVERSION ${qpidclient_version_major})
+unset(qpidclient_includes)
+
 install (TARGETS qpidclient
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
@@ -1251,7 +1260,7 @@ set_source_files_properties(
 add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
-target_link_libraries (qpidmessaging qpidclient)
+target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon)
 set_target_properties (qpidmessaging PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        VERSION ${qpidmessaging_version}
@@ -1377,11 +1386,21 @@ set (qpidbroker_SOURCES
 )
 add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
-target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
+
+target_link_libraries (qpidbroker qpidcommon qpidtypes
+                       "${Boost_PROGRAM_OPTIONS_LIBRARY}"
+                       "${sasl_LIB}"
+                       "${ssl_server_LIBS}")
+
+get_target_property(qpidbroker_includes qpidcommon INCLUDE_DIRECTORIES)
+list(APPEND qpidbroker_includes ${ssl_INCLUDES})
 set_target_properties (qpidbroker PROPERTIES
+                       INCLUDE_DIRECTORIES "${qpidbroker_includes}"
                        VERSION ${qpidbroker_version}
                        SOVERSION ${qpidbroker_version_major}
                        COMPILE_DEFINITIONS _IN_QPID_BROKER)
+unset(qpidbroker_includes)
+
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)

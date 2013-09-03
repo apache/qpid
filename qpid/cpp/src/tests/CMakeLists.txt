@@ -171,7 +171,7 @@ add_executable (unit_test unit_test
                 ${actual_unit_tests} ${platform_test_additions})
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
-                       qpidmessaging qpidbroker)
+                       qpidmessaging qpidtypes qpidbroker qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 set_target_properties (unit_test PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(unit_test)
 
@@ -191,105 +191,104 @@ endif (BUILD_SASL)
 # Other test programs
 #
 add_executable (qpid-perftest qpid-perftest.cpp ${platform_test_additions})
-target_link_libraries (qpid-perftest qpidclient)
+target_link_libraries (qpid-perftest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 remember_location(qpid-perftest)
 
 add_executable (qpid-txtest qpid-txtest.cpp ${platform_test_additions})
-target_link_libraries (qpid-txtest qpidclient)
+target_link_libraries (qpid-txtest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
 remember_location(qpid-txtest)
 
 add_executable (qpid-latency-test qpid-latency-test.cpp ${platform_test_additions})
-target_link_libraries (qpid-latency-test qpidclient)
+target_link_libraries (qpid-latency-test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #qpid_latencytest_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
 remember_location(qpid-latency-test)
 
 add_executable (echotest echotest.cpp ${platform_test_additions})
-target_link_libraries (echotest qpidclient)
+target_link_libraries (echotest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
 remember_location(echotest)
 
 add_executable (qpid-client-test qpid-client-test.cpp ${platform_test_additions})
-target_link_libraries (qpid-client-test qpidclient)
+target_link_libraries (qpid-client-test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
 remember_location(qpid-client-test)
 
 add_executable (qpid-topic-listener qpid-topic-listener.cpp ${platform_test_additions})
-target_link_libraries (qpid-topic-listener qpidclient)
+target_link_libraries (qpid-topic-listener qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
 remember_location(qpid-topic-listener)
 
 add_executable (qpid-topic-publisher qpid-topic-publisher.cpp ${platform_test_additions})
-target_link_libraries (qpid-topic-publisher qpidclient)
+target_link_libraries (qpid-topic-publisher qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
 remember_location(qpid-topic-publisher)
 
 add_executable (publish publish.cpp ${platform_test_additions})
-target_link_libraries (publish qpidclient)
+target_link_libraries (publish qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
 remember_location(publish)
 
 add_executable (consume consume.cpp ${platform_test_additions})
-target_link_libraries (consume qpidclient)
+target_link_libraries (consume qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
 remember_location(consume)
 
 add_executable (header_test header_test.cpp ${platform_test_additions})
-target_link_libraries (header_test qpidclient)
+target_link_libraries (header_test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 remember_location(header_test)
 
 add_executable (declare_queues declare_queues.cpp ${platform_test_additions})
-target_link_libraries (declare_queues qpidclient)
+target_link_libraries (declare_queues qpidclient qpidcommon)
 remember_location(declare_queues)
 
 add_executable (replaying_sender replaying_sender.cpp ${platform_test_additions})
-target_link_libraries (replaying_sender qpidclient)
+target_link_libraries (replaying_sender qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(replaying_sender)
 
 add_executable (resuming_receiver resuming_receiver.cpp ${platform_test_additions})
-target_link_libraries (resuming_receiver qpidclient)
+target_link_libraries (resuming_receiver qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(resuming_receiver)
 
 add_executable (txshift txshift.cpp ${platform_test_additions})
-target_link_libraries (txshift qpidclient)
+target_link_libraries (txshift qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txshift)
 
 add_executable (txjob txjob.cpp ${platform_test_additions})
-target_link_libraries (txjob qpidclient)
+target_link_libraries (txjob qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txjob)
 
 add_executable (receiver receiver.cpp ${platform_test_additions})
-target_link_libraries (receiver qpidclient)
-#receiver_SOURCES=receiver.cpp  TestOptions.h ConnectionOptions.h
+target_link_libraries (receiver qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(receiver)
 
+# This is bizarre - using both messaging and client libraries
 add_executable (sender sender.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (sender qpidmessaging)
-#sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
+target_link_libraries (sender qpidmessaging qpidtypes qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(sender)
 
 add_executable (qpid-receive qpid-receive.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid-receive qpidmessaging)
+target_link_libraries (qpid-receive qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(qpid-receive)
 
 add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid-send qpidmessaging)
+target_link_libraries (qpid-send qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(qpid-send)
 
 add_executable (qpid-ping qpid-ping.cpp ${platform_test_additions})
-target_link_libraries (qpid-ping qpidclient)
+target_link_libraries (qpid-ping qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(qpid-ping)
 
 add_executable (datagen datagen.cpp ${platform_test_additions})
-target_link_libraries (datagen qpidclient)
+target_link_libraries (datagen qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(datagen)
 
 add_executable (msg_group_test msg_group_test.cpp ${platform_test_additions})
-target_link_libraries (msg_group_test qpidmessaging)
+target_link_libraries (msg_group_test qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(msg_group_test)
 
 if (BUILD_SASL)
