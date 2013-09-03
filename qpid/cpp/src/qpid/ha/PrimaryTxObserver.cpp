@@ -83,9 +83,7 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
     logPrefix = "Primary transaction "+shortStr(id)+": ";
 
     // The brokers known at this point are the ones that will be included
-    // in the transaction. Brokers that join later are not included
-    // Latecomers that have replicated the transaction will be rolled back
-    // when the tx-queue is deleted.
+    // in the transaction. Brokers that join later are not included.
     //
     BrokerInfo::Set backups(haBroker.getMembership().otherBackups());
     std::transform(backups.begin(), backups.end(), inserter(members, members.begin()),
@@ -102,7 +100,6 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
     assert(result.second);
     txQueue = result.first;
     txQueue->deliver(TxMembersEvent(members).message());
-    // Do this last, it will start concurrent callbacks.
 }
 
 PrimaryTxObserver::~PrimaryTxObserver() {}
