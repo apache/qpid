@@ -73,7 +73,7 @@ if (SWIG_FOUND)
   set(CMAKE_SWIG_FLAGS "-w361,362,401,467,503")
 
   if (PYTHONLIBS_FOUND)
-      message("Building Python bindings")
+      message(STATUS "Building Python bindings")
       execute_process(COMMAND ${PYTHON_EXECUTABLE}
                       -c "from distutils.sysconfig import get_python_lib; print get_python_lib(True, prefix='${CMAKE_INSTALL_PREFIX}')"
                       OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
@@ -84,7 +84,7 @@ if (SWIG_FOUND)
   endif (PYTHONLIBS_FOUND)
 
   if (RUBY_FOUND)
-      message("Building Ruby bindings")
+      message(STATUS "Building Ruby bindings")
       execute_process(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e "puts RbConfig::CONFIG['prefix']"
                       OUTPUT_VARIABLE RUBY_PREFIX
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -95,7 +95,7 @@ if (SWIG_FOUND)
   endif (RUBY_FOUND)
 
   if (PERLLIBS_FOUND)
-      message("Building Perl bindings")
+      message(STATUS "Building Perl bindings")
       execute_process(COMMAND ${PERL_EXECUTABLE} "-V::prefix:"
                       OUTPUT_VARIABLE QPERL_PREFIX
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
