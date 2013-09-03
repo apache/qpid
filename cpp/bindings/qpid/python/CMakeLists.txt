@@ -24,6 +24,10 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES CPLU
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i
    PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
 
+list(APPEND SWIG_MODULE_cqpid_python_EXTRA_DEPS
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/qpid.i
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/swig_python_typemaps.i
+)
 swig_add_module(cqpid python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
 swig_link_libraries(cqpid qpidmessaging qpidtypes ${PYTHON_LIBRARIES})
 
