@@ -48,15 +48,6 @@ if (BUILD_AMQP)
       message(FATAL_ERROR "Qpid proton not found, required for amqp 1.0 support")
     endif (NOT PROTON_FOUND)
 
-    foreach(f ${PROTON_CFLAGS})
-      set (PROTON_COMPILE_FLAGS "${PROTON_COMPILE_FLAGS} ${f}")
-    endforeach(f)
-
-    foreach(f ${PROTON_LDFLAGS})
-      set (PROTON_LINK_FLAGS "${PROTON_LINK_FLAGS} ${f}")
-    endforeach(f)
-
-
     set (amqp_SOURCES
          qpid/broker/amqp/Authorise.h
          qpid/broker/amqp/Authorise.cpp
@@ -108,17 +99,20 @@ if (BUILD_AMQP)
          qpid/broker/amqp/Translation.h
          qpid/broker/amqp/Translation.cpp
         )
+
+    include_directories(${PROTON_INCLUDE_DIRS})
+    link_directories(${PROTON_LIBRARY_DIRS})
+
     add_library (amqp MODULE ${amqp_SOURCES})
-    target_link_libraries (amqp qpidbroker qpidcommon)
+    target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${PROTON_LIBRARIES} ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (amqp PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"
-                           LINK_FLAGS "${PROTON_LINK_FLAGS}")
-    set_target_properties (amqp PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                           LINK_FLAGS "${CATCH_UNDEFINED}"
+                           COMPILE_DEFINITIONS _IN_QPID_BROKER)
+
     install (TARGETS amqp
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
-
 
     set (amqpc_SOURCES
          qpid/messaging/amqp/AddressHelper.h
@@ -147,11 +141,11 @@ if (BUILD_AMQP)
          qpid/messaging/amqp/TcpTransport.cpp
         )
     add_library (amqpc MODULE ${amqpc_SOURCES})
-    target_link_libraries (amqpc qpidmessaging qpidclient qpidcommon)
+    target_link_libraries (amqpc qpidmessaging qpidtypes qpidclient qpidcommon ${PROTON_LIBRARIES})
     set_target_properties (amqpc PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"
-                           LINK_FLAGS "${PROTON_LINK_FLAGS}")
+                           LINK_FLAGS "${CATCH_UNDEFINED}")
+
     install (TARGETS amqpc
              DESTINATION ${QPIDC_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_CLIENT})

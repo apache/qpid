@@ -23,7 +23,7 @@
 macro(add_messaging_example example)
   add_executable(${example} ${example}.cpp OptionParser.cpp)
   set_target_properties(${example} PROPERTIES OUTPUT_NAME ${example})
-  target_link_libraries(${example} qpidmessaging ${_boost_libs_needed})
+  target_link_libraries(${example} qpidmessaging qpidtypes ${_boost_libs_needed})
   # For installs, don't install the built example; that would be pointless.
   # Install the things a user needs to build the example on-site.
   install (FILES

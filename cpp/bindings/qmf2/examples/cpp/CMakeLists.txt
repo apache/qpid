@@ -57,10 +57,10 @@ macro(add_example subdir example)
   add_executable(${subdir}_${example} ${example}.cpp)
   set_target_properties(${subdir}_${example} PROPERTIES OUTPUT_NAME ${example})
   if (${ARGC} GREATER 2)
-    target_link_libraries(${subdir}_${example} ${ARGN} qpidclient
+    target_link_libraries(${subdir}_${example} ${ARGN} qpidmessaging qpidtypes
                           ${_boost_libs_needed})
   else (${ARGC} GREATER 2)
-    target_link_libraries(${subdir}_${example} qpidclient
+    target_link_libraries(${subdir}_${example} qpidmessaging qpidtypes
                           ${_boost_libs_needed})
   endif (${ARGC} GREATER 2)
 endmacro(add_example)
