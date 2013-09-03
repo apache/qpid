@@ -38,7 +38,7 @@ class RouterTest(unittest.TestCase):
     self.router.wait()
 
   def flush(self, messenger):
-    while messenger.work(100):
+    while messenger.work(0.1):
       pass
 
   def subscribe(self, messenger, address):
@@ -48,7 +48,7 @@ class RouterTest(unittest.TestCase):
   def test_0_discard(self):
     addr = "amqp://0.0.0.0:20000/discard/1"
     M1 = Messenger()
-    M1.timeout = 1000
+    M1.timeout = 1.0
     M1.start()
     tm = Message()
     tm.address = addr
@@ -58,14 +58,13 @@ class RouterTest(unittest.TestCase):
     M1.send()
     M1.stop()
 
-
   def test_1_pre_settled(self):
     addr = "amqp://0.0.0.0:20000/pre_settled/1"
     M1 = Messenger()
     M2 = Messenger()
 
-    M1.timeout = 1000
-    M2.timeout = 1000
+    M1.timeout = 1.0
+    M2.timeout = 1.0
 
     M1.start()
     M2.start()
@@ -96,10 +95,10 @@ class RouterTest(unittest.TestCase):
     M3 = Messenger()
     M4 = Messenger()
 
-    M1.timeout = 1000
-    M2.timeout = 1000
-    M3.timeout = 1000
-    M4.timeout = 1000
+    M1.timeout = 1.0
+    M2.timeout = 1.0
+    M3.timeout = 1.0
+    M4.timeout = 1.0
 
     M1.start()
     M2.start()
@@ -142,8 +141,8 @@ class RouterTest(unittest.TestCase):
     M1 = Messenger()
     M2 = Messenger()
 
-    M1.timeout = 1000
-    M2.timeout = 1000
+    M1.timeout = 1.0
+    M2.timeout = 1.0
     M1.outgoing_window = 5
     M2.incoming_window = 5
 
@@ -205,8 +204,8 @@ class RouterTest(unittest.TestCase):
     M1 = Messenger()
     M2 = Messenger()
 
-    M1.timeout = 1000
-    M2.timeout = 1000
+    M1.timeout = 1.0
+    M2.timeout = 1.0
     M1.outgoing_window = 5
     M2.incoming_window = 5
 
