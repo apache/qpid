@@ -538,47 +538,49 @@ include_directories( ${CMAKE_CURRENT_BINARY_DIR}/../include )
 
 link_directories( ${Boost_LIBRARY_DIRS} )
 
-CHECK_FUNCTION_EXISTS (clock_gettime CLOCK_GETTIME_IN_LIBC)
-if (NOT CLOCK_GETTIME_IN_LIBC)
+# These dependencies aren't found on windows
+if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  # Ensure we have clock_gettime
+  CHECK_FUNCTION_EXISTS (clock_gettime CLOCK_GETTIME_IN_LIBC)
+  if (NOT CLOCK_GETTIME_IN_LIBC)
   CHECK_LIBRARY_EXISTS (rt clock_gettime "" CLOCK_GETTIME_IN_RT)
   if (CLOCK_GETTIME_IN_RT)
     set(clock_gettime_LIB "rt")
   else ()
     message(FATAL_ERROR "Cannot find clock_gettime()")
   endif (CLOCK_GETTIME_IN_RT)
-endif (NOT CLOCK_GETTIME_IN_LIBC)
+  endif (NOT CLOCK_GETTIME_IN_LIBC)
 
-# Check for header file for dtrace static probes
-check_include_files(sys/sdt.h HAVE_SYS_SDT_H)
-if (HAVE_SYS_SDT_H)
-  set(probes_default ON)
-endif (HAVE_SYS_SDT_H)
-option(BUILD_PROBES "Build with DTrace/systemtap static probes" ${probes_default})
-if (NOT BUILD_PROBES)
-  set (HAVE_SYS_SDT_H 0)
-endif (NOT BUILD_PROBES)
-
-# Check for poll/epoll header files
-check_include_files(sys/poll.h HAVE_POLL)
-check_include_files(sys/epoll.h HAVE_EPOLL)
-
-# Set default poller implementation (check from general to specific to allow overriding)
-if (HAVE_POLL)
-  set(poller_default poll)
-endif (HAVE_POLL)
-if (HAVE_EPOLL)
-  set(poller_default epoll)
-endif (HAVE_EPOLL)
-set(POLLER ${poller_default} CACHE STRING "Poller implementation (poll/epoll)")
-
-# If not windows ensure that we have uuid library
-if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  # Ensure we have uuid library
   CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
   CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
   if (NOT HAVE_UUID AND NOT HAVE_UUID_H)
     message(FATAL_ERROR "Uuid library and/or header file not found")
   endif (NOT HAVE_UUID AND NOT HAVE_UUID_H)
   set (uuid_LIB "uuid")
+
+  # Check for header file for dtrace static probes
+  check_include_files(sys/sdt.h HAVE_SYS_SDT_H)
+  if (HAVE_SYS_SDT_H)
+  set(probes_default ON)
+  endif (HAVE_SYS_SDT_H)
+  option(BUILD_PROBES "Build with DTrace/systemtap static probes" ${probes_default})
+  if (NOT BUILD_PROBES)
+  set (HAVE_SYS_SDT_H 0)
+  endif (NOT BUILD_PROBES)
+
+  # Check for poll/epoll header files
+  check_include_files(sys/poll.h HAVE_POLL)
+  check_include_files(sys/epoll.h HAVE_EPOLL)
+
+  # Set default poller implementation (check from general to specific to allow overriding)
+  if (HAVE_POLL)
+  set(poller_default poll)
+  endif (HAVE_POLL)
+  if (HAVE_EPOLL)
+  set(poller_default epoll)
+  endif (HAVE_EPOLL)
+  set(POLLER ${poller_default} CACHE STRING "Poller implementation (poll/epoll)")
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # See if Cyrus SASL is desired and available
