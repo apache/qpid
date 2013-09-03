@@ -78,7 +78,7 @@ if (BUILD_RDMA)
            COMPONENT ${QPID_COMPONENT_COMMON})
 
   add_library (rdma MODULE qpid/sys/RdmaIOPlugin.cpp)
-  target_link_libraries (rdma qpidbroker rdmawrap)
+  target_link_libraries (rdma qpidbroker qpidcommon rdmawrap)
   set_target_properties (rdma PROPERTIES
                          COMPILE_DEFINITIONS _IN_QPID_BROKER
                          LINK_FLAGS "${CATCH_UNDEFINED}"
@@ -94,7 +94,7 @@ if (BUILD_RDMA)
            COMPONENT ${QPID_COMPONENT_BROKER})
 
   add_library (rdmaconnector MODULE qpid/client/RdmaConnector.cpp)
-  target_link_libraries (rdmaconnector qpidclient rdmawrap)
+  target_link_libraries (rdmaconnector qpidclient qpidcommon rdmawrap)
   set_target_properties (rdmaconnector PROPERTIES
                          LINK_FLAGS "${CATCH_UNDEFINED}"
                          PREFIX "")
