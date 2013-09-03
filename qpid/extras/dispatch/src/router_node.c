@@ -1038,7 +1038,7 @@ static void dx_router_python_setup(dx_router_t *router)
     PyObject* pClass;
     PyObject* pArgs;
 
-    pName   = PyString_FromString("router");
+    pName   = PyString_FromString("qpid.dispatch.router");
     pModule = PyImport_Import(pName);
     Py_DECREF(pName);
     if (!pModule) {
