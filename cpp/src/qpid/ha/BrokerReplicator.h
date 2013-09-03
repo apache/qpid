@@ -104,7 +104,6 @@ class BrokerReplicator : public broker::Exchange,
     void connected(broker::Bridge&, broker::SessionHandler&);
     void existingQueue(const boost::shared_ptr<broker::Queue>&);
     void existingExchange(const boost::shared_ptr<broker::Exchange>&);
-    void disconnectedQueue(const boost::shared_ptr<broker::Queue>&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);
@@ -140,8 +139,7 @@ class BrokerReplicator : public broker::Exchange,
     void deleteQueue(const std::string& name, bool purge=true);
     void deleteExchange(const std::string& name);
 
-    void autoDeleteCheck(boost::shared_ptr<broker::Exchange>);
-
+    void disconnectedExchange(boost::shared_ptr<broker::Exchange>);
     void disconnected();
 
     void setMembership(const types::Variant::List&); // Set membership from list.
