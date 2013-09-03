@@ -76,6 +76,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
 
     types::Uuid getId() const { return id; }
     QueuePtr getTxQueue() const { return txQueue; }
+    std::string getExchangeName() const { return exchangeName; }
 
     // Notify that a backup subscription has been cancelled.
     void cancel(const ReplicatingSubscription&);
@@ -96,10 +97,12 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     std::string logPrefix;
     HaBroker& haBroker;
     broker::Broker& broker;
+
     types::Uuid id;
+    std::string exchangeName;
     QueuePtr txQueue;
     QueueIdsMap enqueues;
-    bool failed;
+    bool failed, ended;
 
     UuidSet members;            // All members of transaction.
     UuidSet unprepared;         // Members that have not yet responded to prepare.
