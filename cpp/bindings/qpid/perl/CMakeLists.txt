@@ -24,6 +24,10 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/perl.i PROPERTIES CPLUSP
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/perl.i
   PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
 
+list(APPEND SWIG_MODULE_cqpid_perl_EXTRA_DEPS
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/qpid.i
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/swig_perl_typemaps.i
+)
 swig_add_module(cqpid_perl perl ${CMAKE_CURRENT_SOURCE_DIR}/perl.i)
 swig_link_libraries(cqpid_perl qpidmessaging qpidtypes qmf2 ${PERL_LIBRARY})
 
