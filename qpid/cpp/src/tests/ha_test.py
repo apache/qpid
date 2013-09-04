@@ -271,8 +271,10 @@ acl allow all all
         try: return self.connect()
         except ConnectionError: return None
 
-    def ready(self):
-        return Broker.ready(self, client_properties={"qpid.ha-admin":1})
+    def ready(self, *args, **kwargs):
+        if not 'client_properties' in kwargs: kwargs['client_properties'] = {}
+        kwargs['client_properties']['qpid.ha-admin'] = True
+        return Broker.ready(self, *args, **kwargs)
 
     def kill(self, final=True):
         if final: self.ha_port.stop()
