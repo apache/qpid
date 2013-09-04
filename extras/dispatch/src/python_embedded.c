@@ -495,17 +495,27 @@ static void IoAdapter_dealloc(IoAdapter* self)
 
 static PyObject* dx_python_send(PyObject *self, PyObject *args)
 {
-    IoAdapter  *ioa = (IoAdapter*) self;
-    const char *address;
-    PyObject   *app_properties;
-    PyObject   *body;
+    IoAdapter           *ioa   = (IoAdapter*) self;
+    dx_composed_field_t *field = 0;
+    const char          *address;
+    PyObject            *app_properties;
+    PyObject            *body;
+
     if (!PyArg_ParseTuple(args, "sOO", &address, &app_properties, &body))
         return 0;
 
-    dx_composed_field_t *field = dx_compose(DX_PERFORMATIVE_HEADER, 0);
+    field = dx_compose(DX_PERFORMATIVE_DELIVERY_ANNOTATIONS, field);
+    dx_compose_start_map(field);
+
+    dx_compose_insert_string(field, "qdx.ingress");
+    dx_compose_insert_string(field, dx_router_id(ioa->dx));
+
+    dx_compose_insert_string(field, "qdx.trace");
     dx_compose_start_list(field);
-    dx_compose_insert_bool(field, 0);     // durable
+    dx_compose_insert_string(field, dx_router_id(ioa->dx));
     dx_compose_end_list(field);
+
+    dx_compose_end_map(field);
 
     field = dx_compose(DX_PERFORMATIVE_PROPERTIES, field);
     dx_compose_start_list(field);

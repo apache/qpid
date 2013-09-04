@@ -233,12 +233,14 @@ void dx_compose_free(dx_composed_field_t *field)
     while (buf) {
         DEQ_REMOVE_HEAD(field->buffers);
         dx_free_buffer(buf);
+        buf = DEQ_HEAD(field->buffers);
     }
 
     dx_composite_t *comp = DEQ_HEAD(field->fieldStack);
     while (comp) {
         DEQ_REMOVE_HEAD(field->fieldStack);
         free_dx_composite_t(comp);
+        comp = DEQ_HEAD(field->fieldStack);
     }
 
     free_dx_composed_field_t(field);

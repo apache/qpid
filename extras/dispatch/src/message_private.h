@@ -58,11 +58,15 @@ typedef struct {
 //            1) Received message is held and forwarded unmodified - single buffer list
 //            2) Received message is held and modified before forwarding - two buffer lists
 //            3) Message is composed internally - single buffer list
+// TODO - provide a way to allocate a message without a lock for the link-routing case.
+//        It's likely that link-routing will cause no contention for the message content.
+//
 
 typedef struct {
     sys_mutex_t         *lock;
-    uint32_t             ref_count;                       // The number of qmessages referencing this
+    uint32_t             ref_count;                       // The number of messages referencing this
     dx_buffer_list_t     buffers;                         // The buffer chain containing the message
+    dx_buffer_list_t     new_delivery_annotations;        // The buffer chain containing the new delivery annotations
     dx_field_location_t  section_message_header;          // The message header list
     dx_field_location_t  section_delivery_annotation;     // The delivery annotation map
     dx_field_location_t  section_message_annotation;      // The message annotation map
@@ -77,10 +81,11 @@ typedef struct {
     dx_buffer_t         *parse_buffer;
     unsigned char       *parse_cursor;
     dx_message_depth_t   parse_depth;
+    dx_parsed_field_t   *parsed_delivery_annotations;
 } dx_message_content_t;
 
 typedef struct {
-    DEQ_LINKS(dx_message_t);                              // Deq linkage that overlays the dx_message_t
+    DEQ_LINKS(dx_message_t);   // Deque linkage that overlays the dx_message_t
     dx_message_content_t *content;
 } dx_message_pvt_t;
 
