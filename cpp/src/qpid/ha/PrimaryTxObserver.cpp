@@ -141,10 +141,11 @@ void PrimaryTxObserver::deduplicate(sys::Mutex::ScopedLock&) {
 
 bool PrimaryTxObserver::prepare() {
     sys::Mutex::ScopedLock l(lock);
-    // FIXME aconway 2013-07-23: WRONG blocking. Need async completion.
     QPID_LOG(debug, logPrefix << "Prepare");
     deduplicate(l);
     txQueue->deliver(TxPrepareEvent().message());
+    // TODO aconway 2013-09-04: Blocks the current thread till backups respond.
+    // Need a non-blocking approach (e.g. async completion or borrowing a thread)
     while (!unprepared.empty() && !failed) lock.wait();
     return !failed;
 }
