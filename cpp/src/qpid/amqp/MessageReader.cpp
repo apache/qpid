@@ -185,6 +185,70 @@ void MessageReader::PropertiesReader::onNull(const Descriptor*)
 {
     ++index;
 }
+void MessageReader::PropertiesReader::onBoolean(bool, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (boolean)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onUByte(uint8_t, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (ubyte)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onUShort(uint16_t, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (ushort)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onByte(int8_t, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (byte)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onShort(int16_t, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (short)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onInt(int32_t, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (int)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onLong(int64_t, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (long)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onFloat(float, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (float)");
+    ++index;
+}
+void MessageReader::PropertiesReader::onDouble(double, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (double)");
+    ++index;
+}
+bool MessageReader::PropertiesReader::onStartList(uint32_t /*count*/, const CharSequence& /*elements*/, const CharSequence& /*complete*/, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (list)");
+    ++index;
+    return false;
+}
+bool MessageReader::PropertiesReader::onStartMap(uint32_t /*count*/, const CharSequence& /*elements*/, const CharSequence& /*complete*/, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (map)");
+    ++index;
+    return false;
+}
+bool MessageReader::PropertiesReader::onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*)
+{
+    QPID_LOG(info, "skipping message property at index " << index << " unexpected type (array)");
+    ++index;
+    return false;
+}
+
 
 //header, properties, amqp-sequence, amqp-value
 bool MessageReader::onStartList(uint32_t count, const CharSequence& elements, const CharSequence& raw, const Descriptor* descriptor)
