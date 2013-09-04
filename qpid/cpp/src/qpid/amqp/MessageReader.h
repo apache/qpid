@@ -133,6 +133,20 @@ class MessageReader : public Reader
         void onTimestamp(int64_t v, const Descriptor*); // absolute-expiry-time, creation-time
         void onUInt(uint32_t v, const Descriptor*); // group-sequence
         void onNull(const Descriptor*);
+
+        void onBoolean(bool, const Descriptor*);
+        void onUByte(uint8_t, const Descriptor*);
+        void onUShort(uint16_t, const Descriptor*);
+        void onByte(int8_t, const Descriptor*);
+        void onShort(int16_t, const Descriptor*);
+        void onInt(int32_t, const Descriptor*);
+        void onLong(int64_t, const Descriptor*);
+        void onFloat(float, const Descriptor*);
+        void onDouble(double, const Descriptor*);
+        bool onStartList(uint32_t /*count*/, const CharSequence& /*elements*/, const CharSequence& /*complete*/, const Descriptor*);
+        bool onStartMap(uint32_t /*count*/, const CharSequence& /*elements*/, const CharSequence& /*complete*/, const Descriptor*);
+        bool onStartArray(uint32_t /*count*/, const CharSequence&, const Constructor&, const Descriptor*);
+
       private:
         MessageReader& parent;
         size_t index;
