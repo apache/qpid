@@ -645,6 +645,8 @@ if (BUILD_SSL)
     set (sslconnector_SOURCES
          qpid/client/windows/SslConnector.cpp
     )
+    set (ssl_INCLUDES "")
+    set (ssl_LIBDIRS "")
     set (ssl_LIBS Secur32.lib)
     set (ssl_server_LIBS Crypt32.lib Secur32.lib)
   else (CMAKE_SYSTEM_NAME STREQUAL Windows)
@@ -671,9 +673,16 @@ if (BUILD_SSL)
     )
 
     set (ssl_INCLUDES "${NSS_INCLUDE_DIRS}")
+    set (ssl_LIBDIRS "${NSS_LIBRARY_DIRS}")
     set (ssl_LIBS "${NSS_LIBRARIES}")
     set (ssl_server_LIBS "${NSS_LIBRARIES}")
   endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+  # Add include directories and link directories for NSS
+  # unfortunately this doesn't get done automatically for
+  # libraries detected by FindPkgConfig
+  include_directories(${ssl_INCLUDES})
+  link_directories(${ssl_LIBDIRS})
 endif (BUILD_SSL)
 
 # See if XML Exchange is desired and prerequisites are available
@@ -1097,15 +1106,11 @@ target_link_libraries (qpidcommon qpidtypes
                        ${qpidcommon_platform_LIBS}
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        "${sasl_LIB}"
-                       "${ssl_LIBS}")
+                       ${ssl_LIBS})
 
-get_target_property(qpidcommon_includes qpidcommon INCLUDE_DIRECTORIES)
-list(APPEND qpidcommon_includes ${ssl_INCLUDES})
 set_target_properties (qpidcommon PROPERTIES
-                       INCLUDE_DIRECTORIES "${qpidcommon_includes}"
                        VERSION ${qpidcommon_version}
                        SOVERSION ${qpidcommon_version_major})
-unset(qpidcommon_includes)
 
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
@@ -1182,15 +1187,11 @@ add_library (qpidclient SHARED ${qpidclient_SOURCES})
 
 target_link_libraries (qpidclient qpidcommon
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                       "${ssl_LIBS}")
+                       ${ssl_LIBS})
 
-get_target_property(qpidclient_includes qpidclient INCLUDE_DIRECTORIES)
-list(APPEND qpidclient_includes ${ssl_INCLUDES})
 set_target_properties (qpidclient PROPERTIES
-                       INCLUDE_DIRECTORIES "${qpidclient_includes}"
                        VERSION ${qpidclient_version}
                        SOVERSION ${qpidclient_version_major})
-unset(qpidclient_includes)
 
 install (TARGETS qpidclient
          DESTINATION ${QPID_INSTALL_LIBDIR}
@@ -1392,16 +1393,12 @@ add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 target_link_libraries (qpidbroker qpidcommon qpidtypes
                        "${Boost_PROGRAM_OPTIONS_LIBRARY}"
                        "${sasl_LIB}"
-                       "${ssl_server_LIBS}")
+                       ${ssl_server_LIBS})
 
-get_target_property(qpidbroker_includes qpidcommon INCLUDE_DIRECTORIES)
-list(APPEND qpidbroker_includes ${ssl_INCLUDES})
 set_target_properties (qpidbroker PROPERTIES
-                       INCLUDE_DIRECTORIES "${qpidbroker_includes}"
                        VERSION ${qpidbroker_version}
                        SOVERSION ${qpidbroker_version_major}
                        COMPILE_DEFINITIONS _IN_QPID_BROKER)
-unset(qpidbroker_includes)
 
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
