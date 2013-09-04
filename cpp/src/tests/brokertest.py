@@ -370,7 +370,7 @@ class Broker(Popen):
         deadline = time.time()+timeout
         while True:
             try:
-                c = self.connect(**kwargs)
+                c = self.connect(timeout=timeout, **kwargs)
                 try:
                     c.session()
                     return      # All good
