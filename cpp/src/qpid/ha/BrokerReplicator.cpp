@@ -903,6 +903,13 @@ void BrokerReplicator::disconnectedExchange(boost::shared_ptr<Exchange> ex) {
 
 typedef vector<boost::shared_ptr<Exchange> > ExchangeVector;
 
+// Callback function for accumulating exchange candidates
+namespace {
+	void exchangeAccumulatorCallback(ExchangeVector& ev, const Exchange::shared_ptr& i) {
+		ev.push_back(i);
+	}
+}
+
 // Called by ConnectionObserver::disconnected, disconnected from the network side.
 void BrokerReplicator::disconnected() {
     QPID_LOG(info, logPrefix << "Disconnected from primary " << primary);
@@ -910,7 +917,7 @@ void BrokerReplicator::disconnected() {
 
     // Make copy of exchanges so we can work outside the registry lock.
     ExchangeVector exs;
-    exchanges.eachExchange(boost::bind(&ExchangeVector::push_back, &exs, _1));
+    exchanges.eachExchange(boost::bind(&exchangeAccumulatorCallback, boost::ref(exs), _1));
     for_each(exs.begin(), exs.end(),
              boost::bind(&BrokerReplicator::disconnectedExchange, this, _1));
 }
