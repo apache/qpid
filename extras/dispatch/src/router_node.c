@@ -250,6 +250,56 @@ static int router_writable_link_handler(void* context, dx_link_t *link)
 }
 
 
+static void router_annotate_message(dx_router_t *router, dx_message_t *msg)
+{
+    dx_parsed_field_t   *in_da  = dx_message_delivery_annotations(msg);
+    dx_composed_field_t *out_da = dx_compose(DX_PERFORMATIVE_DELIVERY_ANNOTATIONS, 0);
+
+    dx_parsed_field_t *trace   = 0;
+    dx_parsed_field_t *ingress = 0;
+
+    if (in_da) {
+        trace   = dx_parse_value_by_key(in_da, "qdx.trace");
+        ingress = dx_parse_value_by_key(in_da, "qdx.ingress");
+    }
+
+    dx_compose_start_map(out_da);
+
+    //
+    // If there is a trace field, append this router's ID to the trace.
+    //
+    if (trace && dx_parse_is_list(trace)) {
+        dx_compose_insert_string(out_da, "qdx.trace");
+        dx_compose_start_list(out_da);
+
+        uint32_t idx = 0;
+        dx_parsed_field_t *trace_item = dx_parse_sub_value(trace, idx);
+        while (trace_item) {
+            dx_field_iterator_t *iter = dx_parse_raw(trace_item);
+            dx_compose_insert_string_iterator(out_da, iter);
+            idx++;
+            trace_item = dx_parse_sub_value(trace, idx);
+        }
+
+        dx_compose_insert_string(out_da, router->router_id);
+        dx_compose_end_list(out_da);
+    }
+
+    //
+    // If there is no ingress field, annotate the ingress as this router
+    //
+    if (!ingress) {
+        dx_compose_insert_string(out_da, "qdx.ingress");
+        dx_compose_insert_string(out_da, router->router_id);
+    }
+
+    dx_compose_end_map(out_da);
+
+    dx_message_set_delivery_annotations(msg, out_da);
+    dx_compose_free(out_da);
+}
+
+
 /**
  * Inbound Delivery Handler
  */
@@ -337,6 +387,11 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                 // To field is valid and contains a known destination.  Handle the various
                 // cases for forwarding.
                 //
+
+                //
+                // Interpret and update the delivery annotations of the message
+                //
+                router_annotate_message(router, msg);
 
                 //
                 // Forward to the in-process handler for this message if there is one.  The
@@ -786,6 +841,13 @@ void dx_router_free(dx_router_t *router)
     sys_mutex_free(router->lock);
     free(router);
     dx_python_stop();
+}
+
+
+const char *dx_router_id(const dx_dispatch_t *dx)
+{
+    dx_router_t *router = dx->router;
+    return router->router_id;
 }
 
 
