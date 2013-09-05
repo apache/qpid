@@ -218,7 +218,9 @@ function BuildAPlatform
         ('bin/msvc*.dll',        'bin/Release') ,
         ('bin/*d.dll',           'bin/Debug'),
         ('bin/*.dll',            'bin/Release'),
-        ('bin/*test.exe',        'bin/Release')
+        ('bin/*test.exe',        'bin/Release'),
+        ('bin/qpid-send.exe',    'bin/Release'),
+        ('bin/qpid-receive.exe', 'bin/Release')
     )
 
     $preserve=(
