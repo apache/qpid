@@ -258,5 +258,58 @@ class RouterTest(unittest.TestCase):
 #  def test_7_link_route_receiver(self):
 #    pass 
 
+
+  def test_8_trace(self):
+    addr = "amqp://0.0.0.0:20000/trace/1"
+    M1 = Messenger()
+    M2 = Messenger()
+
+    M1.timeout = 1.0
+    M2.timeout = 1.0
+
+    M1.start()
+    M2.start()
+    self.subscribe(M2, addr)
+
+    tm = Message()
+    rm = Message()
+
+    tm.address = addr
+    tm.instructions = {'qdx.trace' : []}
+
+    for i in range(10):
+      tm.body = {'number': i}
+      M1.put(tm)
+    M1.send()
+
+    for i in range(10):
+      M2.recv(1)
+      M2.get(rm)
+      self.assertEqual(i, rm.body['number'])
+      da = rm.instructions
+      self.assertEqual(da.__class__, dict)
+      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
+      self.assertEqual(da['qdx.trace'], ['Qpid.Dispatch.Router.A'])
+
+    tm.instructions = {'qdx.trace' : ['first.hop']}
+
+    for i in range(10):
+      tm.body = {'number': i}
+      M1.put(tm)
+    M1.send()
+
+    for i in range(10):
+      M2.recv(1)
+      M2.get(rm)
+      self.assertEqual(i, rm.body['number'])
+      da = rm.instructions
+      self.assertEqual(da.__class__, dict)
+      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
+      self.assertEqual(da['qdx.trace'], ['first.hop', 'Qpid.Dispatch.Router.A'])
+
+    M1.stop()
+    M2.stop()
+
+
 if __name__ == '__main__':
   unittest.main()
