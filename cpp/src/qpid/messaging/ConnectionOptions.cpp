@@ -52,7 +52,7 @@ void merge(const qpid::types::Variant::List& from, std::vector<std::string>& to)
 
 ConnectionOptions::ConnectionOptions(const std::map<std::string, qpid::types::Variant>& options)
     : replaceUrls(false), reconnect(false), timeout(FOREVER), limit(-1), minReconnectInterval(0.001), maxReconnectInterval(2),
-      retries(0), reconnectOnLimitExceeded(true)
+      retries(0), reconnectOnLimitExceeded(true), nestAnnotations(false)
 {
     for (qpid::types::Variant::Map::const_iterator i = options.begin(); i != options.end(); ++i) {
         set(i->first, i->second);
