@@ -127,6 +127,11 @@ class SessionState : public qpid::SessionState,
     // belonging to inter-broker bridges
     void addManagementObject();
 
+    // transaction-related methods just to update statistics
+    void startTx();
+    void commitTx();
+    void rollbackTx();
+
   private:
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
     void handleContent(framing::AMQFrame& frame, const framing::SequenceNumber& id);

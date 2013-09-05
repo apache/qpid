@@ -168,12 +168,14 @@ void SemanticState::startTx()
 {
     txBuffer = TxBuffer::shared_ptr(new TxBuffer());
     session.getBroker().getBrokerObservers().startTx(txBuffer);
+    session.startTx(); //just to update statistics
 }
 
 void SemanticState::commit(MessageStore* const store)
 {
     if (!txBuffer) throw
         CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
+    session.commitTx(); //just to update statistics
     TxOp::shared_ptr txAck(static_cast<TxOp*>(new TxAccept(accumulatedAck, unacked)));
     txBuffer->enlist(txAck);
     if (txBuffer->commitLocal(store)) {
@@ -187,6 +189,7 @@ void SemanticState::rollback()
 {
     if (!txBuffer)
         throw CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
+    session.rollbackTx(); //just to update statistics
     txBuffer->rollback();
     accumulatedAck.clear();
 }
