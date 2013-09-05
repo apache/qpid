@@ -353,6 +353,11 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
         }
         break;
 
+    case DX_FIELD_DELIVERY_ANNOTATION:
+        if (content->section_delivery_annotation.parsed)
+            return &content->section_delivery_annotation;
+        break;
+
     case DX_FIELD_APPLICATION_PROPERTIES:
         if (content->section_application_properties.parsed)
             return &content->section_application_properties;
