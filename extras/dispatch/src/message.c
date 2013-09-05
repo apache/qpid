@@ -96,7 +96,10 @@ static int traverse_field(unsigned char **cursor, dx_buffer_t **buffer, dx_field
 {
     unsigned char tag = next_octet(cursor, buffer);
     if (!(*cursor)) return 0;
-    int consume = 0;
+
+    int    consume    = 0;
+    size_t hdr_length = 1;
+
     switch (tag & 0xF0) {
     case 0x40 : consume = 0;  break;
     case 0x50 : consume = 1;  break;
@@ -108,6 +111,7 @@ static int traverse_field(unsigned char **cursor, dx_buffer_t **buffer, dx_field
     case 0xB0 :
     case 0xD0 :
     case 0xF0 :
+        hdr_length += 3;
         consume |= ((int) next_octet(cursor, buffer)) << 24;
         if (!(*cursor)) return 0;
         consume |= ((int) next_octet(cursor, buffer)) << 16;
@@ -119,16 +123,18 @@ static int traverse_field(unsigned char **cursor, dx_buffer_t **buffer, dx_field
     case 0xA0 :
     case 0xC0 :
     case 0xE0 :
+        hdr_length++;
         consume |= (int) next_octet(cursor, buffer);
         if (!(*cursor)) return 0;
         break;
     }
 
     if (field && !field->parsed) {
-        field->buffer = *buffer;
-        field->offset = *cursor - dx_buffer_base(*buffer);
-        field->length = consume;
-        field->parsed = 1;
+        field->buffer     = *buffer;
+        field->offset     = *cursor - dx_buffer_base(*buffer);
+        field->length     = consume;
+        field->hdr_length = hdr_length;
+        field->parsed     = 1;
     }
 
     advance(cursor, buffer, consume, 0, 0);
@@ -238,10 +244,11 @@ static int dx_check_and_advance(dx_buffer_t         **buffer,
     //
     // Pattern matched and tag is expected.  Mark the beginning of the section.
     //
-    location->parsed = 1;
-    location->buffer = test_buffer;
-    location->offset = test_cursor - dx_buffer_base(test_buffer);
-    location->length = 0;
+    location->parsed     = 1;
+    location->buffer     = test_buffer;
+    location->offset     = test_cursor - dx_buffer_base(test_buffer);
+    location->length     = 0;
+    location->hdr_length = pattern_length;
 
     //
     // Advance the pointers to consume the whole section.
@@ -613,7 +620,9 @@ void dx_message_send(dx_message_t *in_msg, dx_link_t *link)
         // Skip over replaced delivery annotations
         //
         if (content->section_delivery_annotation.length > 0)
-            advance(&cursor, &buf, content->section_delivery_annotation.length, 0, 0);
+            advance(&cursor, &buf,
+                    content->section_delivery_annotation.hdr_length + content->section_delivery_annotation.length,
+                    0, 0);
 
         //
         // Send remaining partial buffer
