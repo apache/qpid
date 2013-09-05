@@ -275,8 +275,65 @@ class RouterTest(unittest.TestCase):
     rm = Message()
 
     tm.address = addr
-    tm.instructions = {'qdx.trace' : []}
 
+
+    ##
+    ## No inbound delivery annotations
+    ##
+    for i in range(10):
+      tm.body = {'number': i}
+      M1.put(tm)
+    M1.send()
+
+    for i in range(10):
+      M2.recv(1)
+      M2.get(rm)
+      self.assertEqual(i, rm.body['number'])
+      da = rm.instructions
+      self.assertEqual(da.__class__, dict)
+      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
+      self.assertFalse('qdx.trace' in da)
+
+    ##
+    ## Pre-existing ingress
+    ##
+    tm.instructions = {'qdx.ingress': 'ingress-router'}
+    for i in range(10):
+      tm.body = {'number': i}
+      M1.put(tm)
+    M1.send()
+
+    for i in range(10):
+      M2.recv(1)
+      M2.get(rm)
+      self.assertEqual(i, rm.body['number'])
+      da = rm.instructions
+      self.assertEqual(da.__class__, dict)
+      self.assertEqual(da['qdx.ingress'], 'ingress-router')
+      self.assertFalse('qdx.trace' in da)
+
+    ##
+    ## Invalid trace type
+    ##
+    tm.instructions = {'qdx.trace' : 45}
+    for i in range(10):
+      tm.body = {'number': i}
+      M1.put(tm)
+    M1.send()
+
+    for i in range(10):
+      M2.recv(1)
+      M2.get(rm)
+      self.assertEqual(i, rm.body['number'])
+      da = rm.instructions
+      self.assertEqual(da.__class__, dict)
+      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
+      self.assertFalse('qdx.trace' in da)
+
+    ##
+    ## Empty trace
+    ##
+    tm.instructions = {'qdx.trace' : []}
     for i in range(10):
       tm.body = {'number': i}
       M1.put(tm)
@@ -291,8 +348,10 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
       self.assertEqual(da['qdx.trace'], ['Qpid.Dispatch.Router.A'])
 
+    ##
+    ## Non-empty trace
+    ##
     tm.instructions = {'qdx.trace' : ['first.hop']}
-
     for i in range(10):
       tm.body = {'number': i}
       M1.put(tm)

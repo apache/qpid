@@ -286,12 +286,15 @@ static void router_annotate_message(dx_router_t *router, dx_message_t *msg)
     }
 
     //
-    // If there is no ingress field, annotate the ingress as this router
+    // If there is no ingress field, annotate the ingress as this router else
+    // keep the original field.
     //
-    if (!ingress) {
-        dx_compose_insert_string(out_da, "qdx.ingress");
+    dx_compose_insert_string(out_da, "qdx.ingress");
+    if (ingress && dx_parse_is_scalar(ingress)) {
+        dx_field_iterator_t *iter = dx_parse_raw(ingress);
+        dx_compose_insert_string_iterator(out_da, iter);
+    } else
         dx_compose_insert_string(out_da, router->router_id);
-    }
 
     dx_compose_end_map(out_da);
 
