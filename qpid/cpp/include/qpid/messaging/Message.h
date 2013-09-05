@@ -149,6 +149,7 @@ class QPID_MESSAGING_CLASS_EXTERN Message
      */
     QPID_MESSAGING_EXTERN const qpid::types::Variant::Map& getProperties() const;
     QPID_MESSAGING_EXTERN qpid::types::Variant::Map& getProperties();
+    QPID_MESSAGING_EXTERN void setProperties(const qpid::types::Variant::Map&);
 
     /**
      * Set the content to the data held in the string parameter. Note:

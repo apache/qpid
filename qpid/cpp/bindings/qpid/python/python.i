@@ -164,10 +164,6 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 
 %extend qpid::messaging::Connection {
     %pythoncode %{
-         # Handle the different options by converting underscores to hyphens.
-         # Also, the sasl_mechanisms option in Python has no direct
-         # equivalent in C++, so we will translate them to sasl_mechanism
-         # when possible.
          def __init__(self, url=None, **options):
              if url:
                  args = [str(url)]
@@ -312,6 +308,31 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 
 %extend qpid::messaging::Message {
     %pythoncode %{
+         class MessageProperties:
+             def __init__(self, msg):
+                 self.msg = msg
+                 self.properties = self.msg.getProperties()
+
+             def __len__(self):
+                 return self.properties.__len__()
+
+             def __getitem__(self, key):
+                 return self.properties[key];
+
+             def __setitem__(self, key, value):
+                 self.properties[key] = value
+                 self.msg.setProperty(key, value)
+
+             def __delitem__(self, key):
+                 del self.properties[key]
+                 self.msg.setProperties(self.properties)
+
+             def __iter__(self):
+                 return self.properties.iteritems()
+
+             def __repr__(self):
+                 return str(self.properties)
+
          # UNSPECIFIED was module level before, but I do not
          # know how to insert python code at the top of the module.
          # (A bare "%pythoncode" inserts at the end.
@@ -344,11 +365,14 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
              if ttl is not None :
                  self.ttl = ttl
              if properties is not None :
-                 # Can't set properties via (inst).getProperties, because
-                 # the typemaps make a copy of the underlying properties.
-                 # Instead, set via setProperty for the time-being
-                 for k, v in properties.iteritems() :
-                     self.setProperty(k, v)
+                 self.setProperties(properties)
+
+         def _get_msg_props(self):
+             try:
+                 return self._msg_props
+             except AttributeError:
+                 self._msg_props = Message.MessageProperties(self)
+                 return self._msg_props
 
          def _get_content(self) :
              obj = self.getContentObject()
@@ -418,8 +442,8 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
          __swig_setmethods__["durable"] = setDurable
          if _newclass: durable = property(getDurable, setDurable)
 
-         __swig_getmethods__["properties"] = getProperties
-         if _newclass: properties = property(getProperties)
+         __swig_getmethods__["properties"] = _get_msg_props
+         if _newclass: properties = property(_get_msg_props)
 
          def getReplyTo(self) :
              return self._getReplyTo().str()
@@ -428,7 +452,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
          __swig_getmethods__["reply_to"] = getReplyTo
          __swig_setmethods__["reply_to"] = setReplyTo
          if _newclass: reply_to = property(getReplyTo, setReplyTo)
-         
+
          def __repr__(self):
              args = []
              for name in ["id", "subject", "user_id", "reply_to",
