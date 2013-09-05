@@ -299,7 +299,7 @@ ssl_addr = "ssl:" host [":" port]'
 		Specifies whether queues and exchanges are replicated by default.
 		<replaceable>VALUE</replaceable> is one of: <literal>none</literal>,
 		<literal>configuration</literal>, <literal>all</literal>.
-		For details see <xref linkend="ha-creating-replicated"/>.
+		For details see <xref linkend="ha-replicate-values"/>.
 	      </para>
 	    </entry>
 	  </row>
