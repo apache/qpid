@@ -45,10 +45,11 @@
  */
 
 typedef struct {
-    dx_buffer_t *buffer;  // Buffer that contains the first octet of the field, null if the field is not present
-    size_t       offset;  // Offset in the buffer to the first octet
-    size_t       length;  // Length of the field or zero if unneeded
-    int          parsed;  // non-zero iff the buffer chain has been parsed to find this field
+    dx_buffer_t *buffer;     // Buffer that contains the first octet of the field, null if the field is not present
+    size_t       offset;     // Offset in the buffer to the first octet
+    size_t       length;     // Length of the field or zero if unneeded
+    size_t       hdr_length; // Length of the field's header (not included in the length of the field)
+    int          parsed;     // non-zero iff the buffer chain has been parsed to find this field
 } dx_field_location_t;
 
 
