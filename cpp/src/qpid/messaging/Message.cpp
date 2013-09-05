@@ -73,6 +73,7 @@ void Message::setRedelivered(bool redelivered) { impl->setRedelivered(redelivere
 
 const Variant::Map& Message::getProperties() const { return impl->getHeaders(); }
 Variant::Map& Message::getProperties() { return impl->getHeaders(); }
+void Message::setProperties(const Variant::Map& p) { getProperties() = p; }
 void Message::setProperty(const std::string& k, const qpid::types::Variant& v) { impl->setHeader(k,v); }
 
 void Message::setContent(const std::string& c) { impl->setBytes(c); }

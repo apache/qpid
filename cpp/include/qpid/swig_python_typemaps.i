@@ -61,6 +61,11 @@ typedef int Py_ssize_t;
         if (PyInt_Check(value))    return qpid::types::Variant(int64_t(PyInt_AS_LONG(value)));
         if (PyLong_Check(value))   return qpid::types::Variant(int64_t(PyLong_AsLongLong(value)));
         if (PyString_Check(value)) return qpid::types::Variant(std::string(PyString_AS_STRING(value)));
+        if (PyUnicode_Check(value)) {
+            qpid::types::Variant v(std::string(PyUnicode_AS_DATA(value)));
+            v.setEncoding("utf8");
+            return v;
+        }
         if (PyDict_Check(value)) {
             qpid::types::Variant::Map map;
             PyToMap(value, &map);
@@ -116,7 +121,10 @@ typedef int Py_ssize_t;
             }
             case qpid::types::VAR_STRING : {
                 const std::string val(v->asString());
-                result = PyString_FromStringAndSize(val.c_str(), val.size());
+                if (v->getEncoding() == "utf8")
+                    result = PyUnicode_FromStringAndSize(val.c_str(), val.size());
+                else
+                    result = PyString_FromStringAndSize(val.c_str(), val.size());
                 break;
             }
             case qpid::types::VAR_MAP : {

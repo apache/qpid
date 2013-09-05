@@ -111,6 +111,17 @@ class MessageEchoTests(Base):
     msg.reply_to = "reply-address"
     self.check(msg)
 
+  def testApplicationProperties(self):
+    msg = Message()
+    msg.properties["a"] = u"A"
+    msg.properties["b"] = 1
+    msg.properties["c"] = ["x", 2]
+    msg.properties["d"] = "D"
+    #make sure deleting works as expected
+    msg.properties["foo"] = "bar"
+    del msg.properties["foo"]
+    self.check(msg)
+
   def testContentTypeUnknown(self):
     msg = Message(content_type = "this-content-type-does-not-exist")
     self.check(msg)
