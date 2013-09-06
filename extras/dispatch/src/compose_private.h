@@ -20,7 +20,28 @@
  */
 
 #include <qpid/dispatch/compose.h>
+#include "message_private.h"
 
 dx_buffer_list_t *dx_compose_buffers(dx_composed_field_t *field);
+
+typedef struct dx_composite_t {
+    DEQ_LINKS(struct dx_composite_t);
+    int                 isMap;
+    uint32_t            count;
+    uint32_t            length;
+    dx_field_location_t length_location;
+    dx_field_location_t count_location;
+} dx_composite_t;
+
+ALLOC_DECLARE(dx_composite_t);
+DEQ_DECLARE(dx_composite_t, dx_field_stack_t);
+
+
+struct dx_composed_field_t {
+    dx_buffer_list_t buffers;
+    dx_field_stack_t fieldStack;
+};
+
+ALLOC_DECLARE(dx_composed_field_t);
 
 #endif
