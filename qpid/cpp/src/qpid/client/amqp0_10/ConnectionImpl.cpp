@@ -43,6 +43,7 @@ using qpid::framing::Uuid;
 namespace {
 
 const std::string TCP("tcp");
+const std::string COLON(":");
 double FOREVER(std::numeric_limits<double>::max());
 
 // Time values in seconds can be specified as integer or floating point values.
@@ -86,7 +87,7 @@ bool expired(const sys::AbsTime& start, double timeout)
 } // namespace
 
 ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) :
-    replaceUrls(false), reconnect(false), timeout(FOREVER), limit(-1),
+    replaceUrls(false), autoReconnect(false), timeout(FOREVER), limit(-1),
     minReconnectInterval(0.001), maxReconnectInterval(2),
     retries(0), reconnectOnLimitExceeded(true), disableAutoDecode(false)
 {
@@ -106,7 +107,7 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
 {
     sys::Mutex::ScopedLock l(lock);
     if (name == "reconnect") {
-        reconnect = value;
+        autoReconnect = value;
     } else if (name == "reconnect-timeout" || name == "reconnect_timeout") {
         timeout = timeValue(value);
     } else if (name == "reconnect-limit" || name == "reconnect_limit") {
@@ -256,7 +257,7 @@ void ConnectionImpl::open()
 
 void ConnectionImpl::reopen()
 {
-    if (!reconnect) {
+    if (!autoReconnect) {
         throw qpid::messaging::TransportFailure("Failed to connect (reconnect disabled)");
     }
     open();
@@ -267,7 +268,7 @@ void ConnectionImpl::connect(const qpid::sys::AbsTime& started)
 {
     QPID_LOG(debug, "Starting connection, urls=" << asString(urls));
     for (double i = minReconnectInterval; !tryConnect(); i = std::min(i*2, maxReconnectInterval)) {
-        if (!reconnect) {
+        if (!autoReconnect) {
             throw qpid::messaging::TransportFailure("Failed to connect (reconnect disabled)");
         }
         if (limit >= 0 && retries++ >= limit) {
@@ -340,6 +341,44 @@ bool ConnectionImpl::backoff()
         return true;
     } else {
         return false;
+    }
+}
+
+void ConnectionImpl::reconnect(const std::string& u)
+{
+    sys::Mutex::ScopedLock l(lock);
+    try {
+        QPID_LOG(info, "Trying to connect to " << u << "...");
+        Url url(u, settings.protocol.size() ? settings.protocol : TCP);
+        if (url.getUser().size()) settings.username = url.getUser();
+        if (url.getPass().size()) settings.password = url.getPass();
+        connection.open(url, settings);
+        QPID_LOG(info, "Connected to " << u);
+        mergeUrls(connection.getInitialBrokers(), l);
+        if (!resetSessions(l)) throw qpid::messaging::TransportFailure("Could not re-establish sessions");
+    } catch (const qpid::TransportFailure& e) {
+        QPID_LOG(info, "Failed to connect to " << u << ": " << e.what());
+        throw qpid::messaging::TransportFailure(e.what());
+    } catch (const std::exception& e) {
+        QPID_LOG(info, "Error while connecting to " << u << ": " << e.what());
+        throw qpid::messaging::MessagingException(e.what());
+    }
+}
+
+void ConnectionImpl::reconnect()
+{
+    if (!tryConnect()) {
+        throw qpid::messaging::TransportFailure("Could not reconnect");
+    }
+}
+std::string ConnectionImpl::getUrl() const
+{
+    if (isOpen()) {
+        std::stringstream u;
+        u << connection.getNegotiatedSettings().protocol << COLON << connection.getNegotiatedSettings().host << COLON << connection.getNegotiatedSettings().port;
+        return u.str();
+    } else {
+        return std::string();
     }
 }
 
