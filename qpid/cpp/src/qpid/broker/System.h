@@ -45,6 +45,8 @@ class System : public management::Manageable
 
     System (std::string _dataDir, Broker* broker = 0);
 
+    ~System ();
+
     management::ManagementObject::shared_ptr GetManagementObject(void) const
     { return mgmtObject; }
 

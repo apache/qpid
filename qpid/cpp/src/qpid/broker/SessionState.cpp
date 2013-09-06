@@ -98,6 +98,8 @@ void SessionState::rollbackTx() {
 }
 
 SessionState::~SessionState() {
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
     asyncCommandCompleter->cancel();
     semanticState.closed();
     if (mgmtObject != 0)
