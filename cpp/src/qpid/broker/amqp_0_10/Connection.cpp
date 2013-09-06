@@ -174,6 +174,7 @@ void Connection::requestIOProcessing(boost::function0<void> callback)
 Connection::~Connection()
 {
     if (mgmtObject != 0) {
+        mgmtObject->debugStats("destroying");
         if (!link)
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, getUserId(), mgmtObject->get_remoteProperties()));
         QPID_LOG_CAT(debug, model, "Delete connection. user:" << getUserId()

@@ -353,6 +353,7 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
 Exchange::Binding::~Binding ()
 {
     if (mgmtBinding != 0) {
+        mgmtBinding->debugStats("destroying");
         _qmf::Queue::shared_ptr mo = boost::dynamic_pointer_cast<_qmf::Queue>(queue->GetManagementObject());
         if (mo != 0)
             mo->dec_bindingCount();

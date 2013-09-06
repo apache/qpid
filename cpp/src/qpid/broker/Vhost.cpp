@@ -43,6 +43,11 @@ Vhost::Vhost (qpid::management::Manageable* parentBroker, Broker* broker)
     }
 }
 
+Vhost::~Vhost () {
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
+}
+
 void Vhost::setFederationTag(const std::string& tag)
 {
     mgmtObject->set_federationTag(tag);

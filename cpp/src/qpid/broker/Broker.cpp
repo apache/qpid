@@ -443,6 +443,8 @@ void Broker::shutdown() {
 }
 
 Broker::~Broker() {
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
     shutdown();
     finalize();                 // Finalize any plugins.
     if (config.auth)
