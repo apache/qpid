@@ -15,6 +15,6 @@ $ cmake ..
 $ make
 $ make test
 
-Note:  Your PYTHONPATH _must_ include <dispatch>/src/py in its list of paths in order
+Note:  Your PYTHONPATH _must_ include <dispatch>/python in its list of paths in order
 to test and run Dispatch.
 
