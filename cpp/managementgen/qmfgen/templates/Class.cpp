@@ -70,18 +70,6 @@ uint8_t /*MGEN:Class.NameCap*/::md5Sum[MD5_LEN]   =
 
 /*MGEN:Class.NameCap*/::~/*MGEN:Class.NameCap*/ ()
 {
-/*MGEN:IF(Root.GenLogs)*/
-    bool logEnabled;
-    QPID_LOG_TEST_CAT(trace, model, logEnabled);
-    if (logEnabled)
-    {
-        ::qpid::types::Variant::Map map;
-        mapEncodeValues(map, false, true);
-        QPID_LOG_CAT(trace, model, "Mgmt delete " << className
-            << ". id:" << getKey()
-            << " Statistics: " << map);
-    }
-/*MGEN:ENDIF*/
 /*MGEN:IF(Class.ExistPerThreadStats)*/
     for (int idx = 0; idx < maxThreads; idx++)
         if (perThreadStatsArray[idx] != 0)
@@ -89,6 +77,23 @@ uint8_t /*MGEN:Class.NameCap*/::md5Sum[MD5_LEN]   =
     delete[] perThreadStatsArray;
 /*MGEN:ENDIF*/
 }
+
+void /*MGEN:Class.NameCap*/::debugStats (const std::string& comment)
+{
+/*MGEN:IF(Root.GenLogs)*/
+    bool logEnabled;
+    QPID_LOG_TEST_CAT(trace, model, logEnabled);
+    if (logEnabled)
+    {
+        ::qpid::types::Variant::Map map;
+        mapEncodeValues(map, false, true);
+        QPID_LOG_CAT(trace, model, "Mgmt " << comment << ((comment!="")?(" "):("")) << className
+            << ". id:" << getKey()
+            << " Statistics: " << map);
+    }
+/*MGEN:ENDIF*/
+}
+
 
 namespace {
     const string NAME("name");

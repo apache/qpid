@@ -372,6 +372,8 @@ bool XmlExchange::isBound(Queue::shared_ptr queue, const std::string* const bind
 
 XmlExchange::~XmlExchange() 
 {
+    if (mgmtExchange != 0)
+        mgmtExchange->debugStats("destroying");
     bindingsMap.clear();
 }
 

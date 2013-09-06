@@ -80,3 +80,9 @@ System::System (string _dataDir, Broker* broker)
     }
 }
 
+System::~System ()
+{
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
+}
+

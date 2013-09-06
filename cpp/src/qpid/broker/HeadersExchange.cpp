@@ -339,7 +339,10 @@ void HeadersExchange::getNonFedArgs(const FieldTable* args, FieldTable& nonFedAr
     }
 }
 
-HeadersExchange::~HeadersExchange() {}
+HeadersExchange::~HeadersExchange() {
+    if (mgmtExchange != 0)
+        mgmtExchange->debugStats("destroying");
+}
 
 const std::string HeadersExchange::typeName("headers");
 

@@ -448,6 +448,8 @@ void MessageStoreImpl::closeDbs()
 
 MessageStoreImpl::~MessageStoreImpl()
 {
+    if (mgmtObject.get() != 0)
+        mgmtObject->debugStats("destroying");
     finalize();
     try {
         closeDbs();

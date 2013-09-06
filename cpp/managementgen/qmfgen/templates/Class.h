@@ -118,6 +118,8 @@ namespace qmf {
 
     /*MGEN:Root.ExternMethod*/ ~/*MGEN:Class.NameCap*/();
 
+    void debugStats (const std::string& comment);
+
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
 
     /*MGEN:Root.ExternMethod*/ static void registerSelf(

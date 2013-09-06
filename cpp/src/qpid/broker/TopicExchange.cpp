@@ -333,7 +333,10 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routing
     return false;
 }
 
-TopicExchange::~TopicExchange() {}
+TopicExchange::~TopicExchange() {
+    if (mgmtExchange != 0)
+        mgmtExchange->debugStats("destroying");
+}
 
 const std::string TopicExchange::typeName("topic");
 

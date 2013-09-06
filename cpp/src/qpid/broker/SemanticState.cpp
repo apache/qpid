@@ -437,8 +437,10 @@ bool SemanticStateConsumerImpl::checkCredit(const Message& msg)
 
 SemanticStateConsumerImpl::~SemanticStateConsumerImpl()
 {
-    if (mgmtObject != 0)
+    if (mgmtObject != 0) {
+        mgmtObject->debugStats("destroying");
         mgmtObject->resourceDestroy ();
+    }
 }
 
 void SemanticState::disable(ConsumerImpl::shared_ptr c)

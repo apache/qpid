@@ -223,6 +223,8 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
 
 Queue::~Queue()
 {
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
 }
 
 bool Queue::isLocal(const Message& msg)
