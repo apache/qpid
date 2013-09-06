@@ -45,6 +45,7 @@ class RouterTest(unittest.TestCase):
     messenger.subscribe(address)
     self.flush(messenger)
 
+
   def test_0_discard(self):
     addr = "amqp://0.0.0.0:20000/discard/1"
     M1 = Messenger()
@@ -57,6 +58,7 @@ class RouterTest(unittest.TestCase):
       M1.put(tm)
     M1.send()
     M1.stop()
+
 
   def test_1_pre_settled(self):
     addr = "amqp://0.0.0.0:20000/pre_settled/1"
@@ -196,8 +198,25 @@ class RouterTest(unittest.TestCase):
     M2.stop()
 
 
-#  def test_4_unsettled_undeliverable(self):
-#    pass
+  def test_4_unsettled_undeliverable(self):
+    addr = "amqp://0.0.0.0:20000/unsettled_undeliverable/1"
+    M1 = Messenger()
+
+    M1.timeout = 1.0
+    M1.outgoing_window = 5
+
+    M1.start()
+    tm = Message()
+    tm.address = addr
+    tm.body = {'number': 200}
+
+    tx_tracker = M1.put(tm)
+    M1.send(0)
+    self.flush(M1)
+    self.assertEqual(PENDING, M1.status(tx_tracker)) ## Is this right???
+
+    M1.stop()
+
 
   def test_5_three_ack(self):
     addr = "amqp://0.0.0.0:20000/three_ack/1"
@@ -259,8 +278,8 @@ class RouterTest(unittest.TestCase):
 #    pass 
 
 
-  def test_8_trace(self):
-    addr = "amqp://0.0.0.0:20000/trace/1"
+  def test_8_delivery_annotations(self):
+    addr = "amqp://0.0.0.0:20000/da/1"
     M1 = Messenger()
     M2 = Messenger()
 
