@@ -106,6 +106,9 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     framing::ProtocolVersion getVersion() const;
     //additionally, Transport needs:
     void opened();//signal successful connection
+    void reconnect(const std::string& url);
+    void reconnect();
+    std::string getUrl() const;
     const qpid::sys::SecuritySettings* getTransportSecuritySettings();
 
   private:
@@ -122,6 +125,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     bool readHeader;
     bool haveOutput;
     std::string id;
+    std::string currentUrl;
     enum {
         DISCONNECTED,
         CONNECTING,
@@ -144,14 +148,14 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void checkClosed(boost::shared_ptr<SessionContext>, pn_link_t*);
     void wakeupDriver();
     void attach(pn_link_t*, int credit=0);
-    void reconnect();
+    void autoconnect();
     bool tryConnect();
-    bool tryConnect(const std::string& url);
     bool tryConnect(const qpid::Url& url);
     bool tryConnect(const qpid::Address& address);
     void reset();
     bool restartSessions();
     void restartSession(boost::shared_ptr<SessionContext>);
+    void setCurrentUrl(const qpid::Address&);
 
     std::size_t decodePlain(const char* buffer, std::size_t size);
     std::size_t encodePlain(char* buffer, std::size_t size);

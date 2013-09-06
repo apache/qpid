@@ -81,4 +81,17 @@ std::string ConnectionHandle::getAuthenticatedUsername()
     return connection->getAuthenticatedUsername();
 }
 
+void ConnectionHandle::reconnect(const std::string& url)
+{
+    connection->reconnect(url);
+}
+void ConnectionHandle::reconnect()
+{
+    connection->reconnect();
+}
+std::string ConnectionHandle::getUrl() const
+{
+    return connection->getUrl();
+}
+
 }}} // namespace qpid::messaging::amqp

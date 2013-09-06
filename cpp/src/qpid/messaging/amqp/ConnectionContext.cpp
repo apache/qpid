@@ -79,7 +79,7 @@ ConnectionContext::~ConnectionContext()
 bool ConnectionContext::isOpen() const
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    return pn_connection_state(connection) & (PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
+    return state == CONNECTED && pn_connection_state(connection) & (PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
 }
 
 void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
@@ -399,7 +399,7 @@ void ConnectionContext::check()
     if (state == DISCONNECTED) {
         if (ConnectionOptions::reconnect) {
             reset();
-            reconnect();
+            autoconnect();
         } else {
             throw qpid::messaging::TransportFailure("Disconnected (reconnect disabled)");
         }
@@ -794,7 +794,7 @@ bool expired(const sys::AbsTime& start, double timeout)
 const std::string COLON(":");
 }
 
-void ConnectionContext::reconnect()
+void ConnectionContext::autoconnect()
 {
     qpid::sys::AbsTime started(qpid::sys::now());
     QPID_LOG(debug, "Starting connection, urls=" << asString(urls));
@@ -821,29 +821,7 @@ bool ConnectionContext::tryConnect()
         try {
             QPID_LOG(info, "Trying to connect to " << *i << "...");
             if (tryConnect(qpid::Url(*i, protocol.empty() ? qpid::Address::TCP : protocol))) {
-                QPID_LOG(info, "Connected to " << *i);
-                if (sasl.get()) {
-                    wakeupDriver();
-                    while (!sasl->authenticated()) {
-                        QPID_LOG(debug, id << " Waiting to be authenticated...");
-                        wait();
-                    }
-                    QPID_LOG(debug, id << " Authenticated");
-                }
-
-                QPID_LOG(debug, id << " Opening...");
-                setProperties();
-                pn_connection_open(connection);
-                wakeupDriver(); //want to write
-                while (pn_connection_state(connection) & PN_REMOTE_UNINIT) {
-                    wait();
-                }
-                if (!(pn_connection_state(connection) & PN_REMOTE_ACTIVE)) {
-                    throw qpid::messaging::ConnectionError("Failed to open connection");
-                }
-                QPID_LOG(debug, id << " Opened");
-
-                return restartSessions();
+                return true;
             }
         } catch (const qpid::messaging::TransportFailure& e) {
             QPID_LOG(info, "Failed to connect to " << *i << ": " << e.what());
@@ -852,9 +830,26 @@ bool ConnectionContext::tryConnect()
     return false;
 }
 
-bool ConnectionContext::tryConnect(const std::string& url)
+void ConnectionContext::reconnect(const std::string& url)
 {
-    return tryConnect(qpid::Url(url, protocol.empty() ? qpid::Address::TCP : protocol));
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    if (state != DISCONNECTED) throw qpid::messaging::ConnectionError("Connection was already opened!");
+    if (!driver) driver = DriverImpl::getDefault();
+    reset();
+    if (!tryConnect(qpid::Url(url, protocol.empty() ? qpid::Address::TCP : protocol))) {
+        throw qpid::messaging::TransportFailure("Failed to connect");
+    }
+}
+
+void ConnectionContext::reconnect()
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    if (state != DISCONNECTED) throw qpid::messaging::ConnectionError("Connection was already opened!");
+    if (!driver) driver = DriverImpl::getDefault();
+    reset();
+    if (!tryConnect()) {
+        throw qpid::messaging::TransportFailure("Failed to reconnect");
+    }
 }
 
 bool ConnectionContext::tryConnect(const Url& url)
@@ -863,10 +858,53 @@ bool ConnectionContext::tryConnect(const Url& url)
     if (url.getPass().size()) password = url.getPass();
 
     for (Url::const_iterator i = url.begin(); i != url.end(); ++i) {
-        if (tryConnect(*i)) return true;
+        if (tryConnect(*i)) {
+            QPID_LOG(info, "Connected to " << *i);
+            setCurrentUrl(*i);
+            if (sasl.get()) {
+                wakeupDriver();
+                while (!sasl->authenticated()) {
+                    QPID_LOG(debug, id << " Waiting to be authenticated...");
+                    wait();
+                }
+                QPID_LOG(debug, id << " Authenticated");
+            }
+
+            QPID_LOG(debug, id << " Opening...");
+            setProperties();
+            pn_connection_open(connection);
+            wakeupDriver(); //want to write
+            while (pn_connection_state(connection) & PN_REMOTE_UNINIT) {
+                wait();
+            }
+            if (!(pn_connection_state(connection) & PN_REMOTE_ACTIVE)) {
+                throw qpid::messaging::ConnectionError("Failed to open connection");
+            }
+            QPID_LOG(debug, id << " Opened");
+
+            return restartSessions();
+        }
     }
     return false;
 }
+
+void ConnectionContext::setCurrentUrl(const qpid::Address& a)
+{
+    std::stringstream u;
+    u << a;
+    currentUrl = u.str();
+}
+
+std::string ConnectionContext::getUrl() const
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    if (state == CONNECTED) {
+        return currentUrl;
+    } else {
+        return std::string();
+    }
+}
+
 
 bool ConnectionContext::tryConnect(const qpid::Address& address)
 {
