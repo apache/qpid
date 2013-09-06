@@ -122,7 +122,7 @@ typedef int Py_ssize_t;
             case qpid::types::VAR_STRING : {
                 const std::string val(v->asString());
                 if (v->getEncoding() == "utf8")
-                    result = PyUnicode_FromStringAndSize(val.c_str(), val.size());
+                    result = PyUnicode_DecodeUTF8(val.c_str(), val.size(), NULL);
                 else
                     result = PyString_FromStringAndSize(val.c_str(), val.size());
                 break;
