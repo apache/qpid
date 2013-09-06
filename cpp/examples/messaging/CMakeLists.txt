@@ -49,6 +49,7 @@ add_messaging_example(map_sender)
 
 add_messaging_example(client)
 add_messaging_example(server)
+add_messaging_example(server_reconnect)
 
 # These don't need Boost or OptionParser
 add_executable(hello_world hello_world.cpp)
@@ -74,6 +75,7 @@ install (FILES
            ${CMAKE_CURRENT_SOURCE_DIR}/map_sender.cpp
            ${CMAKE_CURRENT_SOURCE_DIR}/client.cpp
            ${CMAKE_CURRENT_SOURCE_DIR}/server.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/server_reconnect.cpp
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
 

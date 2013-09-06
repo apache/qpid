@@ -49,6 +49,9 @@ class ConnectionHandle : public qpid::messaging::ConnectionImpl
     Session getSession(const std::string& name) const;
     void setOption(const std::string& name, const qpid::types::Variant& value);
     std::string getAuthenticatedUsername();
+    void reconnect(const std::string& url);
+    void reconnect();
+    std::string getUrl() const;
   private:
     boost::shared_ptr<ConnectionContext> connection;
 };

@@ -216,7 +216,7 @@ class QPID_CLIENT_CLASS_EXTERN Connection
     /**
      * Return the set of client negotiated settings
      */
-    QPID_CLIENT_EXTERN const ConnectionSettings& getNegotiatedSettings();
+    QPID_CLIENT_EXTERN const ConnectionSettings& getNegotiatedSettings() const;
 
   friend struct ConnectionAccess; ///<@internal
   friend class SessionBase_0_10; ///<@internal

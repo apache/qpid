@@ -90,4 +90,18 @@ std::string Connection::getAuthenticatedUsername()
 {
     return impl->getAuthenticatedUsername();
 }
+
+void Connection::reconnect(const std::string& url)
+{
+    impl->reconnect(url);
+}
+void Connection::reconnect()
+{
+    impl->reconnect();
+}
+std::string Connection::getUrl() const
+{
+    return impl->getUrl();
+}
+
 }} // namespace qpid::messaging
