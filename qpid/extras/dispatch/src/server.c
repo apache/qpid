@@ -372,20 +372,35 @@ static void *thread_run(void *arg)
         //
         // Service pending timers.
         //
-        dx_timer_t *timer = DEQ_HEAD(dx_server->pending_timers);
-        if (timer) {
-            DEQ_REMOVE_HEAD(dx_server->pending_timers);
+        if (DEQ_SIZE(dx_server->pending_timers) > 0) {
+            dx_timer_list_t local_list;
+            dx_timer_t *timer = DEQ_HEAD(dx_server->pending_timers);
+
+            DEQ_INIT(local_list);
+            while (timer) {
+                DEQ_REMOVE_HEAD(dx_server->pending_timers);
+                DEQ_INSERT_TAIL(local_list, timer);
+                timer = DEQ_HEAD(dx_server->pending_timers);
+            }
 
             //
-            // Mark the timer as idle in case it reschedules itself.
-            //
-            dx_timer_idle_LH(timer);
-
-            //
-            // Release the lock and invoke the connection handler.
+            // Release the lock and invoke the connection handlers.
             //
             sys_mutex_unlock(dx_server->lock);
-            timer->handler(timer->context);
+
+            timer = DEQ_HEAD(local_list);
+            while (timer) {
+                DEQ_REMOVE_HEAD(local_list);
+
+                //
+                // Mark the timer as idle in case it reschedules itself.
+                //
+                dx_timer_idle_LH(timer);
+
+                timer->handler(timer->context);
+                timer = DEQ_HEAD(local_list);
+            }
+
             pn_driver_wakeup(dx_server->driver);
             continue;
         }
