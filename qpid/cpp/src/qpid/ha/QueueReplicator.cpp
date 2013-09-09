@@ -112,7 +112,6 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
       logPrefix("Backup of "+q->getName()+": "),
       subscribed(false),
       settings(hb.getSettings()),
-      destroyed(false),
       nextId(0), maxId(0)
 {
     args.setString(QPID_REPLICATE, printable(NONE).str());
@@ -181,8 +180,7 @@ void QueueReplicator::destroy() {
     boost::shared_ptr<Bridge> bridge2; // To call outside of lock
     {
         Mutex::ScopedLock l(lock);
-        if (destroyed) return;
-        destroyed = true;
+        if (!queue) return;     // Already destroyed
         QPID_LOG(debug, logPrefix << "Destroyed");
         bridge2 = bridge;       // call close outside the lock.
         // Need to drop shared pointers to avoid pointer cycles keeping this in memory.
@@ -197,7 +195,7 @@ void QueueReplicator::destroy() {
 // Note: called with the Link lock held.
 void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler_) {
     Mutex::ScopedLock l(lock);
-    if (destroyed) return;         // Already destroyed
+    if (!queue) return;         // Already destroyed
     sessionHandler = &sessionHandler_;
     AMQP_ServerProxy peer(sessionHandler->out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
@@ -223,14 +221,6 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     link->getRemoteAddress(primary);
     QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
     QPID_LOG(trace, logPrefix << "Subscription arguments: " << arguments);
-}
-
-void QueueReplicator::cancel(Mutex::ScopedLock&) {
-    if (sessionHandler) {
-        // Cancel the replicating subscription.
-        AMQP_ServerProxy peer(sessionHandler->out);
-        peer.getMessage().cancel(getName());
-    }
 }
 
 namespace {
@@ -259,7 +249,7 @@ void QueueReplicator::route(Deliverable& deliverable)
 {
     try {
         Mutex::ScopedLock l(lock);
-        if (destroyed) return;
+        if (!queue) return;     // Already destroyed
         broker::Message& message(deliverable.getMessage());
         string key(message.getRoutingKey());
         if (!isEventKey(message.getRoutingKey())) {
