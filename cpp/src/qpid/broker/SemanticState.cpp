@@ -665,9 +665,7 @@ Queue::shared_ptr SemanticState::getQueue(const string& name) const {
     if (name.empty()) {
         throw NotAllowedException(QPID_MSG("No queue name specified."));
     } else {
-        queue = session.getBroker().getQueues().find(name);
-        if (!queue)
-            throw NotFoundException(QPID_MSG("Queue not found: "<<name));
+        queue = session.getBroker().getQueues().get(name);
     }
     return queue;
 }
