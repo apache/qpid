@@ -169,7 +169,8 @@ void PrimaryTxObserver::rollback() {
 void PrimaryTxObserver::end(sys::Mutex::ScopedLock&) {
     // Don't destroy the tx-queue if there are connected subscriptions.
     if (ended && unfinished.empty()) {
-        haBroker.deleteQueue(txQueue->getName());
+        haBroker.getBroker().deleteQueue(
+            txQueue->getName(), haBroker.getUserId(), string());
         broker.getExchanges().destroy(getExchangeName());
     }
 }

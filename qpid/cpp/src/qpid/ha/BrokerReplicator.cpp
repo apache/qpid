@@ -799,7 +799,7 @@ void BrokerReplicator::deleteQueue(const std::string& name, bool purge) {
         // messages. Any reroutes will be done at the primary and
         // replicated as normal.
         if (purge) queue->purge(0, boost::shared_ptr<Exchange>());
-        haBroker.deleteQueue(name, remoteHost);
+        haBroker.getBroker().deleteQueue(name, userId, remoteHost);
         QPID_LOG(debug, logPrefix << "Queue deleted: " << name);
     }
 }

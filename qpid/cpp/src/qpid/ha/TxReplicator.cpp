@@ -222,7 +222,8 @@ void TxReplicator::members(const string& data, sys::Mutex::ScopedLock&) {
     if (!e.members.count(haBroker.getMembership().getSelf())) {
         QPID_LOG(debug, logPrefix << "Not a member of transaction, terminating");
         // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
-        haBroker.deleteQueue(getQueue()->getName());
+        haBroker.getBroker().deleteQueue(
+            getQueue()->getName(), haBroker.getUserId(), string());
     }
 }
 
