@@ -23,6 +23,7 @@
  */
 
 #include "BrokerInfo.h"
+#include "Settings.h"
 #include "qpid/Url.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Mutex.h"
@@ -32,6 +33,8 @@
 
 namespace qpid {
 namespace ha {
+
+class HaBroker;
 
 // TODO aconway 2012-12-21: This solution is incomplete. It will only protect
 // against bad promotion if there are READY brokers when this broker starts.
@@ -51,7 +54,7 @@ namespace ha {
 class StatusCheck
 {
   public:
-    StatusCheck(const std::string& logPrefix, sys::Duration linkHeartbeatInterval, const BrokerInfo& self);
+    StatusCheck(HaBroker&);
     ~StatusCheck();
     void setUrl(const Url&);
     bool canPromote();
@@ -59,12 +62,11 @@ class StatusCheck
   private:
     void setPromote(bool p);
 
-    std::string logPrefix;
     sys::Mutex lock;
     std::vector<sys::Thread> threads;
     bool promote;
-    sys::Duration linkHeartbeatInterval;
-    BrokerInfo brokerInfo;
+    HaBroker& haBroker;
+
   friend class StatusCheckThread;
 };
 }} // namespace qpid::ha
