@@ -94,7 +94,6 @@ class QueueReplicator : public broker::Exchange,
 
     virtual void deliver(const broker::Message&);
     virtual void destroy();             // Called when the queue is destroyed.
-    void cancel(sys::Mutex::ScopedLock&);
 
     sys::Mutex lock;
     HaBroker& haBroker;
@@ -122,7 +121,6 @@ class QueueReplicator : public broker::Exchange,
 
     bool subscribed;
     const Settings& settings;
-    bool destroyed;
     PositionMap positions;
     ReplicationIdSet idSet; // Set of replicationIds on the queue.
     ReplicationId nextId;   // ID for next message to arrive.

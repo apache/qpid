@@ -125,7 +125,7 @@ class HaBroker(Broker):
         ha_port = ha_port or HaPort(test)
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
-                 "--log-enable=debug+:ha::", "--log-enable=debug+:acl::",
+                 "--log-enable=debug+:ha::",
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
@@ -323,7 +323,7 @@ class HaCluster(object):
         ha_port = self._ports[i]
         b = HaBroker(ha_port.test, ha_port, brokers_url=self.url, name=name,
                      args=args, **self.kwargs)
-        b.ready()
+        b.ready(timeout=5)
         return b
 
     def start(self):

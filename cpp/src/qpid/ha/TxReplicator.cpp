@@ -215,21 +215,24 @@ void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock& l) {
     end(l);
 }
 
-void TxReplicator::members(const string& data, sys::Mutex::ScopedLock&) {
+void TxReplicator::members(const string& data, sys::Mutex::ScopedLock& l) {
     TxMembersEvent e;
     decodeStr(data, e);
     QPID_LOG(debug, logPrefix << "Members: " << e.members);
     if (!e.members.count(haBroker.getMembership().getSelf())) {
         QPID_LOG(debug, logPrefix << "Not a member of transaction, terminating");
-        // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
-        haBroker.getBroker().deleteQueue(
-            getQueue()->getName(), haBroker.getUserId(), string());
+        end(l);
     }
 }
 
-void TxReplicator::end(sys::Mutex::ScopedLock& l) {
+void TxReplicator::end(sys::Mutex::ScopedLock&) {
     complete = true;
-    cancel(l);
+    if (!getQueue()) return;    // Already destroyed
+    // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
+    // Need to do this now to cancel the subscription to the primary tx-queue
+    // which informs the primary that we have completed the transaction.
+    haBroker.getBroker().deleteQueue(
+        getQueue()->getName(), haBroker.getUserId(), string());
 }
 
 void TxReplicator::destroy() {
