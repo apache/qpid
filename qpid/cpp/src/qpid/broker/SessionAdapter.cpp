@@ -685,9 +685,7 @@ Queue::shared_ptr SessionAdapter::HandlerHelper::getQueue(const string& name) co
     if (name.empty()) {
         throw framing::IllegalArgumentException(QPID_MSG("No queue name specified."));
     } else {
-        queue = session.getBroker().getQueues().find(name);
-        if (!queue)
-            throw framing::NotFoundException(QPID_MSG("Queue not found: "<<name));
+        queue = session.getBroker().getQueues().get(name);
     }
     return queue;
 }
