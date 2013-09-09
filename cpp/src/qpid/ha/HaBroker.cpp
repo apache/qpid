@@ -203,7 +203,7 @@ std::vector<Url> HaBroker::getKnownBrokers() const {
 }
 
 void HaBroker::shutdown(const std::string& message) {
-    QPID_LOG(critical, message);
+    QPID_LOG(critical, "Shutting down: " << message);
     broker.shutdown();
     throw Exception(message);
 }

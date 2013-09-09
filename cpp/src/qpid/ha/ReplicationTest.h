@@ -41,6 +41,13 @@ namespace ha {
 /**
  * Test whether something is replicated, taking into account the
  * default replication level.
+ *
+ * The primary uses a ReplicationTest with default based on configuration
+ * settings, and marks objects to be replicated with an explict replication
+ * argument.
+ *
+ * The backup uses a default of NONE, so it always accepts what the primary has
+ * marked on the object.
  */
 class ReplicationTest
 {

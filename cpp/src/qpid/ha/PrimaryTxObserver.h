@@ -23,7 +23,7 @@
  */
 
 #include "types.h"
-
+#include "ReplicationTest.h"
 #include "qpid/broker/TransactionObserver.h"
 #include "qpid/log/Statement.h"
 #include "qpid/types/Uuid.h"
@@ -97,6 +97,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     std::string logPrefix;
     HaBroker& haBroker;
     broker::Broker& broker;
+    ReplicationTest replicationTest;
 
     types::Uuid id;
     std::string exchangeName;

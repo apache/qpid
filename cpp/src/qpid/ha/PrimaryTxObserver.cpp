@@ -79,7 +79,9 @@ class PrimaryTxObserver::Exchange : public broker::Exchange {
 const string PrimaryTxObserver::Exchange::TYPE_NAME(string(QPID_HA_PREFIX)+"primary-tx-observer");
 
 PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
-    haBroker(hb), broker(hb.getBroker()), id(true),
+    haBroker(hb), broker(hb.getBroker()),
+    replicationTest(hb.getSettings().replicateDefault.get()),
+    id(true),
     exchangeName(TRANSACTION_REPLICATOR_PREFIX+id.str()),
     failed(false), ended(false)
 {
@@ -98,8 +100,7 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
 
     pair<QueuePtr, bool> result =
         broker.getQueues().declare(
-            TRANSACTION_REPLICATOR_PREFIX+id.str(),
-            QueueSettings(/*durable*/false, /*autodelete*/true));
+            exchangeName, QueueSettings(/*durable*/false, /*autodelete*/true));
     assert(result.second);
     txQueue = result.first;
     txQueue->deliver(TxMembersEvent(members).message());
@@ -109,25 +110,35 @@ PrimaryTxObserver::~PrimaryTxObserver() {}
 
 
 void PrimaryTxObserver::initialize() {
-    broker.getExchanges().registerExchange(
-        boost::shared_ptr<Exchange>(new Exchange(shared_from_this())));
+    boost::shared_ptr<Exchange> ex(new Exchange(shared_from_this()));
+    FieldTable args = ex->getArgs();
+    args.setString(QPID_REPLICATE, printable(NONE).str()); // Set replication arg.
+    broker.getExchanges().registerExchange(ex);
 }
 
 void PrimaryTxObserver::enqueue(const QueuePtr& q, const broker::Message& m)
 {
     sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(trace, logPrefix << "Enqueue: " << LogMessageId(*q, m));
-    enqueues[q] += m.getReplicationId();
-    txQueue->deliver(TxEnqueueEvent(q->getName(), m.getReplicationId()).message());
-    txQueue->deliver(m);
+    if (replicationTest.useLevel(*q) == ALL) { // Ignore unreplicated queues.
+        QPID_LOG(trace, logPrefix << "Enqueue: " << LogMessageId(*q, m));
+        enqueues[q] += m.getReplicationId();
+        txQueue->deliver(TxEnqueueEvent(q->getName(), m.getReplicationId()).message());
+        txQueue->deliver(m);
+    }
 }
 
 void PrimaryTxObserver::dequeue(
     const QueuePtr& q, QueuePosition pos, ReplicationId id)
 {
     sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(trace, logPrefix << "Dequeue: " << LogMessageId(*q, pos, id));
-    txQueue->deliver(TxDequeueEvent(q->getName(), id).message());
+    if (replicationTest.useLevel(*q) == ALL) { // Ignore unreplicated queues.
+        QPID_LOG(trace, logPrefix << "Dequeue: " << LogMessageId(*q, pos, id));
+        txQueue->deliver(TxDequeueEvent(q->getName(), id).message());
+    }
+    else {
+        QPID_LOG(warning, logPrefix << "Dequeue skipped, queue not replicated: "
+                 << LogMessageId(*q, pos, id));
+    }
 }
 
 void PrimaryTxObserver::deduplicate(sys::Mutex::ScopedLock&) {

@@ -560,11 +560,7 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
 void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
     string name = values[EXNAME].asString();
     boost::shared_ptr<Exchange> exchange = exchanges.find(name);
-    if (!exchange) {
-        QPID_LOG(warning, logPrefix << "Exchange delete event, not found: " << name);
-    } else if (!replicationTest.getLevel(*exchange)) {
-        QPID_LOG(warning, logPrefix << "Exchange delete event, not replicated: " << name);
-    } else {
+    if (exchange && replicationTest.getLevel(*exchange)) {
         QPID_LOG(debug, logPrefix << "Exchange delete event:" << name);
         if (exchangeTracker.get()) exchangeTracker->event(name);
         deleteExchange(name);

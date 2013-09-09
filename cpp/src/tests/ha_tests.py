@@ -562,8 +562,7 @@ class ReplicationTests(HaBrokerTest):
             return
         acl=os.path.join(os.getcwd(), "policy.acl")
         aclf=file(acl,"w")
-        # Verify that replication works with auth=yes and HA user has at least the following
-        # privileges:
+        # Minimum set of privileges required for the HA user.
         aclf.write("""
 # HA user
 acl allow zag@QPID access queue
@@ -592,14 +591,14 @@ acl deny all all
             client_credentials=Credentials("zag", "zag", "PLAIN"))
         c = cluster[0].connect(username="zig", password="zig")
         s0 = c.session();
-        s0.receiver("q;{create:always}")
-        s0.receiver("ex;{create:always,node:{type:topic,x-declare:{type:'fanout'},x-bindings:[{exchange:'ex',queue:'q'}]}}")
+        s0.sender("q;{create:always}")
+        s0.sender("ex;{create:always,node:{type:topic,x-declare:{type:'fanout'},x-bindings:[{exchange:'ex',queue:'q'}]}}")
         s0.sender("ex").send("foo");
         s1 = c.session(transactional=True)
-        s1.sender("ex").send("tx");
+        s1.sender("ex").send("foo-tx");
         cluster[1].assert_browse_backup("q", ["foo"])
         s1.commit()
-        cluster[1].assert_browse_backup("q", ["foo", "tx"])
+        cluster[1].assert_browse_backup("q", ["foo", "foo-tx"])
 
     def test_alternate_exchange(self):
         """Verify that alternate-exchange on exchanges and queues is propagated
