@@ -565,6 +565,7 @@ class ReplicationTests(HaBrokerTest):
         # Verify that replication works with auth=yes and HA user has at least the following
         # privileges:
         aclf.write("""
+# HA user
 acl allow zag@QPID access queue
 acl allow zag@QPID create queue
 acl allow zag@QPID consume queue
@@ -576,6 +577,9 @@ acl allow zag@QPID publish exchange
 acl allow zag@QPID delete exchange
 acl allow zag@QPID access method
 acl allow zag@QPID create link
+# Normal user
+acl allow zig@QPID all all
+
 acl deny all all
  """)
         aclf.close()
@@ -586,14 +590,16 @@ acl deny all all
                   "--ha-username=zag", "--ha-password=zag", "--ha-mechanism=PLAIN"
                   ],
             client_credentials=Credentials("zag", "zag", "PLAIN"))
-        s0 = cluster[0].connect(username="zag", password="zag").session();
+        c = cluster[0].connect(username="zig", password="zig")
+        s0 = c.session();
         s0.receiver("q;{create:always}")
         s0.receiver("ex;{create:always,node:{type:topic,x-declare:{type:'fanout'},x-bindings:[{exchange:'ex',queue:'q'}]}}")
-        cluster[1].wait_backup("q")
-        cluster[1].wait_backup("ex")
-        s1 = cluster[1].connect_admin().session(); # Uses Credentials above.
-        s1.sender("ex").send("foo");
-        self.assertEqual(s1.receiver("q").fetch().content, "foo")
+        s0.sender("ex").send("foo");
+        s1 = c.session(transactional=True)
+        s1.sender("ex").send("tx");
+        cluster[1].assert_browse_backup("q", ["foo"])
+        s1.commit()
+        cluster[1].assert_browse_backup("q", ["foo", "tx"])
 
     def test_alternate_exchange(self):
         """Verify that alternate-exchange on exchanges and queues is propagated

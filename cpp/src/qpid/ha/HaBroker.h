@@ -102,9 +102,8 @@ class HaBroker : public management::Manageable
 
     boost::shared_ptr<QueueReplicator> findQueueReplicator(const std::string& queueName);
 
-    /**@param connectionId optional, only available on backup */
-    void deleteQueue(const std::string& name,
-                     const std::string& connectionId=std::string());
+    /** Authenticated user ID for queue create/delete */
+    std::string getUserId() const { return userId; }
 
   private:
     void setPublicUrl(const Url&);
@@ -116,6 +115,7 @@ class HaBroker : public management::Manageable
     // Immutable members
     const types::Uuid systemId;
     const Settings settings;
+    const std::string userId;
 
     // Member variables protected by lock
     mutable sys::Mutex lock;

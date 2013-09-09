@@ -20,6 +20,8 @@
  */
 #include "StatusCheck.h"
 #include "ConnectionObserver.h"
+#include "HaBroker.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Connection.h"
@@ -41,27 +43,32 @@ const string HA_BROKER = "org.apache.qpid.ha:habroker:ha-broker";
 
 class StatusCheckThread : public sys::Runnable {
   public:
-    StatusCheckThread(StatusCheck& sc, const qpid::Address& addr, const BrokerInfo& self)
-        : url(addr), statusCheck(sc), brokerInfo(self) {}
+    StatusCheckThread(StatusCheck& sc, const qpid::Address& addr)
+        : url(addr), statusCheck(sc) {}
     void run();
   private:
     Url url;
     StatusCheck& statusCheck;
-    BrokerInfo brokerInfo;
 };
 
 void StatusCheckThread::run() {
-    QPID_LOG(debug, statusCheck.logPrefix << "Checking status of " << url);
+    string logPrefix("Status check " + url.str() + ": ");
     Connection c;
     try {
+        // Check for self connections
         Variant::Map options, clientProperties;
-        clientProperties = brokerInfo.asMap(); // Detect self connections.
         clientProperties[ConnectionObserver::ADMIN_TAG] = 1; // Allow connection to backups.
         clientProperties[ConnectionObserver::ADDRESS_TAG] = url.str();
-        clientProperties[ConnectionObserver::BACKUP_TAG] = brokerInfo.asMap();
+        clientProperties[ConnectionObserver::BACKUP_TAG] = statusCheck.haBroker.getBrokerInfo().asMap();
 
+        // Set connection options
+        Settings settings(statusCheck.haBroker.getSettings());
+        if (settings.username.size()) options["username"] = settings.username;
+        if (settings.password.size()) options["password"] = settings.password;
+        if (settings.mechanism.size()) options["sasl_mechanisms"] = settings.mechanism;
         options["client-properties"] = clientProperties;
-        options["heartbeat"] = statusCheck.linkHeartbeatInterval/sys::TIME_SEC;
+        sys::Duration heartbeat(statusCheck.haBroker.getBroker().getOptions().linkHeartbeatInterval);
+        options["heartbeat"] = heartbeat/sys::TIME_SEC;
         c = Connection(url.str(), options);
 
         c.open();
@@ -81,7 +88,7 @@ void StatusCheckThread::run() {
         content["_object_id"] = oid;
         encode(content, request);
         s.send(request);
-        messaging::Duration timeout(statusCheck.linkHeartbeatInterval/sys::TIME_MSEC);
+        messaging::Duration timeout(heartbeat/sys::TIME_MSEC);
         Message response = r.fetch(timeout);
         session.acknowledge();
         Variant::List contentIn;
@@ -89,23 +96,22 @@ void StatusCheckThread::run() {
         if (contentIn.size() == 1) {
             Variant::Map details = contentIn.front().asMap()["_values"].asMap();
             string status = details["status"].getString();
+            QPID_LOG(debug, logPrefix << status);
             if (status != "joining") {
                 statusCheck.setPromote(false);
-                QPID_LOG(info, statusCheck.logPrefix << "Status of " << url << " is "
-                         << status << ", this broker will refuse promotion.");
+                QPID_LOG(info, logPrefix << "Joining established cluster");
             }
-            QPID_LOG(debug, statusCheck.logPrefix << "Status of " << url << ": " << status);
         }
     } catch(const exception& error) {
-        QPID_LOG(info, statusCheck.logPrefix << "Error checking status of " << url
-                 <<  ": " << error.what());
+        // Its not an error to fail to connect to self.
+        if (statusCheck.haBroker.getBrokerInfo().getAddress() != url[0])
+            QPID_LOG(warning, logPrefix << error.what());
     }
     try { c.close(); } catch(...) {}
     delete this;
 }
 
-StatusCheck::StatusCheck(const string& lp, sys::Duration lh, const BrokerInfo& self)
-    : logPrefix(lp), promote(true), linkHeartbeatInterval(lh), brokerInfo(self)
+StatusCheck::StatusCheck(HaBroker& hb) : promote(true), haBroker(hb)
 {}
 
 StatusCheck::~StatusCheck() {
@@ -116,7 +122,7 @@ StatusCheck::~StatusCheck() {
 void StatusCheck::setUrl(const Url& url) {
     Mutex::ScopedLock l(lock);
     for (size_t i = 0; i < url.size(); ++i)
-        threads.push_back(Thread(new StatusCheckThread(*this, url[i], brokerInfo)));
+        threads.push_back(Thread(new StatusCheckThread(*this, url[i])));
 }
 
 bool StatusCheck::canPromote() {

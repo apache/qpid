@@ -64,6 +64,7 @@ using boost::dynamic_pointer_cast;
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : systemId(b.getSystem()->getSystemId().data()),
       settings(s),
+      userId(s.username+"@"+b.getOptions().realm),
       broker(b),
       observer(new ConnectionObserver(*this, systemId)),
       role(new StandAlone),
@@ -219,10 +220,6 @@ void HaBroker::setAddress(const Address& a) {
 boost::shared_ptr<QueueReplicator> HaBroker::findQueueReplicator(const std::string& queueName) {
     return boost::dynamic_pointer_cast<QueueReplicator>(
         broker.getExchanges().find(QueueReplicator::replicatorName(queueName)));
-}
-
-void HaBroker::deleteQueue(const string& name, const string& connectionId) {
-    broker.deleteQueue(name, settings.username, connectionId);
 }
 
 }} // namespace qpid::ha

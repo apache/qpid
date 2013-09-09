@@ -52,9 +52,7 @@ using sys::Mutex;
 Backup::Backup(HaBroker& hb, const Settings& s) :
     logPrefix("Backup: "), membership(hb.getMembership()), stopped(false),
     haBroker(hb), broker(hb.getBroker()), settings(s),
-    statusCheck(
-        new StatusCheck(
-            logPrefix, broker.getOptions().linkHeartbeatInterval, hb.getBrokerInfo()))
+    statusCheck(new StatusCheck(hb))
 {}
 
 void Backup::setBrokerUrl(const Url& brokers) {
