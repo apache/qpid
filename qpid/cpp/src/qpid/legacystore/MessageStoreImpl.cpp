@@ -21,6 +21,7 @@
 
 #include "qpid/legacystore/MessageStoreImpl.h"
 
+#include "db-inc.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/legacystore/BindingDbt.h"
 #include "qpid/legacystore/BufferValue.h"
@@ -31,7 +32,6 @@
 #include "qmf/org/apache/qpid/legacystore/Package.h"
 #include "qpid/legacystore/StoreException.h"
 #include <dirent.h>
-#include <db.h>
 
 #define MAX_AIO_SLEEPS 100000 // tot: ~1 sec
 #define AIO_SLEEP_TIME_US  10 // 0.01 ms
