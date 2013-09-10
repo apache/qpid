@@ -33,13 +33,13 @@
 #ifndef QPID_LEGACYSTORE_JRNL_JCFG_H
 #define QPID_LEGACYSTORE_JRNL_JCFG_H
 
-#if defined(__i386__) /* little endian, 32 bits */
+#if defined(__i386__) || (__arm__) /* little endian, 32 bits */
 #define JRNL_LITTLE_ENDIAN
 #define JRNL_32_BIT
 #elif defined(__PPC__) || defined(__s390__)  /* big endian, 32 bits */
 #define JRNL_BIG_ENDIAN
 #define JRNL_32_BIT
-#elif defined(__ia64__) || defined(__x86_64__) || defined(__alpha__) /* little endian, 64 bits */
+#elif defined(__ia64__) || defined(__x86_64__) || defined(__alpha__) || (__arm64__) /* little endian, 64 bits */
 #define JRNL_LITTLE_ENDIAN
 #define JRNL_64_BIT
 #elif defined(__powerpc64__) || defined(__s390x__) /* big endian, 64 bits */
