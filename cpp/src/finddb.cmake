@@ -22,31 +22,33 @@ if(UNIX)
 # - Find BerkeleyDB
 # Find the BerkeleyDB includes and library
 # This module defines
-# DB_INCLUDE_DIR, where to find db.h, etc.
+# DB_CXX_INCLUDE_DIR, where to find db_cxx.h, etc.
 # DB_LIBRARIES, the libraries needed to use BerkeleyDB.
 # DB_FOUND, If false, do not try to use BerkeleyDB.
 # also defined, but not for general use are
 # DB_LIBRARY, where to find the BerkeleyDB library.
 
-FIND_PATH(DB_INCLUDE_DIR db.h
+FIND_PATH(DB_CXX_INCLUDE_DIR db_cxx.h
     /usr/local/include/db4
+    /usr/local/include/libdb4
     /usr/local/include
     /usr/include/db4
+    /usr/include/libdb4
     /usr/include
 )
 
-SET(DB_NAMES ${DB_NAMES} db_cxx)
+SET(DB_NAMES ${DB_NAMES} db_cxx db_cxx-4)
 FIND_LIBRARY(DB_LIBRARY
     NAMES ${DB_NAMES}
     PATHS /usr/lib /usr/local/lib
 )
 
-IF (DB_LIBRARY AND DB_INCLUDE_DIR)
+IF (DB_LIBRARY AND DB_CXX_INCLUDE_DIR)
     SET(DB_LIBRARIES ${DB_LIBRARY})
     SET(DB_FOUND "YES")
-ELSE (DB_LIBRARY AND DB_INCLUDE_DIR)
+ELSE (DB_LIBRARY AND DB_CXX_INCLUDE_DIR)
     UNSET( DB_FOUND )
-ENDIF (DB_LIBRARY AND DB_INCLUDE_DIR)
+ENDIF (DB_LIBRARY AND DB_CXX_INCLUDE_DIR)
 
 
 IF (DB_FOUND)
@@ -60,12 +62,12 @@ ELSE (DB_FOUND)
 ENDIF (DB_FOUND)
 
 # Deprecated declarations.
-SET (NATIVE_DB_INCLUDE_PATH ${DB_INCLUDE_DIR} )
+SET (NATIVE_DB_INCLUDE_PATH ${DB_CXX_INCLUDE_DIR} )
 GET_FILENAME_COMPONENT (NATIVE_DB_LIB_PATH ${DB_LIBRARY} PATH)
 
 MARK_AS_ADVANCED(
     DB_LIBRARY
-    DB_INCLUDE_DIR
+    DB_CXX_INCLUDE_DIR
 )
 
 else(UNIX)
