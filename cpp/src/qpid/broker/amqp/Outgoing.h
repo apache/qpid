@@ -118,10 +118,13 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
         int disposition;
         size_t index;
         pn_delivery_tag_t tag;
+        static const size_t TAG_WIDTH = sizeof(size_t);
+        char tagData[TAG_WIDTH];//index in encoded form, used for tag
 
         Record();
         void init(size_t i);
         void reset();
+        static size_t getIndex(pn_delivery_tag_t);
     };
 
     const bool exclusive;

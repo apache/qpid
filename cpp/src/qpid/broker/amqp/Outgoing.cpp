@@ -29,6 +29,7 @@
 #include "qpid/sys/OutputControl.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MessageEncoder.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 
@@ -93,8 +94,7 @@ void OutgoingFromQueue::write(const char* data, size_t size)
 
 void OutgoingFromQueue::handle(pn_delivery_t* delivery)
 {
-    pn_delivery_tag_t tag = pn_delivery_tag(delivery);
-    size_t i = *reinterpret_cast<const size_t*>(tag.bytes);
+    size_t i = Record::getIndex(pn_delivery_tag(delivery));
     Record& r = deliveries[i];
     if (pn_delivery_writable(delivery)) {
         assert(r.msg);
@@ -260,8 +260,10 @@ OutgoingFromQueue::Record::Record() : delivery(0), disposition(0), index(0) {}
 void OutgoingFromQueue::Record::init(size_t i)
 {
     index = i;
-    tag.bytes = reinterpret_cast<const char*>(&index);
-    tag.size = sizeof(index);
+    qpid::framing::Buffer buffer(tagData, Record::TAG_WIDTH);
+    buffer.putUInt<Record::TAG_WIDTH>(index);
+    tag.bytes = tagData;
+    tag.size = Record::TAG_WIDTH;
 }
 void OutgoingFromQueue::Record::reset()
 {
@@ -270,6 +272,14 @@ void OutgoingFromQueue::Record::reset()
     delivery = 0;
     disposition = 0;
 }
+
+size_t OutgoingFromQueue::Record::getIndex(pn_delivery_tag_t t)
+{
+    assert(t.size == TAG_WIDTH);
+    qpid::framing::Buffer buffer(const_cast<char*>(t.bytes)/*won't ever be written to*/, t.size);
+    return (size_t) buffer.getUInt<TAG_WIDTH>();
+}
+
 
 
 }}} // namespace qpid::broker::amqp
