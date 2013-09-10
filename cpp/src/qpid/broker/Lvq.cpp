@@ -57,7 +57,8 @@ void Lvq::push(Message& message, bool isRecovery)
     copy.notify();
     if (removed) {
         if (isRecovery) pendingDequeues.push_back(old);
-        else dequeueFromStore(old.getPersistentContext());//do outside of lock
+        else if (old.isPersistent())
+            dequeueFromStore(old.getPersistentContext());//do outside of lock
     }
 }
 }} // namespace qpid::broker
