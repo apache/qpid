@@ -269,7 +269,8 @@ class BrokerReplicator::UpdateTracker {
     void clean(const std::string& name) {
         QPID_LOG(info, "Backup: Deleted " << type << " " << name <<
                  ": no longer exists on primary");
-        cleanFn(name);
+        try { cleanFn(name); }
+        catch (const framing::NotFoundException&) {}
     }
 
     std::string type;

@@ -35,6 +35,7 @@
 #include "qpid/broker/TxBuffer.h"
 #include "qpid/broker/TxAccept.h"
 #include "qpid/broker/amqp_0_10/Connection.h"
+#include "qpid/broker/DeliverableMessage.h"
 #include "qpid/framing/BufferTypes.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
@@ -79,7 +80,7 @@ TxReplicator::TxReplicator(
     txBuffer(new broker::TxBuffer),
     store(hb.getBroker().hasStore() ? &hb.getBroker().getStore() : 0),
     channel(link->nextChannel()),
-    complete(false),
+    complete(false), ignore(false),
     dequeueState(hb.getBroker().getQueues())
 {
     string id(getTxId(txQueue->getName()));
@@ -117,6 +118,10 @@ void TxReplicator::sendMessage(const broker::Message& msg, sys::Mutex::ScopedLoc
     {
         sessionHandler->out.handle(const_cast<AMQFrame&>(*i));
     }
+}
+
+void TxReplicator::route(broker::Deliverable& deliverable) {
+    if (!ignore) QueueReplicator::route(deliverable);
 }
 
 void TxReplicator::deliver(const broker::Message& m_) {
@@ -215,30 +220,28 @@ void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock& l) {
     end(l);
 }
 
-void TxReplicator::members(const string& data, sys::Mutex::ScopedLock& l) {
+void TxReplicator::members(const string& data, sys::Mutex::ScopedLock&) {
     TxMembersEvent e;
     decodeStr(data, e);
     QPID_LOG(debug, logPrefix << "Members: " << e.members);
     if (!e.members.count(haBroker.getMembership().getSelf().getSystemId())) {
-        QPID_LOG(debug, logPrefix << "Not a member of transaction, terminating");
-        end(l);
+        QPID_LOG(info, logPrefix << "Not participating in transaction");
+        ignore = true;
     }
 }
 
 void TxReplicator::end(sys::Mutex::ScopedLock&) {
     complete = true;
     if (!getQueue()) return;    // Already destroyed
-    // Destroy the tx-queue, which will destroy this via QueueReplicator destroy.
-    // Need to do this now to cancel the subscription to the primary tx-queue
-    // which informs the primary that we have completed the transaction.
-    haBroker.getBroker().deleteQueue(
-        getQueue()->getName(), haBroker.getUserId(), string());
+    // Destroy will cancel the subscription to the primary tx-queue which
+    // informs the primary that we have completed the transaction.
+    destroy();
 }
 
 void TxReplicator::destroy() {
     QueueReplicator::destroy();
     sys::Mutex::ScopedLock l(lock);
-    if (!complete) rollback(string(), l);
+    if (!ignore && !complete) rollback(string(), l);
 }
 
 }} // namespace qpid::ha

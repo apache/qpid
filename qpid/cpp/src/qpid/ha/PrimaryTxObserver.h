@@ -103,7 +103,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     std::string exchangeName;
     QueuePtr txQueue;
     QueueIdsMap enqueues;
-    bool failed, ended;
+    bool failed, ended, complete;
 
     UuidSet members;            // All members of transaction.
     UuidSet unprepared;         // Members that have not yet responded to prepare.
