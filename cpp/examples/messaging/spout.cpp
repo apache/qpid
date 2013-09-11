@@ -43,6 +43,7 @@ struct Options : OptionParser
     std::string url;
     std::string address;
     int timeout;
+    bool durable;
     int count;
     std::string id;
     std::string replyto;
@@ -55,10 +56,12 @@ struct Options : OptionParser
         : OptionParser("Usage: spout [OPTIONS] ADDRESS", "Send messages to the specified address"),
           url("127.0.0.1"),
           timeout(0),
-          count(1)
+          count(1),
+          durable(false)
     {
         add("broker,b", url, "url of broker to connect to");
         add("timeout,t", timeout, "exit after the specified time");
+        add("durable,d", durable, "make the message durable (def. transient)");
         add("count,c", count, "stop after count messages have been sent, zero disables");
         add("id,i", id, "use the supplied id instead of generating one");
         add("reply-to", replyto, "specify reply-to address");
@@ -127,6 +130,11 @@ struct Options : OptionParser
             return true;
         }
     }
+
+    bool isDurable() const
+    {
+      return durable;
+    }
 };
 
 
@@ -141,6 +149,7 @@ int main(int argc, char** argv)
             Sender sender = session.createSender(options.address);
 
             Message message;
+            message.setDurable(options.isDurable());
             options.setProperties(message);
             Variant& obj = message.getContentObject();
             if (options.entries.size()) {

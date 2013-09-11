@@ -26,6 +26,7 @@ options = {
   :broker => "127.0.0.1",
   :address => "",
   :timeout => 0,
+  :durable => false,
   :count => 1,
   :properties => {},
   :content => nil,
@@ -49,6 +50,11 @@ opts = OptionParser.new do |opts|
   opts.on("-t", "--timeout VALUE", Integer,
           "exit after the specified time") do |timeout|
     options[:timeout] = Qpid::Messaging::Duration.new timeout * 1000
+  end
+
+  opts.on("-d", "--durable",
+          "make the message durable (def. #{options[:durable]})") do
+    options[:durable] = true
   end
 
   opts.on("-c", "--count VALUE", Integer,
@@ -135,6 +141,7 @@ options[:properties].each_key {|key| message[key] = options[:properties][key]}
   elsif options[:content]
     message.content = options[:content]
   end
+  message.durable = options[:durable]
   message.content = options[:content] unless options[:content].nil?
   message.properties["spout-id"] = "#{count}"
   message.reply_to = options[:replyto] unless options[:replyto].nil? || options[:replyto].empty?
