@@ -148,8 +148,12 @@ void Message::processProperties(MapHandler& mh) const {
 //and whether it should indeed only be the content that is thus
 //measured
 uint64_t Message::getContentSize() const { return data.size(); }
-//getContent() is used primarily for decoding qmf messages in management and ha
-std::string Message::getContent() const { return empty; }
+//getContent() is used primarily for decoding qmf messages in
+//management and ha, but also by the xml exchange
+std::string Message::getContent() const
+{
+    return std::string(body.data, body.size);
+}
 
 Message::Message(size_t size) : data(size)
 {
