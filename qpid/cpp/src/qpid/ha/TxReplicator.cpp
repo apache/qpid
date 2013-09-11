@@ -219,7 +219,7 @@ void TxReplicator::members(const string& data, sys::Mutex::ScopedLock& l) {
     TxMembersEvent e;
     decodeStr(data, e);
     QPID_LOG(debug, logPrefix << "Members: " << e.members);
-    if (!e.members.count(haBroker.getMembership().getSelf())) {
+    if (!e.members.count(haBroker.getMembership().getSelf().getSystemId())) {
         QPID_LOG(debug, logPrefix << "Not a member of transaction, terminating");
         end(l);
     }

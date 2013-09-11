@@ -26,6 +26,7 @@
 #include "types.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Time.h"
 #include "qpid/types/Variant.h"
 #include <boost/function.hpp>
 #include <set>
@@ -61,11 +62,6 @@ class Membership
 
     void setMgmtObject(boost::shared_ptr<qmf::org::apache::qpid::ha::HaBroker>);
 
-    /** Call callback when membership changes.
-     *  NOTE: called with Membership lock held.
-     */
-    typedef boost::function<void(const BrokerInfo::Map&)> UpdateCallback;
-    void addCallback(UpdateCallback);
     void clear();               ///< Clear all but self.
     void add(const BrokerInfo& b);
     void remove(const types::Uuid& id);
@@ -82,11 +78,11 @@ class Membership
 
     bool get(const types::Uuid& id, BrokerInfo& result) const;
 
-    types::Uuid getSelf() const  { return self; }
-    BrokerInfo getInfo() const;
+    BrokerInfo getSelf() const;
     BrokerStatus getStatus() const;
     void setStatus(BrokerStatus s);
-    void setAddress(const Address&);
+
+    void setSelfAddress(const Address&);
 
   private:
     void update(sys::Mutex::ScopedLock&);
@@ -99,7 +95,6 @@ class Membership
     const types::Uuid self;
     BrokerInfo::Map brokers;
     BrokerStatus oldStatus;
-    std::vector<UpdateCallback> callbacks;
 };
 
 }} // namespace qpid::ha
