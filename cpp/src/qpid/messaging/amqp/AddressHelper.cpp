@@ -96,6 +96,7 @@ const std::string X_DECLARE("x-declare");
 const std::string X_BINDINGS("x-bindings");
 const std::string X_SUBSCRIBE("x-subscribe");
 const std::string ARGUMENTS("arguments");
+const std::string EXCHANGE_TYPE("exchange-type");
 
 const std::vector<std::string> RECEIVER_MODES = boost::assign::list_of<std::string>(ALWAYS) (RECEIVER);
 const std::vector<std::string> SENDER_MODES = boost::assign::list_of<std::string>(ALWAYS) (SENDER);
@@ -225,6 +226,18 @@ void flatten(Variant::Map& base, const std::string& nested)
         base.erase(i);
     }
 }
+bool replace(Variant::Map& map, const std::string& original, const std::string& desired)
+{
+    Variant::Map::iterator i = map.find(original);
+    if (i != map.end()) {
+        map[desired] = i->second;
+        map.erase(original);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void write(pn_data_t* data, const Variant& value);
 
 void write(pn_data_t* data, const Variant::Map& map)
@@ -331,6 +344,7 @@ AddressHelper::AddressHelper(const Address& address) :
     Variant::Map::iterator i = node.find(X_DECLARE);
     if (i != node.end()) {
         Variant::Map x_declare = i->second.asMap();
+        replace(x_declare, TYPE, EXCHANGE_TYPE);
         flatten(x_declare, ARGUMENTS);
         add(properties, x_declare);
         node.erase(i);
