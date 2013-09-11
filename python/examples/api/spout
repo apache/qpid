@@ -45,6 +45,8 @@ parser.add_option("-l", "--reconnect-limit", type="int",
                   help="maximum number of reconnect attempts")
 parser.add_option("-c", "--count", type="int", default=1,
                   help="stop after count messages have been sent, zero disables (default %default)")
+parser.add_option("-d", "--durable", action="store_true",
+                  help="make the message persistent")
 parser.add_option("-t", "--timeout", type="float", default=None,
                   help="exit after the specified time")
 parser.add_option("-I", "--id", help="use the supplied id instead of generating one")
@@ -111,6 +113,8 @@ try:
     msg = Message(subject=opts.subject,
                   reply_to=opts.reply_to,
                   content=content)
+    if opts.durable:
+      msg.durable = True
     if content_type is not None:
         msg.content_type = content_type
     msg.properties["spout-id"] = "%s:%s" % (spout_id, count)

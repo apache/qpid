@@ -28,6 +28,7 @@ use Time::Local;
 my $url     = "127.0.0.1";
 my $timeout = 0;
 my $count   = 1;
+my $durable = 0;
 my $id      = "";
 my $replyto = "";
 my @properties;
@@ -41,6 +42,7 @@ my $result = GetOptions(
     "broker|b=s"           => \$url,
     "timeout|t=i"          => \$timeout,
     "count|c=i"            => \$count,
+    "durable|d"            => \$durable,
     "id|i=s"               => \$id,
     "replyto=s"            => \$replyto,
     "property|p=s@"        => \@properties,
@@ -95,6 +97,9 @@ eval {
         $message->set_content($content);
         $message->set_content_type("text/plain");
     }
+
+    # set durable flag
+    $message->set_durable($durable);
 
     # if a reply-to address was supplied, then create a receiver from the
     # session and wait for a response to be sent
