@@ -121,7 +121,9 @@ Queue::shared_ptr QueueRegistry::find(const string& name){
 
 Queue::shared_ptr QueueRegistry::get(const string& name) {
     Queue::shared_ptr q = find(name);
-    if (!q) throw framing::NotFoundException(QPID_MSG("Queue not found: "<<name));
+    if (!q) {
+        throw framing::NotFoundException(QPID_MSG("Queue not found: "<<name));
+    }
     return q;
 }
 

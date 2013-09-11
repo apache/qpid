@@ -83,7 +83,7 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
     replicationTest(hb.getSettings().replicateDefault.get()),
     id(true),
     exchangeName(TRANSACTION_REPLICATOR_PREFIX+id.str()),
-    failed(false), ended(false)
+    failed(false), ended(false), complete(false)
 {
     logPrefix = "Primary transaction "+shortStr(id)+": ";
 
@@ -165,7 +165,7 @@ void PrimaryTxObserver::commit() {
     sys::Mutex::ScopedLock l(lock);
     QPID_LOG(debug, logPrefix << "Commit");
     txQueue->deliver(TxCommitEvent().message());
-    ended = true;
+    complete = true;
     end(l);
 }
 
@@ -173,16 +173,25 @@ void PrimaryTxObserver::rollback() {
     sys::Mutex::ScopedLock l(lock);
     QPID_LOG(debug, logPrefix << "Rollback");
     txQueue->deliver(TxRollbackEvent().message());
-    ended = true;
+    complete = true;
     end(l);
 }
 
 void PrimaryTxObserver::end(sys::Mutex::ScopedLock&) {
-    // Don't destroy the tx-queue if there are connected subscriptions.
-    if (ended && unfinished.empty()) {
-        haBroker.getBroker().deleteQueue(
-            txQueue->getName(), haBroker.getUserId(), string());
-        broker.getExchanges().destroy(getExchangeName());
+    // Don't destroy the tx-queue until the transaction is complete and there
+    // are no connected subscriptions.
+    if (!ended && complete && unfinished.empty()) {
+        ended = true;
+        try {
+            haBroker.getBroker().deleteQueue(txQueue->getName(), haBroker.getUserId(), string());
+        } catch (const std::exception& e) {
+            QPID_LOG(error, logPrefix << "Deleting transaction queue: "  << e.what());
+        }
+        try {
+            broker.getExchanges().destroy(getExchangeName());
+        } catch (const std::exception& e) {
+            QPID_LOG(error, logPrefix << "Deleting transaction exchange: "  << e.what());
+        }
     }
 }
 
@@ -207,7 +216,7 @@ void PrimaryTxObserver::cancel(const ReplicatingSubscription& rs) {
     sys::Mutex::ScopedLock l(lock);
     types::Uuid backup = rs.getBrokerInfo().getSystemId();
     if (unprepared.find(backup) != unprepared.end()) {
-        ended = failed = true;    // Canceled before prepared.
+        complete = failed = true;    // Canceled before prepared.
         unprepared.erase(backup); // Consider it prepared-fail
     }
     unfinished.erase(backup);
