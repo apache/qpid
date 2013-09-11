@@ -1467,13 +1467,10 @@ class TransactionTests(BrokerTest):
         tx = cluster[0].connect().session(transactional=True)
         s = tx.sender("q;{create:always}")
         s.send("foo")
-        tx_q = cluster[0].agent().tx_queues()[0]
         cluster.restart(1)
-        # Verify the new member should not be in the transaction.
-        # but should receive the result of the transaction via normal replication.
-        cluster[1].wait_no_queue(tx_q)
         tx.commit()
-        for b in cluster: b.assert_browse_backup("q", ["foo"])
+        # The new member is not in the tx but  receives the results normal replication.
+        for b in cluster: b.assert_browse_backup("q", ["foo"], msg=b)
 
 if __name__ == "__main__":
     outdir = "ha_tests.tmp"

@@ -36,6 +36,7 @@ class TxAccept;
 class DtxBuffer;
 class Broker;
 class MessageStore;
+class Deliverable;
 }
 
 namespace ha {
@@ -63,6 +64,7 @@ class TxReplicator : public QueueReplicator {
     std::string getType() const;
 
     // QueueReplicator overrides
+    void route(broker::Deliverable& deliverable);
     void destroy();
 
   protected:
@@ -91,7 +93,7 @@ class TxReplicator : public QueueReplicator {
     broker::MessageStore* store;
     std::auto_ptr<broker::TransactionContext> context;
     framing::ChannelId channel; // Channel to send prepare-complete.
-    bool complete;
+    bool complete, ignore;
 
     // Class to process dequeues and create DeliveryRecords to populate a
     // TxAccept.
