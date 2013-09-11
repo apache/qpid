@@ -95,7 +95,7 @@ bool isNone(const std::string& x) { return x.empty() || x == NONE; }
 void HaBroker::initialize() {
     if (settings.cluster) {
         membership.setStatus(JOINING);
-        QPID_LOG(notice, "Initializing HA broker: " << membership.getInfo());
+        QPID_LOG(notice, "Initializing HA broker: " << membership.getSelf());
     }
 
     // Set up the management object.
@@ -214,7 +214,7 @@ BrokerStatus HaBroker::getStatus() const {
 
 void HaBroker::setAddress(const Address& a) {
     QPID_LOG(info, role->getLogPrefix() << "Set self address to: " << a);
-    membership.setAddress(a);
+    membership.setSelfAddress(a);
 }
 
 boost::shared_ptr<QueueReplicator> HaBroker::findQueueReplicator(const std::string& queueName) {
