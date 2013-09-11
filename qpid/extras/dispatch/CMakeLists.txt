@@ -85,7 +85,6 @@ set(CATCH_UNDEFINED "-Wl,--no-undefined")
 set(server_SOURCES
     src/agent.c
     src/alloc.c
-    src/bitmask.c
     src/buffer.c
     src/compose.c
     src/config.c
