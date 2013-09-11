@@ -144,20 +144,9 @@ bool checkTransition(BrokerStatus from, BrokerStatus to) {
 }
 } // namespace
 
-void Membership::addCallback(UpdateCallback cb) {
-    Mutex::ScopedLock l(lock);
-    callbacks.push_back(cb);
-    cb(brokers);                // Give an initial update.
-}
-
 void Membership::update(Mutex::ScopedLock& l) {
     QPID_LOG(info, "Membership: " <<  brokers);
-
-    // Call callbacks
-    for_each(callbacks.begin(), callbacks.end(),
-             boost::bind<void>(&UpdateCallback::operator(), _1, boost::cref(brokers)));
-
-    // Update managment and send update event.
+// Update managment and send update event.
     BrokerStatus newStatus = getStatus(l);
     Variant::List brokerList = asList(l);
     if (mgmtObject) {
@@ -216,14 +205,14 @@ BrokerStatus Membership::getStatus(sys::Mutex::ScopedLock&) const  {
     return i->second.getStatus();
 }
 
-BrokerInfo Membership::getInfo() const  {
+BrokerInfo Membership::getSelf() const  {
     Mutex::ScopedLock l(lock);
     BrokerInfo::Map::const_iterator i = brokers.find(self);
     assert(i != brokers.end());
     return i->second;
 }
 
-void Membership::setAddress(const Address& a) {
+void Membership::setSelfAddress(const Address& a) {
     Mutex::ScopedLock l(lock);
     brokers[self].setAddress(a);
     update(l);

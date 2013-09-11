@@ -92,7 +92,7 @@ class HaBroker : public management::Manageable
     BrokerStatus getStatus() const;
     boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
 
-    BrokerInfo getBrokerInfo() const { return membership.getInfo(); }
+    BrokerInfo getBrokerInfo() const { return membership.getSelf(); }
     Membership& getMembership() { return membership; }
     types::Uuid getSystemId() const { return systemId; }
 
