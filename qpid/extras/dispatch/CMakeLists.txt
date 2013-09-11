@@ -85,6 +85,7 @@ set(CATCH_UNDEFINED "-Wl,--no-undefined")
 set(server_SOURCES
     src/agent.c
     src/alloc.c
+    src/bitmask.c
     src/buffer.c
     src/compose.c
     src/config.c
@@ -122,31 +123,31 @@ install(FILES etc/qpid-dispatch.conf DESTINATION ${SYSCONF_INSTALL_DIR})
 ## Python modules installation
 ##
 set(PYTHON_STUBS_SOURCES
-    src/py/qpid/dispatch/stubs/__init__.py
-    src/py/qpid/dispatch/stubs/ioadapter.py
-    src/py/qpid/dispatch/stubs/logadapter.py
+    python/qpid/dispatch/stubs/__init__.py
+    python/qpid/dispatch/stubs/ioadapter.py
+    python/qpid/dispatch/stubs/logadapter.py
 )
 
 set(PYTHON_ROUTER_SOURCES
-    src/py/qpid/dispatch/router/link.py
-    src/py/qpid/dispatch/router/router_engine.py
-    src/py/qpid/dispatch/router/__init__.py
-    src/py/qpid/dispatch/router/adapter.py
-    src/py/qpid/dispatch/router/mobile.py
-    src/py/qpid/dispatch/router/node.py
-    src/py/qpid/dispatch/router/routing.py
-    src/py/qpid/dispatch/router/data.py
-    src/py/qpid/dispatch/router/configuration.py
-    src/py/qpid/dispatch/router/neighbor.py
-    src/py/qpid/dispatch/router/path.py
-    src/py/qpid/dispatch/router/binding.py
+    python/qpid/dispatch/router/link.py
+    python/qpid/dispatch/router/router_engine.py
+    python/qpid/dispatch/router/__init__.py
+    python/qpid/dispatch/router/adapter.py
+    python/qpid/dispatch/router/mobile.py
+    python/qpid/dispatch/router/node.py
+    python/qpid/dispatch/router/routing.py
+    python/qpid/dispatch/router/data.py
+    python/qpid/dispatch/router/configuration.py
+    python/qpid/dispatch/router/neighbor.py
+    python/qpid/dispatch/router/path.py
+    python/qpid/dispatch/router/binding.py
 )
 
 set(PYTHON_CONFIG_SOURCES
-    src/py/qpid/dispatch/config/parser.py
-    src/py/qpid/dispatch/config/__init__.py
-    src/py/qpid/dispatch/config/schema.py
-    src/py/qpid/dispatch/__init__.py
+    python/qpid/dispatch/config/parser.py
+    python/qpid/dispatch/config/__init__.py
+    python/qpid/dispatch/config/schema.py
+    python/qpid/dispatch/__init__.py
 )
 
 install(FILES ${PYTHON_STUBS_SOURCES}
@@ -158,10 +159,10 @@ install(FILES ${PYTHON_ROUTER_SOURCES}
 install(FILES ${PYTHON_CONFIG_SOURCES}
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch/config)
 
-install(FILES src/py/qpid/__init__.py
+install(FILES python/qpid/__init__.py
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid)
 
-install(FILES src/py/qpid/dispatch/__init__.py
+install(FILES python/qpid/dispatch/__init__.py
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch)
 ##
 ## Build Tests
