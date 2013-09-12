@@ -118,8 +118,12 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
         int disposition;
         size_t index;
         pn_delivery_tag_t tag;
-        static const size_t TAG_WIDTH = sizeof(size_t);
-        char tagData[TAG_WIDTH];//index in encoded form, used for tag
+        //The delivery tag is a 4 byte value representing the
+        //index. It is encoded separately to avoid alignment issues.
+        //The number of deliveries held here is always strictly
+        //bounded, so 4 bytes is more than enough.
+        static const size_t TAG_WIDTH = sizeof(uint32_t);
+        char tagData[TAG_WIDTH];
 
         Record();
         void init(size_t i);

@@ -256,14 +256,17 @@ qpid::broker::OwnershipToken* OutgoingFromQueue::getSession()
     return 0;
 }
 
-OutgoingFromQueue::Record::Record() : delivery(0), disposition(0), index(0) {}
+OutgoingFromQueue::Record::Record() : delivery(0), disposition(0), index(0)
+{
+    tag.bytes = tagData;
+    tag.size = TAG_WIDTH;
+}
 void OutgoingFromQueue::Record::init(size_t i)
 {
     index = i;
-    qpid::framing::Buffer buffer(tagData, Record::TAG_WIDTH);
-    buffer.putUInt<Record::TAG_WIDTH>(index);
-    tag.bytes = tagData;
-    tag.size = Record::TAG_WIDTH;
+    qpid::framing::Buffer buffer(tagData, tag.size);
+    assert(index <= std::numeric_limits<uint32_t>::max());
+    buffer.putLong(index);
 }
 void OutgoingFromQueue::Record::reset()
 {
@@ -277,7 +280,7 @@ size_t OutgoingFromQueue::Record::getIndex(pn_delivery_tag_t t)
 {
     assert(t.size == TAG_WIDTH);
     qpid::framing::Buffer buffer(const_cast<char*>(t.bytes)/*won't ever be written to*/, t.size);
-    return (size_t) buffer.getUInt<TAG_WIDTH>();
+    return (size_t) buffer.getLong();
 }
 
 
