@@ -23,6 +23,29 @@ include(FindPkgConfig)
 
 pkg_check_modules(PROTON libqpid-proton)
 
+if (NOT PROTON_FOUND)
+    # if pkg-config is absent or fails to find proton then use
+    # PROTON_ROOT command line option or environment variable to locate
+    # local installed proton build.
+    if (NOT PROTON_ROOT)
+        set (PROTON_ROOT "$ENV{PROTON_ROOT}")
+    endif()
+    if (PROTON_ROOT)
+        find_package(proton PATHS ${PROTON_ROOT} NO_DEFAULT_PATH)
+
+        if (proton_FOUND EQUAL 1)
+            set(iFile "${PROTON_ROOT}/lib/proton.cmake/libqpid-proton.cmake")
+            if(EXISTS ${iFile})
+                include("${iFile}")
+            else()
+                message(FATAL_ERROR "PROTON_ROOT defined but file ${iFile} is missing")
+            endif()
+        else()
+            message(FATAL_ERROR "Proton package files not found in ${PROTON_ROOT}")
+        endif()
+    endif()
+endif()
+
 set (amqp_default ${amqp_force})
 set (minimum_version 0.5)
 set (maximum_version 0.5)
