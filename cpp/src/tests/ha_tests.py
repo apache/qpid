@@ -220,7 +220,8 @@ class ReplicationTests(HaBrokerTest):
             backup.connect_admin().close()
 
             # Test discovery: should connect to primary after reject by backup
-            c = backup.connect(reconnect_urls=[primary.host_port(), backup.host_port()], reconnect=True)
+            c = backup.connect(reconnect_urls=[primary.host_port(), backup.host_port()],
+                               reconnect=True)
             s = c.session()
             sender = s.sender("q;{create:always}")
             backup.wait_backup("q")
@@ -933,20 +934,22 @@ class LongTests(HaBrokerTest):
         if d: return float(d)*60
         else: return 3                  # Default is to be quick
 
-    # FIXME aconway 2013-06-27: skip this test pending a fix for
-    # https://issues.apache.org/jira/browse/QPID-4944
-    def skip_test_failover_send_receive(self):
+    def test_failover_send_receive(self):
         """Test failover with continuous send-receive"""
         brokers = HaCluster(self, 3)
 
         # Start sender and receiver threads
         n = 10
-        senders = [NumberedSender(brokers[0], url=brokers.url,
-                                  max_depth=1024, failover_updates=False,
-                                  queue="test%s"%(i)) for i in xrange(n)]
-        receivers = [NumberedReceiver(brokers[0], url=brokers.url, sender=senders[i],
-                                      failover_updates=False,
-                                      queue="test%s"%(i)) for i in xrange(n)]
+        senders = [
+            NumberedSender(
+                brokers[0], url=brokers.url,max_depth=1024, failover_updates=False,
+                queue="test%s"%(i), args=["--capacity=10"]) for i in xrange(n)]
+
+        receivers = [
+            NumberedReceiver(
+                brokers[0], url=brokers.url, sender=senders[i],failover_updates=False,
+                queue="test%s"%(i), args=["--capacity=10"]) for i in xrange(n)]
+
         for r in receivers: r.start()
         for s in senders: s.start()
 
@@ -997,7 +1000,7 @@ class LongTests(HaBrokerTest):
         finally:
             for s in senders: s.stop()
             for r in receivers: r.stop()
-            dead = filter(lambda i: not brokers[i].is_running(), xrange(3))
+            dead = filter(lambda b: not b.is_running(), brokers)
             if dead: raise Exception("Brokers not running: %s"%dead)
 
     def test_qmf_order(self):
@@ -1206,7 +1209,7 @@ class ConfigurationTests(HaBrokerTest):
         cluster[0].set_brokers_url(cluster.url+",xxx:1234")
         self.assertRaises(Empty, r.fetch, 0) # Not updated for brokers URL
 
-class StoreTests(BrokerTest):
+class StoreTests(HaBrokerTest):
     """Test for HA with persistence."""
 
     def check_skip(self):
@@ -1254,7 +1257,7 @@ class StoreTests(BrokerTest):
         doing catch-up from the primary."""
         if self.check_skip(): return
         cluster = HaCluster(self, 2)
-        sn = cluster[0].connect(heartbeat=1).session()
+        sn = cluster[0].connect(heartbeat=HaBroker.heartbeat).session()
         s1 = sn.sender("q1;{create:always,node:{durable:true}}")
         for m in ["foo","bar"]: s1.send(Message(m, durable=True))
         s2 = sn.sender("q2;{create:always,node:{durable:true}}")
@@ -1265,7 +1268,7 @@ class StoreTests(BrokerTest):
         cluster[1].assert_browse_backup("q2", ["hello"])
         # Make changes that the backup doesn't see
         cluster.kill(1, promote_next=False, final=False)
-        r1 = cluster[0].connect(heartbeat=1).session().receiver("q1")
+        r1 = cluster[0].connect(heartbeat=HaBroker.heartbeat).session().receiver("q1")
         for m in ["foo", "bar"]: self.assertEqual(r1.fetch().content, m)
         r1.session.acknowledge()
         for m in ["x","y","z"]: s1.send(Message(m, durable=True))
@@ -1284,7 +1287,7 @@ class StoreTests(BrokerTest):
         cluster[0].assert_browse("q1",  ["x","y","z"])
         cluster[1].assert_browse_backup("q1",  ["x","y","z"])
 
-        sn = cluster[0].connect(heartbeat=1).session()
+        sn = cluster[0].connect(heartbeat=HaBroker.heartbeat).session()
         sn.sender("ex/k1").send("boo")
         cluster[0].assert_browse_backup("q1", ["x","y","z", "boo"])
         cluster[1].assert_browse_backup("q1", ["x","y","z", "boo"])
@@ -1299,7 +1302,7 @@ def open_read(name):
         return f.read()
     finally: f.close()
 
-class TransactionTests(BrokerTest):
+class TransactionTests(HaBrokerTest):
 
     load_store=["--load-module", BrokerTest.test_store_lib]
 
