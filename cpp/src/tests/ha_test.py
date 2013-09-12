@@ -119,6 +119,9 @@ class HaBroker(Broker):
     """Start a broker with HA enabled
     @param client_cred: (user, password, mechanism) for admin clients started by the HaBroker.
     """
+
+    heartbeat=2
+
     def __init__(self, test, ha_port=None, args=[], brokers_url=None, ha_cluster=True,
                  ha_replicate="all", client_credentials=None, **kwargs):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
@@ -130,7 +133,7 @@ class HaBroker(Broker):
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
                  # stall on an address that doesn't currently have a broker running.
-                 "--link-heartbeat-interval=1",
+                 "--link-heartbeat-interval=%s"%(HaBroker.heartbeat),
                  "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
         if ha_replicate is not None:
@@ -157,15 +160,18 @@ acl allow all all
         self.client_credentials = client_credentials
         self.ha_port = ha_port
 
-    def __str__(self): return Broker.__str__(self)
+    def __repr__(self): return "<HaBroker:%s:%d>"%(self.log, self.port())
 
     def qpid_ha(self, args):
-        cred = self.client_credentials
-        url = self.host_port()
-        if cred:
-            url =cred.add_user(url)
-            args = args + ["--sasl-mechanism", cred.mechanism]
-        self.qpid_ha_script.main_except(["", "-b", url]+args)
+        try:
+            cred = self.client_credentials
+            url = self.host_port()
+            if cred:
+                url =cred.add_user(url)
+                args = args + ["--sasl-mechanism", cred.mechanism]
+            self.qpid_ha_script.main_except(["", "-b", url]+args)
+        except Exception, e:
+            raise Exception("Error in qpid_ha -b %s %s: %s"%(url, args,e))
 
     def promote(self): self.ready(); self.qpid_ha(["promote"])
     def set_public_url(self, url): self.qpid_ha(["set", "--public-url", url])
