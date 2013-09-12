@@ -99,7 +99,7 @@ class Encoder
     QPID_COMMON_EXTERN void writeList(const std::list<qpid::types::Variant>& value, const Descriptor* d=0, bool large=true);
 
     void writeDescriptor(const Descriptor&);
-    Encoder(char* data, size_t size);
+    QPID_COMMON_EXTERN Encoder(char* data, size_t size);
     QPID_COMMON_EXTERN size_t getPosition();
     void resetPosition(size_t p);
     char* skip(size_t);
