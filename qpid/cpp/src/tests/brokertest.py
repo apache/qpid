@@ -141,7 +141,7 @@ class Popen(subprocess.Popen):
         finally: f.close()
         log.debug("Started process %s: %s" % (self.pname, " ".join(self.cmd)))
 
-    def __str__(self): return "Popen<%s>"%(self.pname)
+    def __repr__(self): return "Popen<%s>"%(self.pname)
 
     def outfile(self, ext): return "%s.%s" % (self.pname, ext)
 
@@ -242,7 +242,7 @@ class Broker(Popen):
     _broker_count = 0
     _log_count = 0
 
-    def __str__(self): return "Broker<%s %s :%d>"%(self.log, self.pname, self.port())
+    def __repr__(self): return "<Broker:%s:%d>"%(self.log, self.port())
 
     def get_log(self):
         return os.path.abspath(self.log)
