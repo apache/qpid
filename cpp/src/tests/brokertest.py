@@ -478,7 +478,7 @@ class BrokerTest(TestCase):
     def assert_browse(self, *args, **kwargs): assert_browse(*args, **kwargs)
     def assert_browse_retry(self, *args, **kwargs): assert_browse_retry(*args, **kwargs)
 
-def join(thread, timeout=10):
+def join(thread, timeout=30):
     thread.join(timeout)
     if thread.isAlive(): raise Exception("Timed out joining thread %s"%thread)
 
