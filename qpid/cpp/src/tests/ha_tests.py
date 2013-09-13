@@ -942,7 +942,7 @@ class LongTests(HaBrokerTest):
         n = 10
         senders = [
             NumberedSender(
-                brokers[0], url=brokers.url,max_depth=1024, failover_updates=False,
+                brokers[0], url=brokers.url,max_depth=50, failover_updates=False,
                 queue="test%s"%(i), args=["--capacity=10"]) for i in xrange(n)]
 
         receivers = [
