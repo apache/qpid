@@ -161,6 +161,11 @@ define([
       this.inherited(arguments);
       try
       {
+        if (this.filterDefDialog)
+        {
+          this.filterDefDialog.destroy();
+          this.filterDefDialog = null;
+        }
         if (this.grid)
         {
           this.grid.unwrap("filter");
@@ -185,11 +190,6 @@ define([
         {
           this.filterStatusTip.destroy();
           this.filterStatusTip = null;
-        }
-        if (this.filterDefDialog)
-        {
-          this.filterDefDialog.destroy();
-          this.filterDefDialog = null;
         }
         this.args = null;
 

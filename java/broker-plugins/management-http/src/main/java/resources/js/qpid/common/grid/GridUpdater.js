@@ -28,40 +28,31 @@ define(["dojo/_base/xhr",
         "qpid/common/updater",
         "qpid/common/UpdatableStore",
         "qpid/common/util",
-        "dojox/grid/EnhancedGrid",
+        "dojo/store/Memory",
+        "dojo/data/ObjectStore",
         "qpid/common/grid/EnhancedFilter",
         "dojox/grid/enhanced/plugins/NestedSorting",
         "dojo/domReady!"],
-       function (xhr, parser, array, lang, properties, updater, UpdatableStore, util, EnhancedGrid, EnhancedFilter, NestedSorting) {
+       function (xhr, parser, array, lang, properties, updater, UpdatableStore, util, Memory, ObjectStore) {
 
-          /*
-           * Construct GridUpdater from the following arguments:
-           * serviceUrl - service URL to fetch data for the grid. Optional, if data is specified
-           * data - array containing data for the grid. Optional, if serviceUrl is specified
-           * node - dom node or dom node id to
-           * structure,
-           * funct,
-           * gridProperties,
-           * gridConstructor
-           */
-           function GridUpdater(args) {
-
-             var self = this;
-
-             // GridUpdater fields
+           function GridUpdater(args, store) {
              this.updatable = args.hasOwnProperty("updatable") ? args.updatable : true ;
              this.serviceUrl = args.serviceUrl;
-             this.updatableStore = null;
-             this.grid = null;
+
              this.onUpdate = args.onUpdate;
-             this._args = args;
+
              this.appendData = args.append;
              this.appendLimit = args.appendLimit;
+             this.initialData = args.data;
+             this.initializeStore(store);
+           };
 
-             // default grid properties
+           GridUpdater.prototype.buildUpdatableGridArguments = function(args)
+           {
+             var filterPluginFound = args && args.hasOwnProperty("plugins") && args.plugins.filter ? true: false;
+
              var gridProperties = {
                  autoHeight: true,
-                 updateDelay: 0, // no delay updates when receiving notifications from a datastore
                  plugins: {
                    pagination: {
                      defaultPageSize: 25,
@@ -73,30 +64,23 @@ define(["dojo/_base/xhr",
                      maxPageStep: 4,
                      position: "bottom"
                  },
-                 enhancedFilter: {}
+                 enhancedFilter: {
+                     disableFiltering: filterPluginFound
+                 }
                 }
              };
 
-             var filterPluginFound = false;
-
-             // merge args grid properties with default grid properties
-             if(args && args.gridProperties)
+             if(args)
              {
-               var argProperties = args.gridProperties;
-               for(var argProperty in argProperties)
+               for(var argProperty in args)
                {
-                   if(argProperties.hasOwnProperty(argProperty))
+                   if(args.hasOwnProperty(argProperty))
                    {
                        if (argProperty == "plugins")
                        {
-                         var argPlugins = argProperties[ argProperty ];
+                         var argPlugins = args[ argProperty ];
                          for(var argPlugin in argPlugins)
                          {
-                           if (argPlugin == "filter")
-                           {
-                               // we need to switch off filtering in EnhancedFilter
-                               filterPluginFound = true;
-                           }
                            if(argPlugins.hasOwnProperty(argPlugin))
                            {
                              var argPluginProperties = argPlugins[ argPlugin ];
@@ -120,65 +104,95 @@ define(["dojo/_base/xhr",
                        }
                        else
                        {
-                         gridProperties[ argProperty ] = argProperties[ argProperty ];
+                         gridProperties[ argProperty ] = args[ argProperty ];
                        }
                    }
                }
              }
 
-             if (filterPluginFound)
-             {
-                 gridProperties.plugins.enhancedFilter.disableFiltering = true;
-             }
+             gridProperties.updater = this;
+             gridProperties.store = this.dataStore;
 
-             var updatableStoreFactory = function(data)
+             return gridProperties;
+           };
+
+           GridUpdater.prototype.initializeStore = function(store)
+           {
+             var self = this;
+
+             function processData(data)
              {
-               try
-               {
-                 self.updatableStore = new UpdatableStore(data, self._args.node, self._args.structure,
-                     self._args.funct, gridProperties, self._args.GridConstructor || EnhancedGrid, self.appendData);
-               }
-               catch(e)
-               {
-                 console.error(e);
-                 throw e;
-               }
-               self.grid = self.updatableStore.grid;
-               self.grid.updater = self;
-               if (self.onUpdate)
-               {
-                 self.onUpdate(data);
-               }
-               if (self.serviceUrl)
-               {
-                 updater.add(self);
-               }
+                 var dataSet = false;
+                 if (!store)
+                 {
+                     store = new ObjectStore({objectStore: new Memory({data: data, idProperty: "id"})});
+                     dataSet = true;
+                 }
+                 self.dataStore = store
+                 self.store = store;
+                 if (store instanceof ObjectStore)
+                 {
+                     if( store.objectStore instanceof Memory)
+                     {
+                         self.memoryStore = store.objectStore;
+                     }
+                     self.store = store.objectStore
+                 }
+
+                 if (data)
+                 {
+                     try
+                     {
+                         if ((dataSet || self.updateOrAppend(data)) && self.onUpdate)
+                         {
+                             self.onUpdate(data);
+                         }
+                     }
+                     catch(e)
+                     {
+                         console.error(e);
+                     }
+                 }
              };
 
-             if (args && args.serviceUrl)
+             if (this.serviceUrl)
              {
                var requestUrl = lang.isFunction(this.serviceUrl) ? this.serviceUrl() : this.serviceUrl;
-               xhr.get({url: requestUrl, sync: properties.useSyncGet, handleAs: "json"}).then(updatableStoreFactory, util.errorHandler);
+               xhr.get({url: requestUrl, sync: true, handleAs: "json"}).then(processData, util.errorHandler);
              }
-             else if (args && args.data)
+             else
              {
-               updatableStoreFactory(args.data);
+                 processData(this.initialData);
              }
-           }
+           };
+
+           GridUpdater.prototype.start = function(grid)
+           {
+               this.grid = grid;
+               if (this.serviceUrl)
+               {
+                 updater.add(this);
+               }
+           };
 
            GridUpdater.prototype.destroy = function()
            {
              updater.remove(this);
-             if (this.updatableStore)
+             if (this.dataStore)
              {
-                 this.updatableStore.close();
-                 this.updatableStore = null;
+                 this.dataStore.close();
+                 this.dataStore = null;
              }
-             if (this.grid)
-             {
-                 this.grid.destroy();
-                 this.grid = null;
-             }
+             this.store = null;
+             this.memoryStore = null;
+             this.grid = null;
+           };
+
+           GridUpdater.prototype.updateOrAppend = function(data)
+           {
+               return this.appendData ?
+                       UpdatableStore.prototype.append.call(this, data, this.appendLimit):
+                           UpdatableStore.prototype.update.call(this, data);
            };
 
            GridUpdater.prototype.refresh = function(data)
@@ -186,7 +200,7 @@ define(["dojo/_base/xhr",
                this.updating = true;
                try
                {
-                   if (this.appendData ? this.updatableStore.append(data, this.appendLimit): this.updatableStore.update(data))
+                   if (this.updateOrAppend(data))
                    {
                      // EnhancedGrid with Filter plugin has "filter" layer.
                      // The filter expression needs to be re-applied after the data update
