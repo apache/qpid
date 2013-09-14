@@ -31,6 +31,7 @@ define(["dojo/_base/xhr",
         "dijit/form/FilteringSelect",
         "dojo/_base/connect",
         "dojo/dom-style",
+        "qpid/management/addPreferencesProvider",
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
         /* basic dijit classes */
@@ -44,7 +45,7 @@ define(["dojo/_base/xhr",
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, addPreferencesProvider) {
 
         var addAuthenticationProvider = {};
 
@@ -163,6 +164,10 @@ define(["dojo/_base/xhr",
                                     if(this.success === true)
                                     {
                                         registry.byId("addAuthenticationProvider").hide();
+                                        if (dojo.byId("formAddAuthenticationProvider.id").value == "")
+                                        {
+                                          addPreferencesProvider.show(newAuthenticationManager.name);
+                                        }
                                     }
                                     else
                                     {
