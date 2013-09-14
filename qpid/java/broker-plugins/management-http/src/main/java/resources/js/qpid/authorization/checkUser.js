@@ -29,7 +29,7 @@ var updateUI = function updateUI(data)
     if(data.user)
     {
         dom.byId("authenticatedUser").innerHTML = entities.encode(String(data.user));
-        dom.byId("login").style.display = "block";
+        dom.byId("login").style.display = "inline";
     }
 };
 
