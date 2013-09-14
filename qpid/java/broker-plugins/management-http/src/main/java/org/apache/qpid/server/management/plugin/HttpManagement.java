@@ -65,6 +65,7 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
@@ -297,6 +298,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "keystore", KeyStore.class);
         addRestServlet(root, "truststore", TrustStore.class);
         addRestServlet(root, "plugin", Plugin.class);
+        addRestServlet(root, "preferencesprovider", AuthenticationProvider.class, PreferencesProvider.class);
 
         root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
