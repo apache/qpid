@@ -30,7 +30,6 @@ define(["dojo/_base/xhr",
         "dijit/registry",
         "qpid/common/util",
         "qpid/common/properties",
-        "qpid/common/updater",
         "qpid/common/UpdatableStore",
         "dojox/grid/EnhancedGrid",
         "dojox/grid/enhanced/plugins/Pagination",
@@ -43,8 +42,8 @@ define(["dojo/_base/xhr",
         "dijit/form/Form",
         "dijit/form/DateTextBox",
         "dojo/domReady!"],
-    function (xhr, dom, parser, query, construct, connect, win, event, json, registry, util, properties, updater, UpdatableStore, EnhancedGrid) {
-        function DatabaseAuthManager(containerNode, authProviderObj, controller, authenticationManagerUpdater) {
+    function (xhr, dom, parser, query, construct, connect, win, event, json, registry, util, properties, UpdatableStore, EnhancedGrid) {
+        function DatabaseAuthManager(containerNode, authProviderObj, controller) {
             var node = construct.create("div", null, containerNode, "last");
             var that = this;
             this.name = authProviderObj.name;
@@ -53,14 +52,7 @@ define(["dojo/_base/xhr",
                                     load:  function(data) {
                                         node.innerHTML = data;
                                         parser.parse(node);
-
-
-                                        that.authDatabaseUpdater= new AuthProviderUpdater(node, authProviderObj, controller, authenticationManagerUpdater);
-                                        updater.add( that.authDatabaseUpdater);
-
-                                        that.authDatabaseUpdater.update();
-
-
+                                        that.init(node, authProviderObj, controller);
                                     }});
         }
 
@@ -72,19 +64,12 @@ define(["dojo/_base/xhr",
             updater.remove( this.authDatabaseUpdater );
         };
 
-        function AuthProviderUpdater(node, authProviderObj, controller, authenticationManagerUpdater)
+        DatabaseAuthManager.prototype.init = function(node, authProviderObj, controller)
         {
             this.controller = controller;
-            this.query = "rest/authenticationprovider?id="+encodeURIComponent(authProviderObj.id);
-            this.name = authProviderObj.name;
-            this.authenticationManagerUpdater = authenticationManagerUpdater;
             var that = this;
 
-            xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
-               .then(function(data) {
-                     that.authProviderData = data[0];
-                     that.name = data[0].name
-                     util.flattenStatistics( that.authProviderData );
+                     that.authProviderData = authProviderObj;
 
                      var userDiv = query(".users")[0];
 
@@ -131,10 +116,9 @@ define(["dojo/_base/xhr",
                                                                     event.stop(evt);
                                                                     that.deleteUsers();
                                                                 });
-                });
         }
 
-        AuthProviderUpdater.prototype.deleteUsers = function()
+        DatabaseAuthManager.prototype.deleteUsers = function()
         {
             var grid = this.usersGrid.grid;
             var data = grid.selection.getSelected();
@@ -168,24 +152,11 @@ define(["dojo/_base/xhr",
 }
         };
 
-        AuthProviderUpdater.prototype.update = function()
+        DatabaseAuthManager.prototype.update = function(data)
         {
-
-            var that = this;
-
-            xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
-                .then(function(data) {
-                    that.authProviderData = data[0];
-                    that.name = data[0].name
-                    util.flattenStatistics( that.authProviderData );
-
-                    that.usersGrid.update(that.authProviderData.users);
-
-                    that.authenticationManagerUpdater.authProviderData = data[0];
-                    that.authenticationManagerUpdater.updateHeader();
-                });
-
-
+            this.authProviderData = data;
+            this.name = data.name
+            this.usersGrid.update(this.authProviderData.users);
         };
 
         var addUser = {};
