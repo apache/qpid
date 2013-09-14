@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -51,7 +52,6 @@ import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -70,9 +70,11 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     protected Collection<String> _supportedAttributes;
     protected Map<String, AuthenticationManagerFactory> _factories;
-    private AtomicReference<State> _state;
+    private final AtomicReference<State> _state;
+    private PreferencesProviderCreator _preferencesProviderCreator;
+    private PreferencesProvider _preferencesProvider;
 
-    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
+    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames, PreferencesProviderCreator preferencesProviderCreator)
     {
         super(id, null, null, broker.getTaskExecutor());
         _authManager = authManager;
@@ -83,6 +85,8 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
         addParent(Broker.class, broker);
+
+        _preferencesProviderCreator = preferencesProviderCreator;
 
         // set attributes now after all attribute names are known
         if (attributes != null)
@@ -210,9 +214,14 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         return super.getAttribute(name);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
+        if (clazz == PreferencesProvider.class && _preferencesProvider != null)
+        {
+            return (Collection<C>)Collections.<PreferencesProvider>singleton(_preferencesProvider);
+        }
         return Collections.emptySet();
     }
 
@@ -240,6 +249,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             {
                 _authManager.close();
                 _authManager.onDelete();
+                if (_preferencesProvider != null)
+                {
+                    _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.DELETED);
+                }
                 return true;
             }
             else
@@ -254,6 +267,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 try
                 {
                     _authManager.initialise();
+                    if (_preferencesProvider != null)
+                    {
+                        _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.ACTIVE);
+                    }
                     return true;
                 }
                 catch(RuntimeException e)
@@ -397,24 +414,39 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
     }
 
+    public PreferencesProvider getPreferencesProvider()
+    {
+        return _preferencesProvider;
+    }
+
+    public void setPreferencesProvider(PreferencesProvider provider)
+    {
+        _preferencesProvider = provider;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        if(childClass == PreferencesProvider.class)
+        {
+            String name = MapValueConverter.getStringAttribute(PreferencesProvider.NAME, attributes);
+            PreferencesProvider pp = _preferencesProviderCreator.create(UUIDGenerator.generatePreferencesProviderUUID(name, getName()), attributes, this);
+            pp.setDesiredState(State.INITIALISING, State.ACTIVE);
+            _preferencesProvider = pp;
+            return (C)pp;
+        }
+        throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
+    }
+
     public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
     {
 
         public SimpleAuthenticationProviderAdapter(
-                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames)
+                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames, PreferencesProviderCreator preferencesProviderCreator)
         {
-            super(id, broker,authManager, attributes, attributeNames);
+            super(id, broker,authManager, attributes, attributeNames, preferencesProviderCreator);
         }
-
-        @Override
-        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
-                                                          Map<String, Object> attributes,
-                                                          ConfiguredObject... otherParents)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-
     }
 
     public static class PrincipalDatabaseAuthenticationManagerAdapter
@@ -422,9 +454,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             implements PasswordCredentialManagingAuthenticationProvider
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
-                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames)
+                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames, PreferencesProviderCreator preferencesProviderCreator)
         {
-            super(id, broker, authManager, attributes, attributeNames);
+            super(id, broker, authManager, attributes, attributeNames, preferencesProviderCreator);
         }
 
         @Override
@@ -507,7 +539,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 if(createUser(username, password,null))
                 {
                     @SuppressWarnings("unchecked")
-                    C pricipalAdapter = (C) new PrincipalAdapter(p, getTaskExecutor());
+                    C pricipalAdapter = (C) new PrincipalAdapter(p);
                     return pricipalAdapter;
                 }
                 else
@@ -529,7 +561,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 Collection<User> principals = new ArrayList<User>(users.size());
                 for(Principal user : users)
                 {
-                    principals.add(new PrincipalAdapter(user, getTaskExecutor()));
+                    principals.add(new PrincipalAdapter(user));
                 }
                 @SuppressWarnings("unchecked")
                 Collection<C> unmodifiablePrincipals = (Collection<C>) Collections.unmodifiableCollection(principals);
@@ -544,22 +576,33 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         @Override
         protected void childAdded(ConfiguredObject child)
         {
-            // no-op, prevent storing users in the broker store
+            if (child instanceof User)
+            {
+                // no-op, prevent storing users in the broker store
+                return;
+            }
+            super.childAdded(child);
         }
 
         @Override
         protected void childRemoved(ConfiguredObject child)
         {
-            // no-op, as per above, users are not in the store
+            if (child instanceof User)
+            {
+                // no-op, as per above, users are not in the store
+                return;
+            }
+            super.childRemoved(child);
         }
 
         private class PrincipalAdapter extends AbstractAdapter implements User
         {
             private final Principal _user;
 
-            public PrincipalAdapter(Principal user, TaskExecutor taskExecutor)
+            public PrincipalAdapter(Principal user)
             {
-                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()), taskExecutor);
+                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()),
+                        PrincipalDatabaseAuthenticationManagerAdapter.this.getTaskExecutor());
                 _user = user;
 
             }
@@ -699,7 +742,13 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 {
                     try
                     {
-                        deleteUser(_user.getName());
+                        String userName = _user.getName();
+                        deleteUser(userName);
+                        PreferencesProvider preferencesProvider = getPreferencesProvider();
+                        if (preferencesProvider != null)
+                        {
+                            preferencesProvider.deletePreferences(userName);
+                        }
                     }
                     catch (AccountNotFoundException e)
                     {
@@ -709,6 +758,60 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 }
                 return false;
             }
+
+            @Override
+            public Map<String, Object> getPreferences()
+            {
+                PreferencesProvider preferencesProvider = getPreferencesProvider();
+                if (preferencesProvider == null)
+                {
+                    return null;
+                }
+                return preferencesProvider.getPreferences(this.getName());
+            }
+
+            @Override
+            public Object getPreference(String name)
+            {
+                Map<String, Object> preferences = getPreferences();
+                if (preferences == null)
+                {
+                    return null;
+                }
+                return preferences.get(name);
+            }
+
+            @Override
+            public Map<String, Object> setPreferences(Map<String, Object> preferences)
+            {
+                PreferencesProvider preferencesProvider = getPreferencesProvider();
+                if (preferencesProvider == null)
+                {
+                    return null;
+                }
+                return preferencesProvider.setPreferences(this.getName(), preferences);
+            }
+
+            @Override
+            public Map<String, Object> replacePreferences(Map<String, Object> newPreferences)
+            {
+                PreferencesProvider preferencesProvider = getPreferencesProvider();
+                if (preferencesProvider == null)
+                {
+                    return null;
+                }
+                Map<String, Object> preferences = preferencesProvider.deletePreferences(this.getName());
+                preferencesProvider.setPreferences(this.getName(), newPreferences);
+                return preferences;
+            }
+
+            private PreferencesProvider getPreferencesProvider()
+            {
+                return PrincipalDatabaseAuthenticationManagerAdapter.this.getPreferencesProvider();
+            }
+
         }
+
     }
+
 }

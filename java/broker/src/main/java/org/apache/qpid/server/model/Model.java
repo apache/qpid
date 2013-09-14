@@ -70,6 +70,7 @@ public class Model
         addRelationship(VirtualHost.class, VirtualHostAlias.class);
 
         addRelationship(AuthenticationProvider.class, User.class);
+        addRelationship(AuthenticationProvider.class, PreferencesProvider.class);
         addRelationship(User.class, GroupMember.class);
 
         addRelationship(GroupProvider.class, Group.class);

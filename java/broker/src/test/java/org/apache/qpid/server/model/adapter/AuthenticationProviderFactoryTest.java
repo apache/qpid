@@ -43,6 +43,7 @@ import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticat
 
 public class AuthenticationProviderFactoryTest extends TestCase
 {
+    private PreferencesProviderCreator _preferencesProviderCreator = mock(PreferencesProviderCreator.class);
 
     public void testCreatePasswordCredentialManagingAuthenticationProvider()
     {
@@ -95,7 +96,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
                 Collections.singleton(authenticationManagerFactory));
         when(authenticationManagerFactory.createInstance(attributes)).thenReturn(authenticationManager);
 
-        AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(authManagerFactoryServiceLoader);
+        AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(authManagerFactoryServiceLoader, _preferencesProviderCreator);
 
         AuthenticationProvider provider = null;
         if (create)
@@ -124,7 +125,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
         when(managerFactory.createInstance(any(Map.class))).thenReturn(mock(PrincipalDatabaseAuthenticationManager.class));
         when(loader.atLeastOneInstanceOf(AuthenticationManagerFactory.class)).thenReturn(Collections.singleton(managerFactory));
 
-        AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(loader);
+        AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(loader, _preferencesProviderCreator);
 
         UUID randomUUID = UUID.randomUUID();
         AuthenticationProvider provider = providerFactory.create(randomUUID, broker, new HashMap<String, Object>());
@@ -145,7 +146,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
         when(managerFactory.createInstance(any(Map.class))).thenReturn(mock(AuthenticationManager.class));
         when(loader.atLeastOneInstanceOf(AuthenticationManagerFactory.class)).thenReturn(Collections.singleton(managerFactory));
 
-        AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(loader);
+        AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(loader, _preferencesProviderCreator);
         UUID id = UUID.randomUUID();
         AuthenticationProvider provider = providerFactory.create(id, broker, new HashMap<String, Object>());
 

@@ -55,6 +55,8 @@ import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.model.adapter.PreferencesProviderCreator;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -76,7 +78,9 @@ public class BrokerRecovererTest extends TestCase
         super.setUp();
 
         _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(GroupProviderFactory.class), mock(AccessControlProviderFactory.class), mock(PortFactory.class),
-                mock(StatisticsGatherer.class), mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class), mock(BrokerOptions.class));
+                mock(PreferencesProviderCreator.class),
+                mock(StatisticsGatherer.class), mock(VirtualHostRegistry.class), mock(LogRecorder.class), mock(RootMessageLogger.class), mock(TaskExecutor.class), mock(BrokerOptions.class),
+                mock(StoreConfigurationChangeListener.class));
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);
         when(_brokerEntry.getAttributes()).thenReturn(Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, Model.MODEL_VERSION));

@@ -24,6 +24,7 @@ package org.apache.qpid.server.model;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 public interface User extends ConfiguredObject
 {
@@ -54,4 +55,11 @@ public interface User extends ConfiguredObject
 
     public void setPassword(String password);
 
+    public Map<String, Object> getPreferences();
+
+    public Object getPreference(String name);
+
+    public Map<String, Object> setPreferences(Map<String, Object> preferences);
+
+    public Map<String, Object> replacePreferences(Map<String, Object> newPreferences);
 }
