@@ -49,6 +49,8 @@ import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.PreferencesServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
@@ -300,6 +302,8 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "plugin", Plugin.class);
         addRestServlet(root, "preferencesprovider", AuthenticationProvider.class, PreferencesProvider.class);
 
+        root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/rest/userpreferences/*");
+        root.addServlet(new ServletHolder(new PreferencesServlet()), "/rest/preferences");
         root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
         root.addServlet(new ServletHolder(new MessageContentServlet()), "/rest/message-content/*");
