@@ -66,4 +66,15 @@ public interface AuthenticationProvider extends ConfiguredObject
      */
     SubjectCreator getSubjectCreator();
 
+    /**
+     * Returns the preferences provider associated with this authentication provider
+     * @return PreferencesProvider
+     */
+    PreferencesProvider getPreferencesProvider();
+
+    /**
+     * Sets the preferences provider
+     * @param preferencesProvider
+     */
+    void setPreferencesProvider(PreferencesProvider preferencesProvider);
 }

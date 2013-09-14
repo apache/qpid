@@ -45,6 +45,7 @@ public interface Broker extends ConfiguredObject
     String SUPPORTED_VIRTUALHOST_TYPES = "supportedVirtualHostTypes";
     String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
+    String SUPPORTED_PREFERENCES_PROVIDERS_TYPES = "supportedPreferencesProviderTypes";
     String CREATED = "created";
     String DURABLE = "durable";
     String ID = "id";
@@ -93,6 +94,7 @@ public interface Broker extends ConfiguredObject
                               SUPPORTED_BROKER_STORE_TYPES,
                               SUPPORTED_VIRTUALHOST_STORE_TYPES,
                               SUPPORTED_AUTHENTICATION_PROVIDERS,
+                              SUPPORTED_PREFERENCES_PROVIDERS_TYPES,
                               CREATED,
                               DURABLE,
                               ID,
@@ -183,4 +185,6 @@ public interface Broker extends ConfiguredObject
     TaskExecutor getTaskExecutor();
 
     boolean isManagementMode();
+
+    AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
 }
