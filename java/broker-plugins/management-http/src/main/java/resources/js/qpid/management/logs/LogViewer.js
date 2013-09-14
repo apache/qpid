@@ -24,10 +24,11 @@ define(["dojo/_base/xhr",
         "dojo/date/locale",
         "dijit/registry",
         "qpid/common/grid/GridUpdater",
+        "qpid/common/grid/UpdatableGrid",
         "qpid/management/logs/LogFileDownloadDialog",
         "dojo/text!../../../logs/showLogViewer.html",
         "dojo/domReady!"],
-       function (xhr, parser, query, locale, registry, GridUpdater, LogFileDownloadDialog, markup) {
+       function (xhr, parser, query, locale, registry, GridUpdater, UpdatableGrid, LogFileDownloadDialog, markup) {
 
            var defaulGridRowLimit = 4096;
 
@@ -58,6 +59,11 @@ define(["dojo/_base/xhr",
                this.downloadLogsButton.on("click", function(evt){
                    self.downloadLogDialog.showDialog();
                });
+               this._buildGrid();
+           };
+
+           LogViewer.prototype._buildGrid = function() {
+               var self = this;
 
                var gridStructure = [
                     {
@@ -97,44 +103,39 @@ define(["dojo/_base/xhr",
                    { name: "Log Message", field: "message", width: "auto", datatype: "string"}
                ];
 
-               this._buildGrid(gridStructure);
-           };
-
-           LogViewer.prototype._buildGrid = function(gridStructure) {
-               var self = this;
                var gridNode = query("#broker-logfile", this.contentPane.containerNode)[0];
                try
                {
-                 this.updater = new GridUpdater({
-                   updatable: false,
-                   serviceUrl: function()
-                   {
-                     return "rest/logrecords?lastLogId=" + self.lastLogId;
-                   },
-                   onUpdate: function(items)
-                   {
-                     if (items)
+                 var updater = new GridUpdater({
+                     updatable: false,
+                     serviceUrl: function()
                      {
-                       var maxId = -1;
-                       for(var i in items)
+                       return "rest/logrecords?lastLogId=" + self.lastLogId;
+                     },
+                     onUpdate: function(items)
+                     {
+                       if (items)
                        {
-                         var item = items[i];
-                         if (item.id > maxId)
+                         var maxId = -1;
+                         for(var i in items)
                          {
-                           maxId = item.id
+                           var item = items[i];
+                           if (item.id > maxId)
+                           {
+                             maxId = item.id
+                           }
+                         }
+                         if (maxId != -1)
+                         {
+                           self.lastLogId = maxId
                          }
                        }
-                       if (maxId != -1)
-                       {
-                         self.lastLogId = maxId
-                       }
-                     }
-                   },
-                   append: true,
-                   appendLimit: defaulGridRowLimit,
-                   node: gridNode,
-                   structure: gridStructure,
-                   gridProperties: {
+                     },
+                     append: true,
+                     appendLimit: defaulGridRowLimit
+                 });
+                 this.grid = new UpdatableGrid(updater.buildUpdatableGridArguments({
+                     structure: gridStructure,
                      selectable: true,
                      selectionMode: "none",
                      sortInfo: -1,
@@ -144,35 +145,31 @@ define(["dojo/_base/xhr",
                        enhancedFilter:{defaulGridRowLimit: defaulGridRowLimit},
                        indirectSelection: false
                      }
-                   },
-                   funct: function (obj)
-                   {
-                     var onStyleRow = function(row)
-                     {
-                       var item = obj.grid.getItem(row.index);
-                       if(item){
-                          var level = obj.dataStore.getValue(item, "level", null);
-                          var changed = false;
-                          if(level == "ERROR"){
-                              row.customClasses += " redBackground";
-                              changed = true;
-                          } else if(level == "WARN"){
-                              row.customClasses += " yellowBackground";
-                              changed = true;
-                          } else if(level == "DEBUG"){
-                              row.customClasses += " grayBackground";
-                              changed = true;
-                          }
-                          if (changed)
-                          {
-                            obj.grid.focus.styleRow(row);
-                          }
-                       }
-                     };
-                     obj.grid.on("styleRow", onStyleRow);
-                     obj.grid.startup();
+                  }), gridNode);
+                 var onStyleRow = function(row)
+                 {
+                   var item = self.grid.getItem(row.index);
+                   if(item){
+                      var level = self.grid.store.getValue(item, "level", null);
+                      var changed = false;
+                      if(level == "ERROR"){
+                          row.customClasses += " redBackground";
+                          changed = true;
+                      } else if(level == "WARN"){
+                          row.customClasses += " yellowBackground";
+                          changed = true;
+                      } else if(level == "DEBUG"){
+                          row.customClasses += " grayBackground";
+                          changed = true;
+                      }
+                      if (changed)
+                      {
+                          self.grid.focus.styleRow(row);
+                      }
                    }
-                 });
+                 };
+                 this.grid.on("styleRow", onStyleRow);
+                 this.grid.startup();
                }
                catch(err)
                {
@@ -181,10 +178,10 @@ define(["dojo/_base/xhr",
            };
 
            LogViewer.prototype.close = function() {
-             if (this.updater)
+             if (this.grid)
              {
-                 this.updater.destroy();
-                 this.updater = null;
+                 this.grid.destroy();
+                 this.grid = null;
              }
              if (this.downloadLogDialog)
              {
