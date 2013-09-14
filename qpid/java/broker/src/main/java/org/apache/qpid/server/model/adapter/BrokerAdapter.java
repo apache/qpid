@@ -178,7 +178,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final GroupProviderFactory _groupProviderFactory;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final AccessControlProviderFactory _accessControlProviderFactory;
-
+    private final PreferencesProviderCreator _preferencesProviderCreator;
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
 
@@ -191,8 +191,8 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            GroupProviderFactory groupProviderFactory, AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, TaskExecutor taskExecutor,
-            ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
+            GroupProviderFactory groupProviderFactory, AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory,
+            PreferencesProviderCreator preferencesProviderCreatory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -201,6 +201,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _rootMessageLogger = rootMessageLogger;
         _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
+        _preferencesProviderCreator = preferencesProviderCreatory;
         _groupProviderFactory = groupProviderFactory;
         _accessControlProviderFactory = accessControlProviderFactory;
         _portFactory = portFactory;
@@ -213,7 +214,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
             AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
-                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
+                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet(), _preferencesProviderCreator);
             _managementAuthenticationProvider = authenticationProvider;
         }
     }
@@ -783,6 +784,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _authenticationProviderFactory.getSupportedAuthenticationProviders();
         }
+        else if (SUPPORTED_PREFERENCES_PROVIDERS_TYPES.equals(name))
+        {
+            return _preferencesProviderCreator.getSupportedPreferencesProviders();
+        }
         else if (MODEL_VERSION.equals(name))
         {
             return Model.MODEL_VERSION;
@@ -1086,6 +1091,19 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public SubjectCreator getSubjectCreator(SocketAddress localAddress)
     {
+        AuthenticationProvider provider = getAuthenticationProvider(localAddress);
+
+        if(provider == null)
+        {
+            throw new IllegalConfigurationException("Unable to determine authentication provider for address: " + localAddress);
+        }
+
+        return provider.getSubjectCreator();
+    }
+
+    @Override
+    public AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress)
+    {
         InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
         AuthenticationProvider provider = null;
         Collection<Port> ports = getPorts();
@@ -1097,13 +1115,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
                 break;
             }
         }
-
-        if(provider == null)
-        {
-            throw new IllegalConfigurationException("Unable to determine authentication provider for address: " + localAddress);
-        }
-
-        return provider.getSubjectCreator();
+        return provider;
     }
 
     @Override

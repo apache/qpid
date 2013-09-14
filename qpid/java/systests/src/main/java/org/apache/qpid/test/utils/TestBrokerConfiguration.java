@@ -38,6 +38,7 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
@@ -293,6 +294,18 @@ public class TestBrokerConfiguration
     public void setSaved(boolean saved)
     {
         _saved = saved;
+    }
+
+    public void addPreferencesProviderConfiguration(String authenticationProvider, Map<String, Object> attributes)
+    {
+        ConfigurationEntry pp = new ConfigurationEntry(UUIDGenerator.generateRandomUUID(),
+                PreferencesProvider.class.getSimpleName(), attributes, Collections.<UUID> emptySet(), _store);
+        ConfigurationEntry ap = findObjectByName(authenticationProvider);
+        Set<UUID> children = new HashSet<UUID>();
+        children.addAll(ap.getChildrenIds());
+        children.add(pp.getId());
+        ConfigurationEntry newAp = new ConfigurationEntry(ap.getId(), ap.getType(), ap.getAttributes(), children, _store);
+        _store.save(newAp, pp);
     }
 
 }

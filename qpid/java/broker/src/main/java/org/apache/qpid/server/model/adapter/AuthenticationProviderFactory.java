@@ -42,9 +42,11 @@ public class AuthenticationProviderFactory
 {
     private final Iterable<AuthenticationManagerFactory> _factories;
     private Collection<String> _supportedAuthenticationProviders;
+    private final PreferencesProviderCreator _preferencesProviderCreator;
 
-    public AuthenticationProviderFactory(QpidServiceLoader<AuthenticationManagerFactory> authManagerFactoryServiceLoader)
+    public AuthenticationProviderFactory(QpidServiceLoader<AuthenticationManagerFactory> authManagerFactoryServiceLoader, PreferencesProviderCreator preferencesProviderCreator)
     {
+        _preferencesProviderCreator = preferencesProviderCreator;
         _factories = authManagerFactoryServiceLoader.atLeastOneInstanceOf(AuthenticationManagerFactory.class);
         List<String> supportedAuthenticationProviders = new ArrayList<String>();
         for (AuthenticationManagerFactory factory : _factories)
@@ -89,11 +91,11 @@ public class AuthenticationProviderFactory
                 if (manager instanceof PrincipalDatabaseAuthenticationManager)
                 {
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
-                            (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames());
+                            (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames(), _preferencesProviderCreator);
                 }
                 else
                 {
-                    authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames());
+                    authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames(), _preferencesProviderCreator);
                 }
                 return authenticationProvider;
             }

@@ -33,6 +33,7 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
 import org.apache.qpid.server.logging.LogActor;
@@ -113,7 +114,8 @@ public class ApplicationRegistry implements IApplicationRegistry
             _taskExecutor = new TaskExecutor();
             _taskExecutor.start();
 
-            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, brokerOptions);
+            StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(_store);
+            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, brokerOptions, storeChangeListener);
             ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
             _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 

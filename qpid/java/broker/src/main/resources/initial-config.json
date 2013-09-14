@@ -26,7 +26,12 @@
   "authenticationproviders" : [ {
     "name" : "passwordFile",
     "type" : "PlainPasswordFile",
-    "path" : "${qpid.home_dir}/etc/passwd"
+    "path" : "${qpid.home_dir}/etc/passwd",
+    "preferencesproviders" : [{
+        "name": "fileSystemPreferences",
+        "type": "FileSystemPreferences",
+        "path" : "${qpid.work_dir}/preferences/passwordFile"
+    }]
   } ],
   "ports" : [  {
     "name" : "AMQP",
