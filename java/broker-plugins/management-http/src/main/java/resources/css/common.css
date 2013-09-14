@@ -149,3 +149,17 @@ div .messages {
 .dojoxGridRowOdd.grayBackground tr{ background-color:#e9e9e9 !important; background-image: none !important;}
 .dojoxGridRowOdd.yellowBackground tr{background-color:#fafdd5 !important; background-image: none !important;}
 .dojoxGridRowOdd.redBackground tr{background-color:#f4c1c1 !important; background-image: none !important;}
+
+.preferencesIcon
+{
+    background: url("../images/gear.png") no-repeat;
+    width: 16px;
+    height: 16px;
+}
+
+.helpIcon
+{
+    background: url("../images/help.png") no-repeat;
+    width: 16px;
+    height: 16px;
+}

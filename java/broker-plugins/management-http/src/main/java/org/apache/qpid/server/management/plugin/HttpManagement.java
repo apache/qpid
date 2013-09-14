@@ -330,6 +330,13 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(new LogFileListingServlet()), "/rest/logfiles");
         root.addServlet(new ServletHolder(new LogFileServlet()), "/rest/logfile");
 
+        String[] timeZoneFiles = {"africa", "antarctica", "asia", "australasia", "backward",
+                "etcetera", "europe", "northamerica", "pacificnew",  "southamerica"};
+        for (String timeZoneFile : timeZoneFiles)
+        {
+            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "/dojo/dojox/date/zoneinfo/" + timeZoneFile);
+        }
+
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
         sessionManager.setSessionCookie(JSESSIONID_COOKIE_PREFIX + lastPort);
         sessionManager.setMaxInactiveInterval((Integer)getAttribute(TIME_OUT));

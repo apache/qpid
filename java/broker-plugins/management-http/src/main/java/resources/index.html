@@ -42,7 +42,6 @@
 
         var dojoConfig = {
             tlmSiblingOfDojo:false,
-            parseOnLoad:true,
             async:true,
             baseUrl: getContextPath(),
             packages:[
@@ -58,7 +57,14 @@
     </script>
 
     <script>
-        require(["dijit/layout/BorderContainer",
+        var qpidHelpLocation = "http://qpid.apache.org/releases/qpid-";
+        var qpidHelpURL = null;
+        var qpidPreferences = null;
+        require([
+                    "dojo/_base/xhr",
+                    "dojo/parser",
+                    "qpid/management/Preferences",
+                    "dijit/layout/BorderContainer",
                     "dijit/layout/TabContainer",
                     "dijit/layout/ContentPane",
                     "dijit/TitlePane",
@@ -66,7 +72,18 @@
                     "qpid/management/treeView",
                     "qpid/management/controller",
                     "qpid/common/footer",
-                    "qpid/authorization/checkUser"]);
+                    "qpid/authorization/checkUser"], function(xhr, parser, Preferences){
+                        parser.parse();
+                        qpidPreferences = new Preferences();
+                         xhr.get({
+                                sync: true,
+                                url: "rest/helper?action=version",
+                                handleAs: "json"
+                         }).then(function(qpidVersion) {
+                            qpidHelpURL = qpidHelpLocation + qpidVersion + "/java-broker/book/index.html";
+                         });
+
+                    });
     </script>
 
 </head>
@@ -75,7 +92,27 @@
 <div id="pageLayout" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'headline', gutters: false">
     <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
         <div id="header" class="header" style="float: left; width: 300px"></div>
-        <div id="login" style="float: right; display:none"><strong>User: </strong> <span id="authenticatedUser"></span><a href="logout">[logout]</a></div>
+        <div style="float: right;">
+          <div id="login" style="display:none"><strong>User: </strong> <span id="authenticatedUser"></span><a href="logout">[logout]</a></div>
+          <div id="preferencesButton" style="float: right; margin-top: 0px;" data-dojo-type="dijit.form.DropDownButton" data-dojo-props="iconClass: 'preferencesIcon', title: 'Preferences', showLabel:false">
+            <div data-dojo-type="dijit.Menu">
+                <div data-dojo-type="dijit.MenuItem" data-dojo-props="
+                        iconClass: 'dijitIconFunction',
+                        onClick: function(){ qpidPreferences.showDialog(); } ">
+                    Preferences
+                </div>
+                <!--
+                <div data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass: 'dijitIconMail', onClick: function(){ console.log('TODO'); }">
+                    Contacts
+                </div>
+                 -->
+                <div data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass: 'helpIcon', onClick: function(){
+                     var newWindow = window.open(qpidHelpURL,'QpidHelp','height=600,width=600,scrollbars=1,location=1,resizable=1,status=0,toolbar=0,titlebar=1,menubar=0',true); newWindow.focus(); } ">
+                    Help
+                </div>
+            </div>
+         </div>
+       </div>
     </div>
     <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'leading', splitter: true" style="width:20%">
         <div qpid-type="treeView" qpid-props="query: 'rest/structure'" ></div>
