@@ -26,6 +26,7 @@
 #include "hash.h"
 #include "qpid/broker/Exchange.h"
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/function.hpp>
 #include <iosfwd>
 
 namespace qpid {
