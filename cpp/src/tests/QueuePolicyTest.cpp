@@ -28,6 +28,8 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "BrokerFixture.h"
 
+#include <boost/format.hpp>
+
 using namespace qpid::broker;
 using namespace qpid::client;
 using namespace qpid::framing;

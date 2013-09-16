@@ -24,6 +24,7 @@
 #include "qpid/sys/Time.h"
 #include "qpid/DisableExceptionLogging.h"
 
+#include "boost/version.hpp"
 #if (BOOST_VERSION >= 104000)
 #include <boost/serialization/singleton.hpp>
 #else

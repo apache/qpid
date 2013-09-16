@@ -35,6 +35,8 @@
 #include "qpid/messaging/Message.h"
 #include "qpid/types/Variant.h"
 
+#include <boost/format.hpp>
+
 namespace qpid {
 namespace tests {
 
