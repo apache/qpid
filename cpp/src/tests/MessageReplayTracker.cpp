@@ -23,6 +23,8 @@
 #include "qpid/client/MessageReplayTracker.h"
 #include "qpid/sys/Time.h"
 
+#include <boost/format.hpp>
+
 namespace qpid {
 namespace tests {
 
