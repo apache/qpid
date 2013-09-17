@@ -90,7 +90,6 @@ define(["dojo/_base/xhr",
                                                 event.stop(evt);
                                                 that.addPreferencesProvider();
                                             });
-
                             updater.add( that.authProviderUpdater );
                         }});
            };
@@ -168,9 +167,17 @@ define(["dojo/_base/xhr",
                                      that.details = new PrincipalDatabaseAuthenticationManager(node, that.authProviderData, controller);
                                      that.details.update(that.authProviderData);
                              }
-                             var preferencesProviderData = that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null;
-                             that.preferencesNode = query(".preferencesProviderDetails", node)[0];
-                             that.updatePreferencesProvider(preferencesProviderData);
+                             if (that.authProviderData.type == "Anonymous")
+                             {
+                               var authenticationProviderPanel =  registry.byNode( query(".preferencesPanel", node)[0]);
+                               domStyle.set(authenticationProviderPanel.domNode, "display","none");
+                             }
+                             else
+                             {
+                               var preferencesProviderData = that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null;
+                               that.preferencesNode = query(".preferencesProviderDetails", node)[0];
+                               that.updatePreferencesProvider(preferencesProviderData);
+                             }
                          });
 
            }
@@ -229,16 +236,20 @@ define(["dojo/_base/xhr",
                          }
                        }
                      }
-                     try
+                     var preferencesProviderData = that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null;
+                     if (preferencesProviderData)
                      {
-                       that.updatePreferencesProvider(that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null);
-                     }
-                     catch(e)
-                     {
-                       if (console)
-                         {
-                           console.error(e);
-                         }
+                       try
+                       {
+                         that.updatePreferencesProvider(preferencesProviderData);
+                       }
+                       catch(e)
+                       {
+                         if (console)
+                           {
+                             console.error(e);
+                           }
+                       }
                      }
                  });
 

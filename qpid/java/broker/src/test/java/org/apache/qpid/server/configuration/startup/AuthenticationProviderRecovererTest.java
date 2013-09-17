@@ -43,7 +43,7 @@ import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.model.adapter.PreferencesProviderCreator;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -82,44 +82,61 @@ public class AuthenticationProviderRecovererTest extends QpidTestCase
 
     public void testRecoverAuthenticationProviderWithPreferencesProvider()
     {
-        Map<String, Object> authenticationAttributes = new HashMap<String, Object>();
-        authenticationAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
-        authenticationAttributes.put(AuthenticationProvider.NAME, "test-authenticator");
-        UUID authenticationId = UUID.randomUUID();
-
-        final PreferencesProviderRecoverer preferencesRecoverer = new PreferencesProviderRecoverer(_preferencesProviderCreator);
-        RecovererProvider recovererProvider = new RecovererProvider()
-        {
-            @Override
-            public ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(String type)
-            {
-                return preferencesRecoverer;
-            }
-        };
-
-        Map<String, Object> preferencesAttributes = new HashMap<String, Object>();
-        UUID preferencesId = UUID.randomUUID();
-        preferencesAttributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.class);
-        preferencesAttributes.put(PreferencesProvider.NAME, "test-provider");
-        File file = TestFileUtils.createTempFile(this, ".prefs.json", "{\"test_user\":{\"pref1\": \"pref1Value\", \"pref2\": 1.0} }");
-        preferencesAttributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
-        ConfigurationEntry preferencesEntry = new ConfigurationEntry(preferencesId, PreferencesProvider.class.getSimpleName(), preferencesAttributes, Collections.<UUID>emptySet(), _configurationStore);
-        when(_configurationStore.getEntry(preferencesId)).thenReturn(preferencesEntry);
-
-        ConfigurationEntry authenticationProviderEntry = new ConfigurationEntry(authenticationId, AuthenticationProvider.class.getSimpleName(), authenticationAttributes, Collections.singleton(preferencesId), _configurationStore);
+        File authenticationProviderFile = TestFileUtils.createTempFile(this, "test-authenticator.txt", "test_user:test_user");
         try
         {
-            AuthenticationProvider authenticationProvider = _recoverer.create(recovererProvider, authenticationProviderEntry, _broker);
-            assertNotNull("Authentication provider was not recovered", authenticationProvider);
-            assertEquals("Unexpected name", "test-authenticator", authenticationProvider.getName());
-            assertEquals("Unexpected id", authenticationId, authenticationProvider.getId());
-            PreferencesProvider preferencesProvider = authenticationProvider.getPreferencesProvider();
-            assertNotNull("Preferences provider was not recovered", preferencesProvider);
-            assertEquals("Unexpected path", file.getAbsolutePath(), preferencesProvider.getAttribute(FileSystemPreferencesProvider.PATH));
+            Map<String, Object> authenticationAttributes = new HashMap<String, Object>();
+            authenticationAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE,
+                    PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+            authenticationAttributes.put(AuthenticationProvider.NAME, "test-authenticator");
+            authenticationAttributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH,
+                    authenticationProviderFile.getAbsolutePath());
+            UUID authenticationId = UUID.randomUUID();
+
+            final PreferencesProviderRecoverer preferencesRecoverer = new PreferencesProviderRecoverer(_preferencesProviderCreator);
+            RecovererProvider recovererProvider = new RecovererProvider()
+            {
+                @Override
+                public ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(String type)
+                {
+                    return preferencesRecoverer;
+                }
+            };
+
+            Map<String, Object> preferencesAttributes = new HashMap<String, Object>();
+            UUID preferencesId = UUID.randomUUID();
+            preferencesAttributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.class);
+            preferencesAttributes.put(PreferencesProvider.NAME, "test-provider");
+            File file = TestFileUtils.createTempFile(this, ".prefs.json",
+                    "{\"test_user\":{\"pref1\": \"pref1Value\", \"pref2\": 1.0} }");
+            preferencesAttributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
+            ConfigurationEntry preferencesEntry = new ConfigurationEntry(preferencesId, PreferencesProvider.class.getSimpleName(),
+                    preferencesAttributes, Collections.<UUID> emptySet(), _configurationStore);
+            when(_configurationStore.getEntry(preferencesId)).thenReturn(preferencesEntry);
+
+            ConfigurationEntry authenticationProviderEntry = new ConfigurationEntry(authenticationId,
+                    AuthenticationProvider.class.getSimpleName(), authenticationAttributes, Collections.singleton(preferencesId),
+                    _configurationStore);
+            try
+            {
+                AuthenticationProvider authenticationProvider = _recoverer.create(recovererProvider, authenticationProviderEntry,
+                        _broker);
+                assertNotNull("Authentication provider was not recovered", authenticationProvider);
+                assertEquals("Unexpected name", "test-authenticator", authenticationProvider.getName());
+                assertEquals("Unexpected id", authenticationId, authenticationProvider.getId());
+                PreferencesProvider preferencesProvider = authenticationProvider.getPreferencesProvider();
+                assertNotNull("Preferences provider was not recovered", preferencesProvider);
+                assertEquals("Unexpected path", file.getAbsolutePath(),
+                        preferencesProvider.getAttribute(FileSystemPreferencesProvider.PATH));
+            }
+            finally
+            {
+                file.delete();
+            }
         }
         finally
         {
-            file.delete();
+            authenticationProviderFile.delete();
         }
     }
 
