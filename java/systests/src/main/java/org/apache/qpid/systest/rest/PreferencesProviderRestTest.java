@@ -13,17 +13,19 @@ import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
 
 public class PreferencesProviderRestTest extends QpidRestTestCase
 {
-    private Map<String, File> _providers;
+    private Map<String, File> _preferencesProviderFiles;
+    private File _authenticationProviderFile;
 
     public void setUp() throws Exception
     {
-        _providers = new HashMap<String, File>();
+        _authenticationProviderFile = TestFileUtils.createTempFile(this, ".test.prefs.txt", "test:test");
+        _preferencesProviderFiles = new HashMap<String, File>();
         super.setUp();
     }
 
@@ -35,7 +37,11 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
         }
         finally
         {
-            for (File file : _providers.values())
+            if (_authenticationProviderFile != null)
+            {
+                _authenticationProviderFile.delete();
+            }
+            for (File file : _preferencesProviderFiles.values())
             {
                 file.delete();
             }
@@ -47,8 +53,9 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     {
         super.customizeConfiguration();
         Map<String, Object> anonymousAuthProviderAttributes = new HashMap<String, Object>();
-        anonymousAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
-        anonymousAuthProviderAttributes.put(AuthenticationProvider.NAME,  TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
+        anonymousAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        anonymousAuthProviderAttributes.put(AuthenticationProvider.NAME,  TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2");
+        anonymousAuthProviderAttributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, _authenticationProviderFile.getAbsolutePath());
         getBrokerConfiguration().addAuthenticationProviderConfiguration(anonymousAuthProviderAttributes);
     }
 
@@ -58,7 +65,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of providers", 0, providerDetails.size());
 
         createPreferencesProvider(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, "test1");
-        createPreferencesProvider(TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER, "test2");
+        createPreferencesProvider(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2", "test2");
 
         providerDetails = getRestTestHelper().getJsonAsList("/rest/preferencesprovider");
         assertEquals("Unexpected number of providers", 2, providerDetails.size());
@@ -72,6 +79,11 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
                 "/rest/preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/test1");
         assertProvider(provider);
         assertEquals("Unexpected provider name ", "test1", provider.get(PreferencesProvider.NAME));
+
+        Map<String, Object> provider2 = getRestTestHelper().getJsonAsSingletonList(
+                "/rest/preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2/test2");
+        assertProvider(provider);
+        assertEquals("Unexpected provider name ", "test2", provider2.get(PreferencesProvider.NAME));
     }
 
     public void testDeleteProvider() throws Exception
@@ -98,7 +110,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected provider name ", "test1", provider.get(PreferencesProvider.NAME));
 
         File file = TestFileUtils.createTempFile(this, ".prefs.json", "{\"admin\":{\"something\": \"somethingValue\"}}");
-        _providers.put("new-test1", file);
+        _preferencesProviderFiles.put("new-test1", file);
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
 
@@ -123,7 +135,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
         String name = (String) provider.get(PreferencesProvider.NAME);
         assertNotNull("Name cannot be null", name);
         assertEquals("Unexpected path for provider " + name, (String) provider.get(FileSystemPreferencesProvider.PATH),
-                _providers.get(name).getAbsolutePath());
+                _preferencesProviderFiles.get(name).getAbsolutePath());
     }
 
     public void assertProviderCommonAttributes(Map<String, Object> provider)
@@ -146,7 +158,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
         attributes.put(PreferencesProvider.NAME, providerName);
         attributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.PROVIDER_TYPE);
         File file = TestFileUtils.createTempFile(this, ".prefs.json", "{\"admin\":{\"language\": \"en\"}}");
-        _providers.put(providerName, file);
+        _preferencesProviderFiles.put(providerName, file);
         attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest(

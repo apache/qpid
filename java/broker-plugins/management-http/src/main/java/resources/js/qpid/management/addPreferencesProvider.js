@@ -33,6 +33,7 @@ define(["dojo/_base/xhr",
         "dojo/_base/connect",
         "dojo/dom-style",
         "dojo/string",
+        "dojox/html/entities",
         "dojox/validate/us",
         "dojox/validate/web",
         "dijit/Dialog",
@@ -46,7 +47,7 @@ define(["dojo/_base/xhr",
         "dojox/form/CheckedMultiSelect",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (xhr, dom, construct, query, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, string) {
+    function (xhr, dom, construct, query, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, string, entities) {
 
         var addPreferencesProvider = {};
 
@@ -167,6 +168,7 @@ define(["dojo/_base/xhr",
                 this.preferencesProviderTypeChooser.set("value", null);
             }
             var dialog = registry.byId("addPreferencesProvider");
+            dialog.set("title", (providerName ? "Edit preference provider '" + entities.encode(String(providerName)) + "' " : "Add preferences provider ") + " for authentication provider '" + entities.encode(String(authenticationProviderName)) + "' ")
             if (providerName)
             {
                 xhr.get({
@@ -178,7 +180,7 @@ define(["dojo/_base/xhr",
                        var provider = data[0];
                        var providerType = provider.type;
                        that.data = provider;
-                       nameWidget.set("value", provider.name);
+                       nameWidget.set("value",  entities.encode(String(provider.name)));
                        nameWidget.set("disabled", true);
                        that.preferencesProviderTypeChooser.set("value", providerType);
                        that.preferencesProviderTypeChooser.set("disabled", true);

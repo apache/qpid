@@ -164,7 +164,7 @@ define(["dojo/_base/xhr",
                                     if(this.success === true)
                                     {
                                         registry.byId("addAuthenticationProvider").hide();
-                                        if (dojo.byId("formAddAuthenticationProvider.id").value == "")
+                                        if (newAuthenticationManager.type != "Anonymous" && dojo.byId("formAddAuthenticationProvider.id").value == "")
                                         {
                                           addPreferencesProvider.show(newAuthenticationManager.name);
                                         }

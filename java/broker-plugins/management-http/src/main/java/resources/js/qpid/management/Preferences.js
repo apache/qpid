@@ -118,22 +118,25 @@ function (declare, xhr, event, dom, domConstruct, parser, query, json, entities,
       xhr.get({
         url: "rest/preferences",
         sync: true,
-        handleAs: "json"
-      }).then(
-       function(data) {
-         for(var preference in data)
-         {
-           if (that.hasOwnProperty(preference))
-           {
-             var value = data[preference];
-             if (typeof data[preference] == "string")
-             {
-               value = entities.encode(String(value))
-             }
-             that[preference].set("value", value);
-           }
-         }
-         that.preferencesDialog.show();
+        handleAs: "json",
+        load: function(data) {
+          for(var preference in data)
+          {
+            if (that.hasOwnProperty(preference))
+            {
+              var value = data[preference];
+              if (typeof data[preference] == "string")
+              {
+                value = entities.encode(String(value))
+              }
+              that[preference].set("value", value);
+            }
+          }
+          that.preferencesDialog.show();
+       },
+       error: function(error){
+         alert("Cannot load user preferences : " + error);
+       }
       });
     },
 

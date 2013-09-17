@@ -520,7 +520,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
 
     private void getFileLock() throws IOException, AMQStoreException
     {
-        File lockFile = new File(_preferencesLocation.getAbsolutePath() + ".lck");
+        File lockFile = new File(getLockFileName());
         lockFile.createNewFile();
 
         FileOutputStream out = new FileOutputStream(lockFile);
@@ -540,6 +540,11 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         lockFile.deleteOnExit();
     }
 
+    private String getLockFileName()
+    {
+        return _preferencesLocation.getAbsolutePath() + ".lck";
+    }
+
     public void close()
     {
         try
@@ -552,7 +557,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         }
         finally
         {
-            new File(_preferencesLocation.getAbsolutePath() + ".lck").delete();
+            new File(getLockFileName()).delete();
             _fileLock = null;
             _preferences.clear();
         }
