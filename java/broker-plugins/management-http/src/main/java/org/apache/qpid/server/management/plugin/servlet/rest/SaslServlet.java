@@ -278,7 +278,7 @@ public class SaslServlet extends AbstractServlet
     private SubjectCreator getSubjectCreator(HttpServletRequest request)
     {
         SocketAddress localAddress = HttpManagementUtil.getSocketAddress(request);
-        return HttpManagementUtil.getManagementConfiguration(getServletContext()).getSubjectCreator(localAddress);
+        return HttpManagementUtil.getManagementConfiguration(getServletContext()).getAuthenticationProvider(localAddress).getSubjectCreator();
     }
 
     @Override

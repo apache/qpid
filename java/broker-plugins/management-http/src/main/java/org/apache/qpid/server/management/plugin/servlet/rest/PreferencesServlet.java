@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -28,6 +27,11 @@ public class PreferencesServlet extends AbstractServlet
             ServletException
     {
         PreferencesProvider preferencesProvider = getPreferencesProvider(request);
+        if (preferencesProvider == null)
+        {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Preferences provider is not configured");
+            return;
+        }
         String userName = getAuthenticatedUserName(request);
         Map<String, Object> preferences = preferencesProvider.getPreferences(userName);
         if (preferences == null)
@@ -45,6 +49,11 @@ public class PreferencesServlet extends AbstractServlet
             throws ServletException, IOException
     {
         PreferencesProvider preferencesProvider = getPreferencesProvider(request);
+        if (preferencesProvider == null)
+        {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Preferences provider is not configured");
+            return;
+        }
         String userName = getAuthenticatedUserName(request);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -69,6 +78,10 @@ public class PreferencesServlet extends AbstractServlet
             throws ServletException, IOException
     {
         PreferencesProvider preferencesProvider = getPreferencesProvider(request);
+        if (preferencesProvider == null)
+        {
+            throw new IllegalStateException("Preferences provider is not configured");
+        }
         String userName = getAuthenticatedUserName(request);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -90,20 +103,14 @@ public class PreferencesServlet extends AbstractServlet
         return principal.getName();
     }
 
-    private AuthenticationProvider getAuthenticationProvider(HttpServletRequest request)
-    {
-        Broker broker = getBroker();
-        SocketAddress localAddress = HttpManagementUtil.getSocketAddress(request);
-        return broker.getAuthenticationProvider(localAddress);
-    }
-
     private PreferencesProvider getPreferencesProvider(HttpServletRequest request)
     {
-        PreferencesProvider preferencesProvider = getAuthenticationProvider(request).getPreferencesProvider();
-        if (preferencesProvider == null)
+        SocketAddress localAddress = HttpManagementUtil.getSocketAddress(request);
+        AuthenticationProvider authenticationProvider = getManagementConfiguration().getAuthenticationProvider(localAddress);
+        if (authenticationProvider == null)
         {
-            throw new IllegalStateException("Preferences provider is not configured");
+            throw new IllegalStateException("Authentication provider is not found");
         }
-        return preferencesProvider;
+        return authenticationProvider.getPreferencesProvider();
     }
 }

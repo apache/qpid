@@ -168,7 +168,7 @@ public class HttpManagementUtil
     {
         Subject subject = null;
         SocketAddress localAddress = getSocketAddress(request);
-        SubjectCreator subjectCreator = managementConfig.getSubjectCreator(localAddress);
+        SubjectCreator subjectCreator = managementConfig.getAuthenticationProvider(localAddress).getSubjectCreator();
         String remoteUser = request.getRemoteUser();
 
         if (remoteUser != null || subjectCreator.isAnonymousAuthenticationAllowed())
