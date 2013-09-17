@@ -56,6 +56,7 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.SecurityManager;
@@ -303,6 +304,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             if (_state.compareAndSet(state, State.STOPPED))
             {
                 _authManager.close();
+                if (_preferencesProvider != null)
+                {
+                    _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.STOPPED);
+                }
                 return true;
             }
             else
@@ -421,6 +426,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     public void setPreferencesProvider(PreferencesProvider provider)
     {
+        if (AnonymousAuthenticationManagerFactory.PROVIDER_TYPE.equals(getAttribute(TYPE)))
+        {
+            throw new IllegalConfigurationException("Cannot set preferences provider for anonymous authentication provider");
+        }
         _preferencesProvider = provider;
     }
 

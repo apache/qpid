@@ -28,9 +28,10 @@ define(["dojo/_base/xhr",
         "dojo/_base/event",
         "dojo/_base/json",
         "dojo/string",
+        "dojox/html/entities",
         "dojo/text!../../../../../authenticationprovider/preferences/filesystempreferences/add.html",
         "dojo/domReady!"],
-    function (xhr, dom, domConstruct, win, registry, parser, array, event, json, string, template) {
+    function (xhr, dom, domConstruct, win, registry, parser, array, event, json, string, entities, template) {
         return {
             show: function(node, data) {
                 dojo.forEach(dijit.findWidgets(node), function(w) {
@@ -41,7 +42,7 @@ define(["dojo/_base/xhr",
                 var pathWidget = registry.byId("preferencesProvider.path")
                 if (data)
                 {
-                  pathWidget.set("value", data["path"]);
+                  pathWidget.set("value", entities.encode(String(data["path"])));
                 }
             }
         };
