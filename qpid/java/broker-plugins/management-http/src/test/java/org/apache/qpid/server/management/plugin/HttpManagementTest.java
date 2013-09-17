@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -88,13 +89,13 @@ public class HttpManagementTest extends QpidTestCase
                 _management.isHttpBasicAuthenticationEnabled());
     }
 
-    public void testGetSubjectCreator()
+    public void testGetAuthenticationProvider()
     {
         SocketAddress localAddress = InetSocketAddress.createUnresolved("localhost", 8080);
-        SubjectCreator subjectCreator = mock(SubjectCreator.class);
-        when(_broker.getSubjectCreator(localAddress)).thenReturn(subjectCreator);
-        SubjectCreator httpManagementSubjectCreator = _management.getSubjectCreator(localAddress);
-        assertEquals("Unexpected subject creator", subjectCreator, httpManagementSubjectCreator);
+        AuthenticationProvider brokerAuthenticationProvider = mock(AuthenticationProvider.class);
+        when(_broker.getAuthenticationProvider(localAddress)).thenReturn(brokerAuthenticationProvider);
+        AuthenticationProvider authenticationProvider = _management.getAuthenticationProvider(localAddress);
+        assertEquals("Unexpected subject creator", brokerAuthenticationProvider, authenticationProvider);
     }
 
 }

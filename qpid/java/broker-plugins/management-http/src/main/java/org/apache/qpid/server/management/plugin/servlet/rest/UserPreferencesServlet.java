@@ -47,15 +47,14 @@ public class UserPreferencesServlet extends AbstractServlet
             throws IOException
     {
         Map<String, Object> preferences = null;
-        try
+        PreferencesProvider preferencesProvider = getPreferencesProvider(authenticationProviderName);
+        if (preferencesProvider == null)
         {
-            preferences = getUserPreferences(authenticationProviderName, userId);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Preferences provider is not configured");
+            return;
         }
-        catch (Exception e)
-        {
-            LOGGER.debug("Bad preferences request", e);
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
-        }
+        preferences =  preferencesProvider.getPreferences(userId);
+
         sendJsonResponse(preferences, response);
     }
 
@@ -74,7 +73,7 @@ public class UserPreferencesServlet extends AbstractServlet
         sendJsonResponse(users, response);
     }
 
-    private Map<String, Object> getUserPreferences(String authenticationProviderName, String userId)
+    private PreferencesProvider getPreferencesProvider(String authenticationProviderName)
     {
         AuthenticationProvider authenticationProvider = getAuthenticationProvider(authenticationProviderName);
         if (authenticationProvider == null)
@@ -83,12 +82,7 @@ public class UserPreferencesServlet extends AbstractServlet
                     authenticationProviderName));
         }
         PreferencesProvider preferencesProvider = authenticationProvider.getPreferencesProvider();
-        if (preferencesProvider == null)
-        {
-            throw new IllegalStateException(String.format(
-                    "Preferences provider is not set for authentication provider '%s'", authenticationProviderName));
-        }
-        return preferencesProvider.getPreferences(userId);
+        return preferencesProvider;
     }
 
     private AuthenticationProvider getAuthenticationProvider(String authenticationProviderName)
