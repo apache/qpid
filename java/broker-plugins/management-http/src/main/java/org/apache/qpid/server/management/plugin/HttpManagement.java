@@ -23,8 +23,6 @@ package org.apache.qpid.server.management.plugin;
 import java.lang.reflect.Type;
 import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -78,7 +76,6 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DispatcherType;
@@ -431,9 +428,9 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
     }
 
     @Override
-    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
+    public AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress)
     {
-        return getBroker().getSubjectCreator(localAddress);
+        return getBroker().getAuthenticationProvider(localAddress);
     }
 
     @Override

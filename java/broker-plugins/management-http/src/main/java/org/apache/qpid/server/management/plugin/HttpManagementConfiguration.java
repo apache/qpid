@@ -22,7 +22,7 @@ package org.apache.qpid.server.management.plugin;
 
 import java.net.SocketAddress;
 
-import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.model.AuthenticationProvider;
 
 public interface HttpManagementConfiguration
 {
@@ -34,5 +34,5 @@ public interface HttpManagementConfiguration
 
     boolean isHttpBasicAuthenticationEnabled();
 
-    SubjectCreator getSubjectCreator(SocketAddress localAddress);
+    AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
 }
