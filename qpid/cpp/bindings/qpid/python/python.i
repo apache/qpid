@@ -313,6 +313,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
              def __init__(self, msg):
                  self.msg = msg
                  self.properties = self.msg.getProperties()
+                 msg.properties = self
 
              def __len__(self):
                  return self.properties.__len__()
@@ -320,9 +321,15 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
              def __getitem__(self, key):
                  return self.properties[key];
 
+             def get(self, key):
+                 return self.__getitem__(key)
+
              def __setitem__(self, key, value):
                  self.properties[key] = value
                  self.msg.setProperty(key, value)
+
+             def set(self, key, value):
+                 self.__setitem__(key, value)
 
              def __delitem__(self, key):
                  del self.properties[key]
