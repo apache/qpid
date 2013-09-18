@@ -96,7 +96,7 @@ struct Options : public qpid::Options
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
           help(false),
-          url("amqp:tcp:127.0.0.1"),
+          url("127.0.0.1"),
           messages(1),
           sendEos(0),
           durable(false),
