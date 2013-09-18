@@ -49,10 +49,10 @@ SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/python.i
 SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/python.i
   PROPERTIES SWIG_FLAGS "-I${QPID_INCLUDE_DIR}")
 
-SWIG_ADD_MODULE (cqpid_python python
+SWIG_ADD_MODULE (qpid_messaging_python python
   ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
 
-SWIG_LINK_LIBRARIES (cqpid_python
+SWIG_LINK_LIBRARIES (qpid_messaging_python
   qpidmessaging
   qpidtypes
   ${PYTHON_LIBRARIES})
@@ -61,9 +61,9 @@ SWIG_LINK_LIBRARIES (cqpid_python
 ## Install the bindings
 ## --------------------
 
-INSTALL (CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -m py_compile cqpid.py
+INSTALL (CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -m py_compile qpid_messaging.py
                                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
-INSTALL (CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile cqpid.py
+INSTALL (CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile qpid_messaging.py
                                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
 
 SET_SOURCE_FILES_PROPERTIES (${swig_generated_file_fullname}
@@ -75,12 +75,12 @@ INCLUDE_DIRECTORIES (
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid.py
-               ${CMAKE_CURRENT_BINARY_DIR}/cqpid.pyc
-               ${CMAKE_CURRENT_BINARY_DIR}/cqpid.pyo
+INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid_messaging.py
+               ${CMAKE_CURRENT_BINARY_DIR}/qpid_messaging.pyc
+               ${CMAKE_CURRENT_BINARY_DIR}/qpid_messaging.pyo
   DESTINATION ${PYTHON_SITEARCH_PACKAGES})
 
-INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/_cqpid_python.so
-  RENAME _cqpid.so
+INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/_qpid_messaging_python.so
+  RENAME _qpid_messaging.so
   DESTINATION ${PYTHON_SITEARCH_PACKAGES})
 

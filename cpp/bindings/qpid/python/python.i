@@ -17,7 +17,8 @@
  * under the License.
  */
 
-%module cqpid
+%module qpid_messaging
+
 %include "std_string.i"
 %include "qpid/swig_python_typemaps.i"
 
@@ -29,7 +30,7 @@
 /*
  * Exceptions
  *
- * The convention below is that exceptions in _cqpid.so have the same
+ * The convention below is that exceptions in _qpid_messaging.so have the same
  * names as in the C++ library.  They get renamed to their Python
  * equivalents when brought into the Python wrapping
  */
@@ -39,12 +40,12 @@ static PyObject* exception;
 %}
 %init %{
     exception = PyErr_NewException(
-        (char *) ("_cqpid." #exception), parent, NULL);
+        (char *) ("_qpid_messaging." #exception), parent, NULL);
     Py_INCREF(exception);
     PyModule_AddObject(m, #exception, exception);
 %}
 %pythoncode %{
-    exception = _cqpid. ## exception
+    exception = _qpid_messaging. ## exception
 %}
 %enddef
 
@@ -176,7 +177,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
                      if v:
                          clean_opts[k] = v
                  args.append(clean_opts)
-             this = _cqpid.new_Connection(*args)
+             this = _qpid_messaging.new_Connection(*args)
              try: self.this.append(this)
              except: self.this = this
 
@@ -341,7 +342,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
                       subject=None, user_id=None, reply_to=None,
                       correlation_id=None, durable=None, priority=None,
                       ttl=None, properties=None):
-             this = _cqpid.new_Message('')
+             this = _qpid_messaging.new_Message('')
              try: self.this.append(this)
              except: self.this = this
              if not content is None:
