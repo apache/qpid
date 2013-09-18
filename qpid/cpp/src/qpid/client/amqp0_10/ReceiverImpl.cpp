@@ -26,6 +26,7 @@
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/types/encodings.h"
 
 namespace qpid {
 namespace client {
@@ -155,6 +156,10 @@ ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name,
     parent(&p), destination(name), address(a), byteCredit(0xFFFFFFFF), autoDecode(autoDecode_),
     state(UNRESOLVED), capacity(0), window(0) {}
 
+namespace {
+const std::string TEXT_PLAIN("text/plain");
+}
+
 bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     {
@@ -169,6 +174,13 @@ bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::D
             } else if (message.getContentType() == qpid::amqp_0_10::ListCodec::contentType) {
                 message.getContentObject() = qpid::types::Variant::List();
                 decode(message, message.getContentObject().asList());
+            } else if (!message.getContentBytes().empty()) {
+                message.getContentObject() = message.getContentBytes();
+                if (message.getContentType() == TEXT_PLAIN) {
+                    message.getContentObject().setEncoding(qpid::types::encodings::UTF8);
+                } else {
+                    message.getContentObject().setEncoding(qpid::types::encodings::BINARY);
+                }
             }
         }
         return true;
