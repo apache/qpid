@@ -102,6 +102,8 @@ void StatusCheckThread::run() {
                 QPID_LOG(info, logPrefix << "Joining established cluster");
             }
         }
+        else
+            QPID_LOG(error, logPrefix << "Invalid response " << response.getContent())
     } catch(const exception& error) {
         // Its not an error to fail to connect to self.
         if (statusCheck.haBroker.getBrokerInfo().getAddress() != url[0])
