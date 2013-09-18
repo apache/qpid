@@ -24,12 +24,12 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES CPLU
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i
    PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
 
-list(APPEND SWIG_MODULE_cqpid_python_EXTRA_DEPS
+list(APPEND SWIG_MODULE_qpid_messaging_python_EXTRA_DEPS
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/qpid.i
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/swig_python_typemaps.i
 )
-swig_add_module(cqpid python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
-swig_link_libraries(cqpid qpidmessaging qpidtypes ${PYTHON_LIBRARIES})
+swig_add_module(qpid_messaging python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
+swig_link_libraries(qpid_messaging qpidmessaging qpidtypes ${PYTHON_LIBRARIES})
 
 set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing")
 include_directories(${PYTHON_INCLUDE_PATH}
@@ -39,17 +39,17 @@ include_directories(${PYTHON_INCLUDE_PATH}
 ##------------------------------------
 ## Install the complete Python binding
 ##------------------------------------
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile cqpid.py
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m py_compile qpid_messaging.py
                               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile cqpid.py
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -O -m py_compile qpid_messaging.py
                               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid.py
-              ${CMAKE_CURRENT_BINARY_DIR}/cqpid.pyc
-              ${CMAKE_CURRENT_BINARY_DIR}/cqpid.pyo
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid_messaging.py
+              ${CMAKE_CURRENT_BINARY_DIR}/qpid_messaging.pyc
+              ${CMAKE_CURRENT_BINARY_DIR}/qpid_messaging.pyo
         DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/_cqpid.so
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/_qpid_messaging.so
         DESTINATION ${PYTHON_SITEARCH_PACKAGES}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
