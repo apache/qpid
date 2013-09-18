@@ -48,16 +48,16 @@ class Throughput(Statistic):
         return "tp(m/s)"
 
     def report(self):
-	if self.started:
+        if self.started:
             elapsed = time.time() - self.start
             return str(int(self.messages/elapsed))
-	else:
-	    return "0"
+        else:
+            return "0"
 
 
 class ThroughputAndLatency(Throughput):
     def __init__(self):
-	Throughput.__init__(self)
+        Throughput.__init__(self)
         self.total = 0.0
         self.min = float('inf')
         self.max = -float('inf')
@@ -82,8 +82,8 @@ class ThroughputAndLatency(Throughput):
     def report(self):
         output = Throughput.report(self)
         if (self.samples > 0):
-	    output += "\t%.2f\t%.2f\t%.2f" %(self.min, self.max, self.total/self.samples)
-	return output
+            output += "\t%.2f\t%.2f\t%.2f" %(self.min, self.max, self.total/self.samples)
+            return output
 
 
 # Report batch and overall statistics
