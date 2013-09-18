@@ -27,12 +27,20 @@ abspath() {
 }
 
 usage() {
-    echo "Usage: $(basename $0) file [file...]
+    echo "Usage: $(basename $0) [-l user] file [file...]
 Synchronize the contents of each file or directory to the same absolute path on
 each host in \$HOSTS.
 "
     exit 1
 }
+
+while getopts "l:" opt; do
+    case $opt in
+	l) RSYNC_USER="$OPTARG@" ;;
+	*) usage ;;
+    esac
+done
+shift `expr $OPTIND - 1`
 
 test "$*" || usage
 
@@ -42,7 +50,7 @@ OK_FILE=`mktemp`		# Will be deleted if anything goes wrong.
 trap "rm -f $OK_FILE" EXIT
 
 for h in $HOSTS; do
-    rsync -aRO --delete $FILES $h:/ || { echo "rsync to $h failed"; rm -f $OK_FILE; } &
+    rsync -vaRO --delete $FILES $RSYNC_USER$h:/ || { echo "rsync to $h failed"; rm -f $OK_FILE; } &
 done
 wait
 test -f $OK_FILE
