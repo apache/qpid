@@ -245,10 +245,10 @@ void Primary::removeReplica(const ReplicatingSubscription& rs) {
 void Primary::queueCreate(const QueuePtr& q) {
     // Set replication argument.
     ReplicateLevel level = replicationTest.useLevel(*q);
-    QPID_LOG(debug, logPrefix << "Created queue " << q->getName()
-             << " replication: " << printable(level));
     q->addArgument(QPID_REPLICATE, printable(level).str());
     if (level) {
+        QPID_LOG(debug, logPrefix << "Created queue " << q->getName()
+                 << " replication: " << printable(level));
         initializeQueue(q);
         // Give each queue a unique id. Used by backups to avoid confusion of
         // same-named queues.
@@ -264,24 +264,26 @@ void Primary::queueCreate(const QueuePtr& q) {
 
 // NOTE: Called with queue registry lock held.
 void Primary::queueDestroy(const QueuePtr& q) {
-    QPID_LOG(debug, logPrefix << "Destroyed queue " << q->getName());
-    {
-        Mutex::ScopedLock l(lock);
-        for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
-            i->second->queueDestroy(q);
+    if (replicationTest.useLevel(*q)) {
+        QPID_LOG(debug, logPrefix << "Destroyed queue " << q->getName());
+        {
+            Mutex::ScopedLock l(lock);
+            for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
+                i->second->queueDestroy(q);
+        }
+        checkReady();               // Outside lock
     }
-    checkReady();               // Outside lock
 }
 
 // NOTE: Called with exchange registry lock held.
 void Primary::exchangeCreate(const ExchangePtr& ex) {
     ReplicateLevel level = replicationTest.useLevel(*ex);
-    QPID_LOG(debug, logPrefix << "Created exchange " << ex->getName()
-             << " replication: " << printable(level));
     FieldTable args = ex->getArgs();
     args.setString(QPID_REPLICATE, printable(level).str()); // Set replication arg.
     if (level) {
-        // Give each exchange a unique id to avoid confusion of same-named exchanges.
+        QPID_LOG(debug, logPrefix << "Created exchange " << ex->getName()
+                 << " replication: " << printable(level));
+         // Give each exchange a unique id to avoid confusion of same-named exchanges.
         args.set(QPID_HA_UUID, FieldTable::ValuePtr(new UuidValue(&Uuid(true)[0])));
     }
     ex->setArgs(args);
@@ -289,8 +291,10 @@ void Primary::exchangeCreate(const ExchangePtr& ex) {
 
 // NOTE: Called with exchange registry lock held.
 void Primary::exchangeDestroy(const ExchangePtr& ex) {
-    QPID_LOG(debug, logPrefix << "Destroyed exchange " << ex->getName());
-    // Do nothing
+    if (replicationTest.useLevel(*ex)) {
+        QPID_LOG(debug, logPrefix << "Destroyed exchange " << ex->getName());
+        // Do nothing
+    }
  }
 
 // New backup connected
