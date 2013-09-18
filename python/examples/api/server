@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +19,12 @@
 #
 
 import optparse, sys, traceback
-from qpid.messaging import *
+
+try:
+  from qpid_messaging import *
+except:
+  from qpid.messaging import *
+
 from qpid.util import URL
 from subprocess import Popen, STDOUT, PIPE
 from qpid.log import enable, DEBUG, WARN
@@ -62,10 +67,10 @@ def dispatch(msg):
     result.properties["exit"] = proc.returncode
   elif msg_type == "eval":
     try:
-      content = eval(msg.content)
+      content = str(eval(msg.content))
     except:
       content = traceback.format_exc()
-    result = Message(content)
+    result = Message(content = content)
   else:
     result = Message("unrecognized message type: %s" % msg_type)
   return result
