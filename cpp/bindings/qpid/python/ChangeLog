@@ -2,4 +2,4 @@ Version 0.26:
 	* QPID-4952: Changed the module name to qpid_messaging.
 	* QPID-5140: Added get/set method to MessageProperties.
 	* QPID-4924: Added examples from pure Python libraries.
-	* Added the console example to interact with server.
+	* QPID-4924: Added the console example to interact with server.
