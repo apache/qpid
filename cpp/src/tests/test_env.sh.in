@@ -47,7 +47,7 @@ export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_HA_EXEC=$PYTHON_COMMANDS/qpid-ha
 export PYTHONPATH_SWIG=$pythonswigdir:$pythonswiglibdir
-export PYTHONSWIGMODULE=$pythonswigdir/cqpid.py
+export PYTHONSWIGMODULE=$pythonswigdir/qpid_messaging.py
 # Executables
 export QPIDD_EXEC=$top_builddir/src/qpidd
 
