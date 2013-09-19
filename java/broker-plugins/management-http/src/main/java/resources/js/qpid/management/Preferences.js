@@ -22,15 +22,18 @@ define([
         "dojo/_base/declare",
         "dojo/_base/xhr",
         "dojo/_base/event",
+        "dojo/_base/connect",
         "dojo/dom",
         "dojo/dom-construct",
         "dojo/parser",
-        "dojo/query",
         "dojo/json",
+        "dojo/store/Memory",
+        "dojo/data/ObjectStore",
         "dojox/html/entities",
         "dijit/registry",
         "qpid/common/TimeZoneSelector",
         "dojo/text!../../showPreferences.html",
+        "qpid/common/util",
         "dijit/Dialog",
         "dijit/form/NumberSpinner",
         "dijit/form/CheckBox",
@@ -40,10 +43,13 @@ define([
         "dijit/form/DropDownButton",
         "dijit/form/Button",
         "dijit/form/Form",
+        "dijit/layout/TabContainer",
+        "dijit/layout/ContentPane",
+        "dojox/grid/EnhancedGrid",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-function (declare, xhr, event, dom, domConstruct, parser, query, json, entities, registry, TimeZoneSelector, markup) {
+function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory, ObjectStore, entities, registry, TimeZoneSelector, markup, util) {
 
   var preferenceNames = ["timeZone", "updatePeriod", "saveTabs"];
 
@@ -58,25 +64,39 @@ function (declare, xhr, event, dom, domConstruct, parser, query, json, entities,
       var that = this;
 
       this.domNode = domConstruct.create("div", {innerHTML: markup});
-      parser.parse(this.domNode);
+      this.preferencesDialog = parser.parse(this.domNode)[0];
 
       for(var i=0; i<preferenceNames.length; i++)
       {
         var name = preferenceNames[i];
-        this[name] = registry.byNode(query("." + name, this.domNode)[0]);
+        this[name] = registry.byId("preferences." + name);
       }
 
-      this.saveButton = registry.byNode(query(".saveButton", this.domNode)[0]);
-      this.cancelButton = registry.byNode(query(".cancelButton", this.domNode)[0]);
-      this.theForm = registry.byId("preferencesForm");
-
-      this.preferencesDialog = new dijit.Dialog({
-        title:"Preferences",
-        style: "width: 600px",
-        content: this.domNode
-      });
-
+      this.saveButton = registry.byId("preferences.saveButton");
+      this.cancelButton = registry.byId("preferences.cancelButton");
+      this.theForm = registry.byId("preferences.preferencesForm");
+      this.users = registry.byId("preferences.users");
+      this.users.set("structure", [ { name: "User", field: "name", width: "50%"},
+                                 { name: "Authentication Provider", field: "authenticationProvider", width: "50%"}]);
       this.cancelButton.on("click", function(){that.preferencesDialog.hide();});
+      this.deletePreferencesButton = registry.byId("preferences.deletePreeferencesButton");
+      this.deletePreferencesButton.on("click", function(){
+         if (util.deleteGridSelections(
+            null,
+            that.users,
+            "rest/userpreferences",
+            "Are you sure you want to delete preferences for user",
+            "user"))
+          {
+             that._updateUsersWithPreferences();
+          }
+      });
+      var deletePreferencesButtonToggler = function(rowIndex){
+        var data = that.users.selection.getSelected();
+        that.deletePreferencesButton.set("disabled",!data.length );
+      };
+      connect.connect(this.users.selection, 'onSelected',  deletePreferencesButtonToggler);
+      connect.connect(this.users.selection, 'onDeselected',  deletePreferencesButtonToggler);
       this.theForm.on("submit", function(e){
         event.stop(e);
         if(that.theForm.validate()){
@@ -120,18 +140,8 @@ function (declare, xhr, event, dom, domConstruct, parser, query, json, entities,
         sync: true,
         handleAs: "json",
         load: function(data) {
-          for(var preference in data)
-          {
-            if (that.hasOwnProperty(preference))
-            {
-              var value = data[preference];
-              if (typeof data[preference] == "string")
-              {
-                value = entities.encode(String(value))
-              }
-              that[preference].set("value", value);
-            }
-          }
+          that._updatePreferencesWidgets(data);
+          that._updateUsersWithPreferences();
           that.preferencesDialog.show();
        },
        error: function(error){
@@ -147,6 +157,48 @@ function (declare, xhr, event, dom, domConstruct, parser, query, json, entities,
         this.preferencesDialog.destroyRecursevly();
         this.preferencesDialog = null;
       }
+    },
+
+    _updatePreferencesWidgets: function(data)
+    {
+      for(var i=0; i<preferenceNames.length; i++)
+      {
+        var preference = preferenceNames[i];
+        if (this.hasOwnProperty(preference))
+        {
+          var value = data ? data[preference] : null;
+          if (typeof value == "string")
+          {
+            value = entities.encode(String(value))
+          }
+          this[preference].set("value", value);
+        }
+      }
+    },
+
+    _updateUsersWithPreferences: function()
+    {
+      var that = this;
+      xhr.get({
+        url: "rest/userpreferences",
+        sync: false,
+        handleAs: "json"
+      }).then(
+         function(users) {
+             for(var i=0; i<users.length; i++)
+             {
+               users[i].id = users[i].authenticationProvider + "/" + users[i].name;
+             }
+             var usersStore = new Memory({data: users, idProperty: "id"});
+             var usersDataStore = new ObjectStore({objectStore: usersStore});
+             if (that.users.store)
+             {
+               that.users.store.close();
+             }
+             that.users.set("store", usersDataStore);
+             that.users._refresh();
+      });
     }
+
   });
 });
