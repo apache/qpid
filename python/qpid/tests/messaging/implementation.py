@@ -17,7 +17,7 @@
 # under the License.
 #
 try:
-    from cqpid import *
+    from qpid_messaging import *
     from qpid.datatypes import uuid4
 except ImportError, e:
     print "Falling back to pure bindings, %s" % e
