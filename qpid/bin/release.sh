@@ -211,13 +211,15 @@ if [ "PYTHON" == "$PYTHON" ] ; then
 
   # create the swigged python sources
   mkdir qpid-${VER}/python-qpid_messaging-${VER}
+  mkdir qpid-${VER}/python-qpid_messaging-${VER}/examples
   cp qpid-${VER}/cpp/bindings/qpid/python/python.i \
      qpid-${VER}/cpp/bindings/qpid/python/LICENSE \
      qpid-${VER}/cpp/bindings/qpid/python/README \
      qpid-${VER}/cpp/bindings/qpid/python/ChangeLog \
      qpid-${VER}/cpp/bindings/qpid/python/extra_dist/CMakeLists.txt \
      qpid-${VER}/python-qpid_messaging-${VER}
-  # TODO: copy python examples into the directory as well
+  cp qpid-${VER}/cpp/bindings/qpid/examples/python/* \
+     qpid-${VER}/python-qpid_messaging-${VER}/examples
   pushd qpid-${VER}
   tar -czf ../artifacts/python-qpid_messaging-${VER}.tar.gz \
       python-qpid_messaging-${VER}
