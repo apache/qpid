@@ -313,7 +313,6 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
              def __init__(self, msg):
                  self.msg = msg
                  self.properties = self.msg.getProperties()
-                 msg.properties = self
 
              def __len__(self):
                  return self.properties.__len__()
