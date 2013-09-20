@@ -441,8 +441,8 @@ class BrokerManager:
                 if not args: args = {}
                 if ex.durable:    print "--durable",
                 if REPLICATE in args: print "--replicate=%s" % args[REPLICATE],
-                if MSG_SEQUENCE in args and args[MSG_SEQUENCE] == 1: print "--sequence",
-                if IVE in args and args[IVE] == 1: print "--ive",
+                if MSG_SEQUENCE in args and args[MSG_SEQUENCE]: print "--sequence",
+                if IVE in args and args[IVE]: print "--ive",
                 if ex.altExchange:
                     print "--alternate-exchange=%s" % ex.altExchange,
                 print
