@@ -265,8 +265,8 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     lnk->configure();
     attach(lnk->sender);
-    lnk->verify();
     checkClosed(ssn, lnk);
+    lnk->verify();
     QPID_LOG(debug, "Attach succeeded to " << lnk->getTarget());
 }
 
@@ -275,8 +275,8 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     lnk->configure();
     attach(lnk->receiver, lnk->capacity);
-    lnk->verify();
     checkClosed(ssn, lnk);
+    lnk->verify();
     QPID_LOG(debug, "Attach succeeded from " << lnk->getSource());
 }
 
