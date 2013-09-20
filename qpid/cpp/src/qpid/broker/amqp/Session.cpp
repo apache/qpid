@@ -607,6 +607,11 @@ void IncomingToExchange::handle(qpid::broker::Message& message)
     authorise.route(exchange, message);
     DeliverableMessage deliverable(message, 0);
     exchange->route(deliverable);
+    if (!deliverable.delivered) {
+        if (exchange->getAlternate()) {
+            exchange->getAlternate()->route(deliverable);
+        }
+    }
 }
 
 }}} // namespace qpid::broker::amqp
