@@ -45,9 +45,9 @@ wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, wrfc& wrfc*/):
         _fhdr_ptr_arr(0),
         _fhdr_aio_cb_arr(0),
         _cached_offset_dblks(0),
-        _jfsize_dblks(0),
-        _jfsize_pgs(0),
-        _num_jfiles(0),
+//        _jfsize_dblks(0),
+//        _jfsize_pgs(0),
+//        _num_jfiles(0),
         _enq_busy(false),
         _deq_busy(false),
         _abort_busy(false),
@@ -65,9 +65,9 @@ wmgr::wmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, wrfc& wrfc*/,
         _fhdr_ptr_arr(0),
         _fhdr_aio_cb_arr(0),
         _cached_offset_dblks(0),
-        _jfsize_dblks(0),
-        _jfsize_pgs(0),
-        _num_jfiles(0),
+//        _jfsize_dblks(0),
+//        _jfsize_pgs(0),
+//        _num_jfiles(0),
         _enq_busy(false),
         _deq_busy(false),
         _abort_busy(false),
@@ -94,9 +94,9 @@ wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks,
 
     initialize(cbp, wcache_pgsize_sblks, wcache_num_pages);
 
-    _jfsize_dblks = _jc->jfsize_sblks() * JRNL_SBLK_SIZE_DBLKS;
-    _jfsize_pgs = _jc->jfsize_sblks() / _cache_pgsize_sblks;
-    assert(_jc->jfsize_sblks() % JRNL_RMGR_PAGE_SIZE == 0);
+//    _jfsize_dblks = _jc->jfsize_sblks() * JRNL_SBLK_SIZE_DBLKS;
+//    _jfsize_pgs = _jc->jfsize_sblks() / _cache_pgsize_sblks;
+//    assert(_jc->jfsize_sblks() % JRNL_RMGR_PAGE_SIZE == 0);
 
     if (eo)
     {
@@ -555,7 +555,7 @@ wmgr::file_header_check(const uint64_t /*rid*/, const bool /*cont*/, const uint3
 }
 
 void
-wmgr::flush_check(iores& res, bool& cont, bool& done)
+wmgr::flush_check(iores& res, bool& /*cont*/, bool& done)
 {
     // Is page is full, flush
     if (_pg_offset_dblks >= _cache_pgsize_sblks * JRNL_SBLK_SIZE_DBLKS)
@@ -569,6 +569,7 @@ wmgr::flush_check(iores& res, bool& cont, bool& done)
             done = true;
         }
 
+/*
         // If file is full, rotate to next file
         if (_pg_cntr >= _jfsize_pgs)
         {
@@ -583,6 +584,7 @@ wmgr::flush_check(iores& res, bool& cont, bool& done)
                     done = true;
             }
         }
+*/
     }
 }
 
@@ -590,12 +592,14 @@ iores
 wmgr::flush()
 {
     iores res = write_flush();
+/*
     if (_pg_cntr >= _jfsize_pgs)
     {
         iores rfres = rotate_file();
         if (rfres != RHM_IORES_SUCCESS)
             res = rfres;
     }
+*/
     return res;
 }
 
@@ -836,12 +840,13 @@ wmgr::is_txn_synced(const std::string& xid)
 }
 
 void
-wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks, const uint16_t wcache_num_pages)
+wmgr::initialize(aio_callback* const /*cbp*/, const uint32_t /*wcache_pgsize_sblks*/, const uint16_t /*wcache_num_pages*/)
 {
+/*
     pmgr::initialize(cbp, wcache_pgsize_sblks, wcache_num_pages);
     wmgr::clean();
-    /*_num_jfiles = _jc->num_jfiles();*/ // TODO: replace for linearstore: _jc->num_jfiles()
-    if (::posix_memalign(&_fhdr_base_ptr, _sblksize, _sblksize /** _num_jfiles*/))
+    _num_jfiles = _jc->num_jfiles(); // TODO: replace for linearstore: _jc->num_jfiles()
+    if (::posix_memalign(&_fhdr_base_ptr, _sblksize, _sblksize * _num_jfiles))
     {
         wmgr::clean();
         std::ostringstream oss;
@@ -863,6 +868,7 @@ wmgr::initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks, co
     _ddtokl.clear();
     _cached_offset_dblks = 0;
     _enq_busy = false;
+*/
 }
 
 iores
@@ -988,7 +994,7 @@ void
 wmgr::write_fhdr(uint64_t rid, uint16_t fid, uint16_t /*lid*/, std::size_t fro)
 {
     file_hdr_t fhdr/*(QLS_FILE_MAGIC, QLS_JRNL_VERSION, rid, fid, lid, fro, _wrfc.owi(), true)*/;
-    /*int err =*/ ::file_hdr_init(&fhdr, QLS_FILE_MAGIC, QLS_JRNL_VERSION, 0, rid, fro, 0, 0, 0);
+    /*int err =*/ ::file_hdr_init(&fhdr, 0, rid, fro, 0, _jc->id().length(), _jc->id().c_str());
     std::memcpy(_fhdr_ptr_arr[fid], &fhdr, sizeof(fhdr));
 #ifdef RHM_CLEAN
     std::memset((char*)_fhdr_ptr_arr[fid] + sizeof(fhdr), RHM_CLEAN_CHAR, _sblksize - sizeof(fhdr));
@@ -1030,8 +1036,8 @@ wmgr::clean()
 
     if (_fhdr_aio_cb_arr)
     {
-        for (uint32_t i=0; i<_num_jfiles; i++)
-            delete _fhdr_aio_cb_arr[i];
+//        for (uint32_t i=0; i<_num_jfiles; i++)
+//            delete _fhdr_aio_cb_arr[i];
         std::free(_fhdr_aio_cb_arr);
         _fhdr_aio_cb_arr = 0;
     }

@@ -40,7 +40,6 @@
 #endif
 */
 
-
 /**
 * <b>Rule:</b> Data block size (JRNL_DBLK_SIZE) MUST be a power of 2 such that
 * <pre>
@@ -51,6 +50,7 @@
 #define JRNL_DBLK_SIZE          128         /**< Data block size in bytes (CANNOT BE LESS THAN 32!) */
 #define JRNL_SBLK_SIZE_DBLKS    32          /**< Disk softblock size in multiples of JRNL_DBLK_SIZE */
 #define JRNL_SBLK_SIZE          JRNL_SBLK_SIZE_DBLKS * JRNL_DBLK_SIZE        /**< Disk softblock size in bytes */
+#define JRNL_SBLK_SIZE_KIB      JRNL_SBLK_SIZE / 1024 /**< Disk softblock size in KiB */
 //#define JRNL_MIN_FILE_SIZE      128         ///< Min. jrnl file size in sblks (excl. file_hdr)
 //#define JRNL_MAX_FILE_SIZE      4194176     ///< Max. jrnl file size in sblks (excl. file_hdr)
 //#define JRNL_MIN_NUM_FILES      4           ///< Min. number of journal files
@@ -68,7 +68,7 @@
 //
 //#define JRNL_INFO_EXTENSION     "jinf"      ///< Extension for journal info files
 //#define JRNL_DATA_EXTENSION     "jdat"      ///< Extension for journal data files
-#define QLS_JRNL_FILE_EXTENSION "jdat"      /**< Extension for journal data files */
+#define QLS_JRNL_FILE_EXTENSION ".jrnl"     /**< Extension for journal data files */
 //#define RHM_JDAT_TXA_MAGIC      0x614d4852  ///< ("RHMa" in little endian) Magic for dtx abort hdrs
 #define QLS_TXA_MAGIC           0x61534c51  /**< ("RHMa" in little endian) Magic for dtx abort hdrs */
 //#define RHM_JDAT_TXC_MAGIC      0x634d4852  ///< ("RHMc" in little endian) Magic for dtx commit hdrs
@@ -83,6 +83,7 @@
 #define QLS_EMPTY_MAGIC         0x78534c51  /**< ("QLSx" in little endian) Magic for empty dblk */
 //#define RHM_JDAT_VERSION        0x01        ///< Version (of file layout)
 #define QLS_JRNL_VERSION        0x0002      /**< Version (of file layout) */
+#define QLS_JRNL_FHDRSIZESBLKS  0x0001      /**< Journal file header size in sblks (as defined by JRNL_SBLK_SIZE) */
 //#define RHM_CLEAN_CHAR          0xff        ///< Char used to clear empty space on disk
 #define QLS_CLEAN_CHAR          0xff        ///< Char used to clear empty space on disk
 //

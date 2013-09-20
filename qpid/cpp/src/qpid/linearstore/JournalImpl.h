@@ -19,11 +19,12 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JOURNALIMPL_H
-#define QPID_LEGACYSTORE_JOURNALIMPL_H
+#ifndef QPID_LINEARSTORE_JOURNALIMPL_H
+#define QPID_LINEARSTORE_JOURNALIMPL_H
 
 #include <set>
 #include "qpid/linearstore/jrnl/enums.h"
+#include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/jrnl/jcntl.h"
 #include "qpid/linearstore/DataTokenImpl.h"
 #include "qpid/linearstore/PreparedTransaction.h"
@@ -35,12 +36,15 @@
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/linearstore/Journal.h"
 
-namespace qpid {
+namespace qpid{
+
 namespace sys {
 class Timer;
-}}
+}
+namespace qls_jrnl {
+class EmptyFilePool;
+}
 
-namespace qpid{
 namespace linearstore{
 
 class JournalImpl;
@@ -83,20 +87,21 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     boost::intrusive_ptr<qpid::sys::TimerTask> getEventsFireEventsPtr;
     qpid::sys::Mutex _getf_lock;
     qpid::sys::Mutex _read_lock;
+    qpid::qls_jrnl::EmptyFilePool* efpp;
 
-    uint64_t lastReadRid; // rid of last read msg for loadMsgContent() - detects out-of-order read requests
-    std::vector<uint64_t> oooRidList; // list of out-of-order rids (greater than current rid) encountered during read sequence
+//    uint64_t lastReadRid; // rid of last read msg for loadMsgContent() - detects out-of-order read requests
+//    std::vector<uint64_t> oooRidList; // list of out-of-order rids (greater than current rid) encountered during read sequence
 
     bool writeActivityFlag;
     bool flushTriggeredFlag;
     boost::intrusive_ptr<qpid::sys::TimerTask> inactivityFireEventPtr;
 
     // temp local vars for loadMsgContent below
-    void* _xidp;
-    void* _datap;
-    size_t _dlen;
-    qpid::qls_jrnl::data_tok _dtok;
-    bool _external;
+//    void* _xidp;
+//    void* _datap;
+//    size_t _dlen;
+//    qpid::qls_jrnl::data_tok _dtok;
+//    bool _external;
 
     qpid::management::ManagementAgent* _agent;
     qmf::org::apache::qpid::linearstore::Journal::shared_ptr _mgmtObject;
@@ -107,7 +112,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     JournalImpl(qpid::sys::Timer& timer,
                 const std::string& journalId,
                 const std::string& journalDirectory,
-                const std::string& journalBaseFilename,
+//                const std::string& journalBaseFilename,
                 const qpid::sys::Duration getEventsTimeout,
                 const qpid::sys::Duration flushTimeout,
                 qpid::management::ManagementAgent* agent,
@@ -121,6 +126,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
                     const bool auto_expand,
                     const uint16_t ae_max_jfiles,
                     const uint32_t jfsize_sblks,*/
+                    qpid::qls_jrnl::EmptyFilePool* efp,
                     const uint16_t wcache_num_pages,
                     const uint32_t wcache_pgsize_sblks,
                     qpid::qls_jrnl::aio_callback* const cbp);
@@ -129,10 +135,10 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
                            const bool auto_expand,
                            const uint16_t ae_max_jfiles,
                            const uint32_t jfsize_sblks,*/
+                           qpid::qls_jrnl::EmptyFilePool* efp,
                            const uint16_t wcache_num_pages,
                            const uint32_t wcache_pgsize_sblks) {
-        initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
-                   this);
+        initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ efp, wcache_num_pages, wcache_pgsize_sblks, this);
     }
 
     void recover(/*const uint16_t num_jfiles,
@@ -164,7 +170,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     // Temporary fn to read and save last msg read from journal so it can be assigned
     // in chunks. To be replaced when coding to do this direct from the journal is ready.
     // Returns true if the record is extern, false if local.
-    bool loadMsgContent(uint64_t rid, std::string& data, size_t length, size_t offset = 0);
+//    bool loadMsgContent(uint64_t rid, std::string& data, size_t length, size_t offset = 0);
 
     // Overrides for write inactivity timer
     void enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
@@ -216,7 +222,8 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     void resetDeleteCallback() { deleteCallback = DeleteCallback(); }
 
   private:
-    void free_read_buffers();
+//    void free_read_buffers();
+    void createStore();
 
     inline void setGetEventTimer()
     {
@@ -242,11 +249,11 @@ class TplJournalImpl : public JournalImpl
     TplJournalImpl(qpid::sys::Timer& timer,
                    const std::string& journalId,
                    const std::string& journalDirectory,
-                   const std::string& journalBaseFilename,
+//                   const std::string& journalBaseFilename,
                    const qpid::sys::Duration getEventsTimeout,
                    const qpid::sys::Duration flushTimeout,
                    qpid::management::ManagementAgent* agent) :
-        JournalImpl(timer, journalId, journalDirectory, journalBaseFilename, getEventsTimeout, flushTimeout, agent)
+        JournalImpl(timer, journalId, journalDirectory/*, journalBaseFilename*/, getEventsTimeout, flushTimeout, agent)
     {}
 
     virtual ~TplJournalImpl() {}
@@ -263,4 +270,4 @@ class TplJournalImpl : public JournalImpl
 } // namespace msgstore
 } // namespace mrg
 
-#endif // ifndef QPID_LEGACYSTORE_JOURNALIMPL_H
+#endif // ifndef QPID_LINEARSTORE_JOURNALIMPL_H

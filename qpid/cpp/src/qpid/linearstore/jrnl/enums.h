@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_ENUMS_H
-#define QPID_LEGACYSTORE_JRNL_ENUMS_H
+#ifndef QPID_LINEARSTORE_JRNL_ENUMS_H
+#define QPID_LINEARSTORE_JRNL_ENUMS_H
 
 namespace qpid
 {
@@ -64,6 +64,7 @@ namespace qls_jrnl
         return "<iores unknown>";
     }
 
+/*
     enum _log_level
     {
         LOG_TRACE = 0,
@@ -74,9 +75,9 @@ namespace qls_jrnl
         LOG_ERROR,
         LOG_CRITICAL
     };
-    typedef _log_level log_level;
+    typedef _log_level log_level_t;
 
-    static inline const char* log_level_str(log_level ll)
+    static inline const char* log_level_str(log_level_t ll)
     {
         switch (ll)
         {
@@ -90,8 +91,9 @@ namespace qls_jrnl
         }
         return "<log level unknown>";
     }
+*/
 
 
 }}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_ENUMS_H
+#endif // ifndef QPID_LINEARSTORE_JRNL_ENUMS_H

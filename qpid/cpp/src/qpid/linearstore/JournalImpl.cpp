@@ -23,16 +23,17 @@
 
 #include "qpid/linearstore/jrnl/jerrno.h"
 #include "qpid/linearstore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/EmptyFilePool.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
-#include "qmf/org/apache/qpid/linearstore/ArgsJournalExpand.h"
+//#include "qmf/org/apache/qpid/linearstore/ArgsJournalExpand.h"
 #include "qmf/org/apache/qpid/linearstore/EventCreated.h"
 #include "qmf/org/apache/qpid/linearstore/EventEnqThresholdExceeded.h"
 #include "qmf/org/apache/qpid/linearstore/EventFull.h"
 #include "qmf/org/apache/qpid/linearstore/EventRecovered.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Timer.h"
-#include "qpid/linearstore/Log.h"
+#include "qpid/linearstore/QpidLog.h"
 #include "qpid/linearstore/StoreException.h"
 
 using namespace qpid::qls_jrnl;
@@ -53,22 +54,23 @@ void GetEventsFireEvent::fire() { qpid::sys::Mutex::ScopedLock sl(_gefe_lock); i
 JournalImpl::JournalImpl(qpid::sys::Timer& timer_,
                          const std::string& journalId,
                          const std::string& journalDirectory,
-                         const std::string& journalBaseFilename,
+//                         const std::string& journalBaseFilename,
                          const qpid::sys::Duration getEventsTimeout,
                          const qpid::sys::Duration flushTimeout,
                          qpid::management::ManagementAgent* a,
                          DeleteCallback onDelete):
-                         jcntl(journalId, journalDirectory, journalBaseFilename),
+                         jcntl(journalId, journalDirectory/*, journalBaseFilename*/),
                          timer(timer_),
                          getEventsTimerSetFlag(false),
-                         lastReadRid(0),
+                         efpp(0),
+//                         lastReadRid(0),
                          writeActivityFlag(false),
                          flushTriggeredFlag(true),
-                         _xidp(0),
-                         _datap(0),
-                         _dlen(0),
-                         _dtok(),
-                         _external(false),
+//                         _xidp(0),
+//                         _datap(0),
+//                         _dlen(0),
+//                         _dtok(),
+//                         _external(false),
                          deleteCallback(onDelete)
 {
     getEventsFireEventsPtr = new GetEventsFireEvent(this, getEventsTimeout);
@@ -82,7 +84,7 @@ JournalImpl::JournalImpl(qpid::sys::Timer& timer_,
 
     QLS_LOG2(notice, _jid, "Created");
     std::ostringstream oss;
-    oss << "Journal directory = \"" << journalDirectory << "\"; Base file name = \"" << journalBaseFilename << "\"";
+    oss << "Journal directory = \"" << journalDirectory << "\"";
     QLS_LOG2(debug, _jid, oss.str());
 }
 
@@ -95,7 +97,7 @@ JournalImpl::~JournalImpl()
 	}
     getEventsFireEventsPtr->cancel();
     inactivityFireEventPtr->cancel();
-    free_read_buffers();
+//    free_read_buffers();
 
     if (_mgmtObject.get() != 0) {
         _mgmtObject->resourceDestroy();
@@ -116,14 +118,14 @@ JournalImpl::initManagement(qpid::management::ManagementAgent* a)
 
         _mgmtObject->set_name(_jid);
         _mgmtObject->set_directory(_jdir.dirname());
-        _mgmtObject->set_baseFileName(_base_filename);
+//        _mgmtObject->set_baseFileName(_base_filename);
         _mgmtObject->set_readPageSize(JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE);
         _mgmtObject->set_readPages(JRNL_RMGR_PAGES);
 
         // The following will be set on initialize(), but being properties, these must be set to 0 in the meantime
-        _mgmtObject->set_initialFileCount(0);
-        _mgmtObject->set_dataFileSize(0);
-        _mgmtObject->set_currentFileCount(0);
+        //_mgmtObject->set_initialFileCount(0);
+        //_mgmtObject->set_dataFileSize(0);
+        //_mgmtObject->set_currentFileCount(0);
         _mgmtObject->set_writePageSize(0);
         _mgmtObject->set_writePages(0);
 
@@ -133,22 +135,23 @@ JournalImpl::initManagement(qpid::management::ManagementAgent* a)
 
 
 void
-JournalImpl::initialize(/*const uint16_t num_jfiles,
-                        const bool auto_expand,
-                        const uint16_t ae_max_jfiles,
-                        const uint32_t jfsize_sblks,*/
+JournalImpl::initialize(qpid::qls_jrnl::EmptyFilePool* efpp_,
                         const uint16_t wcache_num_pages,
                         const uint32_t wcache_pgsize_sblks,
                         qpid::qls_jrnl::aio_callback* const cbp)
 {
-    std::ostringstream oss;
-//    oss << "Initialize; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
-    oss << "Initialize;";
-    oss << " wcache_pgsize_sblks=" << wcache_pgsize_sblks;
-    oss << " wcache_num_pages=" << wcache_num_pages;
-    QLS_LOG2(debug, _jid, oss.str());
-    jcntl::initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks, cbp);
-    QLS_LOG2(debug, _jid, "Initialization complete");
+    efpp = efpp_;
+//    efpp->createJournal(_jdir);
+//    QLS_LOG2(notice, _jid, "Initialized");
+//    std::ostringstream oss;
+////    oss << "Initialize; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
+//    oss << "Initialize; efpPartitionNumber=" << efpp_->getPartitionNumber();
+//    oss << " efpFileSizeKb=" << efpp_->fileSizeKib();
+//    oss << " wcache_pgsize_sblks=" << wcache_pgsize_sblks;
+//    oss << " wcache_num_pages=" << wcache_num_pages;
+//    QLS_LOG2(debug, _jid, oss.str());
+    jcntl::initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ efpp, wcache_num_pages, wcache_pgsize_sblks, cbp);
+//    QLS_LOG2(debug, _jid, "Initialization complete");
     // TODO: replace for linearstore: _lpmgr
 /*
     if (_mgmtObject.get() != 0)
@@ -261,6 +264,7 @@ JournalImpl::recover_complete()
 //#define AIO_SLEEP_TIME_US   10 // 0.01 ms
 // Return true if content is recovered from store; false if content is external and must be recovered from an external store.
 // Throw exception for all errors.
+/*
 bool
 JournalImpl::loadMsgContent(uint64_t rid, std::string& data, size_t length, size_t offset)
 {
@@ -351,6 +355,7 @@ JournalImpl::loadMsgContent(uint64_t rid, std::string& data, size_t length, size
     }
     return true;
 }
+*/
 
 void
 JournalImpl::enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
@@ -574,6 +579,7 @@ void
 JournalImpl::rd_aio_cb(std::vector<uint16_t>& /*pil*/)
 {}
 
+/*
 void
 JournalImpl::free_read_buffers()
 {
@@ -585,6 +591,12 @@ JournalImpl::free_read_buffers()
         ::free(_datap);
         _datap = 0;
     }
+}
+*/
+
+void
+JournalImpl::createStore() {
+
 }
 
 void
@@ -624,12 +636,13 @@ JournalImpl::handleIoResult(const iores r)
     }
 }
 
-qpid::management::Manageable::status_t JournalImpl::ManagementMethod (uint32_t methodId,
+qpid::management::Manageable::status_t JournalImpl::ManagementMethod (uint32_t /*methodId*/,
                                                                       qpid::management::Args& /*args*/,
                                                                       std::string& /*text*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
+/*
     switch (methodId)
     {
     case _qmf::Journal::METHOD_EXPAND :
@@ -640,6 +653,7 @@ qpid::management::Manageable::status_t JournalImpl::ManagementMethod (uint32_t m
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
     }
+*/
 
     return status;
 }

@@ -29,9 +29,11 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <qpid/linearstore/jrnl/EmptyFilePool.h>
 //#include "qpid/linearstore/jrnl/file_hdr.h"
 #include "qpid/linearstore/jrnl/jerrno.h"
 //#include "qpid/linearstore/jrnl/jinf.h"
+#include "qpid/linearstore/jrnl/JournalFileController.h"
 #include <limits>
 #include <sstream>
 #include <unistd.h>
@@ -62,15 +64,16 @@ bool jcntl::init_statics()
 
 // Functions
 
-jcntl::jcntl(const std::string& jid, const std::string& jdir, const std::string& base_filename):
+jcntl::jcntl(const std::string& jid, const std::string& jdir/*, const std::string& base_filename*/):
     _jid(jid),
-    _jdir(jdir, base_filename),
-    _base_filename(base_filename),
+    _jdir(jdir/*, base_filename*/),
+//    _base_filename(base_filename),
     _init_flag(false),
     _stop_flag(false),
     _readonly_flag(false),
-    _autostop(true),
-    _jfsize_sblks(0),
+//    _autostop(true),
+    _jfcp(0),
+//    _jfsize_sblks(0),
 //    _lpmgr(),
     _emap(),
     _tmap(),
@@ -87,11 +90,16 @@ jcntl::~jcntl()
         try { stop(true); }
         catch (const jexception& e) { std::cerr << e << std::endl; }
 //    _lpmgr.finalize();
+    if (_jfcp) {
+        _jfcp->finalize();
+        delete _jfcp;
+        _jfcp = 0;
+    }
 }
 
 void
 jcntl::initialize(/*const uint16_t num_jfiles, const bool ae, const uint16_t ae_max_jfiles,
-        const uint32_t jfsize_sblks,*/ const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
+        const uint32_t jfsize_sblks,*/ EmptyFilePool* efpp, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
         aio_callback* const cbp)
 {
     _init_flag = false;
@@ -100,6 +108,12 @@ jcntl::initialize(/*const uint16_t num_jfiles, const bool ae, const uint16_t ae_
 
     _emap.clear();
     _tmap.clear();
+
+    if (_jfcp) {
+        _jfcp->finalize();
+        delete _jfcp;
+        _jfcp = 0;
+    }
 
 //    _lpmgr.finalize();
 
@@ -117,6 +131,8 @@ jcntl::initialize(/*const uint16_t num_jfiles, const bool ae, const uint16_t ae_
     _jdir.clear_dir();
 //    _lpmgr.initialize(num_jfiles, ae, ae_max_jfiles, this, &new_fcntl);
 
+    _jfcp = new JournalFileController(_jdir.dirname(), efpp);
+    _jfcp->pullEmptyFileFromEfp(1, 4096, _jid);
 //    _wrfc.initialize(_jfsize_sblks);
 //    _rrfc.initialize();
 //    _rrfc.set_findex(0);
@@ -159,7 +175,7 @@ jcntl::recover(/*const uint16_t num_jfiles, const bool ae, const uint16_t ae_max
     highest_rid = _rcvdat._h_rid;
     if (_rcvdat._jfull)
         throw jexception(jerrno::JERR_JCNTL_RECOVERJFULL, "jcntl", "recover");
-    this->log(LOG_DEBUG, _rcvdat.to_log(_jid));
+    this->log(LOG_DEBUG, _jid, _rcvdat.to_log(_jid));
 
 //    _lpmgr.recover(_rcvdat, this, &new_fcntl);
 
@@ -192,6 +208,7 @@ void
 jcntl::delete_jrnl_files()
 {
     stop(true); // wait for AIO to complete
+    _jfcp->purgeFilesToEfp();
     _jdir.delete_dir();
 }
 
@@ -407,20 +424,22 @@ jcntl::flush(const bool block_till_aio_cmpl)
     return res;
 }
 
+/*
 void
-jcntl::log(log_level ll, const std::string& log_stmt) const
+jcntl::log(log_level_t ll, const std::string& log_stmt) const
 {
     log(ll, log_stmt.c_str());
 }
 
 void
-jcntl::log(log_level ll, const char* const log_stmt) const
+jcntl::log(log_level_t ll, const char* const log_stmt) const
 {
     if (ll > LOG_INFO)
     {
         std::cout << log_level_str(ll) << ": Journal \"" << _jid << "\": " << log_stmt << std::endl;
     }
 }
+*/
 
 /*
 void
@@ -523,7 +542,7 @@ jcntl::handle_aio_wait(const iores res, iores& resout, const data_tok* dtp)
             {
                 std::ostringstream oss;
                 oss << "get_events() returned JERR_JCNTL_AIOCMPLWAIT; wmgr_status: " << _wmgr.status_str();
-                this->log(LOG_CRITICAL, oss.str());
+                this->log(LOG_CRITICAL, _jid, oss.str());
                 throw jexception(jerrno::JERR_JCNTL_AIOCMPLWAIT, "jcntl", "handle_aio_wait");
             }
         }
@@ -877,8 +896,8 @@ jcntl::jfile_cycle(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& r
     if (!ifsp->is_open())
     {
         std::ostringstream oss;
-        oss << _jdir.dirname() << "/" << _base_filename << ".";
-        oss << std::hex << std::setfill('0') << std::setw(4) << fid << "." << QLS_JRNL_FILE_EXTENSION;
+        oss << _jdir.dirname() << "/" /*<< _base_filename*/ << "."; // TODO - linear journal name
+        oss << std::hex << std::setfill('0') << std::setw(4) << fid << QLS_JRNL_FILE_EXTENSION;
         ifsp->clear(); // clear eof flag, req'd for older versions of c++
         ifsp->open(oss.str().c_str(), std::ios_base::in | std::ios_base::binary);
         if (!ifsp->good())
@@ -946,12 +965,12 @@ jcntl::check_journal_alignment(const uint16_t fid, std::streampos& file_pos, rcv
             oss << std::hex << "Bad record alignment found at fid=0x" << fid;
             oss << " offs=0x" << file_pos << " (likely journal overwrite boundary); " << std::dec;
             oss << (JRNL_SBLK_SIZE_DBLKS - (sblk_offs/JRNL_DBLK_SIZE)) << " filler record(s) required.";
-            this->log(LOG_WARN, oss.str());
+            this->log(LOG_WARN, _jid, oss.str());
         }
         const uint32_t xmagic = QLS_EMPTY_MAGIC;
         std::ostringstream oss;
-        oss << _jdir.dirname() << "/" << _base_filename << ".";
-        oss << std::hex << std::setfill('0') << std::setw(4) << fid << "." << QLS_JRNL_FILE_EXTENSION;
+        oss << _jdir.dirname() << "/" /*<< _base_filename*/ << "."; // TODO linear journal name
+        oss << std::hex << std::setfill('0') << std::setw(4) << fid << QLS_JRNL_FILE_EXTENSION;
         std::ofstream ofsp(oss.str().c_str(),
                 std::ios_base::in | std::ios_base::out | std::ios_base::binary);
         if (!ofsp.good())
@@ -971,7 +990,7 @@ jcntl::check_journal_alignment(const uint16_t fid, std::streampos& file_pos, rcv
             assert(!ofsp.fail());
             std::ostringstream oss;
             oss << std::hex << "Recover phase write: Wrote filler record: fid=0x" << fid << " offs=0x" << file_pos;
-            this->log(LOG_NOTICE, oss.str());
+            this->log(LOG_NOTICE, _jid, oss.str());
             file_pos = ofsp.tellp();
         }
         ofsp.close();
@@ -979,7 +998,7 @@ jcntl::check_journal_alignment(const uint16_t fid, std::streampos& file_pos, rcv
         rd._lfid = fid;
 //        if (!rd._frot)
 //            rd._ffid = (fid + 1) % rd._njf;
-        this->log(LOG_INFO, "Bad record alignment fixed.");
+        this->log(LOG_INFO, _jid, "Bad record alignment fixed.");
     }
     rd._eo = file_pos;
 }

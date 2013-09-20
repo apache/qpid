@@ -31,39 +31,39 @@ std::map<uint32_t, const char*>::iterator jerrno::_err_map_itr;
 bool jerrno::_initialized = jerrno::__init();
 
 // generic errors
-const uint32_t jerrno::JERR__MALLOC            = 0x0100;
-const uint32_t jerrno::JERR__UNDERFLOW         = 0x0101;
-const uint32_t jerrno::JERR__NINIT             = 0x0102;
-const uint32_t jerrno::JERR__AIO               = 0x0103;
-const uint32_t jerrno::JERR__FILEIO            = 0x0104;
-const uint32_t jerrno::JERR__RTCLOCK           = 0x0105;
-const uint32_t jerrno::JERR__PTHREAD           = 0x0106;
-const uint32_t jerrno::JERR__TIMEOUT           = 0x0107;
-const uint32_t jerrno::JERR__UNEXPRESPONSE     = 0x0108;
-const uint32_t jerrno::JERR__RECNFOUND         = 0x0109;
-const uint32_t jerrno::JERR__NOTIMPL           = 0x010a;
+const uint32_t jerrno::JERR__MALLOC              = 0x0100;
+const uint32_t jerrno::JERR__UNDERFLOW           = 0x0101;
+const uint32_t jerrno::JERR__NINIT               = 0x0102;
+const uint32_t jerrno::JERR__AIO                 = 0x0103;
+const uint32_t jerrno::JERR__FILEIO              = 0x0104;
+const uint32_t jerrno::JERR__RTCLOCK             = 0x0105;
+const uint32_t jerrno::JERR__PTHREAD             = 0x0106;
+const uint32_t jerrno::JERR__TIMEOUT             = 0x0107;
+const uint32_t jerrno::JERR__UNEXPRESPONSE       = 0x0108;
+const uint32_t jerrno::JERR__RECNFOUND           = 0x0109;
+const uint32_t jerrno::JERR__NOTIMPL             = 0x010a;
 
 // class jcntl
-const uint32_t jerrno::JERR_JCNTL_STOPPED      = 0x0200;
-const uint32_t jerrno::JERR_JCNTL_READONLY     = 0x0201;
-const uint32_t jerrno::JERR_JCNTL_AIOCMPLWAIT  = 0x0202;
-const uint32_t jerrno::JERR_JCNTL_UNKNOWNMAGIC = 0x0203;
-const uint32_t jerrno::JERR_JCNTL_NOTRECOVERED = 0x0204;
-const uint32_t jerrno::JERR_JCNTL_RECOVERJFULL = 0x0205;
-const uint32_t jerrno::JERR_JCNTL_OWIMISMATCH  = 0x0206;
+const uint32_t jerrno::JERR_JCNTL_STOPPED        = 0x0200;
+const uint32_t jerrno::JERR_JCNTL_READONLY       = 0x0201;
+const uint32_t jerrno::JERR_JCNTL_AIOCMPLWAIT    = 0x0202;
+const uint32_t jerrno::JERR_JCNTL_UNKNOWNMAGIC   = 0x0203;
+const uint32_t jerrno::JERR_JCNTL_NOTRECOVERED   = 0x0204;
+const uint32_t jerrno::JERR_JCNTL_RECOVERJFULL   = 0x0205;
+const uint32_t jerrno::JERR_JCNTL_OWIMISMATCH    = 0x0206;
 
 // class jdir
-const uint32_t jerrno::JERR_JDIR_NOTDIR        = 0x0300;
-const uint32_t jerrno::JERR_JDIR_MKDIR         = 0x0301;
-const uint32_t jerrno::JERR_JDIR_OPENDIR       = 0x0302;
-const uint32_t jerrno::JERR_JDIR_READDIR       = 0x0303;
-const uint32_t jerrno::JERR_JDIR_CLOSEDIR      = 0x0304;
-const uint32_t jerrno::JERR_JDIR_RMDIR         = 0x0305;
-const uint32_t jerrno::JERR_JDIR_NOSUCHFILE    = 0x0306;
-const uint32_t jerrno::JERR_JDIR_FMOVE         = 0x0307;
-const uint32_t jerrno::JERR_JDIR_STAT          = 0x0308;
-const uint32_t jerrno::JERR_JDIR_UNLINK        = 0x0309;
-const uint32_t jerrno::JERR_JDIR_BADFTYPE      = 0x030a;
+const uint32_t jerrno::JERR_JDIR_NOTDIR          = 0x0300;
+const uint32_t jerrno::JERR_JDIR_MKDIR           = 0x0301;
+const uint32_t jerrno::JERR_JDIR_OPENDIR         = 0x0302;
+const uint32_t jerrno::JERR_JDIR_READDIR         = 0x0303;
+const uint32_t jerrno::JERR_JDIR_CLOSEDIR        = 0x0304;
+const uint32_t jerrno::JERR_JDIR_RMDIR           = 0x0305;
+const uint32_t jerrno::JERR_JDIR_NOSUCHFILE      = 0x0306;
+const uint32_t jerrno::JERR_JDIR_FMOVE           = 0x0307;
+const uint32_t jerrno::JERR_JDIR_STAT            = 0x0308;
+const uint32_t jerrno::JERR_JDIR_UNLINK          = 0x0309;
+const uint32_t jerrno::JERR_JDIR_BADFTYPE        = 0x030a;
 
 // class fcntl
 //const uint32_t jerrno::JERR_FCNTL_OPENWR       = 0x0400;
@@ -82,31 +82,31 @@ const uint32_t jerrno::JERR_JDIR_BADFTYPE      = 0x030a;
 //const uint32_t jerrno::JERR_RRFC_OPENRD        = 0x0600;
 
 // class jrec, enq_rec, deq_rec, txn_rec
-const uint32_t jerrno::JERR_JREC_BADRECHDR     = 0x0700;
-const uint32_t jerrno::JERR_JREC_BADRECTAIL    = 0x0701;
+const uint32_t jerrno::JERR_JREC_BADRECHDR       = 0x0700;
+const uint32_t jerrno::JERR_JREC_BADRECTAIL      = 0x0701;
 
 // class wmgr
-const uint32_t jerrno::JERR_WMGR_BADPGSTATE    = 0x0801;
-const uint32_t jerrno::JERR_WMGR_BADDTOKSTATE  = 0x0802;
-const uint32_t jerrno::JERR_WMGR_ENQDISCONT    = 0x0803;
-const uint32_t jerrno::JERR_WMGR_DEQDISCONT    = 0x0804;
-const uint32_t jerrno::JERR_WMGR_DEQRIDNOTENQ  = 0x0805;
+const uint32_t jerrno::JERR_WMGR_BADPGSTATE      = 0x0801;
+const uint32_t jerrno::JERR_WMGR_BADDTOKSTATE    = 0x0802;
+const uint32_t jerrno::JERR_WMGR_ENQDISCONT      = 0x0803;
+const uint32_t jerrno::JERR_WMGR_DEQDISCONT      = 0x0804;
+const uint32_t jerrno::JERR_WMGR_DEQRIDNOTENQ    = 0x0805;
 
 // class rmgr
-const uint32_t jerrno::JERR_RMGR_UNKNOWNMAGIC  = 0x0900;
-const uint32_t jerrno::JERR_RMGR_RIDMISMATCH   = 0x0901;
+const uint32_t jerrno::JERR_RMGR_UNKNOWNMAGIC    = 0x0900;
+const uint32_t jerrno::JERR_RMGR_RIDMISMATCH     = 0x0901;
 //const uint32_t jerrno::JERR_RMGR_FIDMISMATCH   = 0x0902;
-const uint32_t jerrno::JERR_RMGR_ENQSTATE      = 0x0903;
-const uint32_t jerrno::JERR_RMGR_BADRECTYPE    = 0x0904;
+const uint32_t jerrno::JERR_RMGR_ENQSTATE        = 0x0903;
+const uint32_t jerrno::JERR_RMGR_BADRECTYPE      = 0x0904;
 
 // class data_tok
-const uint32_t jerrno::JERR_DTOK_ILLEGALSTATE  = 0x0a00;
+const uint32_t jerrno::JERR_DTOK_ILLEGALSTATE    = 0x0a00;
 // const uint32_t jerrno::JERR_DTOK_RIDNOTSET     = 0x0a01;
 
 // class enq_map, txn_map
-const uint32_t jerrno::JERR_MAP_DUPLICATE      = 0x0b00;
-const uint32_t jerrno::JERR_MAP_NOTFOUND       = 0x0b01;
-const uint32_t jerrno::JERR_MAP_LOCKED         = 0x0b02;
+const uint32_t jerrno::JERR_MAP_DUPLICATE        = 0x0b00;
+const uint32_t jerrno::JERR_MAP_NOTFOUND         = 0x0b01;
+const uint32_t jerrno::JERR_MAP_LOCKED           = 0x0b02;
 
 // class jinf
 //const uint32_t jerrno::JERR_JINF_CVALIDFAIL    = 0x0c00;
@@ -120,6 +120,13 @@ const uint32_t jerrno::JERR_MAP_LOCKED         = 0x0b02;
 //const uint32_t jerrno::JERR_JINF_BADFILESIZE   = 0x0c08;
 //const uint32_t jerrno::JERR_JINF_OWIBAD        = 0x0c09;
 //const uint32_t jerrno::JERR_JINF_ZEROLENFILE   = 0x0c0a;
+
+// EFP errors
+const uint32_t jerrno::JERR_EFP_BADPARTITIONNAME = 0x0d01;
+const uint32_t jerrno::JERR_EFP_BADPARTITIONDIR  = 0x0d02;
+const uint32_t jerrno::JERR_EFP_BADEFPDIRNAME    = 0x0d03;
+const uint32_t jerrno::JERR_EFP_NOEFP            = 0x0d04;
+const uint32_t jerrno::JERR_EFP_EMPTY        = 0x0d05;
 
 // Negative returns for some functions
 const int32_t jerrno::AIO_TIMEOUT               = -1;
@@ -221,6 +228,13 @@ jerrno::__init()
 //    _err_map[JERR_JINF_BADFILESIZE] = "JERR_JINF_BADFILESIZE: Journal data file is of incorrect or unexpected size";
 //    _err_map[JERR_JINF_OWIBAD] = "JERR_JINF_OWIBAD: Journal data files have inconsistent OWI flags; >1 transition found in non-auto-expand or min-size journal";
 //    _err_map[JERR_JINF_ZEROLENFILE] = "JERR_JINF_ZEROLENFILE: Journal info file zero length";
+
+    // EFP errors
+    _err_map[JERR_EFP_BADPARTITIONNAME] = "JERR_EFP_BADPARTITIONNAME: Invalid partition name (must be \'pNNN\' where NNN is a non-zero number)";
+    _err_map[JERR_EFP_BADEFPDIRNAME] = "JERR_EFP_BADEFPDIRNAME: Bad Empty File Pool directory name (must be \'NNNk\', where NNN is a number which is a multiple of 4)";
+    _err_map[JERR_EFP_BADPARTITIONDIR] = "JERR_EFP_BADPARTITIONDIR: Invalid partition directory";
+    _err_map[JERR_EFP_NOEFP] = "JERR_EFP_NOEFP: No Empty File Pool found for given partition and empty file size";
+    _err_map[JERR_EFP_EMPTY] = "JERR_EFP_EMPTY: Empty File Pool is empty";
 
     //_err_map[] = "";
 

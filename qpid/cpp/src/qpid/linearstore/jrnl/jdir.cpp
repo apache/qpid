@@ -37,9 +37,9 @@ namespace qpid
 namespace qls_jrnl
 {
 
-jdir::jdir(const std::string& dirname, const std::string& _base_filename):
-        _dirname(dirname),
-        _base_filename(_base_filename)
+jdir::jdir(const std::string& dirname/*, const std::string& _base_filename*/):
+        _dirname(dirname)/*,
+        _base_filename(_base_filename)*/
 {}
 
 jdir::~jdir()
@@ -88,21 +88,22 @@ jdir::create_dir(const std::string& dirname)
 void
 jdir::clear_dir(const bool create_flag)
 {
-    clear_dir(_dirname, _base_filename, create_flag);
+    clear_dir(_dirname/*, _base_filename*/, create_flag);
 }
 
 void
-jdir::clear_dir(const char* dirname, const char* base_filename, const bool create_flag)
+jdir::clear_dir(const char* dirname/*, const char* base_filename*/, const bool create_flag)
 {
-    clear_dir(std::string(dirname), std::string(base_filename), create_flag);
+    clear_dir(std::string(dirname)/*, std::string(base_filename)*/, create_flag);
 }
 
 
 void
-jdir::clear_dir(const std::string& dirname, const std::string&
+jdir::clear_dir(const std::string& dirname/*, const std::string&
 #ifndef RHM_JOWRITE
         base_filename
 #endif
+*/
         , const bool create_flag)
 {
     DIR* dir = ::opendir(dirname.c_str());
@@ -117,7 +118,7 @@ jdir::clear_dir(const std::string& dirname, const std::string&
         oss << "dir=\"" << dirname << "\"" << FORMAT_SYSERR(errno);
         throw jexception(jerrno::JERR_JDIR_OPENDIR, oss.str(), "jdir", "clear_dir");
     }
-#ifndef RHM_JOWRITE
+//#ifndef RHM_JOWRITE
     struct dirent* entry;
     bool found = false;
     std::string bak_dir;
@@ -126,13 +127,13 @@ jdir::clear_dir(const std::string& dirname, const std::string&
         // Ignore . and ..
         if (std::strcmp(entry->d_name, ".") != 0 && std::strcmp(entry->d_name, "..") != 0)
         {
-            if (std::strlen(entry->d_name) > base_filename.size())
+            if (std::strlen(entry->d_name) >= 3) // 'bak'
             {
-                if (std::strncmp(entry->d_name, base_filename.c_str(), base_filename.size()) == 0)
+                if (std::strncmp(entry->d_name, "bak", 3) == 0)
                 {
                     if (!found)
                     {
-                        bak_dir = create_bak_dir(dirname, base_filename);
+                        bak_dir = create_bak_dir(dirname/*, base_filename*/);
                         found = true;
                     }
                     std::ostringstream oldname;
@@ -154,16 +155,16 @@ jdir::clear_dir(const std::string& dirname, const std::string&
 // FIXME: Find out why this fails with false alarms/errors from time to time...
 // While commented out, there is no error capture from reading dir entries.
 //    check_err(errno, dir, dirname, "clear_dir");
-#endif
+//#endif
     close_dir(dir, dirname, "clear_dir");
 }
 
 // === push_down ===
 
 std::string
-jdir::push_down(const std::string& dirname, const std::string& target_dir, const std::string& bak_dir_base)
+jdir::push_down(const std::string& dirname, const std::string& target_dir/*, const std::string& bak_dir_base*/)
 {
-    std::string bak_dir_name = create_bak_dir(dirname, bak_dir_base);
+    std::string bak_dir_name = create_bak_dir(dirname/*, bak_dir_base*/);
 
     DIR* dir = ::opendir(dirname.c_str());
     if (!dir)
@@ -202,18 +203,18 @@ jdir::push_down(const std::string& dirname, const std::string& target_dir, const
 void
 jdir::verify_dir()
 {
-    verify_dir(_dirname, _base_filename);
+    verify_dir(_dirname/*, _base_filename*/);
 }
 
 void
-jdir::verify_dir(const char* dirname, const char* base_filename)
+jdir::verify_dir(const char* dirname/*, const char* base_filename*/)
 {
-    verify_dir(std::string(dirname), std::string(base_filename));
+    verify_dir(std::string(dirname)/*, std::string(base_filename)*/);
 }
 
 
 void
-jdir::verify_dir(const std::string& dirname, const std::string& /*base_filename*/)
+jdir::verify_dir(const std::string& dirname/*, const std::string& base_filename*/)
 {
     if (!is_dir(dirname))
     {
@@ -323,7 +324,7 @@ jdir::delete_dir(const std::string& dirname, bool children_only)
 
 
 std::string
-jdir::create_bak_dir(const std::string& dirname, const std::string& base_filename)
+jdir::create_bak_dir(const std::string& dirname)
 {
     DIR* dir = ::opendir(dirname.c_str());
     long dir_num = 0L;
@@ -339,13 +340,11 @@ jdir::create_bak_dir(const std::string& dirname, const std::string& base_filenam
         // Ignore . and ..
         if (std::strcmp(entry->d_name, ".") != 0 && std::strcmp(entry->d_name, "..") != 0)
         {
-            if (std::strlen(entry->d_name) == base_filename.size() + 10) // Format: basename.bak.XXXX
+            if (std::strlen(entry->d_name) == 9) // Format: _bak.XXXX
             {
-                std::ostringstream oss;
-                oss << "_" << base_filename << ".bak.";
-                if (std::strncmp(entry->d_name, oss.str().c_str(), base_filename.size() + 6) == 0)
+                if (std::strncmp(entry->d_name, "_bak.", 5) == 0)
                 {
-                    long this_dir_num = std::strtol(entry->d_name + base_filename.size() + 6, 0, 16);
+                    long this_dir_num = std::strtol(entry->d_name + 5, 0, 16);
                     if (this_dir_num > dir_num)
                         dir_num = this_dir_num;
                 }
@@ -358,8 +357,7 @@ jdir::create_bak_dir(const std::string& dirname, const std::string& base_filenam
     close_dir(dir, dirname, "create_bak_dir");
 
     std::ostringstream dn;
-    dn << dirname << "/_" << base_filename << ".bak." << std::hex << std::setw(4) <<
-            std::setfill('0') << ++dir_num;
+    dn << dirname << "/_bak." << std::hex << std::setw(4) << std::setfill('0') << ++dir_num;
     if (::mkdir(dn.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH))
     {
         std::ostringstream oss;
@@ -408,6 +406,32 @@ bool
 jdir::exists(const std::string& name)
 {
     return exists(name.c_str());
+}
+
+void
+jdir::read_dir(const std::string& name, std::vector<std::string>& dir_list, const bool incl_dirs, const bool incl_files, const bool incl_links) {
+    struct stat s;
+    if (is_dir(name)) {
+        DIR* dir = ::opendir(name.c_str());
+        if (dir != 0) {
+            struct dirent* entry;
+            while ((entry = ::readdir(dir)) != 0) {
+                if (std::strcmp(entry->d_name, ".") != 0 && std::strcmp(entry->d_name, "..") != 0) { // Ignore . and ..
+                    std::string full_name(name + "/" + entry->d_name);
+                    if (::stat(full_name.c_str(), &s))
+                    {
+                        ::closedir(dir);
+                        std::ostringstream oss;
+                        oss << "stat: file=\"" << full_name << "\"" << FORMAT_SYSERR(errno);
+                        throw jexception(jerrno::JERR_JDIR_STAT, oss.str(), "jdir", "delete_dir");
+                    }
+                    if ((S_ISREG(s.st_mode) && incl_files) || (S_ISDIR(s.st_mode) && incl_dirs) || (S_ISLNK(s.st_mode) && incl_links))
+                        dir_list.push_back(entry->d_name);
+                }
+            }
+        }
+        close_dir(dir, name, "read_dir");
+    }
 }
 
 void

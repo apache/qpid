@@ -140,6 +140,13 @@ namespace qls_jrnl
 //        static const uint32_t JERR_JINF_OWIBAD;        ///< OWI inconsistent (>1 transition in non-ae journal)
 //        static const uint32_t JERR_JINF_ZEROLENFILE;   ///< Journal info file is zero length (empty).
 
+        // EFP errors
+        static const uint32_t JERR_EFP_BADPARTITIONNAME;  ///< Partition name invalid or of value 0
+        static const uint32_t JERR_EFP_BADEFPDIRNAME;     ///< Empty File Pool directory name invalid
+        static const uint32_t JERR_EFP_BADPARTITIONDIR;   ///< Invalid partition directory
+        static const uint32_t JERR_EFP_NOEFP;             ///< No EFP found for given partition and file size
+        static const uint32_t JERR_EFP_EMPTY;             ///< EFP empty
+
         // Negative returns for some functions
         static const int32_t AIO_TIMEOUT;               ///< Timeout waiting for AIO return
         static const int32_t LOCK_TAKEN;                ///< Attempted to take lock, but it was taken by another thread

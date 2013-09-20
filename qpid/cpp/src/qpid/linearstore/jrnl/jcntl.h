@@ -31,6 +31,7 @@ namespace qls_jrnl
 
 #include <cstddef>
 #include <deque>
+#include <qpid/linearstore/jrnl/JournalLog.h>
 #include "qpid/linearstore/jrnl/jdir.h"
 //#include "qpid/linearstore/jrnl/fcntl.h"
 //#include "qpid/linearstore/jrnl/lpmgr.h"
@@ -45,6 +46,8 @@ namespace qpid
 {
 namespace qls_jrnl
 {
+class EmptyFilePool;
+class JournalFileController;
 
     /**
     * \brief Access and control interface for the journal. This is the top-level class for the
@@ -56,7 +59,7 @@ namespace qls_jrnl
     * which is used per data block written to the journal, and is used to track its status through
     * the AIO enqueue, read and dequeue process.
     */
-    class jcntl
+    class jcntl : public JournalLog
     {
     protected:
         /**
@@ -85,7 +88,7 @@ namespace qls_jrnl
         * that will be written to disk. No file separator characters should be included here, but
         * all other legal filename characters are valid.
         */
-        std::string _base_filename;
+//        std::string _base_filename;
 
         /**
         * \brief Initialized flag
@@ -121,10 +124,11 @@ namespace qls_jrnl
         *     marker. If not set, then attempts to write will throw exceptions until the journal
         *     file low water marker moves to the next journal file.
         */
-        bool _autostop;             ///< Autostop flag - stops journal when overrun occurs
+        //bool _autostop;             ///< Autostop flag - stops journal when overrun occurs
 
         // Journal control structures
-        uint32_t _jfsize_sblks;    ///< Journal file size in sblks
+        JournalFileController* _jfcp;///< Journal File Controller
+        //uint32_t _jfsize_sblks;    ///< Journal file size in sblks
         //lpmgr _lpmgr;               ///< LFID-PFID manager tracks inserted journal files
         enq_map _emap;              ///< Enqueue map for low water mark management
         txn_map _tmap;              ///< Transaction map open transactions
@@ -148,7 +152,7 @@ namespace qls_jrnl
         * \param jdir The directory which will contain the journal files.
         * \param base_filename The string which will be used to start all journal filenames.
         */
-        jcntl(const std::string& jid, const std::string& jdir, const std::string& base_filename);
+        jcntl(const std::string& jid, const std::string& jdir/*, const std::string& base_filename*/);
 
         /**
         * \brief Destructor.
@@ -190,7 +194,7 @@ namespace qls_jrnl
         * \exception TODO
         */
         void initialize(/*const uint16_t num_jfiles, const bool auto_expand, const uint16_t ae_max_jfiles,
-                const uint32_t jfsize_sblks,*/ const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
+                const uint32_t jfsize_sblks,*/EmptyFilePool* efpp, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
                 aio_callback* const cbp);
 
         /**
@@ -628,17 +632,17 @@ namespace qls_jrnl
         * the same directory, their base filenames <b>MUST</b> be different or else the instances
         * will overwrite one another.
         */
-        inline const std::string& base_filename() const { return _base_filename; }
+//        inline const std::string& base_filename() const { return _base_filename; }
 
 //        inline uint16_t num_jfiles() const; { return _lpmgr.num_jfiles(); }
 
 //        inline fcntl* get_fcntlp(const uint16_t lfid) const { return _lpmgr.get_fcntlp(lfid); }
 
-        inline uint32_t jfsize_sblks() const { return _jfsize_sblks; }
+//        inline uint32_t jfsize_sblks() const { return _jfsize_sblks; }
 
         // Logging
-        virtual void log(log_level level, const std::string& log_stmt) const;
-        virtual void log(log_level level, const char* const log_stmt) const;
+//        virtual void log(log_level_t level, const std::string& log_stmt) const;
+//        virtual void log(log_level_t level, const char* const log_stmt) const;
 
         // FIXME these are _rmgr to _wmgr interactions, remove when _rmgr contains ref to _wmgr:
         //void chk_wr_frot();

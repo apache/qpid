@@ -26,10 +26,12 @@
 
 #include "db-inc.h"
 #include "qpid/linearstore/Cursor.h"
+#include "qpid/linearstore/EmptyFilePoolManagerImpl.h"
 #include "qpid/linearstore/IdDbt.h"
 #include "qpid/linearstore/IdSequence.h"
 #include "qpid/linearstore/JournalImpl.h"
 #include "qpid/linearstore/jrnl/jcfg.h"
+#include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/PreparedTransaction.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/MessageStore.h"
@@ -48,6 +50,9 @@ class Timer;
 }}
 
 namespace qpid{
+namespace qls_jrnl {
+class EmptyFilePoolManager;
+}
 namespace linearstore{
 
 /**
@@ -67,7 +72,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
         uint32_t wCachePageSizeKib;
         uint32_t tplWCachePageSizeKib;
         uint16_t efpPartition;
-        uint64_t efpFileSize;
+        uint64_t efpFileSizeKib;
     };
 
   protected:
@@ -98,10 +103,10 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     static const bool defTruncateFlag = false;
     static const uint32_t defWCachePageSize = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_SBLK_SIZE / 1024;
     static const uint32_t defTplWCachePageSize = defWCachePageSize / 8;
-    static const uint16_t defEfpPartition = 0;
-    static const uint64_t defEfpFileSize = 512 * JRNL_SBLK_SIZE;
-
+    static const uint16_t defEfpPartition = 1;
+    static const uint64_t defEfpFileSizeKib = 512 * JRNL_SBLK_SIZE / 1024;
     static const std::string storeTopLevelDir;
+
     static qpid::sys::Duration defJournalGetEventsTimeout;
     static qpid::sys::Duration defJournalFlushTimeout;
 
@@ -127,21 +132,18 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     IdSequence generalIdSequence;
     IdSequence messageIdSequence;
     std::string storeDir;
-    uint16_t numJrnlFiles;
-    bool      autoJrnlExpand;
-    uint16_t autoJrnlExpandMaxFiles;
-    uint32_t jrnlFsizeSblks;
+    qpid::qls_jrnl::efpPartitionNumber_t defaultEfpPartitionNumber;
+    qpid::qls_jrnl::efpFileSizeKib_t defaultEfpFileSizeKib;
     bool      truncateFlag;
     uint32_t wCachePgSizeSblks;
     uint16_t wCacheNumPages;
-    uint16_t tplNumJrnlFiles;
-    uint32_t tplJrnlFsizeSblks;
     uint32_t tplWCachePgSizeSblks;
     uint16_t tplWCacheNumPages;
     uint64_t highestRid;
     bool isInit;
     const char* envPath;
     qpid::broker::Broker* broker;
+    boost::shared_ptr<EmptyFilePoolManagerImpl> efpMgr;
 
     qmf::org::apache::qpid::linearstore::Store::shared_ptr mgmtObject;
     qpid::management::ManagementAgent* agent;
@@ -149,9 +151,13 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     // Parameter validation and calculation
     static uint32_t chkJrnlWrPageCacheSize(const uint32_t param,
-                                            const std::string paramName/*,
-                                            const uint16_t jrnlFsizePgs*/);
-    static uint16_t getJrnlWrNumPages(const uint32_t wrPageSizeKib);
+                                           const std::string& paramName/*,
+                                           const uint16_t jrnlFsizePgs*/);
+    static uint16_t getJrnlWrNumPages(const uint32_t wrPageSizeKiB);
+    static qpid::qls_jrnl::efpPartitionNumber_t chkEfpPartition(const qpid::qls_jrnl::efpPartitionNumber_t partition,
+                                                                const std::string& paramName);
+    static qpid::qls_jrnl::efpFileSizeKib_t chkEfpFileSizeKiB(const qpid::qls_jrnl::efpFileSizeKib_t efpFileSizeKiB,
+                                                              const std::string& paramName);
 
     void init();
 
@@ -225,9 +231,10 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     // journal functions
     void createJrnlQueue(const qpid::broker::PersistableQueue& queue);
-    uint32_t bHash(const std::string str);
     std::string getJrnlDir(const qpid::broker::PersistableQueue& queue); //for exmaple /var/rhm/ + queueDir/
-    std::string getJrnlHashDir(const std::string& queueName);
+    qpid::qls_jrnl::EmptyFilePool* getEmptyFilePool(const qpid::qls_jrnl::efpPartitionNumber_t p, const qpid::qls_jrnl::efpFileSizeKib_t s);
+    qpid::qls_jrnl::EmptyFilePool* getEmptyFilePool(const qpid::framing::FieldTable& args);
+    std::string getStoreTopLevelDir();
     std::string getJrnlBaseDir();
     std::string getBdbBaseDir();
     std::string getTplBaseDir();
@@ -260,11 +267,13 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     bool init(const qpid::Options* options);
 
     bool init(const std::string& dir,
+              qpid::qls_jrnl::efpPartitionNumber_t efpPartition = defEfpPartition,
+              qpid::qls_jrnl::efpFileSizeKib_t efpFileSizeKib = defEfpFileSizeKib,
               const bool truncateFlag = false,
               uint32_t wCachePageSize = defWCachePageSize,
               uint32_t tplWCachePageSize = defTplWCachePageSize);
 
-    void truncateInit(const bool saveStoreContent = false);
+    void truncateInit();
 
     void initManagement ();
 

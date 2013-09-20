@@ -21,17 +21,19 @@
 
 #include "qpid/linearstore/MessageStoreImpl.h"
 
+#include "db-inc.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/linearstore/BindingDbt.h"
 #include "qpid/linearstore/BufferValue.h"
 #include "qpid/linearstore/IdDbt.h"
+#include "qpid/linearstore/jrnl/EmptyFilePoolManager.h"
 #include "qpid/linearstore/jrnl/txn_map.h"
-#include "qpid/linearstore/Log.h"
+#include "qpid/linearstore/QpidLog.h"
 #include "qpid/framing/FieldValue.h"
 #include "qmf/org/apache/qpid/linearstore/Package.h"
 #include "qpid/linearstore/StoreException.h"
 #include <dirent.h>
-#include <db.h>
+
 
 #define MAX_AIO_SLEEPS 100000 // tot: ~1 sec
 #define AIO_SLEEP_TIME_US  10 // 0.01 ms
@@ -43,53 +45,46 @@ namespace linearstore{
 
 
 const std::string MessageStoreImpl::storeTopLevelDir("qls"); // Sets the top-level store dir name
+
 // FIXME aconway 2010-03-09: was 10
 qpid::sys::Duration MessageStoreImpl::defJournalGetEventsTimeout(1 * qpid::sys::TIME_MSEC); // 10ms
 qpid::sys::Duration MessageStoreImpl::defJournalFlushTimeout(500 * qpid::sys::TIME_MSEC); // 0.5s
 qpid::sys::Mutex TxnCtxt::globalSerialiser;
 
-MessageStoreImpl::TplRecoverStruct::TplRecoverStruct(const uint64_t _rid,
-                                                     const bool _deq_flag,
-                                                     const bool _commit_flag,
-                                                     const bool _tpc_flag) :
-                                                     rid(_rid),
-                                                     deq_flag(_deq_flag),
-                                                     commit_flag(_commit_flag),
-                                                     tpc_flag(_tpc_flag)
+MessageStoreImpl::TplRecoverStruct::TplRecoverStruct(const uint64_t rid_,
+                                                     const bool deq_flag_,
+                                                     const bool commit_flag_,
+                                                     const bool tpc_flag_) :
+                                                     rid(rid_),
+                                                     deq_flag(deq_flag_),
+                                                     commit_flag(commit_flag_),
+                                                     tpc_flag(tpc_flag_)
 {}
 
-MessageStoreImpl::MessageStoreImpl(qpid::broker::Broker* broker_, const char* envpath) :
-                                   numJrnlFiles(0),
-                                   autoJrnlExpand(false),
-                                   autoJrnlExpandMaxFiles(0),
-                                   jrnlFsizeSblks(0),
+MessageStoreImpl::MessageStoreImpl(qpid::broker::Broker* broker_, const char* envpath_) :
+                                   defaultEfpPartitionNumber(0),
+                                   defaultEfpFileSizeKib(0),
                                    truncateFlag(false),
                                    wCachePgSizeSblks(0),
                                    wCacheNumPages(0),
-                                   tplNumJrnlFiles(0),
-                                   tplJrnlFsizeSblks(0),
                                    tplWCachePgSizeSblks(0),
                                    tplWCacheNumPages(0),
                                    highestRid(0),
                                    isInit(false),
-                                   envPath(envpath),
+                                   envPath(envpath_),
                                    broker(broker_),
                                    mgmtObject(),
                                    agent(0)
 {}
 
-uint32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const uint32_t param, const std::string paramName/*, const uint16_t jrnlFsizePgs*/)
+uint32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const uint32_t param_, const std::string& paramName_)
 {
-    uint32_t p = param;
+    uint32_t p = param_;
 
-/*    if (jrnlFsizePgs == 1 && p > 64 ) {
-        p =  64;
-        QLS_LOG(warning, "parameter " << paramName << " (" << param << ") cannot set a page size greater than the journal file size; changing this parameter to the journal file size (" << p << ")");
-    }
-    else*/ if (p == 0) {
+    if (p == 0) {
         // For zero value, use default
         p = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_SBLK_SIZE / 1024;
-        QLS_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to default value (" << p << ")");
+        QLS_LOG(warning, "parameter " << paramName_ << " (" << param_ << ") must be a power of 2 between 1 and 128; changing this parameter to default value (" << p << ")");
     } else if ( p > 128 || (p & (p-1)) ) {
         // For any positive value that is not a power of 2, use closest value
         if      (p <   6)   p =   4;
@@ -98,16 +93,16 @@ uint32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const uint32_t param, const st
         else if (p <  48)   p =  32;
         else if (p <  96)   p =  64;
         else                p = 128;
-        QLS_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to closest allowable value (" << p << ")");
+        QLS_LOG(warning, "parameter " << paramName_ << " (" << param_ << ") must be a power of 2 between 1 and 128; changing this parameter to closest allowable value (" << p << ")");
     }
     return p;
 }
 
-uint16_t MessageStoreImpl::getJrnlWrNumPages(const uint32_t wrPageSizeKib)
+uint16_t MessageStoreImpl::getJrnlWrNumPages(const uint32_t wrPageSizeKib_)
 {
-    uint32_t wrPageSizeSblks = wrPageSizeKib * 1024 / JRNL_SBLK_SIZE; // convert from KiB to number sblks
+    uint32_t wrPageSizeSblks = wrPageSizeKib_ * 1024 / JRNL_SBLK_SIZE; // convert from KiB to number sblks
     uint32_t defTotWCacheSize = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_WMGR_DEF_PAGES; // in sblks. Currently 2014 sblks (1 MiB).
-    switch (wrPageSizeKib)
+    switch (wrPageSizeKib_)
     {
       case 1:
       case 2:
@@ -124,6 +119,29 @@ uint16_t MessageStoreImpl::getJrnlWrNumPages(const uint32_t wrPageSizeKib)
     }
 }
 
+qpid::qls_jrnl::efpPartitionNumber_t MessageStoreImpl::chkEfpPartition(const qpid::qls_jrnl::efpPartitionNumber_t partition_,
+                                                                       const std::string& /*paramName_*/) {
+    // TODO: check against list of existing partitions, throw if not found
+    return partition_;
+}
+
+qpid::qls_jrnl::efpFileSizeKib_t MessageStoreImpl::chkEfpFileSizeKiB(const qpid::qls_jrnl::efpFileSizeKib_t efpFileSizeKib_,
+                                                                     const std::string& paramName_) {
+    uint8_t rem =  efpFileSizeKib_ % uint64_t(JRNL_SBLK_SIZE_KIB);
+    if (rem != 0) {
+        uint64_t newVal = efpFileSizeKib_ - rem;
+        if (rem >= (JRNL_SBLK_SIZE_KIB / 2))
+            newVal += JRNL_SBLK_SIZE_KIB;
+        QLS_LOG(warning, "Parameter " << paramName_ << " (" << efpFileSizeKib_ << ") must be a multiple of " <<
+                JRNL_SBLK_SIZE_KIB << "; changing this parameter to the closest allowable value (" <<
+                newVal << ")");
+        return newVal;
+    }
+    return efpFileSizeKib_;
+
+    // TODO: check against list of existing pools in the given partition
+}
+
 void MessageStoreImpl::initManagement ()
 {
     if (broker != 0) {
@@ -134,15 +152,10 @@ void MessageStoreImpl::initManagement ()
                 new _qmf::Store(agent, this, broker));
 
             mgmtObject->set_location(storeDir);
-            mgmtObject->set_defaultInitialFileCount(numJrnlFiles);
-            mgmtObject->set_defaultDataFileSize(jrnlFsizeSblks / JRNL_RMGR_PAGE_SIZE);
             mgmtObject->set_tplIsInitialized(false);
             mgmtObject->set_tplDirectory(getTplBaseDir());
             mgmtObject->set_tplWritePageSize(tplWCachePgSizeSblks * JRNL_SBLK_SIZE);
             mgmtObject->set_tplWritePages(tplWCacheNumPages);
-            mgmtObject->set_tplInitialFileCount(tplNumJrnlFiles);
-            mgmtObject->set_tplDataFileSize(tplJrnlFsizeSblks * JRNL_SBLK_SIZE);
-            mgmtObject->set_tplCurrentFileCount(tplNumJrnlFiles);
 
             agent->addObject(mgmtObject, 0, true);
 
@@ -154,61 +167,58 @@ void MessageStoreImpl::initManagement ()
     }
 }
 
-bool MessageStoreImpl::init(const qpid::Options* options)
+bool MessageStoreImpl::init(const qpid::Options* options_)
 {
     // Extract and check options
-    const StoreOptions* opts = static_cast<const StoreOptions*>(options);
+    const StoreOptions* opts = static_cast<const StoreOptions*>(options_);
+    qpid::qls_jrnl::efpPartitionNumber_t efpPartition = chkEfpPartition(opts->efpPartition, "efp-partition");
+    qpid::qls_jrnl::efpFileSizeKib_t efpFilePoolSize = chkEfpFileSizeKiB(opts->efpFileSizeKib, "efp-file-size");
     uint32_t jrnlWrCachePageSizeKib = chkJrnlWrPageCacheSize(opts->wCachePageSizeKib, "wcache-page-size");
     uint32_t tplJrnlWrCachePageSizeKib = chkJrnlWrPageCacheSize(opts->tplWCachePageSizeKib, "tpl-wcache-page-size");
 
     // Pass option values to init()
-    return init(opts->storeDir, opts->truncateFlag, jrnlWrCachePageSizeKib, tplJrnlWrCachePageSizeKib);
+    return init(opts->storeDir, efpPartition, efpFilePoolSize, opts->truncateFlag, jrnlWrCachePageSizeKib, tplJrnlWrCachePageSizeKib);
 }
 
 // These params, taken from options, are assumed to be correct and verified
-bool MessageStoreImpl::init(const std::string& dir,
+bool MessageStoreImpl::init(const std::string& storeDir_,
                            /*uint16_t jfiles,
                            uint32_t jfileSizePgs,*/
-                           const bool truncateFlag,
-                           uint32_t wCachePageSizeKib,
+                           qpid::qls_jrnl::efpPartitionNumber_t efpPartition_,
+                           qpid::qls_jrnl::efpFileSizeKib_t efpFileSizeKib_,
+                           const bool truncateFlag_,
+                           uint32_t wCachePageSizeKib_,
                            /*uint16_t tplJfiles,
                            uint32_t tplJfileSizePgs,*/
-                           uint32_t tplWCachePageSizeKib/*,
-                           bool      autoJExpand,
-                           uint16_t autoJExpandMaxFiles*/)
+                           uint32_t tplWCachePageSizeKib_)
+                           /*bool      autoJExpand,
+                           uint16_t autoJExpandMaxFiles)*/
 {
     if (isInit) return true;
 
     // Set geometry members (converting to correct units where req'd)
-//    numJrnlFiles = jfiles;
-//    jrnlFsizeSblks = jfileSizePgs * JRNL_RMGR_PAGE_SIZE;
-    wCachePgSizeSblks = wCachePageSizeKib * 1024 / JRNL_SBLK_SIZE; // convert from KiB to number sblks
-    wCacheNumPages = getJrnlWrNumPages(wCachePageSizeKib);
-//    tplNumJrnlFiles = tplJfiles;
-//    tplJrnlFsizeSblks = tplJfileSizePgs * JRNL_RMGR_PAGE_SIZE;
-    tplWCachePgSizeSblks = tplWCachePageSizeKib * 1024 / JRNL_SBLK_SIZE; // convert from KiB to number sblks
-    tplWCacheNumPages = getJrnlWrNumPages(tplWCachePageSizeKib);
-//    autoJrnlExpand = autoJExpand;
-//    autoJrnlExpandMaxFiles = autoJExpandMaxFiles;
-    if (dir.size()>0) storeDir = dir;
+    defaultEfpPartitionNumber = efpPartition_;
+    defaultEfpFileSizeKib = efpFileSizeKib_;
+    wCachePgSizeSblks = wCachePageSizeKib_ * 1024 / JRNL_SBLK_SIZE; // convert from KiB to number sblks
+    wCacheNumPages = getJrnlWrNumPages(wCachePageSizeKib_);
+    tplWCachePgSizeSblks = tplWCachePageSizeKib_ * 1024 / JRNL_SBLK_SIZE; // convert from KiB to number sblks
+    tplWCacheNumPages = getJrnlWrNumPages(tplWCachePageSizeKib_);
+    if (storeDir_.size()>0) storeDir = storeDir_;
 
-    if (truncateFlag)
-        truncateInit(false);
+    if (truncateFlag_)
+        truncateInit();
     else
         init();
 
-    QLS_LOG(notice, "Store module initialized; store-dir=" << dir);
-//    QLS_LOG(info,   "> Default files per journal: " << jfiles);
-// TODO: Uncomment these lines when auto-expand is enabled.
-//     QLS_LOG(info,   "> Auto-expand " << (autoJrnlExpand ? "enabled" : "disabled"));
-//     if (autoJrnlExpand) QLS_LOG(info,   "> Max auto-expand journal files: " << autoJrnlExpandMaxFiles);
-//    QLS_LOG(info,   "> Default journal file size: " << jfileSizePgs << " (wpgs)");
-    QLS_LOG(info,   "> Default write cache page size: " << wCachePageSizeKib << " (KiB)");
+    QLS_LOG(notice, "Store module initialized; store-dir=" << storeDir_);
+    QLS_LOG(info,   "> Default EFP partition: " << defaultEfpPartitionNumber);
+    QLS_LOG(info,   "> Default EFP file size: " << defaultEfpFileSizeKib << " (KiB)");
+    QLS_LOG(info,   "> Default write cache page size: " << wCachePageSizeKib_ << " (KiB)");
     QLS_LOG(info,   "> Default number of write cache pages: " << wCacheNumPages);
-//    QLS_LOG(info,   "> TPL files per journal: " << tplNumJrnlFiles);
-//    QLS_LOG(info,   "> TPL journal file size: " << tplJfileSizePgs << " (wpgs)");
-    QLS_LOG(info,   "> TPL write cache page size: " << tplWCachePageSizeKib << " (KiB)");
+    QLS_LOG(info,   "> TPL write cache page size: " << tplWCachePageSizeKib_ << " (KiB)");
     QLS_LOG(info,   "> TPL number of write cache pages: " << tplWCacheNumPages);
+    QLS_LOG(info,   "> EFP partition: " << defaultEfpPartitionNumber);
+    QLS_LOG(info,   "> EFP file size pool: " << defaultEfpFileSizeKib << " (KiB)");
 
     return isInit;
 }
@@ -263,7 +273,7 @@ void MessageStoreImpl::init()
             // NOTE: during normal initialization, agent == 0 because the store is initialized before the management infrastructure.
             // However during a truncated initialization in a cluster, agent != 0. We always pass 0 as the agent for the
             // TplStore to keep things consistent in a cluster. See https://bugzilla.redhat.com/show_bug.cgi?id=681026
-            tplStorePtr.reset(new TplJournalImpl(broker->getTimer(), "TplStore", getTplBaseDir(), "tpl", defJournalGetEventsTimeout, defJournalFlushTimeout, 0));
+            tplStorePtr.reset(new TplJournalImpl(broker->getTimer(), "TplStore", getTplBaseDir(), /*"tpl",*/ defJournalGetEventsTimeout, defJournalFlushTimeout, 0));
             isInit = true;
         } catch (const DbException& e) {
             if (e.get_errno() == DB_VERSION_MISMATCH)
@@ -286,6 +296,9 @@ void MessageStoreImpl::init()
             throw;
         }
     } while (!isInit);
+
+    efpMgr.reset(new EmptyFilePoolManagerImpl(getStoreTopLevelDir()));
+    efpMgr->findEfpPartitions();
 }
 
 void MessageStoreImpl::finalize()
@@ -307,7 +320,7 @@ void MessageStoreImpl::finalize()
     }
 }
 
-void MessageStoreImpl::truncateInit(const bool saveStoreContent)
+void MessageStoreImpl::truncateInit()
 {
     if (isInit) {
         {
@@ -324,15 +337,10 @@ void MessageStoreImpl::truncateInit(const bool saveStoreContent)
         dbenv->close(0);
         isInit = false;
     }
-    std::ostringstream oss;
-    oss << storeDir << "/" << storeTopLevelDir;
-    if (saveStoreContent) {
-        std::string dir = qpid::qls_jrnl::jdir::push_down(storeDir, storeTopLevelDir, "cluster");
-        QLS_LOG(notice, "Store directory " << oss.str() << " was pushed down (saved) into directory " << dir << ".");
-    } else {
-        qpid::qls_jrnl::jdir::delete_dir(oss.str().c_str());
-        QLS_LOG(notice, "Store directory " << oss.str() << " was truncated.");
-    }
+    qpid::qls_jrnl::jdir::delete_dir(getBdbBaseDir());
+    qpid::qls_jrnl::jdir::delete_dir(getJrnlBaseDir());
+    qpid::qls_jrnl::jdir::delete_dir(getTplBaseDir());
+    QLS_LOG(notice, "Store directory " << getStoreTopLevelDir() << " was truncated.");
     init();
 }
 
@@ -342,18 +350,18 @@ void MessageStoreImpl::chkTplStoreInit()
     qpid::sys::Mutex::ScopedLock sl(tplInitLock);
     if (!tplStorePtr->is_ready()) {
         qpid::qls_jrnl::jdir::create_dir(getTplBaseDir());
-        tplStorePtr->initialize(/*tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks,*/ tplWCacheNumPages, tplWCachePgSizeSblks);
+        tplStorePtr->initialize(/*tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks,*/ getEmptyFilePool(defaultEfpPartitionNumber, defaultEfpFileSizeKib), tplWCacheNumPages, tplWCachePgSizeSblks);
         if (mgmtObject.get() != 0) mgmtObject->set_tplIsInitialized(true);
     }
 }
 
-void MessageStoreImpl::open(db_ptr db,
-                           DbTxn* txn,
-                           const char* file,
-                           bool dupKey)
+void MessageStoreImpl::open(db_ptr db_,
+                            DbTxn* txn_,
+                            const char* file_,
+                            bool dupKey_)
 {
-    if(dupKey) db->set_flags(DB_DUPSORT);
-    db->open(txn, file, 0, DB_BTREE, DB_CREATE | DB_THREAD, 0);
+    if(dupKey_) db_->set_flags(DB_DUPSORT);
+    db_->open(txn_, file_, 0, DB_BTREE, DB_CREATE | DB_THREAD, 0);
 }
 
 void MessageStoreImpl::closeDbs()
@@ -385,15 +393,15 @@ MessageStoreImpl::~MessageStoreImpl()
     }
 }
 
-void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
-                             const qpid::framing::FieldTable& /*args*/)
+void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue_,
+                              const qpid::framing::FieldTable& args_)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::create() queue=\"" << queue_.getName() << "\""); // DEBUG
     checkInit();
-    if (queue.getPersistenceId()) {
-        THROW_STORE_EXCEPTION("Queue already created: " + queue.getName());
+    if (queue_.getPersistenceId()) {
+        THROW_STORE_EXCEPTION("Queue already created: " + queue_.getName());
     }
     JournalImpl* jQueue = 0;
-    qpid::framing::FieldTable::ValuePtr value;
 
 //    uint16_t localFileCount = numJrnlFiles;
 //    bool      localAutoExpandFlag = autoJrnlExpand;
@@ -408,18 +416,18 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
 //    if (value.get() != 0 && !value->empty() && value->convertsTo<int>())
 //        localFileSizeSblks = chkJrnlFileSizeParam((uint32_t) value->get<int>(), "qpid.file_size", wCachePgSizeSblks) * JRNL_RMGR_PAGE_SIZE;
 
-    if (queue.getName().size() == 0)
+    if (queue_.getName().size() == 0)
     {
         QLS_LOG(error, "Cannot create store for empty (null) queue name - ignoring and attempting to continue.");
         return;
     }
 
-    jQueue = new JournalImpl(broker->getTimer(), queue.getName(), getJrnlDir(queue),  std::string("JournalData"),
+    jQueue = new JournalImpl(broker->getTimer(), queue_.getName(), getJrnlDir(queue_), /*std::string("JournalData"),*/
                              defJournalGetEventsTimeout, defJournalFlushTimeout, agent,
                              boost::bind(&MessageStoreImpl::journalDeleted, this, _1));
     {
         qpid::sys::Mutex::ScopedLock sl(journalListLock);
-        journalList[queue.getName()]=jQueue;
+        journalList[queue_.getName()]=jQueue;
     }
 
 //    value = args.get("qpid.auto_expand");
@@ -429,25 +437,71 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue,
 //    value = args.get("qpid.auto_expand_max_jfiles");
 //    if (value.get() != 0 && !value->empty() && value->convertsTo<int>())
 //        localAutoExpandMaxFileCount = (uint16_t) value->get<int>();
+/*
+    qpid::framing::FieldTable::ValuePtr value;
+    qpid::qls_jrnl::efpPartitionNumber_t localEfpPartition = efpPartition;
+    value = args_.get("qpid.efp_partition");
+    if (value.get() != 0 && !value->empty() && value->convertsTo<int>()) {
+        localEfpPartition = chkEfpPartition((uint32_t)value->get<int>(), "qpid.efp_partition");
+    }
 
-    queue.setExternalQueueStore(dynamic_cast<qpid::broker::ExternalQueueStore*>(jQueue));
+    qpid::qls_jrnl::efpFileSizeKib_t localEfpFileSizeKib = efpFileSizeKib;
+    value = args_.get("qpid.efp_file_size");
+    if (value.get() != 0 && !value->empty() && value->convertsTo<int>()) {
+        localEfpFileSizeKib = chkEfpFileSizeKiB((uint32_t)value->get<int>(),"qpid.efp_file_size" );
+    }
+*/
+
+    queue_.setExternalQueueStore(dynamic_cast<qpid::broker::ExternalQueueStore*>(jQueue));
     try {
         // init will create the deque's for the init...
-        jQueue->initialize(/*localFileCount, localAutoExpandFlag, localAutoExpandMaxFileCount, localFileSizeSblks,*/ wCacheNumPages, wCachePgSizeSblks);
+//        jQueue->initialize(localFileCount, localAutoExpandFlag, localAutoExpandMaxFileCount, localFileSizeSblks, wCacheNumPages, wCachePgSizeSblks);
+        jQueue->initialize(getEmptyFilePool(args_), wCacheNumPages, wCachePgSizeSblks);
     } catch (const qpid::qls_jrnl::jexception& e) {
-        THROW_STORE_EXCEPTION(std::string("Queue ") + queue.getName() + ": create() failed: " + e.what());
+        THROW_STORE_EXCEPTION(std::string("Queue ") + queue_.getName() + ": create() failed: " + e.what());
     }
     try {
-        if (!create(queueDb, queueIdSequence, queue)) {
-            THROW_STORE_EXCEPTION("Queue already exists: " + queue.getName());
+        if (!create(queueDb, queueIdSequence, queue_)) {
+            THROW_STORE_EXCEPTION("Queue already exists: " + queue_.getName());
         }
     } catch (const DbException& e) {
-        THROW_STORE_EXCEPTION_2("Error creating queue named  " + queue.getName(), e);
+        THROW_STORE_EXCEPTION_2("Error creating queue named  " + queue_.getName(), e);
     }
 }
 
-void MessageStoreImpl::destroy(qpid::broker::PersistableQueue& queue)
+qpid::qls_jrnl::EmptyFilePool*
+MessageStoreImpl::getEmptyFilePool(const qpid::qls_jrnl::efpPartitionNumber_t efpPartitionNumber_,
+                                   const qpid::qls_jrnl::efpFileSizeKib_t efpFileSizeKib_) {
+    qpid::qls_jrnl::EmptyFilePool* efpp = efpMgr->getEmptyFilePool(efpPartitionNumber_, efpFileSizeKib_);
+    if (efpp == 0) {
+        std::ostringstream oss;
+        oss << "Partition=" << efpPartitionNumber_ << "; EfpFileSize=" << efpFileSizeKib_ << " KiB";
+        throw qpid::qls_jrnl::jexception(qpid::qls_jrnl::jerrno::JERR_EFP_NOEFP, oss.str(), "MessageStoreImpl", "getEmptyFilePool");
+    }
+    return efpp;
+}
+
+qpid::qls_jrnl::EmptyFilePool*
+MessageStoreImpl::getEmptyFilePool(const qpid::framing::FieldTable& args_) {
+    qpid::framing::FieldTable::ValuePtr value;
+    qpid::qls_jrnl::efpPartitionNumber_t localEfpPartition = defaultEfpPartitionNumber;
+    value = args_.get("qpid.efp_partition");
+    if (value.get() != 0 && !value->empty() && value->convertsTo<int>()) {
+        localEfpPartition = chkEfpPartition((uint32_t)value->get<int>(), "qpid.efp_partition");
+    }
+
+    qpid::qls_jrnl::efpFileSizeKib_t localEfpFileSizeKib = defaultEfpFileSizeKib;
+    value = args_.get("qpid.efp_file_size");
+    if (value.get() != 0 && !value->empty() && value->convertsTo<int>()) {
+        localEfpFileSizeKib = chkEfpFileSizeKiB((uint32_t)value->get<int>(),"qpid.efp_file_size" );
+    }
+    return getEmptyFilePool(localEfpPartition, localEfpFileSizeKib);
+}
+
+void MessageStoreImpl::destroy(qpid::broker::PersistableQueue& queue_)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::destroy() queue=\"" << queue_.getName() << "\"");
+/*
     checkInit();
     destroy(queueDb, queue);
     deleteBindingsForQueue(queue);
@@ -461,21 +515,22 @@ void MessageStoreImpl::destroy(qpid::broker::PersistableQueue& queue)
             journalList.erase(queue.getName());
         }
     }
+*/
 }
 
-void MessageStoreImpl::create(const qpid::broker::PersistableExchange& exchange,
-                             const qpid::framing::FieldTable& /*args*/)
+void MessageStoreImpl::create(const qpid::broker::PersistableExchange& exchange_,
+                              const qpid::framing::FieldTable& /*args_*/)
 {
     checkInit();
-    if (exchange.getPersistenceId()) {
-        THROW_STORE_EXCEPTION("Exchange already created: " + exchange.getName());
+    if (exchange_.getPersistenceId()) {
+        THROW_STORE_EXCEPTION("Exchange already created: " + exchange_.getName());
     }
     try {
-        if (!create(exchangeDb, exchangeIdSequence, exchange)) {
-            THROW_STORE_EXCEPTION("Exchange already exists: " + exchange.getName());
+        if (!create(exchangeDb, exchangeIdSequence, exchange_)) {
+            THROW_STORE_EXCEPTION("Exchange already exists: " + exchange_.getName());
         }
     } catch (const DbException& e) {
-        THROW_STORE_EXCEPTION_2("Error creating exchange named " + exchange.getName(), e);
+        THROW_STORE_EXCEPTION_2("Error creating exchange named " + exchange_.getName(), e);
     }
 }
 
@@ -488,14 +543,14 @@ void MessageStoreImpl::destroy(const qpid::broker::PersistableExchange& exchange
     bindingDb->del(0, &key, DB_AUTO_COMMIT);
 }
 
-void MessageStoreImpl::create(const qpid::broker::PersistableConfig& general)
+void MessageStoreImpl::create(const qpid::broker::PersistableConfig& general_)
 {
     checkInit();
-    if (general.getPersistenceId()) {
+    if (general_.getPersistenceId()) {
         THROW_STORE_EXCEPTION("General configuration item already created");
     }
     try {
-        if (!create(generalDb, generalIdSequence, general)) {
+        if (!create(generalDb, generalIdSequence, general_)) {
             THROW_STORE_EXCEPTION("General configuration already exists");
         }
     } catch (const DbException& e) {
@@ -503,25 +558,25 @@ void MessageStoreImpl::create(const qpid::broker::PersistableConfig& general)
     }
 }
 
-void MessageStoreImpl::destroy(const qpid::broker::PersistableConfig& general)
+void MessageStoreImpl::destroy(const qpid::broker::PersistableConfig& general_)
 {
     checkInit();
-    destroy(generalDb, general);
+    destroy(generalDb, general_);
 }
 
-bool MessageStoreImpl::create(db_ptr db,
-                             IdSequence& seq,
-                             const qpid::broker::Persistable& p)
+bool MessageStoreImpl::create(db_ptr db_,
+                              IdSequence& seq_,
+                              const qpid::broker::Persistable& p_)
 {
-    uint64_t id (seq.next());
+    uint64_t id (seq_.next());
     Dbt key(&id, sizeof(id));
-    BufferValue value (p);
+    BufferValue value (p_);
 
     int status;
     TxnCtxt txn;
     txn.begin(dbenv.get(), true);
     try {
-        status = db->put(txn.get(), &key, &value, DB_NOOVERWRITE);
+        status = db_->put(txn.get(), &key, &value, DB_NOOVERWRITE);
         txn.commit();
     } catch (...) {
         txn.abort();
@@ -530,27 +585,27 @@ bool MessageStoreImpl::create(db_ptr db,
     if (status == DB_KEYEXIST) {
         return false;
     } else {
-        p.setPersistenceId(id);
+        p_.setPersistenceId(id);
         return true;
     }
 }
 
-void MessageStoreImpl::destroy(db_ptr db, const qpid::broker::Persistable& p)
+void MessageStoreImpl::destroy(db_ptr db, const qpid::broker::Persistable& p_)
 {
     qpid::sys::Mutex::ScopedLock sl(bdbLock);
-    IdDbt key(p.getPersistenceId());
+    IdDbt key(p_.getPersistenceId());
     db->del(0, &key, DB_AUTO_COMMIT);
 }
 
 
-void MessageStoreImpl::bind(const qpid::broker::PersistableExchange& e,
-                           const qpid::broker::PersistableQueue& q,
-                           const std::string& k,
-                           const qpid::framing::FieldTable& a)
+void MessageStoreImpl::bind(const qpid::broker::PersistableExchange& e_,
+                            const qpid::broker::PersistableQueue& q_,
+                            const std::string& k_,
+                            const qpid::framing::FieldTable& a_)
 {
     checkInit();
-    IdDbt key(e.getPersistenceId());
-    BindingDbt value(e, q, k, a);
+    IdDbt key(e_.getPersistenceId());
+    BindingDbt value(e_, q_, k_, a_);
     TxnCtxt txn;
     txn.begin(dbenv.get(), true);
     try {
@@ -562,16 +617,16 @@ void MessageStoreImpl::bind(const qpid::broker::PersistableExchange& e,
     }
 }
 
-void MessageStoreImpl::unbind(const qpid::broker::PersistableExchange& e,
-                             const qpid::broker::PersistableQueue& q,
-                             const std::string& k,
-                             const qpid::framing::FieldTable&)
+void MessageStoreImpl::unbind(const qpid::broker::PersistableExchange& e_,
+                              const qpid::broker::PersistableQueue& q_,
+                              const std::string& k_,
+                              const qpid::framing::FieldTable& /*a_*/)
 {
     checkInit();
-    deleteBinding(e, q, k);
+    deleteBinding(e_, q_, k_);
 }
 
-void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry)
+void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry_)
 {
     checkInit();
     txn_list prepared;
@@ -585,14 +640,14 @@ void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry)
     txn.begin(dbenv.get(), false);
     try {
         //read all queues, calls recoversMessages
-        recoverQueues(txn, registry, queues, prepared, messages);
+        recoverQueues(txn, registry_, queues, prepared, messages);
 
         //recover exchange & bindings:
-        recoverExchanges(txn, registry, exchanges);
+        recoverExchanges(txn, registry_, exchanges);
         recoverBindings(txn, exchanges, queues);
 
         //recover general-purpose configuration
-        recoverGeneral(txn, registry);
+        recoverGeneral(txn, registry_);
 
         txn.commit();
     } catch (const DbException& e) {
@@ -629,7 +684,7 @@ void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry)
             tpcc->prepare(tplStorePtr.get());
 
             qpid::broker::RecoverableTransaction::shared_ptr dtx;
-            if (!incomplTplTxnFlag) dtx = registry.recoverTransaction(xid, txn);
+            if (!incomplTplTxnFlag) dtx = registry_.recoverTransaction(xid, txn);
             if (pt.enqueues.get()) {
                 for (LockedMappings::iterator j = pt.enqueues->begin(); j != pt.enqueues->end(); j++) {
                     tpcc->addXidRecord(queues[j->first]->getExternalQueueStore());
@@ -669,15 +724,17 @@ void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry)
             }
         }
     }
-    registry.recoveryComplete();
+    registry_.recoveryComplete();
 }
 
-void MessageStoreImpl::recoverQueues(TxnCtxt& txn,
-                                    qpid::broker::RecoveryManager& registry,
-                                    queue_index& queue_index,
-                                    txn_list& prepared,
-                                    message_index& messages)
+void MessageStoreImpl::recoverQueues(TxnCtxt& /*txn*/,
+                                     qpid::broker::RecoveryManager& /*registry*/,
+                                     queue_index& /*queue_index*/,
+                                     txn_list& /*prepared*/,
+                                     message_index& /*messages*/)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::recoverQueues()");
+/*
     Cursor queues;
     queues.open(queueDb, txn.get());
 
@@ -714,24 +771,22 @@ void MessageStoreImpl::recoverQueues(TxnCtxt& txn,
             long rcnt = 0L;     // recovered msg count
             long idcnt = 0L;    // in-doubt msg count
             uint64_t thisHighestRid = 0ULL;
-            jQueue->recover(/*numJrnlFiles, autoJrnlExpand, autoJrnlExpandMaxFiles, jrnlFsizeSblks,*/ wCacheNumPages,
+            jQueue->recover(numJrnlFiles, autoJrnlExpand, autoJrnlExpandMaxFiles, jrnlFsizeSblks, wCacheNumPages,
                             wCachePgSizeSblks, &prepared, thisHighestRid, key.id); // start recovery
 
-/*
-            // Check for changes to queue store settings qpid.file_count and qpid.file_size resulting
-            // from recovery of a store that has had its size changed externally by the resize utility.
-            // If so, update the queue store settings so that QMF queries will reflect the new values.
-            const qpid::framing::FieldTable& storeargs = queue->getSettings().storeSettings;
-            qpid::framing::FieldTable::ValuePtr value;
-            value = storeargs.get("qpid.file_count");
-            if (value.get() != 0 && !value->empty() && value->convertsTo<int>() && (uint16_t)value->get<int>() != jQueue->num_jfiles()) {
-                queue->addArgument("qpid.file_count", jQueue->num_jfiles());
-            }
-            value = storeargs.get("qpid.file_size");
-            if (value.get() != 0 && !value->empty() && value->convertsTo<int>() && (uint32_t)value->get<int>() != jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE) {
-                queue->addArgument("qpid.file_size", jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE);
-            }
-*/
+//            // Check for changes to queue store settings qpid.file_count and qpid.file_size resulting
+//            // from recovery of a store that has had its size changed externally by the resize utility.
+//            // If so, update the queue store settings so that QMF queries will reflect the new values.
+//            const qpid::framing::FieldTable& storeargs = queue->getSettings().storeSettings;
+//            qpid::framing::FieldTable::ValuePtr value;
+//            value = storeargs.get("qpid.file_count");
+//            if (value.get() != 0 && !value->empty() && value->convertsTo<int>() && (uint16_t)value->get<int>() != jQueue->num_jfiles()) {
+//                queue->addArgument("qpid.file_count", jQueue->num_jfiles());
+//            }
+//            value = storeargs.get("qpid.file_size");
+//            if (value.get() != 0 && !value->empty() && value->convertsTo<int>() && (uint32_t)value->get<int>() != jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE) {
+//                queue->addArgument("qpid.file_size", jQueue->jfsize_sblks()/JRNL_RMGR_PAGE_SIZE);
+//            }
 
             if (highestRid == 0ULL)
                 highestRid = thisHighestRid;
@@ -755,16 +810,17 @@ void MessageStoreImpl::recoverQueues(TxnCtxt& txn,
     QLS_LOG(info, "Most recent persistence id found: 0x" << std::hex << highestRid << std::dec);
 
     queueIdSequence.reset(maxQueueId + 1);
+*/
 }
 
 
-void MessageStoreImpl::recoverExchanges(TxnCtxt& txn,
-                                       qpid::broker::RecoveryManager& registry,
-                                       exchange_index& index)
+void MessageStoreImpl::recoverExchanges(TxnCtxt& txn_,
+                                        qpid::broker::RecoveryManager& registry_,
+                                        exchange_index& index_)
 {
     //TODO: this is a copy&paste from recoverQueues - refactor!
     Cursor exchanges;
-    exchanges.open(exchangeDb, txn.get());
+    exchanges.open(exchangeDb, txn_.get());
 
     uint64_t maxExchangeId(1);
     IdDbt key;
@@ -773,11 +829,11 @@ void MessageStoreImpl::recoverExchanges(TxnCtxt& txn,
     while (exchanges.next(key, value)) {
         qpid::framing::Buffer buffer(reinterpret_cast<char*>(value.get_data()), value.get_size());
         //create a Exchange instance
-        qpid::broker::RecoverableExchange::shared_ptr exchange = registry.recoverExchange(buffer);
+        qpid::broker::RecoverableExchange::shared_ptr exchange = registry_.recoverExchange(buffer);
         if (exchange) {
             //set the persistenceId and update max as required
             exchange->setPersistenceId(key.id);
-            index[key.id] = exchange;
+            index_[key.id] = exchange;
             QLS_LOG(info, "Recovered exchange \"" << exchange->getName() << '"');
         }
         maxExchangeId = std::max(key.id, maxExchangeId);
@@ -785,12 +841,12 @@ void MessageStoreImpl::recoverExchanges(TxnCtxt& txn,
     exchangeIdSequence.reset(maxExchangeId + 1);
 }
 
-void MessageStoreImpl::recoverBindings(TxnCtxt& txn,
-                                      exchange_index& exchanges,
-                                      queue_index& queues)
+void MessageStoreImpl::recoverBindings(TxnCtxt& txn_,
+                                       exchange_index& exchanges_,
+                                       queue_index& queues_)
 {
     Cursor bindings;
-    bindings.open(bindingDb, txn.get());
+    bindings.open(bindingDb, txn_.get());
 
     IdDbt key;
     Dbt value;
@@ -807,9 +863,9 @@ void MessageStoreImpl::recoverBindings(TxnCtxt& txn,
         buffer.getShortString(queueName);
         buffer.getShortString(routingkey);
         buffer.get(args);
-        exchange_index::iterator exchange = exchanges.find(key.id);
-        queue_index::iterator queue = queues.find(queueId);
-        if (exchange != exchanges.end() && queue != queues.end()) {
+        exchange_index::iterator exchange = exchanges_.find(key.id);
+        queue_index::iterator queue = queues_.find(queueId);
+        if (exchange != exchanges_.end() && queue != queues_.end()) {
             //could use the recoverable queue here rather than the name...
             exchange->second->bind(queueName, routingkey, args);
             QLS_LOG(info, "Recovered binding exchange=" << exchange->second->getName()
@@ -823,11 +879,11 @@ void MessageStoreImpl::recoverBindings(TxnCtxt& txn,
     }
 }
 
-void MessageStoreImpl::recoverGeneral(TxnCtxt& txn,
-                                     qpid::broker::RecoveryManager& registry)
+void MessageStoreImpl::recoverGeneral(TxnCtxt& txn_,
+                                      qpid::broker::RecoveryManager& registry_)
 {
     Cursor items;
-    items.open(generalDb, txn.get());
+    items.open(generalDb, txn_.get());
 
     uint64_t maxGeneralId(1);
     IdDbt key;
@@ -836,7 +892,7 @@ void MessageStoreImpl::recoverGeneral(TxnCtxt& txn,
     while (items.next(key, value)) {
         qpid::framing::Buffer buffer(reinterpret_cast<char*>(value.get_data()), value.get_size());
         //create instance
-        qpid::broker::RecoverableConfig::shared_ptr config = registry.recoverConfig(buffer);
+        qpid::broker::RecoverableConfig::shared_ptr config = registry_.recoverConfig(buffer);
         //set the persistenceId and update max as required
         config->setPersistenceId(key.id);
         maxGeneralId = std::max(key.id, maxGeneralId);
@@ -845,14 +901,16 @@ void MessageStoreImpl::recoverGeneral(TxnCtxt& txn,
 }
 
 void MessageStoreImpl::recoverMessages(TxnCtxt& /*txn*/,
-                                      qpid::broker::RecoveryManager& recovery,
-                                      qpid::broker::RecoverableQueue::shared_ptr& queue,
-                                      txn_list& prepared,
-                                      message_index& messages,
-                                      long& rcnt,
-                                      long& idcnt)
+                                       qpid::broker::RecoveryManager& /*recovery*/,
+                                       qpid::broker::RecoverableQueue::shared_ptr& queue_,
+                                       txn_list& /*prepared*/,
+                                       message_index& /*messages*/,
+                                       long& /*rcnt*/,
+                                       long& /*idcnt*/)
 {
-    size_t preambleLength = sizeof(uint32_t)/*header size*/;
+    QLS_LOG(info,   "*** MessageStoreImpl::recoverMessages() queue=\"" << queue_->getName() << "\"");
+/*
+    size_t preambleLength = sizeof(uint32_t)header size;
 
     JournalImpl* jc = static_cast<JournalImpl*>(queue->getExternalQueueStore());
     DataTokenImpl dtok;
@@ -977,38 +1035,39 @@ void MessageStoreImpl::recoverMessages(TxnCtxt& /*txn*/,
     } catch (const qpid::qls_jrnl::jexception& e) {
         THROW_STORE_EXCEPTION(std::string("Queue ") + queue->getName() + ": recoverMessages() failed: " + e.what());
     }
+*/
 }
 
 qpid::broker::RecoverableMessage::shared_ptr MessageStoreImpl::getExternMessage(qpid::broker::RecoveryManager& /*recovery*/,
-                                                                 uint64_t /*messageId*/,
-                                                                 unsigned& /*headerSize*/)
+                                                                                uint64_t /*messageId*/,
+                                                                                unsigned& /*headerSize*/)
 {
     throw qpid::qls_jrnl::jexception(qpid::qls_jrnl::jerrno::JERR__NOTIMPL, "MessageStoreImpl", "getExternMessage");
 }
 
-int MessageStoreImpl::enqueueMessage(TxnCtxt& txn,
-                                    IdDbt& msgId,
-                                    qpid::broker::RecoverableMessage::shared_ptr& msg,
-                                    queue_index& index,
-                                    txn_list& prepared,
-                                    message_index& messages)
+int MessageStoreImpl::enqueueMessage(TxnCtxt& txn_,
+                                     IdDbt& msgId_,
+                                     qpid::broker::RecoverableMessage::shared_ptr& msg_,
+                                     queue_index& index_,
+                                     txn_list& prepared_,
+                                     message_index& messages_)
 {
     Cursor mappings;
-    mappings.open(mappingDb, txn.get());
+    mappings.open(mappingDb, txn_.get());
 
     IdDbt value;
 
     int count(0);
-    for (int status = mappings->get(&msgId, &value, DB_SET); status == 0; status = mappings->get(&msgId, &value, DB_NEXT_DUP)) {
-        if (index.find(value.id) == index.end()) {
+    for (int status = mappings->get(&msgId_, &value, DB_SET); status == 0; status = mappings->get(&msgId_, &value, DB_NEXT_DUP)) {
+        if (index_.find(value.id) == index_.end()) {
             QLS_LOG(warning, "Recovered message for queue that no longer exists");
             mappings->del(0);
         } else {
-            qpid::broker::RecoverableQueue::shared_ptr queue = index[value.id];
-            if (PreparedTransaction::isLocked(prepared, value.id, msgId.id)) {
-                messages[msgId.id] = msg;
+            qpid::broker::RecoverableQueue::shared_ptr queue = index_[value.id];
+            if (PreparedTransaction::isLocked(prepared_, value.id, msgId_.id)) {
+                messages_[msgId_.id] = msg_;
             } else {
-                queue->recover(msg);
+                queue->recover(msg_);
             }
             count++;
         }
@@ -1019,6 +1078,8 @@ int MessageStoreImpl::enqueueMessage(TxnCtxt& txn,
 
 void MessageStoreImpl::readTplStore()
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::readTplStore()");
+/*
     tplRecoverMap.clear();
     qpid::qls_jrnl::txn_map& tmap = tplStorePtr->get_txn_map();
     DataTokenImpl dtok;
@@ -1087,13 +1148,16 @@ void MessageStoreImpl::readTplStore()
     } catch (const qpid::qls_jrnl::jexception& e) {
         THROW_STORE_EXCEPTION(std::string("TPL recoverTplStore() failed: ") + e.what());
     }
+*/
 }
 
 void MessageStoreImpl::recoverTplStore()
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::recoverTplStore()");
+/*
     if (qpid::qls_jrnl::jdir::exists(tplStorePtr->jrnl_dir() + tplStorePtr->base_filename() + ".jinf")) {
         uint64_t thisHighestRid = 0ULL;
-        tplStorePtr->recover(/*tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks,*/ tplWCachePgSizeSblks, tplWCacheNumPages, 0, thisHighestRid, 0);
+        tplStorePtr->recover(tplNumJrnlFiles, false, 0, tplJrnlFsizeSblks, tplWCachePgSizeSblks, tplWCacheNumPages, 0, thisHighestRid, 0);
         if (highestRid == 0ULL)
             highestRid = thisHighestRid;
         else if (thisHighestRid - highestRid  < 0x8000000000000000ULL) // RFC 1982 comparison for unsigned 64-bit
@@ -1104,10 +1168,13 @@ void MessageStoreImpl::recoverTplStore()
 
         tplStorePtr->recover_complete(); // start journal.
     }
+*/
 }
 
-void MessageStoreImpl::recoverLockedMappings(txn_list& txns)
+void MessageStoreImpl::recoverLockedMappings(txn_list& /*txns*/)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::recoverLockedMappings()");
+/*
     if (!tplStorePtr->is_ready())
         recoverTplStore();
 
@@ -1119,10 +1186,13 @@ void MessageStoreImpl::recoverLockedMappings(txn_list& txns)
         deq_ptr.reset(new LockedMappings);
         txns.push_back(new PreparedTransaction(i->first, enq_ptr, deq_ptr));
     }
+*/
 }
 
-void MessageStoreImpl::collectPreparedXids(std::set<std::string>& xids)
+void MessageStoreImpl::collectPreparedXids(std::set<std::string>& /*xids*/)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::collectPreparedXids()");
+/*
     if (tplStorePtr->is_ready()) {
         tplStorePtr->read_reset();
         readTplStore();
@@ -1134,6 +1204,7 @@ void MessageStoreImpl::collectPreparedXids(std::set<std::string>& xids)
         if (!i->second.deq_flag && i->second.tpc_flag)
             xids.insert(i->first);
     }
+*/
 }
 
 void MessageStoreImpl::stage(const boost::intrusive_ptr<qpid::broker::PersistableMessage>& /*msg*/)
@@ -1147,17 +1218,19 @@ void MessageStoreImpl::destroy(qpid::broker::PersistableMessage& /*msg*/)
 }
 
 void MessageStoreImpl::appendContent(const boost::intrusive_ptr<const qpid::broker::PersistableMessage>& /*msg*/,
-                                    const std::string& /*data*/)
+                                     const std::string& /*data*/)
 {
     throw qpid::qls_jrnl::jexception(qpid::qls_jrnl::jerrno::JERR__NOTIMPL, "MessageStoreImpl", "appendContent");
 }
 
-void MessageStoreImpl::loadContent(const qpid::broker::PersistableQueue& queue,
-                                  const boost::intrusive_ptr<const qpid::broker::PersistableMessage>& msg,
-                                  std::string& data,
-                                  uint64_t offset,
-                                  uint32_t length)
+void MessageStoreImpl::loadContent(const qpid::broker::PersistableQueue& /*queue*/,
+                                   const boost::intrusive_ptr<const qpid::broker::PersistableMessage>& /*msg*/,
+                                   std::string& /*data*/,
+                                   uint64_t /*offset*/,
+                                   uint32_t /*length*/)
 {
+    throw qpid::qls_jrnl::jexception(qpid::qls_jrnl::jerrno::JERR__NOTIMPL, "MessageStoreImpl", "loadContent");
+/*
     checkInit();
     uint64_t messageId (msg->getPersistenceId());
 
@@ -1181,10 +1254,13 @@ void MessageStoreImpl::loadContent(const qpid::broker::PersistableQueue& queue,
     } else {
         THROW_STORE_EXCEPTION("Cannot load content. Message not known to store!");
     }
+*/
 }
 
-void MessageStoreImpl::flush(const qpid::broker::PersistableQueue& queue)
+void MessageStoreImpl::flush(const qpid::broker::PersistableQueue& queue_)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::flush() queue=\"" << queue_.getName() << "\"");
+/*
     if (queue.getExternalQueueStore() == 0) return;
     checkInit();
     std::string qn = queue.getName();
@@ -1192,17 +1268,20 @@ void MessageStoreImpl::flush(const qpid::broker::PersistableQueue& queue)
         JournalImpl* jc = static_cast<JournalImpl*>(queue.getExternalQueueStore());
         if (jc) {
             // TODO: check if this result should be used...
-            /*mrg::journal::iores res =*/ jc->flush();
+            mrg::journal::iores res = jc->flush();
         }
     } catch (const qpid::qls_jrnl::jexception& e) {
         THROW_STORE_EXCEPTION(std::string("Queue ") + qn + ": flush() failed: " + e.what() );
     }
+*/
 }
 
-void MessageStoreImpl::enqueue(qpid::broker::TransactionContext* ctxt,
-                              const boost::intrusive_ptr<qpid::broker::PersistableMessage>& msg,
-                              const qpid::broker::PersistableQueue& queue)
+void MessageStoreImpl::enqueue(qpid::broker::TransactionContext* /*ctxt*/,
+                               const boost::intrusive_ptr<qpid::broker::PersistableMessage>& msg_,
+                               const qpid::broker::PersistableQueue& /*queue*/)
 {
+//    QLS_LOG(info,   "*** MessageStoreImpl::enqueue() queue=\"" << queue.getName() << "\"");
+/*
     checkInit();
     uint64_t queueId (queue.getPersistenceId());
     uint64_t messageId (msg->getPersistenceId());
@@ -1228,29 +1307,34 @@ void MessageStoreImpl::enqueue(qpid::broker::TransactionContext* ctxt,
 
     // add queue* to the txn map..
     if (ctxt) txn->addXidRecord(queue.getExternalQueueStore());
+*/
+    msg_->enqueueComplete();// DEBUG: only while null fns in use
 }
 
-uint64_t MessageStoreImpl::msgEncode(std::vector<char>& buff, const boost::intrusive_ptr<qpid::broker::PersistableMessage>& message)
+uint64_t MessageStoreImpl::msgEncode(std::vector<char>& buff_,
+                                     const boost::intrusive_ptr<qpid::broker::PersistableMessage>& message_)
 {
-    uint32_t headerSize = message->encodedHeaderSize();
-    uint64_t size = message->encodedSize() + sizeof(uint32_t);
-    try { buff = std::vector<char>(size); } // long + headers + content
+    uint32_t headerSize = message_->encodedHeaderSize();
+    uint64_t size = message_->encodedSize() + sizeof(uint32_t);
+    try { buff_ = std::vector<char>(size); } // long + headers + content
     catch (const std::exception& e) {
         std::ostringstream oss;
         oss << "Unable to allocate memory for encoding message; requested size: " << size << "; error: " << e.what();
         THROW_STORE_EXCEPTION(oss.str());
     }
-    qpid::framing::Buffer buffer(&buff[0],size);
+    qpid::framing::Buffer buffer(&buff_[0],size);
     buffer.putLong(headerSize);
-    message->encode(buffer);
+    message_->encode(buffer);
     return size;
 }
 
-void MessageStoreImpl::store(const qpid::broker::PersistableQueue* queue,
-                            TxnCtxt* txn,
-                            const boost::intrusive_ptr<qpid::broker::PersistableMessage>& message,
-                            bool /*newId*/)
+void MessageStoreImpl::store(const qpid::broker::PersistableQueue* queue_,
+                             TxnCtxt* /*txn*/,
+                             const boost::intrusive_ptr<qpid::broker::PersistableMessage>& /*message*/,
+                             bool /*newId*/)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::store() queue=\"" << queue_->getName() << "\"");
+/*
     std::vector<char> buff;
     uint64_t size = msgEncode(buff, message);
 
@@ -1275,12 +1359,15 @@ void MessageStoreImpl::store(const qpid::broker::PersistableQueue* queue,
         THROW_STORE_EXCEPTION(std::string("Queue ") + queue->getName() + ": MessageStoreImpl::store() failed: " +
                               e.what());
     }
+*/
 }
 
-void MessageStoreImpl::dequeue(qpid::broker::TransactionContext* ctxt,
-                              const boost::intrusive_ptr<qpid::broker::PersistableMessage>& msg,
-                              const qpid::broker::PersistableQueue& queue)
+void MessageStoreImpl::dequeue(qpid::broker::TransactionContext* /*ctxt*/,
+                               const boost::intrusive_ptr<qpid::broker::PersistableMessage>& msg_,
+                               const qpid::broker::PersistableQueue& /*queue*/)
 {
+//    QLS_LOG(info,   "*** MessageStoreImpl::dequeue() queue=\"" << queue.getName() << "\"");
+/*
     checkInit();
     uint64_t queueId (queue.getPersistenceId());
     uint64_t messageId (msg->getPersistenceId());
@@ -1302,14 +1389,16 @@ void MessageStoreImpl::dequeue(qpid::broker::TransactionContext* ctxt,
     // add queue* to the txn map..
     if (ctxt) txn->addXidRecord(queue.getExternalQueueStore());
     async_dequeue(ctxt, msg, queue);
-
-    msg->dequeueComplete();
+*/
+    msg_->dequeueComplete();
 }
 
-void MessageStoreImpl::async_dequeue(qpid::broker::TransactionContext* ctxt,
-                                    const boost::intrusive_ptr<qpid::broker::PersistableMessage>& msg,
-                                    const qpid::broker::PersistableQueue& queue)
+void MessageStoreImpl::async_dequeue(qpid::broker::TransactionContext* /*ctxt*/,
+                                     const boost::intrusive_ptr<qpid::broker::PersistableMessage>& /*msg*/,
+                                     const qpid::broker::PersistableQueue& queue_)
 {
+    QLS_LOG(info,   "*** MessageStoreImpl::async_dequeue() queue=\"" << queue_.getName() << "\"");
+/*
     boost::intrusive_ptr<DataTokenImpl> ddtokp(new DataTokenImpl);
     ddtokp->setSourceMessage(msg);
     ddtokp->set_external_rid(true);
@@ -1334,38 +1423,39 @@ void MessageStoreImpl::async_dequeue(qpid::broker::TransactionContext* ctxt,
         ddtokp->release();
         THROW_STORE_EXCEPTION(std::string("Queue ") + queue.getName() + ": async_dequeue() failed: " + e.what());
     }
+*/
 }
 
-uint32_t MessageStoreImpl::outstandingQueueAIO(const qpid::broker::PersistableQueue& /*queue*/)
+uint32_t MessageStoreImpl::outstandingQueueAIO(const qpid::broker::PersistableQueue& /*queue_*/)
 {
-    checkInit();
+/*    checkInit();*/
     return 0;
 }
 
-void MessageStoreImpl::completed(TxnCtxt& txn,
-                                bool commit)
+void MessageStoreImpl::completed(TxnCtxt& txn_,
+                                 bool commit_)
 {
     try {
         chkTplStoreInit(); // Late initialize (if needed)
 
         // Nothing to do if not prepared
-        if (txn.getDtok()->is_enqueued()) {
-            txn.incrDtokRef();
-            DataTokenImpl* dtokp = txn.getDtok();
+        if (txn_.getDtok()->is_enqueued()) {
+            txn_.incrDtokRef();
+            DataTokenImpl* dtokp = txn_.getDtok();
             dtokp->set_dequeue_rid(dtokp->rid());
             dtokp->set_rid(messageIdSequence.next());
-            tplStorePtr->dequeue_txn_data_record(txn.getDtok(), txn.getXid(), commit);
+            tplStorePtr->dequeue_txn_data_record(txn_.getDtok(), txn_.getXid(), commit_);
         }
-        txn.complete(commit);
+        txn_.complete(commit_);
         if (mgmtObject.get() != 0) {
             mgmtObject->dec_tplTransactionDepth();
-            if (commit)
+            if (commit_)
                 mgmtObject->inc_tplTxnCommits();
             else
                 mgmtObject->inc_tplTxnAborts();
         }
     } catch (const std::exception& e) {
-        QLS_LOG(error, "Error completing xid " << txn.getXid() << ": " << e.what());
+        QLS_LOG(error, "Error completing xid " << txn_.getXid() << ": " << e.what());
         throw;
     }
 }
@@ -1377,54 +1467,54 @@ std::auto_ptr<qpid::broker::TransactionContext> MessageStoreImpl::begin()
     return std::auto_ptr<qpid::broker::TransactionContext>(new TxnCtxt(&messageIdSequence));
 }
 
-std::auto_ptr<qpid::broker::TPCTransactionContext> MessageStoreImpl::begin(const std::string& xid)
+std::auto_ptr<qpid::broker::TPCTransactionContext> MessageStoreImpl::begin(const std::string& xid_)
 {
     checkInit();
     IdSequence* jtx = &messageIdSequence;
     // pass sequence number for c/a
-    return std::auto_ptr<qpid::broker::TPCTransactionContext>(new TPCTxnCtxt(xid, jtx));
+    return std::auto_ptr<qpid::broker::TPCTransactionContext>(new TPCTxnCtxt(xid_, jtx));
 }
 
-void MessageStoreImpl::prepare(qpid::broker::TPCTransactionContext& ctxt)
+void MessageStoreImpl::prepare(qpid::broker::TPCTransactionContext& ctxt_)
 {
     checkInit();
-    TxnCtxt* txn = dynamic_cast<TxnCtxt*>(&ctxt);
+    TxnCtxt* txn = dynamic_cast<TxnCtxt*>(&ctxt_);
     if(!txn) throw qpid::broker::InvalidTransactionContextException();
     localPrepare(txn);
 }
 
-void MessageStoreImpl::localPrepare(TxnCtxt* ctxt)
+void MessageStoreImpl::localPrepare(TxnCtxt* ctxt_)
 {
     try {
         chkTplStoreInit(); // Late initialize (if needed)
 
         // This sync is required to ensure multi-queue atomicity - ie all txn data
         // must hit the disk on *all* queues before the TPL prepare (enq) is written.
-        ctxt->sync();
+        ctxt_->sync();
 
-        ctxt->incrDtokRef();
-        DataTokenImpl* dtokp = ctxt->getDtok();
+        ctxt_->incrDtokRef();
+        DataTokenImpl* dtokp = ctxt_->getDtok();
         dtokp->set_external_rid(true);
         dtokp->set_rid(messageIdSequence.next());
-        char tpcFlag = static_cast<char>(ctxt->isTPC());
-        tplStorePtr->enqueue_txn_data_record(&tpcFlag, sizeof(char), sizeof(char), dtokp, ctxt->getXid(), false);
-        ctxt->prepare(tplStorePtr.get());
+        char tpcFlag = static_cast<char>(ctxt_->isTPC());
+        tplStorePtr->enqueue_txn_data_record(&tpcFlag, sizeof(char), sizeof(char), dtokp, ctxt_->getXid(), false);
+        ctxt_->prepare(tplStorePtr.get());
         // make sure all the data is written to disk before returning
-        ctxt->sync();
+        ctxt_->sync();
         if (mgmtObject.get() != 0) {
             mgmtObject->inc_tplTransactionDepth();
             mgmtObject->inc_tplTxnPrepares();
         }
     } catch (const std::exception& e) {
-        QLS_LOG(error, "Error preparing xid " << ctxt->getXid() << ": " << e.what());
+        QLS_LOG(error, "Error preparing xid " << ctxt_->getXid() << ": " << e.what());
         throw;
     }
 }
 
-void MessageStoreImpl::commit(qpid::broker::TransactionContext& ctxt)
+void MessageStoreImpl::commit(qpid::broker::TransactionContext& ctxt_)
 {
     checkInit();
-    TxnCtxt* txn(check(&ctxt));
+    TxnCtxt* txn(check(&ctxt_));
     if (!txn->isTPC()) {
         if (txn->impactedQueuesEmpty()) return;
         localPrepare(dynamic_cast<TxnCtxt*>(txn));
@@ -1432,10 +1522,10 @@ void MessageStoreImpl::commit(qpid::broker::TransactionContext& ctxt)
     completed(*dynamic_cast<TxnCtxt*>(txn), true);
 }
 
-void MessageStoreImpl::abort(qpid::broker::TransactionContext& ctxt)
+void MessageStoreImpl::abort(qpid::broker::TransactionContext& ctxt_)
 {
     checkInit();
-    TxnCtxt* txn(check(&ctxt));
+    TxnCtxt* txn(check(&ctxt_));
     if (!txn->isTPC()) {
         if (txn->impactedQueuesEmpty()) return;
         localPrepare(dynamic_cast<TxnCtxt*>(txn));
@@ -1443,20 +1533,20 @@ void MessageStoreImpl::abort(qpid::broker::TransactionContext& ctxt)
     completed(*dynamic_cast<TxnCtxt*>(txn), false);
 }
 
-TxnCtxt* MessageStoreImpl::check(qpid::broker::TransactionContext* ctxt)
+TxnCtxt* MessageStoreImpl::check(qpid::broker::TransactionContext* ctxt_)
 {
-    TxnCtxt* txn = dynamic_cast<TxnCtxt*>(ctxt);
+    TxnCtxt* txn = dynamic_cast<TxnCtxt*>(ctxt_);
     if(!txn) throw qpid::broker::InvalidTransactionContextException();
     return txn;
 }
 
-void MessageStoreImpl::put(db_ptr db,
-                          DbTxn* txn,
-                          Dbt& key,
-                          Dbt& value)
+void MessageStoreImpl::put(db_ptr db_,
+                           DbTxn* txn_,
+                           Dbt& key_,
+                           Dbt& value_)
 {
     try {
-        int status = db->put(txn, &key, &value, DB_NODUPDATA);
+        int status = db_->put(txn_, &key_, &value_, DB_NODUPDATA);
         if (status == DB_KEYEXIST) {
             THROW_STORE_EXCEPTION("duplicate data");
         } else if (status) {
@@ -1467,7 +1557,7 @@ void MessageStoreImpl::put(db_ptr db,
     }
 }
 
-void MessageStoreImpl::deleteBindingsForQueue(const qpid::broker::PersistableQueue& queue)
+void MessageStoreImpl::deleteBindingsForQueue(const qpid::broker::PersistableQueue& queue_)
 {
     TxnCtxt txn;
     txn.begin(dbenv.get(), true);
@@ -1484,9 +1574,9 @@ void MessageStoreImpl::deleteBindingsForQueue(const qpid::broker::PersistableQue
                     THROW_STORE_EXCEPTION("Not enough data for binding");
                 }
                 uint64_t queueId = buffer.getLongLong();
-                if (queue.getPersistenceId() == queueId) {
+                if (queue_.getPersistenceId() == queueId) {
                     bindings->del(0);
-                    QLS_LOG(debug, "Deleting binding for " << queue.getName() << " " << key.id << "->" << queueId);
+                    QLS_LOG(debug, "Deleting binding for " << queue_.getName() << " " << key.id << "->" << queueId);
                 }
             }
         }
@@ -1498,12 +1588,12 @@ void MessageStoreImpl::deleteBindingsForQueue(const qpid::broker::PersistableQue
         txn.abort();
         throw;
     }
-    QLS_LOG(debug, "Deleted all bindings for " << queue.getName() << ":" << queue.getPersistenceId());
+    QLS_LOG(debug, "Deleted all bindings for " << queue_.getName() << ":" << queue_.getPersistenceId());
 }
 
-void MessageStoreImpl::deleteBinding(const qpid::broker::PersistableExchange& exchange,
-                                    const qpid::broker::PersistableQueue& queue,
-                                    const std::string& bkey)
+void MessageStoreImpl::deleteBinding(const qpid::broker::PersistableExchange& exchange_,
+                                     const qpid::broker::PersistableQueue& queue_,
+                                     const std::string& bkey_)
 {
     TxnCtxt txn;
     txn.begin(dbenv.get(), true);
@@ -1512,7 +1602,7 @@ void MessageStoreImpl::deleteBinding(const qpid::broker::PersistableExchange& ex
             Cursor bindings;
             bindings.open(bindingDb, txn.get());
 
-            IdDbt key(exchange.getPersistenceId());
+            IdDbt key(exchange_.getPersistenceId());
             Dbt value;
 
             for (int status = bindings->get(&key, &value, DB_SET); status == 0; status = bindings->get(&key, &value, DB_NEXT_DUP)) {
@@ -1521,14 +1611,14 @@ void MessageStoreImpl::deleteBinding(const qpid::broker::PersistableExchange& ex
                     THROW_STORE_EXCEPTION("Not enough data for binding");
                 }
                 uint64_t queueId = buffer.getLongLong();
-                if (queue.getPersistenceId() == queueId) {
+                if (queue_.getPersistenceId() == queueId) {
                     std::string q;
                     std::string k;
                     buffer.getShortString(q);
                     buffer.getShortString(k);
-                    if (bkey == k) {
+                    if (bkey_ == k) {
                         bindings->del(0);
-                        QLS_LOG(debug, "Deleting binding for " << queue.getName() << " " << key.id << "->" << queueId);
+                        QLS_LOG(debug, "Deleting binding for " << queue_.getName() << " " << key.id << "->" << queueId);
                     }
                 }
             }
@@ -1542,6 +1632,13 @@ void MessageStoreImpl::deleteBinding(const qpid::broker::PersistableExchange& ex
         throw;
     }
 }
+
+std::string MessageStoreImpl::getStoreTopLevelDir() {
+    std::ostringstream dir;
+    dir << storeDir << "/" << storeTopLevelDir;
+    return dir.str();
+}
+
 
 std::string MessageStoreImpl::getJrnlBaseDir()
 {
@@ -1564,43 +1661,28 @@ std::string MessageStoreImpl::getTplBaseDir()
     return dir.str();
 }
 
-std::string MessageStoreImpl::getJrnlDir(const qpid::broker::PersistableQueue& queue) //for exmaple /var/rhm/ + queueDir/
+std::string MessageStoreImpl::getJrnlDir(const qpid::broker::PersistableQueue& queue_) //for exmaple /var/rhm/ + queueDir/
 {
-    return getJrnlHashDir(queue.getName().c_str());
-}
-
-uint32_t MessageStoreImpl::bHash(const std::string str)
-{
-    // Daniel Bernstein hash fn
-    uint32_t h = 0;
-    for (std::string::const_iterator i = str.begin(); i < str.end(); i++)
-        h = 33*h + *i;
-    return h;
-}
-
-std::string MessageStoreImpl::getJrnlHashDir(const std::string& queueName) //for exmaple /var/rhm/ + queueDir/
-{
-    std::stringstream dir;
-    dir << getJrnlBaseDir() << std::hex << std::setfill('0') << std::setw(4);
-    dir << (bHash(queueName.c_str()) % 29); // Use a prime number for better distribution across dirs
-    dir << "/" << queueName << "/";
-    return dir.str();
+    /*return getJrnlHashDir(queue_.getName().c_str());*/
+    std::ostringstream oss;
+    oss << getJrnlBaseDir() << queue_.getName();
+    return oss.str();
 }
 
 std::string MessageStoreImpl::getStoreDir() const { return storeDir; }
 
-void MessageStoreImpl::journalDeleted(JournalImpl& j) {
+void MessageStoreImpl::journalDeleted(JournalImpl& j_) {
     qpid::sys::Mutex::ScopedLock sl(journalListLock);
-    journalList.erase(j.id());
+    journalList.erase(j_.id());
 }
 
-MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name) :
-                                             qpid::Options(name),
+MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name_) :
+                                             qpid::Options(name_),
                                              truncateFlag(defTruncateFlag),
                                              wCachePageSizeKib(defWCachePageSize),
                                              tplWCachePageSizeKib(defTplWCachePageSize),
                                              efpPartition(defEfpPartition),
-                                             efpFileSize(defEfpFileSize)
+                                             efpFileSizeKib(defEfpFileSizeKib)
 {
     addOptions()
         ("store-dir", qpid::optValue(storeDir, "DIR"),
@@ -1619,8 +1701,8 @@ MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name) :
                 "Lower values decrease latency at the expense of throughput.")
         ("efp-partition", qpid::optValue(efpPartition, "N"),
                 "Empty File Pool partition to use for finding empty journal files")
-        ("efp-file-size", qpid::optValue(efpFileSize, "N"),
-                "Empty File Pool file size to use for journal files")
+        ("efp-file-size", qpid::optValue(efpFileSizeKib, "N"),
+                "Empty File Pool file size in KiB to use for journal files. Must be a multiple of 4 KiB.")
         ;
 }
 

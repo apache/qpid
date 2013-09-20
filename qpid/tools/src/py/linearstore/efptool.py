@@ -30,6 +30,8 @@ DEFAULT_SBLK_SIZE = 4096 # 32 dblks
 DEFAULT_SBLK_SIZE_KB = DEFAULT_SBLK_SIZE / 1024
 DEFAULT_EFP_DIR_NAME = 'efp'
 DEFAULT_JRNL_EXTENTION = '.jrnl'
+DEFAULT_FHDR_MAGIC = 'QLSf'
+DEFAULT_JRNL_VERSION = 2
 
 def get_directory_size(directory_name):
     ''' Decode the directory name in the format NNNk to a numeric size, where NNN is a number string '''
@@ -52,7 +54,7 @@ class InvalidPartitionDirectoryError(EfpToolError):
 
 class Header:
     ''' Abstract class for encoding the initial part of the header struct which is common across all journal headers '''
-    FORMAT = '=4sBBHQ'
+    FORMAT = '<4s2HQ'
     HDR_VER = 2
     def __init__(self, magic, hdr_ver, flags, rid):
         self.magic = magic
@@ -64,26 +66,27 @@ class Header:
         return self.magic == r'\0'*4
     def encode(self):
         ''' Encode the members of this struct to a binary string for writing to disk '''
-        return pack(Header.FORMAT, self.magic, self.hdr_ver, 0xff, self.flags, self.rid)
+        return pack(Header.FORMAT, self.magic, self.hdr_ver, self.flags, self.rid)
 
 
 class FileHeader(Header):
     ''' Class for encoding journal file headers to disk '''
-    FORMAT = '=3Q2L2QH'
-    def __init__(self, magic, hdr_ver, flags, rid, fro, ts_sec, ts_ns, file_cnt, file_size, file_number, file_name):
+    FORMAT = '<2HL5QH'
+    def __init__(self, magic, hdr_ver, flags, rid, fhdr_size_sblks, efp_partition, file_size_kib, fro, ts_sec, ts_ns, file_number, queue_name):
         Header.__init__(self, magic, hdr_ver, flags, rid)
+        self.fhdr_size_sblks = fhdr_size_sblks
+        self.efp_partition = efp_partition
+        self.file_size_kib = file_size_kib
         self.fro = fro
         self.ts_sec = ts_sec
         self.ts_ns = ts_ns
-        self.file_cnt = file_cnt
-        self.file_size = file_size
         self.file_number = file_number
-        self.file_name = file_name
+        self.queue_name = queue_name
     def encode(self):
         ''' Encode the members of this struct to a binary string for writing to disk '''
-        return Header.encode(self) + pack(FileHeader.FORMAT, self.fro, self.ts_sec, self.ts_ns, self.file_cnt,
-                                          0xffffffff, self.file_size, self.file_number,
-                                          len(self.file_name)) + self.file_name
+        return Header.encode(self) + pack(FileHeader.FORMAT, self.fhdr_size_sblks, self.efp_partition.partition_num,
+                                          0xffffffff, self.file_size_kib, self.fro, self.ts_sec, self.ts_ns,
+                                          self.file_number, len(self.queue_name)) + self.queue_name
 
 
 class EfpArgParser(argparse.ArgumentParser):
@@ -214,7 +217,7 @@ class EmptyFilePool:
     def create_new_efp_file(self):
         ''' Create a single new empty journal file of the prescribed size for this EFP '''
         file_name = str(uuid4()) + DEFAULT_JRNL_EXTENTION
-        file_header = FileHeader(r'\0\0\0\0', 0, 0, 0, 0, 0, 0, 0, self.file_size_kb, 0, file_name)
+        file_header = FileHeader(DEFAULT_FHDR_MAGIC, DEFAULT_JRNL_VERSION, 0, 0, 1, self.partition, self.file_size_kb, 0, 0, 0, 0, '')
         efh = file_header.encode()
         efh_bytes = len(efh)
         f = open(os.path.join(self.directory, file_name), 'wb')
@@ -258,11 +261,14 @@ class Partition:
         return s
     def validate_efp_directory(self):
         ''' Check that the partition directory is valid '''
-        if os.path.exists(self.efp_directory):
-            if not os.path.isdir(self.efp_directory):
-                raise InvalidPartitionDirectoryError
+        if os.path.isdir(self.root_path):
+            if os.path.exists(self.efp_directory):
+                if not os.path.isdir(self.efp_directory):
+                    raise InvalidPartitionDirectoryError
+            else:
+                os.mkdir(self.efp_directory)
         else:
-            os.mkdir(self.efp_directory)
+            raise InvalidPartitionDirectoryError
         # TODO: Add checks for permissions to write and sufficient space
     def read(self):
         ''' Read the partition, identifying EFP directories. Read each EFP directory found. '''

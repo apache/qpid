@@ -23,7 +23,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/DataDir.h"
-#include "qpid/linearstore/Log.h"
+#include "qpid/linearstore/QpidLog.h"
 #include "qpid/linearstore/MessageStoreImpl.h"
 
 using qpid::linearstore::MessageStoreImpl;

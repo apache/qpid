@@ -80,12 +80,18 @@ if (BUILD_LINEARSTORE)
         qpid/linearstore/jrnl/deq_rec.cpp
         qpid/linearstore/jrnl/enq_map.cpp
         qpid/linearstore/jrnl/enq_rec.cpp
+        qpid/linearstore/jrnl/EmptyFilePool.cpp
+        qpid/linearstore/jrnl/EmptyFilePoolManager.cpp
+        qpid/linearstore/jrnl/EmptyFilePoolPartition.cpp
         #qpid/linearstore/jrnl/fcntl.cpp
         qpid/linearstore/jrnl/jcntl.cpp
         qpid/linearstore/jrnl/jdir.cpp
         qpid/linearstore/jrnl/jerrno.cpp
         qpid/linearstore/jrnl/jexception.cpp
         #qpid/linearstore/jrnl/jinf.cpp
+		qpid/linearstore/jrnl/JournalFile.cpp
+		qpid/linearstore/jrnl/JournalFileController.cpp
+		qpid/linearstore/jrnl/JournalLog.cpp
         qpid/linearstore/jrnl/jrec.cpp
         #qpid/linearstore/jrnl/lp_map.cpp
         #qpid/linearstore/jrnl/lpmgr.cpp
@@ -106,6 +112,7 @@ if (BUILD_LINEARSTORE)
         qpid/linearstore/BindingDbt.cpp
         qpid/linearstore/BufferValue.cpp
         qpid/linearstore/DataTokenImpl.cpp
+        qpid/linearstore/EmptyFilePoolManagerImpl.cpp
         qpid/linearstore/IdDbt.cpp
         qpid/linearstore/IdSequence.cpp
         qpid/linearstore/JournalImpl.cpp
@@ -118,9 +125,9 @@ if (BUILD_LINEARSTORE)
         qpid/linearstore/jrnl/utils/deq_hdr.c
         qpid/linearstore/jrnl/utils/enq_hdr.c
         qpid/linearstore/jrnl/utils/file_hdr.c
-	qpid/linearstore/jrnl/utils/rec_hdr.c
-	qpid/linearstore/jrnl/utils/rec_tail.c
-	qpid/linearstore/jrnl/utils/txn_hdr.c
+        qpid/linearstore/jrnl/utils/rec_hdr.c
+        qpid/linearstore/jrnl/utils/rec_tail.c
+        qpid/linearstore/jrnl/utils/txn_hdr.c
     )
 
     # linearstore include directories

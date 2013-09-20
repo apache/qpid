@@ -28,6 +28,8 @@
 extern "C"{
 #endif
 
+#define MAX_FILE_HDR_LEN 4096 // Set to 1 sblk
+
 #pragma pack(1)
 
 /**
@@ -47,44 +49,50 @@ extern "C"{
  * +---+---+---+---+---+---+---+---+   | struct rec_hdr_t
  * |       first rid in file       |   |
  * +---+---+---+---+---+---+---+---+  -+
+ * |  fs   | partn |   reserved    |
+ * +---+---+---+---+---+---+---+---+
+ * |           file-size           |
+ * +---+---+---+---+---+---+---+---+
  * |              fro              |
  * +---+---+---+---+---+---+---+---+
  * |           timestamp (sec)     |
  * +---+---+---+---+---+---+---+---+
  * |           timestamp (ns)      |
  * +---+---+---+---+---+---+---+---+
- * |  file-count   |    reserved   |
- * +---+---+---+---+---+---+---+---+
- * |           file-size           |
- * +---+---+---+---+---+---+---+---+
  * |          file-number          |
  * +---+---+---+---+---+---+---+---+
- * | n-len |  Queue Name...        |
+ * |  qnl  | Queue Name...         |
  * +-------+                       |
  * |                               |
  * +---+---+---+---+---+---+---+---+
  *
- * ver = file version (If the format or encoding of this file changes, then this
- *       number should be incremented)
+ * ver = Journal version
+ * rid = Record ID
+ * fs = File header size in sblks (defined by JRNL_SBLK_SIZE)
+ * partn = EFP partition from which this file came
  * fro = First Record Offset
- * n-len = Length of the queue name in octets.
+ * qnl = Length of the queue name in octets.
  * </pre>
  */
 typedef struct file_hdr_t {
-    rec_hdr_t _rhdr;		/**< Common record header struct, but rid field is used for rid of first compete record in file */
-    uint64_t  _fro;			/**< First Record Offset (FRO) */
-    uint64_t  _ts_sec;		/**< Time stamp (seconds part) */
-    uint64_t  _ts_nsec;		/**< Time stamp (nanoseconds part) */
-    uint32_t  _file_count;	/**< Total number of files in linear sequence at time of writing this file */
+    rec_hdr_t _rhdr;		    /**< Common record header struct, but rid field is used for rid of first compete record in file */
+    uint16_t  _fhdr_size_sblks; /**< File header size in sblks (defined by JRNL_SBLK_SIZE) */
+    uint16_t  _efp_partition;   /**< EFP Partition number from which this file was obtained */
     uint32_t  _reserved;
-    uint64_t  _file_size;	/**< Size of this file in octets, including header sblk */
-    uint64_t  _file_number; /**< The logical number of this file in a monotonically increasing sequence */
-    uint16_t  _name_length;	/**< Length of the queue name in octets, which follows this struct in the header */
+    uint64_t  _file_size_kib;   /**< Size of this file in KiB, excluding header sblk */
+    uint64_t  _fro;			    /**< First Record Offset (FRO) */
+    uint64_t  _ts_sec;		    /**< Time stamp (seconds part) */
+    uint64_t  _ts_nsec;		    /**< Time stamp (nanoseconds part) */
+    uint64_t  _file_number;     /**< The logical number of this file in a monotonically increasing sequence */
+    uint16_t  _queue_name_len;  /**< Length of the queue name in octets, which follows this struct in the header */
 } file_hdr_t;
 
-int file_hdr_init(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                   const uint64_t rid, const uint64_t fro, const uint32_t file_count, const uint64_t file_size,
-                   const uint64_t file_number);
+void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t fhdr_size_sblks,
+                     const uint16_t efp_partition, const uint64_t file_size);
+int file_hdr_init(file_hdr_t* dest, const uint16_t uflag, const uint64_t rid, const uint64_t fro,
+                  const uint64_t file_number, const uint16_t queue_name_len, const char* queue_name);
+void file_hdr_reset(file_hdr_t* target);
+int is_file_hdr_reset(file_hdr_t* target);
 void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src);
 int  set_time_now(file_hdr_t *fh);
 void set_time(file_hdr_t *fh, struct timespec *ts);

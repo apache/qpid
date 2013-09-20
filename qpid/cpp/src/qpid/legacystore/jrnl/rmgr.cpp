@@ -72,7 +72,7 @@ rmgr::initialize(aio_callback* const cbp)
         throw jexception(jerrno::JERR__MALLOC, oss.str(), "rmgr", "initialize");
     }
     _fhdr_aio_cb_ptr = new aio_cb;
-    std::memset(_fhdr_aio_cb_ptr, 0, sizeof(aio_cb*));
+    std::memset(_fhdr_aio_cb_ptr, 0, sizeof(aio_cb));
 }
 
 void

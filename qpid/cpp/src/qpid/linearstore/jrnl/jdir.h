@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_JDIR_H
-#define QPID_LEGACYSTORE_JRNL_JDIR_H
+#ifndef QPID_LINEARSTORE_JRNL_JDIR_H
+#define QPID_LINEARSTORE_JRNL_JDIR_H
 
 namespace qpid
 {
@@ -32,6 +32,7 @@ class jdir;
 //#include "qpid/linearstore/jrnl/jinf.h"
 #include <dirent.h>
 #include <string>
+#include <vector>
 
 namespace qpid
 {
@@ -46,7 +47,7 @@ namespace qls_jrnl
     {
     private:
         std::string _dirname;
-        std::string _base_filename;
+        //std::string _base_filename;
 
     public:
 
@@ -57,7 +58,7 @@ namespace qls_jrnl
         * \param base_filename Filename root used in the creation of %journal files
         *     and sub-directories.
         */
-        jdir(const std::string& dirname, const std::string& base_filename);
+        jdir(const std::string& dirname/*, const std::string& base_filename*/);
 
         virtual ~jdir();
 
@@ -119,7 +120,7 @@ namespace qls_jrnl
         *     directory failed.
         * \exception jerrno::JERR_JDIR_CLOSEDIR The directory handle could not be closed.
         */
-        static void clear_dir(const char* dirname, const char* base_filename,
+        static void clear_dir(const char* dirname/*, const char* base_filename*/,
                 const bool create_flag = true);
 
         /**
@@ -137,7 +138,7 @@ namespace qls_jrnl
         *     directory failed.
         * \exception jerrno::JERR_JDIR_CLOSEDIR The directory handle could not be closed.
         */
-        static void clear_dir(const std::string& dirname, const std::string& base_filename,
+        static void clear_dir(const std::string& dirname/*, const std::string& base_filename*/,
                 const bool create_flag = true);
 
 
@@ -152,7 +153,7 @@ namespace qls_jrnl
          * \param bak_dir_base Base name for backup directory to be created in dirname, into which target_dir will be moved.
          * \return Name of backup dir into which target_dir was pushed.
          */
-        static std::string push_down(const std::string& dirname, const std::string& target_dir, const std::string& bak_dir_base);
+        static std::string push_down(const std::string& dirname, const std::string& target_dir/*, const std::string& bak_dir_base*/);
 
 
         /**
@@ -184,7 +185,7 @@ namespace qls_jrnl
         * \exception jerrno::JERR_JINF_CVALIDFAIL Error validating %jinf file
         * \exception jerrno::JERR_JDIR_NOSUCHFILE Expected jdat file is missing
         */
-        static void verify_dir(const char* dirname, const char* base_filename);
+        static void verify_dir(const char* dirname/*, const char* base_filename*/);
 
         /**
         * \brief Verify that dirname is a valid %journal directory.
@@ -201,7 +202,7 @@ namespace qls_jrnl
         * \exception jerrno::JERR_JINF_CVALIDFAIL Error validating %jinf file
         * \exception jerrno::JERR_JDIR_NOSUCHFILE Expected jdat file is missing
         */
-        static void verify_dir(const std::string& dirname, const std::string& base_filename);
+        static void verify_dir(const std::string& dirname/*, const std::string& base_filename*/);
 
         /**
         * \brief Delete the %journal directory and all files and sub--directories that it may
@@ -273,8 +274,8 @@ namespace qls_jrnl
         * \exception jerrno::JERR_JDIR_CLOSEDIR The directory handle could not be closed.
         * \exception jerrno::JERR_JDIR_MKDIR The backup directory could not be deleted.
         */
-        static std::string create_bak_dir(const std::string& dirname,
-                const std::string& base_filename);
+        static std::string create_bak_dir(const std::string& dirname/*,
+                const std::string& base_filename*/);
 
         /**
         * \brief Return the directory name as a string.
@@ -284,7 +285,7 @@ namespace qls_jrnl
         /**
         * \brief Return the %journal base filename name as a string.
         */
-        inline const std::string& base_filename() const { return _base_filename; }
+//        inline const std::string& base_filename() const { return _base_filename; }
 
         /**
         * \brief Test whether the named file is a directory.
@@ -335,6 +336,8 @@ namespace qls_jrnl
         */
         static bool exists(const std::string& name);
 
+        static void read_dir(const std::string& name, std::vector<std::string>& dir_list, const bool incl_dirs, const bool incl_files, const bool incl_links);
+
         /**
         * \brief Stream operator
         */
@@ -363,4 +366,4 @@ namespace qls_jrnl
 
 }}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_JDIR_H
+#endif // ifndef QPID_LINEARSTORE_JRNL_JDIR_H

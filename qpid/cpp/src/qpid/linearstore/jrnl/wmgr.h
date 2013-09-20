@@ -67,9 +67,9 @@ namespace qls_jrnl
         aio_cb** _fhdr_aio_cb_arr;      ///< Array of iocb pointers for file header writes
         uint32_t _cached_offset_dblks;  ///< Amount of unwritten data in page (dblocks)
         std::deque<data_tok*> _ddtokl;  ///< Deferred dequeue data_tok list
-        uint32_t _jfsize_dblks;         ///< Journal file size in dblks (NOT sblks!)
-        uint32_t _jfsize_pgs;           ///< Journal file size in cache pages
-        uint16_t _num_jfiles;           ///< Number of files used in iocb mallocs
+//        uint32_t _jfsize_dblks;         ///< Journal file size in dblks (NOT sblks!)
+//        uint32_t _jfsize_pgs;           ///< Journal file size in cache pages
+//        uint16_t _num_jfiles;           ///< Number of files used in iocb mallocs
 
         // TODO: Convert _enq_busy etc into a proper threadsafe lock
         // TODO: Convert to enum? Are these encodes mutually exclusive?

@@ -61,7 +61,7 @@ rmgr::initialize(aio_callback* const cbp)
         throw jexception(jerrno::JERR__MALLOC, oss.str(), "rmgr", "initialize");
     }
     _fhdr_aio_cb_ptr = new aio_cb;
-    std::memset(_fhdr_aio_cb_ptr, 0, sizeof(aio_cb*));
+    std::memset(_fhdr_aio_cb_ptr, 0, sizeof(aio_cb));
 }
 
 void
@@ -638,6 +638,7 @@ rmgr::init_aio_reads(const int16_t /*first_uninit*/, const uint16_t /*num_uninit
 void
 rmgr::rotate_page()
 {
+/*
     _page_cb_arr[_pg_index]._rdblks = 0;
     _page_cb_arr[_pg_index]._state = UNUSED;
     if (_pg_offset_dblks >= JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE_DBLKS)
@@ -654,6 +655,7 @@ rmgr::rotate_page()
     // Need to move reset into if (_rrfc.file_rotate()) above.
     if (_pg_cntr >= (_jc->jfsize_sblks() / JRNL_RMGR_PAGE_SIZE))
         _pg_cntr = 0;
+*/
 }
 
 uint32_t
