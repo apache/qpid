@@ -44,6 +44,7 @@
 namespace qpid {
 namespace broker {
 class Connection;
+class ProtocolRegistry;
 }
 namespace sys {
 class Timer;
@@ -256,6 +257,7 @@ private:
     uint16_t                     interval;
     qpid::broker::Broker*        broker;
     qpid::sys::Timer*            timer;
+    qpid::broker::ProtocolRegistry* protocols;
     uint16_t                     bootSequence;
     uint32_t                     nextObjectId;
     uint32_t                     brokerBank;

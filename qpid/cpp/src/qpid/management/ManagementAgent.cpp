@@ -39,6 +39,7 @@
 #include "qpid/sys/PollableQueue.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/broker/Protocol.h"
 #include "qpid/types/Variant.h"
 #include "qpid/types/Uuid.h"
 #include "qpid/framing/List.h"
@@ -169,7 +170,7 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
 }
 
 ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
-    threadPoolSize(1), publish(true), interval(10), broker(0), timer(0),
+    threadPoolSize(1), publish(true), interval(10), broker(0), timer(0), protocols(0),
     startTime(sys::now()),
     suppressed(false), disallowAllV1Methods(false),
     vendorNameKey(defaultVendorName), productNameKey(defaultProductName),
@@ -221,6 +222,7 @@ void ManagementAgent::configure(const string& _dataDir, bool _publish, uint16_t 
     timer          = &broker->getTimer();
     timer->add(new Periodic(boost::bind(&ManagementAgent::periodicProcessing, this), timer, interval));
 
+    protocols = &broker->getProtocolRegistry();
     // Get from file or generate and save to file.
     if (dataDir.empty())
     {
@@ -2132,9 +2134,9 @@ bool ManagementAgent::authorizeAgentMessage(Message& msg)
     uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
-    qpid::broker::amqp_0_10::MessageTransfer& transfer(qpid::broker::amqp_0_10::MessageTransfer::get(msg));
+    boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> transfer = protocols->translate(msg);
     const framing::MessageProperties* p =
-        transfer.getFrames().getHeaders()->get<framing::MessageProperties>();
+        transfer ? transfer->getFrames().getHeaders()->get<framing::MessageProperties>() : 0;
 
     const framing::FieldTable *headers = p ? &p->getApplicationHeaders() : 0;
 
@@ -2229,9 +2231,9 @@ bool ManagementAgent::authorizeAgentMessage(Message& msg)
 
         // authorization failed, send reply if replyTo present
 
-        qpid::broker::amqp_0_10::MessageTransfer& transfer(qpid::broker::amqp_0_10::MessageTransfer::get(msg));
+        boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> transfer = protocols->translate(msg);
         const framing::MessageProperties* p =
-            transfer.getFrames().getHeaders()->get<framing::MessageProperties>();
+            transfer ? transfer->getFrames().getHeaders()->get<framing::MessageProperties>() : 0;
         if (p && p->hasReplyTo()) {
             const framing::ReplyTo& rt = p->getReplyTo();
             string rte = rt.getExchange();
@@ -2266,9 +2268,10 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
 {
     string   rte;
     string   rtk;
-    qpid::broker::amqp_0_10::MessageTransfer& transfer(qpid::broker::amqp_0_10::MessageTransfer::get(msg));
-    const framing::MessageProperties* p =
-        transfer.getFrames().getHeaders()->get<framing::MessageProperties>();
+
+    boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> transfer = protocols->translate(msg);
+    const framing::MessageProperties* p = transfer ?
+        transfer->getFrames().getHeaders()->get<framing::MessageProperties>() : 0;
     if (p && p->hasReplyTo()) {
         const framing::ReplyTo& rt = p->getReplyTo();
         rte = rt.getExchange();
