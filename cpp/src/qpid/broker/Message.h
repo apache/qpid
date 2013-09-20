@@ -104,7 +104,7 @@ public:
     sys::AbsTime getExpiration() const { return expiration; }
     void setExpiration(sys::AbsTime exp) { expiration = exp; }
     uint64_t getTtl() const;
-    QPID_BROKER_EXTERN bool getTtl(uint64_t) const;
+    QPID_BROKER_EXTERN bool getTtl(uint64_t&) const;
 
     /** set the timestamp delivery property to the current time-of-day */
     QPID_BROKER_EXTERN void setTimestamp();
