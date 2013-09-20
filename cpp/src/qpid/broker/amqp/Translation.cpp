@@ -41,6 +41,7 @@ const std::string EMPTY;
 const std::string FORWARD_SLASH("/");
 const std::string TEXT_PLAIN("text/plain");
 const std::string SUBJECT_KEY("qpid.subject");
+const std::string APP_ID("x-amqp-0-10.app-id");
 
 qpid::framing::ReplyTo translate(const std::string address, Broker* broker)
 {
@@ -253,6 +254,10 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
             if (ap) {
                 qpid::amqp::Decoder d(ap.data, ap.size);
                 qpid::amqp_0_10::translate(d.readMap(), props->getApplicationHeaders());
+                std::string appid = props->getApplicationHeaders().getAsString(APP_ID);
+                if (!appid.empty()) {
+                    props->setAppId(appid);
+                }
             }
 
             qpid::framing::DeliveryProperties* dp =

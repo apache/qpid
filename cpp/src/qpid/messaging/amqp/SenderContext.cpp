@@ -134,6 +134,7 @@ namespace {
 const std::string X_AMQP("x-amqp-");
 const std::string X_AMQP_FIRST_ACQUIRER("x-amqp-first-acquirer");
 const std::string X_AMQP_DELIVERY_COUNT("x-amqp-delivery-count");
+const std::string X_AMQP_0_10_APP_ID("x-amqp-0-10.app-id");
 
 class HeaderAdapter : public qpid::amqp::MessageEncoder::Header
 {
@@ -353,7 +354,7 @@ class ApplicationPropertiesAdapter : public qpid::amqp::MessageEncoder::Applicat
     {
         for (qpid::types::Variant::Map::const_iterator i = headers.begin(); i != headers.end(); ++i) {
             //strip out values with special keys as they are sent in standard fields
-            if (!startsWith(i->first, X_AMQP)) {
+            if (!startsWith(i->first, X_AMQP) || i->first == X_AMQP_0_10_APP_ID) {
                 qpid::amqp::CharSequence key(convert(i->first));
                 switch (i->second.getType()) {
                   case qpid::types::VAR_VOID:
