@@ -1,0 +1,83 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Preferences'" id="preferences.preferencesDialog">
+  <div data-dojo-type="dijit/layout/TabContainer" style="width: 600px; height: 400px">
+    <div data-dojo-type="dijit/layout/ContentPane" title="Own Preferences" data-dojo-props="selected:true" id="preferences.preferencesTab">
+      <form method="post" data-dojo-type="dijit/form/Form" id="preferences.preferencesForm">
+        <table cellpadding="0" cellspacing="2" style="overflow: auto; height: 300px;">
+            <tr>
+                <td><strong>Time zone: </strong></td>
+                <td>
+                    <span id="preferences.timeZone" data-dojo-type="qpid/common/TimeZoneSelector" data-dojo-props="name: 'timeZone'"></span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Update period:</strong></td>
+                <td><input id="preferences.updatePeriod" name="updatePeriod" data-dojo-type="dijit/form/NumberSpinner" data-dojo-props="
+                                  invalidMessage: 'Invalid value',
+                                  required: false,
+                                  smallDelta: 1,
+                                  value: 5,
+                                  constraints: {min:1,max:65535,places:0, pattern: '#####'},
+                              "/>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Save tabs:</strong></td>
+                <td><input id="preferences.saveTabs" type="checkbox" data-dojo-type="dijit/form/CheckBox" name="saveTabs"/></td>
+            </tr>
+        </table>
+        <div class="dijitDialogPaneActionBar">
+          <input type="submit" value="Save Preferences" data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Save Preferences'" id="preferences.saveButton"/>
+          <button value="Cancel" data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Cancel'" id="preferences.cancelButton"></button>
+        </div>
+      </form>
+    </div>
+    <div data-dojo-type="dijit/layout/ContentPane" title="Users with Preferences" id="preferences.usersTab">
+      <table id="preferences.users" data-dojo-type="dojox/grid/EnhancedGrid" data-dojo-props="
+            label:'Trust Stores:',
+            plugins:{
+                      indirectSelection: true,
+                      pagination: {
+                        pageSizes: [10, 25, 50, 100],
+                        description: true,
+                        sizeSwitch: true,
+                        pageStepper: true,
+                        gotoButton: true,
+                        maxPageStep: 4,
+                        position: 'bottom'
+                      }
+                    },
+            rowSelector:'0px'
+            " style="height: 300px;">
+        <thead>
+          <tr>
+            <th field="name" style="width:50%">User</th>
+            <th field="authenticationProvider" style="width:50%">Authentication Provider</th>
+          </tr>
+        </thead>
+      </table>
+      <div class="dijitDialogPaneActionBar">
+        <button id="preferences.deletePreeferencesButton" data-dojo-type="dijit/form/Button" data-dojo-props="label:'Delete Preferences', title:'Delete preferences for selected users'">Delete Preferences</button>
+      </div>
+    </div>
+  </div>
+</div>

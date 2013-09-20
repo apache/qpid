@@ -64,6 +64,7 @@ using boost::dynamic_pointer_cast;
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : systemId(b.getSystem()->getSystemId().data()),
       settings(s),
+      userId(s.username+"@"+b.getOptions().realm),
       broker(b),
       observer(new ConnectionObserver(*this, systemId)),
       role(new StandAlone),
@@ -75,14 +76,14 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     // otherwise there's a window for a client to connect before we get to
     // initialize()
     if (settings.cluster) {
-        QPID_LOG(debug, "Broker startup, rejecting client connections.");
+        QPID_LOG(debug, "Backup starting, rejecting client connections.");
         shared_ptr<broker::ConnectionObserver> excluder(new BackupConnectionExcluder);
         observer->setObserver(excluder, "Backup: ");
         broker.getConnectionObservers().add(observer);
         broker.getExchanges().registerExchange(failoverExchange);
     }
     // QueueSnapshots are needed for standalone replication as well as cluster.
-    broker.getConfigurationObservers().add(queueSnapshots);
+    broker.getBrokerObservers().add(queueSnapshots);
 }
 
 namespace {
@@ -94,7 +95,7 @@ bool isNone(const std::string& x) { return x.empty() || x == NONE; }
 void HaBroker::initialize() {
     if (settings.cluster) {
         membership.setStatus(JOINING);
-        QPID_LOG(notice, "Initializing HA broker: " << membership.getInfo());
+        QPID_LOG(notice, "Initializing HA broker: " << membership.getSelf());
     }
 
     // Set up the management object.
@@ -202,7 +203,7 @@ std::vector<Url> HaBroker::getKnownBrokers() const {
 }
 
 void HaBroker::shutdown(const std::string& message) {
-    QPID_LOG(critical, message);
+    QPID_LOG(critical, "Shutting down: " << message);
     broker.shutdown();
     throw Exception(message);
 }
@@ -213,7 +214,7 @@ BrokerStatus HaBroker::getStatus() const {
 
 void HaBroker::setAddress(const Address& a) {
     QPID_LOG(info, role->getLogPrefix() << "Set self address to: " << a);
-    membership.setAddress(a);
+    membership.setSelfAddress(a);
 }
 
 boost::shared_ptr<QueueReplicator> HaBroker::findQueueReplicator(const std::string& queueName) {

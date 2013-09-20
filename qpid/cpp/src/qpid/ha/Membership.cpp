@@ -107,6 +107,14 @@ BrokerInfo::Set Membership::otherBackups() const {
     return result;
 }
 
+BrokerInfo::Set Membership::getBrokers() const {
+    Mutex::ScopedLock l(lock);
+    BrokerInfo::Set result;
+    transform(brokers.begin(), brokers.end(), inserter(result, result.begin()),
+              boost::bind(&BrokerInfo::Map::value_type::second, _1));
+    return result;
+}
+
 bool Membership::get(const types::Uuid& id, BrokerInfo& result) const {
     Mutex::ScopedLock l(lock);
     BrokerInfo::Map::const_iterator i = brokers.find(id);
@@ -136,10 +144,9 @@ bool checkTransition(BrokerStatus from, BrokerStatus to) {
 }
 } // namespace
 
-
 void Membership::update(Mutex::ScopedLock& l) {
     QPID_LOG(info, "Membership: " <<  brokers);
-    // Update managment and send update event.
+// Update managment and send update event.
     BrokerStatus newStatus = getStatus(l);
     Variant::List brokerList = asList(l);
     if (mgmtObject) {
@@ -198,14 +205,14 @@ BrokerStatus Membership::getStatus(sys::Mutex::ScopedLock&) const  {
     return i->second.getStatus();
 }
 
-BrokerInfo Membership::getInfo() const  {
+BrokerInfo Membership::getSelf() const  {
     Mutex::ScopedLock l(lock);
     BrokerInfo::Map::const_iterator i = brokers.find(self);
     assert(i != brokers.end());
     return i->second;
 }
 
-void Membership::setAddress(const Address& a) {
+void Membership::setSelfAddress(const Address& a) {
     Mutex::ScopedLock l(lock);
     brokers[self].setAddress(a);
     update(l);

@@ -20,7 +20,6 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -34,7 +33,7 @@ public class HAMessageStoreSmokeTest extends QpidTestCase
     {
         try
         {
-            _store.configure("test", mock(VirtualHost.class));
+            _store.configure(mock(VirtualHost.class));
             fail("Expected an exception to be thrown");
         }
         catch (ConfigurationException ce)

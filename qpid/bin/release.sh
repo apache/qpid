@@ -211,13 +211,15 @@ if [ "PYTHON" == "$PYTHON" ] ; then
 
   # create the swigged python sources
   mkdir qpid-${VER}/python-qpid_messaging-${VER}
+  mkdir qpid-${VER}/python-qpid_messaging-${VER}/examples
   cp qpid-${VER}/cpp/bindings/qpid/python/python.i \
      qpid-${VER}/cpp/bindings/qpid/python/LICENSE \
      qpid-${VER}/cpp/bindings/qpid/python/README \
      qpid-${VER}/cpp/bindings/qpid/python/ChangeLog \
      qpid-${VER}/cpp/bindings/qpid/python/extra_dist/CMakeLists.txt \
      qpid-${VER}/python-qpid_messaging-${VER}
-  # TODO: copy python examples into the directory as well
+  cp qpid-${VER}/cpp/bindings/qpid/examples/python/* \
+     qpid-${VER}/python-qpid_messaging-${VER}/examples
   pushd qpid-${VER}
   tar -czf ../artifacts/python-qpid_messaging-${VER}.tar.gz \
       python-qpid_messaging-${VER}
@@ -248,8 +250,8 @@ if [ "JAVA" == "$JAVA" ] ; then
 
   # now generate the binary packages, with the glue for optional features
   pushd qpid-${VER}/java
-  ant build release-bin -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx" -Ddownload-bdb=true
-  ant release-mvn -Dsvnversion.output=${REV} -Dmodules.opt="bdbstore,bdbstore/jmx" -Dmaven.snapshot=false
+  ant build release-bin -Dsvnversion.output=${REV} -Doptional=true
+  ant release-mvn -Dsvnversion.output=${REV} -Doptional=true -Dmaven.snapshot=false
   popd
 
   cp qpid-${VER}/java/broker/release/*.tar.gz artifacts/qpid-java-broker-${VER}.tar.gz
@@ -268,8 +270,18 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/management/common/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-common/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/access-control/release/maven artifacts/
-  cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-0-8-protocol/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-0-10-protocol/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-1-0-protocol/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-8-to-0-10/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-8-to-1-0/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/amqp-msg-conv-0-10-to-1-0/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/derby-store/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/jdbc-provider-bone/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/jdbc-store/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-http/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/memory-store/release/maven artifacts/
   cp -a qpid-${VER}/java/bdbstore/jmx/release/maven artifacts/
 fi
 

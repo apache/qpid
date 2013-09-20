@@ -196,6 +196,9 @@ bool DirectExchange::isBound(Queue::shared_ptr queue, const string* const routin
     return false;
 }
 
-DirectExchange::~DirectExchange() {}
+DirectExchange::~DirectExchange() {
+    if (mgmtExchange != 0)
+        mgmtExchange->debugStats("destroying");
+}
 
 const std::string DirectExchange::typeName("direct");

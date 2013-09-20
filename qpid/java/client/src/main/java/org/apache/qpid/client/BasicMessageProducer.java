@@ -440,7 +440,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     {
         if (!(destination instanceof AMQDestination))
         {
-            throw new JMSException("Unsupported destination class: "
+            throw new InvalidDestinationException("Unsupported destination class: "
                                    + ((destination != null) ? destination.getClass() : null));
         }
 
@@ -453,7 +453,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             }
             catch(Exception e)
             {
-                JMSException ex = new JMSException("Error validating destination");
+                JMSException ex = new InvalidDestinationException("Error validating destination");
                 ex.initCause(e);
                 ex.setLinkedException(e);
 

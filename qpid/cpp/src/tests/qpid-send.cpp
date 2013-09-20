@@ -96,7 +96,7 @@ struct Options : public qpid::Options
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
           help(false),
-          url("amqp:tcp:127.0.0.1"),
+          url("127.0.0.1"),
           messages(1),
           sendEos(0),
           durable(false),
@@ -262,9 +262,8 @@ class MapContentGenerator   : public ContentGenerator {
   public:
     MapContentGenerator(const Options& opt) : opts(opt) {}
     virtual bool setContent(Message& msg) {
-        Variant::Map map;
-        opts.setEntries(map);
-        encode(map, msg);
+        msg.getContentObject() = qpid::types::Variant::Map();
+        opts.setEntries(msg.getContentObject().asMap());
         return true;
     }
   private:
@@ -371,6 +370,7 @@ int main(int argc, char ** argv)
                 msg.setReplyTo(Address(opts.replyto));
             }
             if (!opts.userid.empty()) msg.setUserId(opts.userid);
+            if (!opts.id.empty()) msg.setMessageId(opts.id);
             if (!opts.correlationid.empty()) msg.setCorrelationId(opts.correlationid);
             opts.setProperties(msg);
             uint sent = 0;

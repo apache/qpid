@@ -35,6 +35,7 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
@@ -62,7 +63,7 @@ public class ConfiguredObjectStateTransitionTest extends QpidTestCase
         when(_broker.getTaskExecutor()).thenReturn(executor);
 
         _recovererProvider = new DefaultRecovererProvider(statisticsGatherer, _broker.getVirtualHostRegistry(),
-                _broker.getLogRecorder(), _broker.getRootMessageLogger(), executor, new BrokerOptions());
+                _broker.getLogRecorder(), _broker.getRootMessageLogger(), executor, new BrokerOptions(), mock(StoreConfigurationChangeListener.class));
 
         _store = mock(ConfigurationEntryStore.class);
 

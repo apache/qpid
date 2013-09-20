@@ -38,7 +38,7 @@
 #include "qpid/broker/System.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/ConnectionObservers.h"
-#include "qpid/broker/ConfigurationObservers.h"
+#include "qpid/broker/BrokerObservers.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Mutex.h"
@@ -65,6 +65,7 @@ class AclModule;
 class ExpiryPolicy;
 class Message;
 struct QueueSettings;
+
 static const  uint16_t DEFAULT_PORT=5672;
 
 struct NoSuchTransportException : qpid::Exception
@@ -175,7 +176,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     AclModule* acl;
     DataDir dataDir;
     ConnectionObservers connectionObservers;
-    ConfigurationObservers configurationObservers;
+    BrokerObservers brokerObservers;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
@@ -225,7 +226,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     /** Shut down the broker */
     QPID_BROKER_EXTERN virtual void shutdown();
 
-    QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
+    QPID_BROKER_EXTERN void setStore (const boost::shared_ptr<MessageStore>& store);
+    bool hasStore() const { return store.get(); }
     MessageStore& getStore() { return *store; }
     void setAcl (AclModule* _acl) {acl = _acl;}
     AclModule* getAcl() { return acl; }
@@ -352,7 +354,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
-    ConfigurationObservers& getConfigurationObservers() { return configurationObservers; }
+    BrokerObservers& getBrokerObservers() { return brokerObservers; }
 
     /** Properties to be set on outgoing link connections */
     QPID_BROKER_EXTERN framing::FieldTable getLinkClientProperties() const;

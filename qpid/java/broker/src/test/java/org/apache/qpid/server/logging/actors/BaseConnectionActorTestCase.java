@@ -20,21 +20,29 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class BaseConnectionActorTestCase extends BaseActorTestCase
 {
-    private AMQProtocolSession _session;
+    private AMQConnectionModel _session;
+    private VirtualHost _virtualHost;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
         BrokerTestHelper.setUp();
-        _session = BrokerTestHelper.createSession();
-
+        _session = BrokerTestHelper.createConnection();
+        _virtualHost = BrokerTestHelper.createVirtualHost("test");
         setAmqpActor(new AMQPConnectionActor(_session, getRootLogger()));
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
     }
 
     @Override
@@ -42,9 +50,13 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
     {
         try
         {
+            if(_virtualHost != null)
+            {
+                _virtualHost.close();
+            }
             if (_session != null)
             {
-                _session.getVirtualHost().close();
+                _session.close(AMQConstant.CONNECTION_FORCED, "");
             }
         }
         finally
@@ -54,7 +66,7 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
         }
     }
 
-    public AMQProtocolSession getSession()
+    public AMQConnectionModel getConnection()
     {
         return _session;
     }

@@ -53,6 +53,10 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     void setOption(const std::string& name, const qpid::types::Variant& value);
     bool backoff();
     std::string getAuthenticatedUsername();
+    void reconnect(const std::string& url);
+    void reconnect();
+    std::string getUrl() const;
+    bool getAutoDecode() const;
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
 
@@ -63,13 +67,14 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     bool replaceUrls;     // Replace rather than merging with reconnect-urls
     std::vector<std::string> urls;
     qpid::client::ConnectionSettings settings;
-    bool reconnect;
+    bool autoReconnect;
     double timeout;
     int32_t limit;
     double minReconnectInterval;
     double maxReconnectInterval;
     int32_t retries;
     bool reconnectOnLimitExceeded;
+    bool disableAutoDecode;
 
     void setOptions(const qpid::types::Variant::Map& options);
     void connect(const qpid::sys::AbsTime& started);

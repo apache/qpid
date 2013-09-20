@@ -1,1 +1,0 @@
-SUBDIRS=libTest include exampleProgram

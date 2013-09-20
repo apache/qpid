@@ -35,12 +35,12 @@ namespace amqp {
 class Sasl : protected Reader
 {
   public:
-    Sasl(const std::string& id);
-    virtual ~Sasl();
-    std::size_t read(const char* data, size_t available);
-    std::size_t write(char* data, size_t available);
-    std::size_t readProtocolHeader(const char* buffer, std::size_t size);
-    std::size_t writeProtocolHeader(char* buffer, std::size_t size);
+    QPID_COMMON_EXTERN Sasl(const std::string& id);
+    QPID_COMMON_EXTERN virtual ~Sasl();
+    QPID_COMMON_EXTERN std::size_t read(const char* data, size_t available);
+    QPID_COMMON_EXTERN std::size_t write(char* data, size_t available);
+    QPID_COMMON_EXTERN std::size_t readProtocolHeader(const char* buffer, std::size_t size);
+    QPID_COMMON_EXTERN std::size_t writeProtocolHeader(char* buffer, std::size_t size);
   protected:
     const std::string id;
     std::vector<char> buffer;

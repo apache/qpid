@@ -33,7 +33,7 @@ class RecoverableMessageImpl : public RecoverableMessage
 {
     Message msg;
 public:
-    RecoverableMessageImpl(const Message& _msg);
+    QPID_BROKER_EXTERN RecoverableMessageImpl(const Message& _msg);
     ~RecoverableMessageImpl() {};
     void setPersistenceId(uint64_t id);
     void setRedelivered();

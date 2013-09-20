@@ -79,7 +79,27 @@ void SessionState::addManagementObject() {
     }
 }
 
+void SessionState::startTx() {
+    if (mgmtObject) { mgmtObject->inc_TxnStarts(); }
+}
+
+void SessionState::commitTx() {
+    if (mgmtObject) {
+        mgmtObject->inc_TxnCommits();
+        mgmtObject->inc_TxnCount();
+    }
+}
+
+void SessionState::rollbackTx() {
+    if (mgmtObject) {
+        mgmtObject->inc_TxnRejects();
+        mgmtObject->inc_TxnCount();
+    }
+}
+
 SessionState::~SessionState() {
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
     asyncCommandCompleter->cancel();
     semanticState.closed();
     if (mgmtObject != 0)

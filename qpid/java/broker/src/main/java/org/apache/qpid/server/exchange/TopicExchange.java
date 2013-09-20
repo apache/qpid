@@ -50,10 +50,10 @@ public class TopicExchange extends AbstractExchange
 
     private final TopicParser _parser = new TopicParser();
 
-    private final Map<AMQShortString, TopicExchangeResult> _topicExchangeResults =
-            new ConcurrentHashMap<AMQShortString, TopicExchangeResult>();
+    private final Map<String, TopicExchangeResult> _topicExchangeResults =
+            new ConcurrentHashMap<String, TopicExchangeResult>();
 
-    private final Map<Binding, FieldTable> _bindings = new HashMap<Binding, FieldTable>();
+    private final Map<Binding, Map<String,Object>> _bindings = new HashMap<Binding, Map<String,Object>>();
 
     public TopicExchange()
     {
@@ -62,21 +62,21 @@ public class TopicExchange extends AbstractExchange
 
     protected synchronized void registerQueue(final Binding binding) throws AMQInvalidArgumentException
     {
-        AMQShortString rKey = new AMQShortString(binding.getBindingKey()) ;
+        final String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getQueue();
-        FieldTable args = FieldTable.convertToFieldTable(binding.getArguments());
+        Map<String,Object> args = binding.getArguments();
 
         assert queue != null;
-        assert rKey != null;
+        assert bindingKey != null;
 
-        _logger.debug("Registering queue " + queue.getNameShortString() + " with routing key " + rKey);
+        _logger.debug("Registering queue " + queue.getName() + " with routing key " + bindingKey);
 
 
-        AMQShortString routingKey = TopicNormalizer.normalize(rKey);
+        String routingKey = TopicNormalizer.normalize(bindingKey);
 
         if(_bindings.containsKey(binding))
         {
-            FieldTable oldArgs = _bindings.get(binding);
+            Map<String,Object> oldArgs = _bindings.get(binding);
             TopicExchangeResult result = _topicExchangeResults.get(routingKey);
 
             if(FilterSupport.argumentsContainFilter(args))
@@ -150,9 +150,9 @@ public class TopicExchange extends AbstractExchange
     public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
 
-        final AMQShortString routingKey = payload.getRoutingKeyShortString() == null
-                                          ? AMQShortString.EMPTY_STRING
-                                          : payload.getRoutingKeyShortString();
+        final String routingKey = payload.getRoutingKey() == null
+                                          ? ""
+                                          : payload.getRoutingKey();
 
         final Collection<AMQQueue> matchedQueues = getMatchedQueues(payload, routingKey);
 
@@ -181,8 +181,8 @@ public class TopicExchange extends AbstractExchange
     {
         if(_bindings.containsKey(binding))
         {
-            FieldTable bindingArgs = _bindings.remove(binding);
-            AMQShortString bindingKey = TopicNormalizer.normalize(new AMQShortString(binding.getBindingKey()));
+            Map<String,Object> bindingArgs = _bindings.remove(binding);
+            String bindingKey = TopicNormalizer.normalize(binding.getBindingKey());
             TopicExchangeResult result = _topicExchangeResults.get(bindingKey);
 
             result.removeBinding(binding);
@@ -211,7 +211,7 @@ public class TopicExchange extends AbstractExchange
         }
     }
 
-    private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)
+    private Collection<AMQQueue> getMatchedQueues(InboundMessage message, String routingKey)
     {
 
         Collection<TopicMatcherResult> results = _parser.parse(routingKey);

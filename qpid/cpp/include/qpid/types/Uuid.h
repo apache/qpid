@@ -32,7 +32,7 @@ namespace types {
 class QPID_TYPES_CLASS_EXTERN Uuid
 {
   public:
-    static const size_t SIZE;
+    QPID_TYPES_EXTERN static const size_t SIZE;
     /** 
      * If unique is true, this will generate a new unique uuid, if not
      * it will construct a null uuid.
@@ -42,6 +42,7 @@ class QPID_TYPES_CLASS_EXTERN Uuid
     QPID_TYPES_EXTERN Uuid& operator=(const Uuid&);
     /** Copy the UUID from data16, which must point to a 16-byte UUID */
     QPID_TYPES_EXTERN Uuid(const unsigned char* data16);
+    QPID_TYPES_EXTERN Uuid(const char* data16);
 
     /** Set to a new unique identifier. */
     QPID_TYPES_EXTERN void generate();
@@ -80,6 +81,9 @@ class QPID_TYPES_CLASS_EXTERN Uuid
   private:
     unsigned char bytes[16];
 };
+
+/** Hash value function for use with boots::hash or std::hash */
+inline size_t hash_value(const Uuid& uuid) { return uuid.hash(); }
 
 /** Returns true if the uuids are equal, false otherwise. **/
 QPID_TYPES_EXTERN bool operator==(const Uuid&, const Uuid&);

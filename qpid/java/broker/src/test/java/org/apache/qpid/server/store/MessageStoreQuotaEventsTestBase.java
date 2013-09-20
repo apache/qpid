@@ -27,15 +27,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -73,10 +66,13 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
         VirtualHost vhost = mock(VirtualHost.class);
         when(vhost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storeLocation.getAbsolutePath());
+        when(vhost.getName()).thenReturn("test");
+
         applyStoreSpecificConfiguration(vhost);
 
         _store = createStore();
-        ((DurableConfigurationStore)_store).configureConfigStore("test", null, vhost);
+        ((DurableConfigurationStore)_store).configureConfigStore(vhost, null);
+        _store.configureMessageStore(vhost, null, null);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();
@@ -86,8 +82,18 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     @Override
     public void tearDown() throws Exception
     {
-        super.tearDown();
-        FileUtils.delete(_storeLocation, true);
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            if (_store != null)
+            {
+                _store.close();
+            }
+            FileUtils.delete(_storeLocation, true);
+        }
     }
 
     public void testOverflow() throws Exception
@@ -115,21 +121,23 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
     protected EnqueableMessage addMessage(long id)
     {
-        MessagePublishInfo pubInfoBody = new MessagePublishInfoImpl(new AMQShortString(getName()), false, false,
-                new AMQShortString(getName()));
-        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
-        props.setDeliveryMode(Integer.valueOf(BasicContentHeaderProperties.PERSISTENT).byteValue());
-        props.setContentType(getTestName());
-
-        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v0_9);
-        int classForBasic = methodRegistry.createBasicQosOkBody().getClazz();
-        ContentHeaderBody contentHeaderBody = new ContentHeaderBody(classForBasic, 1, props, MESSAGE_DATA.length);
-
-        MessageMetaData metaData = new MessageMetaData(pubInfoBody, contentHeaderBody, 1);
-        StoredMessage<MessageMetaData> handle = _store.addMessage(metaData);
+        StorableMessageMetaData metaData = createMetaData(id, MESSAGE_DATA.length);
+        StoredMessage handle = _store.addMessage(metaData);
         handle.addContent(0, ByteBuffer.wrap(MESSAGE_DATA));
         TestMessage message = new TestMessage(id, handle);
         return message;
+    }
+
+    private StorableMessageMetaData createMetaData(long id, int length)
+    {
+        StorableMessageMetaData metaData = mock(StorableMessageMetaData.class);
+        when(metaData.isPersistent()).thenReturn(true);
+        when(metaData.getContentSize()).thenReturn(length);
+        when(metaData.getStorableSize()).thenReturn(0);
+        MessageMetaDataType type = mock(MessageMetaDataType.class);
+        when(type.ordinal()).thenReturn(-1);
+        when(metaData.getType()).thenReturn(type);
+        return metaData;
     }
 
     @Override

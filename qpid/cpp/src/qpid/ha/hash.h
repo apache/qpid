@@ -22,19 +22,48 @@
  *
  */
 
+#include "qpid/types/Uuid.h"
 #include <boost/shared_ptr.hpp>
+#include <utility>
 
 namespace qpid {
 namespace ha {
 
-template<class T> struct TrivialHasher {
-    size_t  operator()(T value) const  { return static_cast<size_t>(value); }
-};
+// TODO aconway 2013-08-06: would like to use boost::hash or std::hash here
+// but not available/working on some older compilers.
+// Add overloads as needed.
 
-template<class T> struct SharedPtrHasher {
-    size_t  operator()(const boost::shared_ptr<T>& ptr) const  {
-        return reinterpret_cast<size_t>(ptr.get());
-    }
+inline std::size_t hashValue(bool v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(char v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(unsigned char v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(signed char v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(short v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(unsigned short v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(int v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(unsigned int v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(long v) { return static_cast<std::size_t>(v); }
+inline std::size_t hashValue(unsigned long v) { return static_cast<std::size_t>(v); }
+
+inline std::size_t hashValue(const types::Uuid& v) { return v.hash(); }
+
+template <class T> inline std::size_t hashValue(T* v) {
+    std::size_t x = static_cast<std::size_t>(reinterpret_cast<std::ptrdiff_t>(v));
+    return x + (x >> 3);
+}
+
+template <class T> inline void hashCombine(std::size_t& seed, const T& v) {
+    seed ^= hashValue(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
+template <class T, class U> inline size_t hashValue(const std::pair<T,U>& v) {
+    std::size_t seed = 0;
+    hashCombine(seed, v.first);
+    hashCombine(seed, v.second);
+    return seed;
+}
+
+template<class T> struct Hasher {
+    size_t  operator()(const T& v) const  { return hashValue(v); }
 };
 
 }} // namespace qpid::ha

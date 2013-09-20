@@ -42,9 +42,9 @@ public class BindingLogSubject extends AbstractLogSubject
     {
         setLogStringWithFormat(BINDING_FORMAT,
                                queue.getVirtualHost().getName(),
-                               exchange.getTypeShortString(),
-                               exchange.getNameShortString(),
-                               queue.getNameShortString(),
+                               exchange.getType().getType(),
+                               exchange.getName(),
+                               queue.getName(),
                                routingKey);
     }
 

@@ -64,6 +64,7 @@ class SaslClient : public qpid::sys::ConnectionCodec, qpid::amqp::SaslClient
     bool readHeader;
     bool writeHeader;
     bool haveOutput;
+    bool initialised;
     enum {
         NONE, FAILED, SUCCEEDED
     } state;

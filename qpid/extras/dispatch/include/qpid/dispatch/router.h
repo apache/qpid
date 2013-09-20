@@ -29,9 +29,9 @@ typedef struct dx_address_t dx_address_t;
 
 typedef void (*dx_router_message_cb)(void *context, dx_message_t *msg);
 
+const char *dx_router_id(const dx_dispatch_t *dx);
 
 dx_address_t *dx_router_register_address(dx_dispatch_t        *dx,
-                                         bool                  is_local,
                                          const char           *address,
                                          dx_router_message_cb  handler,
                                          void                 *context);

@@ -20,23 +20,29 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
+import java.util.Collection;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 
 public class AuthenticationProviderRecoverer implements ConfiguredObjectRecoverer<AuthenticationProvider>
 {
     private final AuthenticationProviderFactory _authenticationProviderFactory;
+    private final StoreConfigurationChangeListener _storeChangeListener;
 
-    public AuthenticationProviderRecoverer(AuthenticationProviderFactory authenticationProviderFactory)
+    public AuthenticationProviderRecoverer(AuthenticationProviderFactory authenticationProviderFactory,  StoreConfigurationChangeListener storeChangeListener)
     {
         _authenticationProviderFactory = authenticationProviderFactory;
+        _storeChangeListener = storeChangeListener;
     }
 
     @Override
@@ -46,6 +52,44 @@ public class AuthenticationProviderRecoverer implements ConfiguredObjectRecovere
         Map<String, Object> attributes = configurationEntry.getAttributes();
         AuthenticationProvider authenticationProvider = _authenticationProviderFactory.recover(configurationEntry.getId(), attributes, broker);
 
+        Map<String, Collection<ConfigurationEntry>> childEntries = configurationEntry.getChildren();
+
+        for (String type : childEntries.keySet())
+        {
+            recoverType(recovererProvider, _storeChangeListener, authenticationProvider, childEntries, type);
+        }
+
         return authenticationProvider;
+    }
+
+    private void recoverType(RecovererProvider recovererProvider,
+            StoreConfigurationChangeListener storeChangeListener,
+            AuthenticationProvider authenticationProvider,
+            Map<String, Collection<ConfigurationEntry>> childEntries,
+            String type)
+    {
+        ConfiguredObjectRecoverer<?> recoverer = recovererProvider.getRecoverer(type);
+        if (recoverer == null)
+        {
+            throw new IllegalConfigurationException("Cannot recover entry for the type '" + type + "' from broker");
+        }
+        Collection<ConfigurationEntry> entries = childEntries.get(type);
+        for (ConfigurationEntry childEntry : entries)
+        {
+            ConfiguredObject object = recoverer.create(recovererProvider, childEntry, authenticationProvider);
+            if (object == null)
+            {
+                throw new IllegalConfigurationException("Cannot create configured object for the entry " + childEntry);
+            }
+            if (object instanceof PreferencesProvider)
+            {
+                authenticationProvider.setPreferencesProvider((PreferencesProvider)object);
+            }
+            else
+            {
+                throw new IllegalConfigurationException("Cannot associate  " + object + " with authentication provider " + authenticationProvider);
+            }
+            object.addChangeListener(storeChangeListener);
+        }
     }
 }

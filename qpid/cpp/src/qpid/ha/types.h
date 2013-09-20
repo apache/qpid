@@ -105,14 +105,26 @@ inline bool isPrimary(BrokerStatus s) {
 
 inline bool isBackup(BrokerStatus s) { return !isPrimary(s); }
 
-// String constants.
+// String constants, defined as char* to avoid initialization order problems.
 extern const std::string QPID_REPLICATE;
 extern const std::string QPID_HA_UUID;
 
-/** Define IdSet type, not a typedef so we can overload operator << */
-class IdSet : public std::set<types::Uuid> {};
+// Strings used as prefixes, defined as char* to avoid link order problems.
+extern const char* QPID_HA_PREFIX;
+extern const char* QUEUE_REPLICATOR_PREFIX;
+extern const char* TRANSACTION_REPLICATOR_PREFIX;
 
-std::ostream& operator<<(std::ostream& o, const IdSet& ids);
+bool startsWith(const std::string& name, const std::string& prefix);
+
+/** Define IdSet type, not a typedef so we can overload operator << and add encoding.*/
+class UuidSet : public std::set<types::Uuid> {
+  public:
+    void encode(framing::Buffer&) const;
+    void decode(framing::Buffer&);
+    size_t encodedSize() const;
+};
+
+std::ostream& operator<<(std::ostream& o, const UuidSet& ids);
 
 // Use type names to distinguish Positions from Replication Ids
 typedef framing::SequenceNumber QueuePosition;
@@ -131,6 +143,9 @@ struct LogMessageId {
     ReplicationId replicationId;
 };
 std::ostream& operator<<(std::ostream&, const LogMessageId&);
+
+/** Return short version of human-readable UUID. */
+inline std::string shortStr(const types::Uuid& uuid) { return uuid.str().substr(0,8); }
 
 }} // qpid::ha
 #endif  /*!QPID_HA_ENUM_H*/

@@ -32,7 +32,7 @@ set (store_SOURCES
      MessageStorePlugin.cpp
     )
 add_library (store MODULE ${store_SOURCES})
-target_link_libraries (store qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries (store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
 if (CMAKE_COMPILER_IS_GNUCXX)
   set (GCC_CATCH_UNDEFINED "-Wl,--no-undefined")
   # gcc on SunOS uses native linker whose "-z defs" is too fussy

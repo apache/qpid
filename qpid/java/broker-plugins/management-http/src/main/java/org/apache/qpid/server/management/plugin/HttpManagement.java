@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import java.io.File;
 import java.lang.reflect.Type;
 import java.net.SocketAddress;
+import java.security.GeneralSecurityException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.SSLContext;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -39,11 +40,15 @@ import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFi
 import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
+import org.apache.qpid.server.management.plugin.servlet.LogFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LogFileListingServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.PreferencesServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
@@ -60,6 +65,7 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
@@ -70,7 +76,6 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DispatcherType;
@@ -238,13 +243,17 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
                 {
                     throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
                 }
-                String keyStorePath = (String)keyStore.getAttribute(KeyStore.PATH);
-                String keyStorePassword = keyStore.getPassword();
-
                 SslContextFactory factory = new SslContextFactory();
-                factory.setKeyStorePath(keyStorePath);
-                factory.setKeyStorePassword(keyStorePassword);
-
+                try
+                {
+                    SSLContext sslContext = SSLContext.getInstance("TLS");
+                    sslContext.init(keyStore.getKeyManagers(), null, null);
+                    factory.setSslContext(sslContext);
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new RuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
+                }
                 connector = new SslSocketConnector(factory);
             }
             else
@@ -288,7 +297,10 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "keystore", KeyStore.class);
         addRestServlet(root, "truststore", TrustStore.class);
         addRestServlet(root, "plugin", Plugin.class);
+        addRestServlet(root, "preferencesprovider", AuthenticationProvider.class, PreferencesProvider.class);
 
+        root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/rest/userpreferences/*");
+        root.addServlet(new ServletHolder(new PreferencesServlet()), "/rest/preferences");
         root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
         root.addServlet(new ServletHolder(new MessageContentServlet()), "/rest/message-content/*");
@@ -312,6 +324,15 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.txt");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.xsl");
         root.addServlet(new ServletHolder(new HelperServlet()), "/rest/helper");
+        root.addServlet(new ServletHolder(new LogFileListingServlet()), "/rest/logfiles");
+        root.addServlet(new ServletHolder(new LogFileServlet()), "/rest/logfile");
+
+        String[] timeZoneFiles = {"africa", "antarctica", "asia", "australasia", "backward",
+                "etcetera", "europe", "northamerica", "pacificnew",  "southamerica"};
+        for (String timeZoneFile : timeZoneFiles)
+        {
+            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "/dojo/dojox/date/zoneinfo/" + timeZoneFile);
+        }
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
         sessionManager.setSessionCookie(JSESSIONID_COOKIE_PREFIX + lastPort);
@@ -407,9 +428,9 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
     }
 
     @Override
-    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
+    public AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress)
     {
-        return getBroker().getSubjectCreator(localAddress);
+        return getBroker().getAuthenticationProvider(localAddress);
     }
 
     @Override

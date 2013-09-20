@@ -41,12 +41,9 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
-import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -68,14 +65,13 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -86,6 +82,7 @@ import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostListener;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
 
 public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener
 {
@@ -203,7 +200,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     private void populateQueues()
     {
-        Collection<AMQQueue> actualQueues = _virtualHost.getQueueRegistry().getQueues();
+        Collection<AMQQueue> actualQueues = _virtualHost.getQueues();
         if ( actualQueues != null )
         {
             synchronized(_queueAdapters)
@@ -399,7 +396,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             }
             if (queueType == QueueType.LVQ && attributes.get(Queue.LVQ_KEY) == null)
             {
-                attributes.put(Queue.LVQ_KEY, AMQQueueFactory.QPID_LVQ_KEY);
+                attributes.put(Queue.LVQ_KEY, AMQQueueFactory.QPID_DEFAULT_LVQ_KEY);
             }
             else if (queueType == QueueType.PRIORITY && attributes.get(Queue.PRIORITIES) == null)
             {
@@ -415,7 +412,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             String key = MapValueConverter.getStringAttribute(Queue.MESSAGE_GROUP_KEY, attributes);
             attributes.remove(Queue.MESSAGE_GROUP_KEY);
-            attributes.put(SimpleAMQQueue.QPID_GROUP_HEADER_KEY, key);
+            attributes.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY, key);
         }
 
         if (attributes.containsKey(Queue.MESSAGE_GROUP_SHARED_GROUPS))
@@ -423,7 +420,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             if(MapValueConverter.getBooleanAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS, attributes))
             {
                 attributes.remove(Queue.MESSAGE_GROUP_SHARED_GROUPS);
-                attributes.put(SimpleAMQQueue.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
+                attributes.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
             }
         }
 
@@ -439,15 +436,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         attributes.remove(Queue.DURABLE);
         attributes.remove(Queue.LIFETIME_POLICY);
         attributes.remove(Queue.TIME_TO_LIVE);
-
-        List<String> attrNames = new ArrayList<String>(attributes.keySet());
-        for(String attr : attrNames)
-        {
-            if(QueueAdapter.ATTRIBUTE_MAPPINGS.containsKey(attr))
-            {
-                attributes.put(QueueAdapter.ATTRIBUTE_MAPPINGS.get(attr),attributes.remove(attr));
-            }
-        }
 
         return createQueue(name, state, durable, exclusive, lifetime, ttl, attributes);
     }
@@ -472,32 +460,25 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 owner = authenticatedPrincipal.getName();
             }
         }
+
+        final boolean autoDelete = lifetime == LifetimePolicy.AUTO_DELETE;
+
         try
         {
-            QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
-            synchronized (queueRegistry)
-            {
-                if(_virtualHost.getQueueRegistry().getQueue(name)!=null)
-                {
-                    throw new IllegalArgumentException("Queue with name "+name+" already exists");
-                }
-                AMQQueue queue =
-                        AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateQueueUUID(name, _virtualHost.getName()), name,
-                                                           durable, owner, lifetime == LifetimePolicy.AUTO_DELETE,
-                                                           exclusive, _virtualHost, attributes);
 
-                if(durable)
-                {
-                    DurableConfigurationStoreHelper.createQueue(_virtualHost.getDurableConfigurationStore(),
-                            queue,
-                            FieldTable.convertToFieldTable(attributes));
-                }
-                synchronized (_queueAdapters)
-                {
-                    return _queueAdapters.get(queue);
-                }
+            AMQQueue queue =
+                    _virtualHost.createQueue(UUIDGenerator.generateQueueUUID(name, _virtualHost.getName()), name,
+                            durable, owner, autoDelete, exclusive, autoDelete && exclusive, attributes);
+
+            synchronized (_queueAdapters)
+            {
+                return _queueAdapters.get(queue);
             }
 
+        }
+        catch(QueueExistsException qe)
+        {
+            throw new IllegalArgumentException("Queue with name "+name+" already exists");
         }
         catch(AMQException e)
         {
@@ -784,7 +765,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
         for(ExchangeType<? extends org.apache.qpid.server.exchange.Exchange> type : types)
         {
-            exchangeTypes.add(type.getName().asString());
+            exchangeTypes.add(type.getType());
         }
         return Collections.unmodifiableCollection(exchangeTypes);
     }
@@ -938,7 +919,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             List<String> types = new ArrayList<String>();
             for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeTypes())
             {
-                types.add(type.getName().asString());
+                types.add(type.getType());
             }
             return Collections.unmodifiableCollection(types);
         }
@@ -1057,7 +1038,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             if(VirtualHost.QUEUE_COUNT.equals(name))
             {
-                return _vhost.getQueueRegistry().getQueues().size();
+                return _vhost.getQueues().size();
             }
             else if(VirtualHost.EXCHANGE_COUNT.equals(name))
             {

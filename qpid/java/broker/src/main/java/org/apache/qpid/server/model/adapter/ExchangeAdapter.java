@@ -30,9 +30,7 @@ import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -42,7 +40,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -90,7 +87,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
 
     public String getExchangeType()
     {
-        return _exchange.getType().getName().toString();
+        return _exchange.getType().getType();
     }
 
     public Collection<org.apache.qpid.server.model.Binding> getBindings()
@@ -357,7 +354,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         }
         else if(TYPE.equals(name))
         {
-            return _exchange.getType().getName().asString();
+            return _exchange.getTypeName();
         }
         return super.getAttribute(name);
     }

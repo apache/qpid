@@ -42,7 +42,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
  * The ruleset is configured directly rather than using an external file by adding rules individually, calling the
  * {@link RuleSet#grant(Integer, String, Permission, Operation, ObjectType, ObjectProperties)} method. Then, the
  * access control mechanism is validated by checking whether operations would be authorised by calling the
- * {@link RuleSet#check(Principal, Operation, ObjectType, ObjectProperties)} method.
+ * {@link RuleSet#check(Subject, Operation, ObjectType, ObjectProperties)} method.
  *
  * It ensure that permissions can be granted correctly on users directly and on groups.
  */
@@ -53,9 +53,9 @@ public class RuleSetTest extends QpidTestCase
     private static final String TEST_USER = "user";
 
     // Common things that are passed to frame constructors
-    private AMQShortString _queueName = new AMQShortString(this.getClass().getName() + "queue");
-    private AMQShortString _exchangeName = new AMQShortString("amq.direct");
-    private AMQShortString _exchangeType = new AMQShortString("direct");
+    private String _queueName = this.getClass().getName() + "queue";
+    private String _exchangeName = "amq.direct";
+    private String _exchangeType = "direct";
     private Subject _testSubject = TestPrincipalUtils.createTestSubject(TEST_USER);
 
     @Override
@@ -116,7 +116,7 @@ public class RuleSetTest extends QpidTestCase
     public void testExchangeCreate()
     {
         ObjectProperties properties = new ObjectProperties(_exchangeName);
-        properties.put(ObjectProperties.Property.TYPE, _exchangeType.asString());
+        properties.put(ObjectProperties.Property.TYPE, _exchangeType);
 
         assertDenyGrantAllow(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, properties);
     }

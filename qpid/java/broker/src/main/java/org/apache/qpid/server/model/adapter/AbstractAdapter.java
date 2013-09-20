@@ -39,7 +39,7 @@ import org.apache.qpid.server.configuration.updater.CreateChildTask;
 import org.apache.qpid.server.configuration.updater.SetAttributeTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
-abstract class AbstractAdapter implements ConfiguredObject
+public abstract class AbstractAdapter implements ConfiguredObject
 {
     private static final Object ID = "id";
     private final Map<String,Object> _attributes = new HashMap<String, Object>();

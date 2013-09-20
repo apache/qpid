@@ -24,9 +24,9 @@
 
   <property name="project.name"          value="qpid"/>
   <!-- Version used for standard build output -->
-  <property name="project.version"       value="0.23"/>
+  <property name="project.version"       value="0.25"/>
   <!-- The release version used for maven output. SNAPSHOT added via maven.version.suffix -->
-  <property name="project.version.maven" value="0.24"/>
+  <property name="project.version.maven" value="0.26"/>
   <property name="project.url"           value="http://qpid.apache.org"/>
   <property name="project.groupid"       value="org.apache.qpid"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>

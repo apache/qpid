@@ -21,6 +21,7 @@
 #include "BrokerReplicator.h"
 #include "HaBroker.h"
 #include "QueueReplicator.h"
+#include "TxReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/ConnectionObserver.h"
@@ -129,7 +130,6 @@ const string COLON(":");
 void sendQuery(const string& packageName, const string& className, const string& queueName,
                SessionHandler& sessionHandler)
 {
-    framing::AMQP_ServerProxy peer(sessionHandler.out);
     Variant::Map request;
     request[WHAT] = OBJECT;
     Variant::Map schema;
@@ -229,8 +229,8 @@ class BrokerReplicator::UpdateTracker {
     typedef boost::function<void (const std::string&)> CleanFn;
 
     UpdateTracker(const std::string& type_, // "queue" or "exchange"
-                  CleanFn f, const ReplicationTest& rt)
-        : type(type_), cleanFn(f), repTest(rt) {}
+                  CleanFn f)
+        : type(type_), cleanFn(f) {}
 
     /** Destructor cleans up remaining initial queues. */
     ~UpdateTracker() {
@@ -245,16 +245,10 @@ class BrokerReplicator::UpdateTracker {
     }
 
     /** Add an exchange name */
-    void addExchange(Exchange::shared_ptr ex)  {
-        if (repTest.getLevel(*ex))
-            initial.insert(ex->getName());
-    }
+    void addExchange(Exchange::shared_ptr ex)  { initial.insert(ex->getName()); }
 
     /** Add a queue name. */
-    void addQueue(Queue::shared_ptr q) {
-        if (repTest.getLevel(*q))
-            initial.insert(q->getName());
-    }
+    void addQueue(Queue::shared_ptr q) { initial.insert(q->getName()); }
 
     /** Received an event for name */
     void event(const std::string& name) {
@@ -275,13 +269,13 @@ class BrokerReplicator::UpdateTracker {
     void clean(const std::string& name) {
         QPID_LOG(info, "Backup: Deleted " << type << " " << name <<
                  ": no longer exists on primary");
-        cleanFn(name);
+        try { cleanFn(name); }
+        catch (const framing::NotFoundException&) {}
     }
 
     std::string type;
     Names initial, events;
     CleanFn cleanFn;
-    ReplicationTest repTest;
 };
 
 namespace {
@@ -349,7 +343,8 @@ BrokerReplicator::~BrokerReplicator() { shutdown(); }
 
 namespace {
 void collectQueueReplicators(
-    const boost::shared_ptr<Exchange> ex, set<boost::shared_ptr<QueueReplicator> >& collect)
+    const boost::shared_ptr<Exchange>& ex,
+    set<boost::shared_ptr<QueueReplicator> >& collect)
 {
     boost::shared_ptr<QueueReplicator> qr(boost::dynamic_pointer_cast<QueueReplicator>(ex));
     if (qr) collect.insert(qr);
@@ -390,16 +385,13 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
 
     exchangeTracker.reset(
         new UpdateTracker("exchange",
-                          boost::bind(&BrokerReplicator::deleteExchange, this, _1),
-                          replicationTest));
-    exchanges.eachExchange(
-        boost::bind(&UpdateTracker::addExchange, exchangeTracker.get(), _1));
+                          boost::bind(&BrokerReplicator::deleteExchange, this, _1)));
+    exchanges.eachExchange(boost::bind(&BrokerReplicator::existingExchange, this, _1));
 
     queueTracker.reset(
         new UpdateTracker("queue",
-                          boost::bind(&BrokerReplicator::deleteQueue, this, _1, true),
-                          replicationTest));
-    queues.eachQueue(boost::bind(&UpdateTracker::addQueue, queueTracker.get(), _1));
+                          boost::bind(&BrokerReplicator::deleteQueue, this, _1, true)));
+    queues.eachQueue(boost::bind(&BrokerReplicator::existingQueue, this, _1));
 
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
@@ -426,6 +418,21 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
     sendQuery(ORG_APACHE_QPID_BROKER, QUEUE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, EXCHANGE, queueName, sessionHandler);
     sendQuery(ORG_APACHE_QPID_BROKER, BINDING, queueName, sessionHandler);
+}
+
+// Called for each queue in existence when the backup connects to a primary.
+void BrokerReplicator::existingQueue(const boost::shared_ptr<Queue>& q) {
+    if (replicationTest.getLevel(*q)) {
+        QPID_LOG(debug, "Existing queue: " << q->getName());
+        queueTracker->addQueue(q);
+    }
+}
+
+void BrokerReplicator::existingExchange(const boost::shared_ptr<Exchange>& ex) {
+    if (replicationTest.getLevel(*ex)) {
+        QPID_LOG(debug, "Existing exchange: " << ex->getName());
+        exchangeTracker->addExchange(ex);
+    }
 }
 
 void BrokerReplicator::route(Deliverable& msg) {
@@ -554,11 +561,7 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
 void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
     string name = values[EXNAME].asString();
     boost::shared_ptr<Exchange> exchange = exchanges.find(name);
-    if (!exchange) {
-        QPID_LOG(warning, logPrefix << "Exchange delete event, not found: " << name);
-    } else if (!replicationTest.getLevel(*exchange)) {
-        QPID_LOG(warning, logPrefix << "Exchange delete event, not replicated: " << name);
-    } else {
+    if (exchange && replicationTest.getLevel(*exchange)) {
         QPID_LOG(debug, logPrefix << "Exchange delete event:" << name);
         if (exchangeTracker.get()) exchangeTracker->event(name);
         deleteExchange(name);
@@ -651,8 +654,10 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     if (!queueTracker.get())
         throw Exception(QPID_MSG("Unexpected queue response: " << values));
     if (!queueTracker->response(name)) return; // Response is out-of-date
+
     QPID_LOG(debug, logPrefix << "Queue response: " << name);
     boost::shared_ptr<Queue> queue = queues.find(name);
+
     if (queue) { // Already exists
         bool uuidOk = (getHaUuid(queue->getSettings().original) == getHaUuid(argsMap));
         if (!uuidOk) QPID_LOG(debug, logPrefix << "UUID mismatch for queue: " << name);
@@ -660,6 +665,7 @@ void BrokerReplicator::doResponseQueue(Variant::Map& values) {
         QPID_LOG(debug, logPrefix << "Queue response replacing queue:  " << name);
         deleteQueue(name);
     }
+
     framing::FieldTable args;
     qpid::amqp_0_10::translate(argsMap, args);
     boost::shared_ptr<QueueReplicator> qr = replicateQueue(
@@ -770,8 +776,13 @@ boost::shared_ptr<QueueReplicator> BrokerReplicator::startQueueReplicator(
     const boost::shared_ptr<Queue>& queue)
 {
     if (replicationTest.getLevel(*queue) == ALL) {
-        boost::shared_ptr<QueueReplicator> qr(
-            new QueueReplicator(haBroker, queue, link));
+        boost::shared_ptr<QueueReplicator> qr;
+        if (TxReplicator::isTxQueue(queue->getName())){
+            qr.reset(new TxReplicator(haBroker, queue, link));
+        }
+        else {
+            qr.reset(new QueueReplicator(haBroker, queue, link));
+        }
         qr->activate();
         return qr;
     }
@@ -785,7 +796,7 @@ void BrokerReplicator::deleteQueue(const std::string& name, bool purge) {
         // messages. Any reroutes will be done at the primary and
         // replicated as normal.
         if (purge) queue->purge(0, boost::shared_ptr<Exchange>());
-        broker.deleteQueue(name, userId, remoteHost);
+        haBroker.getBroker().deleteQueue(name, userId, remoteHost);
         QPID_LOG(debug, logPrefix << "Queue deleted: " << name);
     }
 }
@@ -864,28 +875,35 @@ bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, co
 
 string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
 
-void BrokerReplicator::autoDeleteCheck(boost::shared_ptr<Exchange> ex) {
+void BrokerReplicator::disconnectedExchange(boost::shared_ptr<Exchange> ex) {
     boost::shared_ptr<QueueReplicator> qr(boost::dynamic_pointer_cast<QueueReplicator>(ex));
-    if (!qr) return;
-    assert(qr);
-    if (qr->getQueue()->isAutoDelete() && qr->isSubscribed()) {
-        if (qr->getQueue()->getSettings().autoDeleteDelay) {
-            // Start the auto-delete timer
-            qr->getQueue()->releaseFromUse();
-            qr->getQueue()->scheduleAutoDelete();
+    if (qr) {
+        qr->disconnect();
+        if (TxReplicator::isTxQueue(qr->getQueue()->getName())) {
+            // Transactions are aborted on failover so clean up tx-queues
+            deleteQueue(qr->getQueue()->getName());
         }
-        else {
-            // Delete immediately. Don't purge, the primary is gone so we need
-            // to reroute the deleted messages.
-            deleteQueue(qr->getQueue()->getName(), false);
+        else if (qr->getQueue()->isAutoDelete() && qr->isSubscribed()) {
+            if (qr->getQueue()->getSettings().autoDeleteDelay) {
+                // Start the auto-delete timer
+                qr->getQueue()->releaseFromUse();
+                qr->getQueue()->scheduleAutoDelete();
+            }
+            else {
+                // Delete immediately. Don't purge, the primary is gone so we need
+                // to reroute the deleted messages.
+                deleteQueue(qr->getQueue()->getName(), false);
+            }
         }
     }
 }
 
+typedef vector<boost::shared_ptr<Exchange> > ExchangeVector;
+
 // Callback function for accumulating exchange candidates
 namespace {
-	void exchangeAccumulatorCallback(vector<boost::shared_ptr<Exchange> >& c, const Exchange::shared_ptr& i) {
-		c.push_back(i);
+	void exchangeAccumulatorCallback(ExchangeVector& ev, const Exchange::shared_ptr& i) {
+		ev.push_back(i);
 	}
 }
 
@@ -893,13 +911,12 @@ namespace {
 void BrokerReplicator::disconnected() {
     QPID_LOG(info, logPrefix << "Disconnected from primary " << primary);
     connection = 0;
-    // Clean up auto-delete queues
-    vector<boost::shared_ptr<Exchange> > collect;
-    // Make a copy so we can work outside the ExchangeRegistry lock
-    exchanges.eachExchange(
-        boost::bind(&exchangeAccumulatorCallback, boost::ref(collect), _1));
-    for_each(collect.begin(), collect.end(),
-             boost::bind(&BrokerReplicator::autoDeleteCheck, this, _1));
+
+    // Make copy of exchanges so we can work outside the registry lock.
+    ExchangeVector exs;
+    exchanges.eachExchange(boost::bind(&exchangeAccumulatorCallback, boost::ref(exs), _1));
+    for_each(exs.begin(), exs.end(),
+             boost::bind(&BrokerReplicator::disconnectedExchange, this, _1));
 }
 
 void BrokerReplicator::setMembership(const Variant::List& brokers) {

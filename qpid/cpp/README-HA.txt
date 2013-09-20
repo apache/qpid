@@ -136,4 +136,4 @@ The queue state replication mechanism implemented by the modules `replicating_li
 [ha-virtual-ip]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-virtual-ip
 [ha-replicate-values]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-replicate-values
 [ha-rm-config]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-rm-config
-[ha-queue-replication]: http://qpid.apache.org/books/0.22/AMQP-Messaging-Broker-CPP-Book/html/chapter-ha.html#ha-queue-replication
+[ha-queue-replication]: http://qpid.apache.org/releases/qpid-0.22/cpp-broker/book/ha-queue-replication.html

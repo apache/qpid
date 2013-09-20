@@ -115,7 +115,7 @@ public class PropertiesFileInitialContextFactoryTest extends QpidTestCase
 
             setTestSystemProperty(ClientProperties.DEST_SYNTAX, "ADDR");
             setTestSystemProperty(InitialContext.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jndi.PropertiesFileInitialContextFactory");
-            setTestSystemProperty(InitialContext.PROVIDER_URL, "file://" + f.getCanonicalPath());
+            setTestSystemProperty(InitialContext.PROVIDER_URL,  f.toURI().toURL().toString());
 
             InitialContext context = new InitialContext();
             Destination dest = (Destination) context.lookup("topicExchange");

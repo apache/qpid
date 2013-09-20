@@ -45,15 +45,13 @@ public interface DurableConfigurationStore
      *
      *
      *
-     * @param name             The name to be used by this store
-     * @param recoveryHandler  Handler to be called as the store recovers on start up
+     *
+     *
      * @param virtualHost
+     * @param recoveryHandler  Handler to be called as the store recovers on start up
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configureConfigStore(String name,
-                              ConfigurationRecoveryHandler recoveryHandler,
-                              VirtualHost virtualHost) throws Exception;
-
+    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception;
 
 
     /**
@@ -77,6 +75,8 @@ public interface DurableConfigurationStore
      */
     void remove(UUID id, String type) throws AMQStoreException;
 
+    public UUID[] removeConfiguredObjects(UUID... objects) throws AMQStoreException;
+
 
     /**
      * Updates the specified object in the persistent store, IF it is already present. If the object
@@ -91,4 +91,9 @@ public interface DurableConfigurationStore
     void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException;
 
 
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException;
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException;
+
+
+    void close() throws Exception;
 }

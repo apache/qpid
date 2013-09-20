@@ -84,6 +84,7 @@ class HaBroker : public management::Manageable
 
     broker::Broker& getBroker() { return broker; }
     const Settings& getSettings() const { return settings; }
+    boost::shared_ptr<Role> getRole() const {return role; }
 
     /** Shut down the broker because of a critical error. */
     void shutdown(const std::string& message);
@@ -91,7 +92,7 @@ class HaBroker : public management::Manageable
     BrokerStatus getStatus() const;
     boost::shared_ptr<ConnectionObserver> getObserver() { return observer; }
 
-    BrokerInfo getBrokerInfo() const { return membership.getInfo(); }
+    BrokerInfo getBrokerInfo() const { return membership.getSelf(); }
     Membership& getMembership() { return membership; }
     types::Uuid getSystemId() const { return systemId; }
 
@@ -100,6 +101,9 @@ class HaBroker : public management::Manageable
     boost::shared_ptr<QueueSnapshots> getQueueSnapshots() { return queueSnapshots; }
 
     boost::shared_ptr<QueueReplicator> findQueueReplicator(const std::string& queueName);
+
+    /** Authenticated user ID for queue create/delete */
+    std::string getUserId() const { return userId; }
 
   private:
     void setPublicUrl(const Url&);
@@ -111,6 +115,7 @@ class HaBroker : public management::Manageable
     // Immutable members
     const types::Uuid systemId;
     const Settings settings;
+    const std::string userId;
 
     // Member variables protected by lock
     mutable sys::Mutex lock;

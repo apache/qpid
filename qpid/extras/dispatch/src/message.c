@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,11 +25,35 @@
 #include <string.h>
 #include <stdio.h>
 
+static const unsigned char * const MSG_HDR_LONG                 = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x70";
+static const unsigned char * const MSG_HDR_SHORT                = (unsigned char*) "\x00\x53\x70";
+static const unsigned char * const DELIVERY_ANNOTATION_LONG     = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x71";
+static const unsigned char * const DELIVERY_ANNOTATION_SHORT    = (unsigned char*) "\x00\x53\x71";
+static const unsigned char * const MESSAGE_ANNOTATION_LONG      = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x72";
+static const unsigned char * const MESSAGE_ANNOTATION_SHORT     = (unsigned char*) "\x00\x53\x72";
+static const unsigned char * const PROPERTIES_LONG              = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x73";
+static const unsigned char * const PROPERTIES_SHORT             = (unsigned char*) "\x00\x53\x73";
+static const unsigned char * const APPLICATION_PROPERTIES_LONG  = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x74";
+static const unsigned char * const APPLICATION_PROPERTIES_SHORT = (unsigned char*) "\x00\x53\x74";
+static const unsigned char * const BODY_DATA_LONG               = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x75";
+static const unsigned char * const BODY_DATA_SHORT              = (unsigned char*) "\x00\x53\x75";
+static const unsigned char * const BODY_SEQUENCE_LONG           = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x76";
+static const unsigned char * const BODY_SEQUENCE_SHORT          = (unsigned char*) "\x00\x53\x76";
+static const unsigned char * const BODY_VALUE_LONG              = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x77";
+static const unsigned char * const BODY_VALUE_SHORT             = (unsigned char*) "\x00\x53\x77";
+static const unsigned char * const FOOTER_LONG                  = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x78";
+static const unsigned char * const FOOTER_SHORT                 = (unsigned char*) "\x00\x53\x78";
+static const unsigned char * const TAGS_LIST                    = (unsigned char*) "\x45\xc0\xd0";
+static const unsigned char * const TAGS_MAP                     = (unsigned char*) "\xc1\xd1";
+static const unsigned char * const TAGS_BINARY                  = (unsigned char*) "\xa0\xb0";
+static const unsigned char * const TAGS_ANY                     = (unsigned char*) "\x45\xc0\xd0\xc1\xd1\xa0\xb0";
+
 ALLOC_DEFINE_CONFIG(dx_message_t, sizeof(dx_message_pvt_t), 0, 0);
 ALLOC_DEFINE(dx_message_content_t);
 
+typedef void (*buffer_process_t) (void *context, const unsigned char *base, int length);
 
-static void advance(unsigned char **cursor, dx_buffer_t **buffer, int consume)
+static void advance(unsigned char **cursor, dx_buffer_t **buffer, int consume, buffer_process_t handler, void *context)
 {
     unsigned char *local_cursor = *cursor;
     dx_buffer_t   *local_buffer = *buffer;
@@ -37,9 +61,13 @@ static void advance(unsigned char **cursor, dx_buffer_t **buffer, int consume)
     int remaining = dx_buffer_size(local_buffer) - (local_cursor - dx_buffer_base(local_buffer));
     while (consume > 0) {
         if (consume < remaining) {
+            if (handler)
+                handler(context, local_cursor, consume);
             local_cursor += consume;
             consume = 0;
         } else {
+            if (handler)
+                handler(context, local_cursor, remaining);
             consume -= remaining;
             local_buffer = local_buffer->next;
             if (local_buffer == 0){
@@ -59,7 +87,7 @@ static void advance(unsigned char **cursor, dx_buffer_t **buffer, int consume)
 static unsigned char next_octet(unsigned char **cursor, dx_buffer_t **buffer)
 {
     unsigned char result = **cursor;
-    advance(cursor, buffer, 1);
+    advance(cursor, buffer, 1, 0, 0);
     return result;
 }
 
@@ -68,7 +96,10 @@ static int traverse_field(unsigned char **cursor, dx_buffer_t **buffer, dx_field
 {
     unsigned char tag = next_octet(cursor, buffer);
     if (!(*cursor)) return 0;
-    int consume = 0;
+
+    int    consume    = 0;
+    size_t hdr_length = 1;
+
     switch (tag & 0xF0) {
     case 0x40 : consume = 0;  break;
     case 0x50 : consume = 1;  break;
@@ -80,6 +111,7 @@ static int traverse_field(unsigned char **cursor, dx_buffer_t **buffer, dx_field
     case 0xB0 :
     case 0xD0 :
     case 0xF0 :
+        hdr_length += 3;
         consume |= ((int) next_octet(cursor, buffer)) << 24;
         if (!(*cursor)) return 0;
         consume |= ((int) next_octet(cursor, buffer)) << 16;
@@ -91,19 +123,21 @@ static int traverse_field(unsigned char **cursor, dx_buffer_t **buffer, dx_field
     case 0xA0 :
     case 0xC0 :
     case 0xE0 :
+        hdr_length++;
         consume |= (int) next_octet(cursor, buffer);
         if (!(*cursor)) return 0;
         break;
     }
 
     if (field && !field->parsed) {
-        field->buffer = *buffer;
-        field->offset = *cursor - dx_buffer_base(*buffer);
-        field->length = consume;
-        field->parsed = 1;
+        field->buffer     = *buffer;
+        field->offset     = *cursor - dx_buffer_base(*buffer);
+        field->length     = consume;
+        field->hdr_length = hdr_length;
+        field->parsed     = 1;
     }
 
-    advance(cursor, buffer, consume);
+    advance(cursor, buffer, consume, 0, 0);
     return 1;
 }
 
@@ -210,10 +244,11 @@ static int dx_check_and_advance(dx_buffer_t         **buffer,
     //
     // Pattern matched and tag is expected.  Mark the beginning of the section.
     //
-    location->parsed = 1;
-    location->buffer = test_buffer;
-    location->offset = test_cursor - dx_buffer_base(test_buffer);
-    location->length = 0;
+    location->parsed     = 1;
+    location->buffer     = test_buffer;
+    location->offset     = test_cursor - dx_buffer_base(test_buffer);
+    location->length     = 0;
+    location->hdr_length = pattern_length;
 
     //
     // Advance the pointers to consume the whole section.
@@ -249,7 +284,7 @@ static int dx_check_and_advance(dx_buffer_t         **buffer,
 
     location->length = pre_consume + consume;
     if (consume)
-        advance(&test_cursor, &test_buffer, consume);
+        advance(&test_cursor, &test_buffer, consume, 0, 0);
 
     *cursor = test_cursor;
     *buffer = test_buffer;
@@ -318,6 +353,11 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
         }
         break;
 
+    case DX_FIELD_DELIVERY_ANNOTATION:
+        if (content->section_delivery_annotation.parsed)
+            return &content->section_delivery_annotation;
+        break;
+
     case DX_FIELD_APPLICATION_PROPERTIES:
         if (content->section_application_properties.parsed)
             return &content->section_application_properties;
@@ -343,8 +383,7 @@ dx_message_t *dx_allocate_message()
         return 0;
 
     DEQ_ITEM_INIT(msg);
-    msg->content      = new_dx_message_content_t();
-    msg->out_delivery = 0;
+    msg->content = new_dx_message_content_t();
 
     if (msg->content == 0) {
         free_dx_message_t((dx_message_t*) msg);
@@ -355,6 +394,7 @@ dx_message_t *dx_allocate_message()
     msg->content->lock        = sys_mutex();
     msg->content->ref_count   = 1;
     msg->content->parse_depth = DX_DEPTH_NONE;
+    msg->content->parsed_delivery_annotations = 0;
 
     return (dx_message_t*) msg;
 }
@@ -371,12 +411,21 @@ void dx_free_message(dx_message_t *in_msg)
     sys_mutex_unlock(content->lock);
 
     if (rc == 0) {
-        dx_buffer_t *buf = DEQ_HEAD(content->buffers);
+        if (content->parsed_delivery_annotations)
+            dx_parse_free(content->parsed_delivery_annotations);
 
+        dx_buffer_t *buf = DEQ_HEAD(content->buffers);
         while (buf) {
             DEQ_REMOVE_HEAD(content->buffers);
             dx_free_buffer(buf);
             buf = DEQ_HEAD(content->buffers);
+        }
+
+        buf = DEQ_HEAD(content->new_delivery_annotations);
+        while (buf) {
+            DEQ_REMOVE_HEAD(content->new_delivery_annotations);
+            dx_free_buffer(buf);
+            buf = DEQ_HEAD(content->new_delivery_annotations);
         }
 
         sys_mutex_free(content->lock);
@@ -397,8 +446,7 @@ dx_message_t *dx_message_copy(dx_message_t *in_msg)
         return 0;
 
     DEQ_ITEM_INIT(copy);
-    copy->content      = content;
-    copy->out_delivery = 0;
+    copy->content = content;
 
     sys_mutex_lock(content->lock);
     content->ref_count++;
@@ -408,55 +456,58 @@ dx_message_t *dx_message_copy(dx_message_t *in_msg)
 }
 
 
-void dx_message_set_out_delivery(dx_message_t *msg, pn_delivery_t *delivery)
+dx_parsed_field_t *dx_message_delivery_annotations(dx_message_t *in_msg)
 {
-    ((dx_message_pvt_t*) msg)->out_delivery = delivery;
+    dx_message_pvt_t     *msg     = (dx_message_pvt_t*) in_msg;
+    dx_message_content_t *content = msg->content;
+
+    if (content->parsed_delivery_annotations)
+        return content->parsed_delivery_annotations;
+
+    dx_field_iterator_t *da = dx_message_field_iterator(in_msg, DX_FIELD_DELIVERY_ANNOTATION);
+    if (da == 0)
+        return 0;
+
+    content->parsed_delivery_annotations = dx_parse(da);
+    if (content->parsed_delivery_annotations == 0 ||
+        !dx_parse_ok(content->parsed_delivery_annotations) ||
+        !dx_parse_is_map(content->parsed_delivery_annotations)) {
+        dx_field_iterator_free(da);
+        dx_parse_free(content->parsed_delivery_annotations);
+        return 0;
+    }
+
+    return content->parsed_delivery_annotations;
 }
 
 
-pn_delivery_t *dx_message_out_delivery(dx_message_t *msg)
+void dx_message_set_delivery_annotations(dx_message_t *msg, dx_composed_field_t *da)
 {
-    return ((dx_message_pvt_t*) msg)->out_delivery;
+    dx_message_content_t *content       = MSG_CONTENT(msg);
+    dx_buffer_list_t     *field_buffers = dx_compose_buffers(da);
+
+    assert(DEQ_SIZE(content->new_delivery_annotations) == 0);
+    content->new_delivery_annotations = *field_buffers;
+    DEQ_INIT(*field_buffers); // Zero out the linkage to the now moved buffers.
 }
 
 
-void dx_message_set_in_delivery(dx_message_t *msg, pn_delivery_t *delivery)
+dx_message_t *dx_message_receive(dx_delivery_t *delivery)
 {
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    content->in_delivery = delivery;
-}
-
-
-pn_delivery_t *dx_message_in_delivery(dx_message_t *msg)
-{
-    dx_message_content_t *content = MSG_CONTENT(msg);
-    return content->in_delivery;
-}
-
-
-dx_message_t *dx_message_receive(pn_delivery_t *delivery)
-{
-    pn_link_t        *link = pn_delivery_link(delivery);
-    dx_message_pvt_t *msg  = (dx_message_pvt_t*) pn_delivery_get_context(delivery);
+    pn_delivery_t    *pnd  = dx_delivery_pn(delivery);
+    dx_message_pvt_t *msg  = (dx_message_pvt_t*) dx_delivery_context(delivery);
+    pn_link_t        *link = pn_delivery_link(pnd);
     ssize_t           rc;
     dx_buffer_t      *buf;
 
     //
     // If there is no message associated with the delivery, this is the first time
-    // we've received anything on this delivery.  Allocate a message descriptor and 
+    // we've received anything on this delivery.  Allocate a message descriptor and
     // link it and the delivery together.
     //
     if (!msg) {
         msg = (dx_message_pvt_t*) dx_allocate_message();
-        pn_delivery_set_context(delivery, (void*) msg);
-
-        //
-        // Record the incoming delivery only if it is not settled.  If it is 
-        // settled, it should not be recorded as no future operations on it are
-        // permitted.
-        //
-        if (!pn_delivery_settled(delivery))
-            msg->content->in_delivery = delivery;
+        dx_delivery_set_context(delivery, (void*) msg);
     }
 
     //
@@ -489,6 +540,7 @@ dx_message_t *dx_message_receive(pn_delivery_t *delivery)
                 DEQ_REMOVE_TAIL(msg->content->buffers);
                 dx_free_buffer(buf);
             }
+            dx_delivery_set_context(delivery, 0);
             return (dx_message_t*) msg;
         }
 
@@ -520,14 +572,76 @@ dx_message_t *dx_message_receive(pn_delivery_t *delivery)
 }
 
 
-void dx_message_send(dx_message_t *in_msg, pn_link_t *link)
+static void send_handler(void *context, const unsigned char *start, int length)
 {
-    dx_message_pvt_t *msg = (dx_message_pvt_t*) in_msg;
-    dx_buffer_t      *buf = DEQ_HEAD(msg->content->buffers);
+    pn_link_t *pnl = (pn_link_t*) context;
+    pn_link_send(pnl, (const char*) start, length);
+}
 
-    // TODO - Handle cases where annotations have been added or modified
+
+void dx_message_send(dx_message_t *in_msg, dx_link_t *link)
+{
+    dx_message_pvt_t     *msg     = (dx_message_pvt_t*) in_msg;
+    dx_message_content_t *content = msg->content;
+    dx_buffer_t          *buf     = DEQ_HEAD(content->buffers);
+    unsigned char        *cursor;
+    pn_link_t            *pnl     = dx_link_pn(link);
+
+    if (DEQ_SIZE(content->new_delivery_annotations) > 0) {
+        //
+        // This is the case where the delivery annotations have been modified.
+        // The message send must be divided into sections:  The existing header;
+        // the new delivery annotations; the rest of the existing message.
+        // Note that the original delivery annotations that are still in the
+        // buffer chain must not be sent.
+        //
+        // Start by making sure that we've parsed the message sections through
+        // the delivery annotations
+        //
+        if (!dx_message_check(in_msg, DX_DEPTH_DELIVERY_ANNOTATIONS))
+            return;
+
+        //
+        // Send header if present
+        //
+        cursor = dx_buffer_base(buf);
+        if (content->section_message_header.length > 0) {
+            pn_link_send(pnl, (const char*) MSG_HDR_SHORT, 3);
+            buf    = content->section_message_header.buffer;
+            cursor = content->section_message_header.offset + dx_buffer_base(buf);
+            advance(&cursor, &buf, content->section_message_header.length, send_handler, (void*) pnl);
+        }
+
+        //
+        // Send new delivery annotations
+        //
+        dx_buffer_t *da_buf = DEQ_HEAD(content->new_delivery_annotations);
+        while (da_buf) {
+            pn_link_send(pnl, (char*) dx_buffer_base(da_buf), dx_buffer_size(da_buf));
+            da_buf = DEQ_NEXT(da_buf);
+        }
+
+        //
+        // Skip over replaced delivery annotations
+        //
+        if (content->section_delivery_annotation.length > 0)
+            advance(&cursor, &buf,
+                    content->section_delivery_annotation.hdr_length + content->section_delivery_annotation.length,
+                    0, 0);
+
+        //
+        // Send remaining partial buffer
+        //
+        if (buf) {
+            size_t len = dx_buffer_size(buf) - (cursor - dx_buffer_base(buf));
+            advance(&cursor, &buf, len, send_handler, (void*) pnl);
+        }
+
+        // Fall through to process the remaining buffers normally
+    }
+
     while (buf) {
-        pn_link_send(link, (char*) dx_buffer_base(buf), dx_buffer_size(buf));
+        pn_link_send(pnl, (char*) dx_buffer_base(buf), dx_buffer_size(buf));
         buf = DEQ_NEXT(buf);
     }
 }
@@ -557,29 +671,6 @@ static int dx_check_field_LH(dx_message_content_t *content,
 
 static int dx_message_check_LH(dx_message_content_t *content, dx_message_depth_t depth)
 {
-    static const unsigned char * const MSG_HDR_LONG                 = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x70";
-    static const unsigned char * const MSG_HDR_SHORT                = (unsigned char*) "\x00\x53\x70";
-    static const unsigned char * const DELIVERY_ANNOTATION_LONG     = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x71";
-    static const unsigned char * const DELIVERY_ANNOTATION_SHORT    = (unsigned char*) "\x00\x53\x71";
-    static const unsigned char * const MESSAGE_ANNOTATION_LONG      = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x72";
-    static const unsigned char * const MESSAGE_ANNOTATION_SHORT     = (unsigned char*) "\x00\x53\x72";
-    static const unsigned char * const PROPERTIES_LONG              = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x73";
-    static const unsigned char * const PROPERTIES_SHORT             = (unsigned char*) "\x00\x53\x73";
-    static const unsigned char * const APPLICATION_PROPERTIES_LONG  = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x74";
-    static const unsigned char * const APPLICATION_PROPERTIES_SHORT = (unsigned char*) "\x00\x53\x74";
-    static const unsigned char * const BODY_DATA_LONG               = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x75";
-    static const unsigned char * const BODY_DATA_SHORT              = (unsigned char*) "\x00\x53\x75";
-    static const unsigned char * const BODY_SEQUENCE_LONG           = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x76";
-    static const unsigned char * const BODY_SEQUENCE_SHORT          = (unsigned char*) "\x00\x53\x76";
-    static const unsigned char * const BODY_VALUE_LONG              = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x77";
-    static const unsigned char * const BODY_VALUE_SHORT             = (unsigned char*) "\x00\x53\x77";
-    static const unsigned char * const FOOTER_LONG                  = (unsigned char*) "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x78";
-    static const unsigned char * const FOOTER_SHORT                 = (unsigned char*) "\x00\x53\x78";
-    static const unsigned char * const TAGS_LIST                    = (unsigned char*) "\x45\xc0\xd0";
-    static const unsigned char * const TAGS_MAP                     = (unsigned char*) "\xc1\xd1";
-    static const unsigned char * const TAGS_BINARY                  = (unsigned char*) "\xa0\xb0";
-    static const unsigned char * const TAGS_ANY                     = (unsigned char*) "\x45\xc0\xd0\xc1\xd1\xa0\xb0";
-
     dx_buffer_t *buffer  = DEQ_HEAD(content->buffers);
 
     if (!buffer)

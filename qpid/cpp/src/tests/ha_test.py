@@ -48,6 +48,24 @@ class QmfAgent(object):
             address, client_properties={"qpid.ha-admin":1}, **kwargs)
         self._agent = BrokerAgent(self._connection)
 
+    def queues(self):
+        return [q.values['name'] for q in self._agent.getAllQueues()]
+
+    def repsub_queue(self, sub):
+        """If QMF subscription sub is a replicating subscription return
+        the name of the replicated queue, else return None"""
+        session_name = self.getSession(sub.sessionRef).name
+        m = re.search("qpid.ha-q:(.*)\.", session_name)
+        return m and m.group(1)
+
+    def repsub_queues(self):
+        """Return queue names for all replicating subscriptions"""
+        return filter(None, [self.repsub_queue(s) for s in self.getAllSubscriptions()])
+
+    def tx_queues(self):
+        """Return names of all tx-queues"""
+        return [q for q in self.queues() if q.startswith("qpid.ha-tx")]
+
     def __getattr__(self, name):
         a = getattr(self._agent, name)
         return a
@@ -101,6 +119,9 @@ class HaBroker(Broker):
     """Start a broker with HA enabled
     @param client_cred: (user, password, mechanism) for admin clients started by the HaBroker.
     """
+
+    heartbeat=2
+
     def __init__(self, test, ha_port=None, args=[], brokers_url=None, ha_cluster=True,
                  ha_replicate="all", client_credentials=None, **kwargs):
         assert BrokerTest.ha_lib, "Cannot locate HA plug-in"
@@ -112,7 +133,7 @@ class HaBroker(Broker):
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
                  # stall on an address that doesn't currently have a broker running.
-                 "--link-heartbeat-interval=1",
+                 "--link-heartbeat-interval=%s"%(HaBroker.heartbeat),
                  "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
         if ha_replicate is not None:
@@ -139,15 +160,18 @@ acl allow all all
         self.client_credentials = client_credentials
         self.ha_port = ha_port
 
-    def __str__(self): return Broker.__str__(self)
+    def __repr__(self): return "<HaBroker:%s:%d>"%(self.log, self.port())
 
     def qpid_ha(self, args):
-        cred = self.client_credentials
-        url = self.host_port()
-        if cred:
-            url =cred.add_user(url)
-            args = args + ["--sasl-mechanism", cred.mechanism]
-        self.qpid_ha_script.main_except(["", "-b", url]+args)
+        try:
+            cred = self.client_credentials
+            url = self.host_port()
+            if cred:
+                url =cred.add_user(url)
+                args = args + ["--sasl-mechanism", cred.mechanism]
+            self.qpid_ha_script.main_except(["", "-b", url]+args)
+        except Exception, e:
+            raise Exception("Error in qpid_ha -b %s %s: %s"%(url, args,e))
 
     def promote(self): self.ready(); self.qpid_ha(["promote"])
     def set_public_url(self, url): self.qpid_ha(["set", "--public-url", url])
@@ -221,6 +245,12 @@ acl allow all all
 
     def wait_backup(self, address): self.wait_address(address)
 
+    def browse(self, queue, timeout=0, transform=lambda m: m.content):
+        c = self.connect_admin()
+        try:
+            return browse(c.session(), queue, timeout, transform)
+        finally: c.close()
+
     def assert_browse(self, queue, expected, **kwargs):
         """Verify queue contents by browsing."""
         bs = self.connect().session()
@@ -247,8 +277,10 @@ acl allow all all
         try: return self.connect()
         except ConnectionError: return None
 
-    def ready(self):
-        return Broker.ready(self, client_properties={"qpid.ha-admin":1})
+    def ready(self, *args, **kwargs):
+        if not 'client_properties' in kwargs: kwargs['client_properties'] = {}
+        kwargs['client_properties']['qpid.ha-admin'] = True
+        return Broker.ready(self, *args, **kwargs)
 
     def kill(self, final=True):
         if final: self.ha_port.stop()
@@ -259,16 +291,19 @@ acl allow all all
 class HaCluster(object):
     _cluster_count = 0
 
-    def __init__(self, test, n, promote=True, wait=True, args=[], **kwargs):
+    def __init__(self, test, n, promote=True, wait=True, args=[], s_args=[], **kwargs):
         """Start a cluster of n brokers.
 
         @test: The test being run
         @n: start n brokers
         @promote: promote self[0] to primary
         @wait: wait for primary active and backups ready. Ignored if promote=False
+        @args: args for all brokers in the cluster.
+        @s_args: args for specific brokers: s_args[i] for broker i.
         """
         self.test = test
-        self.args = args
+        self.args = copy(args)
+        self.s_args = copy(s_args)
         self.kwargs = kwargs
         self._ports = [HaPort(test) for i in xrange(n)]
         self._set_url()
@@ -288,10 +323,13 @@ class HaCluster(object):
         self.broker_id += 1
         return name
 
-    def _ha_broker(self, ha_port, name):
+    def _ha_broker(self, i, name):
+        args = self.args
+        if i < len(self.s_args): args += self.s_args[i]
+        ha_port = self._ports[i]
         b = HaBroker(ha_port.test, ha_port, brokers_url=self.url, name=name,
-                     args=self.args, **self.kwargs)
-        b.ready()
+                     args=args, **self.kwargs)
+        b.ready(timeout=5)
         return b
 
     def start(self):
@@ -302,7 +340,7 @@ class HaCluster(object):
             self._ports.append(HaPort(self.test))
             self._set_url()
             self._update_urls()
-        b = self._ha_broker(self._ports[i], self.next_name())
+        b = self._ha_broker(i, self.next_name())
         self._brokers.append(b)
         return b
 
@@ -328,7 +366,7 @@ class HaCluster(object):
         a separate log file: foo.n.log"""
         if self._ports[i].stopped: raise Exception("Restart after final kill: %s"%(self))
         b = self._brokers[i]
-        self._brokers[i] = self._ha_broker(self._ports[i], b.name)
+        self._brokers[i] = self._ha_broker(i, b.name)
         self._brokers[i].ready()
 
     def bounce(self, i, promote_next=True):

@@ -145,7 +145,7 @@ uint64_t Message::getTtl() const
     }
 }
 
-bool Message::getTtl(uint64_t ttl) const
+bool Message::getTtl(uint64_t& ttl) const
 {
     if (encoding->getTtl(ttl) && expiration < FAR_FUTURE) {
         sys::Duration remaining(sys::AbsTime::now(), getExpiration());
@@ -182,8 +182,10 @@ void Message::addAnnotation(const std::string& key, const qpid::types::Variant& 
 void Message::annotationsChanged()
 {
     if (persistentContext) {
+        uint64_t id = persistentContext->getPersistenceId();
         persistentContext = persistentContext->merge(annotations);
         persistentContext->setIngressCompletion(encoding);
+        persistentContext->setPersistenceId(id);
     }
 }
 

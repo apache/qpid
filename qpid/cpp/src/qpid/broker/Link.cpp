@@ -536,7 +536,7 @@ bool Link::tryFailoverLH() {
     if (url.empty()) return false;
     Address next = url[reconnectNext++];
     if (next.host != host || next.port != port || next.protocol != transport) {
-        QPID_LOG(notice, "Inter-broker link '" << name << "' failing over to " << next);
+        QPID_LOG(info, "Inter-broker link '" << name << "' failing over to " << next);
         reconnectLH(next);
         return true;
     }

@@ -36,7 +36,7 @@ namespace amqp {
 SaslClient::SaslClient(qpid::sys::OutputControl& out_, const std::string& id, boost::shared_ptr<Interconnect> c, std::auto_ptr<qpid::Sasl> s,
                        const std::string& hostname_, const std::string& mechs, const qpid::sys::SecuritySettings& t)
     : qpid::amqp::SaslClient(id), out(out_), connection(c), sasl(s),
-      hostname(hostname_), allowedMechanisms(mechs), transport(t), readHeader(true), writeHeader(false), haveOutput(false), state(NONE) {}
+      hostname(hostname_), allowedMechanisms(mechs), transport(t), readHeader(true), writeHeader(false), haveOutput(false), initialised(false), state(NONE) {}
 
 SaslClient::~SaslClient()
 {
@@ -67,8 +67,10 @@ std::size_t SaslClient::encode(char* buffer, std::size_t size)
          encoded += writeProtocolHeader(buffer, size);
          writeHeader = !encoded;
     }
-    if (state == NONE && encoded < size) {
-        encoded += write(buffer + encoded, size - encoded);
+    if ((!initialised || state == NONE) && encoded < size) {
+        size_t extra = write(buffer + encoded, size - encoded);
+        encoded += extra;
+        initialised = extra > 0;
     } else if (state == SUCCEEDED) {
         if (securityLayer.get()) encoded += securityLayer->encode(buffer + encoded, size - encoded);
         else encoded += connection->encode(buffer + encoded, size - encoded);

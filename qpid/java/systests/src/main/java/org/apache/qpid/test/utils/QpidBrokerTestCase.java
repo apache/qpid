@@ -57,6 +57,7 @@ import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.Broker;
@@ -66,7 +67,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.url.URLSyntaxException;
@@ -250,20 +250,12 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     private void initialiseLogConfigFile()
     {
-        try
-        {
-            _logger.info("About to initialise log config file from system property: " + LOG4J_CONFIG_FILE_PATH);
+        _logger.info("About to initialise log config file from system property: " + LOG4J_CONFIG_FILE_PATH);
 
-            URI uri = new URI("file", LOG4J_CONFIG_FILE_PATH, null);
-            _logConfigFile = new File(uri);
-            if(!_logConfigFile.exists())
-            {
-                throw new RuntimeException("Log config file " + _logConfigFile.getAbsolutePath() + " does not exist");
-            }
-        }
-        catch (URISyntaxException e)
+        _logConfigFile = new File(LOG4J_CONFIG_FILE_PATH);
+        if(!_logConfigFile.exists())
         {
-            throw new RuntimeException("Couldn't create URI from log4.configuration: " + LOG4J_CONFIG_FILE_PATH, e);
+            throw new RuntimeException("Log config file " + _logConfigFile.getAbsolutePath() + " does not exist");
         }
     }
 
@@ -634,17 +626,17 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public String getTestConfigFile(int port)
     {
-        return _output + "/" + getTestQueueName() + "-" + port + "-config";
+        return _output + File.separator + getTestQueueName() + "-" + port + "-config";
     }
 
     public String getTestVirtualhostsFile(int port)
     {
-        return _output + "/" + getTestQueueName() + "-" + port + "-virtualhosts.xml";
+        return _output + File.separator + getTestQueueName() + "-" + port + "-virtualhosts.xml";
     }
 
     private String relativeToQpidHome(String file)
     {
-        return file.replace(System.getProperty(QPID_HOME,"QPID_HOME") + "/","");
+        return file.replace(System.getProperty(QPID_HOME,"QPID_HOME") + File.separator,"");
     }
 
     protected String getPathRelativeToWorkingDirectory(String file)
@@ -1199,7 +1191,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public Topic getTestTopic()
     {
-        return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, getTestQueueName());
+        return new AMQTopic(AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_NAME), getTestQueueName());
     }
 
     @Override
@@ -1433,10 +1425,10 @@ public class QpidBrokerTestCase extends QpidTestCase
     public String getTestProfileMessageStoreType()
     {
         final String storeClass = getTestProfileMessageStoreClassName();
-        if (storeClass == null)
+       /* if (storeClass == null)
         {
-            return MemoryMessageStore.TYPE;
-        }
+            return "Memory";
+        }*/
         return supportedStoresClassToTypeMapping.get(storeClass);
     }
 

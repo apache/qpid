@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -61,13 +61,13 @@ public class AmqPlainSaslServer implements SaslServer
         try
         {
             final FieldTable ft = FieldTableFactory.newFieldTable(new DataInputStream(new ByteArrayInputStream(response)), response.length);
-            String username = (String) ft.getString("LOGIN");
+            String username = ft.getString("LOGIN");
             // we do not care about the prompt but it throws if null
             NameCallback nameCb = new NameCallback("prompt", username);
             // we do not care about the prompt but it throws if null
             PasswordCallback passwordCb = new PasswordCallback("prompt", false);
             // TODO: should not get pwd as a String but as a char array...
-            String pwd = (String) ft.getString("PASSWORD");
+            String pwd = ft.getString("PASSWORD");
             AuthorizeCallback authzCb = new AuthorizeCallback(username, username);
             Callback[] callbacks = new Callback[]{nameCb, passwordCb, authzCb};
             _cbh.handle(callbacks);

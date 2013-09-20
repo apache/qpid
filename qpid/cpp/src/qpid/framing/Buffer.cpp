@@ -182,27 +182,27 @@ double Buffer::getDouble(){
 }
 
 template <>
-uint64_t Buffer::getUInt<1>() {
+QPID_COMMON_EXTERN uint64_t Buffer::getUInt<1>() {
     return getOctet();
 }
 
 template <>
-uint64_t Buffer::getUInt<2>() {
+QPID_COMMON_EXTERN uint64_t Buffer::getUInt<2>() {
     return getShort();
 }
 
 template <>
-uint64_t Buffer::getUInt<4>() {
+QPID_COMMON_EXTERN uint64_t Buffer::getUInt<4>() {
     return getLong();
 }
 
 template <>
-uint64_t Buffer::getUInt<8>() {
+QPID_COMMON_EXTERN uint64_t Buffer::getUInt<8>() {
     return getLongLong();
 }
 
 template <>
-void Buffer::putUInt<1>(uint64_t i) {
+QPID_COMMON_EXTERN void Buffer::putUInt<1>(uint64_t i) {
     if (std::numeric_limits<uint8_t>::min() <= i && i <= std::numeric_limits<uint8_t>::max()) {
         putOctet(i);
         return;
@@ -211,7 +211,7 @@ void Buffer::putUInt<1>(uint64_t i) {
 }
 
 template <>
-void Buffer::putUInt<2>(uint64_t i) {
+QPID_COMMON_EXTERN void Buffer::putUInt<2>(uint64_t i) {
     if (std::numeric_limits<uint16_t>::min() <= i && i <= std::numeric_limits<uint16_t>::max()) {
         putShort(i);
         return;
@@ -220,7 +220,7 @@ void Buffer::putUInt<2>(uint64_t i) {
 }
 
 template <>
-void Buffer::putUInt<4>(uint64_t i) {
+QPID_COMMON_EXTERN void Buffer::putUInt<4>(uint64_t i) {
     if (std::numeric_limits<uint32_t>::min() <= i && i <= std::numeric_limits<uint32_t>::max()) {
         putLong(i);
         return;
@@ -229,7 +229,7 @@ void Buffer::putUInt<4>(uint64_t i) {
 }
 
 template <>
-void Buffer::putUInt<8>(uint64_t i) {
+QPID_COMMON_EXTERN void Buffer::putUInt<8>(uint64_t i) {
     putLongLong(i);
 }
 

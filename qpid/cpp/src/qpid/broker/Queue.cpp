@@ -34,6 +34,7 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/Selector.h"
+#include "qpid/broker/TransactionObserver.h"
 
 //TODO: get rid of this
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
@@ -167,6 +168,12 @@ void Queue::TxPublish::rollback() throw()
     }
 }
 
+void Queue::TxPublish::callObserver(
+    const boost::shared_ptr<TransactionObserver>& observer)
+{
+    observer->enqueue(queue, message);
+}
+
 Queue::Queue(const string& _name, const QueueSettings& _settings,
              MessageStore* const _store,
              Manageable* parent,
@@ -216,6 +223,8 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
 
 Queue::~Queue()
 {
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
 }
 
 bool Queue::isLocal(const Message& msg)
@@ -270,6 +279,7 @@ void Queue::deliver(Message msg, TxBuffer* txn)
 void Queue::deliverTo(Message msg, TxBuffer* txn)
 {
     if (accept(msg)) {
+        interceptors.record(msg);
         if (txn) {
             TxOp::shared_ptr op(new TxPublish(msg, shared_from_this()));
             txn->enlist(op);
@@ -385,6 +395,7 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
     if (!checkNotDeleted(c)) return false;
     QueueListeners::NotificationSet set;
     ScopedAutoDelete autodelete(*this);
+    bool messageFound(false);
     while (true) {
         //TODO: reduce lock scope
         Mutex::ScopedLock locker(messageLock);
@@ -426,7 +437,8 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
                     QPID_LOG(debug, "Message " << msg->getSequence() << " retrieved from '"
                              << name << "'");
                     m = *msg;
-                    return true;
+                    messageFound = true;
+                    break;
                 } else {
                     //message(s) are available but consumer hasn't got enough credit
                     QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
@@ -448,11 +460,12 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
         } else {
             QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
             listeners.addListener(c);
-            return false;
+            break;
         }
+
     }
     set.notify();
-    return false;
+    return messageFound;
 }
 
 void Queue::removeListener(Consumer::shared_ptr c)
@@ -677,17 +690,6 @@ namespace {
         return new MessageFilter();
     }
 
-    bool reroute(boost::shared_ptr<Exchange> e, const Message& m)
-    {
-        if (e) {
-            DeliverableMessage d(m, 0);
-            d.getMessage().clearTrace();
-            e->routeWithAlternate(d);
-            return true;
-        } else {
-            return false;
-        }
-    }
     void moveTo(boost::shared_ptr<Queue> q, Message& m)
     {
         if (q) {
@@ -846,7 +848,6 @@ bool Queue::isEmpty(const Mutex::ScopedLock&) const
  */
 bool Queue::enqueue(TransactionContext* ctxt, Message& msg)
 {
-    interceptors.record(msg);
     ScopedUse u(barrier);
     if (!u.acquired) return false;
 
@@ -1684,6 +1685,19 @@ void Queue::setMgmtRedirectState( std::string peer, bool enabled, bool isSrc ) {
         mgmtObject->set_redirectSource(isSrc);
     }
 }
+
+bool Queue::reroute(boost::shared_ptr<Exchange> e, const Message& m)
+{
+    if (e) {
+        DeliverableMessage d(m, 0);
+        d.getMessage().clearTrace();
+        e->routeWithAlternate(d);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 Queue::QueueUsers::QueueUsers() : consumers(0), browsers(0), others(0), controller(false) {}
 void Queue::QueueUsers::addConsumer() { ++consumers; }
 void Queue::QueueUsers::addBrowser() { ++browsers; }

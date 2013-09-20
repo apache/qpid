@@ -21,6 +21,8 @@
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
 
+    <property name="broker.plugin" value="true"/>
+
     <import file="../../module.xml" />
 
     <condition property="download.bonecp.jar">

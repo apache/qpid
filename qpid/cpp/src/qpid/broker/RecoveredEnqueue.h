@@ -41,6 +41,8 @@ class RecoveredEnqueue : public TxOp{
     virtual bool prepare(TransactionContext* ctxt) throw();
     virtual void commit() throw();
     virtual void rollback() throw();
+    // TODO aconway 2013-07-08: revisit
+    virtual void callObserver(const boost::shared_ptr<TransactionObserver>&) {}
     virtual ~RecoveredEnqueue(){}
 
     boost::shared_ptr<Queue> getQueue() const { return queue; }

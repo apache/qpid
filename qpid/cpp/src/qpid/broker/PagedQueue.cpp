@@ -64,7 +64,7 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
 }
 
 PagedQueue::PagedQueue(const std::string& name, const std::string& directory, uint m, uint factor, ProtocolRegistry& p)
-    : pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0)
+    : pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0), loaded(0), version(0)
 {
     path = file.open(name, directory);
     QPID_LOG(debug, "PagedQueue[" << path << "]");
@@ -295,7 +295,8 @@ void PagedQueue::Page::load(MemoryMappedFile& file, ProtocolRegistry& protocols)
     bool haveData = used > 0;
     used = 4;//first 4 bytes are the count
     if (haveData) {
-        uint32_t count = *(reinterpret_cast<uint32_t*>(region));
+        qpid::framing::Buffer buffer(region, sizeof(uint32_t));
+        uint32_t count = buffer.getLong();
         //decode messages into Page::messages
         for (size_t i = 0; i < count; ++i) {
             Message message;
@@ -331,7 +332,8 @@ void PagedQueue::Page::unload(MemoryMappedFile& file)
         if (i->getState() == ACQUIRED) acquired.add(i->getSequence());
     }
     uint32_t count = messages.size();
-    ::memcpy(region, &count, sizeof(count));
+    qpid::framing::Buffer buffer(region, sizeof(uint32_t));
+    buffer.putLong(count);
     file.flush(region, size);
     file.unmap(region, size);
     //remove messages from memory

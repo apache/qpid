@@ -1,0 +1,10 @@
+{
+    global:
+        extern "C++" {
+            typeinfo*qpid::*;
+            vtable*qpid::*;
+            qpid::*;
+            qpid::*operator*qpid::*;
+        };
+    local: *;
+};

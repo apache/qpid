@@ -93,3 +93,73 @@ div .messages {
 .formLabel-labelCell {
   font-weight: bold;
 }
+
+.columnDefDialogButtonIcon {
+  background: url("../dojo/dojox/grid/enhanced/resources/images/sprite_icons.png") no-repeat;
+    background-position: -260px 2px;
+    width: 14px;
+    height: 14px;
+}
+
+.logViewerIcon {
+  background: url("../images/log-viewer.png") no-repeat;
+    width: 14px;
+    height: 16px;
+}
+
+.downloadLogsIcon {
+  background: url("../images/download.png") no-repeat;
+    width: 14px;
+    height: 14px;
+}
+
+.dojoxGridFBarClearFilterButtontnIcon
+{
+    background: url("../dojo/dojox/grid/enhanced/resources/images/sprite_icons.png") no-repeat;
+    background-position: -120px -18px;
+    width: 14px;
+    height: 14px;
+}
+
+.rowNumberLimitIcon
+{
+    background: url("../dojo/dojox/grid/enhanced/resources/images/sprite_icons.png") no-repeat;
+    background-position: -240px -18px;
+    width: 14px;
+    height: 14px;
+}
+
+.gridRefreshIcon
+{
+    background: url("../images/refresh.png") no-repeat;
+    width: 16px;
+    height: 16px;
+}
+
+.gridAutoRefreshIcon
+{
+    background: url("../images/auto-refresh.png") no-repeat;
+    width: 16px;
+    height: 16px;
+}
+
+.redBackground tr{ background-color:#ffdcd7 !important; background-image: none !important;}
+.yellowBackground tr{background-color:#fbfddf !important; background-image: none !important;}
+.grayBackground tr{background-color:#eeeeee !important; background-image: none !important;}
+.dojoxGridRowOdd.grayBackground tr{ background-color:#e9e9e9 !important; background-image: none !important;}
+.dojoxGridRowOdd.yellowBackground tr{background-color:#fafdd5 !important; background-image: none !important;}
+.dojoxGridRowOdd.redBackground tr{background-color:#f4c1c1 !important; background-image: none !important;}
+
+.preferencesIcon
+{
+    background: url("../images/gear.png") no-repeat;
+    width: 16px;
+    height: 16px;
+}
+
+.helpIcon
+{
+    background: url("../images/help.png") no-repeat;
+    width: 16px;
+    height: 16px;
+}

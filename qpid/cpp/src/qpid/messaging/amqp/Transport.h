@@ -21,12 +21,14 @@
  * under the License.
  *
  */
+#include "qpid/CommonImportExport.h"
 #include "qpid/sys/OutputControl.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace sys {
 class Poller;
+struct SecuritySettings;
 }
 namespace messaging {
 namespace amqp {
@@ -38,10 +40,11 @@ class Transport : public qpid::sys::OutputControl
     virtual ~Transport() {}
     virtual void connect(const std::string& host, const std::string& port) = 0;
     virtual void close() = 0;
+    virtual const qpid::sys::SecuritySettings* getSecuritySettings() = 0;
 
     typedef Transport* Factory(TransportContext&, boost::shared_ptr<qpid::sys::Poller>);
-    static Transport* create(const std::string& name, TransportContext&, boost::shared_ptr<qpid::sys::Poller>);
-    static void add(const std::string& name, Factory* factory);
+    QPID_COMMON_EXTERN static Transport* create(const std::string& name, TransportContext&, boost::shared_ptr<qpid::sys::Poller>);
+    QPID_COMMON_EXTERN static void add(const std::string& name, Factory* factory);
 };
 }}} // namespace qpid::messaging::amqp
 

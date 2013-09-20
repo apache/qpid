@@ -93,7 +93,7 @@ if (WIN32)
     "Directory to install SASL configuration files")
   set (QPID_INSTALL_DATADIR conf CACHE STRING
     "Directory to install read-only arch.-independent data root")
-  set (QPID_INSTALL_EXAMPLESDIR qpid/examples CACHE STRING
+  set (QPID_INSTALL_EXAMPLESDIR examples CACHE STRING
     "Directory to install programming examples in")
   set (QPID_INSTALL_DOCDIR docs CACHE STRING
     "Directory to install documentation")

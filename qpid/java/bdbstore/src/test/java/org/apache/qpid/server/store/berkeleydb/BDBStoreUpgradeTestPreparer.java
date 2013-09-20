@@ -48,6 +48,7 @@ import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.url.URLSyntaxException;
 
 /**
@@ -159,7 +160,7 @@ public class BDBStoreUpgradeTestPreparer
         session = connection.createSession(true,  Session.SESSION_TRANSACTED);
         // Create a priority queue on broker
         final Map<String,Object> priorityQueueArguments = new HashMap<String, Object>();
-        priorityQueueArguments.put("x-qpid-priorities",10);
+        priorityQueueArguments.put(QueueArgumentsConverter.X_QPID_PRIORITIES,10);
         createAndBindQueueOnBroker(session, PRIORITY_QUEUE_NAME, priorityQueueArguments);
 
         // Create a queue that has a DLQ

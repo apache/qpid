@@ -28,8 +28,10 @@ public class MessageStoreLogSubject extends AbstractLogSubject
 {
 
     /** Create an MessageStoreLogSubject that Logs in the following format. */
-    public MessageStoreLogSubject(VirtualHost vhost, String messageStoreName)
+    public MessageStoreLogSubject(String vhostName, String messageStoreName)
     {
-        setLogStringWithFormat(STORE_FORMAT, vhost.getName(), messageStoreName);
+        setLogStringWithFormat(STORE_FORMAT, vhostName, messageStoreName);
     }
+
+
 }

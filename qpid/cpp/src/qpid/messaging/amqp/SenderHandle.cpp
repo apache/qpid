@@ -44,7 +44,7 @@ void SenderHandle::send(const Message& message, bool sync)
 
 void SenderHandle::close()
 {
-    session->closeSender(getName());
+    connection->detach(session, sender);
 }
 
 void SenderHandle::setCapacity(uint32_t capacity)

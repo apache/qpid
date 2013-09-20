@@ -22,26 +22,31 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/amqp/Decoder.h"
+#include "qpid/amqp/DataBuilder.h"
+#include "qpid/amqp/ListBuilder.h"
+#include "qpid/amqp/MapBuilder.h"
+#include "qpid/amqp/typecodes.h"
+#include "qpid/types/encodings.h"
+#include "qpid/log/Statement.h"
 #include <boost/lexical_cast.hpp>
 #include <string.h>
 
 namespace qpid {
 namespace messaging {
 namespace amqp {
-
 using namespace qpid::amqp;
 
-EncodedMessage::EncodedMessage(size_t s) : size(s), data(size ? new char[size] : 0)
+EncodedMessage::EncodedMessage(size_t s) : size(s), data(size ? new char[size] : 0), nestAnnotations(false)
 {
     init();
 }
 
-EncodedMessage::EncodedMessage() : size(0), data(0)
+EncodedMessage::EncodedMessage() : size(0), data(0), nestAnnotations(false)
 {
     init();
 }
 
-EncodedMessage::EncodedMessage(const EncodedMessage& other) : size(other.size), data(size ? new char[size] : 0)
+EncodedMessage::EncodedMessage(const EncodedMessage& other) : size(other.size), data(size ? new char[size] : 0), nestAnnotations(false)
 {
     init();
 }
@@ -105,6 +110,8 @@ void EncodedMessage::init(qpid::messaging::MessageImpl& impl)
     }
 
 }
+void EncodedMessage::setNestAnnotationsOption(bool b) { nestAnnotations = b; }
+
 void EncodedMessage::populate(qpid::types::Variant::Map& map) const
 {
     //decode application properties
@@ -139,14 +146,20 @@ void EncodedMessage::populate(qpid::types::Variant::Map& map) const
     }
     //add in any annotations
     if (deliveryAnnotations) {
-        qpid::types::Variant::Map& annotations = map["x-amqp-delivery-annotations"].asMap();
         qpid::amqp::Decoder decoder(deliveryAnnotations.data, deliveryAnnotations.size);
-        decoder.readMap(annotations);
+        if (nestAnnotations) {
+            map["x-amqp-delivery-annotations"] = decoder.readMap();
+        } else {
+            decoder.readMap(map);
+        }
     }
     if (messageAnnotations) {
-        qpid::types::Variant::Map& annotations = map["x-amqp-message-annotations"].asMap();
         qpid::amqp::Decoder decoder(messageAnnotations.data, messageAnnotations.size);
-        decoder.readMap(annotations);
+        if (nestAnnotations) {
+            map["x-amqp-message-annotations"] = decoder.readMap();
+        } else {
+            decoder.readMap(map);
+        }
     }
 }
 qpid::amqp::CharSequence EncodedMessage::getBareMessage() const
@@ -178,9 +191,38 @@ void EncodedMessage::getCorrelationId(std::string& s) const
 {
     correlationId.assign(s);
 }
-void EncodedMessage::getBody(std::string& s) const
+void EncodedMessage::getBody(std::string& raw, qpid::types::Variant& c) const
 {
-    s.assign(body.data, body.size);
+    if (!content.isVoid()) {
+        c = content;//integer types, floats, bool etc
+        //TODO: populate raw data?
+    } else {
+        if (bodyType.empty()
+            || bodyType == qpid::amqp::typecodes::BINARY_NAME
+            || bodyType == qpid::types::encodings::UTF8
+            || bodyType == qpid::types::encodings::ASCII)
+        {
+            c = std::string(body.data, body.size);
+            c.setEncoding(bodyType);
+        } else if (bodyType == qpid::amqp::typecodes::LIST_NAME) {
+            qpid::amqp::ListBuilder builder;
+            qpid::amqp::Decoder decoder(body.data, body.size);
+            decoder.read(builder);
+            c = builder.getList();
+            raw.assign(body.data, body.size);
+        } else if (bodyType == qpid::amqp::typecodes::MAP_NAME) {
+            qpid::amqp::DataBuilder builder = qpid::amqp::DataBuilder(qpid::types::Variant::Map());
+            qpid::amqp::Decoder decoder(body.data, body.size);
+            decoder.read(builder);
+            c = builder.getValue().asMap();
+            raw.assign(body.data, body.size);
+        } else if (bodyType == qpid::amqp::typecodes::UUID_NAME) {
+            if (body.size == qpid::types::Uuid::SIZE) c = qpid::types::Uuid(body.data);
+            raw.assign(body.data, body.size);
+        } else if (bodyType == qpid::amqp::typecodes::ARRAY_NAME) {
+            raw.assign(body.data, body.size);
+        }
+    }
 }
 
 qpid::amqp::CharSequence EncodedMessage::getBody() const
@@ -216,6 +258,7 @@ bool EncodedMessage::hasHeaderChanged(const qpid::messaging::MessageImpl& msg) c
 }
 
 
+
 EncodedMessage::InitialScan::InitialScan(EncodedMessage& e, qpid::messaging::MessageImpl& m) : em(e), mi(m)
 {
     //set up defaults as needed:
@@ -249,15 +292,35 @@ void EncodedMessage::InitialScan::onGroupId(const qpid::amqp::CharSequence& v) {
 void EncodedMessage::InitialScan::onGroupSequence(uint32_t i) { em.groupSequence = i; }
 void EncodedMessage::InitialScan::onReplyToGroupId(const qpid::amqp::CharSequence& v) { em.replyToGroupId = v; }
 
-void EncodedMessage::InitialScan::onApplicationProperties(const qpid::amqp::CharSequence& v) { em.applicationProperties = v; }
-void EncodedMessage::InitialScan::onDeliveryAnnotations(const qpid::amqp::CharSequence& v) { em.deliveryAnnotations = v; }
-void EncodedMessage::InitialScan::onMessageAnnotations(const qpid::amqp::CharSequence& v) { em.messageAnnotations = v; }
-void EncodedMessage::InitialScan::onBody(const qpid::amqp::CharSequence& v, const qpid::amqp::Descriptor&)
+void EncodedMessage::InitialScan::onApplicationProperties(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.applicationProperties = v; }
+void EncodedMessage::InitialScan::onDeliveryAnnotations(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.deliveryAnnotations = v; }
+void EncodedMessage::InitialScan::onMessageAnnotations(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.messageAnnotations = v; }
+
+void EncodedMessage::InitialScan::onData(const qpid::amqp::CharSequence& v)
 {
-    //TODO: how to communicate the type, i.e. descriptor?
     em.body = v;
 }
-void EncodedMessage::InitialScan::onBody(const qpid::types::Variant&, const qpid::amqp::Descriptor&) {}
-void EncodedMessage::InitialScan::onFooter(const qpid::amqp::CharSequence& v) { em.footer = v; }
+void EncodedMessage::InitialScan::onAmqpSequence(const qpid::amqp::CharSequence& v)
+{
+    em.body = v;
+    em.bodyType = qpid::amqp::typecodes::LIST_NAME;
+}
+void EncodedMessage::InitialScan::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& type)
+{
+    em.body = v;
+    if (type == qpid::amqp::typecodes::STRING_NAME) {
+        em.bodyType = qpid::types::encodings::UTF8;
+    } else if (type == qpid::amqp::typecodes::SYMBOL_NAME) {
+        em.bodyType = qpid::types::encodings::ASCII;
+    } else {
+        em.bodyType = type;
+    }
+}
+void EncodedMessage::InitialScan::onAmqpValue(const qpid::types::Variant& v)
+{
+    em.content = v;
+}
+
+void EncodedMessage::InitialScan::onFooter(const qpid::amqp::CharSequence& v, const qpid::amqp::CharSequence&) { em.footer = v; }
 
 }}} // namespace qpid::messaging::amqp

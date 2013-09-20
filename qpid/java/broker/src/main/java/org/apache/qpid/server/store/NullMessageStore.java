@@ -21,14 +21,13 @@ package org.apache.qpid.server.store;
 
 import java.util.Map;
 import java.util.UUID;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.VirtualHost;
 
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
     @Override
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
     {
     }
 
@@ -38,8 +37,25 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+    }
+
+    @Override
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+    }
+
+
+    @Override
     public void remove(UUID id, String type)
     {
+    }
+
+    @Override
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    {
+        return objects;
     }
 
     @Override
@@ -48,8 +64,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler recoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
     }

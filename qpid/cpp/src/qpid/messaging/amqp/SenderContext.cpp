@@ -42,7 +42,7 @@ SenderContext::SenderContext(pn_session_t* session, const std::string& n, const 
   : name(n),
     address(a),
     helper(address),
-    sender(pn_sender(session, n.c_str())), capacity(1000) {}
+    sender(pn_sender(session, n.c_str())), capacity(1000), unreliable(helper.isUnreliable()) {}
 
 SenderContext::~SenderContext()
 {
@@ -67,7 +67,7 @@ uint32_t SenderContext::getCapacity()
 
 uint32_t SenderContext::getUnsettled()
 {
-    return processUnsettled();
+    return processUnsettled(true/*always allow retrieval of unsettled count, even if link has failed*/);
 }
 
 const std::string& SenderContext::getName() const
@@ -80,16 +80,26 @@ const std::string& SenderContext::getTarget() const
     return address.getName();
 }
 
-SenderContext::Delivery* SenderContext::send(const qpid::messaging::Message& message)
+bool SenderContext::send(const qpid::messaging::Message& message, SenderContext::Delivery** out)
 {
-    if (processUnsettled() < capacity && pn_link_credit(sender)) {
-        deliveries.push_back(Delivery(nextId++));
-        Delivery& delivery = deliveries.back();
-        delivery.encode(MessageImplAccess::get(message), address);
-        delivery.send(sender);
-        return &delivery;
+    resend();//if there are any messages needing to be resent at the front of the queue, send them first
+    if (processUnsettled(false) < capacity && pn_link_credit(sender)) {
+        if (unreliable) {
+            Delivery delivery(nextId++);
+            delivery.encode(MessageImplAccess::get(message), address);
+            delivery.send(sender, unreliable);
+            *out = 0;
+            return true;
+        } else {
+            deliveries.push_back(Delivery(nextId++));
+            Delivery& delivery = deliveries.back();
+            delivery.encode(MessageImplAccess::get(message), address);
+            delivery.send(sender, unreliable);
+            *out = &delivery;
+            return true;
+        }
     } else {
-        return 0;
+        return false;
     }
 }
 
@@ -108,11 +118,13 @@ void SenderContext::check()
     }
 }
 
-uint32_t SenderContext::processUnsettled()
+uint32_t SenderContext::processUnsettled(bool silent)
 {
-    check();
+    if (!silent) {
+        check();
+    }
     //remove messages from front of deque once peer has confirmed receipt
-    while (!deliveries.empty() && deliveries.front().delivered()) {
+    while (!deliveries.empty() && deliveries.front().delivered() && !(pn_link_state(sender) & PN_REMOTE_CLOSED)) {
         deliveries.front().settle();
         deliveries.pop_front();
     }
@@ -122,6 +134,7 @@ namespace {
 const std::string X_AMQP("x-amqp-");
 const std::string X_AMQP_FIRST_ACQUIRER("x-amqp-first-acquirer");
 const std::string X_AMQP_DELIVERY_COUNT("x-amqp-delivery-count");
+const std::string X_AMQP_0_10_APP_ID("x-amqp-0-10.app-id");
 
 class HeaderAdapter : public qpid::amqp::MessageEncoder::Header
 {
@@ -341,7 +354,7 @@ class ApplicationPropertiesAdapter : public qpid::amqp::MessageEncoder::Applicat
     {
         for (qpid::types::Variant::Map::const_iterator i = headers.begin(); i != headers.end(); ++i) {
             //strip out values with special keys as they are sent in standard fields
-            if (!startsWith(i->first, X_AMQP)) {
+            if (!startsWith(i->first, X_AMQP) || i->first == X_AMQP_0_10_APP_ID) {
                 qpid::amqp::CharSequence key(convert(i->first));
                 switch (i->second.getType()) {
                   case qpid::types::VAR_VOID:
@@ -413,7 +426,12 @@ bool changedSubject(const qpid::messaging::MessageImpl& msg, const qpid::messagi
 
 }
 
-SenderContext::Delivery::Delivery(int32_t i) : id(i), token(0) {}
+SenderContext::Delivery::Delivery(int32_t i) : id(i), token(0), presettled(false) {}
+
+void SenderContext::Delivery::reset()
+{
+    token = 0;
+}
 
 void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, const qpid::messaging::Address& address)
 {
@@ -440,7 +458,15 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
         PropertiesAdapter properties(msg, address.getSubject());
         ApplicationPropertiesAdapter applicationProperties(msg.getHeaders());
         //compute size:
-        encoded.resize(qpid::amqp::MessageEncoder::getEncodedSize(header, properties, applicationProperties, msg.getBytes()));
+        size_t contentSize = qpid::amqp::MessageEncoder::getEncodedSize(header)
+            + qpid::amqp::MessageEncoder::getEncodedSize(properties)
+            + qpid::amqp::MessageEncoder::getEncodedSize(applicationProperties);
+        if (msg.getContent().isVoid()) {
+            contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForContent(msg.getBytes());
+        } else {
+            contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForValue(msg.getContent()) + 3/*descriptor*/;
+        }
+        encoded.resize(contentSize);
         QPID_LOG(debug, "Sending message, buffer is " << encoded.getSize() << " bytes")
         qpid::amqp::MessageEncoder encoder(encoded.getData(), encoded.getSize());
         //write header:
@@ -451,7 +477,12 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
         //write application-properties
         encoder.writeApplicationProperties(applicationProperties);
         //write body
-        if (msg.getBytes().size()) encoder.writeBinary(msg.getBytes(), &qpid::amqp::message::DATA);//structured content not yet directly supported
+        if (!msg.getContent().isVoid()) {
+            //write as AmqpValue
+            encoder.writeValue(msg.getContent(), &qpid::amqp::message::AMQP_VALUE);
+        } else if (msg.getBytes().size()) {
+            encoder.writeBinary(msg.getBytes(), &qpid::amqp::message::DATA);//structured content not yet directly supported
+        }
         if (encoder.getPosition() < encoded.getSize()) {
             QPID_LOG(debug, "Trimming buffer from " << encoded.getSize() << " to " << encoder.getPosition());
             encoded.trim(encoder.getPosition());
@@ -459,19 +490,27 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
         //write footer (no annotations yet supported)
     }
 }
-void SenderContext::Delivery::send(pn_link_t* sender)
+void SenderContext::Delivery::send(pn_link_t* sender, bool unreliable)
 {
     pn_delivery_tag_t tag;
     tag.size = sizeof(id);
     tag.bytes = reinterpret_cast<const char*>(&id);
     token = pn_delivery(sender, tag);
     pn_link_send(sender, encoded.getData(), encoded.getSize());
+    if (unreliable) {
+        pn_delivery_settle(token);
+        presettled = true;
+    }
     pn_link_advance(sender);
 }
 
+bool SenderContext::Delivery::sent() const
+{
+    return presettled || token;
+}
 bool SenderContext::Delivery::delivered()
 {
-    if (pn_delivery_remote_state(token) || pn_delivery_settled(token)) {
+    if (presettled || (token && (pn_delivery_remote_state(token) || pn_delivery_settled(token)))) {
         //TODO: need a better means for signalling outcomes other than accepted
         if (rejected()) {
             QPID_LOG(warning, "delivery " << id << " was rejected by peer");
@@ -495,8 +534,19 @@ void SenderContext::Delivery::settle()
 {
     pn_delivery_settle(token);
 }
-void SenderContext::verify(pn_terminus_t* target)
+void SenderContext::verify()
 {
+    pn_terminus_t* target = pn_link_remote_target(sender);
+    if (!pn_terminus_get_address(target)) {
+        std::string msg("No such target : ");
+        msg += getTarget();
+        QPID_LOG(debug, msg);
+        throw qpid::messaging::NotFound(msg);
+    } else if (AddressImpl::isTemporary(address)) {
+        address.setName(pn_terminus_get_address(target));
+        QPID_LOG(debug, "Dynamic target name set to " << address.getName());
+    }
+
     helper.checkAssertion(target, AddressHelper::FOR_SENDER);
 }
 void SenderContext::configure()
@@ -505,17 +555,41 @@ void SenderContext::configure()
 }
 void SenderContext::configure(pn_terminus_t* target)
 {
-    helper.configure(target, AddressHelper::FOR_SENDER);
+    helper.configure(sender, target, AddressHelper::FOR_SENDER);
+    std::string option;
+    if (helper.getLinkSource(option)) {
+        pn_terminus_set_address(pn_link_source(sender), option.c_str());
+    } else {
+        pn_terminus_set_address(pn_link_source(sender), pn_terminus_get_address(pn_link_target(sender)));
+    }
 }
 
 bool SenderContext::settled()
 {
-    return processUnsettled() == 0;
+    return processUnsettled(false) == 0;
 }
 
 Address SenderContext::getAddress() const
 {
     return address;
+}
+
+
+void SenderContext::reset(pn_session_t* session)
+{
+    sender = pn_sender(session, name.c_str());
+    configure();
+
+    for (Deliveries::iterator i = deliveries.begin(); i != deliveries.end(); ++i) {
+        i->reset();
+    }
+}
+
+void SenderContext::resend()
+{
+    for (Deliveries::iterator i = deliveries.begin(); i != deliveries.end() && pn_link_credit(sender) && !i->sent(); ++i) {
+        i->send(sender, false/*only resend reliable transfers*/);
+    }
 }
 
 }}} // namespace qpid::messaging::amqp

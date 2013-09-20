@@ -25,12 +25,14 @@ import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
+import org.apache.qpid.server.virtualhost.DefaultUpgraderProvider;
 import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHostConfigRecoveryHandler;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -58,7 +60,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         _messageStore = new BDBHAMessageStore();
 
         final MessageStoreLogSubject storeLogSubject =
-                new MessageStoreLogSubject(this, _messageStore.getClass().getSimpleName());
+                new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
         OperationalLoggingListener.listen(_messageStore, storeLogSubject);
 
         _messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
@@ -71,13 +73,16 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         _messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
 
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getExchangeRegistry(), getExchangeFactory());
+        DurableConfigurationRecoverer configRecoverer =
+                new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
+                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()));
 
-        _messageStore.configureConfigStore(getName(),
-                recoveryHandler,
-                virtualHost);
+        _messageStore.configureConfigStore(
+                virtualHost, configRecoverer
+        );
 
-        _messageStore.configureMessageStore(getName(),
-                recoveryHandler,
+        _messageStore.configureMessageStore(
+                virtualHost, recoveryHandler,
                 recoveryHandler
         );
     }

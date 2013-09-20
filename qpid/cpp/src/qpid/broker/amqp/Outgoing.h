@@ -88,7 +88,8 @@ class Outgoing : public ManagedOutgoingLink
 class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public boost::enable_shared_from_this<OutgoingFromQueue>
 {
   public:
-    OutgoingFromQueue(Broker&, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session&, qpid::sys::OutputControl& o, bool exclusive, bool isControllingUser);
+    OutgoingFromQueue(Broker&, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session&,
+                      qpid::sys::OutputControl& o, SubscriptionType type, bool exclusive, bool isControllingUser);
     void setSubjectFilter(const std::string&);
     void setSelectorFilter(const std::string&);
     void init();
@@ -117,10 +118,17 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
         int disposition;
         size_t index;
         pn_delivery_tag_t tag;
+        //The delivery tag is a 4 byte value representing the
+        //index. It is encoded separately to avoid alignment issues.
+        //The number of deliveries held here is always strictly
+        //bounded, so 4 bytes is more than enough.
+        static const size_t TAG_WIDTH = sizeof(uint32_t);
+        char tagData[TAG_WIDTH];
 
         Record();
         void init(size_t i);
         void reset();
+        static size_t getIndex(pn_delivery_tag_t);
     };
 
     const bool exclusive;
@@ -134,6 +142,7 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
     std::vector<char> buffer;
     std::string subjectFilter;
     boost::scoped_ptr<Selector> selector;
+    bool unreliable;
 };
 }}} // namespace qpid::broker::amqp
 

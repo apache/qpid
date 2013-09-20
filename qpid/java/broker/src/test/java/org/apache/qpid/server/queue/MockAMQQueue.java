@@ -24,7 +24,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.plugins.AbstractConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.ServerMessage;
@@ -44,7 +43,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class MockAMQQueue implements AMQQueue
 {
     private boolean _deleted = false;
-    private AMQShortString _name;
+    private String _name;
     private VirtualHost _virtualhost;
 
     private AuthorizationHolder _authorizationHolder;
@@ -55,7 +54,7 @@ public class MockAMQQueue implements AMQQueue
 
     public MockAMQQueue(String name)
     {
-       _name = new AMQShortString(name);
+       _name = name;
     }
 
     public boolean getDeleteOnNoConsumers()
@@ -164,11 +163,6 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public AMQShortString getNameShortString()
-    {
-        return _name;
-    }
-
     public void setNoLocal(boolean b)
     {
 
@@ -195,7 +189,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
 
-    public AMQShortString getOwner()
+    public String getOwner()
     {
         return null;
     }
@@ -212,7 +206,7 @@ public class MockAMQQueue implements AMQQueue
 
     public String getName()
     {
-        return _name.asString();
+        return _name;
     }
 
     public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
@@ -470,7 +464,14 @@ public class MockAMQQueue implements AMQQueue
 
     }
 
-    public Map<String, Object> getArguments()
+    @Override
+    public Collection<String> getAvailableAttributes()
+    {
+        return null;
+    }
+
+    @Override
+    public Object getAttribute(String attrName)
     {
         return null;
     }

@@ -23,6 +23,7 @@
  */
 
 #include "types.h"
+#include "hash.h"
 #include "qpid/Url.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/types/Uuid.h"
@@ -42,7 +43,7 @@ class BrokerInfo
 {
   public:
     typedef std::set<BrokerInfo> Set;
-    typedef qpid::sys::unordered_map<types::Uuid, BrokerInfo, types::Uuid::Hasher> Map;
+    typedef qpid::sys::unordered_map<types::Uuid, BrokerInfo, Hasher<types::Uuid> > Map;
 
     BrokerInfo();
     BrokerInfo(const types::Uuid& id, BrokerStatus, const Address& = Address());

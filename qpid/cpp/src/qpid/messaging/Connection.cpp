@@ -68,7 +68,7 @@ Connection::Connection(const std::string& url, const Variant::Map& options)
 Connection::Connection()
 {
     Variant::Map options;
-    std::string url = "amqp:tcp:127.0.0.1:5672";
+    std::string url = "127.0.0.1:5672";
     PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(url, options));
 }
 
@@ -90,4 +90,18 @@ std::string Connection::getAuthenticatedUsername()
 {
     return impl->getAuthenticatedUsername();
 }
+
+void Connection::reconnect(const std::string& url)
+{
+    impl->reconnect(url);
+}
+void Connection::reconnect()
+{
+    impl->reconnect();
+}
+std::string Connection::getUrl() const
+{
+    return impl->getUrl();
+}
+
 }} // namespace qpid::messaging

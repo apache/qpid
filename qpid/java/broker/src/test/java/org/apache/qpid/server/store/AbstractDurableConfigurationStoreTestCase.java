@@ -38,8 +38,6 @@ import java.util.UUID;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueableMessage;
@@ -48,15 +46,22 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockStoredMessage;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.Transaction.Record;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTestCase
 {
     private static final String EXCHANGE_NAME = "exchangeName";
+
+    private static final String EXCHANGE = org.apache.qpid.server.model.Exchange.class.getSimpleName();
+    private static final String BINDING = org.apache.qpid.server.model.Binding.class.getSimpleName();
+    private static final String QUEUE = Queue.class.getSimpleName();
+
     private String _storePath;
     private String _storeName;
     private MessageStore _messageStore;
@@ -73,7 +78,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private Exchange _exchange = mock(Exchange.class);
     private static final String ROUTING_KEY = "routingKey";
     private static final String QUEUE_NAME = "queueName";
-    private FieldTable _bindingArgs;
+    private Map<String,Object> _bindingArgs;
     private UUID _queueId;
     private UUID _exchangeId;
     private DurableConfigurationStore _configStore;
@@ -101,14 +106,15 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(_messageStoreRecoveryHandler.begin()).thenReturn(_storedMessageRecoveryHandler);
         when(_logRecoveryHandler.begin(any(MessageStore.class))).thenReturn(_queueEntryRecoveryHandler);
         when(_queueEntryRecoveryHandler.completeQueueEntryRecovery()).thenReturn(_dtxRecordRecoveryHandler);
-        when(_exchange.getNameShortString()).thenReturn(AMQShortString.valueOf(EXCHANGE_NAME));
+        when(_exchange.getName()).thenReturn(EXCHANGE_NAME);
+
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
                 _storePath);
         when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
 
-        _bindingArgs = new FieldTable();
-        AMQShortString argKey = AMQPFilterTypes.JMS_SELECTOR.getValue();
+        _bindingArgs = new HashMap<String, Object>();
+        String argKey = AMQPFilterTypes.JMS_SELECTOR.toString();
         String argValue = "some selector expression";
         _bindingArgs.put(argKey, argValue);
 
@@ -117,8 +123,16 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     public void tearDown() throws Exception
     {
-        FileUtils.delete(new File(_storePath), true);
-        super.tearDown();
+        try
+        {
+            closeMessageStore();
+            closeConfigStore();
+            FileUtils.delete(new File(_storePath), true);
+        }
+        finally
+        {
+            super.tearDown();
+        }
     }
 
     public void testCreateExchange() throws Exception
@@ -127,7 +141,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
 
         reopenStore();
-        verify(_recoveryHandler).configuredObject(eq(_exchangeId), eq(org.apache.qpid.server.model.Exchange.class.getName()),
+        verify(_recoveryHandler).configuredObject(eq(_exchangeId), eq(EXCHANGE),
                 eq(map( org.apache.qpid.server.model.Exchange.NAME, getName(),
                         org.apache.qpid.server.model.Exchange.TYPE, getName()+"Type",
                         org.apache.qpid.server.model.Exchange.LIFETIME_POLICY, LifetimePolicy.AUTO_DELETE.toString())));
@@ -166,9 +180,9 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     public void testBindQueue() throws Exception
     {
-        AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
+        AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
         Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                _exchange, FieldTable.convertToMap(_bindingArgs));
+                _exchange, _bindingArgs);
         DurableConfigurationStoreHelper.createBinding(_configStore, binding);
 
         reopenStore();
@@ -177,49 +191,48 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         map.put(org.apache.qpid.server.model.Binding.EXCHANGE, _exchange.getId().toString());
         map.put(org.apache.qpid.server.model.Binding.QUEUE, queue.getId().toString());
         map.put(org.apache.qpid.server.model.Binding.NAME, ROUTING_KEY);
-        map.put(org.apache.qpid.server.model.Binding.ARGUMENTS,FieldTable.convertToMap(_bindingArgs));
+        map.put(org.apache.qpid.server.model.Binding.ARGUMENTS,_bindingArgs);
 
-        verify(_recoveryHandler).configuredObject(eq(binding.getId()), eq(org.apache.qpid.server.model.Binding.class.getName()),
+        verify(_recoveryHandler).configuredObject(eq(binding.getId()), eq(BINDING),
                 eq(map));
     }
 
     public void testUnbindQueue() throws Exception
     {
-        AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false);
+        AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
         Binding binding = new Binding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                _exchange, FieldTable.convertToMap(_bindingArgs));
+                _exchange, _bindingArgs);
         DurableConfigurationStoreHelper.createBinding(_configStore, binding);
 
         DurableConfigurationStoreHelper.removeBinding(_configStore, binding);
         reopenStore();
 
         verify(_recoveryHandler, never()).configuredObject(any(UUID.class),
-                eq(org.apache.qpid.server.model.Binding.class.getName()),
+                eq(BINDING),
                 anyMap());
     }
 
     public void testCreateQueueAMQQueue() throws Exception
     {
-        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue, null);
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, null);
+        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
 
         reopenStore();
         Map<String, Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     public void testCreateQueueAMQQueueFieldTable() throws Exception
     {
-        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true);
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put("x-qpid-dlq-enabled", Boolean.TRUE);
-        attributes.put("x-qpid-maximum-delivery-count", new Integer(10));
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
 
-        FieldTable arguments = FieldTable.convertToFieldTable(attributes);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue, arguments);
+        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
 
         reopenStore();
 
@@ -229,17 +242,17 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
-        queueAttributes.put(Queue.ARGUMENTS, attributes);
+        queueAttributes.putAll(attributes);
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     public void testCreateQueueAMQQueueWithAlternateExchange() throws Exception
     {
         Exchange alternateExchange = createTestAlternateExchange();
 
-        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, alternateExchange);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue, null);
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, alternateExchange, null);
+        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
 
         reopenStore();
 
@@ -249,7 +262,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     private Exchange createTestAlternateExchange()
@@ -263,16 +276,15 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     public void testUpdateQueueExclusivity() throws Exception
     {
         // create queue
-        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true);
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put("x-qpid-dlq-enabled", Boolean.TRUE);
-        attributes.put("x-qpid-maximum-delivery-count", new Integer(10));
-        FieldTable arguments = FieldTable.convertToFieldTable(attributes);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue, arguments);
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
+
+        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
 
         // update the queue to have exclusive=false
-        queue = createTestQueue(getName(), getName() + "Owner", false);
-        when(queue.getArguments()).thenReturn(attributes);
+        queue = createTestQueue(getName(), getName() + "Owner", false, attributes);
 
         DurableConfigurationStoreHelper.updateQueue(_configStore, queue);
 
@@ -283,26 +295,24 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.FALSE);
-        queueAttributes.put(Queue.ARGUMENTS, attributes);
+        queueAttributes.putAll(attributes);
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
 
     }
 
     public void testUpdateQueueAlternateExchange() throws Exception
     {
         // create queue
-        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true);
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put("x-qpid-dlq-enabled", Boolean.TRUE);
-        attributes.put("x-qpid-maximum-delivery-count", new Integer(10));
-        FieldTable arguments = FieldTable.convertToFieldTable(attributes);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue, arguments);
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
+        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
 
         // update the queue to have exclusive=false
         Exchange alternateExchange = createTestAlternateExchange();
-        queue = createTestQueue(getName(), getName() + "Owner", false, alternateExchange);
-        when(queue.getArguments()).thenReturn(attributes);
+        queue = createTestQueue(getName(), getName() + "Owner", false, alternateExchange, attributes);
 
         DurableConfigurationStoreHelper.updateQueue(_configStore, queue);
 
@@ -313,21 +323,20 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, Boolean.FALSE);
-        queueAttributes.put(Queue.ARGUMENTS, attributes);
+        queueAttributes.putAll(attributes);
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(Queue.class.getName()), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
     public void testRemoveQueue() throws Exception
     {
         // create queue
-        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true);
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put("x-qpid-dlq-enabled", Boolean.TRUE);
-        attributes.put("x-qpid-maximum-delivery-count", new Integer(10));
-        FieldTable arguments = FieldTable.convertToFieldTable(attributes);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue, arguments);
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
+        AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
+        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
 
         // remove queue
         DurableConfigurationStoreHelper.removeQueue(_configStore,queue);
@@ -337,29 +346,51 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
                 anyMap());
     }
 
-    private AMQQueue createTestQueue(String queueName, String queueOwner, boolean exclusive) throws AMQStoreException
+    private AMQQueue createTestQueue(String queueName,
+                                     String queueOwner,
+                                     boolean exclusive,
+                                     final Map<String, Object> arguments) throws AMQStoreException
     {
-        return createTestQueue(queueName, queueOwner, exclusive, null);
+        return createTestQueue(queueName, queueOwner, exclusive, null, arguments);
     }
 
-    private AMQQueue createTestQueue(String queueName, String queueOwner, boolean exclusive, Exchange alternateExchange) throws AMQStoreException
+    private AMQQueue createTestQueue(String queueName,
+                                     String queueOwner,
+                                     boolean exclusive,
+                                     Exchange alternateExchange,
+                                     final Map<String, Object> arguments) throws AMQStoreException
     {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getName()).thenReturn(queueName);
-        when(queue.getNameShortString()).thenReturn(AMQShortString.valueOf(queueName));
-        when(queue.getOwner()).thenReturn(AMQShortString.valueOf(queueOwner));
+        when(queue.getOwner()).thenReturn(queueOwner);
         when(queue.isExclusive()).thenReturn(exclusive);
         when(queue.getId()).thenReturn(_queueId);
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
+        if(arguments != null && !arguments.isEmpty())
+        {
+            when(queue.getAvailableAttributes()).thenReturn(arguments.keySet());
+            final ArgumentCaptor<String> requestedAttribute = ArgumentCaptor.forClass(String.class);
+            when(queue.getAttribute(requestedAttribute.capture())).then(
+                    new Answer()
+                    {
+
+                        @Override
+                        public Object answer(final InvocationOnMock invocation) throws Throwable
+                        {
+                            String attrName = requestedAttribute.getValue();
+                            return arguments.get(attrName);
+                        }
+                    });
+        }
+
         return queue;
     }
 
     private Exchange createTestExchange()
     {
         Exchange exchange = mock(Exchange.class);
-        when(exchange.getNameShortString()).thenReturn(AMQShortString.valueOf(getName()));
         when(exchange.getName()).thenReturn(getName());
-        when(exchange.getTypeShortString()).thenReturn(AMQShortString.valueOf(getName() + "Type"));
+        when(exchange.getTypeName()).thenReturn(getName() + "Type");
         when(exchange.isAutoDelete()).thenReturn(true);
         when(exchange.getId()).thenReturn(_exchangeId);
         return exchange;
@@ -367,53 +398,21 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     private void reopenStore() throws Exception
     {
-        onReopenStore();
-        if (_messageStore != null)
-        {
-            _messageStore.close();
-        }
+        closeMessageStore();
+        closeConfigStore();
         _messageStore = createMessageStore();
         _configStore = createConfigStore();
 
-        _configStore.configureConfigStore(_storeName, _recoveryHandler, _virtualHost);
-        _messageStore.configureMessageStore(_storeName, _messageStoreRecoveryHandler, _logRecoveryHandler);
+        _configStore.configureConfigStore(_virtualHost, _recoveryHandler);
+        _messageStore.configureMessageStore(_virtualHost, _messageStoreRecoveryHandler, _logRecoveryHandler);
         _messageStore.activate();
     }
 
-    protected abstract void onReopenStore();
+    protected abstract MessageStore createMessageStore() throws Exception;
+    protected abstract DurableConfigurationStore createConfigStore() throws Exception;
+    protected abstract void closeMessageStore() throws Exception;
+    protected abstract void closeConfigStore() throws Exception;
 
-    abstract protected MessageStore createMessageStore() throws Exception;
-    /*{
-        String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
-        if (storeClass == null)
-        {
-            storeClass = DerbyMessageStore.class.getName();
-        }
-        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-        MessageStore messageStore = (MessageStore) Class.forName(storeClass).newInstance();
-        return messageStore;
-    }
-*/
-    abstract protected DurableConfigurationStore createConfigStore() throws Exception;
-    /*{
-        String storeClass = System.getProperty(CONFIGURATION_STORE_CLASS_NAME_KEY);
-        if (storeClass == null)
-        {
-            storeClass = DerbyMessageStore.class.getName();
-        }
-        Class<DurableConfigurationStore> clazz = (Class<DurableConfigurationStore>) Class.forName(storeClass);
-        DurableConfigurationStore configurationStore ;
-        if(clazz.isInstance(_messageStore))
-        {
-            configurationStore = (DurableConfigurationStore) _messageStore;
-        }
-        else
-        {
-            configurationStore = (DurableConfigurationStore) Class.forName(storeClass).newInstance();
-        }
-        return configurationStore;
-    }
-*/
     public void testRecordXid() throws Exception
     {
         Record enqueueRecord = getTestRecord(1);
@@ -445,7 +444,9 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         EnqueableMessage message1 = mock(EnqueableMessage.class);
         when(message1.isPersistent()).thenReturn(true);
         when(message1.getMessageNumber()).thenReturn(messageNumber);
-        when(message1.getStoredMessage()).thenReturn(new MockStoredMessage(messageNumber));
+        final StoredMessage storedMessage = mock(StoredMessage.class);
+        when(storedMessage.getMessageNumber()).thenReturn(messageNumber);
+        when(message1.getStoredMessage()).thenReturn(storedMessage);
         Record enqueueRecord = new TestRecord(queue1, message1);
         return enqueueRecord;
     }

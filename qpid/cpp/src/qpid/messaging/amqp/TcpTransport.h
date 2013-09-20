@@ -50,6 +50,7 @@ class TcpTransport : public Transport
     void abort();
     void connectionEstablished() {};
     void close();
+    const qpid::sys::SecuritySettings* getSecuritySettings();
 
   private:
     boost::scoped_ptr<qpid::sys::Socket> socket;

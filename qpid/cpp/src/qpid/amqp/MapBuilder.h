@@ -21,42 +21,20 @@
  * under the License.
  *
  */
-#include "MapReader.h"
-#include "qpid/types/Variant.h"
+#include "DataBuilder.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace amqp {
 
 /**
- * Utility to build a Variant::Map from a data stream (doesn't handle
- * nested maps or lists yet)
+ * Utility to build a Variant::Map from a data stream
  */
-class MapBuilder : public MapReader
+class MapBuilder : public DataBuilder
 {
   public:
-    void onNullValue(const CharSequence& /*key*/, const Descriptor*);
-    void onBooleanValue(const CharSequence& /*key*/, bool, const Descriptor*);
-    void onUByteValue(const CharSequence& /*key*/, uint8_t, const Descriptor*);
-    void onUShortValue(const CharSequence& /*key*/, uint16_t, const Descriptor*);
-    void onUIntValue(const CharSequence& /*key*/, uint32_t, const Descriptor*);
-    void onULongValue(const CharSequence& /*key*/, uint64_t, const Descriptor*);
-    void onByteValue(const CharSequence& /*key*/, int8_t, const Descriptor*);
-    void onShortValue(const CharSequence& /*key*/, int16_t, const Descriptor*);
-    void onIntValue(const CharSequence& /*key*/, int32_t, const Descriptor*);
-    void onLongValue(const CharSequence& /*key*/, int64_t, const Descriptor*);
-    void onFloatValue(const CharSequence& /*key*/, float, const Descriptor*);
-    void onDoubleValue(const CharSequence& /*key*/, double, const Descriptor*);
-    void onUuidValue(const CharSequence& /*key*/, const CharSequence&, const Descriptor*);
-    void onTimestampValue(const CharSequence& /*key*/, int64_t, const Descriptor*);
-
-    void onBinaryValue(const CharSequence& /*key*/, const CharSequence&, const Descriptor*);
-    void onStringValue(const CharSequence& /*key*/, const CharSequence&, const Descriptor*);
-    void onSymbolValue(const CharSequence& /*key*/, const CharSequence&, const Descriptor*);
-
-    qpid::types::Variant::Map getMap();
-    const qpid::types::Variant::Map getMap() const;
-  private:
-    qpid::types::Variant::Map map;
+    QPID_COMMON_EXTERN MapBuilder();
+    QPID_COMMON_EXTERN qpid::types::Variant::Map getMap();
 };
 }} // namespace qpid::amqp
 

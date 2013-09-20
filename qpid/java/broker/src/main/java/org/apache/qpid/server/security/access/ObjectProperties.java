@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -136,12 +135,6 @@ public class ObjectProperties
         setName(name);
     }
 
-
-    public ObjectProperties(AMQShortString name)
-    {
-        setName(name);
-    }
-
     public ObjectProperties(AMQQueue queue)
     {
         setName(queue.getName());
@@ -164,7 +157,7 @@ public class ObjectProperties
         }
     }
 
-    public ObjectProperties(Exchange exch, AMQQueue queue, AMQShortString routingKey)
+    public ObjectProperties(Exchange exch, AMQQueue queue, String routingKey)
     {
         this(queue);
 
@@ -172,11 +165,6 @@ public class ObjectProperties
 
 		put(Property.QUEUE_NAME, queue.getName());
         put(Property.ROUTING_KEY, routingKey);
-    }
-
-    public ObjectProperties(Exchange exch, AMQShortString routingKey)
-    {
-        this(exch.getName(), routingKey.asString());
     }
 
     public ObjectProperties(String exchangeName, String routingKey, Boolean immediate)
@@ -195,8 +183,8 @@ public class ObjectProperties
         put(Property.ROUTING_KEY, routingKey);
     }
 
-    public ObjectProperties(Boolean autoDelete, Boolean durable, AMQShortString exchangeName,
-            Boolean internal, Boolean nowait, Boolean passive, AMQShortString exchangeType)
+    public ObjectProperties(Boolean autoDelete, Boolean durable, String exchangeName,
+            Boolean internal, Boolean nowait, Boolean passive, String exchangeType)
     {
         super();
 
@@ -212,7 +200,7 @@ public class ObjectProperties
     }
 
     public ObjectProperties(Boolean autoDelete, Boolean durable, Boolean exclusive, Boolean nowait, Boolean passive,
-            AMQShortString queueName, String owner)
+            String queueName, String owner)
     {
         super();
 
@@ -255,16 +243,6 @@ public class ObjectProperties
     public void setName(String name)
     {
         _properties.put(Property.NAME, name);
-    }
-
-    public void setName(AMQShortString name)
-    {
-        put(Property.NAME, name);
-    }
-
-    public String put(Property key, AMQShortString value)
-    {
-        return put(key, value == null ? "" : value.asString());
     }
 
     public String put(Property key, String value)

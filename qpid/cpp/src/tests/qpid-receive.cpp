@@ -69,11 +69,12 @@ struct Options : public qpid::Options
     string readyAddress;
     uint receiveRate;
     std::string replyto;
+    bool noReplies;
 
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
           help(false),
-          url("amqp:tcp:127.0.0.1"),
+          url("127.0.0.1"),
           timeout(0),
           forever(false),
           messages(0),
@@ -91,7 +92,8 @@ struct Options : public qpid::Options
           reportTotal(false),
           reportEvery(0),
           reportHeader(true),
-          receiveRate(0)
+          receiveRate(0),
+          noReplies(false)
     {
         addOptions()
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
@@ -116,6 +118,7 @@ struct Options : public qpid::Options
             ("ready-address", qpid::optValue(readyAddress, "ADDRESS"), "send a message to this address when ready to receive")
             ("receive-rate", qpid::optValue(receiveRate,"N"), "Receive at rate of N messages/second. 0 means receive as fast as possible.")
             ("reply-to", qpid::optValue(replyto, "REPLY-TO"), "specify reply-to address on response messages")
+            ("ignore-reply-to", qpid::optValue(noReplies), "Do not send replies even if reply-to is set")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -222,6 +225,7 @@ int main(int argc, char ** argv)
                         if (opts.printHeaders) {
                             if (msg.getSubject().size()) std::cout << "Subject: " << msg.getSubject() << std::endl;
                             if (msg.getReplyTo()) std::cout << "ReplyTo: " << msg.getReplyTo() << std::endl;
+                            if (msg.getMessageId().size()) std::cout << "MessageId: " << msg.getMessageId() << std::endl;
                             if (msg.getCorrelationId().size()) std::cout << "CorrelationId: " << msg.getCorrelationId() << std::endl;
                             if (msg.getUserId().size()) std::cout << "UserId: " << msg.getUserId() << std::endl;
                             if (msg.getTtl().getMilliseconds()) std::cout << "TTL: " << msg.getTtl().getMilliseconds() << std::endl;
@@ -231,8 +235,10 @@ int main(int argc, char ** argv)
                             std::cout << "Properties: " << msg.getProperties() << std::endl;
                             std::cout << std::endl;
                         }
-                        if (opts.printContent)
-                            std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages
+                        if (opts.printContent) {
+                            if (!msg.getContentObject().isVoid()) std::cout << msg.getContentObject() << std::endl;
+                            else std::cout << msg.getContent() << std::endl;
+                        }
                         if (opts.messages && count >= opts.messages) done = true;
                     }
                 }
@@ -245,7 +251,7 @@ int main(int argc, char ** argv)
                 } else if (opts.ackFrequency && (count % opts.ackFrequency == 0)) {
                     session.acknowledge();
                 }
-                if (msg.getReplyTo()) { // Echo message back to reply-to address.
+                if (msg.getReplyTo() && !opts.noReplies) { // Echo message back to reply-to address.
                     Sender& s = replyTo[msg.getReplyTo().str()];
                     if (s.isNull()) {
                         s = session.createSender(msg.getReplyTo());
@@ -260,8 +266,6 @@ int main(int argc, char ** argv)
                     int64_t delay = qpid::sys::Duration(qpid::sys::now(), waitTill);
                     if (delay > 0) qpid::sys::usleep(delay/qpid::sys::TIME_USEC);
                 }
-                // Clear out message properties & content for next iteration.
-                msg = Message(); // TODO aconway 2010-12-01: should be done by fetch
             }
             if (opts.reportTotal) reporter.report();
             if (opts.tx) {

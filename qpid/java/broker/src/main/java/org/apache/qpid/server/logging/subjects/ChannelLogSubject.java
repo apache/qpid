@@ -20,20 +20,16 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.transport.ServerConnection;
-import org.apache.qpid.server.transport.ServerSession;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
 
 public class ChannelLogSubject extends AbstractLogSubject
 {
 
-    public ChannelLogSubject(AMQChannel channel)
+    public ChannelLogSubject(AMQSessionModel session)
     {
-        AMQProtocolSession session = channel.getProtocolSession();
-
         /**
          * LOG FORMAT used by the AMQPConnectorActor follows
          * ChannelLogSubject.CHANNEL_FORMAT : con:{0}({1}@{2}/{3})/ch:{4}.
@@ -47,39 +43,14 @@ public class ChannelLogSubject extends AbstractLogSubject
          * 3 - Virtualhost
          * 4 - Channel ID
          */
+        AMQConnectionModel connection = session.getConnectionModel();
         setLogStringWithFormat(CHANNEL_FORMAT,
-                               session.getSessionID(),
-                               session.getAuthorizedPrincipal().getName(),
-                               session.getRemoteAddress(),
-                               session.getVirtualHost().getName(),
-                               channel.getChannelId());
-    }
+                               connection == null ? -1L : connection.getConnectionId(),
+                               (connection == null || connection.getPrincipalAsString() == null) ? "?" : connection.getPrincipalAsString(),
+                               (connection == null || connection.getRemoteAddressString() == null) ? "?" : connection.getRemoteAddressString(),
+                               (connection == null || connection.getVirtualHostName() == null) ? "?" : connection.getVirtualHostName(),
+                               session.getChannelId());
 
-    public ChannelLogSubject(ServerSession session)
-    {
-        /**
-         * LOG FORMAT used by the AMQPConnectorActor follows
-         * ChannelLogSubject.CHANNEL_FORMAT : con:{0}({1}@{2}/{3})/ch:{4}.
-         *
-         * Uses a MessageFormat call to insert the required values according to
-         * these indices:
-         *
-         * 0 - Connection ID
-         * 1 - User ID
-         * 2 - IP
-         * 3 - Virtualhost
-         * 4 - Channel ID
-         */
-        if(session.getConnection() instanceof ServerConnection)
-        {
-            ServerConnection connection = (ServerConnection) session.getConnection();
-            setLogStringWithFormat(CHANNEL_FORMAT,
-                                   connection == null ? -1L : connection.getConnectionId(),
-                                   session.getAuthorizedPrincipal() == null ? "?" : session.getAuthorizedPrincipal().getName(),
-                                   (connection == null || connection.getRemoteAddressString() == null) ? "?" : connection.getRemoteAddressString(),
-                                   session.getVirtualHost().getName(),
-                                   session.getChannel());
-        }
     }
 
 }

@@ -31,6 +31,10 @@ using namespace qpid::types;
 
 Message::Message(const std::string& bytes) : impl(new MessageImpl(bytes)) {}
 Message::Message(const char* bytes, size_t count) : impl(new MessageImpl(bytes, count)) {}
+Message::Message(qpid::types::Variant& c) : impl(new MessageImpl(std::string()))
+{
+    setContentObject(c);
+}
 
 Message::Message(const Message& m) : impl(new MessageImpl(*m.impl)) {}
 Message::~Message() { delete impl; }
@@ -69,11 +73,19 @@ void Message::setRedelivered(bool redelivered) { impl->setRedelivered(redelivere
 
 const Variant::Map& Message::getProperties() const { return impl->getHeaders(); }
 Variant::Map& Message::getProperties() { return impl->getHeaders(); }
+void Message::setProperties(const Variant::Map& p) { getProperties() = p; }
 void Message::setProperty(const std::string& k, const qpid::types::Variant& v) { impl->setHeader(k,v); }
 
 void Message::setContent(const std::string& c) { impl->setBytes(c); }
 void Message::setContent(const char* chars, size_t count) { impl->setBytes(chars, count); }
 std::string Message::getContent() const { return impl->getBytes(); }
+
+void Message::setContentBytes(const std::string& c) { impl->setBytes(c); }
+std::string Message::getContentBytes() const { return impl->getBytes(); }
+
+qpid::types::Variant& Message::getContentObject() { return impl->getContent(); }
+void Message::setContentObject(const qpid::types::Variant& c) { impl->getContent() = c; }
+const qpid::types::Variant& Message::getContentObject() const { return impl->getContent(); }
 
 const char* Message::getContentPtr() const
 {

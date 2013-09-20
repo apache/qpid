@@ -44,8 +44,8 @@ start_brokers() {
     # look like they're xml related.
     # if we start supporting xml on windows, it will need something similar 
     # here
-    if [ -f ../.libs/xml.so ] ; then
-	xargs="--load-module ../.libs/xml.so"
+    if [ -f ../xml.so ] ; then
+	xargs="--load-module ../xml.so"
 	if [ ! -f test.xquery ] ; then 
 	    create_test_xquery
 	fi

@@ -22,6 +22,7 @@
 ##
 set(unit_test_SOURCES
     alloc_test.c
+    compose_test.c
     parse_test.c
     run_unit_tests.c
     server_test.c
@@ -51,3 +52,8 @@ add_test(unit_tests_size_2     unit_tests_size 2)
 add_test(unit_tests_size_1     unit_tests_size 1)
 add_test(unit_tests            unit_tests ${CMAKE_CURRENT_SOURCE_DIR}/threads4.conf)
 add_test(router_tests          python ${CMAKE_CURRENT_SOURCE_DIR}/router_engine_test.py -v)
+add_test(system_tests_single   python ${CMAKE_CURRENT_SOURCE_DIR}/system_tests_one_router.py -v)
+
+set_property(TEST system_tests_single PROPERTY
+    ENVIRONMENT "CTEST_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+    )

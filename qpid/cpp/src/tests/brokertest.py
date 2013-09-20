@@ -78,7 +78,7 @@ def error_line(filename, n=1):
     except: return ""
     return ":\n" + "".join(result)
 
-def retry(function, timeout=10, delay=.01, max_delay=1):
+def retry(function, timeout=10, delay=.001, max_delay=1):
     """Call function until it returns a true value or timeout expires.
     Double the delay for each retry up to max_delay.
     Returns what function returns if true, None if timeout expires."""
@@ -141,7 +141,7 @@ class Popen(subprocess.Popen):
         finally: f.close()
         log.debug("Started process %s: %s" % (self.pname, " ".join(self.cmd)))
 
-    def __str__(self): return "Popen<%s>"%(self.pname)
+    def __repr__(self): return "Popen<%s>"%(self.pname)
 
     def outfile(self, ext): return "%s.%s" % (self.pname, ext)
 
@@ -242,16 +242,12 @@ class Broker(Popen):
     _broker_count = 0
     _log_count = 0
 
-    def __str__(self): return "Broker<%s %s :%d>"%(self.log, self.pname, self.port())
-
-    def find_log(self):
-        self.log = "%03d:%s.log" % (Broker._log_count, self.name)
-        Broker._log_count += 1
+    def __repr__(self): return "<Broker:%s:%d>"%(self.log, self.port())
 
     def get_log(self):
         return os.path.abspath(self.log)
 
-    def __init__(self, test, args=[], name=None, expect=EXPECT_RUNNING, port=0, log_level=None, wait=None, show_cmd=False):
+    def __init__(self, test, args=[], test_store=False, name=None, expect=EXPECT_RUNNING, port=0, log_level=None, wait=None, show_cmd=False):
         """Start a broker daemon. name determines the data-dir and log
         file names."""
 
@@ -273,10 +269,17 @@ class Broker(Popen):
         else:
             self.name = "broker%d" % Broker._broker_count
             Broker._broker_count += 1
-        self.find_log()
+
+        self.log = "%03d:%s.log" % (Broker._log_count, self.name)
+        self.store_log = "%03d:%s.store.log" % (Broker._log_count, self.name)
+        Broker._log_count += 1
+
         cmd += ["--log-to-file", self.log]
         cmd += ["--log-to-stderr=no"]
         cmd += ["--log-enable=%s"%(log_level or "info+") ]
+
+        if test_store: cmd += ["--load-module", BrokerTest.test_store_lib,
+                               "--test-store-events", self.store_log]
 
         self.datadir = self.name
         cmd += ["--data-dir", self.datadir]
@@ -285,7 +288,6 @@ class Broker(Popen):
         test.cleanup_stop(self)
         self._host = "127.0.0.1"
         log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
-        self._log_ready = False
 
     def startQmf(self, handler=None):
         self.qmf_session = qmf.console.Session(handler)
@@ -363,29 +365,21 @@ class Broker(Popen):
 
     def host_port(self): return "%s:%s" % (self.host(), self.port())
 
-    def log_contains(self, str, timeout=1):
-        """Wait for str to appear in the log file up to timeout. Return true if found"""
-        return retry(lambda: find_in_file(str, self.log), timeout)
-
-    def log_ready(self):
-        """Return true if the log file exists and contains a broker ready message"""
-        if not self._log_ready:
-            self._log_ready = find_in_file("notice Broker running", self.log)
-        return self._log_ready
-
     def ready(self, timeout=30, **kwargs):
         """Wait till broker is ready to serve clients"""
-        # First make sure the broker is listening by checking the log.
-        if not retry(self.log_ready, timeout=timeout):
-            raise Exception(
-                "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,5)))
-        # Create a connection and a session.
-        try:
-            c = self.connect(**kwargs)
-            try: c.session()
-            finally: c.close()
-        except Exception,e: raise RethrownException(
-            "Broker %s not responding: (%s)%s"%(self.name,e,error_line(self.log, 5)))
+        deadline = time.time()+timeout
+        while True:
+            try:
+                c = self.connect(timeout=timeout, **kwargs)
+                try:
+                    c.session()
+                    return      # All good
+                finally: c.close()
+            except Exception,e: # Retry up to timeout
+                if time.time() > deadline:
+                    raise RethrownException(
+                        "Broker %s not responding: (%s)%s"%(
+                            self.name,e,error_line(self.log, 5)))
 
 def browse(session, queue, timeout=0, transform=lambda m: m.content):
     """Return a list with the contents of each message on queue."""
@@ -407,7 +401,7 @@ def assert_browse(session, queue, expect_contents, timeout=0, transform=lambda m
     if msg: msg = "%s: %r != %r"%(msg, expect_contents, actual_contents)
     assert expect_contents == actual_contents, msg
 
-def assert_browse_retry(session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content, msg="browse failed"):
+def assert_browse_retry(session, queue, expect_contents, timeout=1, delay=.001, transform=lambda m:m.content, msg="browse failed"):
     """Wait up to timeout for contents of queue to match expect_contents"""
     test = lambda: browse(session, queue, 0, transform=transform) == expect_contents
     retry(test, timeout, delay)
@@ -420,6 +414,10 @@ class BrokerTest(TestCase):
     Tracks processes started by test and kills at end of test.
     Provides a well-known working directory for each test.
     """
+
+    def __init__(self, *args, **kwargs):
+        self.longMessage = True # Enable long messages for assert*(..., msg=xxx)
+        TestCase.__init__(self, *args, **kwargs)
 
     # Environment settings.
     qpidd_exec = os.path.abspath(checkenv("QPIDD_EXEC"))
@@ -480,7 +478,7 @@ class BrokerTest(TestCase):
     def assert_browse(self, *args, **kwargs): assert_browse(*args, **kwargs)
     def assert_browse_retry(self, *args, **kwargs): assert_browse_retry(*args, **kwargs)
 
-def join(thread, timeout=10):
+def join(thread, timeout=30):
     thread.join(timeout)
     if thread.isAlive(): raise Exception("Timed out joining thread %s"%thread)
 

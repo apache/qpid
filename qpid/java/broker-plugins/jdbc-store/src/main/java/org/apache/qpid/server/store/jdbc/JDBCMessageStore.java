@@ -51,6 +51,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
     public static final String TYPE = "JDBC";
     public static final String CONNECTION_URL = "connectionURL";
+    public static final String CONFIG_CONNECTION_URL = "configConnectionURL";
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -280,11 +281,20 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         throws ClassNotFoundException, SQLException
     {
 
+        String connectionURL;
+        if(!isConfigStoreOnly())
+        {
+            connectionURL = virtualHost.getAttribute(CONNECTION_URL) == null
+                                   ? String.valueOf(virtualHost.getAttribute(VirtualHost.STORE_PATH))
+                                   : String.valueOf(virtualHost.getAttribute(CONNECTION_URL));
+        }
+        else
+        {
+            connectionURL = virtualHost.getAttribute(CONFIG_CONNECTION_URL) == null
+                                               ? String.valueOf(virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH))
+                                               : String.valueOf(virtualHost.getAttribute(CONFIG_CONNECTION_URL));
 
-        String connectionURL = virtualHost.getAttribute(CONNECTION_URL) == null
-                               ? String.valueOf(virtualHost.getAttribute(VirtualHost.STORE_PATH))
-                               : String.valueOf(virtualHost.getAttribute(CONNECTION_URL));
-
+        }
         JDBCDetails details = null;
 
         String[] components = connectionURL.split(":",3);

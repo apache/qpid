@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.model.VirtualHost;
 
 /**
  * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages.
@@ -33,13 +33,14 @@ public interface MessageStore
      * whatever parameters it wants.
      *
      *
-     * @param name             The name to be used by this store
+     *
+     *
+     * @param virtualHost
      * @param messageRecoveryHandler  Handler to be called as the store recovers on start up
      * @param tlogRecoveryHandler
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configureMessageStore(String name,
-                               MessageStoreRecoveryHandler messageRecoveryHandler,
+    void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
                                TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception;
 
     void activate() throws Exception;

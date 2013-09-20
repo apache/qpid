@@ -71,10 +71,10 @@ class RemoteBackup
      */
     void ready(const QueuePtr& queue);
 
-    /** Called via ConfigurationObserver */
+    /** Called via BrokerObserver */
     void queueCreate(const QueuePtr&);
 
-    /** Called via ConfigurationObserver. Note: may set isReady() */
+    /** Called via BrokerObserver. Note: may set isReady() */
     void queueDestroy(const QueuePtr&);
 
     /**@return true when all catch-up queues for this backup are ready. */
@@ -96,8 +96,10 @@ class RemoteBackup
     void startCatchup() { started = true; }
 
   private:
-    typedef qpid::sys::unordered_map<QueuePtr, GuardPtr,
-                                     SharedPtrHasher<broker::Queue> > GuardMap;
+    typedef qpid::sys::unordered_map<
+      QueuePtr, GuardPtr, Hasher<boost::shared_ptr<broker::Queue> >
+      > GuardMap;
+
     typedef std::set<QueuePtr> QueueSet;
 
     std::string logPrefix;

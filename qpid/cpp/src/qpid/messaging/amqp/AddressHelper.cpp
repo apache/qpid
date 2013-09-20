@@ -57,6 +57,7 @@ const std::string PROPERTIES("properties");
 const std::string MODE("mode");
 const std::string BROWSE("browse");
 const std::string CONSUME("consume");
+const std::string TIMEOUT("timeout");
 
 const std::string TYPE("type");
 const std::string TOPIC("topic");
@@ -69,6 +70,14 @@ const std::string FILTER("filter");
 const std::string DESCRIPTOR("descriptor");
 const std::string VALUE("value");
 const std::string SUBJECT_FILTER("subject-filter");
+const std::string SOURCE("sender-source");
+const std::string TARGET("receiver-target");
+
+//reliability options:
+const std::string UNRELIABLE("unreliable");
+const std::string AT_MOST_ONCE("at-most-once");
+const std::string AT_LEAST_ONCE("at-least-once");
+const std::string EXACTLY_ONCE("exactly-once");
 
 //distribution modes:
 const std::string MOVE("move");
@@ -83,12 +92,11 @@ const std::string DELETE_IF_EMPTY("delete-if-empty");
 const std::string DELETE_IF_UNUSED_AND_EMPTY("delete-if-unused-and-empty");
 const std::string CREATE_ON_DEMAND("create-on-demand");
 
-const std::string DUMMY(".");
-
 const std::string X_DECLARE("x-declare");
 const std::string X_BINDINGS("x-bindings");
 const std::string X_SUBSCRIBE("x-subscribe");
 const std::string ARGUMENTS("arguments");
+const std::string EXCHANGE_TYPE("exchange-type");
 
 const std::vector<std::string> RECEIVER_MODES = boost::assign::list_of<std::string>(ALWAYS) (RECEIVER);
 const std::vector<std::string> SENDER_MODES = boost::assign::list_of<std::string>(ALWAYS) (SENDER);
@@ -139,6 +147,16 @@ bool test(const Variant::Map& options, const std::string& name)
     Variant::Map::const_iterator j = options.find(name);
     if (j == options.end()) {
         return false;
+    } else {
+        return j->second;
+    }
+}
+
+template <typename T> T get(const Variant::Map& options, const std::string& name, T defaultValue)
+{
+    Variant::Map::const_iterator j = options.find(name);
+    if (j == options.end()) {
+        return defaultValue;
     } else {
         return j->second;
     }
@@ -208,6 +226,18 @@ void flatten(Variant::Map& base, const std::string& nested)
         base.erase(i);
     }
 }
+bool replace(Variant::Map& map, const std::string& original, const std::string& desired)
+{
+    Variant::Map::iterator i = map.find(original);
+    if (i != map.end()) {
+        map[desired] = i->second;
+        map.erase(original);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void write(pn_data_t* data, const Variant& value);
 
 void write(pn_data_t* data, const Variant::Map& map)
@@ -260,6 +290,8 @@ void write(pn_data_t* data, const Variant& value)
         break;
     }
 }
+const uint32_t DEFAULT_DURABLE_TIMEOUT(15*60);//15 minutes
+const uint32_t DEFAULT_TIMEOUT(0);
 }
 
 AddressHelper::AddressHelper(const Address& address) :
@@ -268,6 +300,7 @@ AddressHelper::AddressHelper(const Address& address) :
     type(address.getType()),
     durableNode(false),
     durableLink(false),
+    timeout(0),
     browse(false)
 {
     verifier.verify(address);
@@ -279,13 +312,14 @@ AddressHelper::AddressHelper(const Address& address) :
     bind(address, LINK, link);
     bind(node, PROPERTIES, properties);
     bind(node, CAPABILITIES, capabilities);
+    bind(link, RELIABILITY, reliability);
     durableNode = test(node, DURABLE);
     durableLink = test(link, DURABLE);
+    timeout = get(link, TIMEOUT, durableLink ? DEFAULT_DURABLE_TIMEOUT : DEFAULT_TIMEOUT);
     std::string mode;
     if (bind(address, MODE, mode)) {
         if (mode == BROWSE) {
             browse = true;
-            throw qpid::messaging::AddressError("Browse mode not yet supported over AMQP 1.0.");
         } else if (mode != CONSUME) {
             throw qpid::messaging::AddressError("Invalid value for mode; must be 'browse' or 'consume'.");
         }
@@ -310,6 +344,7 @@ AddressHelper::AddressHelper(const Address& address) :
     Variant::Map::iterator i = node.find(X_DECLARE);
     if (i != node.end()) {
         Variant::Map x_declare = i->second.asMap();
+        replace(x_declare, TYPE, EXCHANGE_TYPE);
         flatten(x_declare, ARGUMENTS);
         add(properties, x_declare);
         node.erase(i);
@@ -391,16 +426,23 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
         QPID_LOG(debug, "checking assertions: " << capabilities);
         //ensure all desired capabilities have been offered
         std::set<std::string> desired;
-        if (type.size()) desired.insert(type);
-        if (durableNode) desired.insert(DURABLE);
         for (Variant::List::const_iterator i = capabilities.begin(); i != capabilities.end(); ++i) {
-            desired.insert(i->asString());
+            if (*i != CREATE_ON_DEMAND) desired.insert(i->asString());
         }
         pn_data_t* data = pn_terminus_capabilities(terminus);
-        while (pn_data_next(data)) {
-            pn_bytes_t c = pn_data_get_symbol(data);
-            std::string s(c.start, c.size);
-            desired.erase(s);
+        if (pn_data_next(data)) {
+            pn_type_t type = pn_data_type(data);
+            if (type == PN_ARRAY) {
+                pn_data_enter(data);
+                while (pn_data_next(data)) {
+                    desired.erase(convert(pn_data_get_symbol(data)));
+                }
+                pn_data_exit(data);
+            } else if (type == PN_SYMBOL) {
+                desired.erase(convert(pn_data_get_symbol(data)));
+            } else {
+                QPID_LOG(error, "Skipping capabilities field of type " << pn_type_name(type));
+            }
         }
 
         if (desired.size()) {
@@ -492,6 +534,11 @@ bool AddressHelper::enabled(const std::string& policy, CheckMode mode) const
     return result;
 }
 
+bool AddressHelper::isUnreliable() const
+{
+    return reliability == AT_MOST_ONCE || reliability == UNRELIABLE;
+}
+
 const qpid::types::Variant::Map& AddressHelper::getNodeProperties() const
 {
     return node;
@@ -501,12 +548,32 @@ const qpid::types::Variant::Map& AddressHelper::getLinkProperties() const
     return link;
 }
 
-void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
+bool AddressHelper::getLinkSource(std::string& out) const
+{
+    return getLinkOption(SOURCE, out);
+}
+
+bool AddressHelper::getLinkTarget(std::string& out) const
+{
+    return getLinkOption(TARGET, out);
+}
+
+bool AddressHelper::getLinkOption(const std::string& name, std::string& out) const
+{
+    qpid::types::Variant::Map::const_iterator i = link.find(name);
+    if (i != link.end()) {
+        out = i->second.asString();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMode mode)
 {
     bool createOnDemand(false);
     if (isTemporary) {
         //application expects a name to be generated
-        pn_terminus_set_address(terminus, DUMMY.c_str());//workaround for PROTON-277
         pn_terminus_set_dynamic(terminus, true);
         setNodeProperties(terminus);
     } else {
@@ -517,43 +584,57 @@ void AddressHelper::configure(pn_terminus_t* terminus, CheckMode mode)
             createOnDemand = true;
         }
     }
+
     setCapabilities(terminus, createOnDemand);
     if (durableLink) {
         pn_terminus_set_durability(terminus, PN_DELIVERIES);
     }
-    if (mode == FOR_RECEIVER && browse) {
-        //when PROTON-139 is resolved, set the required delivery-mode
-    }
-    //set filter(s):
-    if (mode == FOR_RECEIVER && !filters.empty()) {
-        pn_data_t* filter = pn_terminus_filter(terminus);
-        pn_data_put_map(filter);
-        pn_data_enter(filter);
-        for (std::vector<Filter>::const_iterator i = filters.begin(); i != filters.end(); ++i) {
-            pn_data_put_symbol(filter, convert(i->name));
-            pn_data_put_described(filter);
+    if (mode == FOR_RECEIVER) {
+        if (timeout) pn_terminus_set_timeout(terminus, timeout);
+        if (browse) {
+            pn_terminus_set_distribution_mode(terminus, PN_DIST_MODE_COPY);
+        }
+        //set filter(s):
+        if (!filters.empty()) {
+            pn_data_t* filter = pn_terminus_filter(terminus);
+            pn_data_put_map(filter);
             pn_data_enter(filter);
-            if (i->descriptorSymbol.size()) {
-                pn_data_put_symbol(filter, convert(i->descriptorSymbol));
-            } else {
-                pn_data_put_ulong(filter, i->descriptorCode);
+            for (std::vector<Filter>::const_iterator i = filters.begin(); i != filters.end(); ++i) {
+                pn_data_put_symbol(filter, convert(i->name));
+                pn_data_put_described(filter);
+                pn_data_enter(filter);
+                if (i->descriptorSymbol.size()) {
+                    pn_data_put_symbol(filter, convert(i->descriptorSymbol));
+                } else {
+                    pn_data_put_ulong(filter, i->descriptorCode);
+                }
+                write(filter, i->value);
+                pn_data_exit(filter);
             }
-            write(filter, i->value);
             pn_data_exit(filter);
         }
-        pn_data_exit(filter);
     }
-
+    if (isUnreliable()) {
+        pn_link_set_snd_settle_mode(link, PN_SND_SETTLED);
+    }
 }
 
 void AddressHelper::setCapabilities(pn_terminus_t* terminus, bool create)
 {
+    if (create) capabilities.push_back(CREATE_ON_DEMAND);
+    if (!type.empty()) capabilities.push_back(type);
+    if (durableNode) capabilities.push_back(DURABLE);
+
     pn_data_t* data = pn_terminus_capabilities(terminus);
-    if (create) pn_data_put_symbol(data, convert(CREATE_ON_DEMAND));
-    if (type.size()) pn_data_put_symbol(data, convert(type));
-    if (durableNode) pn_data_put_symbol(data, convert(DURABLE));
-    for (qpid::types::Variant::List::const_iterator i = capabilities.begin(); i != capabilities.end(); ++i) {
-        pn_data_put_symbol(data, convert(i->asString()));
+    if (capabilities.size() == 1) {
+        pn_data_put_symbol(data, convert(capabilities.front().asString()));
+    } else if (capabilities.size() > 1) {
+        pn_data_put_array(data, false, PN_SYMBOL);
+        pn_data_enter(data);
+        for (qpid::types::Variant::List::const_iterator i = capabilities.begin(); i != capabilities.end(); ++i) {
+            pn_data_put_symbol(data, convert(i->asString()));
+        }
+        pn_data_exit(data);
     }
 }
 std::string AddressHelper::getLinkName(const Address& address)
@@ -632,6 +713,9 @@ Verifier::Verifier()
     link[NAME] = true;
     link[DURABLE] = true;
     link[RELIABILITY] = true;
+    link[TIMEOUT] = true;
+    link[SOURCE] = true;
+    link[TARGET] = true;
     link[X_SUBSCRIBE] = true;
     link[X_DECLARE] = true;
     link[X_BINDINGS] = true;

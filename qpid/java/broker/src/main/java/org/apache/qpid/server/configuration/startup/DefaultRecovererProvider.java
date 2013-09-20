@@ -32,12 +32,15 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.model.adapter.PreferencesProviderCreator;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
@@ -61,11 +64,14 @@ public class DefaultRecovererProvider implements RecovererProvider
     private final QpidServiceLoader<PluginFactory> _pluginFactoryServiceLoader;
     private final TaskExecutor _taskExecutor;
     private final BrokerOptions _brokerOptions;
+    private final StoreConfigurationChangeListener _storeChangeListener;
+    private final PreferencesProviderCreator _preferencesProviderCreator;
 
     public DefaultRecovererProvider(StatisticsGatherer brokerStatisticsGatherer, VirtualHostRegistry virtualHostRegistry,
-            LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions)
+            LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions, StoreConfigurationChangeListener storeChangeListener)
     {
-        _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
+        _preferencesProviderCreator = new PreferencesProviderCreator();
+        _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>(), _preferencesProviderCreator);
         _accessControlProviderFactory = new AccessControlProviderFactory(new QpidServiceLoader<AccessControlFactory>());
         _groupProviderFactory = new GroupProviderFactory(new QpidServiceLoader<GroupManagerFactory>());
         _portFactory = new PortFactory();
@@ -76,6 +82,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         _pluginFactoryServiceLoader = new QpidServiceLoader<PluginFactory>();
         _taskExecutor = taskExecutor;
         _brokerOptions = brokerOptions;
+        _storeChangeListener = storeChangeListener;
     }
 
     @Override
@@ -83,8 +90,8 @@ public class DefaultRecovererProvider implements RecovererProvider
     {
         if (Broker.class.getSimpleName().equals(type))
         {
-            return new BrokerRecoverer(_authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory, _portFactory, _brokerStatisticsGatherer,
-                    _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, _brokerOptions);
+            return new BrokerRecoverer(_authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory, _portFactory, _preferencesProviderCreator,
+                    _brokerStatisticsGatherer, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, _brokerOptions, _storeChangeListener);
         }
         else if(VirtualHost.class.getSimpleName().equals(type))
         {
@@ -96,7 +103,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         }
         else if(AuthenticationProvider.class.getSimpleName().equals(type))
         {
-            return new AuthenticationProviderRecoverer(_authenticationProviderFactory);
+            return new AuthenticationProviderRecoverer(_authenticationProviderFactory, _storeChangeListener);
         }
         else if(Port.class.getSimpleName().equals(type))
         {
@@ -113,6 +120,10 @@ public class DefaultRecovererProvider implements RecovererProvider
         else if(TrustStore.class.getSimpleName().equals(type))
         {
             return new TrustStoreRecoverer();
+        }
+        else if(PreferencesProvider.class.getSimpleName().equals(type))
+        {
+            return new PreferencesProviderRecoverer(_preferencesProviderCreator);
         }
         else if(Plugin.class.getSimpleName().equals(type))
         {

@@ -27,6 +27,8 @@ from os import environ, popen
 
 class QueueFlowLimitTests(TestBase010):
 
+    _timeout = 100
+
     def __getattr__(self, name):
         if name == "assertGreater":
             return lambda a, b: self.failUnless(a > b)
@@ -156,7 +158,7 @@ class QueueFlowLimitTests(TestBase010):
         totalMsgs = 1213 + 797 + 331
 
         # wait until flow control is active
-        deadline = time() + 10
+        deadline = time() + self._timeout
         while (not self.qmf.getObjects(_objectId=oid)[0].flowStopped) and \
                 time() < deadline:
             pass
@@ -209,7 +211,7 @@ class QueueFlowLimitTests(TestBase010):
         totalMsgs = 1699 + 1129 + 881
 
         # wait until flow control is active
-        deadline = time() + 10
+        deadline = time() + self._timeout
         while (not self.qmf.getObjects(_objectId=oid)[0].flowStopped) and \
                 time() < deadline:
             pass
@@ -255,7 +257,7 @@ class QueueFlowLimitTests(TestBase010):
 
         # fill up the queue, waiting until flow control is active
         sndr1 = self._start_qpid_send(testq.mgmt.name, count=testq.sendCount, content=testq.content)
-        deadline = time() + 10
+        deadline = time() + self._timeout
         while (not testq.mgmt.flowStopped) and time() < deadline:
             testq.mgmt.update()
 
@@ -357,7 +359,7 @@ class QueueFlowLimitTests(TestBase010):
 
         sender = BlockedSender(self, "kill-q", count=100)
         # wait for flow control
-        deadline = time() + 10
+        deadline = time() + self._timeout
         while (not q.flowStopped) and time() < deadline:
             q.update()
 

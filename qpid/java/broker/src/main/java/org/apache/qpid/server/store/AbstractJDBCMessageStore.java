@@ -35,6 +35,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -45,6 +47,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
@@ -54,6 +57,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 abstract public class AbstractJDBCMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final String DB_VERSION_TABLE_NAME = "QPID_DB_VERSION";
+    private static final String CONFIGURATION_VERSION_TABLE_NAME = "QPID_CONFIG_VERSION";
 
     private static final String QUEUE_ENTRY_TABLE_NAME = "QPID_QUEUE_ENTRIES";
 
@@ -67,17 +71,27 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final String XID_ACTIONS_TABLE_NAME = "QPID_XID_ACTIONS";
 
     private static final String CONFIGURED_OBJECTS_TABLE_NAME = "QPID_CONFIGURED_OBJECTS";
+    private static final int DEFAULT_CONFIG_VERSION = 0;
 
     public static String[] ALL_TABLES = new String[] { DB_VERSION_TABLE_NAME, LINKS_TABLE_NAME, BRIDGES_TABLE_NAME, XID_ACTIONS_TABLE_NAME,
-        XID_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, META_DATA_TABLE_NAME, CONFIGURED_OBJECTS_TABLE_NAME };
+        XID_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, META_DATA_TABLE_NAME, CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME };
 
-    private static final int DB_VERSION = 6;
+    private static final int DB_VERSION = 7;
 
     private final AtomicLong _messageId = new AtomicLong(0);
     private AtomicBoolean _closed = new AtomicBoolean(false);
 
     private static final String CREATE_DB_VERSION_TABLE = "CREATE TABLE "+ DB_VERSION_TABLE_NAME + " ( version int not null )";
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+ DB_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
+    private static final String SELECT_FROM_DB_VERSION = "SELECT version FROM " + DB_VERSION_TABLE_NAME;
+    private static final String UPDATE_DB_VERSION = "UPDATE " + DB_VERSION_TABLE_NAME + " SET version = ?";
+
+
+    private static final String CREATE_CONFIG_VERSION_TABLE = "CREATE TABLE "+ CONFIGURATION_VERSION_TABLE_NAME + " ( version int not null )";
+    private static final String INSERT_INTO_CONFIG_VERSION = "INSERT INTO "+ CONFIGURATION_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
+    private static final String SELECT_FROM_CONFIG_VERSION = "SELECT version FROM " + CONFIGURATION_VERSION_TABLE_NAME;
+    private static final String UPDATE_CONFIG_VERSION = "UPDATE " + CONFIGURATION_VERSION_TABLE_NAME + " SET version = ?";
+
 
     private static final String INSERT_INTO_QUEUE_ENTRY = "INSERT INTO " + QUEUE_ENTRY_TABLE_NAME + " (queue_id, message_id) values (?,?)";
     private static final String DELETE_FROM_QUEUE_ENTRY = "DELETE FROM " + QUEUE_ENTRY_TABLE_NAME + " WHERE queue_id = ? AND message_id =?";
@@ -155,6 +169,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private MessageStoreRecoveryHandler _messageRecoveryHandler;
     private TransactionLogRecoveryHandler _tlogRecoveryHandler;
     private ConfigurationRecoveryHandler _configRecoveryHandler;
+    private VirtualHost _virtualHost;
 
     public AbstractJDBCMessageStore()
     {
@@ -162,24 +177,33 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler configRecoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
         _configRecoveryHandler = configRecoveryHandler;
-
-        commonConfiguration(name, virtualHost);
+        _virtualHost = virtualHost;
 
     }
 
     @Override
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler recoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
+        if(_stateManager.isInState(State.INITIAL))
+        {
+            _stateManager.attainState(State.INITIALISING);
+        }
+
+        _virtualHost = virtualHost;
         _tlogRecoveryHandler = tlogRecoveryHandler;
         _messageRecoveryHandler = recoveryHandler;
+
+        completeInitialisation();
+    }
+
+    private void completeInitialisation() throws ClassNotFoundException, SQLException, AMQStoreException
+    {
+        commonConfiguration();
 
         _stateManager.attainState(State.INITIALISED);
     }
@@ -187,23 +211,109 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void activate() throws Exception
     {
+        if(_stateManager.isInState(State.INITIALISING))
+        {
+            completeInitialisation();
+        }
         _stateManager.attainState(State.ACTIVATING);
 
         // this recovers durable exchanges, queues, and bindings
-        recoverConfiguration(_configRecoveryHandler);
-        recoverMessages(_messageRecoveryHandler);
-        TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
-        recoverXids(dtxrh);
+        if(_configRecoveryHandler != null)
+        {
+            recoverConfiguration(_configRecoveryHandler);
+        }
+        if(_messageRecoveryHandler != null)
+        {
+            recoverMessages(_messageRecoveryHandler);
+        }
+        if(_tlogRecoveryHandler != null)
+        {
+            TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
+            recoverXids(dtxrh);
+
+        }
 
         _stateManager.attainState(State.ACTIVE);
     }
 
-    private void commonConfiguration(String name, VirtualHost virtualHost)
-            throws ClassNotFoundException, SQLException
+    private void commonConfiguration()
+            throws ClassNotFoundException, SQLException, AMQStoreException
     {
-        implementationSpecificConfiguration(name, virtualHost);
+        implementationSpecificConfiguration(_virtualHost.getName(), _virtualHost);
         createOrOpenDatabase();
+        upgradeIfNecessary();
+    }
 
+    protected void upgradeIfNecessary() throws SQLException, AMQStoreException
+    {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+
+            PreparedStatement statement = conn.prepareStatement(SELECT_FROM_DB_VERSION);
+            try
+            {
+                ResultSet rs = statement.executeQuery();
+                try
+                {
+                    if(!rs.next())
+                    {
+                        throw new AMQStoreException(DB_VERSION_TABLE_NAME + " does not contain the database version");
+                    }
+                    int version = rs.getInt(1);
+                    switch (version)
+                    {
+                        case 6:
+                            upgradeFromV6();
+                        case DB_VERSION:
+                            return;
+                        default:
+                            throw new AMQStoreException("Unknown database version: " + version);
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                statement.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
+
+    }
+
+    private void upgradeFromV6() throws SQLException
+    {
+        updateDbVersion(7);
+    }
+
+    private void updateDbVersion(int newVersion) throws SQLException
+    {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+
+            PreparedStatement statement = conn.prepareStatement(UPDATE_DB_VERSION);
+            try
+            {
+                statement.setInt(1,newVersion);
+                statement.execute();
+            }
+            finally
+            {
+                statement.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
     }
 
     protected abstract void implementationSpecificConfiguration(String name,
@@ -222,6 +332,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         Connection conn = newAutoCommitConnection();
 
         createVersionTable(conn);
+        createConfigVersionTable(conn);
         createConfiguredObjectsTable(conn);
         createQueueEntryTable(conn);
         createMetaDataTable(conn);
@@ -258,7 +369,33 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 pstmt.close();
             }
         }
+    }
 
+    private void createConfigVersionTable(final Connection conn) throws SQLException
+    {
+        if(!tableExists(CONFIGURATION_VERSION_TABLE_NAME, conn))
+        {
+            Statement stmt = conn.createStatement();
+            try
+            {
+                stmt.execute(CREATE_CONFIG_VERSION_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+            PreparedStatement pstmt = conn.prepareStatement(INSERT_INTO_CONFIG_VERSION);
+            try
+            {
+                pstmt.setInt(1, DEFAULT_CONFIG_VERSION);
+                pstmt.execute();
+            }
+            finally
+            {
+                pstmt.close();
+            }
+        }
     }
 
     private void createConfiguredObjectsTable(final Connection conn) throws SQLException
@@ -277,6 +414,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
         }
     }
+
+
 
     private void createQueueEntryTable(final Connection conn) throws SQLException
     {
@@ -456,15 +595,76 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     {
         try
         {
-            recoveryHandler.beginConfigurationRecovery(this);
+            recoveryHandler.beginConfigurationRecovery(this, getConfigVersion());
             loadConfiguredObjects(recoveryHandler);
 
-            recoveryHandler.completeConfigurationRecovery();
+            setConfigVersion(recoveryHandler.completeConfigurationRecovery());
         }
         catch (SQLException e)
         {
             throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
         }
+    }
+
+    private void setConfigVersion(int version) throws SQLException
+    {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+
+            PreparedStatement stmt = conn.prepareStatement(UPDATE_CONFIG_VERSION);
+            try
+            {
+                stmt.setInt(1, version);
+                stmt.execute();
+
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
+    }
+
+    private int getConfigVersion() throws SQLException
+    {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+
+            Statement stmt = conn.createStatement();
+            try
+            {
+                ResultSet rs = stmt.executeQuery(SELECT_FROM_CONFIG_VERSION);
+                try
+                {
+
+                    if(rs.next())
+                    {
+                        return rs.getInt(1);
+                    }
+                    return DEFAULT_CONFIG_VERSION;
+                }
+                finally
+                {
+                    rs.close();
+                }
+
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
+
     }
 
     @Override
@@ -895,6 +1095,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
+    protected boolean isConfigStoreOnly()
+    {
+        return _messageRecoveryHandler == null;
+    }
+
     private static final class ConnectionWrapper
     {
         private final Connection _connection;
@@ -1055,8 +1260,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
                         buf.position(1);
                         buf = buf.slice();
-                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+                        MessageMetaDataType type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                        StorableMessageMetaData metaData = type.createMetaData(buf);
                         StoredJDBCMessage message = new StoredJDBCMessage(messageId, metaData, true);
                         messageHandler.message(message);
                     }
@@ -1307,8 +1512,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
                         buf.position(1);
                         buf = buf.slice();
-                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+                        MessageMetaDataType type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                        StorableMessageMetaData metaData = type.createMetaData(buf);
 
                         return metaData;
                     }
@@ -1804,16 +2009,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             Connection conn = newAutoCommitConnection();
             try
             {
-                PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_CONFIGURED_OBJECTS);
-                try
-                {
-                    stmt.setString(1, id.toString());
-                    results = stmt.executeUpdate();
-                }
-                finally
-                {
-                    stmt.close();
-                }
+                results = removeConfiguredObject(id, conn);
             }
             finally
             {
@@ -1827,6 +2023,50 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         return results;
     }
 
+    public UUID[] removeConfiguredObjects(UUID... objects) throws AMQStoreException
+    {
+        Collection<UUID> removed = new ArrayList<UUID>(objects.length);
+        try
+        {
+
+            Connection conn = newAutoCommitConnection();
+            try
+            {
+                for(UUID id : objects)
+                {
+                    if(removeConfiguredObject(id, conn) != 0)
+                    {
+                        removed.add(id);
+                    }
+                }
+            }
+            finally
+            {
+                conn.close();
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new AMQStoreException("Error deleting of configured objects " + Arrays.asList(objects) + " from database: " + e.getMessage(), e);
+        }
+        return removed.toArray(new UUID[removed.size()]);
+    }
+
+    private int removeConfiguredObject(final UUID id, final Connection conn) throws SQLException
+    {
+        final int results;PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_CONFIGURED_OBJECTS);
+        try
+        {
+            stmt.setString(1, id.toString());
+            results = stmt.executeUpdate();
+        }
+        finally
+        {
+            stmt.close();
+        }
+        return results;
+    }
+
     private void updateConfiguredObject(final ConfiguredObjectRecord configuredObject) throws AMQStoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
@@ -1836,52 +2076,121 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 Connection conn = newAutoCommitConnection();
                 try
                 {
-                    PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
-                    try
-                    {
-                        stmt.setString(1, configuredObject.getId().toString());
-                        ResultSet rs = stmt.executeQuery();
-                        try
-                        {
-                            if (rs.next())
-                            {
-                                PreparedStatement stmt2 = conn.prepareStatement(UPDATE_CONFIGURED_OBJECTS);
-                                try
-                                {
-                                    stmt2.setString(1, configuredObject.getType());
-                                    if (configuredObject.getAttributes() != null)
-                                    {
-                                        byte[] attributesAsBytes = (new ObjectMapper()).writeValueAsBytes(
-                                                configuredObject.getAttributes());
-                                        ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
-                                        stmt2.setBinaryStream(2, bis, attributesAsBytes.length);
-                                    }
-                                    else
-                                    {
-                                        stmt2.setNull(2, Types.BLOB);
-                                    }
-                                    stmt2.setString(3, configuredObject.getId().toString());
-                                    stmt2.execute();
-                                }
-                                finally
-                                {
-                                    stmt2.close();
-                                }
-                            }
-                        }
-                        finally
-                        {
-                            rs.close();
-                        }
-                    }
-                    finally
-                    {
-                        stmt.close();
-                    }
+                    updateConfiguredObject(configuredObject, false, conn);
                 }
                 finally
                 {
                     conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new AMQStoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        update(false, records);
+    }
+
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.ACTIVATING))
+        {
+            try
+            {
+                Connection conn = newConnection();
+                try
+                {
+                    for(ConfiguredObjectRecord record : records)
+                    {
+                        updateConfiguredObject(record, createIfNecessary, conn);
+                    }
+                    conn.commit();
+                }
+                finally
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new AMQStoreException("Error updating configured objects in database: " + e.getMessage(), e);
+            }
+
+        }
+
+    }
+
+    private void updateConfiguredObject(ConfiguredObjectRecord configuredObject,
+                                        boolean createIfNecessary,
+                                        Connection conn)
+            throws SQLException, AMQStoreException
+    {
+            PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
+            try
+            {
+                stmt.setString(1, configuredObject.getId().toString());
+                ResultSet rs = stmt.executeQuery();
+                try
+                {
+                    if (rs.next())
+                    {
+                        PreparedStatement stmt2 = conn.prepareStatement(UPDATE_CONFIGURED_OBJECTS);
+                        try
+                        {
+                            stmt2.setString(1, configuredObject.getType());
+                            if (configuredObject.getAttributes() != null)
+                            {
+                                byte[] attributesAsBytes = (new ObjectMapper()).writeValueAsBytes(
+                                        configuredObject.getAttributes());
+                                ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
+                                stmt2.setBinaryStream(2, bis, attributesAsBytes.length);
+                            }
+                            else
+                            {
+                                stmt2.setNull(2, Types.BLOB);
+                            }
+                            stmt2.setString(3, configuredObject.getId().toString());
+                            stmt2.execute();
+                        }
+                        finally
+                        {
+                            stmt2.close();
+                        }
+                    }
+                    else if(createIfNecessary)
+                    {
+                        PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_CONFIGURED_OBJECTS);
+                        try
+                        {
+                            insertStmt.setString(1, configuredObject.getId().toString());
+                            insertStmt.setString(2, configuredObject.getType());
+                            if(configuredObject.getAttributes() == null)
+                            {
+                                insertStmt.setNull(3, Types.BLOB);
+                            }
+                            else
+                            {
+                                final Map<String, Object> attributes = configuredObject.getAttributes();
+                                byte[] attributesAsBytes = new ObjectMapper().writeValueAsBytes(attributes);
+                                ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
+                                insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
+                            }
+                            insertStmt.execute();
+                        }
+                        finally
+                        {
+                            insertStmt.close();
+                        }
+                    }
+                }
+                finally
+                {
+                    rs.close();
                 }
             }
             catch (JsonMappingException e)
@@ -1896,11 +2205,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             {
                 throw new AMQStoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
             }
-            catch (SQLException e)
+            finally
             {
-                throw new AMQStoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+                stmt.close();
             }
-        }
+
     }
 
     private ConfiguredObjectRecord loadConfiguredObject(final UUID id) throws AMQStoreException

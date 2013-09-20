@@ -37,6 +37,14 @@ using namespace std;
 const string QPID_REPLICATE("qpid.replicate");
 const string QPID_HA_UUID("qpid.ha-uuid");
 
+const char* QPID_HA_PREFIX = "qpid.ha-";
+const char* QUEUE_REPLICATOR_PREFIX = "qpid.ha-q:";
+const char* TRANSACTION_REPLICATOR_PREFIX = "qpid.ha-tx:";
+
+bool startsWith(const string& name, const string& prefix) {
+    return name.compare(0, prefix.size(), prefix) == 0;
+}
+
 string EnumBase::str() const {
     assert(value < count);
     return names[value];
@@ -79,9 +87,11 @@ istream& operator>>(istream& i, EnumBase& e) {
     return i;
 }
 
-ostream& operator<<(ostream& o, const IdSet& ids) {
+ostream& operator<<(ostream& o, const UuidSet& ids) {
     ostream_iterator<qpid::types::Uuid> out(o, " ");
+    o << "{ ";
     copy(ids.begin(), ids.end(), out);
+    o << "}";
     return o;
 }
 
@@ -98,6 +108,24 @@ std::ostream& operator<<(std::ostream& o, const LogMessageId& m) {
     return o  << m.queue << "[" << m.position << "]=" << m.replicationId;
 }
 
+void UuidSet::encode(framing::Buffer& b) const {
+    b.putLong(size());
+    for (const_iterator i = begin(); i != end(); ++i)
+        b.putRawData(i->data(), i->size());
+}
+
+void UuidSet::decode(framing::Buffer& b) {
+    size_t n = b.getLong();
+    for ( ; n > 0; --n) {
+        types::Uuid id;
+        b.getRawData(const_cast<unsigned char*>(id.data()), id.size());
+        insert(id);
+    }
+}
+
+size_t UuidSet::encodedSize() const {
+    return sizeof(uint32_t) + size()*16;
+}
 
 
 }} // namespace qpid::ha

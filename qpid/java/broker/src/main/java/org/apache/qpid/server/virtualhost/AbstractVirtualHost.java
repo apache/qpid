@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -43,7 +44,6 @@ import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
@@ -51,7 +51,7 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
+import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
@@ -61,9 +61,11 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.txn.DtxRegistry;
+import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
 
 public abstract class AbstractVirtualHost implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
 {
@@ -96,6 +98,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     private final ConnectionRegistry _connectionRegistry;
 
     private final DtxRegistry _dtxRegistry;
+    private final AMQQueueFactory _queueFactory;
 
     private volatile State _state = State.INITIALISING;
 
@@ -137,11 +140,14 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(_vhostConfig.getHouseKeepingThreadCount());
 
+
         _queueRegistry = new DefaultQueueRegistry(this);
+
+        _queueFactory = new AMQQueueFactory(this, _queueRegistry);
 
         _exchangeFactory = new DefaultExchangeFactory(this);
 
-        _exchangeRegistry = new DefaultExchangeRegistry(this);
+        _exchangeRegistry = new DefaultExchangeRegistry(this, _queueRegistry);
 
         initialiseStatistics();
 
@@ -299,12 +305,12 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     private void configureQueue(QueueConfiguration queueConfiguration) throws AMQException, ConfigurationException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueConfiguration, this);
+        AMQQueue queue = _queueFactory.createAMQQueueImpl(queueConfiguration);
         String queueName = queue.getName();
 
         if (queue.isDurable())
         {
-            DurableConfigurationStoreHelper.createQueue(getDurableConfigurationStore(), queue, null);
+            DurableConfigurationStoreHelper.createQueue(getDurableConfigurationStore(), queue);
         }
 
         //get the exchange name (returns default exchange name if none was specified)
@@ -429,9 +435,105 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
+    public AMQQueue getQueue(String name)
+    {
+        return _queueRegistry.getQueue(name);
+    }
+
+    @Override
+    public AMQQueue getQueue(UUID id)
+    {
+        return _queueRegistry.getQueue(id);
+    }
+
+    @Override
+    public Collection<AMQQueue> getQueues()
+    {
+        return _queueRegistry.getQueues();
+    }
+
+    @Override
+    public int removeQueue(AMQQueue queue) throws AMQException
+    {
+        synchronized (getQueueRegistry())
+        {
+            int purged = queue.delete();
+
+            getQueueRegistry().unregisterQueue(queue.getName());
+            if (queue.isDurable() && !queue.isAutoDelete())
+            {
+                DurableConfigurationStore store = getDurableConfigurationStore();
+                DurableConfigurationStoreHelper.removeQueue(store, queue);
+            }
+            return purged;
+        }
+    }
+
+    @Override
+    public AMQQueue createQueue(UUID id,
+                                String queueName,
+                                boolean durable,
+                                String owner,
+                                boolean autoDelete,
+                                boolean exclusive,
+                                boolean deleteOnNoConsumer,
+                                Map<String, Object> arguments) throws AMQException
+    {
+
+        if (queueName == null)
+        {
+            throw new IllegalArgumentException("Queue name must not be null");
+        }
+
+                // Access check
+        if (!getSecurityManager().authoriseCreateQueue(autoDelete,
+                                                       durable,
+                                                       exclusive,
+                                                       null,
+                                                       null,
+                                                       queueName,
+                                                       owner))
+        {
+            String description = "Permission denied: queue-name '" + queueName + "'";
+            throw new AMQSecurityException(description);
+        }
+
+        synchronized (_queueRegistry)
+        {
+            if(_queueRegistry.getQueue(queueName) != null)
+            {
+                throw new QueueExistsException("Queue with name " + queueName + " already exists", _queueRegistry.getQueue(queueName));
+            }
+            if(id == null)
+            {
+
+                id = UUIDGenerator.generateExchangeUUID(queueName, getName());
+                while(_queueRegistry.getQueue(id) != null)
+                {
+                    id = UUID.randomUUID();
+                }
+
+            }
+            else if(_queueRegistry.getQueue(id) != null)
+            {
+                throw new QueueExistsException("Queue with id " + id + " already exists", _queueRegistry.getQueue(queueName));
+            }
+            return _queueFactory.createQueue(id, queueName, durable, owner, autoDelete, exclusive, deleteOnNoConsumer,
+                    arguments);
+        }
+
+    }
+
+    @Override
     public Exchange getExchange(String name)
     {
         return _exchangeRegistry.getExchange(name);
+    }
+
+    @Override
+    public Exchange getExchange(UUID id)
+    {
+        return _exchangeRegistry.getExchange(id);
     }
 
     @Override
@@ -514,7 +616,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         for(ExchangeType type : getExchangeTypes())
         {
-            if(type.getDefaultExchangeName().toString().equals( exchange.getName() ))
+            if(type.getDefaultExchangeName().equals( exchange.getName() ))
             {
                 throw new RequiredExchangeException(exchange.getName());
             }
@@ -558,6 +660,18 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             try
             {
                 getMessageStore().close();
+            }
+            catch (Exception e)
+            {
+                _logger.error("Failed to close message store", e);
+            }
+        }
+        if (getDurableConfigurationStore() != null)
+        {
+            //Remove MessageStore Interface should not throw Exception
+            try
+            {
+                getDurableConfigurationStore().close();
             }
             catch (Exception e)
             {
@@ -745,6 +859,22 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         }
     }
 
+    protected Map<String, DurableConfiguredObjectRecoverer> getDurableConfigurationRecoverers()
+    {
+        DurableConfiguredObjectRecoverer[] recoverers = {
+          new QueueRecoverer(this, getExchangeRegistry(), _queueFactory),
+          new ExchangeRecoverer(getExchangeRegistry(), getExchangeFactory()),
+          new BindingRecoverer(this, getExchangeRegistry())
+        };
+
+        final Map<String, DurableConfiguredObjectRecoverer> recovererMap= new HashMap<String, DurableConfiguredObjectRecoverer>();
+        for(DurableConfiguredObjectRecoverer recoverer : recoverers)
+        {
+            recovererMap.put(recoverer.getType(), recoverer);
+        }
+        return recovererMap;
+    }
+
     private class VirtualHostHouseKeepingTask extends HouseKeepingTask
     {
         public VirtualHostHouseKeepingTask()
@@ -766,8 +896,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                     q.checkMessageStatus();
                 } catch (Exception e)
                 {
-                    _logger.error("Exception in housekeeping for queue: "
-                            + q.getNameShortString().toString(), e);
+                    _logger.error("Exception in housekeeping for queue: " + q.getName(), e);
                     //Don't throw exceptions as this will stop the
                     // house keeping task from running.
                 }

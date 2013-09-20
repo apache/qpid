@@ -124,11 +124,10 @@ class ThresholdTests (Base):
 
     def test_alert_on_alert_queue(self):
         rcv = self.ssn.receiver("qmf.default.topic/agent.ind.event.org_apache_qpid_broker.queueThresholdCrossedUpward.#; {link:{x-declare:{arguments:{'qpid.alert_count':1}}}}")
-        rcvQMFv1 = self.ssn.receiver("qpid.management/console.event.#; {link:{x-declare:{arguments:{'qpid.alert_count':1}}}}")
         snd = self.ssn.sender("ttq; {create:always, node: {x-declare:{auto_delete:True,exclusive:True,arguments:{'qpid.alert_count':1}}}}")
         snd.send(Message("my-message"))
         queues = []
-        for i in range(3):
+        for i in range(2):
             event = rcv.fetch(timeout=1)
             schema = event.content[0]["_schema_id"]
             assert schema["_class_name"] == "queueThresholdCrossedUpward"

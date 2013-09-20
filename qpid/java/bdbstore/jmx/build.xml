@@ -18,7 +18,7 @@
  -->
 <project name="bdbstore-jmx" default="build">
     <property name="module.depends" value="common broker broker-plugins/management-jmx management/common bdbstore" />
-    <property name="module.test.depends" value="broker/tests common/tests management/common client systests bdbstore/tests" />
+    <property name="module.test.depends" value="broker/tests common/tests management/common client systests bdbstore/tests broker-plugins/memory-store" />
 
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-broker-plugins-management-jmx=provided -Sqpid-management-common=provided -Sqpid-bdbstore=provided -Sje=provided"/>
@@ -28,4 +28,9 @@
     <import file="../../module.xml" />
 
     <target name="bundle" depends="bundle-tasks" />
+
+    <!-- Overrides target in module.xml -->
+    <target name="copy-broker-plugin-jars-deps" if="broker.plugin" description="copy broker plugins dependencies for use in release packaging">
+        <!-- NO-OP, we explicitly do not want to copy the dependencies for this optional functionality as we can't distribute them -->
+    </target>
 </project>

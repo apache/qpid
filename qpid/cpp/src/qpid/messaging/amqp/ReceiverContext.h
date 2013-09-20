@@ -46,6 +46,7 @@ class ReceiverContext
   public:
     ReceiverContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& source);
     ~ReceiverContext();
+    void reset(pn_session_t* session);
     void setCapacity(uint32_t);
     uint32_t getCapacity();
     uint32_t getAvailable();
@@ -56,7 +57,7 @@ class ReceiverContext
     const std::string& getSource() const;
     bool isClosed() const;
     void configure();
-    void verify(pn_terminus_t*);
+    void verify();
     Address getAddress() const;
   private:
     friend class ConnectionContext;

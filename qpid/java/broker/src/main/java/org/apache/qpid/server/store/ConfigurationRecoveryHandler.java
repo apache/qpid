@@ -28,10 +28,14 @@ import java.util.UUID;
 
 public interface ConfigurationRecoveryHandler
 {
-    void beginConfigurationRecovery(DurableConfigurationStore store);
+    void beginConfigurationRecovery(DurableConfigurationStore store, int configVersion);
 
     void configuredObject(UUID id, String type, Map<String, Object> attributes);
 
-    void completeConfigurationRecovery();
+    /**
+     *
+     * @return the model version of the configuration
+     */
+    int completeConfigurationRecovery();
 
 }

@@ -40,19 +40,17 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     private HashMap<String, Long> _preDelays = new HashMap<String, Long>();
     private HashMap<String, Long> _postDelays = new HashMap<String, Long>();
     private long _defaultDelay = 0L;
-    private MessageStore _realStore = new MemoryMessageStore();
-    private DurableConfigurationStore _durableConfigurationStore = (MemoryMessageStore) _realStore;
+    private MessageStore _realStore = new MessageStoreCreator().createMessageStore("Memory");
+    private DurableConfigurationStore _durableConfigurationStore = (DurableConfigurationStore) _realStore;
     private static final String PRE = "pre";
     private static final String POST = "post";
     private String DEFAULT_DELAY = "default";
 
     // ***** MessageStore Interface.
 
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
     {
-        _logger.info("Starting SlowMessageStore on Virtualhost:" + name);
+        _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
 
         Object delaysAttr = virtualHost.getAttribute("slowMessageStoreDelays");
 
@@ -84,7 +82,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
                 _durableConfigurationStore = (DurableConfigurationStore)o;
             }
         }
-        _durableConfigurationStore.configureConfigStore(name, recoveryHandler, virtualHost);
+        _durableConfigurationStore.configureConfigStore(virtualHost, recoveryHandler);
 
     }
 
@@ -153,11 +151,10 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
 
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler messageRecoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
-        _realStore.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler);
+        _realStore.configureMessageStore(virtualHost, messageRecoveryHandler, tlogRecoveryHandler);
     }
 
     public void close() throws Exception
@@ -190,10 +187,35 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    {
+        doPreDelay("remove");
+        UUID[] removed = _durableConfigurationStore.removeConfiguredObjects(objects);
+        doPostDelay("remove");
+        return removed;
+    }
+
+    @Override
     public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
     {
         doPreDelay("update");
         _durableConfigurationStore.update(id, type, attributes);
+        doPostDelay("update");
+    }
+
+    @Override
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        doPreDelay("update");
+        _durableConfigurationStore.update(records);
+        doPostDelay("update");
+    }
+
+    @Override
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        doPreDelay("update");
+        _durableConfigurationStore.update(createIfNecessary, records);
         doPostDelay("update");
     }
 

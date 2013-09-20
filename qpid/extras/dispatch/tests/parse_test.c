@@ -123,7 +123,7 @@ struct err_vector_t {
 {"\xb0\x00\x00",     3, "Insufficient Data to Determine Length"},        // 6
 {"\xb0\x00\x00\x00", 4, "Insufficient Data to Determine Length"},        // 7
 {"\xc0\x04",         2, "Insufficient Data to Determine Count"},         // 8
-{"\xd0\x00\x00\x00\x00\x00\x00\x00\x01",  9, "Insufficient Data to Determine Tag"},         // 9
+{"\xd0\x00\x00\x00\x00\x00\x00\x00\x01",  9, "Insufficient Length to Determine Count"}, // 9
 {0, 0, 0}
 };
 

@@ -53,14 +53,6 @@ public class InboundMessageAdapterTest extends QpidTestCase
         assertEquals("Unexpected value for routing key", routingKey, _inboundMessageAdapter.getRoutingKey());
     }
 
-    public void testGetRoutingKeyShortString() throws Exception
-    {
-        String routingKey = getTestName();
-        when(_mockMessage.getRoutingKey()).thenReturn(routingKey);
-
-        AMQShortString routingKeyShortString = AMQShortString.valueOf(routingKey);
-        assertEquals("Unexpected value for routing key short string", routingKeyShortString, _inboundMessageAdapter.getRoutingKeyShortString());
-    }
 
     public void testGetMessageHeader() throws Exception
     {

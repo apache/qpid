@@ -20,6 +20,7 @@
  */
 #include "RemoteBackup.h"
 #include "QueueGuard.h"
+#include "TxReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"
@@ -108,13 +109,13 @@ void RemoteBackup::ready(const QueuePtr& q) {
         QPID_LOG(debug, logPrefix << "Caught up on queue: " << q->getName() );
 }
 
-// Called via ConfigurationObserver::queueCreate and from catchupQueue
+// Called via BrokerObserver::queueCreate and from catchupQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
     if (replicationTest.getLevel(*q) == ALL)
         guards[q].reset(new QueueGuard(*q, brokerInfo));
 }
 
-// Called via ConfigurationObserver
+// Called via BrokerObserver
 void RemoteBackup::queueDestroy(const QueuePtr& q) {
     catchupQueues.erase(q);
     GuardMap::iterator i = guards.find(q);

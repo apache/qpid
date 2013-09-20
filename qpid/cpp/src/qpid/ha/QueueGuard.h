@@ -89,7 +89,7 @@ class QueueGuard {
     class QueueObserver;
     typedef qpid::sys::unordered_map<ReplicationId,
                                      boost::intrusive_ptr<broker::AsyncCompletion>,
-                                     TrivialHasher<ReplicationId> > Delayed;
+                                     Hasher<ReplicationId> > Delayed;
 
     bool complete(ReplicationId, sys::Mutex::ScopedLock &);
     void complete(Delayed::iterator, sys::Mutex::ScopedLock &);

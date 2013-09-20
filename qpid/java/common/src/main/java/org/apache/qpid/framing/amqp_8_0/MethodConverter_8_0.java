@@ -79,9 +79,9 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
 
         _basicPublishClassId = BasicPublishBodyImpl.CLASS_ID;
         _basicPublishMethodId = BasicPublishBodyImpl.METHOD_ID;
-                
+
     }
-   
+
     public AMQBody convertToBody(byte[] data)
     {
         return new ContentBody(data);
@@ -97,7 +97,7 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
         return new MessagePublishInfoImpl(exchange == null ? null : exchange.intern(),
                                           publishBody.getImmediate(),
                                           publishBody.getMandatory(),
-                                          routingKey == null ? null : routingKey.intern());
+                                          routingKey == null ? null : routingKey.intern(false));
 
     }
 

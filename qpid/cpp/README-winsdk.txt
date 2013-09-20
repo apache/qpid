@@ -82,7 +82,7 @@ The kit directories hold the content described here.
     A python scripting code set for generating QMF data structures.
     
     For more information on Qpid QMF go to:
-    https://cwiki.apache.org/qpid/qpid-management-framework.html
+    http://qpid.apache.org/components/qmf/index.html
 
 The architectural relationships of the components in this SDK are 
 illustrated here.

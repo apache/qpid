@@ -125,7 +125,6 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
             String subject = null;
             if (isStrictJMS && messageProps != null && messageProps.getApplicationHeaders() != null)
             {
-                System.out.println("%%%% Going to set subject");
                 subject = (String)messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT);
                 if (subject != null)
                 {
@@ -207,7 +206,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
             }
             else
             {
-                throw new JMSException("MessageId '"+messageId+"' is not of the correct format, it must be ID: followed by a UUID");
+                throw new JMSException("MessageId '"+messageId+"' is not of the correct format, it must be prefixed with 'ID:'");
             }
         }
     }

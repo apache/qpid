@@ -29,6 +29,7 @@
 #include "qpid/sys/OutputControl.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MessageEncoder.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 
@@ -44,14 +45,16 @@ void Outgoing::wakeup()
     session.wakeup();
 }
 
-OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session, qpid::sys::OutputControl& o, bool e, bool p)
+OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session,
+                                     qpid::sys::OutputControl& o, SubscriptionType type, bool e, bool p)
     : Outgoing(broker, session, source, target, pn_link_name(l)),
-      Consumer(pn_link_name(l), /*FIXME*/CONSUMER),
+      Consumer(pn_link_name(l), type),
       exclusive(e),
       isControllingUser(p),
       queue(q), deliveries(5000), link(l), out(o),
       current(0), outstanding(0),
-      buffer(1024)/*used only for header at present*/
+      buffer(1024)/*used only for header at present*/,
+      unreliable(pn_link_remote_snd_settle_mode(link) == PN_SND_SETTLED)
 {
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         deliveries[i].init(i);
@@ -91,8 +94,7 @@ void OutgoingFromQueue::write(const char* data, size_t size)
 
 void OutgoingFromQueue::handle(pn_delivery_t* delivery)
 {
-    pn_delivery_tag_t tag = pn_delivery_tag(delivery);
-    size_t i = *reinterpret_cast<const size_t*>(tag.bytes);
+    size_t i = Record::getIndex(pn_delivery_tag(delivery));
     Record& r = deliveries[i];
     if (pn_delivery_writable(delivery)) {
         assert(r.msg);
@@ -104,6 +106,7 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
         write(&buffer[0], encoder.getPosition());
         Translation t(r.msg);
         t.write(*this);
+        if (unreliable) pn_delivery_settle(delivery);
         if (pn_link_advance(link)) {
             --outstanding;
             outgoingMessageSent();
@@ -112,26 +115,28 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
             QPID_LOG(error, "Failed to send message " << r.msg.getSequence() << " from " << queue->getName() << ", index=" << r.index);
         }
     }
-    if (pn_delivery_updated(delivery)) {
+    if (unreliable) {
+        if (preAcquires()) queue->dequeue(0, r.cursor);
+        r.reset();
+    } else if (pn_delivery_updated(delivery)) {
         assert(r.delivery == delivery);
         r.disposition = pn_delivery_remote_state(delivery);
         if (r.disposition) {
             switch (r.disposition) {
               case PN_ACCEPTED:
-                //TODO: only if consuming
-                queue->dequeue(0, r.cursor);
+                if (preAcquires()) queue->dequeue(0, r.cursor);
                 outgoingMessageAccepted();
                 break;
               case PN_REJECTED:
-                queue->reject(r.cursor);
+                if (preAcquires()) queue->reject(r.cursor);
                 outgoingMessageRejected();
                 break;
               case PN_RELEASED:
-                queue->release(r.cursor, false);//TODO: for PN_RELEASED, delivery count should not be incremented
+                if (preAcquires()) queue->release(r.cursor, false);//TODO: for PN_RELEASED, delivery count should not be incremented
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               case PN_MODIFIED:
-                queue->release(r.cursor, true);//TODO: proper handling of modified
+                if (preAcquires()) queue->release(r.cursor, true);//TODO: proper handling of modified
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               default:
@@ -251,12 +256,17 @@ qpid::broker::OwnershipToken* OutgoingFromQueue::getSession()
     return 0;
 }
 
-OutgoingFromQueue::Record::Record() : delivery(0), disposition(0), index(0) {}
+OutgoingFromQueue::Record::Record() : delivery(0), disposition(0), index(0)
+{
+    tag.bytes = tagData;
+    tag.size = TAG_WIDTH;
+}
 void OutgoingFromQueue::Record::init(size_t i)
 {
     index = i;
-    tag.bytes = reinterpret_cast<const char*>(&index);
-    tag.size = sizeof(index);
+    qpid::framing::Buffer buffer(tagData, tag.size);
+    assert(index <= std::numeric_limits<uint32_t>::max());
+    buffer.putLong(index);
 }
 void OutgoingFromQueue::Record::reset()
 {
@@ -265,6 +275,14 @@ void OutgoingFromQueue::Record::reset()
     delivery = 0;
     disposition = 0;
 }
+
+size_t OutgoingFromQueue::Record::getIndex(pn_delivery_tag_t t)
+{
+    assert(t.size == TAG_WIDTH);
+    qpid::framing::Buffer buffer(const_cast<char*>(t.bytes)/*won't ever be written to*/, t.size);
+    return (size_t) buffer.getLong();
+}
+
 
 
 }}} // namespace qpid::broker::amqp

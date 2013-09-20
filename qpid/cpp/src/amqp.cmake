@@ -23,15 +23,43 @@ include(FindPkgConfig)
 
 pkg_check_modules(PROTON libqpid-proton)
 
+if (NOT PROTON_FOUND)
+    # if pkg-config is absent or fails to find proton then use
+    # PROTON_ROOT command line option or environment variable to locate
+    # local installed proton build.
+    if (NOT PROTON_ROOT)
+        set (PROTON_ROOT "$ENV{PROTON_ROOT}")
+    endif()
+    if (PROTON_ROOT)
+        find_package(proton PATHS ${PROTON_ROOT} NO_DEFAULT_PATH)
+
+        if (proton_FOUND EQUAL 1)
+            set(iFile "${PROTON_ROOT}/lib/proton.cmake/libqpid-proton.cmake")
+            if(EXISTS ${iFile})
+                include("${iFile}")
+            else()
+                message(FATAL_ERROR "PROTON_ROOT defined but file ${iFile} is missing")
+            endif()
+        else()
+            message(FATAL_ERROR "Proton package files not found in ${PROTON_ROOT}")
+        endif()
+    endif()
+endif()
+
 set (amqp_default ${amqp_force})
-set (required_version 0.3)
+set (minimum_version 0.5)
+set (maximum_version 0.5)
 if (PROTON_FOUND)
-    if (PROTON_VERSION LESS ${required_version})
-        message(STATUS "Qpid proton is too old, amqp 1.0 support not enabled")
-    else (PROTON_VERSION LESS ${required_version})
-        message(STATUS "Qpid proton found, amqp 1.0 support enabled")
-        set (amqp_default ON)
-    endif (PROTON_VERSION LESS ${required_version})
+    if (PROTON_VERSION LESS ${minimum_version})
+        message(STATUS "Qpid proton ${PROTON_VERSION} is too old, require ${minimum_version} - ${maximum_version}; amqp 1.0 support not enabled")
+    else (PROTON_VERSION LESS ${minimum_version})
+        if (PROTON_VERSION GREATER ${maximum_version})
+            message(STATUS "Qpid proton ${PROTON_VERSION} is too new, require ${minimum_version} - ${maximum_version}; amqp 1.0 support not enabled")
+        else (PROTON_VERSION GREATER ${maximum_version})
+            message(STATUS "Qpid proton found, amqp 1.0 support enabled")
+            set (amqp_default ON)
+        endif (PROTON_VERSION GREATER ${maximum_version})
+    endif (PROTON_VERSION LESS ${minimum_version})
 else (PROTON_FOUND)
     message(STATUS "Qpid proton not found, amqp 1.0 support not enabled")
 endif (PROTON_FOUND)
@@ -42,15 +70,6 @@ if (BUILD_AMQP)
     if (NOT PROTON_FOUND)
       message(FATAL_ERROR "Qpid proton not found, required for amqp 1.0 support")
     endif (NOT PROTON_FOUND)
-
-    foreach(f ${PROTON_CFLAGS})
-      set (PROTON_COMPILE_FLAGS "${PROTON_COMPILE_FLAGS} ${f}")
-    endforeach(f)
-
-    foreach(f ${PROTON_LDFLAGS})
-      set (PROTON_LINK_FLAGS "${PROTON_LINK_FLAGS} ${f}")
-    endforeach(f)
-
 
     set (amqp_SOURCES
          qpid/broker/amqp/Authorise.h
@@ -103,17 +122,20 @@ if (BUILD_AMQP)
          qpid/broker/amqp/Translation.h
          qpid/broker/amqp/Translation.cpp
         )
+
+    include_directories(${PROTON_INCLUDE_DIRS})
+    link_directories(${PROTON_LIBRARY_DIRS})
+
     add_library (amqp MODULE ${amqp_SOURCES})
-    target_link_libraries (amqp qpidbroker qpidcommon)
+    target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${PROTON_LIBRARIES} ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (amqp PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"
-                           LINK_FLAGS "${PROTON_LINK_FLAGS}")
-    set_target_properties (amqp PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                           LINK_FLAGS "${CATCH_UNDEFINED}"
+                           COMPILE_DEFINITIONS _IN_QPID_BROKER)
+
     install (TARGETS amqp
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
-
 
     set (amqpc_SOURCES
          qpid/messaging/amqp/AddressHelper.h
@@ -142,11 +164,11 @@ if (BUILD_AMQP)
          qpid/messaging/amqp/TcpTransport.cpp
         )
     add_library (amqpc MODULE ${amqpc_SOURCES})
-    target_link_libraries (amqpc qpidclient qpidcommon)
+    target_link_libraries (amqpc qpidmessaging qpidtypes qpidclient qpidcommon ${PROTON_LIBRARIES})
     set_target_properties (amqpc PROPERTIES
                            PREFIX ""
-                           COMPILE_FLAGS "${PROTON_COMPILE_FLAGS}"
-                           LINK_FLAGS "${PROTON_LINK_FLAGS}")
+                           LINK_FLAGS "${CATCH_UNDEFINED}")
+
     install (TARGETS amqpc
              DESTINATION ${QPIDC_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_CLIENT})

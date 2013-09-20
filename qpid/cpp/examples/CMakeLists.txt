@@ -90,6 +90,5 @@ if (MSVC)
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
 endif (MSVC)
 
-add_subdirectory(qmf-console)
 add_subdirectory(messaging)
-add_subdirectory(old_api)
+

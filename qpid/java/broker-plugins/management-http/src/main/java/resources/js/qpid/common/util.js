@@ -77,10 +77,10 @@ define(["dojo/_base/xhr",
                return exchangeName == null || exchangeName == "" || "<<default>>" == exchangeName || exchangeName.indexOf("amq.") == 0 || exchangeName.indexOf("qpid.") == 0;
            };
 
-           util.deleteGridSelections = function(updater, grid, url, confirmationMessageStart)
+           util.deleteGridSelections = function(updater, grid, url, confirmationMessageStart, idParam)
            {
                var data = grid.selection.getSelected();
-
+               var success = false;
                if(data.length)
                {
                    var confirmationMessage = null;
@@ -114,18 +114,19 @@ define(["dojo/_base/xhr",
                            {
                                queryParam = "?";
                            }
-                           queryParam += "id=" + data[i].id;
+                           queryParam += ( idParam || "id" ) + "=" + encodeURIComponent(data[i].id);
                        }
                        var query = url + queryParam;
-                       var success = true
                        var failureReason = "";
                        xhr.del({url: query, sync: true, handleAs: "json"}).then(
                            function(data)
                            {
-                               // TODO why query *??
-                               //grid.setQuery({id: "*"});
+                               success = true;
                                grid.selection.deselectAll();
-                               updater.update();
+                               if (updater)
+                               {
+                                 updater.update();
+                               }
                            },
                            function(error) {success = false; failureReason = error;});
                        if(!success )
@@ -134,6 +135,7 @@ define(["dojo/_base/xhr",
                        }
                    }
                }
+               return success;
            }
 
            util.isProviderManagingUsers = function(type)
@@ -352,6 +354,22 @@ define(["dojo/_base/xhr",
                }
              }
            };
+
+           util.errorHandler = function errorHandler(error)
+           {
+               if(error.status == 401)
+               {
+                   alert("Authentication Failed");
+               }
+               else if(error.status == 403)
+               {
+                   alert("Access Denied");
+               }
+               else
+               {
+                   alert(error);
+               }
+           }
 
            return util;
        });

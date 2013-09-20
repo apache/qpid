@@ -59,7 +59,7 @@ std::ostream& operator<<(std::ostream& os, const Descriptor& d)
         else os << "null";
         break;
       case Descriptor::NUMERIC:
-        os << d.value.code;
+        os << "0x" << std::hex << d.value.code;
         break;
     }
     return os;

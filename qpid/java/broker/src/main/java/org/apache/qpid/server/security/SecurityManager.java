@@ -20,7 +20,6 @@ package org.apache.qpid.server.security;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 
 import org.apache.qpid.server.model.AccessControlProvider;
@@ -44,6 +43,7 @@ import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
 import static org.apache.qpid.server.security.access.ObjectType.USER;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
+import static org.apache.qpid.server.security.access.Operation.ACCESS_LOGS;
 import static org.apache.qpid.server.security.access.Operation.BIND;
 import static org.apache.qpid.server.security.access.Operation.CONFIGURE;
 import static org.apache.qpid.server.security.access.Operation.CONSUME;
@@ -166,12 +166,12 @@ public class SecurityManager implements ConfigurationChangeListener
                 {
                     String pluginTypeName = getPluginTypeName(accessControl);
                     _hostPlugins.put(pluginTypeName, accessControl);
-                    
+
                     if(_logger.isDebugEnabled())
                     {
                         _logger.debug("Added access control to host plugins with name: " + vhostName);
                     }
-                    
+
                     break;
                 }
             }
@@ -289,7 +289,7 @@ public class SecurityManager implements ConfigurationChangeListener
         return true;
     }
 
-    public boolean authoriseBind(final Exchange exch, final AMQQueue queue, final AMQShortString routingKey)
+    public boolean authoriseBind(final Exchange exch, final AMQQueue queue, final String routingKey)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -351,8 +351,8 @@ public class SecurityManager implements ConfigurationChangeListener
         });
     }
 
-    public boolean authoriseCreateExchange(final Boolean autoDelete, final Boolean durable, final AMQShortString exchangeName,
-            final Boolean internal, final Boolean nowait, final Boolean passive, final AMQShortString exchangeType)
+    public boolean authoriseCreateExchange(final Boolean autoDelete, final Boolean durable, final String exchangeName,
+            final Boolean internal, final Boolean nowait, final Boolean passive, final String exchangeType)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -365,7 +365,7 @@ public class SecurityManager implements ConfigurationChangeListener
     }
 
     public boolean authoriseCreateQueue(final Boolean autoDelete, final Boolean durable, final Boolean exclusive,
-            final Boolean nowait, final Boolean passive, final AMQShortString queueName, final String owner)
+            final Boolean nowait, final Boolean passive, final String queueName, final String owner)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -491,7 +491,7 @@ public class SecurityManager implements ConfigurationChangeListener
         });
     }
 
-    public boolean authoriseUnbind(final Exchange exch, final AMQShortString routingKey, final AMQQueue queue)
+    public boolean authoriseUnbind(final Exchange exch, final String routingKey, final AMQQueue queue)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -625,6 +625,17 @@ public class SecurityManager implements ConfigurationChangeListener
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CONFIGURE, BROKER, properties);
+            }
+        });
+    }
+
+    public boolean authoriseLogsAccess()
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                return plugin.authorise(ACCESS_LOGS, BROKER, ObjectProperties.EMPTY);
             }
         });
     }

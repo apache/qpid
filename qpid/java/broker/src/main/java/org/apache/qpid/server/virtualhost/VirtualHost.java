@@ -21,18 +21,18 @@
 package org.apache.qpid.server.virtualhost;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeInUseException;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
+import org.apache.qpid.server.protocol.LinkRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -48,7 +48,23 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     String getName();
 
-    QueueRegistry getQueueRegistry();
+    AMQQueue getQueue(String name);
+
+    AMQQueue getQueue(UUID id);
+
+    Collection<AMQQueue> getQueues();
+
+    int removeQueue(AMQQueue queue) throws AMQException;
+
+    AMQQueue createQueue(UUID id,
+                         String queueName,
+                         boolean durable,
+                         String owner,
+                         boolean autoDelete,
+                         boolean exclusive,
+                         boolean deleteOnNoConsumer,
+                         Map<String, Object> arguments) throws AMQException;
+
 
     Exchange createExchange(UUID id,
                             String exchange,
@@ -61,6 +77,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     void removeExchange(Exchange exchange, boolean force) throws AMQException;
 
     Exchange getExchange(String name);
+    Exchange getExchange(UUID id);
+
 
     Exchange getDefaultExchange();
 

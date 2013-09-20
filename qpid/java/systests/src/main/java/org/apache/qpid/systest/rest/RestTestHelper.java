@@ -468,4 +468,11 @@ public class RestTestHelper
         connection.disconnect();
         return responseCode;
     }
+
+    public byte[] getBytes(String path) throws IOException
+    {
+        HttpURLConnection connection = openManagementConnection(path, "GET");
+        connection.connect();
+        return readConnectionInputStream(connection);
+    }
 }

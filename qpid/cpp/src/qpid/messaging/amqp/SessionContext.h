@@ -50,16 +50,19 @@ class SessionContext
   public:
     SessionContext(pn_connection_t*);
     ~SessionContext();
+    void reset(pn_connection_t*);
     boost::shared_ptr<SenderContext> createSender(const qpid::messaging::Address& address);
     boost::shared_ptr<ReceiverContext> createReceiver(const qpid::messaging::Address& address);
     boost::shared_ptr<SenderContext> getSender(const std::string& name) const;
     boost::shared_ptr<ReceiverContext> getReceiver(const std::string& name) const;
-    void closeReceiver(const std::string&);
-    void closeSender(const std::string&);
+    void removeReceiver(const std::string&);
+    void removeSender(const std::string&);
     boost::shared_ptr<ReceiverContext> nextReceiver(qpid::messaging::Duration timeout);
     uint32_t getReceivable();
     uint32_t getUnsettledAcks();
     bool settled();
+    void setName(const std::string&);
+    std::string getName() const;
   private:
     friend class ConnectionContext;
     typedef std::map<std::string, boost::shared_ptr<SenderContext> > SenderMap;
@@ -70,6 +73,7 @@ class SessionContext
     ReceiverMap receivers;
     DeliveryMap unacked;
     qpid::framing::SequenceNumber next;
+    std::string name;
 
     qpid::framing::SequenceNumber record(pn_delivery_t*);
     void acknowledge();

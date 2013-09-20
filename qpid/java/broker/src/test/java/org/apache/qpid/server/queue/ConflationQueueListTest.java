@@ -23,10 +23,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.AMQMessageReference;
-import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -56,7 +54,7 @@ public class ConflationQueueListTest extends TestCase
 
     public void testAddMessageWithoutConflationKeyValue()
     {
-        ServerMessage<MessageMetaData> message = createTestServerMessage(null);
+        ServerMessage message = createTestServerMessage(null);
 
         _list.add(message);
         int numberOfEntries = countEntries(_list);
@@ -65,7 +63,7 @@ public class ConflationQueueListTest extends TestCase
 
     public void testAddAndDiscardMessageWithoutConflationKeyValue()
     {
-        ServerMessage<MessageMetaData> message = createTestServerMessage(null);
+        ServerMessage message = createTestServerMessage(null);
 
         QueueEntry addedEntry = _list.add(message);
         addedEntry.discard();
@@ -76,7 +74,7 @@ public class ConflationQueueListTest extends TestCase
 
     public void testAddMessageWithConflationKeyValue()
     {
-        ServerMessage<MessageMetaData> message = createTestServerMessage(TEST_KEY_VALUE);
+        ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
         _list.add(message);
         int numberOfEntries = countEntries(_list);
@@ -85,7 +83,7 @@ public class ConflationQueueListTest extends TestCase
 
     public void testAddAndRemoveMessageWithConflationKeyValue()
     {
-        ServerMessage<MessageMetaData> message = createTestServerMessage(TEST_KEY_VALUE);
+        ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
         QueueEntry addedEntry = _list.add(message);
         addedEntry.discard();
@@ -96,8 +94,8 @@ public class ConflationQueueListTest extends TestCase
 
     public void testAddTwoMessagesWithDifferentConflationKeyValue()
     {
-        ServerMessage<MessageMetaData> message1 = createTestServerMessage(TEST_KEY_VALUE1);
-        ServerMessage<MessageMetaData> message2 = createTestServerMessage(TEST_KEY_VALUE2);
+        ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE1);
+        ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE2);
 
         _list.add(message1);
         _list.add(message2);
@@ -108,8 +106,8 @@ public class ConflationQueueListTest extends TestCase
 
     public void testAddTwoMessagesWithSameConflationKeyValue()
     {
-        ServerMessage<MessageMetaData> message1 = createTestServerMessage(TEST_KEY_VALUE);
-        ServerMessage<MessageMetaData> message2 = createTestServerMessage(TEST_KEY_VALUE);
+        ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE);
+        ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE);
 
         _list.add(message1);
         _list.add(message2);
@@ -120,8 +118,8 @@ public class ConflationQueueListTest extends TestCase
 
     public void testSupersededEntryIsDiscardedOnRelease()
     {
-        ServerMessage<MessageMetaData> message1 = createTestServerMessage(TEST_KEY_VALUE);
-        ServerMessage<MessageMetaData> message2 = createTestServerMessage(TEST_KEY_VALUE);
+        ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE);
+        ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE);
 
         QueueEntry entry1 = _list.add(message1);
         entry1.acquire(); // simulate an in-progress delivery to consumer
@@ -141,7 +139,7 @@ public class ConflationQueueListTest extends TestCase
     {
         assertEquals(0, _list.getLatestValuesMap().size());
 
-        ServerMessage<MessageMetaData> message = createTestServerMessage(TEST_KEY_VALUE);
+        ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
         QueueEntry addedEntry = _list.add(message);
 
@@ -159,8 +157,8 @@ public class ConflationQueueListTest extends TestCase
 
         assertEquals(0, _list.getLatestValuesMap().size());
 
-        ServerMessage<MessageMetaData> message1 = createTestServerMessage(TEST_KEY_VALUE1);
-        ServerMessage<MessageMetaData> message2 = createTestServerMessage(TEST_KEY_VALUE2);
+        ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE1);
+        ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE2);
 
         QueueEntry addedEntry1 = _list.add(message1);
         QueueEntry addedEntry2 = _list.add(message2);
@@ -186,16 +184,17 @@ public class ConflationQueueListTest extends TestCase
         return count;
     }
 
-    private ServerMessage<MessageMetaData> createTestServerMessage(String conflationKeyValue)
+    private ServerMessage createTestServerMessage(String conflationKeyValue)
     {
-        AMQMessage mockMessage = mock(AMQMessage.class);
+        ServerMessage mockMessage = mock(ServerMessage.class);
 
         AMQMessageHeader messageHeader = mock(AMQMessageHeader.class);
         when(messageHeader.getHeader(CONFLATION_KEY)).thenReturn(conflationKeyValue);
         when(mockMessage.getMessageHeader()).thenReturn(messageHeader);
 
-        AMQMessageReference messageReference = new AMQMessageReference(mockMessage);
+        MessageReference messageReference = mock(MessageReference.class);
         when(mockMessage.newReference()).thenReturn(messageReference);
+        when(messageReference.getMessage()).thenReturn(mockMessage);
 
         return mockMessage;
     }

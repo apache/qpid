@@ -71,6 +71,8 @@ class BrokerReplicator : public broker::Exchange,
                          public boost::enable_shared_from_this<BrokerReplicator>
 {
   public:
+    typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
+
     BrokerReplicator(HaBroker&, const boost::shared_ptr<broker::Link>&);
     ~BrokerReplicator();
 
@@ -84,8 +86,9 @@ class BrokerReplicator : public broker::Exchange,
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
     void shutdown();
 
+    QueueReplicatorPtr findQueueReplicator(const std::string& qname);
+
   private:
-    typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
     typedef std::pair<boost::shared_ptr<broker::Queue>, bool> CreateQueueResult;
     typedef std::pair<boost::shared_ptr<broker::Exchange>, bool> CreateExchangeResult;
 
@@ -99,6 +102,8 @@ class BrokerReplicator : public broker::Exchange,
     class ConnectionObserver;
 
     void connected(broker::Bridge&, broker::SessionHandler&);
+    void existingQueue(const boost::shared_ptr<broker::Queue>&);
+    void existingExchange(const boost::shared_ptr<broker::Exchange>&);
 
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);
@@ -114,7 +119,6 @@ class BrokerReplicator : public broker::Exchange,
     void doResponseBind(types::Variant::Map& values);
     void doResponseHaBroker(types::Variant::Map& values);
 
-    QueueReplicatorPtr findQueueReplicator(const std::string& qname);
     QueueReplicatorPtr startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
 
     QueueReplicatorPtr replicateQueue(
@@ -135,8 +139,7 @@ class BrokerReplicator : public broker::Exchange,
     void deleteQueue(const std::string& name, bool purge=true);
     void deleteExchange(const std::string& name);
 
-    void autoDeleteCheck(boost::shared_ptr<broker::Exchange>);
-
+    void disconnectedExchange(boost::shared_ptr<broker::Exchange>);
     void disconnected();
 
     void setMembership(const types::Variant::List&); // Set membership from list.

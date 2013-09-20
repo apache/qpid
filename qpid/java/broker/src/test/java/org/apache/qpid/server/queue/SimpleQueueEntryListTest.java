@@ -21,12 +21,14 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.SimpleQueueEntryList.QueueEntryIteratorImpl;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SimpleQueueEntryListTest extends QueueEntryListTestBase
 {
@@ -42,12 +44,17 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         _sqel = new SimpleQueueEntryList(_testQueue);
         for(int i = 1; i <= 100; i++)
         {
-            final ServerMessage msg = new MockAMQMessage(i);
-            final QueueEntry bleh = _sqel.add(msg);
+            final ServerMessage message = mock(ServerMessage.class);
+            when(message.getMessageNumber()).thenReturn((long) i);
+            MessageReference ref = mock(MessageReference.class);
+            when(ref.getMessage()).thenReturn(message);
+            when(message.newReference()).thenReturn(ref);
+
+            final QueueEntry bleh = _sqel.add(message);
             assertNotNull("QE should not have been null", bleh);
         }
     }
-    
+
     @Override
     protected void tearDown()
     {
@@ -93,35 +100,41 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
     }
 
     @Override
-    public AMQMessage getTestMessageToAdd() throws AMQException
+    public ServerMessage getTestMessageToAdd() throws AMQException
     {
-        return new MockAMQMessage(1l);
+        ServerMessage msg = mock(ServerMessage.class);
+        when(msg.getMessageNumber()).thenReturn(1l);
+        return msg;
     }
 
     public void testScavenge() throws Exception
     {
         SimpleQueueEntryList sqel = new SimpleQueueEntryList(null);
         ConcurrentHashMap<Integer,QueueEntry> entriesMap = new ConcurrentHashMap<Integer,QueueEntry>();
-        
-        
+
+
         //Add messages to generate QueueEntry's
         for(int i = 1; i <= 100 ; i++)
         {
-            AMQMessage msg = new MockAMQMessage(i);
-            QueueEntry bleh = sqel.add(msg);
+            ServerMessage message = mock(ServerMessage.class);
+            when(message.getMessageNumber()).thenReturn((long) i);
+            MessageReference ref = mock(MessageReference.class);
+            when(ref.getMessage()).thenReturn(message);
+            when(message.newReference()).thenReturn(ref);
+            QueueEntry bleh = sqel.add(message);
             assertNotNull("QE should not have been null", bleh);
             entriesMap.put(i,bleh);
         }
-        
+
         SimpleQueueEntryImpl head = sqel.getHead();
-        
-        //We shall now delete some specific messages mid-queue that will lead to 
+
+        //We shall now delete some specific messages mid-queue that will lead to
         //requiring a scavenge once the requested threshold of 9 deletes is passed
-        
+
         //Delete the 2nd message only
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(2).delete());
         verifyDeletedButPresentBeforeScavenge(head, 2);
-        
+
         //Delete messages 12 to 14
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(12).delete());
         verifyDeletedButPresentBeforeScavenge(head, 12);
@@ -147,7 +160,7 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         //Delete message 99 - this is the 10th message deleted that is after the queue head
         //and so will invoke the scavenge() which is set to go after 9 previous deletions
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(99).delete());
-        
+
         verifyAllDeletedMessagedNotPresent(head, entriesMap);
     }
 
@@ -173,9 +186,9 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         assertNotNull("Initial entry should not have been null", entry);
 
         int count = 0;
-        
+
         while (entry != null)
-        {           
+        {
             assertFalse("Entry " + entry.getMessage().getMessageNumber() + " should not have been deleted", entry.isDeleted());
             assertNotNull("QueueEntry "+entry.getMessage().getMessageNumber()+" was not found in the list of remaining entries " + remainingMessages,
                     remainingMessages.get((int)(entry.getMessage().getMessageNumber())));
@@ -196,7 +209,8 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         // create test entries
         for(int i = 0; i < numberOfEntries; i++)
         {
-            AMQMessage message =  new MockAMQMessage(i);
+            ServerMessage message =  mock(ServerMessage.class);
+            when(message.getMessageNumber()).thenReturn((long)i);
             entries[i] = queueEntryList.add(message);
         }
 

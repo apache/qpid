@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -103,7 +103,7 @@ void sys_cond_signal_all(sys_cond_t *cond)
 
 struct sys_thread_t {
     pthread_t thread;
-}; 
+};
 
 sys_thread_t *sys_thread(void *(*run_function) (void *), void *arg)
 {
@@ -123,4 +123,3 @@ void sys_thread_join(sys_thread_t *thread)
 {
     pthread_join(thread->thread, 0);
 }
-

@@ -67,17 +67,11 @@ public class Broker
         }
         finally
         {
-            try
+            if (_applicationRegistry != null)
             {
-                if (_applicationRegistry != null)
-                {
-                    _applicationRegistry.close();
-                }
+                _applicationRegistry.close();
             }
-            finally
-            {
-                clearAMQShortStringCache();
-            }
+
         }
     }
 
@@ -96,14 +90,8 @@ public class Broker
         }
         finally
         {
-            try
-            {
-                CurrentActor.remove();
-            }
-            finally
-            {
-                clearAMQShortStringCache();
-            }
+            CurrentActor.remove();
+
         }
     }
 
@@ -268,15 +256,6 @@ public class Broker
         {
             LOGGER.debug("Skipping shutdown hook removal as there either isnt one, or we are it.");
         }
-    }
-    /**
-     * Workaround that prevents AMQShortStrings cache from being left in the thread local. This is important
-     * when embedding the Broker in containers where the starting thread may not belong to Qpid.
-     * The long term solution here is to stop our use of AMQShortString outside the AMQP transport layer.
-     */
-    private void clearAMQShortStringCache()
-    {
-        AMQShortString.clearLocalCache();
     }
 
     public org.apache.qpid.server.model.Broker getBroker()

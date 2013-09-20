@@ -21,24 +21,15 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import com.sleepycat.bind.tuple.ByteBinding;
+import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
-import com.sleepycat.je.CheckpointConfig;
-import com.sleepycat.je.Cursor;
-import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseConfig;
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.ExceptionEvent;
-import com.sleepycat.je.ExceptionListener;
-import com.sleepycat.je.LockConflictException;
-import com.sleepycat.je.LockMode;
-import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.*;
+import com.sleepycat.je.Transaction;
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -76,24 +67,27 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     private static final int LOCK_RETRY_ATTEMPTS = 5;
 
-    public static final int VERSION = 6;
+    public static final int VERSION = 7;
 
     private static final Map<String, String> ENVCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
     {{
         put(EnvironmentConfig.LOCK_N_LOCK_TABLES, "7");
+        put(EnvironmentConfig.STATS_COLLECT, "false"); // Turn off stats generation - feature introduced (and on by default) from BDB JE 5.0.84
     }});
 
     private Environment _environment;
 
-    private String CONFIGURED_OBJECTS = "CONFIGURED_OBJECTS";
-    private String MESSAGEMETADATADB_NAME = "MESSAGE_METADATA";
-    private String MESSAGECONTENTDB_NAME = "MESSAGE_CONTENT";
-    private String DELIVERYDB_NAME = "QUEUE_ENTRIES";
-    private String BRIDGEDB_NAME = "BRIDGES";
-    private String LINKDB_NAME = "LINKS";
-    private String XIDDB_NAME = "XIDS";
+    private static String CONFIGURED_OBJECTS = "CONFIGURED_OBJECTS";
+    private static String MESSAGEMETADATADB_NAME = "MESSAGE_METADATA";
+    private static String MESSAGECONTENTDB_NAME = "MESSAGE_CONTENT";
+    private static String DELIVERYDB_NAME = "QUEUE_ENTRIES";
+    private static String BRIDGEDB_NAME = "BRIDGES";
+    private static String LINKDB_NAME = "LINKS";
+    private static String XIDDB_NAME = "XIDS";
+    private static String CONFIG_VERSION_DB = "CONFIG_VERSION";
 
     private Database _configuredObjectsDb;
+    private Database _configVersionDb;
     private Database _messageMetaDataDb;
     private Database _messageContentDb;
     private Database _deliveryDb;
@@ -145,6 +139,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     private String _storeLocation;
 
     private Map<String, String> _envConfigMap;
+    private VirtualHost _virtualHost;
 
     public AbstractBDBMessageStore()
     {
@@ -157,34 +152,58 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _eventManager.addEventListener(eventListener, events);
     }
 
-    public void configureConfigStore(String name,
-                                     ConfigurationRecoveryHandler recoveryHandler,
-                                     VirtualHost virtualHost) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
     {
         _stateManager.attainState(State.INITIALISING);
 
         _configRecoveryHandler = recoveryHandler;
-
-        configure(name, virtualHost);
+        _virtualHost = virtualHost;
     }
 
-    public void configureMessageStore(String name,
-                                      MessageStoreRecoveryHandler messageRecoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
+        if(_stateManager.isInState(State.INITIAL))
+        {
+            // Is acting as a message store, but not a durable config store
+            _stateManager.attainState(State.INITIALISING);
+        }
+
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
+        _virtualHost = virtualHost;
+
+        completeInitialisation();
+    }
+
+    private void completeInitialisation() throws Exception
+    {
+        configure(_virtualHost);
 
         _stateManager.attainState(State.INITIALISED);
     }
 
     public synchronized void activate() throws Exception
     {
+        // check if acting as a durable config store, but not a message store
+        if(_stateManager.isInState(State.INITIALISING))
+        {
+            completeInitialisation();
+        }
         _stateManager.attainState(State.ACTIVATING);
 
-        recoverConfig(_configRecoveryHandler);
-        recoverMessages(_messageRecoveryHandler);
-        recoverQueueEntries(_tlogRecoveryHandler);
+        if(_configRecoveryHandler != null)
+        {
+            recoverConfig(_configRecoveryHandler);
+        }
+        if(_messageRecoveryHandler != null)
+        {
+            recoverMessages(_messageRecoveryHandler);
+        }
+        if(_tlogRecoveryHandler != null)
+        {
+            recoverQueueEntries(_tlogRecoveryHandler);
+        }
 
         _stateManager.attainState(State.ACTIVE);
     }
@@ -198,23 +217,38 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      * Called after instantiation in order to configure the message store.
      *
      *
-     * @param name The name of the virtual host using this store
-     * @param virtualHost
+     *
+     * @param virtualHost The virtual host using this store
      * @return whether a new store environment was created or not (to indicate whether recovery is necessary)
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    public void configure(String name, VirtualHost virtualHost) throws Exception
+    public void configure(VirtualHost virtualHost) throws Exception
     {
+        configure(virtualHost, _messageRecoveryHandler != null);
+    }
 
-
+    public void configure(VirtualHost virtualHost, boolean isMessageStore) throws Exception
+    {
+        String name = virtualHost.getName();
         final String defaultPath = System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name;
 
-
-        String storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
-        if(storeLocation == null)
+        String storeLocation;
+        if(isMessageStore)
         {
-            storeLocation = defaultPath;
+            storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+            if(storeLocation == null)
+            {
+                storeLocation = defaultPath;
+            }
+        }
+        else // we are acting only as the durable config store
+        {
+            storeLocation = (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
+            if(storeLocation == null)
+            {
+                storeLocation = defaultPath;
+            }
         }
 
         Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
@@ -326,6 +360,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         dbConfig.setReadOnly(false);
 
         _configuredObjectsDb = openDatabase(CONFIGURED_OBJECTS, dbConfig);
+        _configVersionDb = openDatabase(CONFIG_VERSION_DB, dbConfig);
         _messageMetaDataDb = openDatabase(MESSAGEMETADATADB_NAME, dbConfig);
         _messageContentDb = openDatabase(MESSAGECONTENTDB_NAME, dbConfig);
         _deliveryDb = openDatabase(DELIVERYDB_NAME, dbConfig);
@@ -399,6 +434,13 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             _xidDb.close();
         }
 
+
+        if (_configVersionDb != null)
+        {
+            LOGGER.info("Close config version database");
+            _configVersionDb.close();
+        }
+
         closeEnvironment();
 
     }
@@ -426,16 +468,81 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     {
         try
         {
-            recoveryHandler.beginConfigurationRecovery(this);
+            final int configVersion = getConfigVersion();
+            recoveryHandler.beginConfigurationRecovery(this, configVersion);
             loadConfiguredObjects(recoveryHandler);
 
-            recoveryHandler.completeConfigurationRecovery();
+            final int newConfigVersion = recoveryHandler.completeConfigurationRecovery();
+            if(newConfigVersion != configVersion)
+            {
+                updateConfigVersion(newConfigVersion);
+            }
         }
         catch (DatabaseException e)
         {
             throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
         }
 
+    }
+
+    private void updateConfigVersion(int newConfigVersion) throws AMQStoreException
+    {
+        Cursor cursor = null;
+        try
+        {
+            Transaction txn = _environment.beginTransaction(null, null);
+            cursor = _configVersionDb.openCursor(txn, null);
+            DatabaseEntry key = new DatabaseEntry();
+            ByteBinding.byteToEntry((byte) 0,key);
+            DatabaseEntry value = new DatabaseEntry();
+
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                IntegerBinding.intToEntry(newConfigVersion, value);
+                OperationStatus status = cursor.put(key, value);
+                if (status != OperationStatus.SUCCESS)
+                {
+                    throw new AMQStoreException("Error setting config version: " + status);
+                }
+            }
+            cursor.close();
+            cursor = null;
+            txn.commit();
+        }
+        finally
+        {
+            closeCursorSafely(cursor);
+        }
+
+    }
+
+    private int getConfigVersion() throws AMQStoreException
+    {
+        Cursor cursor = null;
+        try
+        {
+            cursor = _configVersionDb.openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                return IntegerBinding.entryToInt(value);
+            }
+
+            // Insert 0 as the default config version
+            IntegerBinding.intToEntry(0,value);
+            ByteBinding.byteToEntry((byte) 0,key);
+            OperationStatus status = _configVersionDb.put(null, key, value);
+            if (status != OperationStatus.SUCCESS)
+            {
+                throw new AMQStoreException("Error initialising config version: " + status);
+            }
+            return 0;
+        }
+        finally
+        {
+            closeCursorSafely(cursor);
+        }
     }
 
     private void loadConfiguredObjects(ConfigurationRecoveryHandler crh) throws DatabaseException
@@ -743,7 +850,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         {
             LOGGER.debug("public void remove(id = " + id + ", type="+type+"): called");
         }
-        OperationStatus status = removeConfiguredObject(id);
+        OperationStatus status = removeConfiguredObject(null, id);
         if (status == OperationStatus.NOTFOUND)
         {
             throw new AMQStoreException("Configured object of type " + type + " with id " + id + " not found");
@@ -751,7 +858,44 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
     @Override
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    {
+        com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
+        Collection<UUID> removed = new ArrayList<UUID>(objects.length);
+        for(UUID id : objects)
+        {
+            if(removeConfiguredObject(txn, id) == OperationStatus.SUCCESS)
+            {
+                removed.add(id);
+            }
+        }
+
+        txn.commit();
+        return removed.toArray(new UUID[removed.size()]);
+    }
+
+    @Override
     public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
+    {
+        update(false, id, type, attributes, null);
+    }
+
+    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        update(false, records);
+    }
+
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    {
+        com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
+        for(ConfiguredObjectRecord record : records)
+        {
+            update(createIfNecessary, record.getId(), record.getType(), record.getAttributes(), txn);
+        }
+        txn.commit();
+    }
+
+    private void update(boolean createIfNecessary, UUID id, String type, Map<String, Object> attributes, com.sleepycat.je.Transaction txn) throws AMQStoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -768,14 +912,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             DatabaseEntry newValue = new DatabaseEntry();
             ConfiguredObjectBinding configuredObjectBinding = ConfiguredObjectBinding.getInstance();
 
-            OperationStatus status = _configuredObjectsDb.get(null, key, value, LockMode.DEFAULT);
-            if (status == OperationStatus.SUCCESS)
+            OperationStatus status = _configuredObjectsDb.get(txn, key, value, LockMode.DEFAULT);
+            if (status == OperationStatus.SUCCESS || (createIfNecessary && status == OperationStatus.NOTFOUND))
             {
                 ConfiguredObjectRecord newQueueRecord = new ConfiguredObjectRecord(id, type, attributes);
 
                 // write the updated entry to the store
                 configuredObjectBinding.objectToEntry(newQueueRecord, newValue);
-                status = _configuredObjectsDb.put(null, key, newValue);
+                status = _configuredObjectsDb.put(txn, key, newValue);
                 if (status != OperationStatus.SUCCESS)
                 {
                     throw new AMQStoreException("Error updating queue details within the store: " + status);
@@ -1299,6 +1443,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
+            LOGGER.debug("Storing configured object: " + configuredObject);
             DatabaseEntry key = new DatabaseEntry();
             UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
             keyBinding.objectToEntry(configuredObject.getId(), key);
@@ -1324,14 +1469,16 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
     }
 
-    private OperationStatus removeConfiguredObject(UUID id) throws AMQStoreException
+    private OperationStatus removeConfiguredObject(Transaction tx, UUID id) throws AMQStoreException
     {
+
+        LOGGER.debug("Removing configured object: " + id);
         DatabaseEntry key = new DatabaseEntry();
         UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
         uuidBinding.objectToEntry(id, key);
         try
         {
-            return _configuredObjectsDb.delete(null, key);
+            return _configuredObjectsDb.delete(tx, key);
         }
         catch (DatabaseException e)
         {

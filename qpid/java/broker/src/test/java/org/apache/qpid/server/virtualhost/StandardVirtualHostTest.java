@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -34,7 +36,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -242,7 +244,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         VirtualHost vhost = createVirtualHost(vhostName, config);
         assertNotNull("virtualhost should exist", vhost);
 
-        AMQQueue queue = vhost.getQueueRegistry().getQueue(queueName);
+        AMQQueue queue = vhost.getQueue(queueName);
         assertNotNull("queue should exist", queue);
 
         Exchange defaultExch = vhost.getDefaultExchange();
@@ -306,7 +308,7 @@ public class StandardVirtualHostTest extends QpidTestCase
             writer.write("      <" + vhostName + ">");
             writer.write("          <type>" + StandardVirtualHostFactory.TYPE + "</type>");
             writer.write("              <store>");
-            writer.write("                <class>" + MemoryMessageStore.class.getName() + "</class>");
+            writer.write("                <class>" + TestMemoryMessageStore.class.getName() + "</class>");
             writer.write("              </store>");
             if(exchangeName != null && !dontDeclare)
             {
@@ -363,10 +365,11 @@ public class StandardVirtualHostTest extends QpidTestCase
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         Configuration config = new PropertiesConfiguration();
-        config.setProperty("store.type", MemoryMessageStore.TYPE);
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
+        final org.apache.qpid.server.model.VirtualHost virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
+        when(virtualHost.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_TYPE))).thenReturn(TestMemoryMessageStore.TYPE);
         VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration,
-                mock(org.apache.qpid.server.model.VirtualHost.class));
+                virtualHost);
         _virtualHostRegistry.registerVirtualHost(host);
         return host;
     }

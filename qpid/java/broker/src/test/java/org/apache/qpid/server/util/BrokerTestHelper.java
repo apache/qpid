@@ -31,11 +31,8 @@ import java.util.UUID;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
@@ -47,8 +44,6 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -143,33 +138,35 @@ public class BrokerTestHelper
         return vhostConfig;
     }
 
-    public static AMQChannel createChannel(int channelId, AMQProtocolSession session) throws AMQException
+    public static AMQSessionModel createSession(int channelId, AMQConnectionModel connection) throws AMQException
     {
-        AMQChannel channel = new AMQChannel(session, channelId, session.getVirtualHost().getMessageStore());
-        session.addChannel(channel);
-        return channel;
+        AMQSessionModel session = mock(AMQSessionModel.class);
+        when(session.getConnectionModel()).thenReturn(connection);
+        when(session.getChannelId()).thenReturn(channelId);
+        return session;
     }
 
-    public static AMQChannel createChannel(int channelId) throws Exception
+    public static AMQSessionModel createSession(int channelId) throws Exception
     {
-        InternalTestProtocolSession session = createSession();
-        return createChannel(channelId, session);
+        AMQConnectionModel session = createConnection();
+        return createSession(channelId, session);
     }
 
-    public static AMQChannel createChannel() throws Exception
+    public static AMQSessionModel createSession() throws Exception
     {
-        return createChannel(1);
+        return createSession(1);
     }
 
-    public static InternalTestProtocolSession createSession() throws Exception
+    public static AMQConnectionModel createConnection() throws Exception
     {
-        return createSession("test");
+        return createConnection("test");
     }
 
-    public static InternalTestProtocolSession createSession(String hostName) throws Exception
+    public static AMQConnectionModel createConnection(String hostName) throws Exception
     {
         VirtualHost virtualHost = createVirtualHost(hostName);
-        return new InternalTestProtocolSession(virtualHost, createBrokerMock());
+        AMQConnectionModel connection = mock(AMQConnectionModel.class);
+        return connection;
     }
 
     public static Exchange createExchange(String hostName) throws Exception
@@ -182,44 +179,10 @@ public class BrokerTestHelper
         return factory.createExchange("amp.direct", "direct", false, false);
     }
 
-    public static void publishMessages(AMQChannel channel, int numberOfMessages, String queueName, String exchangeName) throws AMQException
-    {
-        AMQShortString rouningKey = new AMQShortString(queueName);
-        AMQShortString exchangeNameAsShortString = new AMQShortString(exchangeName);
-        MessagePublishInfo info = mock(MessagePublishInfo.class);
-        when(info.getExchange()).thenReturn(exchangeNameAsShortString);
-        when(info.getRoutingKey()).thenReturn(rouningKey);
-
-        Exchange exchange = channel.getVirtualHost().getExchange(exchangeName);
-        for (int count = 0; count < numberOfMessages; count++)
-        {
-            channel.setPublishFrame(info, exchange);
-
-            // Set the body size
-            ContentHeaderBody _headerBody = new ContentHeaderBody();
-            _headerBody.setBodySize(0);
-
-            // Set Minimum properties
-            BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
-
-            properties.setExpiration(0L);
-            properties.setTimestamp(System.currentTimeMillis());
-
-            // Make Message Persistent
-            properties.setDeliveryMode((byte) 2);
-
-            _headerBody.setProperties(properties);
-
-            channel.publishContentHeader(_headerBody);
-        }
-        channel.sync();
-    }
-
     public static SimpleAMQQueue createQueue(String queueName, VirtualHost virtualHost) throws AMQException
     {
-        SimpleAMQQueue queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), queueName, false, null,
-                false, false, virtualHost, Collections.<String, Object>emptyMap());
-        virtualHost.getQueueRegistry().registerQueue(queue);
+        SimpleAMQQueue queue = (SimpleAMQQueue) virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, null,
+                false, false, false, Collections.<String, Object>emptyMap());
         return queue;
     }
 

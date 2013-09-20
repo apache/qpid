@@ -98,6 +98,33 @@ class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<Co
     QPID_MESSAGING_EXTERN void open();
     QPID_MESSAGING_EXTERN bool isOpen();
     QPID_MESSAGING_EXTERN bool isOpen() const;
+
+    /**
+     * Attempts to reconnect to the specified url, re-establish
+     * existing sessions, senders and receivers and resend any indoubt
+     * messages.
+     *
+     * This can be used to directly control reconnect behaviour rather
+     * than using the reconnect option for automatically handling
+     * that.
+     */
+    QPID_MESSAGING_EXTERN void reconnect(const std::string& url);
+    /**
+     * Attempts to reconnect to the original url, including any
+     * specified reconnect_urls, re-establish existing sessions,
+     * senders and receivers and resend any indoubt messages.
+     *
+     * This can be used to directly control reconnect behaviour rather
+     * than using the reconnect option for automatically handling
+     * that.
+     */
+    QPID_MESSAGING_EXTERN void reconnect();
+    /**
+     * returns a url reprsenting the broker the client is currently
+     * connected to (or an e,pty string if it is not connected).
+     */
+    QPID_MESSAGING_EXTERN std::string getUrl() const;
+
     /**
      * Closes a connection and all sessions associated with it. An
      * opened connection must be closed before the last handle is

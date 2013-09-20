@@ -74,6 +74,8 @@ public interface VirtualHost extends ConfiguredObject
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
     String STORE_TYPE                           = "storeType";
     String STORE_PATH                           = "storePath";
+    String CONFIG_STORE_TYPE                    = "configStoreType";
+    String CONFIG_STORE_PATH                    = "configStorePath";
     String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String CREATED                              = "created";
@@ -107,6 +109,8 @@ public interface VirtualHost extends ConfiguredObject
                             QUEUE_MAXIMUM_DELIVERY_ATTEMPTS,
                             QUEUE_FLOW_CONTROL_SIZE_BYTES,
                             QUEUE_FLOW_RESUME_SIZE_BYTES,
+                            CONFIG_STORE_TYPE,
+                            CONFIG_STORE_PATH,
                             STORE_TYPE,
                             STORE_PATH,
                             STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
@@ -119,6 +123,8 @@ public interface VirtualHost extends ConfiguredObject
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
                             CONFIG_PATH));
+
+    int CURRENT_CONFIG_VERSION = 3;
 
     //children
     Collection<VirtualHostAlias> getAliases();

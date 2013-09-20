@@ -79,7 +79,7 @@ class HeadersExchange : public virtual Exchange {
                        framing::FieldTable& nonFedArgs);
 
   public:
-    static const std::string typeName;
+    QPID_BROKER_EXTERN static const std::string typeName;
 
     QPID_BROKER_EXTERN HeadersExchange(const std::string& name,
                                        management::Manageable* parent = 0, Broker* broker = 0);

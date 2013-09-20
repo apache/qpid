@@ -119,7 +119,7 @@
             <row>
               <entry>
                     <para>/rest/queue</para>
-                    <para>/rest/queue/&lt;virtual host name&gt;/&gt;queue name&gt;</para>
+                    <para>/rest/queue/&lt;virtual host name&gt;/&lt;queue name&gt;</para>
               </entry>
               <entry>Rest service to manage queue(s)</entry>
               <entry>Retrieves the details about the queue(s)</entry>
@@ -173,7 +173,7 @@
             </row>
             <row>
               <entry>
-                    <para>/rest/message/*</para>
+                    <para>/rest/message/&lt;virtual host name&gt;/&lt;queue name&gt;</para>
               </entry>
               <entry>Rest service to manage messages(s)</entry>
               <entry>Retrieves the details about the messages(s)</entry>
@@ -183,7 +183,7 @@
             </row>
             <row>
               <entry>
-                    <para>/rest/message-content/*</para>
+                    <para>/rest/message-content/&lt;virtual host name&gt;/&lt;queue name&gt;</para>
               </entry>
               <entry>Rest service to retrieve message content</entry>
               <entry>Retrieves the message content</entry>
@@ -275,22 +275,22 @@
         all bindings for all queues for the given exchange in the virtual host.
         </para>
         <example>
-        <title>Examples of queue creation using curl:</title>
+        <title>Examples of queue creation using curl (authenticating as user admin):</title>
             <programlisting><![CDATA[
 #create a durable queue
-curl -X PUT  -d '{"durable":true}' http://localhost:8080/rest/queue/<vhostname>/<queuename>
+curl --user admin -X PUT  -d '{"durable":true}' http://localhost:8080/rest/queue/<vhostname>/<queuename>
 #create a durable priority queue
-curl -X PUT  -d '{"durable":true,"type":"priority"}' http://localhost:8080/rest/queue/<vhostname>/<queuename>
+curl --user admin -X PUT  -d '{"durable":true,"type":"priority"}' http://localhost:8080/rest/queue/<vhostname>/<queuename>
             ]]></programlisting>
         </example><example>
         <title>Example of binding a queue to an exchange using curl</title>
             <programlisting><![CDATA[
-curl  -X PUT  -d '{}' http://localhost:8080/rest/binding/<vhostname>/<exchangename>/<queue-name>/<binding-name>
+curl --user admin -X PUT  -d '{}' http://localhost:8080/rest/binding/<vhostname>/<exchangename>/<queue-name>/<binding-name>
             ]]></programlisting>
         </example>
         <para>
-            NOTE: the above examples were performed after editing the
-            <link linkend="Java-Broker-Configuring-And-Managing-HTTP-Management-Plugin-Configuration">HTTP Management Plugin Configuration</link>
-            to enable HTTP Basic Authentication on connections not using SSL (i.e HTTPS).
+            NOTE: These curl examples utilise unsecure HTTP transport. To use the examples it is first necessary enable Basic
+            authentication for HTTP within the HTTP Management Configuration (it is off by default).
+            For details see <xref linkend="Java-Broker-Configuring-And-Managing-HTTP-Management-Plugin-Configuration"/>
         </para>
 </section>

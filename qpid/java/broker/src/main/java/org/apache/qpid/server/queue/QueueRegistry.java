@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -32,11 +31,7 @@ public interface QueueRegistry
 
     void registerQueue(AMQQueue queue);
 
-    void unregisterQueue(AMQShortString name);
-
-    AMQQueue getQueue(AMQShortString name);
-
-    Collection<AMQShortString> getQueueNames();
+    void unregisterQueue(String name);
 
     Collection<AMQQueue> getQueues();
 

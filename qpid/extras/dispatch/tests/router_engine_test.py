@@ -18,8 +18,8 @@
 #
 
 import unittest
-from router.router_engine import NeighborEngine, PathEngine, Configuration
-from router.data import LinkState, MessageHELLO
+from qpid.dispatch.router.router_engine import NeighborEngine, PathEngine, Configuration
+from qpid.dispatch.router.data import LinkState, MessageHELLO
 
 class Adapter(object):
   def __init__(self, domain):
@@ -99,12 +99,19 @@ class NeighborTest(unittest.TestCase):
   def local_link_state_changed(self, link_state):
     self.local_link_state = link_state
 
+  def new_neighbor(self, rid):
+    self.neighbors[rid] = None
+
+  def lost_neighbor(self, rid):
+    self.neighbors.pop(rid)
+
   def setUp(self):
     self.sent = []
     self.local_link_state = None
     self.id = "R1"
     self.area = "area"
     self.config = Configuration()
+    self.neighbors = {}
 
   def test_hello_sent(self):
     self.sent = []

@@ -31,6 +31,7 @@
 #include "qpid/broker/Selector.h"
 #include "qpid/broker/SessionContext.h"
 #include "qpid/broker/SessionOutputException.h"
+#include "qpid/broker/TransactionObserver.h"
 #include "qpid/broker/TxAccept.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -65,6 +66,7 @@ namespace broker {
 
 using namespace std;
 using boost::intrusive_ptr;
+using boost::shared_ptr;
 using boost::bind;
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -165,13 +167,15 @@ bool SemanticState::cancel(const string& tag)
 void SemanticState::startTx()
 {
     txBuffer = TxBuffer::shared_ptr(new TxBuffer());
+    session.getBroker().getBrokerObservers().startTx(txBuffer);
+    session.startTx(); //just to update statistics
 }
 
 void SemanticState::commit(MessageStore* const store)
 {
     if (!txBuffer) throw
         CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
-
+    session.commitTx(); //just to update statistics
     TxOp::shared_ptr txAck(static_cast<TxOp*>(new TxAccept(accumulatedAck, unacked)));
     txBuffer->enlist(txAck);
     if (txBuffer->commitLocal(store)) {
@@ -185,7 +189,7 @@ void SemanticState::rollback()
 {
     if (!txBuffer)
         throw CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
-
+    session.rollbackTx(); //just to update statistics
     txBuffer->rollback();
     accumulatedAck.clear();
 }
@@ -202,6 +206,7 @@ void SemanticState::startDtx(const std::string& xid, DtxManager& mgr, bool join)
     }
     dtxBuffer.reset(new DtxBuffer(xid));
     txBuffer = dtxBuffer;
+    session.getBroker().getBrokerObservers().startDtx(dtxBuffer);
     if (join) {
         mgr.join(xid, dtxBuffer);
     } else {
@@ -432,8 +437,10 @@ bool SemanticStateConsumerImpl::checkCredit(const Message& msg)
 
 SemanticStateConsumerImpl::~SemanticStateConsumerImpl()
 {
-    if (mgmtObject != 0)
+    if (mgmtObject != 0) {
+        mgmtObject->debugStats("destroying");
         mgmtObject->resourceDestroy ();
+    }
 }
 
 void SemanticState::disable(ConsumerImpl::shared_ptr c)
@@ -658,9 +665,7 @@ Queue::shared_ptr SemanticState::getQueue(const string& name) const {
     if (name.empty()) {
         throw NotAllowedException(QPID_MSG("No queue name specified."));
     } else {
-        queue = session.getBroker().getQueues().find(name);
-        if (!queue)
-            throw NotFoundException(QPID_MSG("Queue not found: "<<name));
+        queue = session.getBroker().getQueues().get(name);
     }
     return queue;
 }
@@ -767,7 +772,6 @@ void SemanticState::accepted(const SequenceSet& commands) {
             TxOp::shared_ptr txAck(new DtxAck(accumulatedAck, unacked));
             accumulatedAck.clear();
             dtxBuffer->enlist(txAck);
-
             //mark the relevant messages as 'ended' in unacked
             //if the messages are already completed, they can be
             //removed from the record

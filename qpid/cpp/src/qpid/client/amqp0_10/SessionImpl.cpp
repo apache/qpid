@@ -207,7 +207,7 @@ Receiver SessionImpl::createReceiverImpl(const qpid::messaging::Address& address
     ScopedLock l(lock);
     std::string name = address.getName();
     getFreeKey(name, receivers);
-    Receiver receiver(new ReceiverImpl(*this, name, address));
+    Receiver receiver(new ReceiverImpl(*this, name, address, connection->getAutoDecode()));
     getImplPtr<Receiver, ReceiverImpl>(receiver)->init(session, resolver);
     receivers[name] = receiver;
     return receiver;

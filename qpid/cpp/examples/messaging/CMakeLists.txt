@@ -23,7 +23,7 @@
 macro(add_messaging_example example)
   add_executable(${example} ${example}.cpp OptionParser.cpp)
   set_target_properties(${example} PROPERTIES OUTPUT_NAME ${example})
-  target_link_libraries(${example} qpidmessaging ${_boost_libs_needed})
+  target_link_libraries(${example} qpidmessaging qpidtypes ${_boost_libs_needed})
   # For installs, don't install the built example; that would be pointless.
   # Install the things a user needs to build the example on-site.
   install (FILES
@@ -49,6 +49,7 @@ add_messaging_example(map_sender)
 
 add_messaging_example(client)
 add_messaging_example(server)
+add_messaging_example(server_reconnect)
 
 # These don't need Boost or OptionParser
 add_executable(hello_world hello_world.cpp)
@@ -74,6 +75,7 @@ install (FILES
            ${CMAKE_CURRENT_SOURCE_DIR}/map_sender.cpp
            ${CMAKE_CURRENT_SOURCE_DIR}/client.cpp
            ${CMAKE_CURRENT_SOURCE_DIR}/server.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/server_reconnect.cpp
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
 

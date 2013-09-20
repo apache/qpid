@@ -23,9 +23,10 @@ package org.apache.qpid.server.logging.actors;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 /**
  * Test : CurrentActorTest
@@ -71,7 +72,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
     public void testLIFO() throws AMQException, ConfigurationException
     {
         assertTrue("Unexpected actor: " + CurrentActor.get(), CurrentActor.get() instanceof TestLogActor);
-        AMQPConnectionActor connectionActor = new AMQPConnectionActor(getSession(),
+        AMQPConnectionActor connectionActor = new AMQPConnectionActor(getConnection(),
                                                                       new NullRootMessageLogger());
 
         /*
@@ -98,7 +99,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
          *
          */
 
-        AMQChannel channel = new AMQChannel(getSession(), 1, getSession().getVirtualHost().getMessageStore());
+        AMQSessionModel channel = BrokerTestHelper.createSession(1, getConnection());
 
         AMQPChannelActor channelActor = new AMQPChannelActor(channel,
                                                              new NullRootMessageLogger());
@@ -214,7 +215,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
             {
                 LogActor defaultActor = CurrentActor.get();
 
-                AMQPConnectionActor actor = new AMQPConnectionActor(getSession(),
+                AMQPConnectionActor actor = new AMQPConnectionActor(getConnection(),
                                                                     new NullRootMessageLogger());
 
                 CurrentActor.set(actor);

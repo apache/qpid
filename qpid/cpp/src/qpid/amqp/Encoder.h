@@ -23,12 +23,15 @@
  */
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/amqp/Constructor.h"
+#include <list>
+#include <map>
 #include <stddef.h>
 #include <string>
 
 namespace qpid {
 namespace types {
 class Uuid;
+class Variant;
 }
 namespace amqp {
 struct CharSequence;
@@ -74,7 +77,7 @@ class Encoder
     void writeString(const CharSequence&, const Descriptor* d=0);
     void writeString(const std::string&, const Descriptor* d=0);
     void writeBinary(const CharSequence&, const Descriptor* d=0);
-    void writeBinary(const std::string&, const Descriptor* d=0);
+    QPID_COMMON_EXTERN void writeBinary(const std::string&, const Descriptor* d=0);
 
     void* startList8(const Descriptor* d=0);
     void* startList32(const Descriptor* d=0);
@@ -91,9 +94,13 @@ class Encoder
     void endArray8(size_t count, void*);
     void endArray32(size_t count, void*);
 
+    QPID_COMMON_EXTERN void writeValue(const qpid::types::Variant&, const Descriptor* d=0);
+    QPID_COMMON_EXTERN void writeMap(const std::map<std::string, qpid::types::Variant>& value, const Descriptor* d=0, bool large=true);
+    QPID_COMMON_EXTERN void writeList(const std::list<qpid::types::Variant>& value, const Descriptor* d=0, bool large=true);
+
     void writeDescriptor(const Descriptor&);
-    Encoder(char* data, size_t size);
-    size_t getPosition();
+    QPID_COMMON_EXTERN Encoder(char* data, size_t size);
+    QPID_COMMON_EXTERN size_t getPosition();
     void resetPosition(size_t p);
     char* skip(size_t);
     void writeBytes(const char* bytes, size_t count);

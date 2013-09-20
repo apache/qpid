@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,30 +21,10 @@
 #include <qpid/dispatch/alloc.h>
 #include <qpid/dispatch/buffer.h>
 #include <qpid/dispatch/amqp.h>
-#include "message_private.h"
 #include "compose_private.h"
 #include <memory.h>
 
-typedef struct dx_composite_t {
-    DEQ_LINKS(struct dx_composite_t);
-    int                 isMap;
-    uint32_t            count;
-    uint32_t            length;
-    dx_field_location_t length_location;
-    dx_field_location_t count_location;
-} dx_composite_t;
-
-ALLOC_DECLARE(dx_composite_t);
 ALLOC_DEFINE(dx_composite_t);
-DEQ_DECLARE(dx_composite_t, dx_field_stack_t);
-
-
-struct dx_composed_field_t {
-    dx_buffer_list_t buffers;
-    dx_field_stack_t fieldStack;
-};
-
-ALLOC_DECLARE(dx_composed_field_t);
 ALLOC_DEFINE(dx_composed_field_t);
 
 
@@ -197,7 +177,7 @@ static void dx_compose_end_composite(dx_composed_field_t *field)
     //
     dx_composite_t *enclosing = DEQ_HEAD(field->fieldStack);
     if (enclosing) {
-        enclosing->length += 4 + comp->length;
+        enclosing->length += (comp->length - 4); // the length and count were already accounted for
         enclosing->count++;
     }
 
@@ -233,12 +213,14 @@ void dx_compose_free(dx_composed_field_t *field)
     while (buf) {
         DEQ_REMOVE_HEAD(field->buffers);
         dx_free_buffer(buf);
+        buf = DEQ_HEAD(field->buffers);
     }
 
     dx_composite_t *comp = DEQ_HEAD(field->fieldStack);
     while (comp) {
         DEQ_REMOVE_HEAD(field->fieldStack);
         free_dx_composite_t(comp);
+        comp = DEQ_HEAD(field->fieldStack);
     }
 
     free_dx_composed_field_t(field);

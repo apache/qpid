@@ -19,7 +19,7 @@
  *
  */
 
-#include "makeMessage.h"
+#include "Event.h"
 #include "IdSetter.h"
 #include "QueueGuard.h"
 #include "QueueReplicator.h"
@@ -111,7 +111,8 @@ ReplicatingSubscription::ReplicatingSubscription(
 ) : ConsumerImpl(parent, name, queue, ack, REPLICATOR, exclusive, tag,
                  resumeId, resumeTtl, arguments),
     position(0), ready(false), cancelled(false),
-    haBroker(hb)
+    haBroker(hb),
+    primary(boost::dynamic_pointer_cast<Primary>(haBroker.getRole()))
 {
     try {
         FieldTable ft;
@@ -137,7 +138,7 @@ ReplicatingSubscription::ReplicatingSubscription(
         }
 
         // If there's already a guard (we are in failover) use it, else create one.
-        if (Primary::get()) guard = Primary::get()->getGuard(queue, info);
+        if (primary) guard = primary->getGuard(queue, info);
         if (!guard) guard.reset(new QueueGuard(*queue, info));
 
         // NOTE: Once the observer is attached we can have concurrent
@@ -148,20 +149,19 @@ ReplicatingSubscription::ReplicatingSubscription(
         // between the snapshot and attaching the observer.
         observer.reset(new QueueObserver(*this));
         queue->addObserver(observer);
-        ReplicationIdSet primary = haBroker.getQueueSnapshots()->get(queue)->snapshot();
+        ReplicationIdSet primaryIds = haBroker.getQueueSnapshots()->get(queue)->snapshot();
         std::string backupStr = arguments.getAsString(ReplicatingSubscription::QPID_ID_SET);
-        ReplicationIdSet backup;
-        if (!backupStr.empty()) backup = decodeStr<ReplicationIdSet>(backupStr);
+        ReplicationIdSet backupIds;
+        if (!backupStr.empty()) backupIds = decodeStr<ReplicationIdSet>(backupStr);
 
         // Initial dequeues are messages on backup but not on primary.
-        ReplicationIdSet initDequeues = backup - primary;
+        ReplicationIdSet initDequeues = backupIds - primaryIds;
         QueuePosition front,back;
         queue->getRange(front, back, broker::REPLICATOR); // Outside lock, getRange locks queue
         {
             sys::Mutex::ScopedLock l(lock); // Concurrent calls to dequeued()
             dequeues += initDequeues;       // Messages on backup that are not on primary.
-            skip = backup - initDequeues;   // Messages already on the backup.
-
+            skip = backupIds - initDequeues; // Messages already on the backup.
             // Queue front is moving but we know this subscriptions will start at a
             // position >= front so if front is safe then position must be.
             position = front;
@@ -189,6 +189,7 @@ ReplicatingSubscription::~ReplicatingSubscription() {}
 //
 void ReplicatingSubscription::initialize() {
     try {
+        if (primary) primary->addReplica(*this);
         Mutex::ScopedLock l(lock); // Note dequeued() can be called concurrently.
         // Send initial dequeues to the backup.
         // There must be a shared_ptr(this) when sending.
@@ -216,9 +217,8 @@ bool ReplicatingSubscription::deliver(
     try {
         bool result = false;
         if (skip.contains(id)) {
+            QPID_LOG(trace, logPrefix << "Skip " << LogMessageId(*getQueue(), m));
             skip -= id;
-            QPID_LOG(trace, logPrefix << "On backup, skip " <<
-                     LogMessageId(*getQueue(), m));
             guard->complete(id); // This will never be acknowledged.
             notify();
             result = true;
@@ -238,16 +238,13 @@ bool ReplicatingSubscription::deliver(
     }
 }
 
-/**
- *@param position: must be <= last position seen by subscription.
- */
 void ReplicatingSubscription::checkReady(sys::Mutex::ScopedLock& l) {
     if (!ready && isGuarded(l) && unready.empty()) {
         ready = true;
         sys::Mutex::ScopedUnlock u(lock);
         // Notify Primary that a subscription is ready.
         QPID_LOG(debug, logPrefix << "Caught up");
-        if (Primary::get()) Primary::get()->readyReplica(*this);
+        if (primary) primary->readyReplica(*this);
     }
 }
 
@@ -260,6 +257,7 @@ void ReplicatingSubscription::cancel()
         cancelled = true;
     }
     QPID_LOG(debug, logPrefix << "Cancelled");
+    if (primary) primary->removeReplica(*this);
     getQueue()->removeObserver(observer);
     guard->cancel();
     ConsumerImpl::cancel();
@@ -285,9 +283,7 @@ void ReplicatingSubscription::sendDequeueEvent(Mutex::ScopedLock& l)
 {
     if (dequeues.empty()) return;
     QPID_LOG(trace, logPrefix << "Sending dequeues " << dequeues);
-    string buffer = encodeStr(dequeues);
-    dequeues.clear();
-    sendEvent(QueueReplicator::DEQUEUE_EVENT_KEY, buffer, l);
+    sendEvent(DequeueEvent(dequeues), l);
 }
 
 // Called after the message has been removed
@@ -307,23 +303,16 @@ void ReplicatingSubscription::dequeued(ReplicationId id)
 // Called with lock held. Called in subscription's connection thread.
 void ReplicatingSubscription::sendIdEvent(ReplicationId pos, Mutex::ScopedLock& l)
 {
-    sendEvent(QueueReplicator::ID_EVENT_KEY, encodeStr(pos), l);
+    sendEvent(IdEvent(pos), l);
 }
 
-void ReplicatingSubscription::sendEvent(const std::string& key,
-                                        const std::string& buffer,
-                                        Mutex::ScopedLock&)
+void ReplicatingSubscription::sendEvent(const Event& event, Mutex::ScopedLock&)
 {
     Mutex::ScopedUnlock u(lock);
-    broker::Message message = makeMessage(buffer);
-    MessageTransfer& transfer = MessageTransfer::get(message);
-    DeliveryProperties* props =
-        transfer.getFrames().getHeaders()->get<DeliveryProperties>(true);
-    props->setRoutingKey(key);
     // Send the event directly to the base consumer implementation.  The dummy
     // consumer prevents acknowledgements being handled, which is what we want
     // for events
-    ConsumerImpl::deliver(QueueCursor(), message, boost::shared_ptr<Consumer>());
+    ConsumerImpl::deliver(QueueCursor(), event.message(), boost::shared_ptr<Consumer>());
 }
 
 // Called in subscription's connection thread.
@@ -340,6 +329,11 @@ bool ReplicatingSubscription::doDispatch()
         QPID_LOG(warning, logPrefix << " exception in dispatch: " << e.what());
         return false;
     }
+}
+
+void ReplicatingSubscription::addSkip(const ReplicationIdSet& ids) {
+    Mutex::ScopedLock l(lock);
+    skip += ids;
 }
 
 }} // namespace qpid::ha

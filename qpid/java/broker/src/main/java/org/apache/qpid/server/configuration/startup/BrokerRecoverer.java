@@ -47,6 +47,7 @@ import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
+import org.apache.qpid.server.model.adapter.PreferencesProviderCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -65,10 +66,13 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final TaskExecutor _taskExecutor;
     private final BrokerOptions _brokerOptions;
     private final GroupProviderFactory _groupProviderFactory;
+    private final StoreConfigurationChangeListener _storeChangeListener;
+    private final PreferencesProviderCreator _preferencesProviderCreator;
 
     public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, GroupProviderFactory groupProviderFactory,
-            AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, StatisticsGatherer statisticsGatherer,
-            VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions)
+            AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, PreferencesProviderCreator preferencesProviderFactory, StatisticsGatherer statisticsGatherer,
+            VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor,
+            BrokerOptions brokerOptions, StoreConfigurationChangeListener storeChangeListener)
     {
         _groupProviderFactory = groupProviderFactory;
         _portFactory = portFactory;
@@ -80,6 +84,8 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         _rootMessageLogger = rootMessageLogger;
         _taskExecutor = taskExecutor;
         _brokerOptions = brokerOptions;
+        _storeChangeListener = storeChangeListener;
+        _preferencesProviderCreator = preferencesProviderFactory;
     }
 
     @Override
@@ -90,12 +96,11 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 
         attributesCopy.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
 
-        StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(entry.getStore());
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), attributesCopy, _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory,
-                _portFactory, _taskExecutor, entry.getStore(), _brokerOptions);
+                _logRecorder, _rootMessageLogger, _authenticationProviderFactory,_groupProviderFactory, _accessControlProviderFactory,
+                _portFactory , _preferencesProviderCreator, _taskExecutor, entry.getStore(), _brokerOptions);
 
-        broker.addChangeListener(storeChangeListener);
+        broker.addChangeListener(_storeChangeListener);
 
         //Recover the SSL keystores / truststores first, then others that depend on them
         Map<String, Collection<ConfigurationEntry>> childEntries = new HashMap<String, Collection<ConfigurationEntry>>(entry.getChildren());
@@ -117,11 +122,11 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 
         for (String type : priorityChildEntries.keySet())
         {
-            recoverType(recovererProvider, storeChangeListener, broker, priorityChildEntries, type);
+            recoverType(recovererProvider, _storeChangeListener, broker, priorityChildEntries, type);
         }
         for (String type : childEntries.keySet())
         {
-            recoverType(recovererProvider, storeChangeListener, broker, childEntries, type);
+            recoverType(recovererProvider, _storeChangeListener, broker, childEntries, type);
         }
 
         return broker;

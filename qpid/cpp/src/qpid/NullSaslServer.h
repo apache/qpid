@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/CommonImportExport.h"
 #include "qpid/SaslServer.h"
 
 namespace qpid {
@@ -34,7 +35,7 @@ namespace qpid {
 class NullSaslServer : public SaslServer
 {
   public:
-    NullSaslServer(const std::string& realm);
+    QPID_COMMON_EXTERN NullSaslServer(const std::string& realm);
     Status start(const std::string& mechanism, const std::string* response, std::string& challenge);
     Status step(const std::string* response, std::string& challenge);
     std::string getMechanisms();

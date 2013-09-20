@@ -26,6 +26,7 @@
 #include "types.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Time.h"
 #include "qpid/types/Variant.h"
 #include <boost/function.hpp>
 #include <set>
@@ -69,16 +70,19 @@ class Membership
     /** Return IDs of all READY backups other than self */
     BrokerInfo::Set otherBackups() const;
 
+    /** Return IDs of all brokers */
+    BrokerInfo::Set getBrokers() const;
+
     void assign(const types::Variant::List&);
     types::Variant::List asList() const;
 
     bool get(const types::Uuid& id, BrokerInfo& result) const;
 
-    types::Uuid getSelf() const  { return self; }
-    BrokerInfo getInfo() const;
+    BrokerInfo getSelf() const;
     BrokerStatus getStatus() const;
     void setStatus(BrokerStatus s);
-    void setAddress(const Address&);
+
+    void setSelfAddress(const Address&);
 
   private:
     void update(sys::Mutex::ScopedLock&);

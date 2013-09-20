@@ -77,11 +77,11 @@ public class BDBHAMessageStoreTest extends QpidTestCase
     {
         try
         {
-            FileUtils.delete(new File(_workDir), true);
             if (_virtualHost != null)
             {
                 _virtualHost.close();
             }
+            FileUtils.delete(new File(_workDir), true);
         }
         finally
         {

@@ -35,7 +35,7 @@ class SaslServer
 {
   public:
     typedef enum {OK, FAIL, CHALLENGE} Status;
-    virtual ~SaslServer() {}
+    QPID_COMMON_EXTERN virtual ~SaslServer() {}
     virtual Status start(const std::string& mechanism, const std::string* response, std::string& challenge) = 0;
     virtual Status step(const std::string* response, std::string& challenge) = 0;
     virtual std::string getMechanisms() = 0;

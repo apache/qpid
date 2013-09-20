@@ -22,6 +22,7 @@
 package org.apache.qpid;
 
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
@@ -64,7 +65,7 @@ public class AMQConnectionException extends AMQException
         MethodRegistry reg = MethodRegistry.getMethodRegistry(new ProtocolVersion(major,minor));
         return new AMQFrame(0,
                             reg.createConnectionCloseBody(getErrorCode().getCode(),
-                                                          getMessageAsShortString(),
+                                    AMQShortString.validValueOf(getMessage()),
                                                           _classId,
                                                           _methodId));
 

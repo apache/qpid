@@ -44,14 +44,14 @@ public class DefaultExchangeFactory implements ExchangeFactory
 
     private static final Logger LOGGER = Logger.getLogger(DefaultExchangeFactory.class);
 
-    private static final AMQShortString[] BASE_EXCHANGE_TYPES =
-                                    new AMQShortString[]{ExchangeDefaults.DIRECT_EXCHANGE_CLASS,
-                                                         ExchangeDefaults.FANOUT_EXCHANGE_CLASS,
-                                                         ExchangeDefaults.HEADERS_EXCHANGE_CLASS,
-                                                         ExchangeDefaults.TOPIC_EXCHANGE_CLASS};
+    private static final String[] BASE_EXCHANGE_TYPES =
+                                    new String[]{ExchangeDefaults.DIRECT_EXCHANGE_CLASS,
+                                                 ExchangeDefaults.FANOUT_EXCHANGE_CLASS,
+                                                 ExchangeDefaults.HEADERS_EXCHANGE_CLASS,
+                                                 ExchangeDefaults.TOPIC_EXCHANGE_CLASS};
 
     private final VirtualHost _host;
-    private Map<AMQShortString, ExchangeType<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, ExchangeType<? extends Exchange>>();
+    private Map<String, ExchangeType<? extends Exchange>> _exchangeClassMap = new HashMap<String, ExchangeType<? extends Exchange>>();
 
     public DefaultExchangeFactory(VirtualHost host)
     {
@@ -61,7 +61,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         Iterable<ExchangeType> exchangeTypes = loadExchangeTypes();
         for (ExchangeType<?> exchangeType : exchangeTypes)
         {
-            AMQShortString typeName = exchangeType.getName();
+            String typeName = exchangeType.getType();
 
             if(LOGGER.isDebugEnabled())
             {
@@ -80,11 +80,11 @@ public class DefaultExchangeFactory implements ExchangeFactory
             _exchangeClassMap.put(typeName, exchangeType);
         }
 
-        for(AMQShortString type : BASE_EXCHANGE_TYPES)
+        for(String type : BASE_EXCHANGE_TYPES)
         {
             if(!_exchangeClassMap.containsKey(type))
             {
-                throw new IllegalStateException("Did not find expected exchange type: " + type.asString());
+                throw new IllegalStateException("Did not find expected exchange type: " + type);
             }
         }
     }
@@ -114,17 +114,10 @@ public class DefaultExchangeFactory implements ExchangeFactory
     {
 
         UUID id = UUIDGenerator.generateExchangeUUID(exchange, _host.getName());
-        return createExchange(id, new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete);
+        return createExchange(id, exchange, type, durable, autoDelete);
     }
 
     public Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete)
-            throws AMQException
-    {
-        return createExchange(id, new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete);
-    }
-
-    private Exchange createExchange(UUID id, AMQShortString exchange, AMQShortString type, boolean durable,
-                                   boolean autoDelete)
             throws AMQException
     {
         // Check access
@@ -142,5 +135,11 @@ public class DefaultExchangeFactory implements ExchangeFactory
 
         Exchange e = exchType.newInstance(id, _host, exchange, durable, autoDelete);
         return e;
+    }
+
+    @Override
+    public Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete) throws AMQException
+    {
+        return createExchange(id, exchange, type, true, autoDelete);
     }
 }

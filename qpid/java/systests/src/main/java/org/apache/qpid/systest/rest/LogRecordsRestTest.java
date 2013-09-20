@@ -39,4 +39,25 @@ public class LogRecordsRestTest extends QpidRestTestCase
         assertEquals("Unexpected thread", "main", record.get("thread"));
         assertEquals("Unexpected logger", "qpid.message.broker.ready", record.get("logger"));
     }
+
+    public void testGetLogsFromGivenId() throws Exception
+    {
+        List<Map<String, Object>> logs = getRestTestHelper().getJsonAsList("/rest/logrecords");
+        assertNotNull("Logs data cannot be null", logs);
+        assertTrue("Logs are not found", logs.size() > 0);
+
+        Map<String, Object> lastLog = logs.get(logs.size() -1);
+        Object lastId = lastLog.get("id");
+
+        //make sure that new logs are created
+        getConnection();
+
+        List<Map<String, Object>> newLogs = getRestTestHelper().getJsonAsList("/rest/logrecords?lastLogId=" + lastId);
+        assertNotNull("Logs data cannot be null", newLogs);
+        assertTrue("Logs are not found", newLogs.size() > 0);
+
+        Object nextId = newLogs.get(0).get("id");
+
+        assertEquals("Unexpected next log id", ((Number)lastId).longValue() + 1, ((Number)nextId).longValue());
+    }
 }

@@ -52,28 +52,32 @@ class SenderContext
       public:
         Delivery(int32_t id);
         void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&);
-        void send(pn_link_t*);
+        void send(pn_link_t*, bool unreliable);
         bool delivered();
         bool accepted();
         bool rejected();
         void settle();
+        void reset();
+        bool sent() const;
       private:
         int32_t id;
         pn_delivery_t* token;
         EncodedMessage encoded;
+        bool presettled;
     };
 
     SenderContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& target);
     ~SenderContext();
+    void reset(pn_session_t* session);
     void close();
     void setCapacity(uint32_t);
     uint32_t getCapacity();
     uint32_t getUnsettled();
     const std::string& getName() const;
     const std::string& getTarget() const;
-    Delivery* send(const qpid::messaging::Message& message);
+    bool send(const qpid::messaging::Message& message, Delivery**);
     void configure();
-    void verify(pn_terminus_t*);
+    void verify();
     void check();
     bool settled();
     Address getAddress() const;
@@ -88,9 +92,11 @@ class SenderContext
     int32_t nextId;
     Deliveries deliveries;
     uint32_t capacity;
+    bool unreliable;
 
-    uint32_t processUnsettled();
+    uint32_t processUnsettled(bool silent);
     void configure(pn_terminus_t*);
+    void resend();
 };
 }}} // namespace qpid::messaging::amqp
 

@@ -218,19 +218,17 @@ function BuildAPlatform
         ('bin/msvc*.dll',        'bin/Release') ,
         ('bin/*d.dll',           'bin/Debug'),
         ('bin/*.dll',            'bin/Release'),
-        ('bin/*test.exe',        'bin/Release')
+        ('bin/*test.exe',        'bin/Release'),
+        ('bin/qpid-send.exe',    'bin/Release'),
+        ('bin/qpid-receive.exe', 'bin/Release')
     )
 
     $preserve=(
-        'include/qpid/agent',
-        'include/qpid/amqp_0_10',
-        'include/qpid/management',
         'include/qpid/messaging',
         'include/qpid/sys/IntegerTypes.h',
         'include/qpid/sys/windows/IntegerTypes.h',
         'include/qpid/sys/posix/IntegerTypes.h',
         'include/qpid/types',
-        'include/qpid/CommonImportExport.h',
         'include/qpid/ImportExport.h')
 
     $remove=(
@@ -244,8 +242,10 @@ function BuildAPlatform
         'bin/*PDB/qpidxarm*.*',
         'bin/boost_regex*.*',
         'bin/boost',
+        'bin/*.exe',
+        'bin/qmf-gen',
+        'bin/qpidt',
         'conf',
-        'examples/qmf-console',
         'examples/*.sln',
         'examples/*.vcproj',
         'examples/messaging/*.vcproj',
@@ -287,8 +287,8 @@ function BuildAPlatform
 
     # Set top level info files to DOS line endings
     Unix2Dos "$install_dir/README-winsdk.txt"
-    Unix2Dos "$install_dir/LICENSE"
-    Unix2Dos "$install_dir/NOTICE"
+    Unix2Dos "$install_dir/docs/LICENSE"
+    Unix2Dos "$install_dir/docs/NOTICE"
     Unix2Dos "$install_dir/examples/README.txt"
 
     # Install the .NET binding example source code

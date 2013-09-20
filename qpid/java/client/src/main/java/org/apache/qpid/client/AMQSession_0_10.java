@@ -1380,7 +1380,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         dest.setExchangeName(new AMQShortString(dest.getAddressName()));
         Node node = dest.getNode();
         dest.setExchangeClass(node.getExchangeType() == null?
-                              ExchangeDefaults.TOPIC_EXCHANGE_CLASS:
+                              AMQShortString.valueOf(ExchangeDefaults.TOPIC_EXCHANGE_CLASS):
                               new AMQShortString(node.getExchangeType()));
         dest.setRoutingKey(new AMQShortString(dest.getSubject()));
     }

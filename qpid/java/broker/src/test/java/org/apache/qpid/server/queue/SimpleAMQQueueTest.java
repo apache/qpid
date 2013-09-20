@@ -27,30 +27,24 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -66,40 +60,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     private SimpleAMQQueue _queue;
     private VirtualHost _virtualHost;
-    private AMQShortString _qname = new AMQShortString("qname");
-    private AMQShortString _owner = new AMQShortString("owner");
-    private AMQShortString _routingKey = new AMQShortString("routing key");
+    private String _qname = "qname";
+    private String _owner = "owner";
+    private String _routingKey = "routing key";
     private DirectExchange _exchange;
     private MockSubscription _subscription = new MockSubscription();
-    private FieldTable _arguments = null;
-
-    private MessagePublishInfo info = new MessagePublishInfo()
-    {
-
-        public AMQShortString getExchange()
-        {
-            return null;
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-        }
-
-        public boolean isImmediate()
-        {
-            return false;
-        }
-
-        public boolean isMandatory()
-        {
-            return false;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return null;
-        }
-    };
+    private Map<String,Object> _arguments = null;
 
     @Override
     public void setUp() throws Exception
@@ -109,10 +75,10 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(),
-                false, false, _virtualHost, FieldTable.convertToMap(_arguments));
+        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner,
+                false, false, false, _arguments);
 
-        _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME.toString());
+        _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
 
     @Override
@@ -133,8 +99,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
     public void testCreateQueue() throws AMQException
     {
         _queue.stop();
-        try {
-            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), null, false, _owner.asString(), false, false, _virtualHost, FieldTable.convertToMap(_arguments));
+        try
+        {
+            _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), null,
+                                                                         false, _owner, false,
+                                                                         false, false, _arguments);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -143,7 +112,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
                             e.getMessage().contains("name"));
         }
 
-        try {
+        try
+        {
             _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner, false,false, null, Collections.EMPTY_MAP);
             assertNull("Queue was created", _queue);
         }
@@ -153,8 +123,10 @@ public class SimpleAMQQueueTest extends QpidTestCase
                     e.getMessage().contains("Host"));
         }
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), _qname.asString(), false, _owner.asString(), false,
-                                                                false, _virtualHost, FieldTable.convertToMap(_arguments));
+        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(),
+                                                                     "differentName", false,
+                                                                     _owner, false,
+                                                                     false, false, _arguments);
         assertNotNull("Queue was not created", _queue);
     }
 
@@ -165,7 +137,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public void testBinding() throws AMQSecurityException, AMQInternalException
     {
-        _exchange.addBinding(String.valueOf(_routingKey), _queue, Collections.EMPTY_MAP);
+        _exchange.addBinding(_routingKey, _queue, Collections.EMPTY_MAP);
 
         assertTrue("Routing key was not bound",
                         _exchange.isBound(_routingKey));
@@ -173,12 +145,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
                     _exchange.isBound(_routingKey,_queue));
         assertEquals("Exchange binding count", 1,
                 _queue.getBindings().size());
-        assertEquals("Wrong exchange bound", String.valueOf(_routingKey),
+        assertEquals("Wrong exchange bound", _routingKey,
                 _queue.getBindings().get(0).getBindingKey());
         assertEquals("Wrong exchange bound", _exchange,
                 _queue.getBindings().get(0).getExchange());
 
-        _exchange.removeBinding(String.valueOf(_routingKey), _queue, Collections.EMPTY_MAP);
+        _exchange.removeBinding(_routingKey, _queue, Collections.EMPTY_MAP);
         assertFalse("Routing key was still bound",
                 _exchange.isBound(_routingKey));
 
@@ -196,7 +168,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
                 _queue.getActiveConsumerCount());
 
         // Check sending a message ends up with the subscriber
-        AMQMessage messageA = createMessage(new Long(24));
+        ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
         try
         {
@@ -215,7 +187,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertFalse("Queue still has active consumer",
                 1 == _queue.getActiveConsumerCount());
 
-        AMQMessage messageB = createMessage(new Long (25));
+        ServerMessage messageB = createMessage(new Long (25));
         _queue.enqueue(messageB);
          assertNull(_subscription.getQueueContext());
 
@@ -223,7 +195,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public void testEnqueueMessageThenRegisterSubscription() throws AMQException, InterruptedException
     {
-        AMQMessage messageA = createMessage(new Long(24));
+        ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
@@ -236,8 +208,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
      */
     public void testEnqueueTwoMessagesThenRegisterSubscription() throws Exception
     {
-        AMQMessage messageA = createMessage(new Long(24));
-        AMQMessage messageB = createMessage(new Long(25));
+        ServerMessage messageA = createMessage(new Long(24));
+        ServerMessage messageB = createMessage(new Long(25));
         _queue.enqueue(messageA);
         _queue.enqueue(messageB);
         _queue.registerSubscription(_subscription, false);
@@ -263,9 +235,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
             }
         };
 
-        AMQMessage messageA = createMessage(new Long(24));
-        AMQMessage messageB = createMessage(new Long(25));
-        AMQMessage messageC = createMessage(new Long(26));
+        ServerMessage messageA = createMessage(new Long(24));
+        ServerMessage messageB = createMessage(new Long(25));
+        ServerMessage messageC = createMessage(new Long(26));
 
         /* Enqueue three messages */
 
@@ -313,9 +285,10 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         /* Enqueue one message with expiration set for a short time in the future */
 
-        AMQMessage messageA = createMessage(new Long(24));
+        ServerMessage messageA = createMessage(new Long(24));
         int messageExpirationOffset = 200;
-        messageA.setExpiration(System.currentTimeMillis() + messageExpirationOffset);
+        final long expiration = System.currentTimeMillis() + messageExpirationOffset;
+        when(messageA.getExpiration()).thenReturn(expiration);
 
         _queue.enqueue(messageA, postEnqueueAction);
 
@@ -357,9 +330,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
             }
         };
 
-        AMQMessage messageA = createMessage(new Long(24));
-        AMQMessage messageB = createMessage(new Long(25));
-        AMQMessage messageC = createMessage(new Long(26));
+        ServerMessage messageA = createMessage(new Long(24));
+        ServerMessage messageB = createMessage(new Long(25));
+        ServerMessage messageC = createMessage(new Long(26));
 
         /* Enqueue three messages */
 
@@ -410,8 +383,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
             }
         };
 
-        AMQMessage messageA = createMessage(new Long(24));
-        AMQMessage messageB = createMessage(new Long(25));
+        ServerMessage messageA = createMessage(new Long(24));
+        ServerMessage messageB = createMessage(new Long(25));
 
         /* Enqueue two messages */
 
@@ -444,7 +417,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
                 _queue.getActiveConsumerCount());
 
         // Check sending a message ends up with the subscriber
-        AMQMessage messageA = createMessage(new Long(24));
+        ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
         try
         {
@@ -489,7 +462,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
        _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
-       AMQMessage message = createMessage(new Long(25));
+       ServerMessage message = createMessage(new Long(25));
        _queue.enqueue(message);
        _queue.unregisterSubscription(_subscription);
        assertTrue("Queue was not deleted when subscription was removed",
@@ -500,7 +473,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
     {
         _queue.registerSubscription(_subscription, false);
         Long id = new Long(26);
-        AMQMessage message = createMessage(id);
+        ServerMessage message = createMessage(id);
         _queue.enqueue(message);
         QueueEntry entry = _subscription.getQueueContext().getLastSeenEntry();
         entry.setRedelivered();
@@ -512,7 +485,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
     {
         // Create message
         Long messageId = new Long(23);
-        AMQMessage message = createMessage(messageId);
+        ServerMessage message = createMessage(messageId);
 
         // Put message on queue
         _queue.enqueue(message);
@@ -529,7 +502,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
             // Create message
             Long messageId = new Long(i);
-            AMQMessage message = createMessage(messageId);
+            ServerMessage message = createMessage(messageId);
             // Put message on queue
             _queue.enqueue(message);
         }
@@ -550,7 +523,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
             // Create message
             Long messageId = new Long(i);
-            AMQMessage message = createMessage(messageId);
+            ServerMessage message = createMessage(messageId);
             // Put message on queue
             _queue.enqueue(message);
         }
@@ -571,7 +544,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
             // Create message
             Long messageId = new Long(i);
-            AMQMessage message = createMessage(messageId);
+            ServerMessage message = createMessage(messageId);
             // Put message on queue
             _queue.enqueue(message);
         }
@@ -626,56 +599,6 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals("Message ID was wrong", msgID, 9L);
         msgID = entries.get(1).getMessage().getMessageNumber();
         assertEquals("Message ID was wrong", msgID, 10L);
-    }
-
-    public void testEnqueueDequeueOfPersistentMessageToNonDurableQueue() throws AMQException
-    {
-        // Create IncomingMessage and nondurable queue
-        final IncomingMessage msg = new IncomingMessage(info);
-        ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
-        contentHeaderBody.setProperties(new BasicContentHeaderProperties());
-        ((BasicContentHeaderProperties) contentHeaderBody.getProperties()).setDeliveryMode((byte) 2);
-        msg.setContentHeaderBody(contentHeaderBody);
-
-        final ArrayList<BaseQueue> qs = new ArrayList<BaseQueue>();
-
-        // Send persistent message
-
-        qs.add(_queue);
-        MessageMetaData metaData = msg.headersReceived(System.currentTimeMillis());
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) _virtualHost.getMessageStore();
-        StoredMessage handle = store.addMessage(metaData);
-        msg.setStoredMessage(handle);
-
-
-        ServerTransaction txn = new AutoCommitTransaction(store);
-
-        txn.enqueue(qs, msg, new ServerTransaction.Action()
-                                    {
-                                        public void postCommit()
-                                        {
-                                            msg.enqueue(qs);
-                                        }
-
-                                        public void onRollback()
-                                        {
-                                        }
-                                    });
-
-        // Check that it is enqueued
-        AMQQueue data = store.getMessages().get(1L);
-        assertNull(data);
-
-        // Dequeue message
-        MockQueueEntry entry = new MockQueueEntry();
-        AMQMessage amqmsg = new AMQMessage(handle);
-
-        entry.setMessage(amqmsg);
-        _queue.dequeue(entry,null);
-
-        // Check that it is dequeued
-        data = store.getMessages().get(1L);
-        assertNull(data);
     }
 
 
@@ -784,7 +707,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         int expectedId = 0;
         for (int i = 0; i < messageNumber - 1; i++)
         {
-            Long id = ((AMQMessage) entries.get(i).getMessage()).getMessageId();
+            Long id = ( entries.get(i).getMessage()).getMessageNumber();
             if (i == dequeueMessageIndex)
             {
                 assertFalse("Message with id " + dequeueMessageIndex
@@ -832,7 +755,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         int expectedId = 0;
         for (int i = 0; i < messageNumber - 1; i++)
         {
-            Long id = ((AMQMessage) entries.get(i).getMessage()).getMessageId();
+            Long id = (entries.get(i).getMessage()).getMessageNumber();
             if (i == dequeueMessageIndex)
             {
                 assertFalse("Message with id " + dequeueMessageIndex
@@ -874,8 +797,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertNotNull("Null is returned from getMessagesOnTheQueue", entries);
         assertEquals("Expected " + (messageNumber - 2) + " number of messages  but recieved " + entries.size(),
                 messageNumber - 2, entries.size());
-        assertEquals("Expected first entry with id 2", new Long(2),
-                ((AMQMessage) entries.get(0).getMessage()).getMessageId());
+        assertEquals("Expected first entry with id 2", 2l,
+                (entries.get(0).getMessage()).getMessageNumber());
     }
 
     /**
@@ -922,8 +845,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         int dequeueMessageIndex = 1;
 
         // create queue with overridden method deliverAsync
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("test"),
-                false, new AMQShortString("testOwner"), false, false, _virtualHost, null)
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "test",
+                false, "testOwner", false, false, _virtualHost, null)
         {
             @Override
             public void deliverAsync(Subscription sub)
@@ -993,8 +916,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
     public void testEnqueueDequeuedEntry()
     {
         // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("test"), false,
-                new AMQShortString("testOwner"), false, false, _virtualHost, new QueueEntryListFactory()
+        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "test", false,
+                "testOwner", false, false, _virtualHost, new QueueEntryListFactory()
                 {
                     public QueueEntryList createQueueEntryList(AMQQueue queue)
                     {
@@ -1014,23 +937,23 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                 {
                                     public boolean isDequeued()
                                     {
-                                        return (((AMQMessage) message).getMessageId().longValue() % 2 == 0);
+                                        return (message.getMessageNumber() % 2 == 0);
                                     }
 
                                     public boolean isDispensed()
                                     {
-                                        return (((AMQMessage) message).getMessageId().longValue() % 2 == 0);
+                                        return (message.getMessageNumber() % 2 == 0);
                                     }
 
                                     public boolean isAvailable()
                                     {
-                                        return !(((AMQMessage) message).getMessageId().longValue() % 2 == 0);
+                                        return !(message.getMessageNumber() % 2 == 0);
                                     }
 
                                     @Override
                                     public boolean acquire(Subscription sub)
                                     {
-                                        if(((AMQMessage) message).getMessageId().longValue() % 2 == 0)
+                                        if(message.getMessageNumber() % 2 == 0)
                                         {
                                             return false;
                                         }
@@ -1063,16 +986,16 @@ public class SimpleAMQQueueTest extends QpidTestCase
         // assert received messages
         List<QueueEntry> messages = subscription.getMessages();
         assertEquals("Only 2 messages should be returned", 2, messages.size());
-        assertEquals("ID of first message should be 1", new Long(1),
-                ((AMQMessage) messages.get(0).getMessage()).getMessageId());
-        assertEquals("ID of second message should be 3", new Long(3),
-                ((AMQMessage) messages.get(1).getMessage()).getMessageId());
+        assertEquals("ID of first message should be 1", 1l,
+                (messages.get(0).getMessage()).getMessageNumber());
+        assertEquals("ID of second message should be 3", 3l,
+                (messages.get(1).getMessage()).getMessageNumber());
     }
 
     public void testActiveConsumerCount() throws Exception
     {
-        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), new AMQShortString("testActiveConsumerCount"), false,
-                new AMQShortString("testOwner"), false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
+        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "testActiveConsumerCount", false,
+                "testOwner", false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
 
         //verify adding an active subscription increases the count
         final MockSubscription subscription1 = new MockSubscription();
@@ -1177,7 +1100,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals(messageNumber, entries.size());
         for (int i = 0; i < messageNumber; i++)
         {
-            assertEquals(new Long(i), ((AMQMessage)entries.get(i).getMessage()).getMessageId());
+            assertEquals((long)i, (entries.get(i).getMessage()).getMessageNumber());
         }
         return entries;
     }
@@ -1200,7 +1123,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
             // Create message
             Long messageId = new Long(i);
-            AMQMessage message = null;
+            ServerMessage message = null;
             try
             {
                 message = createMessage(messageId);
@@ -1280,55 +1203,31 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return _subscription;
     }
 
-    public FieldTable getArguments()
+    public Map<String,Object> getArguments()
     {
         return _arguments;
     }
 
-    public void setArguments(FieldTable arguments)
+    public void setArguments(Map<String,Object> arguments)
     {
         _arguments = arguments;
     }
 
-    public class TestMessage extends AMQMessage
+
+    protected ServerMessage createMessage(Long id) throws AMQException
     {
-        private final long _tag;
-        private int _count;
+        ServerMessage message = mock(ServerMessage.class);
+        when(message.getMessageNumber()).thenReturn(id);
 
-        TestMessage(long tag, long messageId, MessagePublishInfo publishBody)
-                throws AMQException
-        {
-            this(tag, messageId, publishBody, new ContentHeaderBody(1, 1, new BasicContentHeaderProperties(), 0));
+        MessageReference ref = mock(MessageReference.class);
+        when(ref.getMessage()).thenReturn(message);
 
-        }
-        TestMessage(long tag, long messageId, MessagePublishInfo publishBody, ContentHeaderBody chb)
-                throws AMQException
-        {
-            super(new MockStoredMessage(messageId, publishBody, chb));
-            _tag = tag;
-        }
+        AMQMessageHeader hdr = mock(AMQMessageHeader.class);
+        when(message.getMessageHeader()).thenReturn(hdr);
 
-        public boolean incrementReference()
-        {
-            _count++;
-            return true;
-        }
+        when(message.newReference()).thenReturn(ref);
 
-        public void decrementReference()
-        {
-            _count--;
-        }
-
-        void assertCountEquals(int expected)
-        {
-            assertEquals("Wrong count for message with tag " + _tag, expected, _count);
-        }
-    }
-
-    protected AMQMessage createMessage(Long id) throws AMQException
-    {
-        AMQMessage messageA = new TestMessage(id, id, info);
-        return messageA;
+        return message;
     }
 
     class TestSimpleQueueEntryListFactory implements QueueEntryListFactory

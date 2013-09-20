@@ -27,6 +27,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -40,20 +41,23 @@ import java.util.concurrent.ConcurrentMap;
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
     private static final Logger LOGGER = Logger.getLogger(DefaultExchangeRegistry.class);
-
     /**
      * Maps from exchange name to exchange instance
      */
     private ConcurrentMap<String, Exchange> _exchangeMap = new ConcurrentHashMap<String, Exchange>();
 
     private Exchange _defaultExchange;
-    private VirtualHost _host;
+
+    private final VirtualHost _host;
+    private final QueueRegistry _queueRegistry;
+
     private final Collection<RegistryChangeListener> _listeners =
             Collections.synchronizedCollection(new ArrayList<RegistryChangeListener>());
 
-    public DefaultExchangeRegistry(VirtualHost host)
+    public DefaultExchangeRegistry(VirtualHost host, QueueRegistry queueRegistry)
     {
         _host = host;
+        _queueRegistry = queueRegistry;
     }
 
     public void initialise(ExchangeFactory exchangeFactory) throws AMQException
@@ -61,10 +65,10 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         //create 'standard' exchanges:
         new ExchangeInitialiser().initialise(exchangeFactory, this, getDurableConfigurationStore());
 
-        _defaultExchange = new DefaultExchange();
+        _defaultExchange = new DefaultExchange(_queueRegistry);
 
         UUID defaultExchangeId =
-                UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(), _host.getName());
+                UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME, _host.getName());
 
         _defaultExchange.initialise(defaultExchangeId, _host, ExchangeDefaults.DEFAULT_EXCHANGE_NAME,false, false);
 
@@ -77,7 +81,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void registerExchange(Exchange exchange) throws AMQException
     {
-        _exchangeMap.put(exchange.getNameShortString().toString(), exchange);
+        _exchangeMap.put(exchange.getName(), exchange);
         synchronized (_listeners)
         {
             for(RegistryChangeListener listener : _listeners)
@@ -197,7 +201,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public boolean isReservedExchangeName(String name)
     {
-        if (name == null || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString().equals(name)
+        if (name == null || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equals(name)
                 || name.startsWith("amq.") || name.startsWith("qpid."))
         {
             return true;
@@ -205,7 +209,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         Collection<ExchangeType<? extends Exchange>> registeredTypes = _host.getExchangeTypes();
         for (ExchangeType<? extends Exchange> type : registeredTypes)
         {
-            if (type.getDefaultExchangeName().toString().equals(name))
+            if (type.getDefaultExchangeName().equals(name))
             {
                 return true;
             }

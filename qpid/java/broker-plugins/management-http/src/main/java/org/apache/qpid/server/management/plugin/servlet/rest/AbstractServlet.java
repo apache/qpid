@@ -21,6 +21,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -40,6 +41,10 @@ import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
 public abstract class AbstractServlet extends HttpServlet
 {
@@ -219,14 +224,7 @@ public abstract class AbstractServlet extends HttpServlet
         }
         finally
         {
-            try
-            {
-                SecurityManager.setThreadSubject(null);
-            }
-            finally
-            {
-                AMQShortString.clearLocalCache();
-            }
+            SecurityManager.setThreadSubject(null);
         }
     }
 
@@ -260,5 +258,21 @@ public abstract class AbstractServlet extends HttpServlet
         {
             throw new RuntimeException("Failed to send error response code " + errorCode, e);
         }
+    }
+
+    protected void sendJsonResponse(Object object, HttpServletResponse response) throws IOException,
+            JsonGenerationException, JsonMappingException
+    {
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        response.setHeader("Cache-Control","no-cache");
+        response.setHeader("Pragma","no-cache");
+        response.setDateHeader ("Expires", 0);
+        response.setContentType("application/json");
+
+        final PrintWriter writer = response.getWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        mapper.writeValue(writer, object);
     }
 }

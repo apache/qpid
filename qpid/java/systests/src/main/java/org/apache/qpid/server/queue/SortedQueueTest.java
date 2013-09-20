@@ -336,7 +336,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
     private Queue createQueue() throws AMQException, JMSException
     {
         final Map<String, Object> arguments = new HashMap<String, Object>();
-        arguments.put(AMQQueueFactory.QPID_QUEUE_SORT_KEY, TEST_SORT_KEY);
+        arguments.put(QueueArgumentsConverter.QPID_QUEUE_SORT_KEY, TEST_SORT_KEY);
         ((AMQSession<?,?>) _producerSession).createQueue(new AMQShortString(getTestQueueName()), false, true, false, arguments);
         final Queue queue = new AMQQueue("amq.direct", getTestQueueName());
         ((AMQSession<?,?>) _producerSession).declareAndBind((AMQDestination) queue);

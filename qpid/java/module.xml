@@ -74,6 +74,7 @@
   <property name="module.genpom.args"  value=""/>
   <property name="module.maven.depends"  value=""/>
   <property name="maven.remote.repo"     value="file://${module.release.base}/maven"/>
+  <property name="eclipse.project.suffix" value=""/>
 
   <property name="broker.log.prefix" value="BROKER: "/> 
   <property name="broker.log.interleave" value="true"/>
@@ -521,8 +522,13 @@
     </jar>
   </target>
 
-  <target name="copy-broker-plugin-jars" if="broker.plugin" description="copy broker plugins for use in release packaging">
+  <target name="copy-broker-plugin-jars" depends="copy-broker-plugin-jars-deps" if="broker.plugin" description="copy broker plugins for use in release packaging">
     <copy file="${module.jar}" todir="${build.scratch.broker.plugins.lib}" failonerror="true"/>
+  </target>
+
+  <!-- Overridden in broker-plugins/amqp-1-0-protocol, bdbstore, and bdbstore/jmx modules -->
+  <target name="copy-broker-plugin-jars-deps" if="broker.plugin" description="copy broker plugins dependencies for use in release packaging">
+    <copylist todir="${build.scratch.broker.plugins.lib}" dir="${project.root}" files="${module.libs}"/>
   </target>
 
   <target name="copy-files-to-module-metainf" depends="copy-project-resources-metainf, copy-module-resources-metainf, copy-module-src-resources-metainf"/>
@@ -909,7 +915,7 @@ qpid.name=${project.name}
         <map from="${project.root}${file.separator}" to=''/>
       </pathconvert>
       <map property="eclipse.required.slashedprojectnames" value="${eclipse.required.projectnames}" join="${path.separator}">
-        <globmapper from="*" to="/*"/>
+        <globmapper from="*" to="/*${eclipse.project.suffix}"/>
       </map>
 
       <echo message="Ant module dependencies : ${module.depends} ${module.test.depends} converted to Eclipse required project(s): ${eclipse.required.slashedprojectnames}"/>
@@ -921,7 +927,7 @@ qpid.name=${project.name}
     <!-- Create the Eclipse .project -->
     <target name="eclipse-project">
       <eclipse updatealways="${eclipse.updatealways}">
-        <project name="${module.name}"/>
+        <project name="${module.name}${eclipse.project.suffix}"/>
 
         <!-- If the Eclipse task were to ever support the generation of
              linked resources, we would configure it to generate

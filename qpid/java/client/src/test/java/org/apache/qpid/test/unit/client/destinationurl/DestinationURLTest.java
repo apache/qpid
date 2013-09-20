@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.RejectBehaviour;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 
@@ -138,7 +139,7 @@ public class DestinationURLTest extends TestCase
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        assertTrue(dest.getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS));
+        assertTrue(dest.getExchangeClass().equals(AMQShortString.valueOf(ExchangeDefaults.DIRECT_EXCHANGE_CLASS)));
         assertTrue(dest.getExchangeName().equalsCharSequence(""));
         assertTrue(dest.getDestinationName().equalsCharSequence(""));
         assertTrue(dest.getQueueName().equalsCharSequence("IBMPerfQueue1"));
@@ -179,18 +180,6 @@ public class DestinationURLTest extends TestCase
         }
 
         assertTrue("Failed to throw an URISyntaxException when both the bindingkey and routingkey is specified",exceptionThrown);
-    }
-    
-    public void testDestinationWithDurableTopic() throws URISyntaxException
-    {
-
-        String url = "topic://amq.topic//testTopicD?durable='true'&autodelete='true'&clientid='test'&subscription='testQueueD'";
-
-        AMQBindingURL dest = new AMQBindingURL(url);
-
-        assertTrue(dest.getExchangeClass().equalsCharSequence("topic"));
-        assertTrue(dest.getExchangeName().equalsCharSequence("amq.topic"));
-        assertTrue(dest.getQueueName().equalsCharSequence("test:testQueueD"));
     }
 
     public void testExchangeOptionsNotPresent() throws URISyntaxException
@@ -372,6 +361,46 @@ public class DestinationURLTest extends TestCase
 
         AMQDestination dest = new MyTestAMQDestination(burl);
         assertNull("Reject behaviour is unexpected", dest.getRejectBehaviour());
+    }
+
+    public void testBindingUrlWithoutDestinationAndQueueName() throws Exception
+    {
+        AMQBindingURL bindingURL = new AMQBindingURL("topic://amq.topic//?routingkey='testTopic'");
+        assertEquals("Unexpected queue name", AMQShortString.EMPTY_STRING, bindingURL.getQueueName());
+        assertEquals("Unexpected destination", AMQShortString.EMPTY_STRING, bindingURL.getDestinationName());
+        assertEquals("Unexpected routing key", AMQShortString.valueOf("testTopic"), bindingURL.getRoutingKey());
+    }
+
+    public void testBindingUrlWithoutDestinationAndMissedQueueName() throws Exception
+    {
+        AMQBindingURL bindingURL = new AMQBindingURL("topic://amq.topic/?routingkey='testTopic'");
+        assertEquals("Unexpected queue name", AMQShortString.EMPTY_STRING, bindingURL.getQueueName());
+        assertEquals("Unexpected destination", AMQShortString.EMPTY_STRING, bindingURL.getDestinationName());
+        assertEquals("Unexpected routing key", AMQShortString.valueOf("testTopic"), bindingURL.getRoutingKey());
+    }
+
+    public void testBindingUrlWithoutQueueName() throws Exception
+    {
+        AMQBindingURL bindingURL = new AMQBindingURL("topic://amq.topic/destination/?routingkey='testTopic'");
+        assertEquals("Unexpected queue name", AMQShortString.EMPTY_STRING, bindingURL.getQueueName());
+        assertEquals("Unexpected destination", AMQShortString.valueOf("destination"), bindingURL.getDestinationName());
+        assertEquals("Unexpected routing key", AMQShortString.valueOf("testTopic"), bindingURL.getRoutingKey());
+    }
+
+    public void testBindingUrlWithQueueNameWithoutDestination() throws Exception
+    {
+        AMQBindingURL bindingURL = new AMQBindingURL("topic://amq.topic//queueName?routingkey='testTopic'");
+        assertEquals("Unexpected queue name", AMQShortString.valueOf("queueName"), bindingURL.getQueueName());
+        assertEquals("Unexpected destination", AMQShortString.EMPTY_STRING, bindingURL.getDestinationName());
+        assertEquals("Unexpected routing key", AMQShortString.valueOf("testTopic"), bindingURL.getRoutingKey());
+    }
+
+    public void testBindingUrlWithQueueNameAndDestination() throws Exception
+    {
+        AMQBindingURL bindingURL = new AMQBindingURL("topic://amq.topic/destination/queueName?routingkey='testTopic'");
+        assertEquals("Unexpected queue name", AMQShortString.valueOf("queueName"), bindingURL.getQueueName());
+        assertEquals("Unexpected destination", AMQShortString.valueOf("destination"), bindingURL.getDestinationName());
+        assertEquals("Unexpected routing key", AMQShortString.valueOf("testTopic"), bindingURL.getRoutingKey());
     }
 
     public static junit.framework.Test suite()

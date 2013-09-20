@@ -19,11 +19,17 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.Collections;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.Arrays;
+
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SortedQueueEntryListTest extends QueueEntryListTestBase
 {
@@ -113,7 +119,18 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     private ServerMessage generateTestMessage(final long id, final String keyValue) throws AMQException
     {
-        return new AMQMessage(new MockStoredMessage(id, "KEY", keyValue));
+        final ServerMessage message = mock(ServerMessage.class);
+        AMQMessageHeader hdr = mock(AMQMessageHeader.class);
+        when(message.getMessageHeader()).thenReturn(hdr);
+        when(hdr.getHeader(eq("KEY"))).thenReturn(keyValue);
+        when(hdr.containsHeader(eq("KEY"))).thenReturn(true);
+        when(hdr.getHeaderNames()).thenReturn(Collections.singleton("KEY"));
+        MessageReference ref = mock(MessageReference.class);
+        when(ref.getMessage()).thenReturn(message);
+        when(message.newReference()).thenReturn(ref);
+        when(message.getMessageNumber()).thenReturn(id);
+
+        return message;
     }
 
     public void testIterator()
@@ -132,12 +149,12 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     private Object getSortedKeyValue(QueueEntryIterator<?> iter)
     {
-        return ((SortedQueueEntryImpl) iter.getNode()).getMessage().getMessageHeader().getHeader("KEY");
+        return (iter.getNode()).getMessage().getMessageHeader().getHeader("KEY");
     }
 
     private Long getMessageId(QueueEntryIterator<?> iter)
     {
-        return ((SortedQueueEntryImpl) iter.getNode()).getMessage().getMessageNumber();
+        return (iter.getNode()).getMessage().getMessageNumber();
     }
 
     public void testNonUniqueSortKeys() throws Exception

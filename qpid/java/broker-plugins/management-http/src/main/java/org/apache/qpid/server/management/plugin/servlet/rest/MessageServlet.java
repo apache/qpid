@@ -80,6 +80,7 @@ public class MessageServlet extends AbstractServlet
         response.setHeader("Cache-Control","no-cache");
         response.setHeader("Pragma","no-cache");
         response.setDateHeader ("Expires", 0);
+        response.setContentType("application/json");
 
         final PrintWriter writer = response.getWriter();
         ObjectMapper mapper = new ObjectMapper();
@@ -352,18 +353,30 @@ public class MessageServlet extends AbstractServlet
         if(messageHeader != null)
         {
             addIfPresent(object, "messageId", messageHeader.getMessageId());
-            addIfPresent(object, "expirationTime", messageHeader.getExpiration());
+            addIfPresentAndNotZero(object, "expirationTime", messageHeader.getExpiration());
             addIfPresent(object, "applicationId", messageHeader.getAppId());
             addIfPresent(object, "correlationId", messageHeader.getCorrelationId());
             addIfPresent(object, "encoding", messageHeader.getEncoding());
             addIfPresent(object, "mimeType", messageHeader.getMimeType());
             addIfPresent(object, "priority", messageHeader.getPriority());
             addIfPresent(object, "replyTo", messageHeader.getReplyTo());
-            addIfPresent(object, "timestamp", messageHeader.getTimestamp());
+            addIfPresentAndNotZero(object, "timestamp", messageHeader.getTimestamp());
             addIfPresent(object, "type", messageHeader.getType());
             addIfPresent(object, "userId", messageHeader.getUserId());
         }
 
+    }
+
+    private void addIfPresentAndNotZero(Map<String, Object> object, String name, Object property)
+    {
+        if(property instanceof Number)
+        {
+            Number value = (Number)property;
+            if (value.longValue() != 0)
+            {
+                object.put(name, property);
+            }
+        }
     }
 
     private void addIfPresent(Map<String, Object> object, String name, Object property)

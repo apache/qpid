@@ -50,8 +50,8 @@ public class SimpleAMQQueueThreadPoolTest extends QpidTestCase
 
         try
         {
-            SimpleAMQQueue queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "test", false,
-                                                                                       "owner", false, false, test, null);
+            SimpleAMQQueue queue = (SimpleAMQQueue)
+                    test.createQueue(UUIDGenerator.generateRandomUUID(), "test", false, "owner", false, false, false, null);
 
             assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
 

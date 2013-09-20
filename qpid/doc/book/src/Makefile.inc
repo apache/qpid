@@ -17,7 +17,7 @@
 # under the License.
 #
 
-BOOK=$(wildcard *Book.xml Programming-In-Apache-Qpid.xml)
+BOOK=$(wildcard *Book.xml Programming-In-Apache-Qpid.xml JMS-Performance-Test-Framework.xml)
 XML=$(wildcard *.xml) $(wildcard ../common/*.xml)
 IMAGES=$(wildcard images/*.png) 
 CSS=$(wilcard ../common/css/*.css)

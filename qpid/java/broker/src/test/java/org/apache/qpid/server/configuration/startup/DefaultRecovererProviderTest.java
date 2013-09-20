@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -55,7 +56,9 @@ public class DefaultRecovererProviderTest extends TestCase
         RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
         TaskExecutor taskExecutor = mock(TaskExecutor.class);
 
-        DefaultRecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry, logRecorder, rootMessageLogger, taskExecutor, mock(BrokerOptions.class));
+        DefaultRecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry,
+                logRecorder, rootMessageLogger, taskExecutor, mock(BrokerOptions.class),
+                mock(StoreConfigurationChangeListener.class));
         for (String configuredObjectType : supportedTypes)
         {
             ConfiguredObjectRecoverer<?> recovever = provider.getRecoverer(configuredObjectType);

@@ -63,9 +63,8 @@ if [ $RETVAL = 4 ]; then
 fi
 
 start() {
-        [[ $QPID_DATA_DIR ]] || QPID_DATA_DIR=/var/lib/qpidd
         echo -n $"Starting Qpid AMQP daemon: "
-	daemon --pidfile $pidfile --check $prog --user qpidd @sbindir@/$prog --data-dir $QPID_DATA_DIR --daemon $QPIDD_OPTIONS
+	daemon --pidfile $pidfile --check $prog --user qpidd @sbindir@/$prog ${QPID_DATA_DIR:+--data-dir $QPID_DATA_DIR} --daemon $QPIDD_OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch $lockfile

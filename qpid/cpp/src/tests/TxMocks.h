@@ -103,6 +103,9 @@ public:
         if(!debugName.empty()) std::cout << std::endl << "MockTxOp[" << debugName << "]::rollback()" << std::endl;
         actual.push_back(ROLLBACK);
     }
+
+    void callObserver(const boost::shared_ptr<TransactionObserver>&) {}
+
     MockTxOp& expectPrepare(){
         expected.push_back(PREPARE);
         return *this;

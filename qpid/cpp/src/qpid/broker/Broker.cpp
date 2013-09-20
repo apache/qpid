@@ -38,6 +38,7 @@
 #include "qpid/broker/PersistableObject.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/QueueSettings.h"
+#include "qpid/broker/TransactionObserver.h"
 #include "qpid/broker/MessageGroupManager.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
@@ -139,7 +140,7 @@ Broker::Options::Options(const std::string& name) :
     requireEncrypted(false),
     knownHosts(knownHostsNone),
     qmf2Support(true),
-    qmf1Support(true),
+    qmf1Support(false),
     queueFlowStopRatio(80),
     queueFlowResumeRatio(70),
     queueThresholdEventRatio(80),
@@ -399,7 +400,7 @@ boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
     return boost::intrusive_ptr<Broker>(new Broker(opts));
 }
 
-void Broker::setStore (boost::shared_ptr<MessageStore>& _store)
+void Broker::setStore (const boost::shared_ptr<MessageStore>& _store)
 {
     store.reset(new MessageStoreModule (_store));
     setStore();
@@ -442,6 +443,8 @@ void Broker::shutdown() {
 }
 
 Broker::~Broker() {
+    if (mgmtObject != 0)
+        mgmtObject->debugStats("destroying");
     shutdown();
     finalize();                 // Finalize any plugins.
     if (config.auth)
@@ -1446,7 +1449,7 @@ void Broker::bind(const std::string& queueName,
         throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
     } else {
         if (queue->bind(exchange, key, arguments)) {
-            getConfigurationObservers().bind(exchange, queue, key, arguments);
+            getBrokerObservers().bind(exchange, queue, key, arguments);
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventBind(connectionId, userId, exchangeName,
                                                   queueName, key, ManagementAgent::toMap(arguments)));
@@ -1488,7 +1491,7 @@ void Broker::unbind(const std::string& queueName,
             if (exchange->isDurable() && queue->isDurable()) {
                 store->unbind(*exchange, *queue, key, qpid::framing::FieldTable());
             }
-            getConfigurationObservers().unbind(
+            getBrokerObservers().unbind(
                 exchange, queue, key, framing::FieldTable());
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventUnbind(connectionId, userId, exchangeName, queueName, key));

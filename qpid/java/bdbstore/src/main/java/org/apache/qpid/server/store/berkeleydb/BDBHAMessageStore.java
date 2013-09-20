@@ -122,14 +122,14 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     private Map<String, String> _repConfig;
 
     @Override
-    public void configure(String name, VirtualHost virtualHost) throws Exception
+    public void configure(VirtualHost virtualHost) throws Exception
     {
         //Mandatory configuration
         _groupName = getValidatedStringAttribute(virtualHost, "haGroupName");
         _nodeName = getValidatedStringAttribute(virtualHost, "haNodeName");
         _nodeHostPort = getValidatedStringAttribute(virtualHost, "haNodeAddress");
         _helperHostPort = getValidatedStringAttribute(virtualHost, "haHelperAddress");
-        _name = name;
+        _name = virtualHost.getName();
 
         //Optional configuration
         String durabilitySetting = getStringAttribute(virtualHost,"haDurability",null);
@@ -157,7 +157,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        super.configure(name, virtualHost);
+        super.configure(virtualHost);
     }
 
 
@@ -260,10 +260,10 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     }
 
     @Override
-    public void configureMessageStore(String name, MessageStoreRecoveryHandler messageRecoveryHandler,
+    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
                                       TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
     {
-        super.configureMessageStore(name, messageRecoveryHandler, tlogRecoveryHandler);
+        super.configureMessageStore(virtualHost, messageRecoveryHandler, tlogRecoveryHandler);
 
         final ReplicatedEnvironment replicatedEnvironment = getReplicatedEnvironment();
 

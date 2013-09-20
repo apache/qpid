@@ -23,7 +23,7 @@
 <!ENTITY qpidProgrammingBook "../../Programming-In-Apache-Qpid/html/">
 <!ENTITY qpidCppBook "../../AMQP-Messaging-Broker-CPP-Book/html/">
 
-<!ENTITY qpidCurrentRelease "0.23">
+<!ENTITY qpidCurrentRelease "0.25">
 
 <!ENTITY windowsBrokerDownloadFileName "qpid-java-broker-&qpidCurrentRelease;.zip">
 <!ENTITY windowsExtractedBrokerDirName "qpid-broker-&qpidCurrentRelease;">
@@ -40,5 +40,5 @@
 <!ENTITY oracleBdbProductOverviewUrl "http://www.oracle.com/technetwork/products/berkeleydb/overview/index-093405.html">
 <!ENTITY oracleBdbRepGuideUrl "http://oracle.com/cd/E17277_02/html/ReplicationGuide/">
 <!ENTITY oracleBdbJavaDocUrl "http://docs.oracle.com/cd/E17277_02/html/java/">
-<!ENTITY oracleBdbProductVersion "5.0.73">
+<!ENTITY oracleBdbProductVersion "5.0.84">
 

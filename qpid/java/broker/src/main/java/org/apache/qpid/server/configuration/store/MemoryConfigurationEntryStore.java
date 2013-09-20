@@ -180,7 +180,12 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         return _entries.get(id);
     }
 
-    @Override
+    /**
+     * Copies the store into the given location
+     *
+     * @param target location to copy store into
+     * @throws IllegalConfigurationException if store cannot be copied into given location
+     */
     public void copyTo(String copyLocation)
     {
         File file = new File(copyLocation);
@@ -286,7 +291,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                         + " can not be loaded by store of version " + STORE_VERSION);
             }
 
-            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
+            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries, null);
             _rootId = brokerEntry.getId();
         }
         catch (IOException e)
@@ -365,7 +370,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             byte[] bytes = json.getBytes("UTF-8");
             bais = new ByteArrayInputStream(bytes);
             JsonNode node = loadJsonNodes(bais, _objectMapper);
-            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
+            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries, null);
             _rootId = brokerEntry.getId();
         }
         catch(Exception e)
@@ -485,7 +490,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         return root;
     }
 
-    private ConfigurationEntry toEntry(JsonNode parent, Class<? extends ConfiguredObject> expectedConfiguredObjectClass, Map<UUID, ConfigurationEntry> entries)
+    private ConfigurationEntry toEntry(JsonNode parent, Class<? extends ConfiguredObject> expectedConfiguredObjectClass, Map<UUID, ConfigurationEntry> entries, Class<? extends ConfiguredObject> parentClass)
     {
         Map<String, Object> attributes = null;
         Set<UUID> childrenIds = new TreeSet<UUID>();
@@ -515,8 +520,22 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                     if (element.isObject())
                     {
                         Class<? extends ConfiguredObject> expectedChildConfiguredObjectClass = _relationshipClasses.get(fieldName);
+                        if (expectedChildConfiguredObjectClass == null && expectedConfiguredObjectClass != null)
+                        {
+                            Collection<Class<? extends ConfiguredObject>> childTypes = Model.getInstance().getChildTypes(expectedConfiguredObjectClass);
+                            for (Class<? extends ConfiguredObject> childType : childTypes)
+                            {
+                                String relationship = childType.getSimpleName().toLowerCase();
+                                relationship += relationship.endsWith("s") ? "es": "s";
+                                if (fieldName.equals(relationship))
+                                {
+                                    expectedChildConfiguredObjectClass = childType;
+                                    break;
+                                }
+                            }
+                        }
                         // assuming it is a child node
-                        ConfigurationEntry entry = toEntry(element, expectedChildConfiguredObjectClass, entries);
+                        ConfigurationEntry entry = toEntry(element, expectedChildConfiguredObjectClass, entries, expectedConfiguredObjectClass);
                         childrenIds.add(entry.getId());
                     }
                     else
@@ -531,6 +550,10 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                 if (fieldValues != null)
                 {
                     Object[] array = fieldValues.toArray(new Object[fieldValues.size()]);
+                    if (attributes == null)
+                    {
+                        attributes = new HashMap<String, Object>();
+                    }
                     attributes.put(fieldName, array);
                 }
             }

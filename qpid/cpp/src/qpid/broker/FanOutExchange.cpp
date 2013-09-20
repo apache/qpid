@@ -117,6 +117,9 @@ bool FanOutExchange::isBound(Queue::shared_ptr queue, const string* const, const
 }
 
 
-FanOutExchange::~FanOutExchange() {}
+FanOutExchange::~FanOutExchange() {
+    if (mgmtExchange != 0)
+        mgmtExchange->debugStats("destroying");
+}
 
 const std::string FanOutExchange::typeName("fanout");

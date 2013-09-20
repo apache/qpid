@@ -20,33 +20,31 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.List;
 import junit.framework.Assert;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TopicExchangeTest extends QpidTestCase
 {
 
     private TopicExchange _exchange;
     private VirtualHost _vhost;
-    private MessageStore _store;
 
 
     @Override
@@ -56,7 +54,6 @@ public class TopicExchangeTest extends QpidTestCase
         BrokerTestHelper.setUp();
         _exchange = new TopicExchange();
         _vhost = BrokerTestHelper.createVirtualHost(getName());
-        _store = new MemoryMessageStore();
     }
 
     @Override
@@ -78,37 +75,33 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testNoRoute() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a*#b", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a*#b", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b",queue, _exchange, null));
 
 
-        IncomingMessage message = createMessage("a.b");
-        routeMessage(message);
+        routeMessage("a.b", 0l);
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
 
     public void testDirectMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "ab", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "ab", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b",queue, _exchange, null));
 
 
-        IncomingMessage message = createMessage("a.b");
-
-        routeMessage(message);
+        routeMessage("a.b",0l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
-
-        message = createMessage("a.c");
-
-        int queueCount = routeMessage(message);
+        int queueCount = routeMessage("a.c",1l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
@@ -117,38 +110,30 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testStarMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a*", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a*", false, null, false, false, false, null);
         _exchange.registerQueue(new Binding(null, "a.*",queue, _exchange, null));
 
 
-        IncomingMessage message = createMessage("a.b");
-
-        routeMessage(message);
+        routeMessage("a.b",0l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
-        message = createMessage("a.c");
-
-        int queueCount = routeMessage(message);
+        routeMessage("a.c",1l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
-
-        message = createMessage("a");
-
-
-        queueCount = routeMessage(message);
+        int queueCount = routeMessage("a",2l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
@@ -156,61 +141,49 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, false, null);
         _exchange.registerQueue(new Binding(null, "a.#",queue, _exchange, null));
 
 
-        IncomingMessage message = createMessage("a.b.c");
-
-        int queueCount = routeMessage(message);
+        routeMessage("a.b.c",0l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+
+        queue.deleteMessageFromTop();
+        Assert.assertEquals(0, queue.getMessageCount());
+
+        routeMessage("a.b",1l);
+
+        Assert.assertEquals(1, queue.getMessageCount());
+
+        Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
-        message = createMessage("a.b");
-
-        queueCount = routeMessage(message);
+        routeMessage("a.c",2l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 2l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+
+        queue.deleteMessageFromTop();
+        Assert.assertEquals(0, queue.getMessageCount());
+
+        routeMessage("a",3l);
+
+        Assert.assertEquals(1, queue.getMessageCount());
+
+        Assert.assertEquals("Wrong message received", 3l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
-        message = createMessage("a.c");
-
-        queueCount = routeMessage(message);
-
-        Assert.assertEquals(1, queue.getMessageCount());
-
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
-
-        queue.deleteMessageFromTop();
-        Assert.assertEquals(0, queue.getMessageCount());
-
-        message = createMessage("a");
-
-        queueCount = routeMessage(message);
-
-        Assert.assertEquals(1, queue.getMessageCount());
-
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
-
-        queue.deleteMessageFromTop();
-        Assert.assertEquals(0, queue.getMessageCount());
-
-
-        message = createMessage("b");
-
-
-        queueCount = routeMessage(message);
+        int queueCount = routeMessage("b", 4l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
@@ -219,28 +192,24 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMidHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b",queue, _exchange, null));
 
-
-        IncomingMessage message = createMessage("a.c.d.b");
-
-        routeMessage(message);
+        routeMessage("a.c.d.b",0l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
-        message = createMessage("a.c.b");
-
-        routeMessage(message);
+        routeMessage("a.c.b",1l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
@@ -249,43 +218,36 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMatchafterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b.c",queue, _exchange, null));
 
 
-        IncomingMessage message = createMessage("a.c.b.b");
-
-        int queueCount = routeMessage(message);
+        int queueCount = routeMessage("a.c.b.b",0l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
 
-        message = createMessage("a.a.b.c");
-
-        routeMessage(message);
+        routeMessage("a.a.b.c",1l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
-        message = createMessage("a.b.c.b");
-
-        queueCount = routeMessage(message);
+        queueCount = routeMessage("a.b.c.b",2l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
-        message = createMessage("a.b.c.b.c");
-
-        routeMessage(message);
+        routeMessage("a.b.c.b.c",3l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 3l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
@@ -295,25 +257,20 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashAfterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b.c.#.d",queue, _exchange, null));
 
-
-        IncomingMessage message = createMessage("a.c.b.b.c");
-
-        int queueCount = routeMessage(message);
+        int queueCount = routeMessage("a.c.b.b.c",0l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
-
-        message = createMessage("a.a.b.c.d");
-
-        routeMessage(message);
+        routeMessage("a.a.b.c.d",1l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
@@ -322,24 +279,20 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.#.*.#.d",queue, _exchange, null));
 
-
-        IncomingMessage message = createMessage("a.c.b.b.c");
-
-        int queueCount = routeMessage(message);
+        int queueCount = routeMessage("a.c.b.b.c",0l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
-        message = createMessage("a.a.b.c.d");
-
-        routeMessage(message);
+        routeMessage("a.a.b.c.d",1l);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
         queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
@@ -348,43 +301,43 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testSubMatchFails() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b.c.d",queue, _exchange, null));
 
-
-        IncomingMessage message = createMessage("a.b.c");
-
-        int queueCount = routeMessage(message);
+        int queueCount = routeMessage("a.b.c",0l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
 
-    private int routeMessage(final IncomingMessage message)
-            throws AMQException
+    private int routeMessage(String routingKey, long messageNumber) throws AMQException
     {
-        MessageMetaData mmd = message.headersReceived(System.currentTimeMillis());
-        message.setStoredMessage(_store.addMessage(mmd));
-
-        message.enqueue(_exchange.route(message));
-        AMQMessage msg = new AMQMessage(message.getStoredMessage());
-        for(BaseQueue q : message.getDestinationQueues())
+        InboundMessage inboundMessage = mock(InboundMessage.class);
+        when(inboundMessage.getRoutingKey()).thenReturn(routingKey);
+        List<? extends BaseQueue> queues = _exchange.route(inboundMessage);
+        ServerMessage message = mock(ServerMessage.class);
+        MessageReference ref = mock(MessageReference.class);
+        when(ref.getMessage()).thenReturn(message);
+        when(message.newReference()).thenReturn(ref);
+        when(message.getMessageNumber()).thenReturn(messageNumber);
+        for(BaseQueue q : queues)
         {
-            q.enqueue(msg);
+            q.enqueue(message);
         }
-        return message.getDestinationQueues().size();
+
+        return queues.size();
     }
 
     public void testMoreRouting() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b",queue, _exchange, null));
 
 
-        IncomingMessage message = createMessage("a.b.c");
-
-        int queueCount = routeMessage(message);
+        int queueCount = routeMessage("a.b.c",0l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
@@ -393,66 +346,16 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMoreQueue() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false, _vhost, null);
+        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+                false, null);
         _exchange.registerQueue(new Binding(null, "a.b",queue, _exchange, null));
 
 
-        IncomingMessage message = createMessage("a");
-
-        int queueCount = routeMessage(message);
+        int queueCount = routeMessage("a",0l);
         Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
 
-    private IncomingMessage createMessage(String s) throws AMQException
-    {
-        MessagePublishInfo info = new PublishInfo(new AMQShortString(s));
-
-        IncomingMessage message = new IncomingMessage(info);
-        final ContentHeaderBody chb = new ContentHeaderBody();
-        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
-        chb.setProperties(props);
-        message.setContentHeaderBody(chb);
-
-
-        return message;
-    }
-
-
-    class PublishInfo implements MessagePublishInfo
-    {
-        private AMQShortString _routingkey;
-
-        PublishInfo(AMQShortString routingkey)
-        {
-            _routingkey = routingkey;
-        }
-
-        public AMQShortString getExchange()
-        {
-            return null;
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-
-        }
-
-        public boolean isImmediate()
-        {
-            return false;
-        }
-
-        public boolean isMandatory()
-        {
-            return true;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return _routingkey;
-        }
-    }
 }

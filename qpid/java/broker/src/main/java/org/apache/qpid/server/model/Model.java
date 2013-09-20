@@ -70,6 +70,7 @@ public class Model
         addRelationship(VirtualHost.class, VirtualHostAlias.class);
 
         addRelationship(AuthenticationProvider.class, User.class);
+        addRelationship(AuthenticationProvider.class, PreferencesProvider.class);
         addRelationship(User.class, GroupMember.class);
 
         addRelationship(GroupProvider.class, Group.class);
@@ -77,11 +78,11 @@ public class Model
 
         addRelationship(Connection.class, Session.class);
 
-        addRelationship(Exchange.class, Binding.class);
-        addRelationship(Exchange.class, Publisher.class);
-
         addRelationship(Queue.class, Binding.class);
         addRelationship(Queue.class, Consumer.class);
+
+        addRelationship(Exchange.class, Binding.class);
+        addRelationship(Exchange.class, Publisher.class);
 
         addRelationship(Session.class, Consumer.class);
         addRelationship(Session.class, Publisher.class);

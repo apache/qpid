@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 import java.util.List;
@@ -45,7 +45,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     private void setUpNow() throws Exception
     {
         super.setUp();
-        AMQChannel channel = BrokerTestHelper.createChannel(1, getSession());
+        AMQSessionModel channel = BrokerTestHelper.createSession(1, getConnection());
 
         setAmqpActor(new AMQPChannelActor(channel, getRootLogger()));
     }

@@ -41,6 +41,8 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 public class HelperServlet extends AbstractServlet
 {
+    private static final long serialVersionUID = 1L;
+
     private static final String PARAM_ACTION = "action";
 
     private Map<String, Action> _actions;
@@ -55,6 +57,8 @@ public class HelperServlet extends AbstractServlet
                 new ListAuthenticationProviderAttributes(),
                 new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, "ListMessageStoreTypes"),
                 new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_TYPES, "ListVirtualHostTypes"),
+                new ListBrokerAttribute(Broker.SUPPORTED_PREFERENCES_PROVIDERS_TYPES, "ListPreferencesProvidersTypes"),
+                new ListBrokerAttribute(Broker.PRODUCT_VERSION, "version"),
                 new ListGroupProviderAttributes(),
                 new ListAccessControlProviderAttributes(),
                 new PluginClassProviderAction()

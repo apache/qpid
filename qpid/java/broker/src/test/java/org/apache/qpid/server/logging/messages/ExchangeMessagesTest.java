@@ -34,8 +34,8 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     {
         Exchange exchange = BrokerTestHelper.createExchange("test");
 
-        String type = exchange.getTypeShortString().toString();
-        String name = exchange.getNameShortString().toString();
+        String type = exchange.getTypeName();
+        String name = exchange.getName();
 
         _logMessage = ExchangeMessages.CREATED(type, name, false);
         List<Object> log = performLog();
@@ -49,8 +49,8 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     {
         Exchange exchange = BrokerTestHelper.createExchange("test");
 
-        String type = exchange.getTypeShortString().toString();
-        String name = exchange.getNameShortString().toString();
+        String type = exchange.getTypeName();
+        String name = exchange.getName();
 
         _logMessage = ExchangeMessages.CREATED(type, name, true);
         List<Object> log = performLog();
@@ -74,7 +74,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     {
         Exchange exchange = BrokerTestHelper.createExchange("test");
 
-        final String name = exchange.getNameShortString().toString();
+        final String name = exchange.getName();
         final String routingKey = "routingKey";
 
         _logMessage = ExchangeMessages.DISCARDMSG(name, routingKey);

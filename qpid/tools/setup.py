@@ -20,14 +20,12 @@
 from distutils.core import setup
 
 setup(name="qpid-tools",
-      version="0.23",
+      version="0.25",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       package_dir={'' : 'src/py'},
       packages=["qpidtoollibs"],
-      scripts=["src/py/qpid-cluster",
-               "src/py/qpid-cluster-store",
-               "src/py/qpid-config",
+      scripts=["src/py/qpid-config",
                "src/py/qpid-ha",
                "src/py/qpid-printevents",
                "src/py/qpid-queue-stats",

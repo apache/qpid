@@ -21,7 +21,6 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
@@ -29,7 +28,7 @@ import org.apache.qpid.server.subscription.Subscription;
 public class MockQueueEntry implements QueueEntry
 {
 
-    private AMQMessage _message;
+    private ServerMessage _message;
 
     public boolean acquire()
     {
@@ -209,7 +208,7 @@ public class MockQueueEntry implements QueueEntry
         return 0;
     }
 
-    public void setMessage(AMQMessage msg)
+    public void setMessage(ServerMessage msg)
     {
         _message = msg;
     }

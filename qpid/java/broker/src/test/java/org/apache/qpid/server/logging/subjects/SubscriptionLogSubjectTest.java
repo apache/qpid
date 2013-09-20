@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.flow.LimitlessCreditManager;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionFactory;
-import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Validate SubscriptionLogSubjects are logged as expected
@@ -38,9 +35,9 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
 {
 
+    private static final long SUBSCRIPTION_ID = 1;
     private AMQQueue _queue;
     private VirtualHost _testVhost;
-    private int _channelID = 1;
     private Subscription _subscription;
 
     @Override
@@ -48,23 +45,14 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        InternalTestProtocolSession session = BrokerTestHelper.createSession();
-        _testVhost = session.getVirtualHost();
+        _testVhost = BrokerTestHelper.createVirtualHost("test");
 
         _queue = new MockAMQQueue("SubscriptionLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
-        AMQChannel channel = new AMQChannel(session, _channelID, _testVhost.getMessageStore());
-
-        session.addChannel(channel);
-
-        SubscriptionFactory factory = new SubscriptionFactoryImpl();
-
-        _subscription = factory.createSubscription(_channelID, session, new AMQShortString("cTag"),
-                                                   false, null, false,
-                                                   new LimitlessCreditManager());
-
-        _subscription.setQueue(_queue, false);
+        _subscription = mock(Subscription.class);
+        when(_subscription.getQueue()).thenReturn(_queue);
+        when(_subscription.getSubscriptionID()).thenReturn(SUBSCRIPTION_ID);
 
         _subject = new SubscriptionLogSubject(_subscription);
     }
@@ -102,7 +90,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
         // MESSAGE [Blank][sub:0(vh(/
         //                           test)/
         //                                 qu(SubscriptionLogSubjectTest))]
-        // Take the last bit and drop off the extra )]        
+        // Take the last bit and drop off the extra )]
         String[] parts = message.split("/");
         assertEquals("Message part count wrong", 3, parts.length);
         String subscription = parts[2].substring(0, parts[2].indexOf(")") + 1);

@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
@@ -32,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -42,6 +45,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
@@ -208,6 +212,43 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
         {
             throw new IllegalConfigurationException("Unknown keyManagerFactoryAlgorithm: "
                     + keyManagerFactoryAlgorithm);
+        }
+    }
+
+    public KeyManager[] getKeyManagers() throws GeneralSecurityException
+    {
+        String keyStorePath = (String)getAttribute(KeyStore.PATH);
+        String keyStorePassword = getPassword();
+        String keyStoreType = (String)getAttribute(KeyStore.TYPE);
+        String keyManagerFactoryAlgorithm = (String)getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
+        String certAlias = (String)getAttribute(KeyStore.CERTIFICATE_ALIAS);
+
+        try
+        {
+            if (certAlias != null)
+            {
+                return new KeyManager[] {
+                        new QpidClientX509KeyManager( certAlias, keyStorePath, keyStoreType, keyStorePassword,
+                                                      keyManagerFactoryAlgorithm)
+                                        };
+
+            }
+            else
+            {
+                final java.security.KeyStore ks = SSLUtil.getInitializedKeyStore(keyStorePath, keyStorePassword, keyStoreType);
+
+                char[] keyStoreCharPassword = keyStorePassword == null ? null : keyStorePassword.toCharArray();
+
+                final KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
+
+                kmf.init(ks, keyStoreCharPassword);
+
+                return kmf.getKeyManagers();
+            }
+        }
+        catch (IOException e)
+        {
+            throw new GeneralSecurityException(e);
         }
     }
 }

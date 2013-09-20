@@ -26,6 +26,7 @@ options = {
   :broker => "127.0.0.1",
   :address => "",
   :timeout => 0,
+  :durable => false,
   :count => 1,
   :properties => {},
   :content => nil,
@@ -49,6 +50,11 @@ opts = OptionParser.new do |opts|
   opts.on("-t", "--timeout VALUE", Integer,
           "exit after the specified time") do |timeout|
     options[:timeout] = Qpid::Messaging::Duration.new timeout * 1000
+  end
+
+  opts.on("-d", "--durable",
+          "make the message durable (def. #{options[:durable]})") do
+    options[:durable] = true
   end
 
   opts.on("-c", "--count VALUE", Integer,
@@ -85,8 +91,9 @@ opts = OptionParser.new do |opts|
     options[:content] = content
   end
 
-  opts.on(nil, "--connection-options VALUE",
+  opts.on("--connection-options VALUE",
           "connection options string in the form {name1:value1, name2:value2}") do |conopts|
+
     options[:connection_options] = conopts
   end
 end
@@ -100,7 +107,27 @@ end
 # now get the non-arg options
 options[:address] = ARGV[0] unless ARGV[0].nil?
 
-connection = Qpid::Messaging::Connection.new :url => options[:broker], :options => options[:connection_options]
+# process the connection options
+unless options[:connection_options].nil?
+  fields = options[:connection_options].gsub(/^{(.*)}$/, '\1')
+  # remove any surrounding braces
+  if /{.*}/ =~ fields
+    fields = fields[1..-2]
+  end
+  # break up the options separated by commas
+  keysvalues = {}
+  fields.split(",").each do |field|
+    if /.+:.+/ =~ field
+      (key, value) = field.split(":")
+      keysvalues[key] = value
+    end
+  end
+  # now store the options
+  options[:connection_options] = keysvalues
+end
+
+connection = Qpid::Messaging::Connection.new(:url => options[:broker],
+                                             :options => options[:connection_options])
 connection.open
 session = connection.create_session
 sender = session.create_sender options[:address]
@@ -114,6 +141,7 @@ options[:properties].each_key {|key| message[key] = options[:properties][key]}
   elsif options[:content]
     message.content = options[:content]
   end
+  message.durable = options[:durable]
   message.content = options[:content] unless options[:content].nil?
   message.properties["spout-id"] = "#{count}"
   message.reply_to = options[:replyto] unless options[:replyto].nil? || options[:replyto].empty?

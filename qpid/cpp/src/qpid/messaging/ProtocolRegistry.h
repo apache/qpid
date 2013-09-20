@@ -21,6 +21,9 @@
  * under the License.
  *
  */
+
+#include "qpid/messaging/ImportExport.h"
+
 #include "qpid/types/Variant.h"
 
 namespace qpid {
@@ -34,7 +37,7 @@ class ProtocolRegistry
   public:
     typedef ConnectionImpl* Factory(const std::string& url, const qpid::types::Variant::Map& options);
     static ConnectionImpl* create(const std::string& url, const qpid::types::Variant::Map& options);
-    static void add(const std::string& name, Factory* factory);
+    QPID_MESSAGING_EXTERN static void add(const std::string& name, Factory* factory);
   private:
 };
 }} // namespace qpid::messaging

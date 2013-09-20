@@ -46,6 +46,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
 import org.apache.qpid.server.util.MapJsonSerializer;
@@ -86,11 +87,15 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     static final String OLD_BRIDGES_DB_NAME = "bridges_v5";
     static final String OLD_LINKS_DB_NAME = "links_v5";
 
-    static final String[] DEFAULT_EXCHANGES = { ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(),
-            ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString(), ExchangeDefaults.FANOUT_EXCHANGE_NAME.asString(),
-            ExchangeDefaults.HEADERS_EXCHANGE_NAME.asString(), ExchangeDefaults.TOPIC_EXCHANGE_NAME.asString(),
-            ExchangeDefaults.DIRECT_EXCHANGE_NAME.asString() };
-    private static final Set<String> DEFAULT_EXCHANGES_SET = new HashSet<String>(Arrays.asList(DEFAULT_EXCHANGES));
+    private static final Set<String> DEFAULT_EXCHANGES_SET =
+            new HashSet<String>(Arrays.asList(
+                    ExchangeDefaults.DEFAULT_EXCHANGE_NAME,
+                    ExchangeDefaults.FANOUT_EXCHANGE_NAME,
+                    ExchangeDefaults.HEADERS_EXCHANGE_NAME,
+                    ExchangeDefaults.TOPIC_EXCHANGE_NAME,
+                    ExchangeDefaults.DIRECT_EXCHANGE_NAME));
+
+    private static final String ARGUMENTS = "arguments";
 
     private MapJsonSerializer _serializer = new MapJsonSerializer();
 
@@ -452,8 +457,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                 {
                     // TODO: check and remove orphaned bindings
                     BindingRecord bindingRecord = binding.entryToObject(key);
-                    String exchangeName = bindingRecord.getExchangeName() == null ? ExchangeDefaults.DEFAULT_EXCHANGE_NAME
-                            .asString() : bindingRecord.getExchangeName().asString();
+                    String exchangeName = bindingRecord.getExchangeName() == null ? ExchangeDefaults.DEFAULT_EXCHANGE_NAME : bindingRecord.getExchangeName().asString();
                     String queueName = bindingRecord.getQueueName().asString();
                     String routingKey = bindingRecord.getRoutingKey().asString();
                     FieldTable arguments = bindingRecord.getArguments();
@@ -580,10 +584,10 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
 
         if (moveNonExclusiveOwnerToDescription(owner, exclusive))
         {
-            _logger.info("Non-exclusive owner " + owner + " for queue " + queueName + " moved to " + AMQQueueFactory.X_QPID_DESCRIPTION);
+            _logger.info("Non-exclusive owner " + owner + " for queue " + queueName + " moved to " + QueueArgumentsConverter.X_QPID_DESCRIPTION);
 
             attributesMap.put(Queue.OWNER, null);
-            argumentsCopy.put(AMQShortString.valueOf(AMQQueueFactory.X_QPID_DESCRIPTION), owner);
+            argumentsCopy.put(AMQShortString.valueOf(QueueArgumentsConverter.X_QPID_DESCRIPTION), owner);
         }
         else
         {
@@ -591,7 +595,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         }
         if (!argumentsCopy.isEmpty())
         {
-            attributesMap.put(Queue.ARGUMENTS, FieldTable.convertToMap(argumentsCopy));
+            attributesMap.put(ARGUMENTS, FieldTable.convertToMap(argumentsCopy));
         }
         return attributesMap;
     }
