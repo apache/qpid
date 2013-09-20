@@ -128,6 +128,9 @@ class AmqpBrokerTest(BrokerTest):
     def test_translate2(self):
         self.send_and_receive(send_config=Config(self.broker, version="amqp0-10"))
 
+    def test_translate_with_large_routingkey(self):
+        self.send_and_receive(send_config=Config(self.broker, address="amq.topic/a.%s" % ("x" * 256), version="amqp1.0"), recv_config=Config(self.broker, address="amq.topic/a.*", version="amqp0-10"), wait_for_receiver=True)
+
     def send_and_receive_empty(self, send_config=None, recv_config=None):
         sconfig = send_config or self.default_config
         rconfig = recv_config or self.default_config
