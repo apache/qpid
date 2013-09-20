@@ -260,7 +260,12 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
             dp->setPriority(message->getPriority());
             if (message->isPersistent()) dp->setDeliveryMode(2);
             if (message->getRoutingKey().size()) {
-                dp->setRoutingKey(message->getRoutingKey());
+                if (message->getRoutingKey().size() > std::numeric_limits<uint8_t>::max()) {
+                    //have to truncate routing key as it is specified to be a str8
+                    dp->setRoutingKey(message->getRoutingKey().substr(0,std::numeric_limits<uint8_t>::max()));
+                } else {
+                    dp->setRoutingKey(message->getRoutingKey());
+                }
                 props->getApplicationHeaders().setString(SUBJECT_KEY, message->getRoutingKey());
             }
 
