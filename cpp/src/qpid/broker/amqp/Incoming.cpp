@@ -25,6 +25,7 @@
 #include "qpid/amqp/descriptors.h"
 #include "qpid/broker/AsyncCompletion.h"
 #include "qpid/broker/Message.h"
+#include "qpid/broker/Broker.h"
 
 namespace qpid {
 namespace broker {
@@ -104,7 +105,7 @@ namespace {
 }
 
 DecodingIncoming::DecodingIncoming(pn_link_t* link, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name)
-    : Incoming(link, broker, parent, source, target, name), session(parent.shared_from_this()) {}
+    : Incoming(link, broker, parent, source, target, name), session(parent.shared_from_this()), expiryPolicy(broker.getExpiryPolicy()) {}
 DecodingIncoming::~DecodingIncoming() {}
 
 void DecodingIncoming::readable(pn_delivery_t* delivery)
@@ -116,6 +117,7 @@ void DecodingIncoming::readable(pn_delivery_t* delivery)
 
     qpid::broker::Message message(received, received);
     userid.verify(message.getUserId());
+    message.computeExpiration(expiryPolicy);
     handle(message);
     --window;
     received->begin();

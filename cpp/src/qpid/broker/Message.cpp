@@ -145,7 +145,7 @@ uint64_t Message::getTtl() const
     }
 }
 
-bool Message::getTtl(uint64_t ttl) const
+bool Message::getTtl(uint64_t& ttl) const
 {
     if (encoding->getTtl(ttl) && expiration < FAR_FUTURE) {
         sys::Duration remaining(sys::AbsTime::now(), getExpiration());
