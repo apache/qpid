@@ -61,6 +61,7 @@ class NodeProperties : public qpid::amqp::MapReader
     std::string getExchangeType() const;
     std::string getAlternateExchange() const;
     bool trackControllingLink() const;
+    const qpid::types::Variant::Map& getProperties() const;
   private:
     bool queue;
     bool durable;

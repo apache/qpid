@@ -44,6 +44,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/format.hpp>
 #include <map>
@@ -215,6 +216,7 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 node.queue = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
             } else {
                 qpid::framing::FieldTable args;
+                qpid::amqp_0_10::translate(node.properties.getProperties(), args);
                 node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
                                                       args, connection.getUserId(), connection.getId()).first;
             }
