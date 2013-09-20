@@ -264,7 +264,7 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     lnk->configure();
-    attach(lnk->sender);
+    attach(ssn, lnk->sender);
     checkClosed(ssn, lnk);
     lnk->verify();
     QPID_LOG(debug, "Attach succeeded to " << lnk->getTarget());
@@ -274,13 +274,13 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     lnk->configure();
-    attach(lnk->receiver, lnk->capacity);
+    attach(ssn, lnk->receiver, lnk->capacity);
     checkClosed(ssn, lnk);
     lnk->verify();
     QPID_LOG(debug, "Attach succeeded from " << lnk->getSource());
 }
 
-void ConnectionContext::attach(pn_link_t* link, int credit)
+void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, pn_link_t* link, int credit)
 {
     pn_link_open(link);
     QPID_LOG(debug, "Link attach sent for " << link << ", state=" << pn_link_state(link));
@@ -288,7 +288,7 @@ void ConnectionContext::attach(pn_link_t* link, int credit)
     wakeupDriver();
     while (pn_link_state(link) & PN_REMOTE_UNINIT) {
         QPID_LOG(debug, "Waiting for confirmation of link attach for " << link << ", state=" << pn_link_state(link) << "...");
-        wait();
+        wait(ssn);
     }
 }
 
@@ -454,8 +454,15 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn)
 {
     check();
     if ((pn_session_state(ssn->session) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
+        pn_condition_t* error = pn_session_remote_condition(ssn->session);
+        std::stringstream text;
+        if (pn_condition_is_set(error)) {
+            text << "Session ended by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
+        } else {
+            text << "Session ended by peer";
+        }
         pn_session_close(ssn->session);
-        throw qpid::messaging::SessionError("Session ended by peer");
+        throw qpid::messaging::SessionError(text.str());
     } else if ((pn_session_state(ssn->session) & IS_CLOSED) == IS_CLOSED) {
         throw qpid::messaging::SessionError("Session has ended");
     }
@@ -497,14 +504,14 @@ void ConnectionContext::restartSession(boost::shared_ptr<SessionContext> s)
 
     for (SessionContext::SenderMap::iterator i = s->senders.begin(); i != s->senders.end(); ++i) {
         QPID_LOG(debug, id << " reattaching sender " << i->first);
-        attach(i->second->sender);
+        attach(s, i->second->sender);
         i->second->verify();
         QPID_LOG(debug, id << " sender " << i->first << " reattached");
         i->second->resend();
     }
     for (SessionContext::ReceiverMap::iterator i = s->receivers.begin(); i != s->receivers.end(); ++i) {
         QPID_LOG(debug, id << " reattaching receiver " << i->first);
-        attach(i->second->receiver, i->second->capacity);
+        attach(s, i->second->receiver, i->second->capacity);
         i->second->verify();
         QPID_LOG(debug, id << " receiver " << i->first << " reattached");
     }
@@ -767,7 +774,7 @@ void ConnectionContext::open()
     if (state != DISCONNECTED) throw qpid::messaging::ConnectionError("Connection was already opened!");
     if (!driver) driver = DriverImpl::getDefault();
 
-    tryConnect();
+    autoconnect();
 }
 
 
@@ -936,6 +943,7 @@ bool ConnectionContext::tryConnect(const qpid::Address& address)
         }
     } catch (const std::exception& e) {
         QPID_LOG(info, id << " Error while connecting: " << e.what());
+        state = DISCONNECTED;
     }
     transport = boost::shared_ptr<Transport>();
     return false;

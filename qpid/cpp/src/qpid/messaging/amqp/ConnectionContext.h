@@ -147,7 +147,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
     void checkClosed(boost::shared_ptr<SessionContext>, pn_link_t*);
     void wakeupDriver();
-    void attach(pn_link_t*, int credit=0);
+    void attach(boost::shared_ptr<SessionContext>, pn_link_t*, int credit=0);
     void autoconnect();
     bool tryConnect();
     bool tryConnect(const qpid::Url& url);
