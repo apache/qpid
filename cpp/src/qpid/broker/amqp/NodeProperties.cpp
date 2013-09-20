@@ -277,4 +277,9 @@ bool NodeProperties::trackControllingLink() const
     return lifetime == QueueSettings::DELETE_ON_CLOSE || lifetime == QueueSettings::DELETE_IF_EMPTY;
 }
 
+const qpid::types::Variant::Map& NodeProperties::getProperties() const
+{
+    return properties;
+}
+
 }}} // namespace qpid::broker::amqp
