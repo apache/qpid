@@ -57,15 +57,16 @@ namespace broker {
 namespace amqp {
 
 namespace {
-bool is_capability_requested(const std::string& name, pn_data_t* capabilities)
+pn_bytes_t convert(const std::string& s)
 {
-    pn_data_rewind(capabilities);
-    while (pn_data_next(capabilities)) {
-        pn_bytes_t c = pn_data_get_symbol(capabilities);
-        std::string s(c.start, c.size);
-        if (s == name) return true;
-    }
-    return false;
+    pn_bytes_t result;
+    result.start = const_cast<char*>(s.data());
+    result.size = s.size();
+    return result;
+}
+std::string convert(pn_bytes_t in)
+{
+    return std::string(in.start, in.size);
 }
 //capabilities
 const std::string CREATE_ON_DEMAND("create-on-demand");
@@ -76,38 +77,88 @@ const std::string DIRECT_FILTER("legacy-amqp-direct-binding");
 const std::string TOPIC_FILTER("legacy-amqp-topic-binding");
 const std::string SHARED("shared");
 
-void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Queue> node)
+void writeCapabilities(pn_data_t* out, const std::vector<std::string>& supported)
 {
-    pn_data_rewind(in);
-    while (pn_data_next(in)) {
-        pn_bytes_t c = pn_data_get_symbol(in);
-        std::string s(c.start, c.size);
-        if (s == DURABLE) {
-            if (node->isDurable()) pn_data_put_symbol(out, c);
-        } else if (s == CREATE_ON_DEMAND || s == QUEUE || s == DIRECT_FILTER || s == TOPIC_FILTER) {
-            pn_data_put_symbol(out, c);
+    if (supported.size() == 1) {
+        pn_data_put_symbol(out, convert(supported.front()));
+    } else if (supported.size() > 1) {
+        pn_data_put_array(out, false, PN_SYMBOL);
+        pn_data_enter(out);
+        for (std::vector<std::string>::const_iterator i = supported.begin(); i != supported.end(); ++i) {
+            pn_data_put_symbol(out, convert(*i));
+        }
+        pn_data_exit(out);
+    }
+}
+
+template <class F>
+void readCapabilities(pn_data_t* data, F f)
+{
+    pn_data_rewind(data);
+    if (pn_data_next(data)) {
+        pn_type_t type = pn_data_type(data);
+        if (type == PN_ARRAY) {
+            pn_data_enter(data);
+            while (pn_data_next(data)) {
+                f(convert(pn_data_get_symbol(data)));
+            }
+            pn_data_exit(data);
+        } else if (type == PN_SYMBOL) {
+            f(convert(pn_data_get_symbol(data)));
+        } else {
+            QPID_LOG(error, "Skipping capabilities field of type " << pn_type_name(type));
         }
     }
 }
 
+void matchCapability(const std::string& name, bool* result, const std::string& s)
+{
+    if (s == name) *result = true;
+}
+
+bool is_capability_requested(const std::string& name, pn_data_t* capabilities)
+{
+    bool result(false);
+    readCapabilities(capabilities, boost::bind(&matchCapability, name, &result, _1));
+    return result;
+}
+
+void collectQueueCapabilities(boost::shared_ptr<Queue> node, std::vector<std::string>* supported, const std::string& s)
+{
+    if (s == DURABLE) {
+        if (node->isDurable()) supported->push_back(s);
+    } else if (s == CREATE_ON_DEMAND || s == QUEUE || s == DIRECT_FILTER || s == TOPIC_FILTER) {
+        supported->push_back(s);
+    }
+}
+
+void collectExchangeCapabilities(boost::shared_ptr<Exchange> node, std::vector<std::string>* supported, const std::string& s)
+{
+    if (s == DURABLE) {
+        if (node->isDurable()) supported->push_back(s);
+    } else if (s == SHARED) {
+        supported->push_back(s);
+    } else if (s == CREATE_ON_DEMAND || s == TOPIC) {
+        supported->push_back(s);
+    } else if (s == DIRECT_FILTER) {
+        if (node->getType() == DirectExchange::typeName) supported->push_back(s);
+    } else if (s == TOPIC_FILTER) {
+        if (node->getType() == TopicExchange::typeName) supported->push_back(s);
+    }
+}
+
+void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Queue> node)
+{
+    std::vector<std::string> supported;
+    readCapabilities(in, boost::bind(&collectQueueCapabilities, node, &supported, _1));
+    writeCapabilities(out, supported);
+}
+
 void setCapabilities(pn_data_t* in, pn_data_t* out, boost::shared_ptr<Exchange> node)
 {
-    pn_data_rewind(in);
-    while (pn_data_next(in)) {
-        pn_bytes_t c = pn_data_get_symbol(in);
-        std::string s(c.start, c.size);
-        if (s == DURABLE) {
-            if (node->isDurable()) pn_data_put_symbol(out, c);
-        } else if (s == SHARED) {
-            pn_data_put_symbol(out, c);
-        } else if (s == CREATE_ON_DEMAND || s == TOPIC) {
-            pn_data_put_symbol(out, c);
-        } else if (s == DIRECT_FILTER) {
-            if (node->getType() == DirectExchange::typeName) pn_data_put_symbol(out, c);
-        } else if (s == TOPIC_FILTER) {
-            if (node->getType() == TopicExchange::typeName) pn_data_put_symbol(out, c);
-        }
-    }
+    std::vector<std::string> supported;
+    readCapabilities(in, boost::bind(&collectExchangeCapabilities, node, &supported, _1));
+    writeCapabilities(out, supported);
 }
 
 }
@@ -150,6 +201,12 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     node.queue = connection.getBroker().getQueues().find(name);
     node.topic = connection.getTopics().get(name);
     if (node.topic) node.exchange = node.topic->getExchange();
+    if (node.exchange && !node.queue && is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus))) {
+        node.properties.read(pn_terminus_properties(terminus));
+        if (!node.properties.getExchangeType().empty() && node.properties.getExchangeType() != node.exchange->getType()) {
+            throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "Exchange of different type already exists");
+        }
+    }
     if (!node.queue && !node.exchange) {
         if (pn_terminus_is_dynamic(terminus)  || is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus))) {
             //is it a queue or an exchange?

@@ -426,16 +426,23 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
         QPID_LOG(debug, "checking assertions: " << capabilities);
         //ensure all desired capabilities have been offered
         std::set<std::string> desired;
-        if (type.size()) desired.insert(type);
-        if (durableNode) desired.insert(DURABLE);
         for (Variant::List::const_iterator i = capabilities.begin(); i != capabilities.end(); ++i) {
-            desired.insert(i->asString());
+            if (*i != CREATE_ON_DEMAND) desired.insert(i->asString());
         }
         pn_data_t* data = pn_terminus_capabilities(terminus);
-        while (pn_data_next(data)) {
-            pn_bytes_t c = pn_data_get_symbol(data);
-            std::string s(c.start, c.size);
-            desired.erase(s);
+        if (pn_data_next(data)) {
+            pn_type_t type = pn_data_type(data);
+            if (type == PN_ARRAY) {
+                pn_data_enter(data);
+                while (pn_data_next(data)) {
+                    desired.erase(convert(pn_data_get_symbol(data)));
+                }
+                pn_data_exit(data);
+            } else if (type == PN_SYMBOL) {
+                desired.erase(convert(pn_data_get_symbol(data)));
+            } else {
+                QPID_LOG(error, "Skipping capabilities field of type " << pn_type_name(type));
+            }
         }
 
         if (desired.size()) {
@@ -614,12 +621,20 @@ void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMod
 
 void AddressHelper::setCapabilities(pn_terminus_t* terminus, bool create)
 {
+    if (create) capabilities.push_back(CREATE_ON_DEMAND);
+    if (!type.empty()) capabilities.push_back(type);
+    if (durableNode) capabilities.push_back(DURABLE);
+
     pn_data_t* data = pn_terminus_capabilities(terminus);
-    if (create) pn_data_put_symbol(data, convert(CREATE_ON_DEMAND));
-    if (type.size()) pn_data_put_symbol(data, convert(type));
-    if (durableNode) pn_data_put_symbol(data, convert(DURABLE));
-    for (qpid::types::Variant::List::const_iterator i = capabilities.begin(); i != capabilities.end(); ++i) {
-        pn_data_put_symbol(data, convert(i->asString()));
+    if (capabilities.size() == 1) {
+        pn_data_put_symbol(data, convert(capabilities.front().asString()));
+    } else if (capabilities.size() > 1) {
+        pn_data_put_array(data, false, PN_SYMBOL);
+        pn_data_enter(data);
+        for (qpid::types::Variant::List::const_iterator i = capabilities.begin(); i != capabilities.end(); ++i) {
+            pn_data_put_symbol(data, convert(i->asString()));
+        }
+        pn_data_exit(data);
     }
 }
 std::string AddressHelper::getLinkName(const Address& address)
