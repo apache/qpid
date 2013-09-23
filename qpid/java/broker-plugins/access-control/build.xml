@@ -17,11 +17,11 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Access Control" default="build">
-    <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="common/tests broker/tests management/common" />
+    <property name="module.depends" value="common broker-core" />
+    <property name="module.test.depends" value="common/tests broker-core/tests management/common" />
 
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided"/>
 
     <property name="broker.plugin" value="true"/>
 
@@ -29,7 +29,7 @@
 
     <import file="../../module.xml" />
 
-    <import file="${project.root}/broker/build-generate-sources.xml"/>
+    <import file="${project.root}/broker-core/build-generate-sources.xml"/>
 
     <target name="precompile" depends="generate-logmessages"/>
 
