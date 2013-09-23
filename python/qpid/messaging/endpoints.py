@@ -70,8 +70,8 @@ class Connection(Endpoint):
 
   def __init__(self, url=None, **options):
     """
-    Creates a connection. A newly created connection must be connected
-    with the Connection.connect() method before it can be used.
+    Creates a connection. A newly created connection must be opened
+    with the Connection.open() method before it can be used.
 
     @type url: str
     @param url: [ <username> [ / <password> ] @ ] <host> [ : <port> ]
@@ -88,11 +88,6 @@ class Connection(Endpoint):
     @param username: the username for authentication (overriden by url)
     @type password: str
     @param password: the password for authentication (overriden by url)
-
-     * - sasl_min_ssf: the minimum acceptable security strength factor
-     * - sasl_max_ssf: the minimum acceptable security strength factor
-     * - sasl_service: the service name if needed by the SASL mechanism in use
-
     @type sasl_mechanisms: str
     @param sasl_mechanisms: space separated list of permitted sasl mechanisms
     @type sasl_service: str
@@ -100,7 +95,7 @@ class Connection(Endpoint):
     @type sasl_min_ssf: int
     @param sasl_min_ssf: the minimum acceptable security strength factor
     @type sasl_max_ssf: int
-    @param sasl_max_ssf: the minimum acceptable security strength factor
+    @param sasl_max_ssf: the maximum acceptable security strength factor
 
     @type reconnect: bool
     @param reconnect: enable/disable automatic reconnect
