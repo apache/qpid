@@ -30,7 +30,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.InitialContext;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
@@ -56,9 +56,9 @@ public class UTF8Test extends QpidBrokerTestCase
 
     private void invoke(String name) throws Exception
     {
-        String path = System.getProperties().getProperty("QPID_HOME");
-        path = path + "/../systests/src/main/java/org/apache/qpid/test/unit/message/" + name;
-         BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF8"));
+        InputStream stream = getClass().getClassLoader().getResourceAsStream("org/apache/qpid/test/unit/message/" + name);
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
         runTest(in.readLine(), in.readLine(), in.readLine(), in.readLine());
         in.close();
     }
