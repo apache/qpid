@@ -24,62 +24,21 @@
 
   <import file="../module.xml"/>
 
-  <property name="generated.package" value="org/apache/qpid/framing" />
-  <property name="framing.generated.dir" location="${module.precompiled}/${generated.package}" />
-  <property name="xml.spec.dir" location="${project.root}/../specs" />
-  <property name="xml.spec.deps" value="amqp0-8-qpid.stripped.xml amqp0-9-qpid.stripped.xml amqp0-9-1.stripped.xml" />
-  <property name="xml.spec.list" value='"${xml.spec.dir}/amqp0-8-qpid.stripped.xml" "${xml.spec.dir}/amqp0-9-qpid.stripped.xml" "${xml.spec.dir}/amqp0-9-1.stripped.xml"' />
-  <property name="gentools.timestamp" location="${framing.generated.dir}/gentools.timestamp" />
-  <property name="jython.timestamp" location="${framing.generated.dir}/jython.timestamp" />
   <property name="selector.output.dir" value="${module.precompiled}/org/apache/qpid/filter/selector"/>
 
-  <target name="check_jython_deps">
-    <uptodate property="jython.notRequired" targetfile="${jython.timestamp}">
-      <srcfiles dir="${xml.spec.dir}" includes="amqp.0-10-qpid-errata.stripped.xml" />
-    </uptodate>
-  </target>
-
-  <target name="jython" depends="check_jython_deps" unless="jython.notRequired">
-    <jython path="${mllib.dir}">
-      <args>
-        <arg value="${basedir}/codegen"/>
-        <arg value="${module.precompiled}"/>
-        <arg value="${xml.spec.dir}/amqp.0-10-qpid-errata.stripped.xml"/>
-        <arg value="${basedir}"/>
-      </args>
-    </jython>
-    <touch file="${jython.timestamp}" />
-  </target>
-
-  <target name="compile_gentools">
-    <mkdir dir="${gentools.build}/classes"/>
-    <javac srcdir="${gentools.home}/src" destdir="${gentools.build}/classes" source="${java.source}" target="${java.target}" fork="true" includeantruntime="false">
-      <classpath>
-        <fileset dir="${project.root}">
-          <include name="${velocity.jar}"/>
-          <include name="${velocity-dep.jar}"/>
-        </fileset>
-      </classpath>
-    </javac>
-  </target>
-
-  <target name="check_gentool_deps">
-    <uptodate property="gentools.notRequired" targetfile="${gentools.timestamp}">
-      <srcfiles dir="${xml.spec.dir}" includes="${xml.spec.deps}" />
-    </uptodate>
-  </target>
-
-  <target name="gentools" depends="compile_gentools,check_gentool_deps" unless="gentools.notRequired">
-    <mkdir dir="${framing.generated.dir}"/>
-    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.build}/classes" failonerror="true">
-      <arg line='-j -o "${framing.generated.dir}" -t "${project.root}/common/templates" ${xml.spec.list}'/>
-      <classpath>
-        <pathelement path="${gentools.build}/classes" />
+  <path id="common.source.generation.classpathref">
+        <pathelement path="${project.root}/${jython}" />
         <pathelement path="${project.root}/${velocity.jar}" />
         <pathelement path="${project.root}/${velocity-dep.jar}" />
-      </classpath>
-    </java>
-    <touch file="${gentools.timestamp}" />
+  </path>
+
+  <target name="generate-sources">
+    <ant antfile="build-generate-sources.xml">
+      <reference torefid="source.generation.classpathref" refid="common.source.generation.classpathref" />
+      <property name="generated-amqp-0-8-dir" value="${module.precompiled}"/>
+      <property name="generated-amqp-0-10-dir" value="${module.precompiled}"/>
+      <property name="gentools.classes" value="${build.scratch}/common/gentools/classes"/>
+    </ant>
   </target>
 
   <target name="jms-selector">
@@ -94,7 +53,7 @@
             javacchome="${module.build}"/>
   </target>
 
-  <target name="precompile" depends="gentools,jython,create-version,jms-selector"/>
+  <target name="precompile" depends="generate-sources,jms-selector"/>
 
   <target name="bundle" depends="bundle-tasks"/>
 
