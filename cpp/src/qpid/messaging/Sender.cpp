@@ -27,6 +27,10 @@
 
 namespace qpid {
 namespace messaging {
+
+// Explicitly instantiate Handle superclass
+template class Handle<SenderImpl>;
+
 typedef PrivateImplRef<qpid::messaging::Sender> PI;
 
 Sender::Sender(SenderImpl* impl) { PI::ctor(*this, impl); }
