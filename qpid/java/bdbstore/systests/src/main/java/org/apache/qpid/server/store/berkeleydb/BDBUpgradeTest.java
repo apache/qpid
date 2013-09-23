@@ -20,21 +20,12 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.NON_DURABLE_QUEUE_NAME;
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.PRIORITY_QUEUE_NAME;
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_NAME;
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_WITH_DLQ_NAME;
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.SELECTOR_SUB_NAME;
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.SELECTOR_TOPIC_NAME;
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.SUB_NAME;
-import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.TOPIC_NAME;
-
 import java.io.File;
 import java.io.InputStream;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -62,14 +53,26 @@ import org.slf4j.LoggerFactory;
  * Tests upgrading a BDB store on broker startup.
  * The store will then be used to verify that the upgrade is completed
  * properly and that once upgraded it functions as expected.
+ *
+ * Store prepared using old client/broker with BDBStoreUpgradeTestPreparer.
  */
 public class BDBUpgradeTest extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(BDBUpgradeTest.class);
 
-    private static final String STRING_1024 = BDBStoreUpgradeTestPreparer.generateString(1024);
-    private static final String STRING_1024_256 = BDBStoreUpgradeTestPreparer.generateString(1024*256);
     private static final String QPID_WORK_ORIG = System.getProperty("QPID_WORK");
+
+    private static final String STRING_1024 = generateString(1024);
+    private static final String STRING_1024_256 = generateString(1024*256);
+
+    private static final String TOPIC_NAME="myUpgradeTopic";
+    private static final String SUB_NAME="myDurSubName";
+    private static final String SELECTOR_SUB_NAME="mySelectorDurSubName";
+    private static final String SELECTOR_TOPIC_NAME="mySelectorUpgradeTopic";
+    private static final String QUEUE_NAME="myUpgradeQueue";
+    private static final String NON_DURABLE_QUEUE_NAME="queue-non-durable";
+    private static final String PRIORITY_QUEUE_NAME="myPriorityQueue";
+    private static final String QUEUE_WITH_DLQ_NAME="myQueueWithDLQ";   
 
     private String _storeLocation;
 
@@ -134,12 +137,12 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
             Topic topic = pubSession.createTopic(SELECTOR_TOPIC_NAME);
             TopicPublisher publisher = pubSession.createPublisher(topic);
 
-            BDBStoreUpgradeTestPreparer.publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "false");
+            publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "false");
             pubSession.commit();
             assertEquals("DurableSubscription backing queue should still have 1 message on it",
                          Integer.valueOf(1), dursubQueue.getMessageCount());
 
-            BDBStoreUpgradeTestPreparer.publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "true");
+            publishMessages(pubSession, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "true");
             pubSession.commit();
             assertEquals("DurableSubscription backing queue should now have 2 messages on it",
                          Integer.valueOf(2), dursubQueue.getMessageCount());
@@ -191,7 +194,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
             Topic topic = session.createTopic(TOPIC_NAME);
             TopicPublisher publisher = session.createPublisher(topic);
 
-            BDBStoreUpgradeTestPreparer.publishMessages(session, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "indifferent");
+            publishMessages(session, publisher, topic, DeliveryMode.PERSISTENT, 1*1024, 1, "indifferent");
             session.commit();
             assertEquals("DurableSubscription backing queue should now have 2 messages on it",
                         Integer.valueOf(2), dursubQueue.getMessageCount());
@@ -262,7 +265,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         MessageProducer messageProducer = session.createProducer(queue);
 
         // Send a new message
-        BDBStoreUpgradeTestPreparer.sendMessages(session, messageProducer, queue, DeliveryMode.PERSISTENT, 256*1024, 1);
+        sendMessages(session, messageProducer, queue, DeliveryMode.PERSISTENT, 256*1024, 1);
 
         session.close();
 
@@ -440,7 +443,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
             assertEquals("Selector property did not match", "true", m.getStringProperty("testprop"));
         }
         assertEquals("ID property did not match", 1, m.getIntProperty("ID"));
-        assertEquals("Message content was not as expected",BDBStoreUpgradeTestPreparer.generateString(1024) , ((TextMessage)m).getText());
+        assertEquals("Message content was not as expected", generateString(1024) , ((TextMessage)m).getText());
 
         // Verify that no more messages are received
         m = durSub.receive(1000);
@@ -497,5 +500,45 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         send.setIntProperty("msg", msgId);
 
         return send;
+    }
+    
+    /**
+     * Generates a string of a given length consisting of the sequence 0,1,2,..,9,0,1,2.
+     *
+     * @param length number of characters in the string
+     * @return string sequence of the given length
+     */
+    private static String generateString(int length)
+    {
+        char[] base_chars = new char[]{'0','1','2','3','4','5','6','7','8','9'};
+        char[] chars = new char[length];
+        for (int i = 0; i < (length); i++)
+        {
+            chars[i] = base_chars[i % 10];
+        }
+        return new String(chars);
+    }
+
+    private static void sendMessages(Session session, MessageProducer messageProducer,
+            Destination dest, int deliveryMode, int length, int numMesages) throws JMSException
+    {
+        for (int i = 1; i <= numMesages; i++)
+        {
+            Message message = session.createTextMessage(generateString(length));
+            message.setIntProperty("ID", i);
+            messageProducer.send(message, deliveryMode, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+        }
+    }
+
+    private static void publishMessages(Session session, TopicPublisher publisher,
+            Destination dest, int deliveryMode, int length, int numMesages, String selectorProperty) throws JMSException
+    {
+        for (int i = 1; i <= numMesages; i++)
+        {
+            Message message = session.createTextMessage(generateString(length));
+            message.setIntProperty("ID", i);
+            message.setStringProperty("testprop", selectorProperty);
+            publisher.publish(message, deliveryMode, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+        }
     }
 }

@@ -23,7 +23,7 @@
   <import file="common.xml"/>
 
   <property name="optional" value="false"/>
-  <property name="modules.opt.default" value="bdbstore bdbstore/jmx perftests/visualisation-jfc"/>
+  <property name="modules.opt.default" value="bdbstore bdbstore/jmx bdbstore/systests perftests/visualisation-jfc"/>
   <condition property="modules.opt" value="" else="${modules.opt.default}">
     <isfalse value="${optional}"/>
   </condition>

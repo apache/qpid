@@ -537,7 +537,14 @@
     </copy>
   </target>
 
-  <target name="copy-resources" if="module.src.resources.exists">
+  <target name="copy-extra-resources" if="module.src.resources.extra">
+      <echo message="Copying extra resources from ${module.src.resources.extra} to ${module.classes}..."/>
+      <copy todir="${module.classes}" failonerror="true">
+        <fileset dir="${module.src.resources.extra}"/>
+      </copy>
+  </target>
+
+  <target name="copy-resources" depends="copy-extra-resources" if="module.src.resources.exists">
       <echo message="Copying resources from ${module.src.resources} to ${module.classes}..."/>
       <copy todir="${module.classes}" failonerror="true">
         <fileset dir="${module.src.resources}" excludes="META-INF/**"/>
