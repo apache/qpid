@@ -31,6 +31,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/Buffer.h"
 #include <string.h>
+#include <boost/lexical_cast.hpp>
 
 namespace qpid {
 namespace broker {
@@ -79,8 +80,51 @@ uint8_t Message::getPriority() const
     else return priority.get();
 }
 
-std::string Message::getPropertyAsString(const std::string& /*key*/) const { return empty; }
-std::string Message::getAnnotationAsString(const std::string& /*key*/) const { return empty; }
+namespace {
+class StringRetriever : public MapHandler
+{
+  public:
+    StringRetriever(const std::string& k) : key(k) {}
+    void handleBool(const qpid::amqp::CharSequence& actualKey, bool actualValue) { process(actualKey, actualValue); }
+    void handleUint8(const qpid::amqp::CharSequence& actualKey, uint8_t actualValue) { process(actualKey, actualValue); }
+    void handleUint16(const qpid::amqp::CharSequence& actualKey, uint16_t actualValue) { process(actualKey, actualValue); }
+    void handleUint32(const qpid::amqp::CharSequence& actualKey, uint32_t actualValue) { process(actualKey, actualValue); }
+    void handleUint64(const qpid::amqp::CharSequence& actualKey, uint64_t actualValue) { process(actualKey, actualValue); }
+    void handleInt8(const qpid::amqp::CharSequence& actualKey, int8_t actualValue) { process(actualKey, actualValue); }
+    void handleInt16(const qpid::amqp::CharSequence& actualKey, int16_t actualValue) { process(actualKey, actualValue); }
+    void handleInt32(const qpid::amqp::CharSequence& actualKey, int32_t actualValue) { process(actualKey, actualValue); }
+    void handleInt64(const qpid::amqp::CharSequence& actualKey, int64_t actualValue) { process(actualKey, actualValue); }
+    void handleFloat(const qpid::amqp::CharSequence& actualKey, float actualValue) { process(actualKey, actualValue); }
+    void handleDouble(const qpid::amqp::CharSequence& actualKey, double actualValue) { process(actualKey, actualValue); }
+    void handleVoid(const qpid::amqp::CharSequence&) { /*nothing to do*/ }
+    void handleString(const qpid::amqp::CharSequence& actualKey, const qpid::amqp::CharSequence& actualValue, const qpid::amqp::CharSequence& /*encoding*/)
+    {
+        if (isRequestedKey(actualKey)) value = std::string(actualValue.data, actualValue.size);
+    }
+    std::string getValue() const { return value; }
+  private:
+    const std::string key;
+    std::string value;
+
+    template <typename T> void process(const qpid::amqp::CharSequence& actualKey, T actualValue)
+    {
+        if (isRequestedKey(actualKey)) value = boost::lexical_cast<std::string>(actualValue);
+    }
+
+    bool isRequestedKey(const qpid::amqp::CharSequence& actualKey)
+    {
+        //TODO: avoid allocating new string by just iterating over chars
+        return key == std::string(actualKey.data, actualKey.size);
+    }
+};
+}
+
+std::string Message::getPropertyAsString(const std::string& key) const
+{
+    StringRetriever sr(key);
+    processProperties(sr);
+    return sr.getValue();
+}
 
 namespace {
     class PropertyAdapter : public Reader {
@@ -135,12 +179,27 @@ namespace {
             state(KEY)
          {}
     };
+
+void processMapData(const CharSequence& source, MapHandler& handler)
+{
+    qpid::amqp::Decoder d(source.data, source.size);
+    PropertyAdapter adapter(handler);
+    d.read(adapter);
+
+}
 }
 
 void Message::processProperties(MapHandler& mh) const {
-    qpid::amqp::Decoder d(applicationProperties.data, applicationProperties.size);
-    PropertyAdapter mha(mh);
-    d.read(mha);
+    processMapData(applicationProperties, mh);
+}
+
+std::string Message::getAnnotationAsString(const std::string& key) const
+{
+    StringRetriever sr(key);
+    processMapData(messageAnnotations, sr);
+    if (sr.getValue().empty()) processMapData(deliveryAnnotations, sr);
+    return sr.getValue();
+
 }
 
 //getContentSize() is primarily used in stats about the number of
