@@ -398,7 +398,6 @@
   <property name="test.output" value="${module.results}"/>
   <property name="QPID_HOME" value="${qpid.home}"/>
   <property name="QPID_WORK" value="${qpid.work}"/>
-  <property name="broker.existing.qpid.work" value=""/>
 
   <propertyset id="all.test.systemproperties">
     <propertyref prefix="test"/>
@@ -423,7 +422,6 @@
 
     <propertyref name="QPID_HOME"/>
     <propertyref name="QPID_WORK"/>
-    <propertyref name="example.plugin.target"/>
   </propertyset>
 
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
