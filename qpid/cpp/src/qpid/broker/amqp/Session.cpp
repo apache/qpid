@@ -101,11 +101,13 @@ void readCapabilities(pn_data_t* data, F f)
         if (type == PN_ARRAY) {
             pn_data_enter(data);
             while (pn_data_next(data)) {
-                f(convert(pn_data_get_symbol(data)));
+	      std::string s = convert(pn_data_get_symbol(data));
+	      f(s);
             }
             pn_data_exit(data);
         } else if (type == PN_SYMBOL) {
-            f(convert(pn_data_get_symbol(data)));
+	  std::string s = convert(pn_data_get_symbol(data));
+	  f(s);
         } else {
             QPID_LOG(error, "Skipping capabilities field of type " << pn_type_name(type));
         }
