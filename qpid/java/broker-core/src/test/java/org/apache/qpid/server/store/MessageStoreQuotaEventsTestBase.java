@@ -28,7 +28,6 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -72,7 +71,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
         _store = createStore();
         ((DurableConfigurationStore)_store).configureConfigStore(vhost, null);
-        _store.configureMessageStore(vhost, null, null);
+        _store.configureMessageStore(vhost, mock(MessageStoreRecoveryHandler.class), null);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();
@@ -122,7 +121,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     protected EnqueableMessage addMessage(long id)
     {
         StorableMessageMetaData metaData = createMetaData(id, MESSAGE_DATA.length);
-        StoredMessage handle = _store.addMessage(metaData);
+        StoredMessage<?> handle = _store.addMessage(metaData);
         handle.addContent(0, ByteBuffer.wrap(MESSAGE_DATA));
         TestMessage message = new TestMessage(id, handle);
         return message;
@@ -130,14 +129,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
     private StorableMessageMetaData createMetaData(long id, int length)
     {
-        StorableMessageMetaData metaData = mock(StorableMessageMetaData.class);
-        when(metaData.isPersistent()).thenReturn(true);
-        when(metaData.getContentSize()).thenReturn(length);
-        when(metaData.getStorableSize()).thenReturn(0);
-        MessageMetaDataType type = mock(MessageMetaDataType.class);
-        when(type.ordinal()).thenReturn(-1);
-        when(metaData.getType()).thenReturn(type);
-        return metaData;
+        return new TestMessageMetaData(id, length);
     }
 
     @Override
