@@ -20,7 +20,7 @@
  -->
 <project name="Broker" default="build">
     <property name="module.depends" value="broker-core common"/>
-    <property name="module.test.depends" value="common/tests" />
+    <property name="module.test.depends" value="qpid-test-utils" />
     <property name="module.main" value="org.apache.qpid.server.Main"/>
     <property name="module.genpom" value="true"/>
 

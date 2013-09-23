@@ -18,11 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport;
+package org.apache.qpid.client.transport;
 
 import java.security.Principal;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.net.BindException;

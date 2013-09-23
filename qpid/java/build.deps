@@ -96,6 +96,7 @@ client-example.test.libs=${test.libs}
 tools.test.libs=
 systests.libs=${test.libs}
 perftests.test.libs=${test.libs}
+qpid-test-utils.libs = ${test.libs} ${geronimo-jms}
 
 broker-plugins-access-control.test.libs=${test.libs}
 broker-plugins-management-http.test.libs=${test.libs}

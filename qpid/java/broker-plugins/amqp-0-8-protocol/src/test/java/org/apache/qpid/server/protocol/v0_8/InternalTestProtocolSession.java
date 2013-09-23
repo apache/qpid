@@ -20,29 +20,9 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.protocol.v0_8.AMQProtocolEngine;
-import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
-import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.subscription.ClientDeliveryMethod;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.protocol.v0_8.SubscriptionImpl;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.TestNetworkConnection;
-
-import javax.security.auth.Subject;
-
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +32,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.security.auth.Subject;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.subscription.ClientDeliveryMethod;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
@@ -264,6 +264,97 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
                 consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)entry.getMessage()));
             }
+        }
+    }
+
+    private static class TestNetworkConnection implements NetworkConnection
+    {
+        private String _remoteHost = "127.0.0.1";
+        private String _localHost = "127.0.0.1";
+        private int _port = 1;
+        private final Sender<ByteBuffer> _sender;
+
+        public TestNetworkConnection()
+        {
+            _sender = new Sender<ByteBuffer>()
+            {
+                public void setIdleTimeout(int i)
+                {
+                }
+
+                public void send(ByteBuffer msg)
+                {
+                }
+
+                public void flush()
+                {
+                }
+
+                public void close()
+                {
+                }
+            };
+        }
+
+        @Override
+        public SocketAddress getLocalAddress()
+        {
+            return new InetSocketAddress(_localHost, _port);
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress()
+        {
+            return new InetSocketAddress(_remoteHost, _port);
+        }
+
+        @Override
+        public void setMaxReadIdle(int idleTime)
+        {
+        }
+
+        @Override
+        public void setPeerPrincipal(Principal principal)
+        {
+        }
+
+        @Override
+        public Principal getPeerPrincipal()
+        {
+            return null;
+        }
+
+        @Override
+        public int getMaxReadIdle()
+        {
+            return 0;
+        }
+
+        @Override
+        public int getMaxWriteIdle()
+        {
+            return 0;
+        }
+
+        @Override
+        public void setMaxWriteIdle(int idleTime)
+        {
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        @Override
+        public Sender<ByteBuffer> getSender()
+        {
+            return _sender;
+        }
+
+        @Override
+        public void start()
+        {
         }
     }
 }
