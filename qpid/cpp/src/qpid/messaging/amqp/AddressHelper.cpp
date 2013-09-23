@@ -688,7 +688,7 @@ void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
                 putLifetimePolicy(data, toLifetimePolicy(i->second.asString()));
             } else {
                 pn_data_put_symbol(data, convert(i->first));
-                pn_data_put_string(data, convert(i->second.asString()));
+                write(data, i->second);
             }
         }
         pn_data_exit(data);
