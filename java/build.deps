@@ -72,9 +72,12 @@ amqp-1-0-client.libs=
 amqp-1-0-client-example.libs=${commons-cli}
 amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
-broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
+broker-core.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${derby-db} ${commons-configuration.libs} \
     ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket}
+
+#Borrow the broker-core libs, hack for release binary generation
+broker.libs=${broker-core.libs}
 
 broker-plugins-management-http.libs=${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api}  ${jackson-core} ${jackson-mapper}
 broker-plugins.libs=${log4j} ${commons-configuration.libs}
@@ -87,6 +90,7 @@ management-common.libs=
 
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
+broker-core.test.libs=${test.libs}
 client.test.libs=${test.libs}
 client-example.test.libs=${test.libs}
 tools.test.libs=

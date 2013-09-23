@@ -34,7 +34,7 @@ nn - or more contributor license agreements.  See the NOTICE file
 
     <!-- The jca module is unusual in that it produces a jar with the name ra rather than jca.  Unfortunately this means we
           need to add both jca (finds jca's jar dependencies) and ra (to find the qpid-ra jar file itself).  -->
-    <property name="module.depends" value="client management/common broker broker/tests common amqp-1-0-common common/tests jca ra broker-plugins/access-control broker-plugins/management-http broker-plugins/management-jmx broker-plugins/memory-store broker-plugins/derby-store broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol broker-plugins/amqp-1-0-protocol broker-plugins/amqp-msg-conv-0-8-to-0-10 broker-plugins/amqp-msg-conv-0-8-to-1-0 broker-plugins/amqp-msg-conv-0-10-to-1-0 ${systests.optional.depends}"/>
+    <property name="module.depends" value="client management/common broker-core broker-core/tests common amqp-1-0-common common/tests jca ra broker-plugins/access-control broker-plugins/management-http broker-plugins/management-jmx broker-plugins/memory-store broker-plugins/derby-store broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol broker-plugins/amqp-1-0-protocol broker-plugins/amqp-msg-conv-0-8-to-0-10 broker-plugins/amqp-msg-conv-0-8-to-1-0 broker-plugins/amqp-msg-conv-0-10-to-1-0 ${systests.optional.depends}"/>
     <property name="module.test.src" location="src/main/java"/>
     <property name="module.test.excludes"
               value="**/DropInTest.java,**/TestClientControlledTest.java"/>

@@ -17,9 +17,9 @@
  - under the License.
  -->
 <project name="jdbc-provider-bone" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
-    <property name="module.depends" value="common broker" />
+    <property name="module.depends" value="common broker-core" />
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided"/>
 
     <property name="broker.plugin" value="true"/>
 

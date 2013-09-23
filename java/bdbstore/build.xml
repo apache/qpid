@@ -17,10 +17,10 @@
  - under the License.
  -->
 <project name="bdbstore" xmlns:ivy="antlib:org.apache.ivy.ant" default="build">
-    <property name="module.depends" value="common broker broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol" />
-    <property name="module.test.depends" value="client common/tests broker/tests management/common systests broker-plugins/management-jmx broker-plugins/memory-store broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol broker-plugins/amqp-msg-conv-0-8-to-0-10" />
+    <property name="module.depends" value="common broker-core broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol" />
+    <property name="module.test.depends" value="client common/tests broker-core/tests management/common systests broker-plugins/management-jmx broker-plugins/memory-store broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol broker-plugins/amqp-msg-conv-0-8-to-0-10" />
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-broker-plugins-amqp-0-8-protocol=provided -Sje=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided -Sqpid-broker-plugins-amqp-0-8-protocol=provided -Sje=provided"/>
 
     <property name="broker.plugin" value="true"/>
 

@@ -17,11 +17,11 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins AMQP 0.8 to 1.0 MessageConversion" default="build">
-    <property name="module.depends" value="common broker amqp-1-0-common broker-plugins/amqp-1-0-protocol broker-plugins/amqp-0-10-protocol" />
-    <property name="module.test.depends" value="common/tests broker/tests" />
+    <property name="module.depends" value="common broker-core amqp-1-0-common broker-plugins/amqp-1-0-protocol broker-plugins/amqp-0-10-protocol" />
+    <property name="module.test.depends" value="common/tests broker-core/tests" />
 
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-amqp-1-0-common=provided -Sqpid-broker-plugins-amqp-0-10-protocol=provided -Sqpid-broker-plugins-amqp-1-0-protocol=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided -Sqpid-amqp-1-0-common=provided -Sqpid-broker-plugins-amqp-0-10-protocol=provided -Sqpid-broker-plugins-amqp-1-0-protocol=provided"/>
     <property name="broker-plugins-amqp-msg-conv-0-10-to-1-0.libs" value="" />
 
     <property name="broker.plugin" value="true"/>
