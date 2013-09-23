@@ -18,11 +18,11 @@
  -->
 <project name="Qpid Broker-Plugins Management HTTP" default="build">
 
-    <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="broker/tests common/tests management/common client" />
+    <property name="module.depends" value="common broker-core" />
+    <property name="module.test.depends" value="broker-core/tests common/tests management/common client" />
 
     <property name="module.genpom" value="true" />
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided" />
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided" />
 
     <property name="broker.plugin" value="true"/>
 

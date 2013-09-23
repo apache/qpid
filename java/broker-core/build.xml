@@ -21,67 +21,13 @@
 <project name="AMQ Broker" default="build">
     <property name="module.depends" value="management/common common"/>
     <property name="module.test.depends" value="common/tests" />
-    <property name="module.main" value="org.apache.qpid.server.Main"/>
     <property name="module.genpom" value="true"/>
-
-    <!-- Add dependencies to the broker pom for the broker-plugins and bdbstore modules -->
-    <property name="module.maven.depends" value="broker-plugins/access-control broker-plugins/amqp-0-8-protocol broker-plugins/amqp-0-10-protocol broker-plugins/amqp-1-0-protocol broker-plugins/amqp-msg-conv-0-8-to-0-10 broker-plugins/amqp-msg-conv-0-8-to-1-0 broker-plugins/amqp-msg-conv-0-10-to-1-0 broker-plugins/derby-store broker-plugins/jdbc-provider-bone broker-plugins/jdbc-store broker-plugins/management-http broker-plugins/management-jmx broker-plugins/memory-store bdbstore bdbstore/jmx"/>
-    <!-- Make them runtime dependencies, make bdbstore modules optional -->
-    <property name="module.genpom.args" value="-Sqpid-broker-plugins-access-control=runtime -Sqpid-broker-plugins-amqp-0-8-protocol=runtime -Sqpid-broker-plugins-amqp-0-10-protocol=runtime -Sqpid-broker-plugins-amqp-1-0-protocol=runtime -Sqpid-broker-plugins-amqp-msg-conv-0-8-to-0-10=runtime -Sqpid-broker-plugins-amqp-msg-conv-0-8-to-1-0=runtime -Sqpid-broker-plugins-amqp-msg-conv-0-10-to-1-0=runtime -Sqpid-broker-plugins-derby-store=runtime -Sqpid-broker-plugins-jdbc-provider-bone=runtime -Sqpid-broker-plugins-jdbc-store=runtime -Sqpid-broker-plugins-management-http=runtime -Sqpid-broker-plugins-management-jmx=runtime -Sbroker-plugins-memory-store=runtime -Sqpid-bdbstore=runtime -Sqpid-bdbstore-jmx=runtime -Oqpid-bdbstore -Oqpid-bdbstore-jmx"/>
 
     <import file="../module.xml"/>
 
-    <import file="${project.root}/broker/build-generate-sources.xml"/>
+    <import file="${project.root}/broker-core/build-generate-sources.xml"/>
 
     <target name="precompile" depends="generate-logmessages"/>
-
-    <target name="copy-etc-release" if="module.etc.exists" description="copy etc directory if it exists to build tree">
-      <copy todir="${module.release}/etc" failonerror="false" flatten="true">
-          <fileset dir="${module.etc}" excludes="*.conf,*.jpp"/>
-      </copy>
-    </target>
-
-    <target name="copy-bin-release" description="copy dependencies into module release">
-        <copy todir="${module.release}/bin" failonerror="true">
-            <fileset dir="${module.bin}"/>
-        </copy>
-        <copy todir="${module.release}/bin" failonerror="true" flatten="true">
-            <fileset dir="${basedir}/../common/bin"/>
-        </copy>
-        <chmod dir="${module.release}/bin" perm="ugo+rx" includes="**/*"/>
-        <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="unix"/>
-        <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="dos" includes="*.bat"/>
-    </target>
-
-    <target name="release-bin-other" depends="release-bin-other-lib-opt,release-bin-other-bdbstore,release-bin-copy-broker-plugins"/>
-
-    <target name="release-bin-other-lib-opt" depends="release-bin-other-bdbstore" description="make lib/opt dir in the module release">
-        <mkdir dir="${module.release}/lib/opt"/>
-    </target>
-
-    <target name="release-bin-copy-broker-plugins" description="copy broker-plugins into module release">
-        <copy todir="${module.release}/lib/plugins" failonerror="true">
-            <fileset dir="${build.scratch.broker.plugins.lib}"/>
-        </copy>
-    </target>
-
-    <target name="release-bin-other-bdbstore" depends="check-bdbstore-requested" if="bdbstore-requested"
-                                         description="copy bdbstore items into module release">
-        <copy todir="${module.release}/bin" failonerror="true" flatten="true">
-            <fileset dir="${basedir}/../bdbstore/bin"/>
-        </copy>
-    </target>
-
-    <target name="check-bdbstore-requested">
-         <condition property="bdbstore-requested">
-             <or>
-                 <contains string="${modules.opt}" substring="bdbstore"/>
-                 <istrue value="${optional}"/>
-             </or>
-         </condition>
-    </target>
-
-    <target name="release-bin" depends="release-bin-tasks"/>
 
     <target name="bundle" depends="bundle-tasks"/>
 </project>
