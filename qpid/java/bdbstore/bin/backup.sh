@@ -35,7 +35,7 @@ if [ -z "${QPID_HOME}" ]; then
 fi
 
 # BDB's je JAR expected to be found in lib/opt
-LIBS="${QPID_HOME}/lib/opt/*:${QPID_HOME}/lib/qpid-all.jar"
+LIBS="${QPID_HOME}/lib/*:${QPID_HOME}/lib/plugins/*:${QPID_HOME}/lib/opt/*"
 
 echo "Starting Hot Backup Script"
 java -Dlog4j.configuration=backup-log4j.xml ${JAVA_OPTS} -cp "${LIBS}" org.apache.qpid.server.store.berkeleydb.BDBBackup "${ARGS[@]}"
