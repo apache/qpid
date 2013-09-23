@@ -33,8 +33,6 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestUtils;
 
-import com.sleepycat.je.rep.ReplicationConfig;
-
 /**
  * The HA black box tests test the BDB cluster as a opaque unit.  Client connects to
  * the cluster via a failover url

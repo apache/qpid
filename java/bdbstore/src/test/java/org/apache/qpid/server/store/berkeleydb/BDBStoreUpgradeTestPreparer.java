@@ -293,7 +293,7 @@ public class BDBStoreUpgradeTestPreparer
         connection.close();
     }
 
-    public static void sendMessages(Session session, MessageProducer messageProducer,
+    private static void sendMessages(Session session, MessageProducer messageProducer,
             Destination dest, int deliveryMode, int length, int numMesages) throws JMSException
     {
         for (int i = 1; i <= numMesages; i++)
@@ -304,7 +304,7 @@ public class BDBStoreUpgradeTestPreparer
         }
     }
 
-    public static void publishMessages(Session session, TopicPublisher publisher,
+    private static void publishMessages(Session session, TopicPublisher publisher,
             Destination dest, int deliveryMode, int length, int numMesages, String selectorProperty) throws JMSException
     {
         for (int i = 1; i <= numMesages; i++)
@@ -322,7 +322,7 @@ public class BDBStoreUpgradeTestPreparer
      * @param length number of characters in the string
      * @return string sequence of the given length
      */
-    public static String generateString(int length)
+    private static String generateString(int length)
     {
         char[] base_chars = new char[]{'0','1','2','3','4','5','6','7','8','9'};
         char[] chars = new char[length];
