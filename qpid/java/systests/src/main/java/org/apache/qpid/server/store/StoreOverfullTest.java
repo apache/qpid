@@ -106,9 +106,15 @@ public class StoreOverfullTest extends QpidBrokerTestCase
 
         MessageSender sender = sendMessagesAsync(_producer, _producerSession, TEST_SIZE, 50L, sentMessages);
 
+        long timeoutPoint = System.currentTimeMillis() + 20 * 1000;
+
         while(!((AMQSession<?,?>)_producerSession).isFlowBlocked())
         {
             Thread.sleep(100l);
+            if(System.currentTimeMillis() > timeoutPoint)
+            {
+                throw new RuntimeException("Timed out waiting for session to be blocked");
+            }
         }
         int sentCount = sentMessages.get();
         assertFalse("Did not block before sending all messages", TEST_SIZE == sentCount);
@@ -168,17 +174,28 @@ public class StoreOverfullTest extends QpidBrokerTestCase
         sendMessagesAsync(_producer, _producerSession, TEST_SIZE, 50L, sentMessages);
         sendMessagesAsync(secondProducer, secondProducerSession, TEST_SIZE, 50L, sentMessages2);
 
+        long timeoutPoint = System.currentTimeMillis() + 20 * 1000;
+
         while(!((AMQSession<?,?>)_producerSession).isFlowBlocked())
         {
             Thread.sleep(100l);
+            if(System.currentTimeMillis() > timeoutPoint)
+            {
+                throw new RuntimeException("Timed out waiting for session to be blocked");
+            }
         }
         int sentCount = sentMessages.get();
         assertFalse("Did not block before sending all messages", TEST_SIZE == sentCount);
 
+        timeoutPoint = System.currentTimeMillis() + 20 * 1000;
 
         while(!((AMQSession<?,?>)secondProducerSession).isFlowBlocked())
         {
             Thread.sleep(100l);
+            if(System.currentTimeMillis() > timeoutPoint)
+            {
+                throw new RuntimeException("Timed out waiting for second session to be blocked");
+            }
         }
         int sentCount2 = sentMessages2.get();
         assertFalse("Did not block before sending all messages", TEST_SIZE == sentCount2);
@@ -220,18 +237,30 @@ public class StoreOverfullTest extends QpidBrokerTestCase
 
         sendMessagesAsync(_producer, _producerSession, TEST_SIZE, 50L, sentMessages);
 
+        long timeoutPoint = System.currentTimeMillis() + 20 * 1000;
+
         while(!((AMQSession<?,?>)_producerSession).isFlowBlocked())
         {
             Thread.sleep(100l);
+            if(System.currentTimeMillis() > timeoutPoint)
+            {
+                throw new RuntimeException("Timed out waiting for session to be blocked");
+            }
         }
         int sentCount = sentMessages.get();
         assertFalse("Did not block before sending all messages", TEST_SIZE == sentCount);
 
         sendMessagesAsync(secondProducer, secondProducerSession, TEST_SIZE, 50L, sentMessages2);
 
+        timeoutPoint = System.currentTimeMillis() + 20 * 1000;
+
         while(!((AMQSession<?,?>)_producerSession).isFlowBlocked())
         {
             Thread.sleep(100l);
+            if(System.currentTimeMillis() > timeoutPoint)
+            {
+                throw new RuntimeException("Timed out waiting for session to be blocked");
+            }
         }
         int sentCount2 = sentMessages2.get();
         assertFalse("Did not block before sending all messages", TEST_SIZE == sentCount2);
