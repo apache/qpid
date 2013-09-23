@@ -64,6 +64,8 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
             //Move this to factory also?
             if (alternate)
                 queue->setAlternateExchange(alternate);//need to do this *before* create
+            queue->setOwningUser(userId);
+
             if (!recovering) {
                 //create persistent record if required
                 queue->create();
