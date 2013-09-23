@@ -19,6 +19,7 @@ package org.apache.qpid.test.utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -643,7 +644,25 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         File configLocation = new File(file);
         File workingDirectory = new File(System.getProperty("user.dir"));
-        return configLocation.getAbsolutePath().replace(workingDirectory.getAbsolutePath(), "").substring(1);
+
+        _logger.debug("Converting path to be relative to working directory: " + file);
+
+        try
+        {
+            if(!configLocation.getAbsolutePath().startsWith(workingDirectory.getCanonicalPath()))
+            {
+                throw new RuntimeException("Provided path is not a child of the working directory: " + workingDirectory.getCanonicalPath());
+            }
+
+            String substring = configLocation.getAbsolutePath().replace(workingDirectory.getCanonicalPath(), "").substring(1);
+            _logger.debug("Converted relative path: " + substring);
+
+            return substring;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Problem while converting to relative path", e);
+        }
     }
 
     protected String saveTestConfiguration(int port, TestBrokerConfiguration testConfiguration)
