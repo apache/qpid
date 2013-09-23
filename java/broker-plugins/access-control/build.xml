@@ -29,10 +29,6 @@
 
     <import file="../../module.xml" />
 
-    <import file="${project.root}/broker-core/build-generate-sources.xml"/>
-
-    <target name="precompile" depends="generate-logmessages"/>
-
     <target name="bundle" depends="bundle-tasks"/>
 
 </project>
