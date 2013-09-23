@@ -31,9 +31,9 @@
 
     <import file="../module.xml"/>
 
-    <property name="output.dir" value="${module.precompiled}/org/apache/qpid/server/filter/jms/selector"/>
+    <import file="${project.root}/broker/build-generate-sources.xml"/>
 
-    <target name="precompile" depends="gen_logging"/>
+    <target name="precompile" depends="generate-logmessages"/>
 
     <target name="copy-etc-release" if="module.etc.exists" description="copy etc directory if it exists to build tree">
       <copy todir="${module.release}/etc" failonerror="false" flatten="true">

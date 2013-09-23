@@ -29,8 +29,10 @@
 
     <import file="../../module.xml" />
 
-    <target name="bundle" depends="bundle-tasks"/>
+    <import file="${project.root}/broker/build-generate-sources.xml"/>
 
-    <target name="precompile" depends="gen_logging"/>
+    <target name="precompile" depends="generate-logmessages"/>
+
+    <target name="bundle" depends="bundle-tasks"/>
 
 </project>
