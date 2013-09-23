@@ -23,12 +23,14 @@ import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.naming.NamingException;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -46,6 +48,8 @@ import org.apache.qpid.url.URLSyntaxException;
  */
 public class CloseOnNoRouteForMandatoryMessageTest extends QpidBrokerTestCase
 {
+    private static final Logger _logger = Logger.getLogger(CloseOnNoRouteForMandatoryMessageTest.class);
+
     private Connection _connection;
     private UnroutableMessageTestExceptionListener _testExceptionListener = new UnroutableMessageTestExceptionListener();
 
@@ -73,8 +77,15 @@ public class CloseOnNoRouteForMandatoryMessageTest extends QpidBrokerTestCase
             transactedSession.commit();
             fail("Expected exception not thrown");
         }
+        catch (IllegalStateException ise)
+        {
+            _logger.debug("Caught exception", ise);
+            //The session was marked closed even before we had a chance to call commit on it
+            assertTrue("ISE did not indicate closure", ise.getMessage().contains("closed"));
+        }
         catch(JMSException e)
         {
+            _logger.debug("Caught exception", e);
             _testExceptionListener.assertNoRoute(e, testQueueName);
         }
         _testExceptionListener.assertReceivedNoRoute(testQueueName);
@@ -106,8 +117,15 @@ public class CloseOnNoRouteForMandatoryMessageTest extends QpidBrokerTestCase
             transactedSession.commit();
             fail("Expected exception not thrown");
         }
+        catch (IllegalStateException ise)
+        {
+            _logger.debug("Caught exception", ise);
+            //The session was marked closed even before we had a chance to call commit on it
+            assertTrue("ISE did not indicate closure", ise.getMessage().contains("closed"));
+        }
         catch (JMSException e)
         {
+            _logger.debug("Caught exception", e);
             AMQException noRouteException = (AMQException) e.getLinkedException();
             assertNotNull("AMQException should be linked to JMSException", noRouteException);
 
