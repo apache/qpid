@@ -38,8 +38,12 @@ import java.util.NoSuchElementException;
 
 public class QpidTestCase extends TestCase
 {
+    private static final String TEST_EXCLUDES = "test.excludes";
+    private static final String TEST_EXCLUDELIST = "test.excludelist";
+    private static final String TEST_EXCLUDEFILES = "test.excludefiles";
     public static final String QPID_HOME = System.getProperty("QPID_HOME");
     public static final String TEST_RESOURCES_DIR = QPID_HOME + "/../test-profiles/test_resources/";
+    public static final String TEST_PROFILES_DIR = QPID_HOME + "/../test-profiles/";
     public static final String TMP_FOLDER = System.getProperty("java.io.tmpdir");
     public static final String LOG4J_CONFIG_FILE_PATH = System.getProperty("log4j.configuration.file");
 
@@ -64,8 +68,19 @@ public class QpidTestCase extends TestCase
         if (Boolean.getBoolean("test.exclude"))
         {
             _logger.info("Some tests should be excluded, building the exclude list");
-            String exclusionListURIs = System.getProperties().getProperty("test.excludefiles", "");
-            String exclusionListString = System.getProperties().getProperty("test.excludelist", "");
+            String exclusionListURIs = System.getProperty(TEST_EXCLUDEFILES, "");
+            String exclusionListString = System.getProperty(TEST_EXCLUDELIST, "");
+            String testExcludes = System.getProperty(TEST_EXCLUDES);
+
+            //For the maven build, process the test.excludes property
+            if(testExcludes != null && exclusionListURIs == "")
+            {
+                for (String exclude : testExcludes.split("\\s+"))
+                {
+                    exclusionListURIs += TEST_PROFILES_DIR + "/" + exclude + ";";
+                }
+            }
+
             List<String> exclusionList = new ArrayList<String>();
 
             for (String uri : exclusionListURIs.split(";\\s*"))
