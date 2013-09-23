@@ -201,6 +201,11 @@ public class TestFileUtils
      */
     public static void copy(InputStream in, File dst) throws IOException
     {
+        if(in == null)
+        {
+            throw new IllegalArgumentException("Provided InputStream must not be null");
+        }
+
         try
         {
             if (!dst.exists())
