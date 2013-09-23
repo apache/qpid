@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>12</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.apache.qpid</groupId>
+  <artifactId>qpid-project</artifactId>
+  <version>0.26-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <!-- ###### TODO ######
+
+    - Test deploying the modules to a local Nexus instance (overriding the repo properties).
+      - Dont deploy modules we aren't already doing so.
+    - Decide on name for this parent module.
+    - Fix the version numbers in all the modules.
+    - Remove groupid from all the modules, if possible?
+    - Add enforcer check for maven versions.
+    - Add enforcer check for test profile property values, if possible?
+    - Align the XML in the pom files consistently, fix whitepsace errors.
+    - Complete setting properties for the dependency version numbers.
+    - Use dependancy management sections to control the version numbers.
+    - Add LICENCE, NOTICE, README files to the binary assemblies.
+    - Add the test profiles, log4j config etc to a module which can be extracted by the others.
+      - Then fix log4j configuration property to work with all modules.
+      - Then fix what the systests/perftests do to copy the test-profiles dir to the encessary location.
+    - Default and remove broker log interleave property from tests.
+    - Figure out dependency setup for optional bdbstore tests.
+    - Add the other test profiles
+    - Generate HTML reports of the test results
+
+    === Once the Ant build is removed ===
+    - Move all the resources to be in the /src/foo/resources folders.
+    - Fix the tests not to be dependant on the working dir being the java dir.
+    - Fix the tests not to be dependant on the test config/output dirs being children of qpid.home.
+      - Remove the QBTC output file mechanics, rely on Surefire to do it?
+  -->
+
+  <properties>
+    <!-- version properties -->
+    <junit-version>3.8.1</junit-version>
+    <mockito-version>1.9.0</mockito-version>
+
+    <!-- Should be 1.6 but set to 1.5 for binary comparison with the Ant build output -->
+    <java.source>1.5</java.source>
+    <java.target>1.5</java.target>
+
+    <!-- test properties -->
+    <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
+    <qpid.home.qbtc.output>${qpid.home}/target/qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
+    <qpid.work>${project.build.directory}/QPID_WORK</qpid.work>
+
+    <profile.excludes.java-mms.0-10>JavaTransientExcludes Java010Excludes</profile.excludes.java-mms.0-10>
+    <broker.version.java-mms.0-10>v0_10</broker.version.java-mms.0-10>
+    <qpid.broker_default_amqp_protocol_excludes.java-mms.0-10>AMQP_1_0</qpid.broker_default_amqp_protocol_excludes.java-mms.0-10>
+
+    <profile>java-mms.0-10</profile>
+    <profile.excludes>${profile.excludes.java-mms.0-10}</profile.excludes>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit-version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>${mockito-version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <modules>
+    <module>amqp-1-0-client</module>
+    <module>amqp-1-0-client-jms</module>
+    <module>amqp-1-0-common</module>
+    <module>broker</module>
+    <module>broker-core</module>
+    <module>broker-plugins/access-control</module>
+    <module>broker-plugins/amqp-0-8-protocol</module>
+    <module>broker-plugins/amqp-0-10-protocol</module>
+    <module>broker-plugins/amqp-1-0-protocol</module>
+    <module>broker-plugins/amqp-msg-conv-0-8-to-0-10</module>
+    <module>broker-plugins/amqp-msg-conv-0-8-to-1-0</module>
+    <module>broker-plugins/amqp-msg-conv-0-10-to-1-0</module>
+    <module>broker-plugins/derby-store</module>
+    <module>broker-plugins/jdbc-provider-bone</module>
+    <module>broker-plugins/jdbc-store</module>
+    <module>broker-plugins/management-http</module>
+    <module>broker-plugins/management-jmx</module>
+    <module>broker-plugins/memory-store</module>
+    <module>common</module>
+    <module>client</module>
+    <module>management/common</module>
+    <module>jca</module>
+    <module>jca/rar</module>
+
+    <module>tools</module>
+    <module>management/example</module>
+
+    <module>qpid-test-utils</module>
+    <module>systests</module>
+    <module>perftests</module>
+
+    <module>perftests/visualisation-jfc</module>
+    <module>bdbstore</module>
+    <module>bdbstore/jmx</module>
+    <module>bdbstore/systests</module>
+  </modules>
+
+  <repositories>
+    <!-- For the BDB JE dependency of the optional bdbstore plugin modules-->
+    <repository>
+      <id>oracle.releases</id>
+      <url>http://download.oracle.com/maven</url>
+      <layout>default</layout>
+    </repository>
+    <!-- For the CSVJDBC dependency of the optional perftests-visualistion-jfc module-->
+    <repository>
+      <id>csvjdbc.releases</id>
+      <url>http://csvjdbc.sourceforge.net/maven2</url>
+      <layout>default</layout>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <!--version specified in parent pom -->
+        <executions>
+          <execution>
+             <id>create-qbtc-output-dir</id>
+             <phase>pre-integration-test</phase>
+             <goals>
+               <goal>run</goal>
+             </goals>
+             <configuration>
+               <target>
+                 <mkdir dir="${qpid.home.qbtc.output}"/>
+               </target>
+             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <!--version specified in parent pom -->
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+          <argLine>-Xmx512m</argLine>
+          <systemPropertyVariables>
+            <QPID_HOME>${qpid.home}</QPID_HOME>
+            <QPID_WORK>${qpid.work}</QPID_WORK>
+
+            <java.naming.factory.initial>org.apache.qpid.jndi.PropertiesFileInitialContextFactory</java.naming.factory.initial>
+            <java.naming.provider.url>test-profiles${file.separator}test-provider.properties</java.naming.provider.url>
+
+            <broker.config>${qpid.home}/etc/config-systests.json</broker.config>
+            <messagestore.class.name>org.apache.qpid.server.store.MemoryMessageStore</messagestore.class.name>
+            <broker.protocol.excludes></broker.protocol.excludes>
+            <broker.persistent>false</broker.persistent>
+
+            <max_prefetch>1000</max_prefetch>
+            <qpid.dest_syntax>BURL</qpid.dest_syntax>
+
+            <amqj.logging.level>debug</amqj.logging.level>
+            <amqj.server.logging.level>debug</amqj.server.logging.level>
+            <amqj.protocol.logging.level>debug</amqj.protocol.logging.level>
+            <root.logging.level>warn</root.logging.level>
+
+            <log4j.configuration.file>test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
+            <log4j.configuration>file://${basedir}${file.separator}..${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration>
+
+            <log4j.debug>false</log4j.debug>
+
+            <test.port>15672</test.port>
+            <test.mport>18999</test.mport>
+            <test.cport>19099</test.cport>
+            <test.hport>18080</test.hport>
+
+            <test.port.ssl>15671</test.port.ssl>
+            <test.port.alt>25672</test.port.alt>
+            <test.port.alt.ssl>25671</test.port.alt.ssl>
+
+            <test.exclude>true</test.exclude>
+            <test.excludes>Excludes JavaExcludes ${profile}.excludes ${profile.excludes}</test.excludes>
+            <test.mem>512M</test.mem>
+
+            <profile.clustered>false</profile.clustered>
+            <broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</broker.virtualhosts-config>
+
+            <!-- Different from the properties files in the Ant build -->
+            <broker.language>java</broker.language>
+            <broker.type>internal</broker.type>
+
+            <broker.version>${broker.version.java-mms.0-10}</broker.version>
+            <qpid.broker_default_amqp_protocol_excludes>${qpid.broker_default_amqp_protocol_excludes.java-mms.0-10}</qpid.broker_default_amqp_protocol_excludes>
+            <broker.stopped>Exception</broker.stopped>
+            <broker.command>${qpid.home}/bin/qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</broker.command>
+
+            <broker.ready>BRK-1004</broker.ready>
+            <broker.log.interleave>true</broker.log.interleave>
+            <profile>${profile}</profile>
+
+            <!-- This must be a child of qpid home currently
+                 due to the horrible mechanics of QBTC  -->
+            <test.output>${qpid.home.qbtc.output}</test.output>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <!-- Everything in this profile should already be set above by default in case someone sets an explicit non-test
+           maven profile, which will disable this activeByDefault profile. This is only here for clarity. -->
+      <id>java-mms.0-10</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>profile</name>
+          <value>java-mms.0-10</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>java-mms.0-10</profile>
+        <profile.excludes>${profile.excludes.java-mms.0-10}</profile.excludes>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <broker.version>${broker.version.java-mms.0-10}</broker.version>
+                <qpid.broker_default_amqp_protocol_excludes>${qpid.broker_default_amqp_protocol_excludes.java-mms.0-10}</qpid.broker_default_amqp_protocol_excludes>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>java-mms.0-9-1</id>
+      <activation>
+        <property>
+          <name>profile</name>
+          <value>java-mms.0-9-1</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>java-mms.0-9-1</profile>
+        <profile.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.excludes>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <broker.version>v0_9_1</broker.version>
+                <qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</qpid.broker_default_amqp_protocol_excludes>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>
+
