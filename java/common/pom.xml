@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-project</artifactId>
+    <version>0.26-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.apache.qpid</groupId>
+  <artifactId>qpid-common</artifactId>
+
+  <properties>
+    <generated-amqp-0-8-dir>${project.build.directory}/generated-sources/generated-amqp-0-8</generated-amqp-0-8-dir>
+    <generated-amqp-0-10-dir>${project.build.directory}/generated-sources/generated-amqp-0-10</generated-amqp-0-10-dir>
+    <selector.output.dir>${project.build.directory}/generated-sources/generated-jms-selector/org/apache/qpid/filter/selector</selector.output.dir>
+  </properties>
+
+  <dependencies>
+	<dependency>
+	  <groupId>org.slf4j</groupId>
+	  <artifactId>slf4j-api</artifactId>
+	  <version>1.6.4</version>
+	  <scope>compile</scope>
+	</dependency>
+
+    <!-- test dependencies -->
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-test-utils</artifactId>
+      <version>0.26-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+
+	<dependency>
+	  <groupId>log4j</groupId>
+	  <artifactId>log4j</artifactId>
+	  <version>1.2.16</version>
+	  <scope>test</scope>
+	</dependency>
+  </dependencies>
+   
+  <build>
+    <testResources>
+        <testResource>
+            <directory>${basedir}/src/test/java</directory>
+            <excludes>
+              <exclude>**/*.java/</exclude>
+            </excludes>
+        </testResource>
+        <testResource>
+            <directory>${basedir}/src/test/resources</directory>
+        </testResource>
+    </testResources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <!--version specified via parent poms -->
+        <configuration>
+          <source>${java.source}</source>
+          <target>${java.target}</target>
+          <optimize>true</optimize>
+          <showDeprecation>true</showDeprecation>
+          <showWarnings>true</showWarnings>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javacc-maven-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>jms-selector-generated</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>javacc</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${selector.output.dir}</outputDirectory>
+              <sourceDirectory>src/main/grammar</sourceDirectory>
+              <includes>
+                <include>SelectorParser.jj</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <!--version specified via parent poms -->
+        <executions>
+            <execution>
+              <id>amqp-0-8-generated</id>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>run</goal>
+              </goals>
+              <configuration>
+                <target>
+                    <ant antfile="build-generate-sources.xml">
+                      <reference torefid="source.generation.classpathref" refid="maven.plugin.classpath" />
+                      <property name="gentools.classes" value="${project.build.directory}/gentools-classes"/>
+                      <property name="build.compiler" value="extJavac"/>
+                    </ant>
+                </target>
+              </configuration>
+            </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>velocity</groupId>
+            <artifactId>velocity</artifactId>
+            <version>1.4</version>
+          </dependency>
+          <dependency>
+            <groupId>velocity</groupId>
+            <artifactId>velocity-dep</artifactId>
+            <version>1.4</version>
+          </dependency>
+          <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-standalone</artifactId>
+            <version>2.5.3</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <!-- Add the generated source paths for compilation-->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${generated-amqp-0-8-dir}</source>
+                <source>${generated-amqp-0-10-dir}</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>
