@@ -19,7 +19,7 @@
 <project name="Qpid Broker-Plugins Management HTTP" default="build">
 
     <property name="module.depends" value="common broker-core" />
-    <property name="module.test.depends" value="broker-core/tests common/tests management/common client" />
+    <property name="module.test.depends" value="broker-core/tests qpid-test-utils management/common client" />
 
     <property name="module.genpom" value="true" />
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided" />

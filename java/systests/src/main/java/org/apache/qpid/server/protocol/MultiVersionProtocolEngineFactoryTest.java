@@ -22,7 +22,10 @@ package org.apache.qpid.server.protocol;
 
 import static org.mockito.Mockito.when;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -32,7 +35,8 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.transport.TestNetworkConnection;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
@@ -200,6 +204,97 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         catch(IllegalArgumentException iae)
         {
             //expected
+        }
+    }
+
+    private static class TestNetworkConnection implements NetworkConnection
+    {
+        private String _remoteHost = "127.0.0.1";
+        private String _localHost = "127.0.0.1";
+        private int _port = 1;
+        private final Sender<ByteBuffer> _sender;
+
+        public TestNetworkConnection()
+        {
+            _sender = new Sender<ByteBuffer>()
+            {
+                public void setIdleTimeout(int i)
+                {
+                }
+
+                public void send(ByteBuffer msg)
+                {
+                }
+
+                public void flush()
+                {
+                }
+
+                public void close()
+                {
+                }
+            };
+        }
+
+        @Override
+        public SocketAddress getLocalAddress()
+        {
+            return new InetSocketAddress(_localHost, _port);
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress()
+        {
+            return new InetSocketAddress(_remoteHost, _port);
+        }
+
+        @Override
+        public void setMaxReadIdle(int idleTime)
+        {
+        }
+
+        @Override
+        public void setPeerPrincipal(Principal principal)
+        {
+        }
+
+        @Override
+        public Principal getPeerPrincipal()
+        {
+            return null;
+        }
+
+        @Override
+        public int getMaxReadIdle()
+        {
+            return 0;
+        }
+
+        @Override
+        public int getMaxWriteIdle()
+        {
+            return 0;
+        }
+
+        @Override
+        public void setMaxWriteIdle(int idleTime)
+        {
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        @Override
+        public Sender<ByteBuffer> getSender()
+        {
+            return _sender;
+        }
+
+        @Override
+        public void start()
+        {
         }
     }
 }

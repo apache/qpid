@@ -33,7 +33,7 @@
     </condition>
 
     <property name="module.depends" value="client common"/>
-    <property name="module.test.depends" value="systests broker-core broker-plugins/memory-store broker-plugins/derby-store common/tests management/common broker-plugins/amqp-0-8-protocol  broker-plugins/amqp-0-10-protocol broker-plugins/amqp-1-0-protocol ${perftests.optional.test.depends}"/>
+    <property name="module.test.depends" value="systests broker-core broker-plugins/memory-store broker-plugins/derby-store qpid-test-utils management/common broker-plugins/amqp-0-8-protocol  broker-plugins/amqp-0-10-protocol broker-plugins/amqp-1-0-protocol ${perftests.optional.test.depends}"/>
 
     <import file="../module.xml"/>
 

@@ -20,17 +20,20 @@
  */
 package org.apache.qpid.test.unit.client.protocol;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.security.Principal;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.transport.TestNetworkConnection;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 public class AMQProtocolSessionTest extends QpidBrokerTestCase
 {
@@ -96,5 +99,105 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
     {
         _testSession.getNetworkConnection().setLocalAddress(address);
         assertEquals("Wrong queue name", queueName, _testSession.genQueueName().asString());
+    }
+
+    private static class TestNetworkConnection implements NetworkConnection
+    {
+        private String _remoteHost = "127.0.0.1";
+        private String _localHost = "127.0.0.1";
+        private int _port = 1;
+        private SocketAddress _localAddress = null;
+        private final Sender<ByteBuffer> _sender;
+
+        public TestNetworkConnection()
+        {
+            _sender = new Sender<ByteBuffer>()
+            {
+
+                public void setIdleTimeout(int i)
+                {
+
+                }
+
+                public void send(ByteBuffer msg)
+                {
+
+                }
+
+                public void flush()
+                {
+
+                }
+
+                public void close()
+                {
+
+                }
+            };
+        }
+
+        @Override
+        public SocketAddress getLocalAddress()
+        {
+            return (_localAddress != null) ? _localAddress : new InetSocketAddress(_localHost, _port);
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress()
+        {
+            return new InetSocketAddress(_remoteHost, _port);
+        }
+
+        @Override
+        public void setMaxReadIdle(int idleTime)
+        {
+        }
+
+        @Override
+        public void setPeerPrincipal(Principal principal)
+        {
+        }
+
+        @Override
+        public Principal getPeerPrincipal()
+        {
+            return null;
+        }
+
+        @Override
+        public int getMaxReadIdle()
+        {
+            return 0;
+        }
+
+        @Override
+        public int getMaxWriteIdle()
+        {
+            return 0;
+        }
+
+        @Override
+        public void setMaxWriteIdle(int idleTime)
+        {
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        public void setLocalAddress(SocketAddress address)
+        {
+            _localAddress = address;
+        }
+
+        public Sender<ByteBuffer> getSender()
+        {
+            return _sender;
+        }
+
+        public void start()
+        {
+        }
     }
 }

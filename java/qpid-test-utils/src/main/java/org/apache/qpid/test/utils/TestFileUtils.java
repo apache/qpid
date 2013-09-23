@@ -23,15 +23,14 @@ package org.apache.qpid.test.utils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import java.io.FileOutputStream;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.util.FileUtils;
-
 /**
- * Utility methods intended to be used in unit tests that manipulate files
+ * Utility methods intended to be used in tests that manipulate files
  */
 public class TestFileUtils
 {
@@ -55,7 +54,7 @@ public class TestFileUtils
         File testDir = new File(SYSTEM_TMP_DIR, dirNameStem + "-" + System.currentTimeMillis());
         if (testDir.exists())
         {
-            FileUtils.delete(testDir, true);
+            delete(testDir, true);
         }
 
         testDir.mkdirs();
@@ -102,7 +101,7 @@ public class TestFileUtils
         InputStream in = testCase.getClass().getResourceAsStream(resourceName);
         try
         {
-            FileUtils.copy(in, dst);
+            copy(in, dst);
         }
         catch (Exception e)
         {
@@ -149,5 +148,86 @@ public class TestFileUtils
             }
         }
         return file;
+    }
+
+    /**
+     * Delete a given file/directory,
+     * A directory will always require the recursive flag to be set.
+     * if a directory is specified and recursive set then delete the whole tree
+     *
+     * @param file      the File object to start at
+     * @param recursive boolean to recurse if a directory is specified.
+     *
+     * @return <code>true</code> if and only if the file or directory is
+     *         successfully deleted; <code>false</code> otherwise
+     */
+    public static boolean delete(File file, boolean recursive)
+    {
+        boolean success = true;
+
+        if (file.isDirectory())
+        {
+            if (recursive)
+            {
+                File[] files = file.listFiles();
+
+                // This can occur if the file is deleted outside the JVM
+                if (files == null)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < files.length; i++)
+                {
+                    success = delete(files[i], true) && success;
+                }
+
+                return success && file.delete();
+            }
+
+            return false;
+        }
+
+        return file.delete();
+    }
+
+    /**
+     * Copies the specified InputStream to the specified destination file. If the destination file does not exist,
+     * it is created.
+     *
+     * @param in The InputStream
+     * @param dst The destination file name.
+     * @throws IOException
+     */
+    public static void copy(InputStream in, File dst) throws IOException
+    {
+        try
+        {
+            if (!dst.exists())
+            {
+                dst.createNewFile();
+            }
+
+            OutputStream out = new FileOutputStream(dst);
+            
+            try
+            {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0)
+                {
+                    out.write(buf, 0, len);
+                }
+            }
+            finally
+            {
+                out.close();
+            }
+        }
+        finally
+        {
+            in.close();
+        }
     }
 }
