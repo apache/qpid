@@ -18,7 +18,7 @@
  -->
 <project name="Qpid Broker-Plugins AMQP 0-10 Protocol" default="build">
     <property name="module.depends" value="common broker-core" />
-    <property name="module.test.depends" value="common/tests broker-core/tests" />
+    <property name="module.test.depends" value="qpid-test-utils broker-core/tests" />
 
     <property name="module.genpom" value="true"/>
     <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided"/>

@@ -18,9 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport;
+package org.apache.qpid.client.transport;
 
 import java.nio.ByteBuffer;
+
+import org.apache.qpid.transport.Sender;
 
 public class MockSender implements Sender<ByteBuffer>
 {

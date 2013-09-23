@@ -20,7 +20,7 @@
  -->
 <project name="AMQ Broker" default="build">
     <property name="module.depends" value="management/common common"/>
-    <property name="module.test.depends" value="common/tests" />
+    <property name="module.test.depends" value="qpid-test-utils" />
     <property name="module.genpom" value="true"/>
 
     <import file="../module.xml"/>

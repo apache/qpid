@@ -28,12 +28,12 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.MockAMQConnection;
 import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.transport.TestNetworkConnection;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.amqp_8_0.BasicRecoverOkBodyImpl;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.transport.TestNetworkConnection;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

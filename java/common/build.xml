@@ -20,6 +20,7 @@
  -->
 <project name="AMQ Common" default="build">
 
+  <property name="module.test.depends" value="qpid-test-utils" />
   <property name="module.genpom" value="true"/>
 
   <import file="../module.xml"/>
