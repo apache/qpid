@@ -1182,18 +1182,27 @@ void Queue::encode(Buffer& buffer) const
     buffer.putShortString(name);
     buffer.put(encodableSettings);
     buffer.putShortString(alternateExchange.get() ? alternateExchange->getName() : std::string(""));
+    buffer.putShortString(userId);
 }
 
 uint32_t Queue::encodedSize() const
 {
     return name.size() + 1/*short string size octet*/
         + (alternateExchange.get() ? alternateExchange->getName().size() : 0) + 1 /* short string */
+        + userId.size() + 1 /* short string */
         + encodableSettings.encodedSize();
+}
+
+void Queue::updateAclUserQueueCount()
+{
+  if (broker->getAcl())
+    broker->getAcl()->approveCreateQueue(userId, name);
 }
 
 Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
 {
     string name;
+    string _userId;
     buffer.getShortString(name);
     FieldTable ft;
     buffer.get(ft);
@@ -1205,6 +1214,12 @@ Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
         string altExch;
         buffer.getShortString(altExch);
         result.first->alternateExchangeName.assign(altExch);
+    }
+
+    //get userId of queue's creator; ACL counters for userId are done after ACL plugin is initialized
+    if (buffer.available()) {
+        buffer.getShortString(_userId);
+        result.first->setOwningUser(_userId);
     }
 
     return result.first;

@@ -355,6 +355,11 @@ Broker::Broker(const Broker::Options& conf) :
     //recover any objects via object factories
     objects.restore(*this);
 
+    // Assign to queues their users who created them (can be done after ACL is loaded in Plugin::initializeAll above
+    if ((getAcl()) && (store.get())) {
+        queues.eachQueue(boost::bind(&qpid::broker::Queue::updateAclUserQueueCount, _1));
+    }
+
     if(conf.enableMgmt) {
         if (getAcl()) {
             mgmtObject->set_maxConns(getAcl()->getMaxConnectTotal());
