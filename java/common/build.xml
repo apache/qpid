@@ -26,7 +26,6 @@
 
   <property name="generated.package" value="org/apache/qpid/framing" />
   <property name="framing.generated.dir" location="${module.precompiled}/${generated.package}" />
-  <property name="qpidbuildversion.java" location="${module.precompiled}/org/apache/qpid/QpidBuildVersion.java" />
   <property name="xml.spec.dir" location="${project.root}/../specs" />
   <property name="xml.spec.deps" value="amqp0-8-qpid.stripped.xml amqp0-9-qpid.stripped.xml amqp0-9-1.stripped.xml" />
   <property name="xml.spec.list" value='"${xml.spec.dir}/amqp0-8-qpid.stripped.xml" "${xml.spec.dir}/amqp0-9-qpid.stripped.xml" "${xml.spec.dir}/amqp0-9-1.stripped.xml"' />
@@ -83,25 +82,6 @@
     <touch file="${gentools.timestamp}" />
   </target>
 
-  <target name="build-version" depends="create-version" if="version-stale">
-  <tstamp>
-    <format property="build.time" pattern="yyyy-MM-dd HH:mm:ss z" timezone="UTC"/>
-  </tstamp>
-
-    <echo file="${qpidbuildversion.java}" append="false">package org.apache.qpid;
-
-public class QpidBuildVersion
-{
-    public static final String VERSION = "${project.version}";
-    public static final String SVN_VERSION = "${svnversion.output}";
-    public static final String BUILD_PROJECT = "${project.name}";
-    public static final String BUILD_TIME = "${build.time}";
-
-}
-</echo>
-
-  </target>
-
   <target name="jms-selector">
     <copy tofile="${module.build}/javacc.jar" failonerror="true">
       <fileset dir="${project.root}/lib/required">
@@ -114,7 +94,7 @@ public class QpidBuildVersion
             javacchome="${module.build}"/>
   </target>
 
-  <target name="precompile" depends="gentools,jython,create-version,build-version,jms-selector"/>
+  <target name="precompile" depends="gentools,jython,create-version,jms-selector"/>
 
   <target name="bundle" depends="bundle-tasks"/>
 
