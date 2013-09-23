@@ -889,10 +889,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     windows/SCM.cpp
   )
 
-  set (qpidmessaging_platform_SOURCES
-     qpid/messaging/HandleInstantiator.cpp
-  )
-
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   # POSIX (Non-Windows) platforms have a lot of overlap in sources; the only
@@ -989,9 +985,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidd_platform_SOURCES
     posix/QpiddBroker.cpp
-  )
-
-  set (qpidmessaging_platform_SOURCES
   )
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
@@ -1234,7 +1227,6 @@ set_source_files_properties(
      COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
 
 set (qpidmessaging_SOURCES
-     ${qpidmessaging_platform_SOURCES}
      ${qpidmessaging_SOURCES_hidden}
      qpid/messaging/Address.cpp
      qpid/messaging/AddressParser.cpp # The functions in here are not in the public interface, but qmf uses them
