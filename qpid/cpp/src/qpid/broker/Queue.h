@@ -204,6 +204,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QueueDepth current;
     QueueBindings bindings;
     std::string alternateExchangeName;
+    std::string userId; // queue owner for ACL quota purposes
     boost::shared_ptr<Exchange> alternateExchange;
     framing::SequenceNumber sequence;
     qmf::org::apache::qpid::broker::Queue::shared_ptr mgmtObject;
@@ -383,6 +384,10 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     /** Get the message at position pos, returns true if found and sets msg */
     QPID_BROKER_EXTERN bool find(framing::SequenceNumber pos, Message& msg ) const;
+
+    // Remember the queue's owner so acl quotas can be restored after restart
+    void setOwningUser(std::string& _userId) { userId  = _userId; }
+    void updateAclUserQueueCount();
 
     QPID_BROKER_EXTERN void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
     QPID_BROKER_EXTERN boost::shared_ptr<Exchange> getAlternateExchange();
