@@ -1294,8 +1294,9 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
 
-        if (!acl->approveCreateQueue(userId,name) )
-            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
+        if (!queues.find(name))
+            if (!acl->approveCreateQueue(userId,name) )
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
     }
 
     Exchange::shared_ptr alternate;
