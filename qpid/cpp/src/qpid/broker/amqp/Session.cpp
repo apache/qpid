@@ -203,17 +203,24 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     node.exchange = connection.getBroker().getExchanges().find(name);
     node.queue = connection.getBroker().getQueues().find(name);
     node.topic = connection.getTopics().get(name);
+    bool createOnDemand = is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus));
+    //Strictly speaking, properties should only be specified when the
+    //terminus is dynamic. However we will not enforce that here. If
+    //properties are set on the attach request, we will set them on
+    //our reply. This allows the 'create' and 'assert' options in the
+    //qpid messaging API to be implemented over 1.0.
+    node.properties.read(pn_terminus_properties(terminus));
+
     if (node.topic) node.exchange = node.topic->getExchange();
-    if (node.exchange && !node.queue && is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus))) {
-        node.properties.read(pn_terminus_properties(terminus));
+    if (node.exchange && !node.queue && createOnDemand) {
         if (!node.properties.getExchangeType().empty() && node.properties.getExchangeType() != node.exchange->getType()) {
+            //emulate 0-10 exchange-declare behaviour
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "Exchange of different type already exists");
         }
     }
     if (!node.queue && !node.exchange) {
-        if (pn_terminus_is_dynamic(terminus)  || is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus))) {
+        if (pn_terminus_is_dynamic(terminus)  || createOnDemand) {
             //is it a queue or an exchange?
-            node.properties.read(pn_terminus_properties(terminus));
             if (node.properties.isQueue()) {
                 node.queue = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
             } else {
@@ -222,7 +229,6 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
                                                       args, connection.getUserId(), connection.getId()).first;
             }
-            node.created = true;
         } else {
             size_t i = name.find('@');
             if (i != std::string::npos && (i+1) < name.length()) {
@@ -324,12 +330,11 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
     if (node.queue) {
         setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.queue);
         authorise.incoming(node.queue);
+        node.properties.write(pn_terminus_properties(pn_link_target(link)), node.queue);
     } else if (node.exchange) {
         setCapabilities(pn_terminus_capabilities(target), pn_terminus_capabilities(pn_link_target(link)), node.exchange);
         authorise.incoming(node.exchange);
-    }
-    if (node.created) {
-        node.properties.write(pn_terminus_properties(pn_link_target(link)));
+        node.properties.write(pn_terminus_properties(pn_link_target(link)), node.exchange);
     }
 
     const char* sourceAddress = pn_terminus_get_address(pn_link_remote_source(link));
@@ -361,10 +366,12 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
 void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::string& name)
 {
     ResolvedNode node = resolve(name, source, false);
-    if (node.queue) setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.queue);
-    else if (node.exchange) setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.exchange);
-    if (node.created) {
-        node.properties.write(pn_terminus_properties(pn_link_source(link)));
+    if (node.queue) {
+        setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.queue);
+        node.properties.write(pn_terminus_properties(pn_link_source(link)), node.queue);
+    } else if (node.exchange) {
+        setCapabilities(pn_terminus_capabilities(source), pn_terminus_capabilities(pn_link_source(link)), node.exchange);
+        node.properties.write(pn_terminus_properties(pn_link_source(link)), node.exchange);
     }
 
     Filter filter;

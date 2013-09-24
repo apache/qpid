@@ -20,6 +20,8 @@
  */
 #include "qpid/broker/amqp/NodeProperties.h"
 #include "qpid/broker/amqp/DataReader.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/Descriptor.h"
@@ -100,7 +102,7 @@ bool getLifetimeDescriptorSymbol(QueueSettings::LifetimePolicy policy, pn_bytes_
 
 }
 
-NodeProperties::NodeProperties() : queue(true), durable(false), autoDelete(false), exclusive(false), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
+NodeProperties::NodeProperties() : received(false), queue(true), durable(false), autoDelete(false), exclusive(false), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
 
 void NodeProperties::read(pn_data_t* data)
 {
@@ -108,26 +110,92 @@ void NodeProperties::read(pn_data_t* data)
     reader.read(data);
 }
 
-void NodeProperties::write(pn_data_t* data)
+void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Queue> node)
 {
-    pn_data_put_map(data);
-    pn_data_enter(data);
-    pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
-    pn_data_put_string(data, convert(queue ? MOVE : COPY));
-    pn_bytes_t symbol;
-    if (autoDelete && getLifetimeDescriptorSymbol(lifetime, symbol)) {
-        pn_data_put_symbol(data, convert(LIFETIME_POLICY));
-        pn_data_put_described(data);
+    if (received) {
+        pn_data_put_map(data);
         pn_data_enter(data);
-        pn_data_put_symbol(data, symbol);
-        pn_data_put_list(data);
+        pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
+        pn_data_put_string(data, convert(MOVE));//TODO: should really add COPY as well, since queues can be browsed
+        pn_bytes_t symbol;
+        if (autoDelete && node->isAutoDelete() && getLifetimeDescriptorSymbol(node->getSettings().lifetime, symbol)) {
+            pn_data_put_symbol(data, convert(LIFETIME_POLICY));
+            pn_data_put_described(data);
+            pn_data_enter(data);
+            pn_data_put_symbol(data, symbol);
+            pn_data_put_list(data);
+            pn_data_exit(data);
+        }
+        if (durable && node->isDurable()) {
+            pn_data_put_symbol(data, convert(DURABLE));
+            pn_data_put_bool(data, true);
+        }
+        if (exclusive && node->hasExclusiveOwner()) {
+            pn_data_put_symbol(data, convert(EXCLUSIVE));
+            pn_data_put_bool(data, true);
+        }
+        if (!alternateExchange.empty() && node->getAlternateExchange()) {
+            pn_data_put_symbol(data, convert(ALTERNATE_EXCHANGE));
+            pn_data_put_string(data, convert(node->getAlternateExchange()->getName()));
+        }
+
+        qpid::types::Variant::Map actual = node->getSettings().asMap();
+        qpid::types::Variant::Map unrecognised;
+        QueueSettings dummy;
+        dummy.populate(actual, unrecognised);
+        for (qpid::types::Variant::Map::const_iterator i = unrecognised.begin(); i != unrecognised.end(); ++i) {
+            actual.erase(i->first);
+        }
+        for (qpid::types::Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+            qpid::types::Variant::Map::const_iterator j = actual.find(i->first);
+            if (j != actual.end()) {
+                pn_data_put_symbol(data, convert(j->first));
+                pn_data_put_string(data, convert(j->second.asString()));
+            }
+        }
+
         pn_data_exit(data);
     }
-    pn_data_exit(data);
 }
+namespace {
+const std::string QPID_MSG_SEQUENCE("qpid.msg_sequence");
+const std::string QPID_IVE("qpid.ive");
+}
+void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Exchange> node)
+{
+    if (received) {
+        pn_data_put_map(data);
+        pn_data_enter(data);
+        pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
+        pn_data_put_string(data, convert(COPY));
+        if (durable && node->isDurable()) {
+            pn_data_put_symbol(data, convert(DURABLE));
+            pn_data_put_bool(data, true);
+        }
+        if (!exchangeType.empty()) {
+            pn_data_put_symbol(data, convert(EXCHANGE_TYPE));
+            pn_data_put_string(data, convert(node->getType()));
+        }
+        if (!alternateExchange.empty() && node->getAlternate()) {
+            pn_data_put_symbol(data, convert(ALTERNATE_EXCHANGE));
+            pn_data_put_string(data, convert(node->getAlternate()->getName()));
+        }
+
+        for (qpid::types::Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+            if ((i->first == QPID_MSG_SEQUENCE || i->first == QPID_IVE) && node->getArgs().isSet(i->first)) {
+                pn_data_put_symbol(data, convert(i->first));
+                pn_data_put_bool(data, true);
+            }
+        }
+
+        pn_data_exit(data);
+    }
+}
+
 
 void NodeProperties::process(const std::string& key, const qpid::types::Variant& value, const Descriptor* d)
 {
+    received = true;
     QPID_LOG(debug, "Processing node property " << key << " = " << value);
     if (key == SUPPORTED_DIST_MODES) {
         if (value == MOVE) queue = true;

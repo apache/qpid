@@ -24,10 +24,13 @@
 #include "qpid/amqp/MapReader.h"
 #include "qpid/types/Variant.h"
 #include "qpid/broker/QueueSettings.h"
+#include <boost/shared_ptr.hpp>
 
 struct pn_data_t;
 namespace qpid {
 namespace broker {
+class Exchange;
+class Queue;
 struct QueueSettings;
 namespace amqp {
 
@@ -36,7 +39,8 @@ class NodeProperties : public qpid::amqp::MapReader
   public:
     NodeProperties();
     void read(pn_data_t*);
-    void write(pn_data_t*);
+    void write(pn_data_t*,boost::shared_ptr<Queue>);
+    void write(pn_data_t*,boost::shared_ptr<Exchange>);
     void onNullValue(const qpid::amqp::CharSequence&, const qpid::amqp::Descriptor*);
     void onBooleanValue(const qpid::amqp::CharSequence&, bool, const qpid::amqp::Descriptor*);
     void onUByteValue(const qpid::amqp::CharSequence&, uint8_t, const qpid::amqp::Descriptor*);
@@ -63,6 +67,7 @@ class NodeProperties : public qpid::amqp::MapReader
     bool trackControllingLink() const;
     const qpid::types::Variant::Map& getProperties() const;
   private:
+    bool received;
     bool queue;
     bool durable;
     bool autoDelete;
