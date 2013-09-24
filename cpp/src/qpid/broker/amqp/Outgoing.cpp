@@ -121,6 +121,10 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
     } else if (pn_delivery_updated(delivery)) {
         assert(r.delivery == delivery);
         r.disposition = pn_delivery_remote_state(delivery);
+        if (!r.disposition && pn_delivery_settled(delivery)) {
+            //if peer has settled without setting state, assume accepted
+            r.disposition = PN_ACCEPTED;
+        }
         if (r.disposition) {
             switch (r.disposition) {
               case PN_ACCEPTED:
@@ -142,7 +146,7 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
               default:
                 QPID_LOG(warning, "Unhandled disposition: " << r.disposition);
             }
-            //TODO: ony settle once any dequeue on store has completed
+            //TODO: only settle once any dequeue on store has completed
             pn_delivery_settle(delivery);
             r.reset();
         }
