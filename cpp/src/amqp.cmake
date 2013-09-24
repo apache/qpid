@@ -173,4 +173,17 @@ if (BUILD_AMQP)
              DESTINATION ${QPIDC_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_CLIENT})
 
+    if (WIN32)
+        set(proton_dll  "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}.dll")
+        set(proton_dlld "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}d.dll")
+
+        install (PROGRAMS  ${proton_dll}
+                DESTINATION ${QPID_INSTALL_LIBDIR}
+                COMPONENT   ${QPID_COMPONENT_COMMON}
+                CONFIGURATIONS Release|MinSizeRel|RelWithDebInfo)
+        install (PROGRAMS  ${proton_dlld}
+                DESTINATION ${QPID_INSTALL_LIBDIR}
+                COMPONENT   ${QPID_COMPONENT_COMMON}
+                CONFIGURATIONS Debug)
+    endif (WIN32)
 endif (BUILD_AMQP)
