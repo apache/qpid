@@ -22,6 +22,7 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/AddressImpl.h"
 #include "qpid/amqp/descriptors.h"
+#include "qpid/types/encodings.h"
 #include "qpid/log/Statement.h"
 #include <vector>
 #include <set>
@@ -290,6 +291,127 @@ void write(pn_data_t* data, const Variant& value)
         break;
     }
 }
+bool read(pn_data_t* data, pn_type_t type, qpid::types::Variant& value);
+bool read(pn_data_t* data, qpid::types::Variant& value)
+{
+    return read(data, pn_data_type(data), value);
+}
+void readList(pn_data_t* data, qpid::types::Variant::List& value)
+{
+    size_t count = pn_data_get_list(data);
+    pn_data_enter(data);
+    for (size_t i = 0; i < count && pn_data_next(data); ++i) {
+        qpid::types::Variant e;
+        if (read(data, e)) value.push_back(e);
+    }
+    pn_data_exit(data);
+}
+void readMap(pn_data_t* data, qpid::types::Variant::Map& value)
+{
+    size_t count = pn_data_get_list(data);
+    pn_data_enter(data);
+    for (size_t i = 0; i < (count/2) && pn_data_next(data); ++i) {
+        std::string key = convert(pn_data_get_symbol(data));
+        pn_data_next(data);
+        qpid::types::Variant e;
+        if (read(data, e)) value[key]= e;
+    }
+    pn_data_exit(data);
+}
+void readArray(pn_data_t* data, qpid::types::Variant::List& value)
+{
+    size_t count = pn_data_get_array(data);
+    pn_type_t type = pn_data_get_array_type(data);
+    pn_data_enter(data);
+    for (size_t i = 0; i < count && pn_data_next(data); ++i) {
+        qpid::types::Variant e;
+        if (read(data, type, e)) value.push_back(e);
+    }
+    pn_data_exit(data);
+}
+bool read(pn_data_t* data, pn_type_t type, qpid::types::Variant& value)
+{
+    switch (type) {
+      case PN_NULL:
+        if (value.getType() != qpid::types::VAR_VOID) value = qpid::types::Variant();
+        return true;
+      case PN_BOOL:
+        value = pn_data_get_bool(data);
+        return true;
+      case PN_UBYTE:
+        value = pn_data_get_ubyte(data);
+        return true;
+      case PN_BYTE:
+        value = pn_data_get_byte(data);
+        return true;
+      case PN_USHORT:
+        value = pn_data_get_ushort(data);
+        return true;
+      case PN_SHORT:
+        value = pn_data_get_short(data);
+        return true;
+      case PN_UINT:
+        value = pn_data_get_uint(data);
+        return true;
+      case PN_INT:
+        value = pn_data_get_int(data);
+        return true;
+      case PN_CHAR:
+        value = pn_data_get_char(data);
+        return true;
+      case PN_ULONG:
+        value = pn_data_get_ulong(data);
+        return true;
+      case PN_LONG:
+        value = pn_data_get_long(data);
+        return true;
+      case PN_TIMESTAMP:
+        value = pn_data_get_timestamp(data);
+        return true;
+      case PN_FLOAT:
+        value = pn_data_get_float(data);
+        return true;
+      case PN_DOUBLE:
+        value = pn_data_get_double(data);
+        return true;
+      case PN_UUID:
+        value = qpid::types::Uuid(pn_data_get_uuid(data).bytes);
+        return true;
+      case PN_BINARY:
+        value = convert(pn_data_get_binary(data));
+        value.setEncoding(qpid::types::encodings::BINARY);
+        return true;
+      case PN_STRING:
+        value = convert(pn_data_get_string(data));
+        value.setEncoding(qpid::types::encodings::UTF8);
+        return true;
+      case PN_SYMBOL:
+        value = convert(pn_data_get_string(data));
+        value.setEncoding(qpid::types::encodings::ASCII);
+        return true;
+      case PN_LIST:
+        value = qpid::types::Variant::List();
+        readList(data, value.asList());
+        return true;
+        break;
+      case PN_MAP:
+        value = qpid::types::Variant::Map();
+        readMap(data, value.asMap());
+        return true;
+      case PN_ARRAY:
+        value = qpid::types::Variant::List();
+        readArray(data, value.asList());
+        return true;
+      case PN_DESCRIBED:
+      case PN_DECIMAL32:
+      case PN_DECIMAL64:
+      case PN_DECIMAL128:
+      default:
+        return false;
+    }
+
+}
+
 const uint32_t DEFAULT_DURABLE_TIMEOUT(15*60);//15 minutes
 const uint32_t DEFAULT_TIMEOUT(0);
 }
@@ -354,7 +476,7 @@ AddressHelper::AddressHelper(const Address& address) :
         properties[LIFETIME_POLICY] = DELETE_ON_CLOSE;
     }
 
-    if (properties.size() && !(isTemporary || createPolicy.size())) {
+    if (properties.size() && !(isTemporary || !createPolicy.empty() || !assertPolicy.empty())) {
         QPID_LOG(warning, "Properties will be ignored! " << address);
     }
 
@@ -420,10 +542,48 @@ void AddressHelper::addFilter(const std::string& name, const std::string& descri
     filters.push_back(Filter(name, descriptor, value));
 }
 
+namespace {
+bool checkLifetimePolicy(const std::string& requested, const std::string& actual)
+{
+    if (actual == qpid::amqp::lifetime_policy::DELETE_ON_CLOSE_SYMBOL && requested == DELETE_ON_CLOSE) return true;
+    else if (actual == qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_SYMBOL && requested == DELETE_IF_UNUSED) return true;
+    else if (actual == qpid::amqp::lifetime_policy::DELETE_ON_NO_MESSAGES_SYMBOL && requested == DELETE_IF_EMPTY) return true;
+    else if (actual == qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_OR_MESSAGES_SYMBOL && requested == DELETE_IF_UNUSED_AND_EMPTY) return true;
+    else return actual == requested;
+}
+bool checkLifetimePolicy(const std::string& requested, uint64_t actual)
+{
+    if (actual == qpid::amqp::lifetime_policy::DELETE_ON_CLOSE_CODE)
+        return checkLifetimePolicy(requested, qpid::amqp::lifetime_policy::DELETE_ON_CLOSE_SYMBOL);
+    else if (actual == qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_CODE)
+        return checkLifetimePolicy(requested, qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_SYMBOL);
+    else if (actual == qpid::amqp::lifetime_policy::DELETE_ON_NO_MESSAGES_CODE)
+        return checkLifetimePolicy(requested, qpid::amqp::lifetime_policy::DELETE_ON_NO_MESSAGES_SYMBOL);
+    else if (actual == qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_OR_MESSAGES_CODE)
+        return checkLifetimePolicy(requested, qpid::amqp::lifetime_policy::DELETE_ON_NO_LINKS_OR_MESSAGES_SYMBOL);
+    else
+        return false;
+}
+bool checkLifetimePolicy(const std::string& requested, pn_data_t* actual)
+{
+    bool result(false);
+    if (pn_data_is_described(actual)) {
+        pn_data_enter(actual);
+        pn_data_next(actual);
+        if (pn_data_type(actual) == PN_ULONG) {
+            result = checkLifetimePolicy(requested, pn_data_get_ulong(actual));
+        } else if (pn_data_type(actual) == PN_SYMBOL) {
+            result = checkLifetimePolicy(requested, convert(pn_data_get_symbol(actual)));
+        }
+        pn_data_exit(actual);
+    }
+    return result;
+}
+}
 void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
 {
     if (assertEnabled(mode)) {
-        QPID_LOG(debug, "checking assertions: " << capabilities);
+        QPID_LOG(debug, "checking capabilities: " << capabilities);
         //ensure all desired capabilities have been offered
         std::set<std::string> desired;
         for (Variant::List::const_iterator i = capabilities.begin(); i != capabilities.end(); ++i) {
@@ -493,6 +653,40 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
             }
         }
         if (!first) throw qpid::messaging::AssertionFailed(missing.str());
+
+        //assert on properties (Note: this violates the AMQP 1.0
+        //specification - as does the create option - by sending
+        //node-properties even if the dynamic option is not
+        //set. However this can be avoided by not specifying any node
+        //properties when asserting)
+        if (!type.empty() || durableNode || !properties.empty()) {
+            qpid::types::Variant::Map requested = properties;
+            if (!type.empty()) requested[SUPPORTED_DIST_MODES] = type == TOPIC ? COPY : MOVE;
+            if (durableNode) requested[DURABLE] = true;
+
+            data = pn_terminus_properties(terminus);
+            if (pn_data_next(data)) {
+                size_t count = pn_data_get_map(data);
+                pn_data_enter(data);
+                for (size_t i = 0; i < count && pn_data_next(data); ++i) {
+                    std::string key = convert(pn_data_get_symbol(data));
+                    pn_data_next(data);
+                    qpid::types::Variant::Map::const_iterator j = requested.find(key);
+                    qpid::types::Variant v;
+                    if (j != requested.end() &&
+                        ((key == LIFETIME_POLICY && checkLifetimePolicy(j->second.asString(), data)) ||
+                         (read(data, v) && v.asString() == j->second.asString()))) {
+                        requested.erase(j->first);
+                    }
+                }
+                pn_data_exit(data);
+                if (!requested.empty()) {
+                    std::stringstream missing;
+                    missing << "Requested node properties not met: " << requested;
+                    throw qpid::messaging::AssertionFailed(missing.str());
+                }
+            }
+        }
     }
 }
 
@@ -582,6 +776,8 @@ void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMod
             //application expects name of node to be as specified
             setNodeProperties(terminus);
             createOnDemand = true;
+        } else if (assertEnabled(mode)) {
+            setNodeProperties(terminus);
         }
     }
 
