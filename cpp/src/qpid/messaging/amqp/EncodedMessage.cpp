@@ -169,7 +169,15 @@ qpid::amqp::CharSequence EncodedMessage::getBareMessage() const
 
 void EncodedMessage::getReplyTo(qpid::messaging::Address& a) const
 {
-    a = qpid::messaging::Address(replyTo.str());
+    std::string rt = replyTo.str();
+    std::string::size_type i = rt.find('/');
+    if (i != std::string::npos && i > 0 && rt.find('/', i+1) == std::string::npos) {
+        //handle <name>/<subject> special case
+        a.setName(rt.substr(0, i));
+        a.setSubject(rt.substr(i+1));
+    } else {
+        a.setName(rt);
+    }
 }
 void EncodedMessage::getSubject(std::string& s) const
 {
