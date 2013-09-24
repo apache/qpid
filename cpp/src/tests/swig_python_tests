@@ -53,7 +53,7 @@ export PYTHONPATH=$PYTHONPATH:$PYTHONPATH_SWIG
 $QPID_PYTHON_TEST -m qpid.tests.messaging.message -m qpid_tests.broker_0_10.priority -m qpid_tests.broker_0_10.lvq -m qpid_tests.broker_0_10.new_api -b localhost:$QPID_PORT -I $srcdir/failing-amqp0-10-python-tests || FAILED=1
 if [[ -a $AMQPC_LIB ]] ; then
     export QPID_LOAD_MODULE=$AMQPC_LIB
-    $QPID_PYTHON_TEST --define="protocol_version=amqp1.0" -m qpid_tests.broker_1_0 -m qpid_tests.broker_0_10.new_api -b localhost:$QPID_PORT -I $srcdir/failing-amqp1.0-python-tests || FAILED=1
+    $QPID_PYTHON_TEST --define="protocol_version=amqp1.0" -m qpid_tests.broker_1_0 -m qpid_tests.broker_0_10.new_api -m assertions -b localhost:$QPID_PORT -I $srcdir/failing-amqp1.0-python-tests || FAILED=1
 fi
 stop_broker
 if [[ $FAILED -eq 1 ]]; then
