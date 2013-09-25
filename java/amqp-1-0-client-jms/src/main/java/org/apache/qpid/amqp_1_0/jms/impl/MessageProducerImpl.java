@@ -64,6 +64,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         }
 
         _session = session;
+        _syncPublish = session.getConnection().syncPublish();
 
         if(_destination != null)
         {
