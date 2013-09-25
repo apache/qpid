@@ -107,6 +107,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 {
                     _conn = new org.apache.qpid.amqp_1_0.client.Connection(_host,
                             _port, _username, _password, container, _remoteHost, _ssl);
+                    _conn.setConnectionErrorTask(new ConnectionErrorTask());
                     // TODO - retrieve negotiated AMQP version
                     _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
                 }
@@ -234,8 +235,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     public void setClientID(final String value) throws JMSException
     {
         checkNotConnected("Cannot set client-id to \""
-                                        + value
-                                        + "\"; client-id must be set before the connection is used");
+                          + value
+                          + "\"; client-id must be set before the connection is used");
         if( _clientId !=null )
         {
             throw new IllegalStateException("client-id has already been set");
@@ -532,6 +533,34 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     boolean syncPublish()
     {
         return _syncPublish;
+    }
+
+    private class ConnectionErrorTask implements Runnable
+    {
+
+        @Override
+        public void run()
+        {
+
+            try
+            {
+                final ExceptionListener exceptionListener = getExceptionListener();
+
+                if(exceptionListener != null)
+                {
+                    final org.apache.qpid.amqp_1_0.type.transport.Error connectionError = _conn.getConnectionError();
+                    if(connectionError != null)
+                    {
+                        exceptionListener.onException(new JMSException(connectionError.getDescription(),
+                                connectionError.getCondition().toString()));
+                    }
+                }
+            }
+            catch (JMSException ignored)
+            {
+                // ignored
+            }
+        }
     }
 
 }
