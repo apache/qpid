@@ -32,6 +32,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{properties:{alternate-exchange:amq.topic}}}" % name)
             assert False, "Expected assertion to fail on alternate-exchange"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_queues_alternate_exchange2(self):
         name = str(uuid4())
@@ -41,6 +42,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{x-declare:{alternate-exchange:amq.topic}}}" % name)
             assert False, "Expected assertion to fail on alternate-exchange"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_queue_type(self):
         name = str(uuid4())
@@ -50,6 +52,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{type:topic}}" % name)
             assert False, "Expected assertion to fail on type"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_queue_durability(self):
         name = str(uuid4())
@@ -59,6 +62,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{durable:True}}" % name)
             assert False, "Expected assertion to fail on durability"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_queue_options(self):
         name = str(uuid4())
@@ -68,14 +72,17 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments:{foo:bar}}}}" % name)
             assert False, "Expected assertion to fail on unrecognised option"
         except AssertionFailed: None
+        except MessagingError: None
         try:
             self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments:{'qpid.max_count':10}}}}" % name)
             assert False, "Expected assertion to fail on unspecified option"
         except AssertionFailed: None
+        except MessagingError: None
         try:
             self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments:{'qpid.last_value_key':xyz}}}}" % name)
             assert False, "Expected assertion to fail on option with different value"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_exchanges_alternate_exchange1(self):
         name = str(uuid4())
@@ -85,6 +92,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{properties:{alternate-exchange:amq.topic}}}" % name)
             assert False, "Expected assertion to fail on alternate-exchange"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_exchanges_alternate_exchange2(self):
         name = str(uuid4())
@@ -94,6 +102,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{x-declare:{alternate-exchange:amq.topic}}}" % name)
             assert False, "Expected assertion to fail on alternate-exchange"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_exchange_type(self):
         name = str(uuid4())
@@ -103,6 +112,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{type:queue}}" % name)
             assert False, "Expected assertion to fail on type"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_exchange_durability(self):
         name = str(uuid4())
@@ -112,6 +122,7 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{durable:True}}" % name)
             assert False, "Expected assertion to fail on durability"
         except AssertionFailed: None
+        except MessagingError: None
 
     def test_exchange_options(self):
         name = str(uuid4())
@@ -121,8 +132,10 @@ class AssertionTests (VersionTest):
             self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments:{foo:bar}}}}" % name)
             assert False, "Expected assertion to fail on unrecognised option"
         except AssertionFailed: None
+        except MessagingError: None
         try:
             self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments:{'qpid.ive':True}}}}" % name)
             assert False, "Expected assertion to fail on unspecified option"
         except AssertionFailed: None
+        except MessagingError: None
 
