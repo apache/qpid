@@ -2122,19 +2122,21 @@ bool ManagementAgent::authorizeAgentMessage(Message& msg)
     string  methodName;
     string cid;
 
+    boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> transfer = protocols->translate(msg);
     //
-    // If the message is larger than our working buffer size, we can't determine if it's
-    // authorized or not.  In this case, return true (authorized) if there is no ACL in place,
-    // otherwise return false;
+    // If the message is larger than our working buffer size (or if it
+    // could not be converted to an 0-10 messgae-transfer), we can't
+    // determine if it's authorized or not.  In this case, return true
+    // (authorized) if there is no ACL in place, otherwise return
+    // false;
     //
-    if (msg.getContentSize() > qmfV1BufferSize)
+    if (!transfer || transfer->getContentSize() > qmfV1BufferSize)
         return broker->getAcl() == 0;
 
-    inBuffer.putRawData(msg.getContent());
+    inBuffer.putRawData(transfer->getContent());
     uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
-    boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> transfer = protocols->translate(msg);
     const framing::MessageProperties* p =
         transfer ? transfer->getFrames().getHeaders()->get<framing::MessageProperties>() : 0;
 
@@ -2283,13 +2285,13 @@ void ManagementAgent::dispatchAgentCommand(Message& msg, bool viaLocal)
     ResizableBuffer inBuffer(qmfV1BufferSize);
     uint8_t  opcode;
 
-    if (msg.getContentSize() > qmfV1BufferSize) {
+    if (transfer->getContentSize() > qmfV1BufferSize) {
         QPID_LOG(debug, "ManagementAgent::dispatchAgentCommandLH: Message too large: " <<
-                 msg.getContentSize());
+                 transfer->getContentSize());
         return;
     }
 
-    inBuffer.putRawData(msg.getContent());
+    inBuffer.putRawData(transfer->getContent());
     uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
