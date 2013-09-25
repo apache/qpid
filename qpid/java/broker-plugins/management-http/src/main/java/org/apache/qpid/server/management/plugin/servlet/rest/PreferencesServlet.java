@@ -101,7 +101,8 @@ public class PreferencesServlet extends AbstractServlet
         PreferencesProvider preferencesProvider = getPreferencesProvider(request);
         if (preferencesProvider == null)
         {
-            throw new IllegalStateException("Preferences provider is not configured");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Preferences provider is not configured");
+            return;
         }
         String userName = getAuthenticatedUserName(request);
 

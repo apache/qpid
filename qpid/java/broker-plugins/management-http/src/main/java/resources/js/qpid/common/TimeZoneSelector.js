@@ -28,38 +28,15 @@ define([
         "dijit/_WidgetBase",
         "dijit/registry",
         "dojo/text!common/TimeZoneSelector.html",
+        "qpid/common/timezone",
         "dijit/form/ComboBox",
         "dijit/form/FilteringSelect",
-        "dojox/date/timezone",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, registry, template) {
+function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, registry, template, timezone) {
 
   var preferencesRegions = ["Africa","America","Antarctica","Arctic","Asia","Atlantic","Australia","Europe","Indian","Pacific"];
-
-  function initSupportedTimeZones()
-  {
-    var supportedTimeZones = [];
-    var allTimeZones = dojox.date.timezone.getAllZones();
-    for(var i = 0; i < allTimeZones.length; i++)
-    {
-      var timeZone = allTimeZones[i];
-      var elements = timeZone.split("/");
-      if (elements.length > 1)
-      {
-        for(var j = 0; j<preferencesRegions.length; j++)
-        {
-          if (elements[0] == preferencesRegions[j])
-          {
-            supportedTimeZones.push({id: timeZone, region: elements[0], city: elements.slice(1).join("/").replace("_", " ") })
-            break;
-          }
-        }
-      }
-    }
-    return supportedTimeZones;
-  }
 
   function initSupportedRegions()
   {
@@ -91,7 +68,7 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
     postCreate: function(){
       this.inherited(arguments);
 
-      var supportedTimeZones = initSupportedTimeZones();
+      var supportedTimeZones = timezone.getAllTimeZones();
 
       this._citySelector = registry.byNode(query(".timezoneCity", this.domNode)[0]);
       this._citySelector.set("searchAttr", "city");
