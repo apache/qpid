@@ -40,6 +40,7 @@ define(["dojo/_base/xhr",
              this.serviceUrl = args.serviceUrl;
 
              this.onUpdate = args.onUpdate;
+             this.dataTransformer = args.dataTransformer;
 
              this.appendData = args.append;
              this.appendLimit = args.appendLimit;
@@ -122,6 +123,10 @@ define(["dojo/_base/xhr",
 
              function processData(data)
              {
+                 if (self.dataTransformer)
+                 {
+                   data = self.dataTransformer(data);
+                 }
                  var dataSet = false;
                  if (!store)
                  {
@@ -197,6 +202,10 @@ define(["dojo/_base/xhr",
 
            GridUpdater.prototype.refresh = function(data)
            {
+               if (this.dataTransformer && data)
+               {
+                 data = this.dataTransformer(data);
+               }
                this.updating = true;
                try
                {
