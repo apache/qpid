@@ -32,30 +32,6 @@ public class StringTypeConstructor extends VariableWidthTypeConstructor
 {
     private Charset _charSet;
 
-    private BinaryString _defaultBinaryString = new BinaryString();
-    private ValueCache<BinaryString, String> _cachedValues = new ValueCache<BinaryString, String>(10);
-
-    private static final class ValueCache<K,V> extends LinkedHashMap<K,V>
-    {
-        private final int _cacheSize;
-
-        public ValueCache(int cacheSize)
-        {
-            _cacheSize = cacheSize;
-        }
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<K, V> eldest)
-        {
-            return size() > _cacheSize;
-        }
-
-        public boolean isFull()
-        {
-            return size() == _cacheSize;
-        }
-    }
-
 
     public static StringTypeConstructor getInstance(int i, Charset c)
     {
@@ -84,44 +60,19 @@ public class StringTypeConstructor extends VariableWidthTypeConstructor
         }
 
         int origPosition = in.position();
-        _defaultBinaryString.setData(in.array(), in.arrayOffset()+ origPosition, size);
 
-        BinaryString binaryStr = _defaultBinaryString;
-
-        boolean isFull = _cachedValues.isFull();
-
-        String str = isFull ? _cachedValues.remove(binaryStr) : _cachedValues.get(binaryStr);
-
-        if(str == null)
+        ByteBuffer dup = in.duplicate();
+        try
         {
-
-            ByteBuffer dup = in.duplicate();
-            try
-            {
-                dup.limit(dup.position()+size);
-            }
-            catch(IllegalArgumentException e)
-            {
-                throw new IllegalArgumentException("position: " + dup.position() + "size: " + size + " capacity: " + dup.capacity());
-            }
-            CharBuffer charBuf = _charSet.decode(dup);
-
-            str = charBuf.toString();
-
-            byte[] data = new byte[size];
-            in.get(data);
-            binaryStr = new BinaryString(data, 0, size);
-
-            _cachedValues.put(binaryStr, str);
+            dup.limit(dup.position()+size);
         }
-        else if(isFull)
+        catch(IllegalArgumentException e)
         {
-            byte[] data = new byte[size];
-            in.get(data);
-            binaryStr = new BinaryString(data, 0, size);
-
-            _cachedValues.put(binaryStr, str);
+            throw new IllegalArgumentException("position: " + dup.position() + "size: " + size + " capacity: " + dup.capacity());
         }
+        CharBuffer charBuf = _charSet.decode(dup);
+
+        String str = charBuf.toString();
 
         in.position(origPosition+size);
 
