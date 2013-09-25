@@ -28,7 +28,9 @@ import org.apache.qpid.amqp_1_0.transport.Container;
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 import javax.jms.Queue;
+
 import java.util.*;
+
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
@@ -57,6 +59,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private String _queuePrefix;
     private String _topicPrefix;
     private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
+    private boolean _syncPublish = Boolean.parseBoolean(System.getProperty("qpid.sync_publish", "false"));
 
     private static enum State
     {
@@ -521,5 +524,14 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         return _useBinaryMessageId;
     }
 
+    void setSyncPublish(boolean syncPublish)
+    {
+        _syncPublish = syncPublish;
+    }
+
+    boolean syncPublish()
+    {
+        return _syncPublish;
+    }
 
 }
