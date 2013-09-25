@@ -34,6 +34,7 @@ define([
         "qpid/common/TimeZoneSelector",
         "dojo/text!../../showPreferences.html",
         "qpid/common/util",
+        "qpid/management/UserPreferences",
         "dijit/Dialog",
         "dijit/form/NumberSpinner",
         "dijit/form/CheckBox",
@@ -43,26 +44,26 @@ define([
         "dijit/form/DropDownButton",
         "dijit/form/Button",
         "dijit/form/Form",
+        "dijit/layout/BorderContainer",
         "dijit/layout/TabContainer",
         "dijit/layout/ContentPane",
         "dojox/grid/EnhancedGrid",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory, ObjectStore, entities, registry, TimeZoneSelector, markup, util) {
+function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory, ObjectStore, entities, registry, TimeZoneSelector, markup, util, UserPreferences) {
 
-  var preferenceNames = ["timeZone", "updatePeriod", "saveTabs"];
+  var preferenceNames = ["timeZone", "updatePeriod"];
 
   return declare("qpid.management.Preferences", null, {
 
     preferencesDialog: null,
-    saveButton: null,
-    cancelButton: null,
 
     constructor: function()
     {
       var that = this;
 
+      this.userPreferences = {};
       this.domNode = domConstruct.create("div", {innerHTML: markup});
       this.preferencesDialog = parser.parse(this.domNode)[0];
 
@@ -72,82 +73,38 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
         this[name] = registry.byId("preferences." + name);
       }
 
-      this.saveButton = registry.byId("preferences.saveButton");
-      this.cancelButton = registry.byId("preferences.cancelButton");
+      this.setButton = registry.byId("preferences.setButton");
+      this.setAndCloseButton = registry.byId("preferences.setAndCloseButton");
+      this.setButton.on("click", function(e){that._savePreferences(e, false)});
+      this.setAndCloseButton.on("click", function(e){that._savePreferences(e, true)});
       this.theForm = registry.byId("preferences.preferencesForm");
-      this.users = registry.byId("preferences.users");
-      this.users.set("structure", [ { name: "User", field: "name", width: "50%"},
+      this.usersGrid = registry.byId("preferences.users");
+      this.usersGrid.set("structure", [ { name: "User", field: "name", width: "50%"},
                                  { name: "Authentication Provider", field: "authenticationProvider", width: "50%"}]);
-      this.cancelButton.on("click", function(){that.preferencesDialog.hide();});
-      this.deletePreferencesButton = registry.byId("preferences.deletePreeferencesButton");
-      this.deletePreferencesButton.on("click", function(){
-         if (util.deleteGridSelections(
-            null,
-            that.users,
-            "rest/userpreferences",
-            "Are you sure you want to delete preferences for user",
-            "user"))
-          {
-             that._updateUsersWithPreferences();
-          }
-      });
+      this.deleteButton = registry.byId("preferences.deleteButton");
+      this.deleteAndCloseButton = registry.byId("preferences.deleteAndCloseButton");
+      this.deleteButton.on("click", function(e){that._deletePreferences(false)});
+      this.deleteAndCloseButton.on("click", function(e){that._deletePreferences(true)});
+
       var deletePreferencesButtonToggler = function(rowIndex){
-        var data = that.users.selection.getSelected();
-        that.deletePreferencesButton.set("disabled",!data.length );
+        var data = that.usersGrid.selection.getSelected();
+        that.deleteButton.set("disabled",!data.length );
+        that.deleteAndCloseButton.set("disabled",!data.length );
       };
-      connect.connect(this.users.selection, 'onSelected',  deletePreferencesButtonToggler);
-      connect.connect(this.users.selection, 'onDeselected',  deletePreferencesButtonToggler);
-      this.theForm.on("submit", function(e){
-        event.stop(e);
-        if(that.theForm.validate()){
-          var preferences = {};
-          for(var i=0; i<preferenceNames.length; i++)
-          {
-            var name = preferenceNames[i];
-            var preferenceWidget = that[name];
-            if (preferenceWidget)
-            {
-              preferences[name] = preferenceWidget.get("value");
-            }
-          }
-          xhr.post({
-                url: "rest/preferences",
-                sync: true,
-                handleAs: "json",
-                headers: { "Content-Type": "application/json"},
-                postData: json.stringify(preferences),
-                load: function(x) {that.success = true; },
-                error: function(error) {that.success = false; that.failureReason = error;}
-          });
-          if(that.success === true)
-          {
-            that.preferencesDialog.hide();
-          }
-          else
-          {
-            alert("Error:" + that.failureReason);
-          }
-        }
-        return false;
-      });
+      connect.connect(this.usersGrid.selection, 'onSelected',  deletePreferencesButtonToggler);
+      connect.connect(this.usersGrid.selection, 'onDeselected',  deletePreferencesButtonToggler);
+      this.theForm.on("submit", function(e){event.stop(e); return false;});
+
+      this._setValues();
+
+      deletePreferencesButtonToggler();
       this.preferencesDialog.startup();
     },
 
     showDialog: function(){
-      var that = this;
-      xhr.get({
-        url: "rest/preferences",
-        sync: true,
-        handleAs: "json",
-        load: function(data) {
-          that._updatePreferencesWidgets(data);
-          that._updateUsersWithPreferences();
-          that.preferencesDialog.show();
-       },
-       error: function(error){
-         alert("Cannot load user preferences : " + error);
-       }
-      });
+      this._setValues();
+      this._loadUserPreferences();
+      this.preferencesDialog.show();
     },
 
     destroy: function()
@@ -159,24 +116,113 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
       }
     },
 
-    _updatePreferencesWidgets: function(data)
+    _savePreferences: function(e, hideDialog)
     {
-      for(var i=0; i<preferenceNames.length; i++)
-      {
-        var preference = preferenceNames[i];
-        if (this.hasOwnProperty(preference))
+      var that =this;
+      event.stop(e);
+      if(this.theForm.validate()){
+        var preferences = {};
+        for(var i=0; i<preferenceNames.length; i++)
         {
-          var value = data ? data[preference] : null;
+          var name = preferenceNames[i];
+          var preferenceWidget = this[name];
+          if (preferenceWidget)
+          {
+            preferences[name] = preferenceWidget.hasOwnProperty("checked") ? preferenceWidget.checked : preferenceWidget.get("value");
+          }
+        }
+
+        UserPreferences.setPreferences(
+            preferences,
+            function(preferences)
+            {
+              success = true;
+              if (hideDialog)
+              {
+                that.preferencesDialog.hide();
+              }
+              else
+              {
+                var reloadUsers = true;
+                if (that.users)
+                {
+                  var authenticatedUser = dom.byId("authenticatedUser").innerHTML;
+                  for(var i=0; i<that.users.length; i++)
+                  {
+                    if (that.users[i].name == authenticatedUser)
+                    {
+                      reloadUsers = false;
+                      break;
+                    }
+                  }
+                }
+                if (reloadUsers)
+                {
+                  that._loadUserPreferences();
+                }
+                alert("Preferences stored successfully");
+              }
+            },
+            function(error){alert("Error:" + error);}
+        );
+      }
+    },
+
+    _deletePreferences: function(hideDialog){
+      var data = this.usersGrid.selection.getSelected();
+      if (util.deleteGridSelections(
+         null,
+         this.usersGrid,
+         "rest/userpreferences",
+         "Are you sure you want to delete preferences for user",
+         "user"))
+       {
+        this._loadUserPreferences();
+        var authenticatedUser = dom.byId("authenticatedUser").innerHTML;
+        for(i = 0; i<data.length; i++)
+        {
+          if (data[i].name == authenticatedUser)
+          {
+            UserPreferences.resetPreferences();
+            this._setValues();
+            break;
+          }
+        }
+        if (hideDialog)
+        {
+          this.preferencesDialog.hide();
+        }
+       }
+    },
+
+    _setValues: function()
+    {
+      for(var i = 0; i < preferenceNames.length; i++)
+      {
+        var name = preferenceNames[i];
+        var preferenceWidget = this[name];
+        if (preferenceWidget)
+        {
+          var value = UserPreferences[name]
           if (typeof value == "string")
           {
             value = entities.encode(String(value))
           }
-          this[preference].set("value", value);
+          if (!value && name == "updatePeriod")
+          {
+            // set to default
+            value = 5;
+          }
+          preferenceWidget.set("value", value);
+          if (preferenceWidget.hasOwnProperty("checked"))
+          {
+            preferenceWidget.set("checked", UserPreferences[name] ? true : false);
+          }
         }
       }
     },
 
-    _updateUsersWithPreferences: function()
+    _loadUserPreferences : function()
     {
       var that = this;
       xhr.get({
@@ -189,14 +235,15 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
              {
                users[i].id = users[i].authenticationProvider + "/" + users[i].name;
              }
+             that.users = users;
              var usersStore = new Memory({data: users, idProperty: "id"});
              var usersDataStore = new ObjectStore({objectStore: usersStore});
-             if (that.users.store)
+             if (that.usersGrid.store)
              {
-               that.users.store.close();
+               that.usersGrid.store.close();
              }
-             that.users.set("store", usersDataStore);
-             that.users._refresh();
+             that.usersGrid.set("store", usersDataStore);
+             that.usersGrid._refresh();
       });
     }
 

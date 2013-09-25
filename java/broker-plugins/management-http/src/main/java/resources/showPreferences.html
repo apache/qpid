@@ -40,14 +40,10 @@
                               "/>
                 </td>
             </tr>
-            <tr>
-                <td><strong>Save tabs:</strong></td>
-                <td><input id="preferences.saveTabs" type="checkbox" data-dojo-type="dijit/form/CheckBox" name="saveTabs"/></td>
-            </tr>
         </table>
         <div class="dijitDialogPaneActionBar">
-          <input type="submit" value="Save Preferences" data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Save Preferences'" id="preferences.saveButton"/>
-          <button value="Cancel" data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Cancel'" id="preferences.cancelButton"></button>
+          <button data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Set'" id="preferences.setButton">Set</button>
+          <button data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Set and Close'" id="preferences.setAndCloseButton">Set and Close</button>
         </div>
       </form>
     </div>
@@ -76,7 +72,8 @@
         </thead>
       </table>
       <div class="dijitDialogPaneActionBar">
-        <button id="preferences.deletePreeferencesButton" data-dojo-type="dijit/form/Button" data-dojo-props="label:'Delete Preferences', title:'Delete preferences for selected users'">Delete Preferences</button>
+        <button id="preferences.deleteButton" data-dojo-type="dijit/form/Button" data-dojo-props="label:'Delete', title:'Delete preferences for selected users'">Delete</button>
+        <button id="preferences.deleteAndCloseButton" data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Delete and Close', title:'Delete preferences for selected users and close the dialog'">Delete and Close</button>
       </div>
     </div>
   </div>
