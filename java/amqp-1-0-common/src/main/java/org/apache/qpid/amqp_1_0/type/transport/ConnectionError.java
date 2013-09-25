@@ -43,6 +43,8 @@ public class ConnectionError
     
     public static final ConnectionError REDIRECT = new ConnectionError(Symbol.valueOf("amqp:connection:redirect"));
     
+    public static final ConnectionError SOCKET_ERROR = new ConnectionError(Symbol.valueOf("amqp:connection:socket-error"));
+    
 
 
     private ConnectionError(Symbol val)
@@ -73,6 +75,11 @@ public class ConnectionError
             return "redirect";
         }
         
+        if(this == SOCKET_ERROR)
+        {
+            return "socket-error";
+        }
+        
         else
         {
             return String.valueOf(_val);
@@ -96,6 +103,11 @@ public class ConnectionError
         if(REDIRECT._val.equals(val))
         {
             return REDIRECT;
+        }
+        
+        if(SOCKET_ERROR._val.equals(val))
+        {
+            return SOCKET_ERROR;
         }
     
         // TODO ERROR
