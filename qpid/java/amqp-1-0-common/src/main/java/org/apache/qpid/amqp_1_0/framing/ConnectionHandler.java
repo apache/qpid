@@ -386,12 +386,14 @@ public class ConnectionHandler
         private BytesSource _bytesSource;
         private boolean _closed;
         private ConnectionEndpoint _conn;
+        private SocketExceptionHandler _exceptionHandler;
 
-        public BytesOutputHandler(OutputStream outputStream, BytesSource source, ConnectionEndpoint conn)
+        public BytesOutputHandler(OutputStream outputStream, BytesSource source, ConnectionEndpoint conn, SocketExceptionHandler exceptionHandler)
             {
                 _outputStream = outputStream;
                 _bytesSource = source;
                 _conn = conn;
+                _exceptionHandler = exceptionHandler;
             }
 
             public void run()
@@ -421,7 +423,7 @@ public class ConnectionHandler
             catch (IOException e)
             {
                 _closed = true;
-                e.printStackTrace();  //TODO
+                _exceptionHandler.processSocketException(e);
             }
         }
     }
