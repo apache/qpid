@@ -32,8 +32,6 @@ public class SymbolTypeConstructor extends VariableWidthTypeConstructor
 {
     private static final Charset ASCII = Charset.forName("US-ASCII");
 
-    private BinaryString _defaultBinaryString = new BinaryString();
-
     private static final ConcurrentHashMap<BinaryString, Symbol> SYMBOL_MAP =
             new ConcurrentHashMap<BinaryString, Symbol>(2048);
 
@@ -62,9 +60,7 @@ public class SymbolTypeConstructor extends VariableWidthTypeConstructor
             size = in.getInt();
         }
 
-        _defaultBinaryString.setData(in.array(), in.arrayOffset()+in.position(), size);
-
-        BinaryString binaryStr = _defaultBinaryString;
+        BinaryString binaryStr = new BinaryString(in.array(), in.arrayOffset()+in.position(), size);
 
         Symbol symbolVal = SYMBOL_MAP.get(binaryStr);
         if(symbolVal == null)
