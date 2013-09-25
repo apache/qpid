@@ -35,6 +35,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAccessCo
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAuthenticationProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListBrokerAttribute;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListGroupProviderAttributes;
+import org.apache.qpid.server.management.plugin.servlet.rest.action.ListTimeZones;
 import org.apache.qpid.server.model.Broker;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -61,7 +62,8 @@ public class HelperServlet extends AbstractServlet
                 new ListBrokerAttribute(Broker.PRODUCT_VERSION, "version"),
                 new ListGroupProviderAttributes(),
                 new ListAccessControlProviderAttributes(),
-                new PluginClassProviderAction()
+                new PluginClassProviderAction(),
+                new ListTimeZones()
         };
 
         _actions = new HashMap<String, Action>();

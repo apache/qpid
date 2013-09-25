@@ -23,10 +23,9 @@ define(["dojo/_base/xhr",
         "dojo/date",
         "dojo/date/locale",
         "dojo/number",
-        "dojox/date/timezone"], function (xhr, json, date, locale, number) {
+        "qpid/common/timezone"], function (xhr, json, date, locale, number, timezone) {
 
   var listeners = [];
-  var userTimeZones = {};
 
   var UserPreferences = {
 
@@ -156,21 +155,13 @@ define(["dojo/_base/xhr",
         return null;
       }
 
-      var timeZoneInfo = userTimeZones[timeZoneName];
-      if (timeZoneInfo)
-      {
-        return timeZoneInfo;
-      }
-
-      timeZoneInfo = dojox.date.timezone.getTzInfo(new Date(), timeZoneName);
-      userTimeZones[timeZoneName] = timeZoneInfo;
-      return timeZoneInfo;
+      return timezone.getTimeZoneInfo(timeZoneName);
     },
 
     addTimeZoneOffsetToUTC : function(utcTimeInMilliseconds, timeZone)
     {
       var tzi = null;
-      if (timeZone && timeZone.hasOwnProperty("tzOffset"))
+      if (timeZone && timeZone.hasOwnProperty("offset"))
       {
         tzi = timeZone;
       }
@@ -181,8 +172,8 @@ define(["dojo/_base/xhr",
 
       if (tzi)
       {
-        var browserTimeZoneOffsetInMinues = new Date().getTimezoneOffset();
-        return utcTimeInMilliseconds - (tzi.tzOffset - browserTimeZoneOffsetInMinues) * 60000;
+        var browserTimeZoneOffsetInMinutes = -new Date().getTimezoneOffset();
+        return utcTimeInMilliseconds + ( tzi.offset - browserTimeZoneOffsetInMinutes ) * 60000;
       }
       return utcTimeInMilliseconds;
     },
@@ -190,7 +181,7 @@ define(["dojo/_base/xhr",
     getTimeZoneDescription : function(timeZone)
     {
       var tzi = null;
-      if (timeZone && timeZone.hasOwnProperty("tzOffset"))
+      if (timeZone && timeZone.hasOwnProperty("offset"))
       {
         tzi = timeZone;
       }
@@ -201,12 +192,11 @@ define(["dojo/_base/xhr",
 
       if (tzi)
       {
-        var timeZoneOfsetInMinutes = -tzi.tzOffset;
-        var timeZoneCode = tzi.tzAbbr;
-        return (timeZoneOfsetInMinutes>=0? "+" : "-")
+        var timeZoneOfsetInMinutes = tzi.offset;
+        return (timeZoneOfsetInMinutes>0? "+" : "")
           + number.format(timeZoneOfsetInMinutes/60, {pattern: "00"})
           + ":" + number.format(timeZoneOfsetInMinutes%60, {pattern: "00"})
-          + " " + timeZoneCode;
+          + " " + tzi.name;
       }
       return date.getTimezoneName(new Date());
     },
