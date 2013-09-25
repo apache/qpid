@@ -33,6 +33,7 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
 import org.apache.qpid.amqp_1_0.jms.ConnectionFactory;
 
+
 public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnectionFactory, QueueConnectionFactory
 {
     private String _host;
@@ -45,7 +46,9 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     private String _queuePrefix;
     private String _topicPrefix;
-    private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));;
+    private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
+    private boolean _syncPublish = Boolean.parseBoolean(System.getProperty("qpid.sync_publish", "false"));
+
 
     public ConnectionFactoryImpl(final String host,
                                  final int port,
@@ -102,6 +105,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         connection.setQueuePrefix(_queuePrefix);
         connection.setTopicPrefix(_topicPrefix);
         connection.setUseBinaryMessageId(_useBinaryMessageId);
+        connection.setSyncPublish(_syncPublish);
         return connection;
     }
 
@@ -153,6 +157,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String remoteHost = null;
 
         boolean binaryMessageId = true;
+        boolean syncPublish = false;
 
         if(userInfo != null)
         {
@@ -185,6 +190,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                 {
                     binaryMessageId = Boolean.parseBoolean(keyValuePair[1]);
                 }
+                else if (keyValuePair[0].equalsIgnoreCase("sync-publish"))
+                {
+                    syncPublish = Boolean.parseBoolean(keyValuePair[1]);
+                }
             }
         }
 
@@ -196,6 +205,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         ConnectionFactoryImpl connectionFactory =
                 new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl);
         connectionFactory.setUseBinaryMessageId(binaryMessageId);
+        connectionFactory.setSyncPublish(syncPublish);
 
         return connectionFactory;
 
@@ -252,5 +262,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     public void setUseBinaryMessageId(boolean useBinaryMessageId)
     {
         _useBinaryMessageId = useBinaryMessageId;
+    }
+
+    public void setSyncPublish(boolean syncPublish)
+    {
+        _syncPublish = syncPublish;
     }
 }
