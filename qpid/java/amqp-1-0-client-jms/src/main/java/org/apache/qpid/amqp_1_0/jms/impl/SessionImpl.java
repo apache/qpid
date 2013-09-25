@@ -140,8 +140,6 @@ public class SessionImpl implements Session, QueueSession, TopicSession
 
         _messageFactory = new MessageFactory(this);
 
-        _dispatcherThread = new Thread(_dispatcher);
-        _dispatcherThread.start();
     }
 
     public BytesMessageImpl createBytesMessage() throws IllegalStateException
@@ -384,6 +382,12 @@ public class SessionImpl implements Session, QueueSession, TopicSession
         final MessageConsumerImpl messageConsumer;
         synchronized(_session.getEndpoint().getLock())
         {
+            if(_dispatcherThread == null)
+            {
+                _dispatcherThread = new Thread(_dispatcher);
+                _dispatcherThread.start();
+            }
+
             messageConsumer = new MessageConsumerImpl(destination, this, selector, noLocal);
             addConsumer(messageConsumer);
             if(_connection.isStarted())
