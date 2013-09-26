@@ -34,7 +34,8 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.util.UUID;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
-import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.messaging.Rejected;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class MessageProducerImpl implements MessageProducer, QueueSender, TopicPublisher
 {
@@ -302,7 +303,15 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
 
         if(_syncPublish && !action.wasAccepted(_syncPublishTimeout + System.currentTimeMillis()))
         {
-            throw new MessageRejectedException("Message was rejected");
+            if (action.getOutcome() instanceof Rejected)
+            {
+                Error err = ((Rejected) action.getOutcome()).getError();
+                throw new MessageRejectedException(err.getDescription(), err.getCondition().toString());
+            }
+            else
+            {
+                throw new MessageRejectedException("Message was not accepted.  Outcome was: " + action.getOutcome());
+            }
         }
 
         if(getDestination() != null)
@@ -485,6 +494,11 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
                     return _outcome instanceof Accepted;
                 }
             }
+        }
+
+        Outcome getOutcome()
+        {
+            return _outcome;
         }
     }
 }
