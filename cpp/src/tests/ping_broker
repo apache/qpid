@@ -57,7 +57,7 @@ def OptionsAndArguments(argv):
     parser.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>",
                       help="Maximum time to wait for broker connection (in seconds)")
     parser.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>",
-                      help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+                      help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
     parser.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
     parser.add_option("--ssl-trustfile", action="store", type="string", metavar="<CA>", help="List of trusted CAs (PEM Format)")
