@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.amqp_1_0.client;
 
+import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
@@ -28,6 +29,7 @@ import org.apache.qpid.amqp_1_0.transport.SendingLinkListener;
 import org.apache.qpid.amqp_1_0.type.*;
 import org.apache.qpid.amqp_1_0.type.Source;
 import org.apache.qpid.amqp_1_0.type.Target;
+import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
 import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.*;
@@ -49,6 +51,7 @@ public class Sender implements DeliveryStateHandler
     private boolean _closed;
     private Error _error;
     private Runnable _remoteErrorTask;
+    private Outcome _defaultOutcome;
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr)
             throws SenderCreationException, ConnectionClosedException
@@ -186,6 +189,35 @@ public class Sender implements DeliveryStateHandler
                 super.remoteDetached(endpoint, detach);
             }
         });
+        final org.apache.qpid.amqp_1_0.type.messaging.Source remoteSource =
+                (org.apache.qpid.amqp_1_0.type.messaging.Source) getSource();
+        _defaultOutcome = remoteSource.getDefaultOutcome();
+        if(_defaultOutcome == null)
+        {
+            if(remoteSource.getOutcomes() == null || remoteSource.getOutcomes().length == 0)
+            {
+                _defaultOutcome = new Accepted();
+            }
+            else if(remoteSource.getOutcomes().length == 1)
+            {
+
+                final AMQPDescribedTypeRegistry describedTypeRegistry = _endpoint.getSession()
+                        .getConnection()
+                        .getDescribedTypeRegistry();
+
+                DescribedTypeConstructor constructor = describedTypeRegistry
+                        .getConstructor(remoteSource.getOutcomes()[0]);
+                if(constructor != null)
+                {
+                    Object impliedOutcome = constructor.construct(Collections.EMPTY_LIST);
+                    if(impliedOutcome instanceof Outcome)
+                    {
+                        _defaultOutcome = (Outcome) impliedOutcome;
+                    }
+                }
+
+            }
+        }
     }
 
     public Source getSource()
@@ -369,7 +401,9 @@ public class Sender implements DeliveryStateHandler
             OutcomeAction action;
             if((action = _outcomeActions.remove(deliveryTag)) != null)
             {
-                action.onOutcome(deliveryTag, (Outcome) state);
+
+                final Outcome outcome = (Outcome) state;
+                action.onOutcome(deliveryTag, (outcome == null && settled) ? _defaultOutcome : outcome);
             }
             if(!Boolean.TRUE.equals(settled))
             {
@@ -379,10 +413,10 @@ public class Sender implements DeliveryStateHandler
         else if(state instanceof TransactionalState)
         {
             OutcomeAction action;
-
             if((action = _outcomeActions.remove(deliveryTag)) != null)
             {
-                action.onOutcome(deliveryTag, ((TransactionalState) state).getOutcome());
+                final Outcome outcome = ((TransactionalState) state).getOutcome();
+                action.onOutcome(deliveryTag, outcome == null ? _defaultOutcome : outcome);
             }
 
         }
