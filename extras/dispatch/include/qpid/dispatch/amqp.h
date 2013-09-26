@@ -76,5 +76,23 @@
 #define DX_AMQP_ARRAY8      0xe0
 #define DX_AMQP_ARRAY32     0xf0
 
+/**
+ * Delivery Annotation Headers
+ */
+const char * const DX_DA_INGRESS;  // Ingress Router
+const char * const DX_DA_TRACE;    // Trace
+const char * const DX_DA_TO;       // To-Override
+
+/**
+ * Link Terminus Capabilities
+ */
+const char * const DX_CAPABILITY_ROUTER;
+
+/**
+ * Miscellaneous Strings
+ */
+const char * const DX_INTERNODE_LINK_NAME_1;
+const char * const DX_INTERNODE_LINK_NAME_2;
+
 #endif
 
