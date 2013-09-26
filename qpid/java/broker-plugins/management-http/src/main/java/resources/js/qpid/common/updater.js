@@ -18,15 +18,35 @@
  * under the License.
  *
  */
-define(function () {
+define(["qpid/management/UserPreferences"], function (UserPreferences) {
     var updateList = new Array();
 
-    setInterval(function() {
-            for(var i = 0; i < updateList.length; i++) {
-              var obj = updateList[i];
-              obj.update();
-            }
-        }, 5000); // TODO: Should make this configurable
+    function invokeUpdates()
+    {
+      for(var i = 0; i < updateList.length; i++)
+      {
+        var obj = updateList[i];
+        obj.update();
+      }
+    }
+
+    var updatePeriod = UserPreferences.updatePeriod ? UserPreferences.updatePeriod: 5;
+
+    var timer = setInterval(invokeUpdates, updatePeriod * 1000);
+
+    var updateIntervalListener = {
+        onPreferencesChange: function(preferences)
+        {
+          if (preferences.updatePeriod && preferences.updatePeriod != updatePeriod)
+          {
+            updatePeriod = preferences.updatePeriod;
+            clearInterval(timer);
+            timer = setInterval(invokeUpdates, updatePeriod * 1000);
+          }
+        }
+    };
+
+    UserPreferences.addListener(updateIntervalListener);
 
     return {
             add: function(obj) {
