@@ -61,13 +61,6 @@ if (PYTHONLIBS_FOUND)
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif (PYTHONLIBS_FOUND)
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${proton_include}
-    ${PYTHON_INCLUDE_PATH}
-    )
-
 ##
 ## Find dependencies
 ##
@@ -75,6 +68,13 @@ find_library(proton_lib qpid-proton)
 find_library(pthread_lib pthread)
 find_library(rt_lib rt)
 find_path(proton_include proton/driver.h)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${proton_include}
+    ${PYTHON_INCLUDE_PATH}
+    )
 
 set(CMAKE_C_FLAGS "-pthread -Wall -Werror -std=gnu99")
 set(CATCH_UNDEFINED "-Wl,--no-undefined")
@@ -85,6 +85,8 @@ set(CATCH_UNDEFINED "-Wl,--no-undefined")
 set(server_SOURCES
     src/agent.c
     src/alloc.c
+    src/amqp.c
+    src/bitmask.c
     src/buffer.c
     src/compose.c
     src/config.c

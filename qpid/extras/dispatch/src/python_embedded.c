@@ -402,7 +402,7 @@ typedef struct {
 } IoAdapter;
 
 
-static void dx_io_rx_handler(void *context, dx_message_t *msg)
+static void dx_io_rx_handler(void *context, dx_message_t *msg, int link_id)
 {
     IoAdapter *self = (IoAdapter*) context;
 
@@ -454,9 +454,10 @@ static void dx_io_rx_handler(void *context, dx_message_t *msg)
     PyObject *pAP   = dx_field_to_py(ap_map);
     PyObject *pBody = dx_field_to_py(body_map);
 
-    PyObject *pArgs = PyTuple_New(2);
+    PyObject *pArgs = PyTuple_New(3);
     PyTuple_SetItem(pArgs, 0, pAP);
     PyTuple_SetItem(pArgs, 1, pBody);
+    PyTuple_SetItem(pArgs, 2, PyInt_FromLong((long) link_id));
 
     PyObject *pValue = PyObject_CallObject(self->handler_rx_call, pArgs);
     Py_DECREF(pArgs);
@@ -507,10 +508,10 @@ static PyObject* dx_python_send(PyObject *self, PyObject *args)
     field = dx_compose(DX_PERFORMATIVE_DELIVERY_ANNOTATIONS, field);
     dx_compose_start_map(field);
 
-    dx_compose_insert_string(field, "qdx.ingress");
+    dx_compose_insert_string(field, DX_DA_INGRESS);
     dx_compose_insert_string(field, dx_router_id(ioa->dx));
 
-    dx_compose_insert_string(field, "qdx.trace");
+    dx_compose_insert_string(field, DX_DA_TRACE);
     dx_compose_start_list(field);
     dx_compose_insert_string(field, dx_router_id(ioa->dx));
     dx_compose_end_list(field);
