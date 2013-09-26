@@ -1,5 +1,5 @@
-#ifndef __dispatch_h__
-#define __dispatch_h__ 1
+#ifndef __dispatch_bitmask_h__
+#define __dispatch_bitmask_h__ 1
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,26 +19,19 @@
  * under the License.
  */
 
-#include <qpid/dispatch/alloc.h>
-#include <qpid/dispatch/bitmask.h>
-#include <qpid/dispatch/buffer.h>
-#include <qpid/dispatch/ctools.h>
-#include <qpid/dispatch/hash.h>
-#include <qpid/dispatch/iovec.h>
-#include <qpid/dispatch/iterator.h>
-#include <qpid/dispatch/log.h>
-#include <qpid/dispatch/router.h>
-#include <qpid/dispatch/amqp.h>
-#include <qpid/dispatch/parse.h>
-#include <qpid/dispatch/compose.h>
-#include <qpid/dispatch/config.h>
-#include <qpid/dispatch/threading.h>
-#include <qpid/dispatch/timer.h>
-#include <qpid/dispatch/user_fd.h>
-#include <qpid/dispatch/server.h>
-#include <qpid/dispatch/message.h>
-#include <qpid/dispatch/container.h>
-#include <qpid/dispatch/agent.h>
-#include <qpid/dispatch/dispatch.h>
+typedef struct dx_bitmask_t dx_bitmask_t;
+
+int dx_bitmask_width();
+dx_bitmask_t *dx_bitmask(int initial);
+void dx_bitmask_free(dx_bitmask_t *b);
+void dx_bitmask_set_all(dx_bitmask_t *b);
+void dx_bitmask_clear_all(dx_bitmask_t *b);
+void dx_bitmask_set_bit(dx_bitmask_t *b, int bitnum);
+void dx_bitmask_clear_bit(dx_bitmask_t *b, int bitnum);
+int dx_bitmask_value(dx_bitmask_t *b, int bitnum);
+int dx_bitmask_first_set(dx_bitmask_t *b, int *bitnum);
+
+
 
 #endif
+

@@ -240,7 +240,7 @@ static void dx_agent_deferred_handler(void *context)
 }
 
 
-static void dx_agent_rx_handler(void *context, dx_message_t *msg)
+static void dx_agent_rx_handler(void *context, dx_message_t *msg, int unused_link_id)
 {
     dx_agent_t   *agent = (dx_agent_t*) context;
     dx_message_t *copy  = dx_message_copy(msg);

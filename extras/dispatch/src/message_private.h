@@ -67,7 +67,7 @@ typedef struct {
     sys_mutex_t         *lock;
     uint32_t             ref_count;                       // The number of messages referencing this
     dx_buffer_list_t     buffers;                         // The buffer chain containing the message
-    dx_buffer_list_t     new_delivery_annotations;        // The buffer chain containing the new delivery annotations
+    dx_buffer_list_t     new_delivery_annotations;        // The buffer chain containing the new delivery annotations (MOVE TO MSG_PVT)
     dx_field_location_t  section_message_header;          // The message header list
     dx_field_location_t  section_delivery_annotation;     // The delivery annotation map
     dx_field_location_t  section_message_annotation;      // The message annotation map

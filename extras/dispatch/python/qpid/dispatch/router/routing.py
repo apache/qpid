@@ -18,39 +18,39 @@
 #
 
 try:
-  from dispatch import *
+    from dispatch import *
 except ImportError:
-  from ..stubs import *
+    from ..stubs import *
 
 class RoutingTableEngine(object):
-  """
-  This module is responsible for converting the set of next hops to remote routers to a routing
-  table in the "topological" address class.
-  """
-  def __init__(self, container):
-    self.container = container
-    self.id = self.container.id
-    self.area = self.container.area
-    self.next_hops = {}
+    """
+    This module is responsible for converting the set of next hops to remote routers to a routing
+    table in the "topological" address class.
+    """
+    def __init__(self, container):
+        self.container = container
+        self.id = self.container.id
+        self.area = self.container.area
+        self.next_hops = {}
 
 
-  def tick(self, now):
-    pass
+    def tick(self, now):
+        pass
 
 
-  def next_hops_changed(self, next_hops):
-    # Convert next_hops into routing table
-    self.next_hops = next_hops
-    new_table = []
-    for _id, next_hop in next_hops.items():
-      new_table.append(('_topo.%s.%s.#'  % (self.area, _id), next_hop))
-      pair = ('_topo.%s.all' % (self.area), next_hop)
-      if new_table.count(pair) == 0:
-        new_table.append(pair)
+    def next_hops_changed(self, next_hops):
+        # Convert next_hops into routing table
+        self.next_hops = next_hops
+        new_table = []
+        for _id, next_hop in next_hops.items():
+            new_table.append(('_topo.%s.%s.#'  % (self.area, _id), next_hop))
+            pair = ('_topo.%s.all' % (self.area), next_hop)
+            if new_table.count(pair) == 0:
+                new_table.append(pair)
 
-    self.container.remote_routes_changed('topological', new_table)
+        self.container.remote_routes_changed('topological', new_table)
 
 
-  def get_next_hops(self):
-    return self.next_hops
+    def get_next_hops(self):
+        return self.next_hops
 
