@@ -146,13 +146,26 @@ public class QueueBrowserImpl implements QueueBrowser
             if( _needNext )
             {
                 _needNext = false;
-                _nextElement = createJMSMessage(_receiver.receive(0L));
+                Message msg = _receiver.receive(0L);
+                if(msg != null)
+                {
+                    _receiver.acknowledge(msg);
+                }
+                _nextElement = createJMSMessage(msg);
                 if( _nextElement == null )
                 {
+                    _receiver.setCredit(UnsignedInteger.valueOf(100), true);
                     // Drain to verify there really are no more messages.
                     _receiver.drain();
                     _receiver.drainWait();
-                    _nextElement = createJMSMessage(_receiver.receive(0L));
+                    msg = _receiver.receive(0L);
+
+                    if(msg != null)
+                    {
+                        _receiver.acknowledge(msg);
+                    }
+                    _nextElement = createJMSMessage(msg);
+
                     if( _nextElement == null )
                     {
                         close();

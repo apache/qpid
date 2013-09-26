@@ -231,7 +231,7 @@ public class SourceConstructor extends DescribedTypeConstructor<Source>
 
                     try
                     {
-                        obj.setDistributionMode( (DistributionMode) val );
+                        obj.setDistributionMode( StdDistMode.valueOf(val) );
                     }
                     catch(ClassCastException e)
                     {
@@ -326,7 +326,7 @@ public class SourceConstructor extends DescribedTypeConstructor<Source>
                             // TODO Error
                         }
                     }
-                    
+
                 }
 
 
@@ -360,7 +360,7 @@ public class SourceConstructor extends DescribedTypeConstructor<Source>
                             // TODO Error
                         }
                     }
-                    
+
                 }
 
 
