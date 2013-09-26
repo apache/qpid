@@ -106,7 +106,7 @@ import org.apache.qpid.qmf2.util.GetOpt;
  *                         N.B. if this gets set too low the fuse may not blow.\n" +
  *   --sasl-mechanism=&lt;mech&gt;
  *                         SASL mechanism for authentication (e.g. EXTERNAL,
- *                         ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL
+ *                         ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL
  *                         automatically picks the most secure available
  *                         mechanism - use this option to override.
  * </pre>
@@ -149,7 +149,7 @@ public final class QueueFuse implements QmfEventListener
     "                        N.B. if this gets set too low the fuse may not blow.\n" +
     "  --sasl-mechanism=<mech>\n" +
     "                        SASL mechanism for authentication (e.g. EXTERNAL,\n" +
-    "                        ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL\n" +
+    "                        ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL\n" +
     "                        automatically picks the most secure available\n" +
     "                        mechanism - use this option to override.\n";
 
