@@ -254,6 +254,24 @@ void *dx_connection_get_context(dx_connection_t *conn);
 
 
 /**
+ * \brief Set the link context for a connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @param context Link context to be stored with the connection.
+ */
+void dx_connection_set_link_context(dx_connection_t *conn, void *context);
+
+
+/**
+ * \brief Get the link context from a connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @return The link context stored with the connection.
+ */
+void *dx_connection_get_link_context(dx_connection_t *conn);
+
+
+/**
  * \brief Activate a connection for output.
  *
  * This function is used to request that the server activate the indicated

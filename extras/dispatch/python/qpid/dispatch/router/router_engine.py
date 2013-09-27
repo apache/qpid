@@ -281,4 +281,4 @@ class RouterEngine:
     def node_updated(self, address, reachable, neighbor, link_bit, router_bit):
         self.log(LOG_DEBUG, "Event: node_updated: address=%s, reachable=%r, neighbor=%r, link_bit=%d, router_bit=%d" % \
                      (address, reachable, neighbor, link_bit, router_bit))
-        self.router_adapter.node_updataed(address, reachable, neighbor, link_bit, router_bit)
+        self.router_adapter.node_updated(address, reachable, neighbor, link_bit, router_bit)
