@@ -306,7 +306,14 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             if (action.getOutcome() instanceof Rejected)
             {
                 Error err = ((Rejected) action.getOutcome()).getError();
-                throw new MessageRejectedException(err.getDescription(), err.getCondition().toString());
+                if(err != null)
+                {
+                    throw new MessageRejectedException(err.getDescription(), err.getCondition().toString());
+                }
+                else
+                {
+                    throw new MessageRejectedException("Message was rejected: " + action.getOutcome());
+                }
             }
             else
             {
