@@ -220,7 +220,9 @@ function BuildAPlatform
         ('bin/*.dll',            'bin/Release'),
         ('bin/*test.exe',        'bin/Release'),
         ('bin/qpid-send.exe',    'bin/Release'),
-        ('bin/qpid-receive.exe', 'bin/Release')
+        ('bin/qpid-receive.exe', 'bin/Release'),
+        ('plugins/client/*d.dll','bin/Debug'),
+        ('plugins/client/*.dll', 'bin/Release')
     )
 
     $preserve=(
