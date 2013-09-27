@@ -86,6 +86,10 @@ public class ErrorConstructor extends DescribedTypeConstructor<org.apache.qpid.a
                                     if(condition == null)
                                     {
                                         condition = TransactionErrors.valueOf(val);
+                                        if(condition == null)
+                                        {
+                                            condition = new UnknownErrorCondition((Symbol)val);
+                                        }
                                     }
                                 }
                             }
@@ -166,4 +170,52 @@ public class ErrorConstructor extends DescribedTypeConstructor<org.apache.qpid.a
     }
 
 
+    private static final class UnknownErrorCondition implements ErrorCondition
+    {
+        private final Symbol _value;
+
+        public UnknownErrorCondition(final Symbol value)
+        {
+            _value = value;
+        }
+
+        public Symbol getValue()
+        {
+            return _value;
+        }
+
+        @Override
+        public boolean equals(final Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final UnknownErrorCondition that = (UnknownErrorCondition) o;
+
+            if (!_value.equals(that._value))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _value.hashCode();
+        }
+
+        @Override
+        public String toString()
+        {
+            return _value.toString();
+        }
+    }
 }
