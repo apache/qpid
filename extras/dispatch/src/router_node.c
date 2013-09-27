@@ -1132,6 +1132,7 @@ static PyTypeObject RouterAdapterType = {
 
 static void dx_router_python_setup(dx_router_t *router)
 {
+    PyObject *raType          = (PyObject*) &RouterAdapterType;
     PyObject *pDispatchModule = dx_python_module();
 
     RouterAdapterType.tp_new = PyType_GenericNew;
@@ -1141,7 +1142,7 @@ static void dx_router_python_setup(dx_router_t *router)
         return;
     }
 
-    Py_INCREF(&RouterAdapterType);
+    Py_INCREF(raType);
     PyModule_AddObject(pDispatchModule, "RouterAdapter", (PyObject*) &RouterAdapterType);
 
     //
