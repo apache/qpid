@@ -388,7 +388,15 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setContentType(AMQShortString contentType)
     {
-        _propertyFlags |= (CONTENT_TYPE_MASK);
+
+        if(contentType == null)
+        {
+            _propertyFlags &= (~CONTENT_TYPE_MASK);
+        }
+        else
+        {
+            _propertyFlags |= CONTENT_TYPE_MASK;
+        }
         _contentType = contentType;
         _encodedForm = null;
     }
@@ -411,14 +419,19 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setEncoding(String encoding)
     {
-        _propertyFlags |= ENCODING_MASK;
-        _encoding = (encoding == null) ? null : AMQShortString.valueOf(encoding);
-        _encodedForm = null;
+        setEncoding(encoding == null ? null : AMQShortString.valueOf(encoding));
     }
 
     public void setEncoding(AMQShortString encoding)
     {
-        _propertyFlags |= ENCODING_MASK;
+        if(encoding == null)
+        {
+            _propertyFlags &= (~ENCODING_MASK);
+        }
+        else
+        {
+            _propertyFlags |= ENCODING_MASK;
+        }
         _encoding = encoding;
         _encodedForm = null;
     }
@@ -435,7 +448,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setHeaders(FieldTable headers)
     {
-        _propertyFlags |= HEADERS_MASK;
+        if(headers == null)
+        {
+            _propertyFlags &= (~HEADERS_MASK);
+        }
+        else
+        {
+            _propertyFlags |= HEADERS_MASK;
+        }
         _headers = headers;
         _encodedForm = null;
     }
@@ -481,7 +501,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setCorrelationId(AMQShortString correlationId)
     {
-        _propertyFlags |= CORRELATION_ID_MASK;
+        if(correlationId == null)
+        {
+            _propertyFlags &= (~CORRELATION_ID_MASK);
+        }
+        else
+        {
+            _propertyFlags |= CORRELATION_ID_MASK;
+        }
         _correlationId = correlationId;
         _encodedForm = null;
     }
@@ -503,7 +530,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setReplyTo(AMQShortString replyTo)
     {
-        _propertyFlags |= REPLY_TO_MASK;
+        if(replyTo == null)
+        {
+            _propertyFlags &= (~REPLY_TO_MASK);
+        }
+        else
+        {
+            _propertyFlags |= REPLY_TO_MASK;
+        }
         _replyTo = replyTo;
         _encodedForm = null;
     }
@@ -515,7 +549,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setExpiration(long expiration)
     {
-        _propertyFlags |= EXPIRATION_MASK;
+        if(expiration == 0l)
+        {
+            _propertyFlags &= (~EXPIRATION_MASK);
+        }
+        else
+        {
+            _propertyFlags |= EXPIRATION_MASK;
+        }
         _expiration = expiration;
         _encodedForm = null;
     }
@@ -532,14 +573,19 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setMessageId(String messageId)
     {
-        _propertyFlags |= MESSAGE_ID_MASK;
-        _messageId = (messageId == null) ? null : new AMQShortString(messageId);
-        _encodedForm = null;
+        setMessageId(messageId == null ? null : new AMQShortString(messageId));
     }
 
     public void setMessageId(AMQShortString messageId)
     {
-        _propertyFlags |= MESSAGE_ID_MASK;
+        if(messageId == null)
+        {
+            _propertyFlags &= (~MESSAGE_ID_MASK);
+        }
+        else
+        {
+            _propertyFlags |= MESSAGE_ID_MASK;
+        }
         _messageId = messageId;
         _encodedForm = null;
     }
@@ -573,7 +619,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setType(AMQShortString type)
     {
-        _propertyFlags |= TYPE_MASK;
+        if(type == null)
+        {
+            _propertyFlags &= (~TYPE_MASK);
+        }
+        else
+        {
+            _propertyFlags |= TYPE_MASK;
+        }
         _type = type;
         _encodedForm = null;
     }
@@ -595,7 +648,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setUserId(AMQShortString userId)
     {
-        _propertyFlags |= USER_ID_MASK;
+        if(userId == null)
+        {
+            _propertyFlags &= (~USER_ID_MASK);
+        }
+        else
+        {
+            _propertyFlags |= USER_ID_MASK;
+        }
         _userId = userId;
         _encodedForm = null;
     }
@@ -617,7 +677,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setAppId(AMQShortString appId)
     {
-        _propertyFlags |= APPLICATION_ID_MASK;
+        if(appId == null)
+        {
+            _propertyFlags &= (~APPLICATION_ID_MASK);
+        }
+        else
+        {
+            _propertyFlags |= APPLICATION_ID_MASK;
+        }
         _appId = appId;
         _encodedForm = null;
     }
@@ -639,7 +706,14 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setClusterId(AMQShortString clusterId)
     {
-        _propertyFlags |= CLUSTER_ID_MASK;
+        if(clusterId == null)
+        {
+            _propertyFlags &= (~CLUSTER_ID_MASK);
+        }
+        else
+        {
+            _propertyFlags |= CLUSTER_ID_MASK;
+        }
         _clusterId = clusterId;
         _encodedForm = null;
     }
