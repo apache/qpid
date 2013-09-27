@@ -118,7 +118,7 @@ install(TARGETS qpid-dispatch
 file(GLOB headers "include/qpid/dispatch/*.h")
 install(FILES ${headers} DESTINATION ${INCLUDE_INSTALL_DIR}/qpid/dispatch)
 install(FILES include/qpid/dispatch.h DESTINATION ${INCLUDE_INSTALL_DIR}/qpid)
-install(FILES etc/qpid-dispatch.conf DESTINATION ${SYSCONF_INSTALL_DIR})
+install(FILES etc/qpid-dispatch.conf DESTINATION ${SYSCONF_INSTALL_DIR}/qpid)
 
 ##
 ## Python modules installation
