@@ -151,6 +151,13 @@ set(PYTHON_CONFIG_SOURCES
     python/qpid/dispatch/__init__.py
 )
 
+set(DOC_FILES
+    ChangeLog
+    LICENSE
+    README.md
+    TODO
+)
+
 install(FILES ${PYTHON_STUBS_SOURCES}
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch/stubs)
 
@@ -165,6 +172,9 @@ install(FILES python/qpid/__init__.py
 
 install(FILES python/qpid/dispatch/__init__.py
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch)
+
+install(FILES ${DOC_FILES}
+        DESTINATION ${SHARE_INSTALL_DIR}/qpid-dispatch)
 ##
 ## Build Tests
 ##
