@@ -55,6 +55,7 @@ ALLOC_DEFINE(dx_router_node_t);
 ALLOC_DEFINE(dx_router_ref_t);
 ALLOC_DEFINE(dx_router_link_ref_t);
 ALLOC_DEFINE(dx_address_t);
+ALLOC_DEFINE(dx_router_conn_t);
 
 
 static void dx_router_add_link_ref_LH(dx_router_link_ref_list_t *ref_list, dx_router_link_t *link)
@@ -95,6 +96,8 @@ static int dx_router_terminus_is_router(pn_terminus_t *term)
 {
     pn_data_t *cap = pn_terminus_capabilities(term);
 
+    pn_data_rewind(cap);
+    pn_data_next(cap);
     if (cap && pn_data_type(cap) == PN_SYMBOL) {
         pn_bytes_t sym = pn_data_get_symbol(cap);
         if (sym.size == strlen(DX_CAPABILITY_ROUTER) &&
@@ -121,9 +124,24 @@ static void dx_router_generate_temp_addr(dx_router_t *router, char *buffer, size
 }
 
 
-static int dx_router_find_mask_bit(dx_link_t *link)
+static int dx_router_find_mask_bit_LH(dx_router_t *router, dx_link_t *link)
 {
-    return 0;  // TODO
+    dx_router_conn_t *shared = (dx_router_conn_t*) dx_link_get_conn_context(link);
+    if (shared)
+        return shared->mask_bit;
+
+    int mask_bit;
+    if (dx_bitmask_first_set(router->neighbor_free_mask, &mask_bit)) {
+        dx_bitmask_clear_bit(router->neighbor_free_mask, mask_bit);
+    } else {
+        dx_log(module, LOG_CRITICAL, "Exceeded maximum inter-router link count");
+        return -1;
+    }
+
+    shared = new_dx_router_conn_t();
+    shared->mask_bit = mask_bit;
+    dx_link_set_conn_context(link, shared);
+    return mask_bit;
 }
 
 
@@ -542,7 +560,6 @@ static int router_incoming_link_handler(void* context, dx_link_t *link)
     int is_router             = dx_router_terminus_is_router(dx_link_remote_source(link));
 
     DEQ_ITEM_INIT(rlink);
-    rlink->mask_bit       = is_router ? dx_router_find_mask_bit(link) : 0;
     rlink->link_type      = is_router ? DX_LINK_ROUTER : DX_LINK_ENDPOINT;
     rlink->link_direction = DX_INCOMING;
     rlink->owning_addr    = 0;
@@ -556,6 +573,7 @@ static int router_incoming_link_handler(void* context, dx_link_t *link)
     dx_link_set_context(link, rlink);
 
     sys_mutex_lock(router->lock);
+    rlink->mask_bit = is_router ? dx_router_find_mask_bit_LH(router, link) : 0;
     DEQ_INSERT_TAIL(router->links, rlink);
     sys_mutex_unlock(router->lock);
 
@@ -599,7 +617,6 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     //
     dx_router_link_t *rlink = new_dx_router_link_t();
     DEQ_ITEM_INIT(rlink);
-    rlink->mask_bit       = is_router ? dx_router_find_mask_bit(link) : 0;
     rlink->link_type      = is_router ? DX_LINK_ROUTER : DX_LINK_ENDPOINT;
     rlink->link_direction = DX_OUTGOING;
     rlink->owning_addr    = 0;
@@ -615,6 +632,7 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     pn_terminus_copy(dx_link_target(link), dx_link_remote_target(link));
 
     sys_mutex_lock(router->lock);
+    rlink->mask_bit = is_router ? dx_router_find_mask_bit_LH(router, link) : 0;
 
     if (is_router) {
         //
@@ -675,6 +693,12 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
 {
     dx_router_t      *router = (dx_router_t*) context;
     dx_router_link_t *rlink  = (dx_router_link_t*) dx_link_get_context(link);
+    dx_router_conn_t *shared = (dx_router_conn_t*) dx_link_get_conn_context(link);
+
+    if (shared) {
+        dx_link_set_conn_context(link, 0);
+        free_dx_router_conn_t(shared);
+    }
 
     if (!rlink)
         return 0;
@@ -766,7 +790,7 @@ static void router_outbound_open_handler(void *type_context, dx_connection_t *co
     sender = dx_link(router->node, conn, DX_OUTGOING, DX_INTERNODE_LINK_NAME_2);
     // TODO - We don't want to have to cast away the constness of the literal string here!
     //        See PROTON-429
-    pn_data_put_symbol(pn_terminus_capabilities(dx_link_target(receiver)), pn_bytes(clen, (char *) DX_CAPABILITY_ROUTER));
+    pn_data_put_symbol(pn_terminus_capabilities(dx_link_source(sender)), pn_bytes(clen, (char *) DX_CAPABILITY_ROUTER));
 
     rlink = new_dx_router_link_t();
     DEQ_ITEM_INIT(rlink);

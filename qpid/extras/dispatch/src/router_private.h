@@ -23,6 +23,7 @@ typedef struct dx_router_link_t     dx_router_link_t;
 typedef struct dx_router_node_t     dx_router_node_t;
 typedef struct dx_router_ref_t      dx_router_ref_t;
 typedef struct dx_router_link_ref_t dx_router_link_ref_t;
+typedef struct dx_router_conn_t     dx_router_conn_t;
 
 
 typedef enum {
@@ -89,6 +90,13 @@ struct dx_router_link_ref_t {
 
 ALLOC_DECLARE(dx_router_link_ref_t);
 DEQ_DECLARE(dx_router_link_ref_t, dx_router_link_ref_list_t);
+
+
+struct dx_router_conn_t {
+    int mask_bit;
+};
+
+ALLOC_DECLARE(dx_router_conn_t);
 
 
 struct dx_address_t {
