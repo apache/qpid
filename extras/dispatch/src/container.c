@@ -651,6 +651,36 @@ void *dx_link_get_context(dx_link_t *link)
 }
 
 
+void dx_link_set_conn_context(dx_link_t *link, void *context)
+{
+    pn_session_t *pn_sess = pn_link_session(link->pn_link);
+    if (!pn_sess)
+        return;
+    pn_connection_t *pn_conn = pn_session_connection(pn_sess);
+    if (!pn_conn)
+        return;
+    dx_connection_t *conn = (dx_connection_t*) pn_connection_get_context(pn_conn);
+    if (!conn)
+        return;
+    dx_connection_set_link_context(conn, context);
+}
+
+
+void *dx_link_get_conn_context(dx_link_t *link)
+{
+    pn_session_t *pn_sess = pn_link_session(link->pn_link);
+    if (!pn_sess)
+        return 0;
+    pn_connection_t *pn_conn = pn_session_connection(pn_sess);
+    if (!pn_conn)
+        return 0;
+    dx_connection_t *conn = (dx_connection_t*) pn_connection_get_context(pn_conn);
+    if (!conn)
+        return 0;
+    return dx_connection_get_link_context(conn);
+}
+
+
 pn_link_t *dx_link_pn(dx_link_t *link)
 {
     return link->pn_link;

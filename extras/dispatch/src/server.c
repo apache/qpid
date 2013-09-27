@@ -109,6 +109,8 @@ static void thread_process_listeners(dx_server_t *dx_server)
         ctx->listener     = (dx_listener_t*) pn_listener_context(listener);
         ctx->connector    = 0;
         ctx->context      = ctx->listener->context;
+        ctx->user_context = 0;
+        ctx->link_context = 0;
         ctx->ufd          = 0;
 
         pn_connection_t *conn = pn_connection();
@@ -630,6 +632,7 @@ static void cxtr_try_open(void *context)
     ctx->connector    = ct;
     ctx->context      = ct->context;
     ctx->user_context = 0;
+    ctx->link_context = 0;
     ctx->ufd          = 0;
 
     //
@@ -878,6 +881,18 @@ void *dx_connection_get_context(dx_connection_t *conn)
 }
 
 
+void dx_connection_set_link_context(dx_connection_t *conn, void *context)
+{
+    conn->link_context = context;
+}
+
+
+void *dx_connection_get_link_context(dx_connection_t *conn)
+{
+    return conn->link_context;
+}
+
+
 pn_connection_t *dx_connection_pn(dx_connection_t *conn)
 {
     return conn->pn_conn;
@@ -976,6 +991,7 @@ dx_user_fd_t *dx_user_fd(dx_dispatch_t *dx, int fd, void *context)
     ctx->connector    = 0;
     ctx->context      = 0;
     ctx->user_context = 0;
+    ctx->link_context = 0;
     ctx->ufd          = ufd;
 
     ufd->context = context;
