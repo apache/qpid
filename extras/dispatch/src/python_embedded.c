@@ -614,6 +614,9 @@ static void dx_register_log_constant(PyObject *module, const char *name, uint32_
 
 static void dx_python_setup()
 {
+    PyObject *laType  = (PyObject*) &LogAdapterType;
+    PyObject *ioaType = (PyObject*) &IoAdapterType;
+
     LogAdapterType.tp_new = PyType_GenericNew;
     IoAdapterType.tp_new  = PyType_GenericNew;
     if ((PyType_Ready(&LogAdapterType) < 0) || (PyType_Ready(&IoAdapterType) < 0)) {
@@ -626,7 +629,7 @@ static void dx_python_setup()
         //
         // Add LogAdapter
         //
-        Py_INCREF(&LogAdapterType);
+        Py_INCREF(laType);
         PyModule_AddObject(m, "LogAdapter", (PyObject*) &LogAdapterType);
 
         dx_register_log_constant(m, "LOG_TRACE",    LOG_TRACE);
@@ -638,7 +641,7 @@ static void dx_python_setup()
         dx_register_log_constant(m, "LOG_CRITICAL", LOG_CRITICAL);
 
         //
-        Py_INCREF(&IoAdapterType);
+        Py_INCREF(ioaType);
         PyModule_AddObject(m, "IoAdapter", (PyObject*) &IoAdapterType);
 
         Py_INCREF(m);
