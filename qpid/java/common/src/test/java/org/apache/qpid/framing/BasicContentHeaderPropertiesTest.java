@@ -144,6 +144,9 @@ public class BasicContentHeaderPropertiesTest extends TestCase
         long expiration = 999999999;
         _testProperties.setExpiration(expiration);
         assertEquals(expiration, _testProperties.getExpiration());
+        expiration = 0l;
+        _testProperties.setExpiration(expiration);
+        assertEquals(expiration, _testProperties.getExpiration());
     }
 
     public void testSetGetMessageId()
