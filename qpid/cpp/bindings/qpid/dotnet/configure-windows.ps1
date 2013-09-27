@@ -153,6 +153,8 @@ $global:vsVersion = ''
 $global:cmakeGenerator = ''
 $global:vsSubdir = ''
 $global:cmakeCompiler = ''
+$global:cmakeCommandLine32 = ''
+$global:cmakeCommandLine64 = ''
 
 #############################
 # Select-Folder
@@ -325,7 +327,8 @@ function WriteDotnetBindingEnvSetupBat
         [string] $nBits,
         [string] $outfileName,
         [string] $studioVersion,
-        [string] $studioSubdir
+        [string] $studioSubdir,
+		[string] $cmakeLine
     )
 
     $out = @("@ECHO OFF
@@ -337,6 +340,8 @@ REM
 REM     > call $outfileName
 REM     >
 REM
+REM The solution was generated with cmake command line:
+REM $cmakeLine
 ECHO %PATH% | FINDSTR /I boost > NUL
 IF %ERRORLEVEL% EQU 0 ECHO WARNING: Boost is defined in your path multiple times!
 SET PATH=$boostRoot\lib;%PATH%
@@ -387,7 +392,7 @@ function SelectVisualStudioVersion {
 
     $Form.width = 350
     $Form.height = 150
-    $Form.Text = ”Select Visual Studio Version”
+    $Form.Text = "Select Visual Studio Version"
 
     $DropDown          = new-object System.Windows.Forms.ComboBox
     $DropDown.Location = new-object System.Drawing.Size(120,10)
@@ -502,10 +507,11 @@ if ($defined64) {
 # 32-bit X86
 #
 if ($make32) {
-    $env:BOOST_ROOT = "$boost32"
     cd "$build32"
     Write-Host "Running 32-bit CMake in $build32 ..."
-    CMake -G "$global:cmakeGenerator" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x86" "-DBoost_COMPILER=$global:cmakeCompiler" $cppDir
+	$global:cmakeCommandLine32 = "CMake -G ""$global:cmakeGenerator"" ""-DGEN_DOXYGEN=No"" ""-DCMAKE_INSTALL_PREFIX=install_x86"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost32"" $cppDir"
+	Write-Host "$global:cmakeCommadLine32"
+    CMake -G "$global:cmakeGenerator" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x86" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost32" $cppDir
 } else {
     Write-Host "Skipped 32-bit CMake."
 }
@@ -514,10 +520,11 @@ if ($make32) {
 # 64-bit X64
 #
 if ($make64) {
-    $env:BOOST_ROOT = "$boost64"
     cd "$build64"
     Write-Host "Running 64-bit CMake in $build64"
-    CMake -G "$global:cmakeGenerator Win64" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x64" "-DBoost_COMPILER=$global:cmakeCompiler" $cppDir
+	$global:cmakeCommandLine64 = "CMake -G ""$global:cmakeGenerator Win64"" ""-DGEN_DOXYGEN=No"" ""-DCMAKE_INSTALL_PREFIX=install_x64"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost64"" $cppDir"
+	Write-Host "$global:cmakeCommadLine64"
+    CMake -G "$global:cmakeGenerator Win64" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x64" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost64" $cppDir
 } else {
     Write-Host "Skipped 64-bit CMake."
 }
@@ -569,7 +576,8 @@ if ($defined32) {
                                         -nBits "32" `
                                   -outfileName "setenv-messaging-$global:vsSubdir-x86-32bit.bat" `
                                 -studioVersion "$global:vsVersion" `
-                                 -studioSubdir "$global:vsSubdir"
+                                 -studioSubdir "$global:vsSubdir" `
+								    -cmakeLine "$global:cmakeCommandLine32"
 
 } else {
     Write-Host "Skipped writing 32-bit scripts."
@@ -620,7 +628,8 @@ if ($defined64) {
                                         -nBits "64" `
                                   -outfileName "setenv-messaging-$global:vsSubdir-x64-64bit.bat" `
                                 -studioVersion "$global:vsVersion" `
-                                 -studioSubdir "$global:vsSubdir"
+                                 -studioSubdir "$global:vsSubdir" `
+								    -cmakeLine "$global:cmakeCommandLine64"
 
 } else {
     Write-Host "Skipped writing 64-bit scripts."
