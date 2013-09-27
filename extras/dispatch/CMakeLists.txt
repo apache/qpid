@@ -51,6 +51,7 @@ set(INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
 set(LIB_INSTALL_DIR "lib${LIB_SUFFIX}" CACHE PATH "Library object file directory")
 set(SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
 set(SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
+set(DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc CACHE PATH "Shared read-only data directory")
 set(MAN_INSTALL_DIR share/man CACHE PATH "Manpage directory")
 
 # determine the location for installing the python packages
@@ -174,7 +175,7 @@ install(FILES python/qpid/dispatch/__init__.py
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch)
 
 install(FILES ${DOC_FILES}
-        DESTINATION ${SHARE_INSTALL_DIR}/qpid-dispatch)
+        DESTINATION ${DOC_INSTALL_DIR}/qpid-dispatch)
 ##
 ## Build Tests
 ##
