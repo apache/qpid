@@ -358,7 +358,7 @@ if ($args.length -lt 3) {
     exit
 }
 
-$qpid_src    = "qpid"
+$qpid_src    = Split-Path -leaf $global:sourceDirectory
 $boostRoot   = $args[0]
 $ver         = $args[1]
 $generator = ""
