@@ -27,6 +27,7 @@
           <isset property="generated-amqp-0-8-dir"/>
           <isset property="generated-amqp-0-10-dir"/>
           <isset property="gentools.classes"/>
+          <isset property="version.file"/>
         </and>
       </not>
     </condition>
