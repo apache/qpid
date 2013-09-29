@@ -48,7 +48,7 @@
     <target name="compile-logmessages-generator" >
         <mkdir dir="${velocity.classes}" />
         <!-- Compile LogMessages Velocity Generator -->
-        <javac source="1.5" target="1.5"
+        <javac source="${java.source}" target="${java.target}"
                destdir="${velocity.classes}" debug="on" includeantruntime="false"
                srcdir="${velocity.src.dir}" >
           <classpath>

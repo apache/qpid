@@ -65,9 +65,9 @@
     <junit-version>3.8.1</junit-version>
     <mockito-version>1.9.0</mockito-version>
 
-    <!-- Should be 1.6 but set to 1.5 for binary comparison with the Ant build output -->
-    <java.source>1.5</java.source>
-    <java.target>1.5</java.target>
+    <!-- javac source/target properties -->
+    <java.source>1.6</java.source>
+    <java.target>1.6</java.target>
 
     <!-- test properties -->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->

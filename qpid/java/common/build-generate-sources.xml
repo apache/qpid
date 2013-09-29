@@ -92,7 +92,7 @@ qpid.name=qpid
 
   <target name="compile-gentools">
     <mkdir dir="${gentools.classes}"/>
-    <javac srcdir="${gentools.src}" destdir="${gentools.classes}" source="1.5" target="1.5" fork="true" includeantruntime="false">
+    <javac srcdir="${gentools.src}" destdir="${gentools.classes}" source="${java.source}" target="${java.target}" fork="true" includeantruntime="false">
       <classpath>
         <path refid="source.generation.classpathref"/>
       </classpath>
