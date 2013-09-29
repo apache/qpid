@@ -33,6 +33,10 @@
     </condition>
   </fail>
 
+  <condition property="generate.protocol.sources" value="true">
+    <istrue value="${generate}"/>
+  </condition>
+
   <property name="mllib.dir" value="${basedir}/../../python"/>
   <property name="xml.spec.dir" value="${basedir}/../../specs"/>
 
@@ -45,9 +49,6 @@
 
   <property name="gentools.src" value="${basedir}/gentools/src"/>
   <property name="generated.package" value="org/apache/qpid/framing" />
-
-  <property name="amqp-0-8-generation.timestamp" location="${generated-amqp-0-8-dir}/amqp-0-8-generation.timestamp" />
-  <property name="amqp-0-10-generation.timestamp" location="${generated-amqp-0-10-dir}/amqp-0-10-generation.timestamp" />
 
   <property name="version.file" location="${basedir}/target/classes/qpidversion.properties"/>
   <property file="${version.file}" prefix="old."/>
@@ -74,13 +75,7 @@ qpid.name=qpid
 </echo>
   </target>
 
-  <target name="check-amqp-0-10-generation-required">
-    <uptodate property="amqp-0-10-generation-not-required" targetfile="${amqp-0-10-generation.timestamp}">
-      <srcfiles dir="${xml.spec.dir}" includes="amqp.0-10-qpid-errata.stripped.xml" />
-    </uptodate>
-  </target>
-
-  <target name="amqp-0-10-generation" depends="check-amqp-0-10-generation-required" unless="amqp-0-10-generation-not-required">
+  <target name="amqp-0-10-generation" if="generate.protocol.sources">
       <mkdir dir="${generated-amqp-0-10-dir}"/>
       <echo message="Generating AMQP 0-10 protocol classes..."/>
       <java classname="org.python.util.jython" dir="${generated-amqp-0-10-dir}" fork="true" failonerror="true">
@@ -93,7 +88,6 @@ qpid.name=qpid
         </classpath>
         <sysproperty key="python.path" value ="${mllib.dir}"/>
       </java>
-    <touch file="${amqp-0-10-generation.timestamp}" />
   </target>
 
   <target name="compile-gentools">
@@ -105,13 +99,7 @@ qpid.name=qpid
     </javac>
   </target>
 
-  <target name="check-amqp-0-8-generation-required">
-    <uptodate property="amqp-0-8-generation-not-required" targetfile="${amqp-0-8-generation.timestamp}">
-      <srcfiles dir="${xml.spec.dir}" includes="${xml.spec.deps.0-8}" />
-    </uptodate>
-  </target>
-
-  <target name="amqp-0-8-generation" depends="compile-gentools, check-amqp-0-8-generation-required" unless="amqp-0-8-generation-not-required">
+  <target name="amqp-0-8-generation" depends="compile-gentools" if="generate.protocol.sources">
     <mkdir dir="${generated-amqp-0-8-dir}/${generated.package}"/>
     <echo message="Generating AMQP 0-8/0-9/0-9-1 protocol classes..."/>
     <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.classes}" failonerror="true">
@@ -121,7 +109,6 @@ qpid.name=qpid
         <path refid="source.generation.classpathref"/>
       </classpath>
     </java>
-    <touch file="${amqp-0-8-generation.timestamp}" />
   </target>
 
   <target name="generate-sources" depends="amqp-0-8-generation, amqp-0-10-generation, create-version"/>

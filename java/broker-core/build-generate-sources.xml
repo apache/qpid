@@ -18,28 +18,32 @@
  - under the License.
  -
  -->
-<project name="QpidBrokerGenerateSources" default="generate-logmessages">
+<project name="QpidBrokerCoreGenerateSources" default="generate-logmessages">
 
     <!-- Additions to perform LogMessage generation. To enable for a given
     module using the Ant build, add the following to the build.xml:
 
-    <import file="${project.root}/broker/build-generate-sources.xml"/>
+    <import file="${project.root}/broker-core/build-generate-sources.xml"/>
 
     <target name="precompile" depends="generate-logmessages"/> -->
 
-    <dirname property="QpidBrokerGenerateSources.basedir" file="${ant.file.QpidBrokerGenerateSources}"/>
+    <dirname property="QpidBrokerCoreGenerateSources.basedir" file="${ant.file.QpidBrokerCoreGenerateSources}"/>
 
     <property name="gentools.classes" location="${build.scratch}/common/gentools" />
-    <property name="generated-logmessages-dir" location="${module.precompiled}" />
-    <property name="velocity.classes" value="${build.scratch}/broker/velocity"/>
+    <property name="generated-logmessages-dir" location="${module.src}" />
+    <property name="velocity.classes" value="${build.scratch}/broker-core/velocity"/>
     <property name="velocity.timestamp" location="${generated-logmessages-dir}/velocity.timestamp" />
-    <property name="velocity.src.dir" value="${QpidBrokerGenerateSources.basedir}/src/velocity/java"/>
-    <property name="velocity.template.dir" value="${QpidBrokerGenerateSources.basedir}/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
+    <property name="velocity.src.dir" value="${QpidBrokerCoreGenerateSources.basedir}/src/velocity/java"/>
+    <property name="velocity.template.dir" value="${QpidBrokerCoreGenerateSources.basedir}/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
 
     <path id="source.generation.classpathref">
           <pathelement path="${project.root}/${velocity.jar}" />
           <pathelement path="${project.root}/${velocity-dep.jar}" />
     </path>
+
+    <condition property="generate.logmessage.sources" value="true">
+      <istrue value="${generate}"/>
+    </condition>
 
     <target name="compile-logmessages-generator" >
         <mkdir dir="${velocity.classes}" />
@@ -60,7 +64,7 @@
       </uptodate>
     </target>
 
-    <target name="generate-logmessages" depends="compile-logmessages-generator,check-logmessages-generation-required" unless="logmessages-generation-not-required">
+    <target name="generate-logmessages" depends="compile-logmessages-generator" if="generate.logmessage.sources">
       <mkdir dir="${generated-logmessages-dir}"/>
 
       <path id="logmessages.path">

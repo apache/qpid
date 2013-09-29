@@ -25,7 +25,11 @@
 
   <import file="../module.xml"/>
 
-  <property name="selector.output.dir" value="${module.precompiled}/org/apache/qpid/filter/selector"/>
+  <property name="selector.output.dir" value="${module.src}/org/apache/qpid/filter/selector"/>
+
+  <condition property="generate.selector.sources" value="true">
+    <istrue value="${generate}"/>
+  </condition>
 
   <path id="common.source.generation.classpathref">
         <pathelement path="${project.root}/${jython}" />
@@ -36,14 +40,15 @@
   <target name="generate-sources">
     <ant antfile="build-generate-sources.xml">
       <reference torefid="source.generation.classpathref" refid="common.source.generation.classpathref" />
-      <property name="generated-amqp-0-8-dir" value="${module.precompiled}"/>
-      <property name="generated-amqp-0-10-dir" value="${module.precompiled}"/>
+      <property name="generated-amqp-0-8-dir" value="${module.src}"/>
+      <property name="generated-amqp-0-10-dir" value="${module.src}"/>
       <property name="gentools.classes" value="${build.scratch}/common/gentools/classes"/>
       <property name="version.file" location="${module.classes}/qpidversion.properties"/>
     </ant>
   </target>
 
-  <target name="jms-selector">
+  <target name="jms-selector" if="generate.selector.sources">
+    <echo>Generating JMS selector sources</echo>
     <copy tofile="${module.build}/javacc.jar" failonerror="true">
       <fileset dir="${project.root}/lib/required">
         <include name="javacc-*.jar"/>
