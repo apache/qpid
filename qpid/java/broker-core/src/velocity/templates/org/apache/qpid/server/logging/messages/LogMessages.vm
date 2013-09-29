@@ -31,21 +31,18 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Generated Using GeneratedLogMessages and LogMessages.vm
+ * DO NOT EDIT DIRECTLY, THIS FILE WAS GENERATED.
  *
- * This file is based on the content of LogMessages.properties
+ * Generated using GenerateLogMessages and LogMessages.vm
+ * This file is based on the content of ${type.name}_logmessages.properties
  *
- * It is generated so that we can provide compile time validation of the
- * message parameters.
- *
- * DO NOT EDIT DIRECTLY THIS FILE IS GENERATED.
- *
+ * To regenerate, edit the templates/properties and run the build with -Dgenerate=true
  */
 public class ${type.name}Messages
 {
     private static ResourceBundle _messages;
     private static Locale _currentLocale = BrokerProperties.getLocale();
-    
+
     public static final String ${type.name.toUpperCase()}_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "${type.name.toLowerCase()}";
 #foreach( $message in ${type.list} )
     public static final String ${message.methodName.toUpperCase()}_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "${type.name.toLowerCase()}.${message.methodName.toLowerCase()}";
@@ -172,7 +169,7 @@ public class ${type.name}Messages
             {
                 return message;
             }
-            
+
             public String getLogHierarchy()
             {
                 return ${message.methodName.toUpperCase()}_LOG_HIERARCHY;
