@@ -110,7 +110,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                     }
                     try
                     {
-                        final Error error = end.getError();
+                        final Error error = end == null ? null : end.getError();
                         final ExceptionListener exceptionListener = _connection.getExceptionListener();
                         if(exceptionListener != null)
                         {
