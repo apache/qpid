@@ -390,9 +390,18 @@ public class Connection implements SocketExceptionHandler
 
 
             }
+            if(!handler.isDone())
+            {
+                _conn.inputClosed();
+                if(_conn.getConnectionEventListener() != null)
+                {
+                    _conn.getConnectionEventListener().closeReceived();
+                }
+            }
         }
         catch (IOException e)
         {
+            _conn.inputClosed();
             e.printStackTrace();
         }
     }

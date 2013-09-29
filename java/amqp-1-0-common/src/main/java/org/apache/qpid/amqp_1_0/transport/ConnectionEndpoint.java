@@ -380,6 +380,20 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         if (!_closedForInput)
         {
             _closedForInput = true;
+            switch(_state)
+            {
+                case UNOPENED:
+                case AWAITING_OPEN:
+                case CLOSE_SENT:
+                    _state = ConnectionState.CLOSED;
+                case OPEN:
+                    _state = ConnectionState.CLOSE_RECEIVED;
+                case CLOSED:
+                    // already sent our close - too late to do anything more
+                    break;
+                default:
+            }
+
             for (int i = 0; i < _receivingSessions.length; i++)
             {
                 if (_receivingSessions[i] != null)
