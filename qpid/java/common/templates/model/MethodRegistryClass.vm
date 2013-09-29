@@ -8,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,7 +27,7 @@
  *   $supportedVersion.getMajor()-$supportedVersion.getMinor()
  #end
  */
- 
+
 package org.apache.qpid.framing;
 
 import java.io.IOException;
@@ -48,12 +48,10 @@ public abstract class MethodRegistry
 
 #set( $verName = "_$supportedVersion.getMajor()_$supportedVersion.getMinor()" )
 #set( $regPackage = "org.apache.qpid.framing.amqp$verName" )
-	public static final MethodRegistry registry_$supportedVersion.getMajor()_$supportedVersion.getMinor() = 
-	    new ${regPackage}.MethodRegistry${verName}();
-	
+    public static final MethodRegistry registry_$supportedVersion.getMajor()_$supportedVersion.getMinor() =
+        new ${regPackage}.MethodRegistry${verName}();
 #end
- 			
-			
+
     public abstract AMQMethodBody convertToBody(MarkableDataInput in, long size)
         throws AMQFrameDecodingException, IOException;
 
@@ -61,7 +59,6 @@ public abstract class MethodRegistry
 
     public abstract int getMaxMethodId(int classId);
 
-    
     protected MethodRegistry(ProtocolVersion pv)
     {
         _registries.put(pv, this);
@@ -84,22 +81,18 @@ public abstract class MethodRegistry
 #set( $amqpMethodNameFirstChar = $amqpMethod.getName().substring(0,1) )
 #set( $amqpMethodNameFirstCharU = $amqpMethodNameFirstChar.toUpperCase() )
 #set( $amqpMethodNameUpperCamel = "$amqpMethodNameFirstCharU$amqpMethod.getName().substring(1)" )
-    public abstract ${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body create${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body(	
+    public abstract ${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body create${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body(
 #foreach( $field in $amqpMethod.FieldList )
 #if( $velocityCount == $amqpMethod.getFieldList().size() )
                                 final $field.NativeType $field.Name
 #else
                                 final $field.NativeType $field.Name,
 #end
-#end                            
-	                        );
-
-
+#end
+                                );
 #end
 #end
 #end
 
-
-	public abstract ProtocolVersionMethodConverter getProtocolVersionMethodConverter();
-	
+    public abstract ProtocolVersionMethodConverter getProtocolVersionMethodConverter();
 }
