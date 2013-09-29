@@ -8,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,7 +25,7 @@
  * Supported AMQP version:
  *   $version.getMajor()-$version.getMinor()
  */
- 
+
 package org.apache.qpid.framing.amqp_${version.getMajor()}_${version.getMinor()};
 
 import org.apache.qpid.framing.*;
@@ -43,25 +43,23 @@ import org.apache.qpid.codec.MarkableDataInput;
 
 public class MethodRegistry_$version.getMajor()_$version.getMinor() extends MethodRegistry
 {
-    
+
     private static final Logger _log = LoggerFactory.getLogger(MethodRegistry.class);
 
     private ProtocolVersionMethodConverter _protocolVersionConverter = new MethodConverter_$version.getMajor()_$version.getMinor()();
-    
-#set( $specificModel = $model.asSingleVersionModel() )    
-    
-    
-#set( $maxClassId = $specificModel.getMaximumClassId()+1 )    
+
+#set( $specificModel = $model.asSingleVersionModel() )
+#set( $maxClassId = $specificModel.getMaximumClassId()+1 )
     private final AMQMethodBodyInstanceFactory[][] _factories = new AMQMethodBodyInstanceFactory[$maxClassId][];
 
     public MethodRegistry_$version.getMajor()_$version.getMinor()()
     {
         this(new ProtocolVersion((byte)$version.getMajor(),(byte)$version.getMinor()));
     }
-    
+
     public MethodRegistry_$version.getMajor()_$version.getMinor()(ProtocolVersion pv)
     {
-        super(pv);    
+        super(pv);
 #foreach( $amqpClass in $specificModel.getClassList() )
 #set( $amqpClassNameFirstChar = $amqpClass.getName().substring(0,1) )
 #set( $amqpClassNameFirstCharU = $amqpClassNameFirstChar.toUpperCase() )
@@ -71,28 +69,24 @@ public class MethodRegistry_$version.getMajor()_$version.getMinor() extends Meth
 
         // Register method body instance factories for the $amqpClassNameUpperCamel class.
 
-#set( $maxMethodId = $amqpClass.getMaximumMethodId()+1 )        
+#set( $maxMethodId = $amqpClass.getMaximumMethodId()+1 )
         _factories[$amqpClass.getClassId()] = new AMQMethodBodyInstanceFactory[$maxMethodId];
-        
+
 #foreach( $amqpMethod in $amqpClass.getMethodList() )
 #set( $amqpMethodNameFirstChar = $amqpMethod.getName().substring(0,1) )
 #set( $amqpMethodNameFirstCharU = $amqpMethodNameFirstChar.toUpperCase() )
 #set( $amqpMethodNameUpperCamel = "$amqpMethodNameFirstCharU$amqpMethod.getName().substring(1)" )
-        _factories[$amqpClass.getClassId()][$amqpMethod.getMethodId()] = ${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}BodyImpl.getFactory(); 
-#end        
-        
+        _factories[$amqpClass.getClassId()][$amqpMethod.getMethodId()] = ${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}BodyImpl.getFactory();
 #end
-        
-        
+#end
     }
-
 
     public AMQMethodBody convertToBody(MarkableDataInput in, long size)
         throws AMQFrameDecodingException, IOException
     {
         int classId = in.readUnsignedShort();
         int methodId = in.readUnsignedShort();
-    
+
         AMQMethodBodyInstanceFactory bodyFactory;
         try
         {
@@ -122,7 +116,6 @@ public class MethodRegistry_$version.getMajor()_$version.getMinor() extends Meth
             }
         }
 
-
         if (bodyFactory == null)
         {
             throw new AMQFrameDecodingException(AMQConstant.COMMAND_INVALID,
@@ -130,44 +123,38 @@ public class MethodRegistry_$version.getMajor()_$version.getMinor() extends Meth
                  + " (while trying to decode class " + classId + " method " + methodId + ".");
         }
 
-
         return bodyFactory.newInstance(in, size);
-
-
     }
-
 
     public int getMaxClassId()
     {
         return $specificModel.getMaximumClassId();
     }
-    
+
     public int getMaxMethodId(int classId)
     {
-        return _factories[classId].length - 1;    
+        return _factories[classId].length - 1;
     }
-    
-
 
 #foreach( $amqpClass in $specificModel.getClassList() )
 #set( $amqpClassNameFirstChar = $amqpClass.getName().substring(0,1) )
 #set( $amqpClassNameFirstCharU = $amqpClassNameFirstChar.toUpperCase() )
 #set( $amqpClassNameUpperCamel = "$amqpClassNameFirstCharU$amqpClass.getName().substring(1)" )
 
-        
+
 #foreach( $amqpMethod in $amqpClass.getMethodList() )
 #set( $amqpMethodNameFirstChar = $amqpMethod.getName().substring(0,1) )
 #set( $amqpMethodNameFirstCharU = $amqpMethodNameFirstChar.toUpperCase() )
 #set( $amqpMethodNameUpperCamel = "$amqpMethodNameFirstCharU$amqpMethod.getName().substring(1)" )
-    public ${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body create${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body(    
+    public ${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body create${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}Body(
 #foreach( $field in $amqpMethod.FieldList )
 #if( $velocityCount == $amqpMethod.getFieldList().size() )
                                 final $field.NativeType $field.Name
 #else
                                 final $field.NativeType $field.Name,
 #end
-#end                            
-                            )
+#end
+                                )
     {
         return new ${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}BodyImpl(
 #foreach( $field in $amqpMethod.FieldList )
@@ -176,19 +163,17 @@ public class MethodRegistry_$version.getMajor()_$version.getMinor() extends Meth
 #else
                                 $field.Name,
 #end
-#end                            
-                            );
-    }
-    
-#end        
-        
 #end
-        
-    
+                                );
+    }
+
+#end
+
+#end
+
     public ProtocolVersionMethodConverter getProtocolVersionMethodConverter()
     {
         return _protocolVersionConverter;
-    }    
+    }
 
-    
 }
