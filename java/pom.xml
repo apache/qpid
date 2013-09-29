@@ -51,6 +51,10 @@
 
     === Once the Ant build is removed ===
     - Move all the resources to be in the /src/foo/resources folders.
+    - Make qpidversion.properties in common be a filtered resource instead of generated.
+      - Get rid of the antrun-plugin execution in common, directly invoke the required java elements.
+      - Do the above in the generate-sources-common profile instead of current default config.
+    - Get rid of the antrun-plugin execution in broker-core, directly invoke the required java elements.
     - Fix the tests not to be dependant on the working dir being the java dir.
     - Fix the tests not to be dependant on the test config/output dirs being children of qpid.home.
       - Remove the QBTC output file mechanics, rely on Surefire to do it?

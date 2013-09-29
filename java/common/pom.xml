@@ -28,9 +28,9 @@
 
   <properties>
     <!-- used during the antrun-plugin execution -->
-    <generated-amqp-0-8-dir>${project.build.directory}/generated-sources/generated-amqp-0-8</generated-amqp-0-8-dir>
-    <generated-amqp-0-10-dir>${project.build.directory}/generated-sources/generated-amqp-0-10</generated-amqp-0-10-dir>
-    <selector.output.dir>${project.build.directory}/generated-sources/generated-jms-selector/org/apache/qpid/filter/selector</selector.output.dir>
+    <generated-amqp-0-8-dir>${basedir}/src/main/java</generated-amqp-0-8-dir>
+    <generated-amqp-0-10-dir>${basedir}/src/main/java</generated-amqp-0-10-dir>
+    <selector.output.dir>${basedir}/src/main/java/org/apache/qpid/filter/selector</selector.output.dir>
     <version.file>${project.build.directory}/classes/qpidversion.properties</version.file>
   </properties>
 
@@ -86,28 +86,6 @@
       </plugin>
 
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>javacc-maven-plugin</artifactId>
-        <version>2.6</version>
-        <executions>
-          <execution>
-            <id>jms-selector-generated</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>javacc</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${selector.output.dir}</outputDirectory>
-              <sourceDirectory>src/main/grammar</sourceDirectory>
-              <includes>
-                <include>SelectorParser.jj</include>
-              </includes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
         <!--version specified via parent poms -->
@@ -147,30 +125,44 @@
           </dependency>
         </dependencies>
       </plugin>
-
-      <!-- Add the generated source paths for compilation-->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.8</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${generated-amqp-0-8-dir}</source>
-                <source>${generated-amqp-0-10-dir}</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>generate-sources-common</id>
+      <activation>
+        <property>
+          <name>generate</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>javacc-maven-plugin</artifactId>
+          <version>2.6</version>
+          <executions>
+            <execution>
+              <id>jms-selector-generated</id>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>javacc</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${selector.output.dir}</outputDirectory>
+                <sourceDirectory>src/main/grammar</sourceDirectory>
+                <includes>
+                  <include>SelectorParser.jj</include>
+                </includes>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
