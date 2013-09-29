@@ -27,7 +27,7 @@
   <artifactId>qpid-broker-core</artifactId>
 
   <properties>
-    <generated-logmessages-dir>${project.build.directory}/generated-sources/generated-logmessages</generated-logmessages-dir>
+    <generated-logmessages-dir>${basedir}/src/main/java</generated-logmessages-dir>
   </properties>
 
   <dependencies>
@@ -212,65 +212,6 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <!--version is specified in the parent poms -->
-        <executions>
-            <execution>
-              <id>logmessages-generated</id>
-              <phase>generate-sources</phase>
-              <goals>
-                <goal>run</goal>
-              </goals>
-              <configuration>
-                <target>
-                    <ant antfile="build-generate-sources.xml">
-                      <reference torefid="source.generation.classpathref" refid="maven.plugin.classpath" />
-                      <property name="build.compiler" value="extJavac"/>
-                      <property name="generated-logmessages-dir" value ="${generated-logmessages-dir}"/>
-                      <property name="gentools.classes" location="${basedir}/../common/target/gentools-classes" />
-                      <property name="velocity.classes" value="${project.build.directory}/velocity-classes"/>
-                      <property name="module.src" value="${basedir}/src/main/java"/>
-                    </ant>
-                </target>
-              </configuration>
-            </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>velocity</groupId>
-            <artifactId>velocity</artifactId>
-            <version>1.4</version>
-          </dependency>
-          <dependency>
-            <groupId>velocity</groupId>
-            <artifactId>velocity-dep</artifactId>
-            <version>1.4</version>
-          </dependency>
-        </dependencies>
-      </plugin>
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.8</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${generated-logmessages-dir}</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <!--version specified in parent pom -->
         <configuration>
@@ -279,5 +220,59 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>generate-sources-broker-core</id>
+      <activation>
+        <property>
+          <name>generate</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <!--version is specified in the parent poms -->
+            <executions>
+                <execution>
+                  <id>generate-sources-broker-core</id>
+                  <phase>generate-sources</phase>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                  <configuration>
+                    <target>
+                        <ant antfile="build-generate-sources.xml">
+                          <reference torefid="source.generation.classpathref" refid="maven.plugin.classpath" />
+                          <property name="build.compiler" value="extJavac"/>
+                          <property name="generated-logmessages-dir" value ="${generated-logmessages-dir}"/>
+                          <property name="gentools.classes" location="${basedir}/../common/target/gentools-classes" />
+                          <property name="velocity.classes" value="${project.build.directory}/velocity-classes"/>
+                          <property name="module.src" value="${basedir}/src/main/java"/>
+                        </ant>
+                    </target>
+                  </configuration>
+                </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>velocity</groupId>
+                <artifactId>velocity</artifactId>
+                <version>1.4</version>
+              </dependency>
+              <dependency>
+                <groupId>velocity</groupId>
+                <artifactId>velocity-dep</artifactId>
+                <version>1.4</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
