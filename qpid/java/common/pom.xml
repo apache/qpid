@@ -27,9 +27,11 @@
   <artifactId>qpid-common</artifactId>
 
   <properties>
+    <!-- used during the antrun-plugin execution -->
     <generated-amqp-0-8-dir>${project.build.directory}/generated-sources/generated-amqp-0-8</generated-amqp-0-8-dir>
     <generated-amqp-0-10-dir>${project.build.directory}/generated-sources/generated-amqp-0-10</generated-amqp-0-10-dir>
     <selector.output.dir>${project.build.directory}/generated-sources/generated-jms-selector/org/apache/qpid/filter/selector</selector.output.dir>
+    <version.file>${project.build.directory}/classes/qpidversion.properties</version.file>
   </properties>
 
   <dependencies>

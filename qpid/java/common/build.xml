@@ -39,6 +39,7 @@
       <property name="generated-amqp-0-8-dir" value="${module.precompiled}"/>
       <property name="generated-amqp-0-10-dir" value="${module.precompiled}"/>
       <property name="gentools.classes" value="${build.scratch}/common/gentools/classes"/>
+      <property name="version.file" location="${module.classes}/qpidversion.properties"/>
     </ant>
   </target>
 
