@@ -152,7 +152,7 @@ public class Source
         return _outcomes;
     }
 
-    public void setOutcomes(Symbol[] outcomes)
+    public void setOutcomes(Symbol... outcomes)
     {
         _outcomes = outcomes;
     }

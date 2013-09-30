@@ -154,8 +154,7 @@ public class Demo extends Util
             responseReceiver.setCredit(UnsignedInteger.valueOf(getWindowSize()), true);
 
 
-
-            Sender s = session.createSender(queue, getWindowSize(), getMode());
+            Sender s = session.createSender(queue, getWindowSize(), getMode(), null);
 
 
             Properties properties = new Properties();
