@@ -236,21 +236,8 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <!--version is specified in the parent poms -->
-        <configuration>
-          <source>${java.source}</source>
-          <target>${java.target}</target>
-          <optimize>true</optimize>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <!--version is specified in the parent poms -->
+        <!--version specified in parent pluginManagement -->
         <configuration>
           <workingDirectory>${basedir}/..</workingDirectory>
           <!-- Skip the default test phase, bind to the
@@ -274,7 +261,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <!--version is specified in the parent poms -->
+        <!--version specified in parent pluginManagement -->
         <executions>
           <!-- copy the systests config files into the ${qpid.home}/etc
                directory where the tests expect them -->
@@ -322,7 +309,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <!--version is specified in the parent poms -->
+        <!--version specified in parent pluginManagement -->
         <executions>
           <execution>
             <id>extract-broker-distribution</id>
@@ -346,7 +333,6 @@
           </execution>
         </executions>
       </plugin>
-
     </plugins>
   </build>
 

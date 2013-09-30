@@ -61,9 +61,37 @@
   -->
 
   <properties>
-    <!-- version properties -->
+    <!-- dependency version numbers -->
     <junit-version>3.8.1</junit-version>
     <mockito-version>1.9.0</mockito-version>
+
+    <!-- plugin version numbers -->
+    <maven-antrun-plugin-version>1.7</maven-antrun-plugin-version>
+    <maven-assembly-plugin-version>2.4</maven-assembly-plugin-version>
+    <maven-clean-plugin-version>2.5</maven-clean-plugin-version>
+    <maven-compiler-plugin-version>3.1</maven-compiler-plugin-version>
+    <maven-deploy-plugin-version>2.7</maven-deploy-plugin-version>
+    <maven-docck-plugin-version>1.0</maven-docck-plugin-version>
+    <maven-enforcer-plugin-version>1.3.1</maven-enforcer-plugin-version>
+    <maven-failsafe-and-surefire-plugins-version>2.16</maven-failsafe-and-surefire-plugins-version>
+    <maven-gpg-plugin-version>1.4</maven-gpg-plugin-version>
+    <maven-install-plugin-version>2.5</maven-install-plugin-version>
+    <maven-invoker-plugin-version>1.8</maven-invoker-plugin-version>
+    <maven-jar-plugin-version>2.4</maven-jar-plugin-version>
+    <maven-javadoc-plugin-version>2.9.1</maven-javadoc-plugin-version>
+    <maven-plugin-plugin-version>3.2</maven-plugin-plugin-version>
+    <maven-release-plugin-version>2.3.2</maven-release-plugin-version>
+    <maven-remote-resources-plugin-version>1.5</maven-remote-resources-plugin-version>
+    <maven-resources-plugin-version>2.6</maven-resources-plugin-version>
+    <maven-scm-plugin-version>1.8</maven-scm-plugin-version>
+    <maven-scm-publish-plugin-version>1.0-beta-2</maven-scm-publish-plugin-version>
+    <maven-site-plugin-version>3.3</maven-site-plugin-version>
+    <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
+    <apache-rat-plugin-version>0.10</apache-rat-plugin-version>
+    <clirr-maven-plugin-version>2.6</clirr-maven-plugin-version>
+    <maven-dependency-plugin-version>2.8</maven-dependency-plugin-version>
+    <javacc-maven-plugin-version>2.6</javacc-maven-plugin-version>
+    <maven-rar-plugin-version>2.3</maven-rar-plugin-version>
 
     <!-- javac source/target properties -->
     <java.source>1.6</java.source>
@@ -152,11 +180,176 @@
   </repositories>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <!-- override the parent pom, set versions etc -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>${maven-antrun-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>${maven-assembly-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin-version}</version>
+          <configuration>
+            <source>${java.source}</source>
+            <target>${java.target}</target>
+            <optimize>true</optimize>
+            <showDeprecation>true</showDeprecation>
+            <showWarnings>true</showWarnings>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>${maven-deploy-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-docck-plugin</artifactId>
+          <version>${maven-docck-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${maven-failsafe-and-surefire-plugins-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${maven-gpg-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>${maven-install-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-invoker-plugin</artifactId>
+          <version>${maven-invoker-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${maven-jar-plugin-version}</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>${maven-plugin-plugin-version}</version>
+        </plugin>
+        <!-- START SNIPPET: release-plugin-configuration -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>${maven-release-plugin-version}</version>
+          <configuration>
+            <useReleaseProfile>false</useReleaseProfile>
+            <goals>deploy</goals>
+            <arguments>-Papache-release ${arguments}</arguments>
+          </configuration>
+        </plugin>
+        <!-- END SNIPPET: release-plugin-configuration -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-remote-resources-plugin</artifactId>
+          <version>${maven-remote-resources-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>${maven-resources-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-scm-plugin</artifactId>
+          <version>${maven-scm-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-scm-publish-plugin</artifactId>
+          <version>${maven-scm-publish-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>${maven-site-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${maven-source-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-failsafe-and-surefire-plugins-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>${apache-rat-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>clirr-maven-plugin</artifactId>
+          <version>${clirr-maven-plugin-version}</version>
+        </plugin>
+
+		<!-- the below are not in the parent pom -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>javacc-maven-plugin</artifactId>
+          <version>${javacc-maven-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-rar-plugin</artifactId>
+          <version>${maven-rar-plugin-version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
-        <!--version specified in parent pom -->
+        <!--version specified in pluginManagement -->
         <executions>
           <execution>
              <id>create-qbtc-output-dir</id>
@@ -176,7 +369,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <!--version specified in parent pom -->
+        <!--version specified in pluginManagement -->
         <configuration>
           <includes>
             <include>**/*Test.java</include>

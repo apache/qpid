@@ -54,21 +54,8 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <!--version is specified in the parent poms -->
-        <configuration>
-          <source>${java.source}</source>
-          <target>${java.target}</target>
-          <optimize>true</optimize>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-rar-plugin</artifactId>
-        <version>2.3</version>
+        <!--version specified in parent pluginManagement -->
         <configuration>
           <raXmlFile>src/main/resources/META-INF/ra.xml</raXmlFile>
           <rarSourceDirectory>src/main/resources</rarSourceDirectory>
