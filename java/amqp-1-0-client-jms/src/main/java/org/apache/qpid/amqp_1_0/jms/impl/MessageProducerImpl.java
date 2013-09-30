@@ -311,7 +311,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             throw jmsException;
         }
 
-        if(_syncPublish && !action.wasAccepted(_syncPublishTimeout + System.currentTimeMillis()))
+        if(_syncPublish && !action.wasAccepted(_syncPublishTimeout))
         {
             if (action.getOutcome() instanceof Rejected)
             {
@@ -487,7 +487,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
                 {
                     try
                     {
-                        _lock.wait(timeout - System.currentTimeMillis());
+                        _lock.wait(timeout);
                     }
                     catch (InterruptedException e)
                     {
