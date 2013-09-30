@@ -27,7 +27,7 @@
 *.vglog
 .dirstamp
 Makefile.in
-config\.*
+config(?!\.sh)\.*
 configure
 .deps
 .libs
