@@ -107,6 +107,16 @@ public class Sender implements DeliveryStateHandler
         this(session, linkName, createTarget(targetAddr, isDurable), createSource(sourceAddr), window, mode, unsettled);
     }
 
+    protected void configureSource(org.apache.qpid.amqp_1_0.type.messaging.Source source)
+    {
+
+    }
+
+    protected void configureTarget(org.apache.qpid.amqp_1_0.type.messaging.Target target)
+    {
+
+    }
+
     private static org.apache.qpid.amqp_1_0.type.messaging.Source createSource(final String sourceAddr)
     {
         org.apache.qpid.amqp_1_0.type.messaging.Source source = new org.apache.qpid.amqp_1_0.type.messaging.Source();
@@ -133,6 +143,8 @@ public class Sender implements DeliveryStateHandler
 
         _session = session;
         session.getConnection().checkNotClosed();
+        configureSource(source);
+        configureTarget(target);
         _endpoint = session.getEndpoint().createSendingLinkEndpoint(linkName,
                                                                     source, target, unsettled);
 
@@ -189,16 +201,15 @@ public class Sender implements DeliveryStateHandler
                 super.remoteDetached(endpoint, detach);
             }
         });
-        final org.apache.qpid.amqp_1_0.type.messaging.Source remoteSource =
-                (org.apache.qpid.amqp_1_0.type.messaging.Source) getSource();
-        _defaultOutcome = remoteSource.getDefaultOutcome();
+
+        _defaultOutcome = source.getDefaultOutcome();
         if(_defaultOutcome == null)
         {
-            if(remoteSource.getOutcomes() == null || remoteSource.getOutcomes().length == 0)
+            if(source.getOutcomes() == null || source.getOutcomes().length == 0)
             {
                 _defaultOutcome = new Accepted();
             }
-            else if(remoteSource.getOutcomes().length == 1)
+            else if(source.getOutcomes().length == 1)
             {
 
                 final AMQPDescribedTypeRegistry describedTypeRegistry = _endpoint.getSession()
@@ -206,7 +217,7 @@ public class Sender implements DeliveryStateHandler
                         .getDescribedTypeRegistry();
 
                 DescribedTypeConstructor constructor = describedTypeRegistry
-                        .getConstructor(remoteSource.getOutcomes()[0]);
+                        .getConstructor(source.getOutcomes()[0]);
                 if(constructor != null)
                 {
                     Object impliedOutcome = constructor.construct(Collections.EMPTY_LIST);

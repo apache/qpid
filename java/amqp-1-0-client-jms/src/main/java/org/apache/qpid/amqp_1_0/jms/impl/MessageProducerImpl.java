@@ -18,9 +18,8 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
-import org.apache.qpid.amqp_1_0.client.ConnectionClosedException;
-import org.apache.qpid.amqp_1_0.client.LinkDetachedException;
-import org.apache.qpid.amqp_1_0.client.Sender;
+import org.apache.qpid.amqp_1_0.client.*;
+import org.apache.qpid.amqp_1_0.client.Session;
 import org.apache.qpid.amqp_1_0.jms.MessageProducer;
 import org.apache.qpid.amqp_1_0.jms.MessageRejectedException;
 import org.apache.qpid.amqp_1_0.jms.QueueSender;
@@ -32,9 +31,13 @@ import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
+import javax.jms.Message;
 import java.util.UUID;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.Rejected;
+import org.apache.qpid.amqp_1_0.type.messaging.Source;
+import org.apache.qpid.amqp_1_0.type.messaging.codec.AcceptedConstructor;
+import org.apache.qpid.amqp_1_0.type.messaging.codec.RejectedConstructor;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class MessageProducerImpl implements MessageProducer, QueueSender, TopicPublisher
@@ -71,7 +74,14 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         {
             try
             {
-                _sender = _session.getClientSession().createSender(_session.toAddress(_destination));
+                _sender = _session.getClientSession().createSender(_session.toAddress(_destination), new Session.SourceConfigurator()
+                {
+                    public void configureSource(final Source source)
+                    {
+                        source.setDefaultOutcome(new Accepted());
+                        source.setOutcomes(AcceptedConstructor.SYMBOL_CONSTRUCTOR, RejectedConstructor.SYMBOL_CONSTRUCTOR);
+                    }
+                });
             }
             catch (Sender.SenderCreationException e)
             {
