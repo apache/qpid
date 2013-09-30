@@ -21,7 +21,6 @@
 
 package org.apache.qpid.amqp_1_0.client;
 
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.UnsignedLong;
@@ -143,8 +142,7 @@ public class Request extends Util
             responseReceiver.setCredit(UnsignedInteger.valueOf(getWindowSize()), true);
 
 
-
-            Sender s = session.createSender(queue, getWindowSize(), getMode());
+            Sender s = session.createSender(queue, getWindowSize(), getMode(), null);
 
             Transaction txn = null;
 

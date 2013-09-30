@@ -34,9 +34,10 @@ import java.util.List;
 
 public class RejectedConstructor extends DescribedTypeConstructor<Rejected>
 {
+    public static final Symbol SYMBOL_CONSTRUCTOR = Symbol.valueOf("amqp:rejected:list");
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("amqp:rejected:list"),UnsignedLong.valueOf(0x0000000000000025L),
+            SYMBOL_CONSTRUCTOR,UnsignedLong.valueOf(0x0000000000000025L),
     };
 
     private static final RejectedConstructor INSTANCE = new RejectedConstructor();
