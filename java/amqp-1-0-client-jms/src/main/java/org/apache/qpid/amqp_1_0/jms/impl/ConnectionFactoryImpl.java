@@ -48,6 +48,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _topicPrefix;
     private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
     private boolean _syncPublish = Boolean.parseBoolean(System.getProperty("qpid.sync_publish", "false"));
+    private int _maxSessions = Integer.getInteger("qpid.max_sessions", 0);
 
 
     public ConnectionFactoryImpl(final String host,
@@ -85,6 +86,18 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                                  final String remoteHost,
                                  final boolean ssl)
     {
+        this(host, port, username, password, clientId, remoteHost, ssl,0);
+    }
+
+    public ConnectionFactoryImpl(final String host,
+                                 final int port,
+                                 final String username,
+                                 final String password,
+                                 final String clientId,
+                                 final String remoteHost,
+                                 final boolean ssl,
+                                 final int maxSessions)
+    {
         _host = host;
         _port = port;
         _username = username;
@@ -92,6 +105,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _clientId = clientId;
         _remoteHost = remoteHost;
         _ssl = ssl;
+        _maxSessions = maxSessions;
     }
 
     public ConnectionImpl createConnection() throws JMSException
@@ -101,7 +115,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     public ConnectionImpl createConnection(final String username, final String password) throws JMSException
     {
-        ConnectionImpl connection = new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl);
+        ConnectionImpl connection = new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl, _maxSessions);
         connection.setQueuePrefix(_queuePrefix);
         connection.setTopicPrefix(_topicPrefix);
         connection.setUseBinaryMessageId(_useBinaryMessageId);
@@ -158,6 +172,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
         boolean binaryMessageId = true;
         boolean syncPublish = false;
+        int maxSessions = 0;
 
         if(userInfo != null)
         {
@@ -194,6 +209,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                 {
                     syncPublish = Boolean.parseBoolean(keyValuePair[1]);
                 }
+                else if(keyValuePair[0].equalsIgnoreCase("max-sessions"))
+                {
+                    maxSessions = Integer.parseInt(keyValuePair[1]);
+                }
             }
         }
 
@@ -203,7 +222,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         }
 
         ConnectionFactoryImpl connectionFactory =
-                new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl);
+                new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl, maxSessions);
         connectionFactory.setUseBinaryMessageId(binaryMessageId);
         connectionFactory.setSyncPublish(syncPublish);
 
