@@ -186,21 +186,8 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <!--version is specified in the parent poms -->
-        <configuration>
-          <source>${java.source}</source>
-          <target>${java.target}</target>
-          <optimize>true</optimize>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <!--version specified via parent poms -->
+        <!--version specified in parent pluginManagement -->
         <executions>
           <execution>
             <goals>
@@ -213,7 +200,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <!--version specified in parent pom -->
+        <!--version specified in parent pluginManagement -->
         <configuration>
           <workingDirectory>${basedir}/..</workingDirectory>
         </configuration>
@@ -235,7 +222,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
-            <!--version is specified in the parent poms -->
+            <!--version specified in parent pluginManagement -->
             <executions>
                 <execution>
                   <id>generate-sources-broker-core</id>

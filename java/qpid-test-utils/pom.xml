@@ -50,20 +50,6 @@
   </dependencies>
    
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <!--version specified via parent poms -->
-        <configuration>
-          <source>${java.source}</source>
-          <target>${java.target}</target>
-          <optimize>true</optimize>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-        </configuration>
-      </plugin>
-    </plugins>
   </build>
 
 </project>
