@@ -170,12 +170,24 @@
       <id>oracle.releases</id>
       <url>http://download.oracle.com/maven</url>
       <layout>default</layout>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
     <!-- For the CSVJDBC dependency of the optional perftests-visualistion-jfc module-->
     <repository>
       <id>csvjdbc.releases</id>
       <url>http://csvjdbc.sourceforge.net/maven2</url>
       <layout>default</layout>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
   </repositories>
 
