@@ -74,21 +74,8 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <!--version specified via parent poms -->
-        <configuration>
-          <source>${java.source}</source>
-          <target>${java.target}</target>
-          <optimize>true</optimize>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
-        <!--version specified via parent poms -->
+        <!--version specified in parent pluginManagement -->
         <executions>
             <execution>
               <id>amqp-0-8-generated</id>
@@ -142,7 +129,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>javacc-maven-plugin</artifactId>
-          <version>2.6</version>
+          <!--version specified in parent pluginManagement -->
           <executions>
             <execution>
               <id>jms-selector-generated</id>
