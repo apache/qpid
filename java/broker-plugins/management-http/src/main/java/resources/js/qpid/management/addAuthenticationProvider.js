@@ -31,7 +31,7 @@ define(["dojo/_base/xhr",
         "dijit/form/FilteringSelect",
         "dojo/_base/connect",
         "dojo/dom-style",
-        "qpid/management/addPreferencesProvider",
+        "qpid/management/PreferencesProviderFields",
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
         /* basic dijit classes */
@@ -45,7 +45,7 @@ define(["dojo/_base/xhr",
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, addPreferencesProvider) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, PreferencesProviderFields) {
 
         var addAuthenticationProvider = {};
 
@@ -66,6 +66,10 @@ define(["dojo/_base/xhr",
             {
                 if(formValues.hasOwnProperty(propName))
                 {
+                    if (propName.indexOf("preferencesProvider") == 0)
+                    {
+                      continue;
+                    }
                     if(formValues[ propName ] !== "") {
                         newProvider[ propName ] = formValues[propName];
                     }
@@ -101,6 +105,21 @@ define(["dojo/_base/xhr",
             return "ap_" + providerType + "Field" + attribute;
         }
 
+        var showPreferencesProviderFields = function showPreferencesProviderFields(provider)
+        {
+          var preferencesProviderDiv = dojo.byId("addAuthenticationProvider.preferencesProvider");
+          var preferencesProviderPanel = dijit.byId("addAuthenticationProvider.preferencesProviderPanel");
+          if (provider && provider.type == "Anonymous")
+          {
+            preferencesProviderPanel.domNode.style.display = 'none';
+          }
+          else
+          {
+            preferencesProviderPanel.domNode.style.display = 'block';
+            PreferencesProviderFields.show(preferencesProviderDiv, provider && provider.preferencesproviders ? provider.preferencesproviders[0] : null);
+          }
+        }
+
         var loadProviderAndDisplayForm = function loadProviderAndDisplayForm(providerName, dialog)
         {
             if (providerName)
@@ -129,11 +148,13 @@ define(["dojo/_base/xhr",
                                }
                            }
                        }
+                       showPreferencesProviderFields(provider);
                        registry.byId("addAuthenticationProvider").show();
                });
             }
             else
             {
+                showPreferencesProviderFields();
                 registry.byId("addAuthenticationProvider").show();
             }
         }
@@ -163,15 +184,14 @@ define(["dojo/_base/xhr",
 
                                     if(this.success === true)
                                     {
+                                      if (PreferencesProviderFields.save(newAuthenticationManager.name))
+                                      {
                                         registry.byId("addAuthenticationProvider").hide();
-                                        if (newAuthenticationManager.type != "Anonymous" && dojo.byId("formAddAuthenticationProvider.id").value == "")
-                                        {
-                                          addPreferencesProvider.show(newAuthenticationManager.name);
-                                        }
+                                      }
                                     }
                                     else
                                     {
-                                        alert("Error:" + this.failureReason);
+                                        alert("Authentication Provider Error:" + this.failureReason);
                                     }
                                     return false;
                                 }else{
@@ -251,9 +271,10 @@ define(["dojo/_base/xhr",
                                                                  name: "type",
                                                                  store: providersStore,
                                                                  searchAttr: "name"}, input);
-                       connect.connect(that.providerChooser, "onChange",
-                           function(event)
+                       that.providerChooser.on("change",
+                           function(value)
                            {
+                               dijit.byId("addAuthenticationProvider.preferencesProviderPanel").domNode.style.display = (value == "Anonymous" ? "none" : "block");
                                showFieldSets(that.providerChooser.value, that.providerFieldSets);
                            }
                        );
