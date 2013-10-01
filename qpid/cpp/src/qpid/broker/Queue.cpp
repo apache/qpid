@@ -131,7 +131,15 @@ inline void mgntDeqStats(const Message& msg,
 QueueSettings merge(const QueueSettings& inputs, const Broker::Options& globalOptions)
 {
     QueueSettings settings(inputs);
-    if (!settings.maxDepth.hasSize() && globalOptions.queueLimit) {
+    settings.maxDepth = QueueDepth();
+    if (inputs.maxDepth.hasCount() && inputs.maxDepth.getCount()) {
+        settings.maxDepth.setCount(inputs.maxDepth.getCount());
+    }
+    if (inputs.maxDepth.hasSize()) {
+        if (inputs.maxDepth.getSize()) {
+            settings.maxDepth.setSize(inputs.maxDepth.getSize());
+        }
+    } else if (globalOptions.queueLimit) {
         settings.maxDepth.setSize(globalOptions.queueLimit);
     }
     return settings;
