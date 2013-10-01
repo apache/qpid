@@ -184,7 +184,7 @@ public class FrameHandler implements ProtocolHandler
                     // type
 
                     int type = in.get() & 0xFF;
-                    int channel = in.getShort() & 0xFF;
+                    int channel = in.getShort() & 0xFFFF;
 
                     if(type != 0 && type != 1)
                     {
