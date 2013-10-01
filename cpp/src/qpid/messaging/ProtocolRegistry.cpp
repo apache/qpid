@@ -19,7 +19,7 @@
  *
  */
 #include "ProtocolRegistry.h"
-#include "qpid/Exception.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/client/amqp0_10/ConnectionImpl.h"
 #include "qpid/client/LoadPlugins.h"
 #include <map>
@@ -61,7 +61,7 @@ ConnectionImpl* ProtocolRegistry::create(const std::string& url, const Variant::
         Registry::const_iterator i = theRegistry().find(name.asString());
         if (i != theRegistry().end()) return (i->second)(url, stripped);
         else if (name.asString() == "amqp0-10") return new qpid::client::amqp0_10::ConnectionImpl(url, stripped);
-        else throw qpid::Exception("Unsupported protocol: " + name.asString());
+        else throw MessagingException("Unsupported protocol: " + name.asString());
     }
     return 0;
 }

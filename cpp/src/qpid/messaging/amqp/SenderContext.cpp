@@ -21,6 +21,8 @@
 #include "qpid/messaging/amqp/SenderContext.h"
 #include "qpid/messaging/amqp/EncodedMessage.h"
 #include "qpid/messaging/AddressImpl.h"
+#include "qpid/messaging/exceptions.h"
+#include "qpid/Exception.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/MapHandler.h"
 #include "qpid/amqp/MessageEncoder.h"
@@ -435,59 +437,63 @@ void SenderContext::Delivery::reset()
 
 void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, const qpid::messaging::Address& address)
 {
-    boost::shared_ptr<const EncodedMessage> original = msg.getEncoded();
+    try {
+        boost::shared_ptr<const EncodedMessage> original = msg.getEncoded();
 
-    if (original && !changedSubject(msg, address)) { //still have the content as received, send at least the bare message unaltered
-        //do we need to alter the header? are durable, priority, ttl, first-acquirer, delivery-count different from what was received?
-        if (original->hasHeaderChanged(msg)) {
-            //since as yet have no annotations, just write the revised header then the rest of the message as received
-            encoded.resize(16/*max header size*/ + original->getBareMessage().size);
-            qpid::amqp::MessageEncoder encoder(encoded.getData(), encoded.getSize());
+        if (original && !changedSubject(msg, address)) { //still have the content as received, send at least the bare message unaltered
+            //do we need to alter the header? are durable, priority, ttl, first-acquirer, delivery-count different from what was received?
+            if (original->hasHeaderChanged(msg)) {
+                //since as yet have no annotations, just write the revised header then the rest of the message as received
+                encoded.resize(16/*max header size*/ + original->getBareMessage().size);
+                qpid::amqp::MessageEncoder encoder(encoded.getData(), encoded.getSize());
+                HeaderAdapter header(msg);
+                encoder.writeHeader(header);
+                ::memcpy(encoded.getData() + encoder.getPosition(), original->getBareMessage().data, original->getBareMessage().size);
+            } else {
+                //since as yet have no annotations, if the header hasn't
+                //changed and we still have the original bare message, can
+                //send the entire content as is
+                encoded.resize(original->getSize());
+                ::memcpy(encoded.getData(), original->getData(), original->getSize());
+            }
+        } else {
             HeaderAdapter header(msg);
+            PropertiesAdapter properties(msg, address.getSubject());
+            ApplicationPropertiesAdapter applicationProperties(msg.getHeaders());
+            //compute size:
+            size_t contentSize = qpid::amqp::MessageEncoder::getEncodedSize(header)
+                + qpid::amqp::MessageEncoder::getEncodedSize(properties)
+                + qpid::amqp::MessageEncoder::getEncodedSize(applicationProperties);
+            if (msg.getContent().isVoid()) {
+                contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForContent(msg.getBytes());
+            } else {
+                contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForValue(msg.getContent()) + 3/*descriptor*/;
+            }
+            encoded.resize(contentSize);
+            QPID_LOG(debug, "Sending message, buffer is " << encoded.getSize() << " bytes")
+                qpid::amqp::MessageEncoder encoder(encoded.getData(), encoded.getSize());
+            //write header:
             encoder.writeHeader(header);
-            ::memcpy(encoded.getData() + encoder.getPosition(), original->getBareMessage().data, original->getBareMessage().size);
-        } else {
-            //since as yet have no annotations, if the header hasn't
-            //changed and we still have the original bare message, can
-            //send the entire content as is
-            encoded.resize(original->getSize());
-            ::memcpy(encoded.getData(), original->getData(), original->getSize());
+            //write delivery-annotations, write message-annotations (none yet supported)
+            //write properties
+            encoder.writeProperties(properties);
+            //write application-properties
+            encoder.writeApplicationProperties(applicationProperties);
+            //write body
+            if (!msg.getContent().isVoid()) {
+                //write as AmqpValue
+                encoder.writeValue(msg.getContent(), &qpid::amqp::message::AMQP_VALUE);
+            } else if (msg.getBytes().size()) {
+                encoder.writeBinary(msg.getBytes(), &qpid::amqp::message::DATA);//structured content not yet directly supported
+            }
+            if (encoder.getPosition() < encoded.getSize()) {
+                QPID_LOG(debug, "Trimming buffer from " << encoded.getSize() << " to " << encoder.getPosition());
+                encoded.trim(encoder.getPosition());
+            }
+            //write footer (no annotations yet supported)
         }
-    } else {
-        HeaderAdapter header(msg);
-        PropertiesAdapter properties(msg, address.getSubject());
-        ApplicationPropertiesAdapter applicationProperties(msg.getHeaders());
-        //compute size:
-        size_t contentSize = qpid::amqp::MessageEncoder::getEncodedSize(header)
-            + qpid::amqp::MessageEncoder::getEncodedSize(properties)
-            + qpid::amqp::MessageEncoder::getEncodedSize(applicationProperties);
-        if (msg.getContent().isVoid()) {
-            contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForContent(msg.getBytes());
-        } else {
-            contentSize += qpid::amqp::MessageEncoder::getEncodedSizeForValue(msg.getContent()) + 3/*descriptor*/;
-        }
-        encoded.resize(contentSize);
-        QPID_LOG(debug, "Sending message, buffer is " << encoded.getSize() << " bytes")
-        qpid::amqp::MessageEncoder encoder(encoded.getData(), encoded.getSize());
-        //write header:
-        encoder.writeHeader(header);
-        //write delivery-annotations, write message-annotations (none yet supported)
-        //write properties
-        encoder.writeProperties(properties);
-        //write application-properties
-        encoder.writeApplicationProperties(applicationProperties);
-        //write body
-        if (!msg.getContent().isVoid()) {
-            //write as AmqpValue
-            encoder.writeValue(msg.getContent(), &qpid::amqp::message::AMQP_VALUE);
-        } else if (msg.getBytes().size()) {
-            encoder.writeBinary(msg.getBytes(), &qpid::amqp::message::DATA);//structured content not yet directly supported
-        }
-        if (encoder.getPosition() < encoded.getSize()) {
-            QPID_LOG(debug, "Trimming buffer from " << encoded.getSize() << " to " << encoder.getPosition());
-            encoded.trim(encoder.getPosition());
-        }
-        //write footer (no annotations yet supported)
+    } catch (const qpid::Exception& e) {
+        throw SendError(e.what());
     }
 }
 void SenderContext::Delivery::send(pn_link_t* sender, bool unreliable)
