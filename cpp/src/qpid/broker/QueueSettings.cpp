@@ -112,10 +112,10 @@ QueueSettings::QueueSettings(bool d, bool a) :
 
 bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& value)
 {
-    if (key == MAX_COUNT && value.asUint32() > 0) {
+    if (key == MAX_COUNT) {
         maxDepth.setCount(value);
         return true;
-    } else if (key == MAX_SIZE && value.asUint64() > 0) {
+    } else if (key == MAX_SIZE) {
         maxDepth.setSize(value);
         return true;
     } else if (key == POLICY_TYPE) {
