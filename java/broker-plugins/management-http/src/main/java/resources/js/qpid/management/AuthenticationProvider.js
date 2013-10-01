@@ -237,18 +237,15 @@ define(["dojo/_base/xhr",
                        }
                      }
                      var preferencesProviderData = that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null;
-                     if (preferencesProviderData)
+                     try
                      {
-                       try
+                       that.updatePreferencesProvider(preferencesProviderData);
+                     }
+                     catch(e)
+                     {
+                       if (console)
                        {
-                         that.updatePreferencesProvider(preferencesProviderData);
-                       }
-                       catch(e)
-                       {
-                         if (console)
-                           {
-                             console.error(e);
-                           }
+                         console.error(e);
                        }
                      }
                  });

@@ -33,10 +33,10 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
     function (xhr, dom, domConstruct, win, registry, parser, array, event, json, string, entities, template) {
         return {
-            show: function(node, data) {
-                dojo.forEach(dijit.findWidgets(node), function(w) {
-                    w.destroyRecursive();
-                });
+            show: function(node, data)
+            {
+                this.destroy();
+                this.node = node;
                 node.innerHTML = template;
                 parser.parse(node);
                 var pathWidget = registry.byId("preferencesProvider.path")
@@ -44,6 +44,23 @@ define(["dojo/_base/xhr",
                 {
                   pathWidget.set("value", entities.encode(String(data["path"])));
                 }
+            },
+            destroy: function()
+            {
+              if (this.node)
+              {
+                dojo.forEach(dijit.findWidgets(this.node), function(w) {w.destroyRecursive();});
+                this.node = null;
+              }
+            },
+            disable: function(val)
+            {
+                var pathWidget = registry.byId("preferencesProvider.path");
+                pathWidget.set("disabled", val);
+            },
+            getValues: function()
+            {
+              return {path: registry.byId("preferencesProvider.path").value};
             }
         };
     });
