@@ -1195,8 +1195,7 @@ install (DIRECTORY ../include/qpid
          PATTERN ".svn" EXCLUDE)
 install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
-set (qpidmessaging_SOURCES_hidden
-     qpid/messaging/AddressParser.h
+set (qpidmessaging_SOURCES
      qpid/messaging/AddressImpl.h
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/ReceiverImpl.h
@@ -1220,15 +1219,8 @@ set (qpidmessaging_SOURCES_hidden
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
-)
-set_source_files_properties(
-     ${qpidmessaging_SOURCES_hidden}
-     PROPERTIES
-     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
-
-set (qpidmessaging_SOURCES
-     ${qpidmessaging_SOURCES_hidden}
      qpid/messaging/Address.cpp
+     qpid/messaging/AddressParser.h
      qpid/messaging/AddressParser.cpp # The functions in here are not in the public interface, but qmf uses them
      qpid/messaging/Connection.cpp
      qpid/messaging/Duration.cpp
@@ -1247,10 +1239,6 @@ set (qpidmessaging_SOURCES
      qpid/messaging/amqp/EncodedMessage.h
      qpid/messaging/amqp/EncodedMessage.cpp
 )
-set_source_files_properties(
-     ${qpidmessaging_SOURCES}
-     PROPERTIES
-     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
 
 add_msvc_version (qpidmessaging library dll)
 
@@ -1258,6 +1246,7 @@ add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
 target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon)
 set_target_properties (qpidmessaging PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
+                       COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}"
                        VERSION ${qpidmessaging_version}
                        SOVERSION ${qpidmessaging_version_major})
 install (TARGETS qpidmessaging
