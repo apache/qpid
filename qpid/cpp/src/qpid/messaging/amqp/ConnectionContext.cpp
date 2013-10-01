@@ -584,7 +584,7 @@ std::size_t ConnectionContext::decodePlain(const char* buffer, std::size_t size)
         lock.notifyAll();
         return n;
     } else if (n == PN_ERR) {
-        throw qpid::Exception(QPID_MSG("Error on input: " << getError()));
+        throw MessagingException(QPID_MSG("Error on input: " << getError()));
     } else {
         return 0;
     }
@@ -608,7 +608,7 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
         haveOutput = true;
         return n;
     } else if (n == PN_ERR) {
-        throw qpid::Exception(QPID_MSG("Error on output: " << getError()));
+        throw MessagingException(QPID_MSG("Error on output: " << getError()));
     } else if (n == PN_EOS) {
         haveOutput = false;
         return 0;//Is this right?

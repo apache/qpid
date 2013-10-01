@@ -20,7 +20,9 @@
  */
 #include "qpid/messaging/amqp/EncodedMessage.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/MessageImpl.h"
+#include "qpid/Exception.h"
 #include "qpid/amqp/Decoder.h"
 #include "qpid/amqp/DataBuilder.h"
 #include "qpid/amqp/ListBuilder.h"
@@ -100,66 +102,73 @@ const char* EncodedMessage::getData() const
 
 void EncodedMessage::init(qpid::messaging::MessageImpl& impl)
 {
-    //initial scan of raw data
-    qpid::amqp::Decoder decoder(data, size);
-    InitialScan reader(*this, impl);
-    decoder.read(reader);
-    bareMessage = reader.getBareMessage();
-    if (bareMessage.data && !bareMessage.size) {
-        bareMessage.size = (data + size) - bareMessage.data;
+    try {
+        //initial scan of raw data
+        qpid::amqp::Decoder decoder(data, size);
+        InitialScan reader(*this, impl);
+        decoder.read(reader);
+        bareMessage = reader.getBareMessage();
+        if (bareMessage.data && !bareMessage.size) {
+            bareMessage.size = (data + size) - bareMessage.data;
+        }
+    } catch (const qpid::Exception& e) {
+        throw FetchError(e.what());
     }
-
 }
 void EncodedMessage::setNestAnnotationsOption(bool b) { nestAnnotations = b; }
 
 void EncodedMessage::populate(qpid::types::Variant::Map& map) const
 {
-    //decode application properties
-    if (applicationProperties) {
-        qpid::amqp::Decoder decoder(applicationProperties.data, applicationProperties.size);
-        decoder.readMap(map);
-    }
-    //add in 'x-amqp-' prefixed values
-    if (!!firstAcquirer) {
-        map["x-amqp-first-acquirer"] = firstAcquirer.get();
-    }
-    if (!!deliveryCount) {
-        map["x-amqp-delivery-count"] = deliveryCount.get();
-    }
-    if (to) {
-        map["x-amqp-to"] = to.str();
-    }
-    if (!!absoluteExpiryTime) {
-        map["x-amqp-absolute-expiry-time"] = absoluteExpiryTime.get();
-    }
-    if (!!creationTime) {
-        map["x-amqp-creation-time"] = creationTime.get();
-    }
-    if (groupId) {
-        map["x-amqp-group-id"] = groupId.str();
-    }
-    if (!!groupSequence) {
-        map["x-amqp-qroup-sequence"] = groupSequence.get();
-    }
-    if (replyToGroupId) {
-        map["x-amqp-reply-to-group-id"] = replyToGroupId.str();
-    }
-    //add in any annotations
-    if (deliveryAnnotations) {
-        qpid::amqp::Decoder decoder(deliveryAnnotations.data, deliveryAnnotations.size);
-        if (nestAnnotations) {
-            map["x-amqp-delivery-annotations"] = decoder.readMap();
-        } else {
+    try {
+        //decode application properties
+        if (applicationProperties) {
+            qpid::amqp::Decoder decoder(applicationProperties.data, applicationProperties.size);
             decoder.readMap(map);
         }
-    }
-    if (messageAnnotations) {
-        qpid::amqp::Decoder decoder(messageAnnotations.data, messageAnnotations.size);
-        if (nestAnnotations) {
-            map["x-amqp-message-annotations"] = decoder.readMap();
-        } else {
-            decoder.readMap(map);
+        //add in 'x-amqp-' prefixed values
+        if (!!firstAcquirer) {
+            map["x-amqp-first-acquirer"] = firstAcquirer.get();
         }
+        if (!!deliveryCount) {
+            map["x-amqp-delivery-count"] = deliveryCount.get();
+        }
+        if (to) {
+            map["x-amqp-to"] = to.str();
+        }
+        if (!!absoluteExpiryTime) {
+            map["x-amqp-absolute-expiry-time"] = absoluteExpiryTime.get();
+        }
+        if (!!creationTime) {
+            map["x-amqp-creation-time"] = creationTime.get();
+        }
+        if (groupId) {
+            map["x-amqp-group-id"] = groupId.str();
+        }
+        if (!!groupSequence) {
+            map["x-amqp-qroup-sequence"] = groupSequence.get();
+        }
+        if (replyToGroupId) {
+            map["x-amqp-reply-to-group-id"] = replyToGroupId.str();
+        }
+        //add in any annotations
+        if (deliveryAnnotations) {
+            qpid::amqp::Decoder decoder(deliveryAnnotations.data, deliveryAnnotations.size);
+            if (nestAnnotations) {
+                map["x-amqp-delivery-annotations"] = decoder.readMap();
+            } else {
+                decoder.readMap(map);
+            }
+        }
+        if (messageAnnotations) {
+            qpid::amqp::Decoder decoder(messageAnnotations.data, messageAnnotations.size);
+            if (nestAnnotations) {
+                map["x-amqp-message-annotations"] = decoder.readMap();
+            } else {
+                decoder.readMap(map);
+            }
+        }
+    } catch (const qpid::Exception& e) {
+        throw FetchError(e.what());
     }
 }
 qpid::amqp::CharSequence EncodedMessage::getBareMessage() const
@@ -201,35 +210,39 @@ void EncodedMessage::getCorrelationId(std::string& s) const
 }
 void EncodedMessage::getBody(std::string& raw, qpid::types::Variant& c) const
 {
-    if (!content.isVoid()) {
-        c = content;//integer types, floats, bool etc
-        //TODO: populate raw data?
-    } else {
-        if (bodyType.empty()
-            || bodyType == qpid::amqp::typecodes::BINARY_NAME
-            || bodyType == qpid::types::encodings::UTF8
-            || bodyType == qpid::types::encodings::ASCII)
-        {
-            c = std::string(body.data, body.size);
-            c.setEncoding(bodyType);
-        } else if (bodyType == qpid::amqp::typecodes::LIST_NAME) {
-            qpid::amqp::ListBuilder builder;
-            qpid::amqp::Decoder decoder(body.data, body.size);
-            decoder.read(builder);
-            c = builder.getList();
-            raw.assign(body.data, body.size);
-        } else if (bodyType == qpid::amqp::typecodes::MAP_NAME) {
-            qpid::amqp::DataBuilder builder = qpid::amqp::DataBuilder(qpid::types::Variant::Map());
-            qpid::amqp::Decoder decoder(body.data, body.size);
-            decoder.read(builder);
-            c = builder.getValue().asMap();
-            raw.assign(body.data, body.size);
-        } else if (bodyType == qpid::amqp::typecodes::UUID_NAME) {
-            if (body.size == qpid::types::Uuid::SIZE) c = qpid::types::Uuid(body.data);
-            raw.assign(body.data, body.size);
-        } else if (bodyType == qpid::amqp::typecodes::ARRAY_NAME) {
-            raw.assign(body.data, body.size);
+    try {
+        if (!content.isVoid()) {
+            c = content;//integer types, floats, bool etc
+            //TODO: populate raw data?
+        } else {
+            if (bodyType.empty()
+                || bodyType == qpid::amqp::typecodes::BINARY_NAME
+                || bodyType == qpid::types::encodings::UTF8
+                || bodyType == qpid::types::encodings::ASCII)
+            {
+                c = std::string(body.data, body.size);
+                c.setEncoding(bodyType);
+            } else if (bodyType == qpid::amqp::typecodes::LIST_NAME) {
+                qpid::amqp::ListBuilder builder;
+                qpid::amqp::Decoder decoder(body.data, body.size);
+                decoder.read(builder);
+                c = builder.getList();
+                raw.assign(body.data, body.size);
+            } else if (bodyType == qpid::amqp::typecodes::MAP_NAME) {
+                qpid::amqp::DataBuilder builder = qpid::amqp::DataBuilder(qpid::types::Variant::Map());
+                qpid::amqp::Decoder decoder(body.data, body.size);
+                decoder.read(builder);
+                c = builder.getValue().asMap();
+                raw.assign(body.data, body.size);
+            } else if (bodyType == qpid::amqp::typecodes::UUID_NAME) {
+                if (body.size == qpid::types::Uuid::SIZE) c = qpid::types::Uuid(body.data);
+                raw.assign(body.data, body.size);
+            } else if (bodyType == qpid::amqp::typecodes::ARRAY_NAME) {
+                raw.assign(body.data, body.size);
+            }
         }
+    } catch (const qpid::Exception& e) {
+        throw FetchError(e.what());
     }
 }
 
