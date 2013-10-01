@@ -17,7 +17,7 @@
 <div class="dijitHidden">
     <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Authentication Provider'" id="addAuthenticationProvider">
         <form id="formAddAuthenticationProvider" method="post" dojoType="dijit.form.Form">
-            <div style="height:100px; width:420px; overflow: auto">
+            <div style="width:420px; overflow: auto">
                 <table class="tableContainer-table tableContainer-table-horiz" width="100%" cellspacing="1">
                 <tr>
                     <td class="tableContainer-labelCell" style="width: 200px;">Type*:</td>
@@ -32,6 +32,10 @@
                 </table>
                 <input type="hidden" id="formAddAuthenticationProvider.id" name="id"/>
                 <div id="addAuthenticationProvider.fieldSets"></div>
+                <br/>
+                <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Preferences Provider',  open: true" id="addAuthenticationProvider.preferencesProviderPanel">
+                  <div id="addAuthenticationProvider.preferencesProvider"></div>
+                </div>
             </div>
             <div class="dijitDialogPaneActionBar">
                 <!-- submit buttons -->
