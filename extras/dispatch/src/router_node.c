@@ -28,9 +28,6 @@
 
 static char *module = "ROUTER";
 
-static void dx_router_python_setup(dx_router_t *router);
-static void dx_pyrouter_tick(dx_router_t *router);
-
 static char *local_prefix = "_local/";
 static char *topo_prefix  = "_topo/";
 
@@ -116,7 +113,7 @@ static void dx_router_generate_temp_addr(dx_router_t *router, char *buffer, size
     long int rnd = random();
     int      idx;
 
-    for (idx = 0; idx < 10; idx++)
+    for (idx = 0; idx < 6; idx++)
         discriminator[idx] = table[(rnd >> (idx * 6)) & 63];
     discriminator[idx] = '\0';
 
@@ -640,6 +637,7 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
         //
         dx_router_add_link_ref_LH(&router->router_addr->rlinks, rlink);
         rlink->owning_addr = router->router_addr;
+        router->out_links_by_mask_bit[rlink->mask_bit] = rlink;
 
     } else {
         //
@@ -648,7 +646,7 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
         // address, that address needs to be set up in the address list.
         //
         dx_field_iterator_t *iter;
-        char                 temp_addr[1000];
+        char                 temp_addr[1000]; // FIXME
         dx_address_t        *addr;
 
         if (is_dynamic) {
@@ -711,6 +709,17 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
     if (rlink->link_direction == DX_OUTGOING && rlink->owning_addr) {
         dx_router_del_link_ref_LH(&rlink->owning_addr->rlinks, rlink);
         dx_router_check_addr_LH(rlink->owning_addr);
+    }
+
+    //
+    // If this is an outgoing inter-router link, we must remove the by-mask-bit
+    // index reference to this link.
+    //
+    if (rlink->link_type == DX_LINK_ROUTER && rlink->link_direction == DX_OUTGOING) {
+        if (router->out_links_by_mask_bit[rlink->mask_bit] == rlink)
+            router->out_links_by_mask_bit[rlink->mask_bit] = 0;
+        else
+            dx_log(module, LOG_CRITICAL, "Outgoing router link closing but not in index: bit=%d", rlink->mask_bit);
     }
 
     //
@@ -809,6 +818,12 @@ static void router_outbound_open_handler(void *type_context, dx_connection_t *co
     //
     dx_router_add_link_ref_LH(&router->router_addr->rlinks, rlink);
 
+    //
+    // Index this link from the by-maskbit index so we can later find it quickly
+    // when provided with the mask bit.
+    //
+    router->out_links_by_mask_bit[mask_bit] = rlink;
+
     dx_link_set_context(sender, rlink);
     DEQ_INSERT_TAIL(router->links, rlink);
     sys_mutex_unlock(router->lock);
@@ -866,6 +881,10 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
 
     DEQ_INIT(router->links);
     DEQ_INIT(router->routers);
+
+    router->out_links_by_mask_bit = NEW_PTR_ARRAY(dx_router_link_t, dx_bitmask_width());
+    for (int idx = 0; idx < dx_bitmask_width(); idx++)
+        router->out_links_by_mask_bit[idx] = 0;
 
     router->neighbor_free_mask = dx_bitmask(1);
     router->lock               = sys_mutex();
@@ -1029,233 +1048,5 @@ void dx_router_send2(dx_dispatch_t *dx,
     dx_field_iterator_t *iter = dx_field_iterator_string(address, ITER_VIEW_ADDRESS_HASH);
     dx_router_send(dx, iter, msg);
     dx_field_iterator_free(iter);
-}
-
-
-//===============================================================================
-// Python Router Adapter
-//===============================================================================
-
-typedef struct {
-    PyObject_HEAD
-    dx_router_t *router;
-} RouterAdapter;
-
-
-static PyObject* dx_router_node_updated(PyObject *self, PyObject *args)
-{
-    //RouterAdapter *adapter = (RouterAdapter*) self;
-    //dx_router_t   *router  = adapter->router;
-    const char    *address;
-    int            is_reachable;
-    int            is_neighbor;
-    int            link_maskbit;
-    int            router_maskbit;
-
-    if (!PyArg_ParseTuple(args, "siiii", &address, &is_reachable, &is_neighbor,
-                          &link_maskbit, &router_maskbit))
-        return 0;
-
-    // TODO
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-static PyObject* dx_router_add_route(PyObject *self, PyObject *args)
-{
-    //RouterAdapter *adapter = (RouterAdapter*) self;
-    const char    *addr;
-    const char    *peer;
-
-    if (!PyArg_ParseTuple(args, "ss", &addr, &peer))
-        return 0;
-
-    // TODO
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-static PyObject* dx_router_del_route(PyObject *self, PyObject *args)
-{
-    //RouterAdapter *adapter = (RouterAdapter*) self;
-    const char    *addr;
-    const char    *peer;
-
-    if (!PyArg_ParseTuple(args, "ss", &addr, &peer))
-        return 0;
-
-    // TODO
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-static PyMethodDef RouterAdapter_methods[] = {
-    {"node_updated", dx_router_node_updated, METH_VARARGS, "Update the status of a remote router node"},
-    {"add_route",    dx_router_add_route,    METH_VARARGS, "Add a newly discovered route"},
-    {"del_route",    dx_router_del_route,    METH_VARARGS, "Delete a route"},
-    {0, 0, 0, 0}
-};
-
-static PyTypeObject RouterAdapterType = {
-    PyObject_HEAD_INIT(0)
-    0,                         /* ob_size*/
-    "dispatch.RouterAdapter",  /* tp_name*/
-    sizeof(RouterAdapter),     /* tp_basicsize*/
-    0,                         /* tp_itemsize*/
-    0,                         /* tp_dealloc*/
-    0,                         /* tp_print*/
-    0,                         /* tp_getattr*/
-    0,                         /* tp_setattr*/
-    0,                         /* tp_compare*/
-    0,                         /* tp_repr*/
-    0,                         /* tp_as_number*/
-    0,                         /* tp_as_sequence*/
-    0,                         /* tp_as_mapping*/
-    0,                         /* tp_hash */
-    0,                         /* tp_call*/
-    0,                         /* tp_str*/
-    0,                         /* tp_getattro*/
-    0,                         /* tp_setattro*/
-    0,                         /* tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,        /* tp_flags*/
-    "Dispatch Router Adapter", /* tp_doc */
-    0,                         /* tp_traverse */
-    0,                         /* tp_clear */
-    0,                         /* tp_richcompare */
-    0,                         /* tp_weaklistoffset */
-    0,                         /* tp_iter */
-    0,                         /* tp_iternext */
-    RouterAdapter_methods,     /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,                         /* tp_init */
-    0,                         /* tp_alloc */
-    0,                         /* tp_new */
-    0,                         /* tp_free */
-    0,                         /* tp_is_gc */
-    0,                         /* tp_bases */
-    0,                         /* tp_mro */
-    0,                         /* tp_cache */
-    0,                         /* tp_subclasses */
-    0,                         /* tp_weaklist */
-    0,                         /* tp_del */
-    0                          /* tp_version_tag */
-};
-
-
-static void dx_router_python_setup(dx_router_t *router)
-{
-    PyObject *raType          = (PyObject*) &RouterAdapterType;
-    PyObject *pDispatchModule = dx_python_module();
-
-    RouterAdapterType.tp_new = PyType_GenericNew;
-    if (PyType_Ready(&RouterAdapterType) < 0) {
-        PyErr_Print();
-        dx_log(module, LOG_CRITICAL, "Unable to initialize the Python Router Adapter");
-        return;
-    }
-
-    Py_INCREF(raType);
-    PyModule_AddObject(pDispatchModule, "RouterAdapter", (PyObject*) &RouterAdapterType);
-
-    //
-    // Attempt to import the Python Router module
-    //
-    PyObject* pName;
-    PyObject* pId;
-    PyObject* pArea;
-    PyObject* pMaxRouters;
-    PyObject* pModule;
-    PyObject* pClass;
-    PyObject* pArgs;
-
-    pName   = PyString_FromString("qpid.dispatch.router");
-    pModule = PyImport_Import(pName);
-    Py_DECREF(pName);
-    if (!pModule) {
-        dx_log(module, LOG_CRITICAL, "Can't Locate 'router' Python module");
-        return;
-    }
-
-    pClass = PyObject_GetAttrString(pModule, "RouterEngine");
-    if (!pClass || !PyClass_Check(pClass)) {
-        dx_log(module, LOG_CRITICAL, "Can't Locate 'RouterEngine' class in the 'router' module");
-        return;
-    }
-
-    PyObject *adapterType     = PyObject_GetAttrString(pDispatchModule, "RouterAdapter");
-    PyObject *adapterInstance = PyObject_CallObject(adapterType, 0);
-    assert(adapterInstance);
-
-    ((RouterAdapter*) adapterInstance)->router = router;
-
-    //
-    // Constructor Arguments for RouterEngine
-    //
-    pArgs = PyTuple_New(4);
-
-    // arg 0: adapter instance
-    PyTuple_SetItem(pArgs, 0, adapterInstance);
-
-    // arg 1: router_id
-    pId = PyString_FromString(router->router_id);
-    PyTuple_SetItem(pArgs, 1, pId);
-
-    // arg 2: area_id
-    pArea = PyString_FromString(router->router_area);
-    PyTuple_SetItem(pArgs, 2, pArea);
-
-    // arg 3: max_routers
-    pMaxRouters = PyInt_FromLong((long) dx_bitmask_width());
-    PyTuple_SetItem(pArgs, 3, pMaxRouters);
-
-    //
-    // Instantiate the router
-    //
-    router->pyRouter = PyInstance_New(pClass, pArgs, 0);
-    Py_DECREF(pArgs);
-    Py_DECREF(adapterType);
-
-    if (!router->pyRouter) {
-        PyErr_Print();
-        dx_log(module, LOG_CRITICAL, "'RouterEngine' class cannot be instantiated");
-        return;
-    }
-
-    router->pyTick = PyObject_GetAttrString(router->pyRouter, "handleTimerTick");
-    if (!router->pyTick || !PyCallable_Check(router->pyTick)) {
-        dx_log(module, LOG_CRITICAL, "'RouterEngine' class has no handleTimerTick method");
-        return;
-    }
-}
-
-
-static void dx_pyrouter_tick(dx_router_t *router)
-{
-    PyObject *pArgs;
-    PyObject *pValue;
-
-    if (router->pyTick) {
-        pArgs  = PyTuple_New(0);
-        pValue = PyObject_CallObject(router->pyTick, pArgs);
-        if (PyErr_Occurred()) {
-            PyErr_Print();
-        }
-        Py_DECREF(pArgs);
-        if (pValue) {
-            Py_DECREF(pValue);
-        }
-    }
 }
 

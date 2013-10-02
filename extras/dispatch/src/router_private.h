@@ -25,6 +25,8 @@ typedef struct dx_router_ref_t      dx_router_ref_t;
 typedef struct dx_router_link_ref_t dx_router_link_ref_t;
 typedef struct dx_router_conn_t     dx_router_conn_t;
 
+void dx_router_python_setup(dx_router_t *router);
+void dx_pyrouter_tick(dx_router_t *router);
 
 typedef enum {
     DX_LINK_ENDPOINT,   // A link to a connected endpoint
@@ -112,25 +114,26 @@ DEQ_DECLARE(dx_address_t, dx_address_list_t);
 
 
 struct dx_router_t {
-    dx_dispatch_t         *dx;
-    const char            *router_area;
-    const char            *router_id;
-    dx_node_t             *node;
+    dx_dispatch_t          *dx;
+    const char             *router_area;
+    const char             *router_id;
+    dx_node_t              *node;
 
-    dx_address_list_t      addrs;
-    hash_t                *addr_hash;
-    dx_address_t          *router_addr;
+    dx_address_list_t       addrs;
+    hash_t                 *addr_hash;
+    dx_address_t           *router_addr;
 
-    dx_router_link_list_t  links;
-    dx_router_node_list_t  routers;
+    dx_router_link_list_t   links;
+    dx_router_node_list_t   routers;
+    dx_router_link_t      **out_links_by_mask_bit;
 
-    dx_bitmask_t          *neighbor_free_mask;
-    sys_mutex_t           *lock;
-    dx_timer_t            *timer;
-    uint64_t               dtag;
+    dx_bitmask_t           *neighbor_free_mask;
+    sys_mutex_t            *lock;
+    dx_timer_t             *timer;
+    uint64_t                dtag;
 
-    PyObject              *pyRouter;
-    PyObject              *pyTick;
+    PyObject               *pyRouter;
+    PyObject               *pyTick;
 };
 
 #endif
