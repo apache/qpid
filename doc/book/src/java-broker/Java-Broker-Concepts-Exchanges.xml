@@ -22,34 +22,152 @@
 
 <section id="Java-Broker-Concepts-Exchanges">
 <title>Exchanges</title>
-<para>An <emphasis>Exchange</emphasis> is a named entity within the <emphasis>Virtual Host</emphasis> which receives
-messages from producers and routes them to matching message <emphasis>Queue</emphasis>s within the <emphasis>Virtual Host</emphasis>.
-Message routing occurs based on the particular Exchange's routing algorithm and its configured queue <emphasis>Binding</emphasis>s.</para>
-<para>
-The following <emphasis>Exchange</emphasis> types are supported by the <emphasis>Broker</emphasis>:
-    <itemizedlist>
-        <listitem><para><emphasis>Direct</emphasis>: routes messages to queues based on an exact match between
-        the routing key of the message, and the binding key used to bind the queue to the exchange
-        </para></listitem>
-        <listitem><para><emphasis>Topic</emphasis>: routes messages to queues based on heirarchical pattern matching between the routing
-        key for each message and the binding keys used to bind Queues to the Exchange. This exchange type is used to support the classic
-        publish/subscribe paradigm using a topic namespace as the addressing model to select and deliver messages across multiple
-        consumers based on a partial or full match on a topic pattern.
-        </para>
-        <para>
-        Binding and routing keys for this Exchange use a "." deliminator to seperate words representing different levels of the heirarchy,
-        with special meaning given to use of * and # as a word within a binding key such that a * matches any single word in a routing
-        key and # matches zero or more words, allowing a binding key to match many routing keys for published messages. For example,
-        a binding key of <emphasis>a.b.#</emphasis> would match the routing keys <emphasis>a.b</emphasis>, <emphasis>a.b.c</emphasis>, and
-        <emphasis>a.b.c.d</emphasis>, but not the routing key <emphasis>a.z</emphasis>.</para></listitem>
-        <listitem><para><emphasis>Fanout</emphasis>: routes messages to all queues bound to the exchange, regardless of the message's routing key.
-        </para></listitem>
-        <listitem><para><emphasis>Headers</emphasis>: routes messages to queues based on header properties within the AMQP message.
-        The message is passed to a queue if the header properties of the message satisfy header matching arguments table with which the queue was bound.
-        </para></listitem>
-     </itemizedlist>
-</para>
-<para>Also, Broker supports the concept of a Default Exchange to which all queues are bound using their name as a binding key.</para>
-<para>Any number of exchanges of any type can be created on <emphasis>Virtual Host</emphasis>.</para>
-<para>Exchange configuration is covered in <xref linkend="Java-Broker-Exchanges"/>.</para>
+ <para>An <emphasis>Exchange</emphasis> is a named entity within the <emphasis>Virtual Host</emphasis> which receives
+  messages from producers and routes them to matching <emphasis>Queue</emphasis>s within the <emphasis>Virtual Host</emphasis>.</para>
+ <para>The server provides a set of exchange types with each exchange type implementing a different routing algorithm. For details of how
+  these exchanges types work see <xref linkend="Java-Broker-Concepts-Exchanges-Types"/> below.</para>
+ <para>The server predeclares a number of exchange instances with names starting with <literal>amq.</literal>. These are defined in
+  <xref linkend="Java-Broker-Concepts-Exchanges-Predeclared"/>.</para>
+ <para>Applications can make use the pre-declared exchanges, or they may declare their own. The number of exchanges within a virtual host is
+  limited only by resource constraints.</para>
+ <para>The behaviour when an exchange is unable to route a message to any queue is defined in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/></para>
+ <para>Exchange configuration is covered in <xref linkend="Java-Broker-Exchanges"/>.</para>
+ <section id="Java-Broker-Concepts-Exchanges-Predeclared">
+  <title>Predeclared Exchanges</title>
+  <para>Each virtual host pre-declares the following exchanges:
+   <itemizedlist>
+    <listitem>amq.direct (an instance of a direct exchange)</listitem>
+    <listitem>amq.topic (an instance of a topic exchange)</listitem>
+    <listitem>amq.fanout (an instance of a fanout exchange)</listitem>
+    <listitem>amq.match (an instance of a headers exchange)</listitem>
+   </itemizedlist>
+  </para>
+  <para>An exchange known as the default exchange is also pre-declared. This is a direct exchange but is special in that all
+   queues are automatically bound to it once using their name as a binding key. It is not possible to manually add or remove
+   bindings within this exchange.</para>
+  <para>Applications may not declare exchanges with names beginning with <literal>amq.</literal>. Such names are reserved for system use.</para>
+ </section>
+ <section id="Java-Broker-Concepts-Exchanges-Types">
+  <title>Exchange Types</title>
+  <para>
+   The following Exchange types are supported.
+   <itemizedlist>
+    <listitem>Direct</listitem>
+    <listitem>Topic</listitem>
+    <listitem>Fanout</listitem>
+    <listitem>Headers</listitem>
+   </itemizedlist>
+   These exchange types are described in the following sub-sections.</para>
+
+   <section id="Java-Broker-Concepts-Exchanges-Types-Direct">
+   <title>Direct</title>
+   <para>The direct exchange type routes messages to queues based on an exact match between
+    the routing key of the message, and the binding key used to bind the queue to the exchange.
+   </para>
+   <para>This exchange type is often used to implement point to point messaging. When used in this manner, the normal
+   convention is that the binding key matches the name of the queue. It is also possible to use this exchange type
+   for multi-cast, in this case the same binding key is associated with many queues.</para>
+   <figure>
+    <title>Direct exchange</title>
+    <mediaobject>
+     <imageobject>
+      <imagedata fileref="images/Exchange-Direct.png" format="PNG" scalefit="1"/>
+     </imageobject>
+    </mediaobject>
+   </figure>
+   <para>The figure above illustrates the operation of direct exchange type. The yellow messages published with the routing key
+    <literal>myqueue</literal> match the binding key corresponding to queue <literal>myqueue</literal> to are routes there.  The red
+    messages published with the routing key <literal>foo</literal> match two bindings in the table so a copy of the message is
+    routed to both <literal>bar1</literal> and <literal>bar2</literal>.</para>
+    <para>The routing key of the blue message matches no binding keys, so the message is unroutable. It is handled as described
+     in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-Types-Topic">
+    <title>Topic</title>
+    <para>This exchange type is used to support the classic publish/subscribe paradigm.</para>
+    <para>The topic exchange is capable of routing messages to queues based on wildcard matches between the routing key and the
+     binding key pattern defined by the queue binding. Routing keys are formed from one or more words, with each word delimited
+     by a full-stop (.). The pattern matching characters are the * and # symbols. The * symbol matches a single word  and the #
+     symbol matches zero or more words.</para>
+    <para>The topic exchange is also capable of routing messages according to whether a message's header values or properties match
+     a JMS message selector <footnote><para>This is a Qpid specific extension.</para></footnote>.</para>
+    <para>The following three figures help explain how the topic exchange functions.</para>
+    <para></para>
+    <figure>
+     <title>Topic exchange - exact match on topic name</title>
+     <mediaobject>
+      <imageobject>
+       <imagedata fileref="images/Exchange-Topic.png" format="PNG" scalefit="1"/>
+      </imageobject>
+     </mediaobject>
+    </figure>
+   <para>The figure above illustrates publishing messages with routing key <literal>weather</literal>. The exchange routes each
+    message to every bound queue whose binding key matches the routing key.</para>
+   <para>In the case illustrated, this means that each subscriber's queue receives every yellow message.</para>
+   <figure>
+    <title>Topic exchange - matching on hierarchical topic patterns</title>
+    <mediaobject>
+     <imageobject>
+      <imagedata fileref="images/Exchange-Topic-Hierarchical.png" format="PNG" scalefit="1"/>
+     </imageobject>
+    </mediaobject>
+   </figure>
+   <para>The figure above illustrates publishing messages with hierarchical routing keys. As before, the exchange routes each
+    message to every bound queue whose binding key matches the routing key but as the binding keys contain wildcards, the
+    wildcard rules described above apply.</para>
+   <para>In the case illustrated, <literal>sub1</literal> has received the red and green message as <literal>news.uk</literal> and <literal>news.de</literal>
+    match binding key <literal>news.#</literal>. The red message has also gone to <literal>sub2</literal> and <literal>sub3</literal> as it's routing key
+    is matched exactly by <literal>news.uk</literal> and by <literal>*.uk</literal>.</para>
+   <para>The routing key of the yellow message matches no binding keys, so the message is unroutable. It is handled as described
+    in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
+   <figure>
+    <title>Topic exchange - matching on JMS message selector</title>
+    <mediaobject>
+     <imageobject>
+      <imagedata fileref="images/Exchange-Topic-JMSSelector.png" format="PNG" scalefit="1"/>
+     </imageobject>
+    </mediaobject>
+   </figure>
+   <para>The figure above illustrates messages with properties published with routing key <literal>shipping</literal>.</para>
+   <para>As before, the exchange routes each message to every bound queue whose binding key matches the routing key but as a JMS selector
+    argument has been specified, the expression is evalutated against each matching message. Only messages whose message's header values or properties
+    match the expression are routed to the queue.</para>
+   <para>In the case illustrated, <literal>sub1</literal> has received the yellow and blue message as their property <literal>area</literal>
+    cause expression <literal>area in ('Forties', 'Cromarty')</literal> to evaluate true.  Similarly, the yellow message has also gone to
+    <literal>gale_alert</literal> as its property <literal>speed</literal> causes expression <literal>speed &gt; 7 and speed &lt; 10</literal>.
+    to evaluate true.</para>
+   <para>The properties of purple message cause expressions no evaluate true, so the message is unroutable. It is handled as described in
+    <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-Types-Fanout">
+    <title>Fanout</title>
+    <para>The fanout exchange type routes messages to all queues bound to the exchange, regardless of the message's routing key.</para>
+    <figure>
+     <title>Fanout exchange</title>
+     <mediaobject>
+      <imageobject>
+       <imagedata fileref="images/Exchange-Fanout.png" format="PNG" scalefit="1"/>
+      </imageobject>
+     </mediaobject>
+    </figure>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-Types-Headers">
+    <title>Headers</title>
+    <para>The headers exchange type routes messages to queues based on header properties within the AMQP message. The message is
+     passed to a queue if the header properties of the message satisfy header matching arguments table with which the queue was bound.
+   </para>
+  </section>
+ </section>
+ <section id="Java-Broker-Concepts-Exchanges-UnroutableMessage">
+  <title>Unrouteable Messages</title>
+  <para>If an exchange is unable to route a message to any queues, the Broker will:
+   <itemizedlist>
+    <listitem>If using AMQP 0-10 protocol, and an alternate exchange has been set on the exchange, the message is routed to the alternate exchange.
+    The alternate exchange routes the message according to its routing algorithm and its binding table.  If the messages is still unroutable,
+    the message is discarded.</listitem>
+    <listitem>If using AMQP protocols 0-8..0-9-1, and the publisher set the mandatory flag, the message is returned to the Producer.</listitem>
+    <listitem>Otherwise, the message is discarded.</listitem>
+   </itemizedlist>
+  </para>
+ </section>
 </section>
