@@ -102,9 +102,14 @@ set(server_SOURCES
     src/posix/threading.c
     src/python_embedded.c
     src/router_node.c
+    src/router_pynode.c
     src/server.c
     src/timer.c
     src/work_queue.c
+    )
+
+set_property(SOURCE src/python_embedded.c src/router_pynode.c
+    PROPERTY COMPILE_FLAGS -Wno-strict-aliasing
     )
 
 add_library(qpid-dispatch SHARED ${server_SOURCES})
