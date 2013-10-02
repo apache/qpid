@@ -410,13 +410,16 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 default:
             }
 
-            for (int i = 0; i < _receivingSessions.length; i++)
+            if(_receivingSessions != null)
             {
-                if (_receivingSessions[i] != null)
+                for (int i = 0; i < _receivingSessions.length; i++)
                 {
-                    _receivingSessions[i].end();
-                    _receivingSessions[i] = null;
+                    if (_receivingSessions[i] != null)
+                    {
+                        _receivingSessions[i].end();
+                        _receivingSessions[i] = null;
 
+                    }
                 }
             }
         }
