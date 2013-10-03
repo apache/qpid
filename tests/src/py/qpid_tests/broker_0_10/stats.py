@@ -67,34 +67,36 @@ class BrokerStatsTests(Base):
         start_broker = agent.getBroker()
 
         agent.addExchange("direct", "stats-test-exchange")
-        sess = self.setup_session()
-        tx_a = sess.sender("stats-test-exchange/a")
-        tx_b = sess.sender("stats-test-exchange/b")
-        rx_a = sess.receiver("stats-test-exchange/a")
+        try:
+            sess = self.setup_session()
+            tx_a = sess.sender("stats-test-exchange/a")
+            tx_b = sess.sender("stats-test-exchange/b")
+            rx_a = sess.receiver("stats-test-exchange/a")
 
-        exchange = agent.getExchange("stats-test-exchange")
-        self.failUnless(exchange, "expected a valid exchange object")
-        self.assertEqual(exchange.msgReceives, 0, "msgReceives")
-        self.assertEqual(exchange.msgDrops, 0, "msgDrops")
-        self.assertEqual(exchange.msgRoutes, 0, "msgRoutes")
-        self.assertEqual(exchange.byteReceives, 0, "byteReceives")
-        self.assertEqual(exchange.byteDrops, 0, "byteDrops")
-        self.assertEqual(exchange.byteRoutes, 0, "byteRoutes")
+            exchange = agent.getExchange("stats-test-exchange")
+            self.failUnless(exchange, "expected a valid exchange object")
+            self.assertEqual(exchange.msgReceives, 0, "msgReceives")
+            self.assertEqual(exchange.msgDrops, 0, "msgDrops")
+            self.assertEqual(exchange.msgRoutes, 0, "msgRoutes")
+            self.assertEqual(exchange.byteReceives, 0, "byteReceives")
+            self.assertEqual(exchange.byteDrops, 0, "byteDrops")
+            self.assertEqual(exchange.byteRoutes, 0, "byteRoutes")
 
-        tx_a.send("0123456789")
-        tx_b.send("01234567890123456789")
-        tx_a.send("012345678901234567890123456789")
-        tx_b.send("0123456789012345678901234567890123456789")
+            tx_a.send("0123456789")
+            tx_b.send("01234567890123456789")
+            tx_a.send("012345678901234567890123456789")
+            tx_b.send("0123456789012345678901234567890123456789")
 
-        exchange.update()
-        self.assertEqual(exchange.msgReceives, 4, "msgReceives")
-        self.assertEqual(exchange.msgDrops, 2, "msgDrops")
-        self.assertEqual(exchange.msgRoutes, 2, "msgRoutes")
-        self.assertEqual(exchange.byteReceives, 100, "byteReceives")
-        self.assertEqual(exchange.byteDrops, 60, "byteDrops")
-        self.assertEqual(exchange.byteRoutes, 40, "byteRoutes")
-
-        agent.delExchange("stats-test-exchange")
+            overhead = 63 #overhead added to message from headers
+            exchange.update()
+            self.assertEqual(exchange.msgReceives, 4, "msgReceives")
+            self.assertEqual(exchange.msgDrops, 2, "msgDrops")
+            self.assertEqual(exchange.msgRoutes, 2, "msgRoutes")
+            self.assertEqual(exchange.byteReceives, 100+(4*overhead), "byteReceives")
+            self.assertEqual(exchange.byteDrops, 60+(2*overhead), "byteDrops")
+            self.assertEqual(exchange.byteRoutes, 40+(2*overhead), "byteRoutes")
+        finally:
+            agent.delExchange("stats-test-exchange")
 
     def test_enqueues_dequeues(self):
         agent = self.setup_access()
@@ -117,14 +119,15 @@ class BrokerStatsTests(Base):
         tx.send("01234567890123456789")
         tx.send("012345678901234567890123456789")
         tx.send("0123456789012345678901234567890123456789")
+        overhead = 38 #overhead added to message from headers
 
         queue.update()
         self.assertEqual(queue.msgTotalEnqueues, 4, "msgTotalEnqueues")
-        self.assertEqual(queue.byteTotalEnqueues, 100, "byteTotalEnqueues")
+        self.assertEqual(queue.byteTotalEnqueues, 100+(4*overhead), "byteTotalEnqueues")
         self.assertEqual(queue.msgTotalDequeues, 0, "msgTotalDequeues")
         self.assertEqual(queue.byteTotalDequeues, 0, "byteTotalDequeues")
         self.assertEqual(queue.msgDepth, 4, "msgDepth")
-        self.assertEqual(queue.byteDepth, 100, "byteDepth")
+        self.assertEqual(queue.byteDepth, 100+(4*overhead), "byteDepth")
 
         now_broker = agent.getBroker()
         self.failUnless((now_broker.msgTotalEnqueues - start_broker.msgTotalEnqueues) >= 4, "broker msgTotalEnqueues")
@@ -136,11 +139,11 @@ class BrokerStatsTests(Base):
 
         queue.update()
         self.assertEqual(queue.msgTotalEnqueues, 4, "msgTotalEnqueues")
-        self.assertEqual(queue.byteTotalEnqueues, 100, "byteTotalEnqueues")
+        self.assertEqual(queue.byteTotalEnqueues, 100+(4*overhead), "byteTotalEnqueues")
         self.assertEqual(queue.msgTotalDequeues, 2, "msgTotalDequeues")
-        self.assertEqual(queue.byteTotalDequeues, 30, "byteTotalDequeues")
+        self.assertEqual(queue.byteTotalDequeues, 30+(2*overhead), "byteTotalDequeues")
         self.assertEqual(queue.msgDepth, 2, "msgDepth")
-        self.assertEqual(queue.byteDepth, 70, "byteDepth")
+        self.assertEqual(queue.byteDepth, 70+(2*overhead), "byteDepth")
 
         now_broker = agent.getBroker()
         self.failUnless((now_broker.msgTotalDequeues - start_broker.msgTotalDequeues) >= 2, "broker msgTotalDequeues")
@@ -165,6 +168,7 @@ class BrokerStatsTests(Base):
         tx.send("0123456789")
         tx.send("0123456789")
         tx.send("0123456789")
+        overhead = 41 #overhead added to message from headers
 
         queue = agent.getQueue("tx_enqueue_test")
         self.failUnless(queue, "expected a valid queue object")
@@ -180,9 +184,9 @@ class BrokerStatsTests(Base):
         sess.commit()
         queue.update()
         self.assertEqual(queue.msgTotalEnqueues,   4, "msgTotalEnqueues post-tx-commit")
-        self.assertEqual(queue.byteTotalEnqueues, 40, "byteTotalEnqueues post-tx-commit")
+        self.assertEqual(queue.byteTotalEnqueues, 40+(4*overhead), "byteTotalEnqueues post-tx-commit")
         self.assertEqual(queue.msgTxnEnqueues,     4, "msgTxnEnqueues post-tx-commit")
-        self.assertEqual(queue.byteTxnEnqueues,   40, "byteTxnEnqueues post-tx-commit")
+        self.assertEqual(queue.byteTxnEnqueues,   40+(4*overhead), "byteTxnEnqueues post-tx-commit")
         self.assertEqual(queue.msgTotalDequeues,   0, "msgTotalDequeues post-tx-commit")
         self.assertEqual(queue.byteTotalDequeues,  0, "byteTotalDequeues post-tx-commit")
         self.assertEqual(queue.msgTxnDequeues,     0, "msgTxnDequeues post-tx-commit")
@@ -198,9 +202,9 @@ class BrokerStatsTests(Base):
 
         queue.update()
         self.assertEqual(queue.msgTotalEnqueues,   4, "msgTotalEnqueues pre-rx-commit")
-        self.assertEqual(queue.byteTotalEnqueues, 40, "byteTotalEnqueues pre-rx-commit")
+        self.assertEqual(queue.byteTotalEnqueues, 40+(4*overhead), "byteTotalEnqueues pre-rx-commit")
         self.assertEqual(queue.msgTxnEnqueues,     4, "msgTxnEnqueues pre-rx-commit")
-        self.assertEqual(queue.byteTxnEnqueues,   40, "byteTxnEnqueues pre-rx-commit")
+        self.assertEqual(queue.byteTxnEnqueues,   40+(4*overhead), "byteTxnEnqueues pre-rx-commit")
         self.assertEqual(queue.msgTotalDequeues,   0, "msgTotalDequeues pre-rx-commit")
         self.assertEqual(queue.byteTotalDequeues,  0, "byteTotalDequeues pre-rx-commit")
         self.assertEqual(queue.msgTxnDequeues,     0, "msgTxnDequeues pre-rx-commit")
@@ -211,22 +215,22 @@ class BrokerStatsTests(Base):
 
         queue.update()
         self.assertEqual(queue.msgTotalEnqueues,   4, "msgTotalEnqueues post-rx-commit")
-        self.assertEqual(queue.byteTotalEnqueues, 40, "byteTotalEnqueues post-rx-commit")
+        self.assertEqual(queue.byteTotalEnqueues, 40+(4*overhead), "byteTotalEnqueues post-rx-commit")
         self.assertEqual(queue.msgTxnEnqueues,     4, "msgTxnEnqueues post-rx-commit")
-        self.assertEqual(queue.byteTxnEnqueues,   40, "byteTxnEnqueues post-rx-commit")
+        self.assertEqual(queue.byteTxnEnqueues,   40+(4*overhead), "byteTxnEnqueues post-rx-commit")
         self.assertEqual(queue.msgTotalDequeues,   4, "msgTotalDequeues post-rx-commit")
-        self.assertEqual(queue.byteTotalDequeues, 40, "byteTotalDequeues post-rx-commit")
+        self.assertEqual(queue.byteTotalDequeues, 40+(4*overhead), "byteTotalDequeues post-rx-commit")
         self.assertEqual(queue.msgTxnDequeues,     4, "msgTxnDequeues post-rx-commit")
-        self.assertEqual(queue.byteTxnDequeues,   40, "byteTxnDequeues post-rx-commit")
+        self.assertEqual(queue.byteTxnDequeues,   40+(4*overhead), "byteTxnDequeues post-rx-commit")
 
         sess.close()
         sess2.close()
 
         now_broker = agent.getBroker()
         self.assertEqual(now_broker.msgTxnEnqueues  - start_broker.msgTxnEnqueues,   4, "broker msgTxnEnqueues")
-        self.assertEqual(now_broker.byteTxnEnqueues - start_broker.byteTxnEnqueues, 40, "broker byteTxnEnqueues")
+        self.assertEqual(now_broker.byteTxnEnqueues - start_broker.byteTxnEnqueues, 40+(4*overhead), "broker byteTxnEnqueues")
         self.assertEqual(now_broker.msgTxnDequeues  - start_broker.msgTxnDequeues,   4, "broker msgTxnDequeues")
-        self.assertEqual(now_broker.byteTxnDequeues - start_broker.byteTxnDequeues, 40, "broker byteTxnDequeues")
+        self.assertEqual(now_broker.byteTxnDequeues - start_broker.byteTxnDequeues, 40+(4*overhead), "broker byteTxnDequeues")
 
 
     def test_discards_no_route(self):
