@@ -135,7 +135,7 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
     if (mgmtExchange != 0)
     {
         qmf::org::apache::qpid::broker::Exchange::PerThreadStats *eStats = mgmtExchange->getStatistics();
-        uint64_t contentSize = msg.getMessage().getContentSize();
+        uint64_t contentSize = msg.getMessage().getMessageSize();
 
         eStats->msgReceives += 1;
         eStats->byteReceives += contentSize;

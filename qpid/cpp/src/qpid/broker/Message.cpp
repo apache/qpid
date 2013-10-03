@@ -71,9 +71,9 @@ bool Message::isPersistent() const
     return getEncoding().isPersistent();
 }
 
-uint64_t Message::getContentSize() const
+uint64_t Message::getMessageSize() const
 {
-    return getEncoding().getContentSize();
+    return getEncoding().getMessageSize();
 }
 
 boost::intrusive_ptr<AsyncCompletion> Message::getIngressCompletion() const

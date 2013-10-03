@@ -69,9 +69,15 @@ QPID_AUTO_TEST_CASE(testRingPolicyCount)
 
 QPID_AUTO_TEST_CASE(testRingPolicySize)
 {
-    std::string hundredBytes = std::string(100, 'h');
-    std::string fourHundredBytes = std::string (400, 'f');
-    std::string thousandBytes = std::string(1000, 't');
+    //The message size now includes all headers as well as the content
+    //aka body, so compute the amount of data needed to hit a given
+    //overall size
+    std::string q("my-ring-queue");
+    size_t minMessageSize = 25/*minimum size of headers*/ + q.size()/*routing key length*/ + 4/*default exchange, added by broker*/;
+
+    std::string hundredBytes = std::string(100 - minMessageSize, 'h');
+    std::string fourHundredBytes = std::string (400 - minMessageSize, 'f');
+    std::string thousandBytes = std::string(1000 - minMessageSize, 't');
 
     // Ring queue, 500 bytes maxSize
 
@@ -79,7 +85,6 @@ QPID_AUTO_TEST_CASE(testRingPolicySize)
     args.setSizePolicy(RING, 500, 0);
 
     SessionFixture f;
-    std::string q("my-ring-queue");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
 
     // A. Send messages 0 .. 5, each 100 bytes

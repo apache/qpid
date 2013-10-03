@@ -44,7 +44,7 @@ ThresholdAlerts::ThresholdAlerts(const std::string& n,
 
 void ThresholdAlerts::enqueued(const Message& m)
 {
-    size += m.getContentSize();
+    size += m.getMessageSize();
     ++count;
 
     if (sizeGoingUp && sizeThreshold && size >= sizeThreshold) {
@@ -64,7 +64,7 @@ void ThresholdAlerts::enqueued(const Message& m)
 
 void ThresholdAlerts::dequeued(const Message& m)
 {
-    size -= m.getContentSize();
+    size -= m.getMessageSize();
     --count;
 
     if (!sizeGoingUp && sizeThreshold && size <= sizeThresholdDown) {

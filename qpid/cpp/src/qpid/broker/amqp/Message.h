@@ -44,7 +44,7 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     std::string getRoutingKey() const;
     bool isPersistent() const;
     uint8_t getPriority() const;
-    uint64_t getContentSize() const;
+    uint64_t getMessageSize() const;
     std::string getPropertyAsString(const std::string& key) const;
     std::string getAnnotationAsString(const std::string& key) const;
     bool getTtl(uint64_t&) const;

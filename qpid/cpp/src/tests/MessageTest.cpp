@@ -65,7 +65,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     msg = registry.decode(buffer);
 
     BOOST_CHECK_EQUAL(routingKey, msg.getRoutingKey());
-    BOOST_CHECK_EQUAL((uint64_t) data.size(), msg.getContentSize());
+    BOOST_CHECK_EQUAL((uint64_t) data.size(), msg.getContent().size());
     BOOST_CHECK_EQUAL(data, msg.getContent());
     //BOOST_CHECK_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
     BOOST_CHECK_EQUAL(string("xyz"), msg.getPropertyAsString("abc"));

@@ -112,7 +112,7 @@ void QueueFlowLimit::enqueued(const Message& msg)
     sys::Mutex::ScopedLock l(indexLock);
 
     ++count;
-    size += msg.getContentSize();
+    size += msg.getMessageSize();
 
     if (!flowStopped) {
         if (flowStopCount && count > flowStopCount) {
@@ -150,7 +150,7 @@ void QueueFlowLimit::dequeued(const Message& msg)
         throw Exception(QPID_MSG("Flow limit count underflow on dequeue. Queue=" << queueName));
     }
 
-    uint64_t _size = msg.getContentSize();
+    uint64_t _size = msg.getMessageSize();
     if (_size <= size) {
         size -= _size;
     } else {

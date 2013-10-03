@@ -65,12 +65,13 @@ class ThresholdTests (Base):
         rcvBw = self.ssn.receiver("qmf.default.topic/agent.ind.event.org_apache_qpid_broker.queueThresholdExceeded.#")
         snd = self.ssn.sender("ttq; {create:always, node: {x-declare:{auto_delete:True,exclusive:True,arguments:{%s}}}}" % astr)
         rcv = self.ssn.receiver("ttq")
+        overhead = 29 #additional bytes in broker's view of message size from headers etc
         size = 0
         count = 0
         for m in messages:
             snd.send(m)
             count = count + 1
-            size = size + len(m.content)
+            size = size + len(m.content) + overhead
         event = rcvUp.fetch(timeout=1)
         schema = event.content[0]["_schema_id"]
         assert schema["_class_name"] == "queueThresholdCrossedUpward"
@@ -92,7 +93,7 @@ class ThresholdTests (Base):
                 m = rcv.fetch(timeout=1)
                 self.ssn.acknowledge()
                 count -= 1
-                size -= len(m.content)
+                size -= (len(m.content) + overhead)
             event = rcvDn.fetch(timeout=1)
             schema = event.content[0]["_schema_id"]
             assert schema["_class_name"] == "queueThresholdCrossedDownward"
@@ -111,7 +112,7 @@ class ThresholdTests (Base):
         self.do_threshold_test(a, [Message("msg-%s" % i) for i in range(5)], 2)
 
     def test_alert_size(self):
-        a = {'qpid.alert_size_up':25,'qpid.alert_size_down':15}
+        a = {'qpid.alert_size_up':150,'qpid.alert_size_down':120}
         self.do_threshold_test(a, [Message("msg-%s" % i) for i in range(5)], 2)
 
     def test_alert_count_alias(self):
@@ -119,7 +120,7 @@ class ThresholdTests (Base):
         self.do_threshold_test(a, [Message("msg-%s" % i) for i in range(10)], 0, True)
 
     def test_alert_size_alias(self):
-        a = {'x-qpid-maximum-message-size':15}
+        a = {'x-qpid-maximum-message-size':100}
         self.do_threshold_test(a, [Message("msg-%s" % i) for i in range(3)], 0, True)
 
     def test_alert_on_alert_queue(self):

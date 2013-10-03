@@ -52,6 +52,11 @@ uint64_t MessageTransfer::getContentSize() const
     return frames.getContentSize();
 }
 
+uint64_t MessageTransfer::getMessageSize() const
+{
+    return getRequiredCredit();
+}
+
 std::string MessageTransfer::getAnnotationAsString(const std::string& key) const
 {
     const qpid::framing::MessageProperties* mp = getProperties<qpid::framing::MessageProperties>();
