@@ -134,7 +134,7 @@ public class BDBBackupTest extends QpidBrokerTestCase
 
     private void invokeBdbBackup(final File backupFromDir, final File backupToDir) throws Exception
     {
-        if (String.valueOf(System.getProperty("os.name")).toLowerCase().contains("windows"))
+        if (IS_OS_WINDOWS)
         {
             BDBBackup.main(new String[]{"-todir", backupToDir.getAbsolutePath(), "-fromdir", backupFromDir.getAbsolutePath()});
         }
