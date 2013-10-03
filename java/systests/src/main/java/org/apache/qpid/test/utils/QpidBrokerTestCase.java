@@ -158,6 +158,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", DEFAULT_JMXPORT_REGISTRYSERVER);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", DEFAULT_SSL_PORT_VALUE);
+    public static final String OS_NAME = System.getProperty("os.name");
+    public static final boolean IS_OS_WINDOWS = String.valueOf(OS_NAME).toLowerCase().contains("windows");
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
@@ -649,12 +651,19 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         try
         {
-            if(!configLocation.getAbsolutePath().startsWith(workingDirectory.getCanonicalPath()))
+            String configPath = configLocation.getAbsolutePath();
+            String workingDirectoryPath = workingDirectory.getCanonicalPath();
+            if (IS_OS_WINDOWS)
             {
-                throw new RuntimeException("Provided path is not a child of the working directory: " + workingDirectory.getCanonicalPath());
+                configPath = configPath.toLowerCase();
+                workingDirectoryPath = workingDirectoryPath.toLowerCase();
+            }
+            if(!configPath.startsWith(workingDirectoryPath))
+            {
+                throw new RuntimeException("Provided path is not a child of the working directory: " + workingDirectoryPath);
             }
 
-            String substring = configLocation.getAbsolutePath().replace(workingDirectory.getCanonicalPath(), "").substring(1);
+            String substring = configPath.replace(workingDirectoryPath, "").substring(1);
             _logger.debug("Converted relative path: " + substring);
 
             return substring;
