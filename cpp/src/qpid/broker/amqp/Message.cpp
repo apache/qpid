@@ -202,11 +202,7 @@ std::string Message::getAnnotationAsString(const std::string& key) const
 
 }
 
-//getContentSize() is primarily used in stats about the number of
-//bytes enqueued/dequeued etc, not sure whether this is the right name
-//and whether it should indeed only be the content that is thus
-//measured
-uint64_t Message::getContentSize() const { return data.size(); }
+uint64_t Message::getMessageSize() const { return data.size(); }
 //getContent() is used primarily for decoding qmf messages in
 //management and ha, but also by the xml exchange
 std::string Message::getContent() const

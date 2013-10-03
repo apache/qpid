@@ -68,7 +68,7 @@ public:
         virtual std::string getRoutingKey() const = 0;
         virtual bool isPersistent() const = 0;
         virtual uint8_t getPriority() const = 0;
-        virtual uint64_t getContentSize() const = 0;
+        virtual uint64_t getMessageSize() const = 0;
         virtual qpid::amqp::MessageId getMessageId() const = 0;
         virtual qpid::amqp::MessageId getCorrelationId() const = 0;
         virtual std::string getPropertyAsString(const std::string& key) const = 0;
@@ -119,7 +119,7 @@ public:
     QPID_BROKER_EXTERN qpid::types::Variant getProperty(const std::string& key) const;
     void processProperties(qpid::amqp::MapHandler&) const;
 
-    QPID_BROKER_EXTERN uint64_t getContentSize() const;
+    QPID_BROKER_EXTERN uint64_t getMessageSize() const;
 
     QPID_BROKER_EXTERN Encoding& getEncoding();
     QPID_BROKER_EXTERN const Encoding& getEncoding() const;
