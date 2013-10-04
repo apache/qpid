@@ -34,7 +34,7 @@ import java.util.ArrayList;
  * <p>
  * Example usage (paraphrased from QpidConfig):
  * <pre>
- * String[] longOpts = {"help", "durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
+ * String[] longOpts = {"help", "durable", "bindings", "broker-addr=", "file-count=",
  *                      "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
  *                      "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
  *                      "force-if-used", "alternate-exchange=", "passive", "timeout=", "file=", "flow-stop-size=",
