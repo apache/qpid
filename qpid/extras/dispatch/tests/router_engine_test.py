@@ -344,6 +344,7 @@ class PathTest(unittest.TestCase):
         self.id = 'R1'
         self.area = 'area'
         self.next_hops = None
+        self.valid_origins = None
         self.engine = PathEngine(self)
 
     def log(self, level, text):
@@ -351,6 +352,9 @@ class PathTest(unittest.TestCase):
 
     def next_hops_changed(self, nh):
         self.next_hops = nh
+
+    def valid_origins_changed(self, vo):
+        self.valid_origins = vo
 
     def test_topology1(self): 
         """
@@ -368,6 +372,11 @@ class PathTest(unittest.TestCase):
         self.assertEqual(len(self.next_hops), 2)
         self.assertEqual(self.next_hops['R2'], 'R2')
         self.assertEqual(self.next_hops['R3'], 'R2')
+
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.assertEqual(self.valid_origins['R2'], [])
+        self.assertEqual(self.valid_origins['R3'], [])
 
     def test_topology2(self):
         """
@@ -396,6 +405,17 @@ class PathTest(unittest.TestCase):
         self.assertEqual(self.next_hops['R5'], 'R2')
         self.assertEqual(self.next_hops['R6'], 'R2')
 
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.valid_origins['R4'].sort()
+        self.valid_origins['R5'].sort()
+        self.valid_origins['R6'].sort()
+        self.assertEqual(self.valid_origins['R2'], [])
+        self.assertEqual(self.valid_origins['R3'], [])
+        self.assertEqual(self.valid_origins['R4'], [])
+        self.assertEqual(self.valid_origins['R5'], [])
+        self.assertEqual(self.valid_origins['R6'], [])
+
     def test_topology3(self):
         """
 
@@ -404,7 +424,7 @@ class PathTest(unittest.TestCase):
         +----+      +----+      +----+
                        |           |
                     +====+      +----+      +----+
-                   | R1 |------| R5 |------| R6 |
+                    | R1 |------| R5 |------| R6 |
                     +====+      +----+      +----+
 
         """
@@ -422,6 +442,17 @@ class PathTest(unittest.TestCase):
         self.assertEqual(self.next_hops['R4'], 'R3')
         self.assertEqual(self.next_hops['R5'], 'R5')
         self.assertEqual(self.next_hops['R6'], 'R5')
+
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.valid_origins['R4'].sort()
+        self.valid_origins['R5'].sort()
+        self.valid_origins['R6'].sort()
+        self.assertEqual(self.valid_origins['R2'], ['R5', 'R6'])
+        self.assertEqual(self.valid_origins['R3'], ['R5', 'R6'])
+        self.assertEqual(self.valid_origins['R4'], [])
+        self.assertEqual(self.valid_origins['R5'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R6'], ['R2', 'R3'])
 
     def test_topology4(self):
         """
@@ -451,6 +482,19 @@ class PathTest(unittest.TestCase):
         self.assertEqual(self.next_hops['R6'], 'R5')
         self.assertEqual(self.next_hops['R7'], 'R5')
 
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.valid_origins['R4'].sort()
+        self.valid_origins['R5'].sort()
+        self.valid_origins['R6'].sort()
+        self.valid_origins['R7'].sort()
+        self.assertEqual(self.valid_origins['R2'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R3'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R4'], [])
+        self.assertEqual(self.valid_origins['R5'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R6'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R7'], ['R2', 'R3'])
+
     def test_topology5(self):
         """
 
@@ -478,6 +522,19 @@ class PathTest(unittest.TestCase):
         self.assertEqual(self.next_hops['R5'], 'R5')
         self.assertEqual(self.next_hops['R6'], 'R5')
         self.assertEqual(self.next_hops['R7'], 'R5')
+
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.valid_origins['R4'].sort()
+        self.valid_origins['R5'].sort()
+        self.valid_origins['R6'].sort()
+        self.valid_origins['R7'].sort()
+        self.assertEqual(self.valid_origins['R2'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R3'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R4'], [])
+        self.assertEqual(self.valid_origins['R5'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R6'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R7'], ['R2', 'R3'])
 
     def test_topology5_with_asymmetry1(self):
         """
@@ -507,6 +564,19 @@ class PathTest(unittest.TestCase):
         self.assertEqual(self.next_hops['R6'], 'R5')
         self.assertEqual(self.next_hops['R7'], 'R5')
 
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.valid_origins['R4'].sort()
+        self.valid_origins['R5'].sort()
+        self.valid_origins['R6'].sort()
+        self.valid_origins['R7'].sort()
+        self.assertEqual(self.valid_origins['R2'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R3'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R4'], [])
+        self.assertEqual(self.valid_origins['R5'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R6'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R7'], ['R2', 'R3'])
+
     def test_topology5_with_asymmetry2(self):
         """
 
@@ -535,6 +605,19 @@ class PathTest(unittest.TestCase):
         self.assertEqual(self.next_hops['R6'], 'R5')
         self.assertEqual(self.next_hops['R7'], 'R5')
 
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.valid_origins['R4'].sort()
+        self.valid_origins['R5'].sort()
+        self.valid_origins['R6'].sort()
+        self.valid_origins['R7'].sort()
+        self.assertEqual(self.valid_origins['R2'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R3'], ['R5', 'R6', 'R7'])
+        self.assertEqual(self.valid_origins['R4'], [])
+        self.assertEqual(self.valid_origins['R5'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R6'], ['R2', 'R3'])
+        self.assertEqual(self.valid_origins['R7'], ['R2', 'R3'])
+
     def test_topology5_with_asymmetry3(self):
         """
 
@@ -560,6 +643,15 @@ class PathTest(unittest.TestCase):
         self.assertEqual(self.next_hops['R3'], 'R3')
         self.assertEqual(self.next_hops['R4'], 'R3')
         self.assertEqual(self.next_hops['R5'], 'R5')
+
+        self.valid_origins['R2'].sort()
+        self.valid_origins['R3'].sort()
+        self.valid_origins['R4'].sort()
+        self.valid_origins['R5'].sort()
+        self.assertEqual(self.valid_origins['R2'], ['R5'])
+        self.assertEqual(self.valid_origins['R3'], ['R5'])
+        self.assertEqual(self.valid_origins['R4'], [])
+        self.assertEqual(self.valid_origins['R5'], ['R2', 'R3'])
 
 
 if __name__ == '__main__':

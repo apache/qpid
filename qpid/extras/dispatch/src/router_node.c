@@ -502,12 +502,34 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                         if (origin >= 0) {
                             dx_router_ref_t  *dest_node_ref = DEQ_HEAD(addr->rnodes);
                             dx_router_link_t *dest_link;
+                            dx_bitmask_t     *link_set = dx_bitmask(0);
+
+                            //
+                            // Loop over the target nodes for this address.  Build a set of outgoing links
+                            // for which there are valid targets.  We do this to avoid sending more than one
+                            // message down a given link.  It's possible that there are multiple destinations
+                            // for this address that are all reachable over the same link.  In this case, we
+                            // will send only one copy of the message over the link and allow a downstream
+                            // router to fan the message out.
+                            //
                             while (dest_node_ref) {
                                 if (dest_node_ref->router->next_hop)
                                     dest_link = dest_node_ref->router->next_hop->peer_link;
                                 else
                                     dest_link = dest_node_ref->router->peer_link;
-                                if (dest_link && dx_bitmask_value(dest_node_ref->router->valid_origins, origin)) {
+                                if (dest_link && dx_bitmask_value(dest_node_ref->router->valid_origins, origin))
+                                    dx_bitmask_set_bit(link_set, dest_link->mask_bit);
+                                dest_node_ref = DEQ_NEXT(dest_node_ref);
+                            }
+
+                            //
+                            // Send a copy of the message outbound on each identified link.
+                            //
+                            int link_bit;
+                            while (dx_bitmask_first_set(link_set, &link_bit)) {
+                                dx_bitmask_clear_bit(link_set, link_bit);
+                                dest_link = router->out_links_by_mask_bit[link_bit];
+                                if (link) {
                                     dx_routed_event_t *re = new_dx_routed_event_t();
                                     DEQ_ITEM_INIT(re);
                                     re->delivery    = 0;
@@ -522,8 +544,9 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                                 
                                     dx_link_activate(dest_link->link);
                                 }
-                                dest_node_ref = DEQ_NEXT(dest_node_ref);
                             }
+
+                            dx_bitmask_free(link_set);
                         }
                     }
                 }

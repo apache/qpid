@@ -246,6 +246,61 @@ static PyObject* dx_set_next_hop(PyObject *self, PyObject *args)
 }
 
 
+static PyObject* dx_set_valid_origins(PyObject *self, PyObject *args)
+{
+    RouterAdapter *adapter = (RouterAdapter*) self;
+    dx_router_t   *router  = adapter->router;
+    int            router_maskbit;
+    PyObject      *origin_list;
+    Py_ssize_t     idx;
+
+    if (!PyArg_ParseTuple(args, "iO", &router_maskbit, &origin_list))
+        return 0;
+
+    if (router_maskbit >= dx_bitmask_width() || router_maskbit < 0) {
+        PyErr_SetString(PyExc_Exception, "Router bit mask out of range");
+        return 0;
+    }
+
+    if (router->routers_by_mask_bit[router_maskbit] == 0) {
+        PyErr_SetString(PyExc_Exception, "Router Not Found");
+        return 0;
+    }
+
+    if (!PyList_Check(origin_list)) {
+        PyErr_SetString(PyExc_Exception, "Expected List as argument 2");
+        return 0;
+    }
+
+    Py_ssize_t        origin_count = PyTuple_Size(origin_list);
+    dx_router_node_t *rnode        = router->routers_by_mask_bit[router_maskbit];
+    int               maskbit;
+
+    for (idx = 0; idx < origin_count; idx++) {
+        maskbit = PyInt_AS_LONG(PyTuple_GetItem(origin_list, idx));
+
+        if (maskbit >= dx_bitmask_width() || maskbit < 0) {
+            PyErr_SetString(PyExc_Exception, "Origin bit mask out of range");
+            return 0;
+        }
+        
+        if (router->routers_by_mask_bit[maskbit] == 0) {
+            PyErr_SetString(PyExc_Exception, "Origin router Not Found");
+            return 0;
+        }
+    }
+
+    dx_bitmask_clear_all(rnode->valid_origins);
+    for (idx = 0; idx < origin_count; idx++) {
+        maskbit = PyInt_AS_LONG(PyTuple_GetItem(origin_list, idx));
+        dx_bitmask_set_bit(rnode->valid_origins, maskbit);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
 static PyObject* dx_add_neighbor_router(PyObject *self, PyObject *args)
 {
     RouterAdapter *adapter = (RouterAdapter*) self;
@@ -326,6 +381,7 @@ static PyMethodDef RouterAdapter_methods[] = {
     {"add_remote_router",   dx_add_remote_router,   METH_VARARGS, "A new remote/reachable router has been discovered"},
     {"del_remote_router",   dx_del_remote_router,   METH_VARARGS, "We've lost reachability to a remote router"},
     {"set_next_hop",        dx_set_next_hop,        METH_VARARGS, "Set the next hop for a remote router"},
+    {"set_valid_origins",   dx_set_valid_origins,   METH_VARARGS, "Set the valid origins for a remote router"},
     {"add_neighbor_router", dx_add_neighbor_router, METH_VARARGS, "A new neighbor router has been discovered"},
     {"del_neighbor_router", dx_del_neighbor_router, METH_VARARGS, "We've lost reachability to a neighbor router"},
     {"map_destination",     dx_map_destination,     METH_VARARGS, "Add a newly discovered destination mapping"},
