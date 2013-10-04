@@ -115,6 +115,10 @@ static char* test_view_address_hash(void *context)
     {"amqp:/_topo/my-area/all/local/sub",       "Llocal/sub"},
     {"amqp:/_topo/all/all/local/sub",           "Llocal/sub"},
     {"amqp://host:port/_local/my-addr",         "Lmy-addr"},
+    {"_topo/area/router/my-addr",               "Aarea"},
+    {"_topo/my-area/router/my-addr",            "Rrouter"},
+    {"_topo/my-area/my-router/my-addr",         "Lmy-addr"},
+    {"_topo/my-area/router",                    "Rrouter"},
     {0, 0}
     };
     int idx;
