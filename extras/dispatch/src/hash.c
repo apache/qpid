@@ -270,7 +270,6 @@ dx_error_t hash_remove_by_handle(hash_t *h, hash_handle_t *handle)
     DEQ_REMOVE(handle->bucket->items, handle->item);
     free_hash_item_t(handle->item);
     h->size--;
-    free_hash_handle_t(handle);
     return DX_ERROR_NONE;
 }
 

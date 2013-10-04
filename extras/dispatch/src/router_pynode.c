@@ -272,12 +272,12 @@ static PyObject* dx_set_valid_origins(PyObject *self, PyObject *args)
         return 0;
     }
 
-    Py_ssize_t        origin_count = PyTuple_Size(origin_list);
+    Py_ssize_t        origin_count = PyList_Size(origin_list);
     dx_router_node_t *rnode        = router->routers_by_mask_bit[router_maskbit];
     int               maskbit;
 
     for (idx = 0; idx < origin_count; idx++) {
-        maskbit = PyInt_AS_LONG(PyTuple_GetItem(origin_list, idx));
+        maskbit = PyInt_AS_LONG(PyList_GetItem(origin_list, idx));
 
         if (maskbit >= dx_bitmask_width() || maskbit < 0) {
             PyErr_SetString(PyExc_Exception, "Origin bit mask out of range");
@@ -292,7 +292,7 @@ static PyObject* dx_set_valid_origins(PyObject *self, PyObject *args)
 
     dx_bitmask_clear_all(rnode->valid_origins);
     for (idx = 0; idx < origin_count; idx++) {
-        maskbit = PyInt_AS_LONG(PyTuple_GetItem(origin_list, idx));
+        maskbit = PyInt_AS_LONG(PyList_GetItem(origin_list, idx));
         dx_bitmask_set_bit(rnode->valid_origins, maskbit);
     }
 
@@ -534,6 +534,7 @@ void dx_pyrouter_tick(dx_router_t *router)
     PyObject *pValue;
 
     if (router->pyTick) {
+        dx_python_lock();
         pArgs  = PyTuple_New(0);
         pValue = PyObject_CallObject(router->pyTick, pArgs);
         if (PyErr_Occurred()) {
@@ -543,6 +544,7 @@ void dx_pyrouter_tick(dx_router_t *router)
         if (pValue) {
             Py_DECREF(pValue);
         }
+        dx_python_unlock();
     }
 }
 
