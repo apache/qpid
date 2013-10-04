@@ -1747,10 +1747,6 @@ qmfui.AddQueue = new function() {
             } else if (!parseIntegerProperty("#file-count", "qpid.file_count")) {
                 return;
             }
-
-            if ($("#queue-cluster-durable")[0].checked) {
-                _properties["qpid.persist_last_node"] = 1;
-            }
         } else {
             _properties["durable"] = false;
         }
@@ -1831,7 +1827,6 @@ qmfui.AddQueue = new function() {
 
         if (durable) {
             setTimeout(function() {
-                $("#queue-cluster-durable").parent().appendTo(durableList);
                 iTablet.renderList(durableList);
                 setTimeout(function() {
                     $("#file-size").parent().appendTo(durableList);
@@ -1846,17 +1841,11 @@ qmfui.AddQueue = new function() {
 
             $("#add-queue-additional-journal-note").show();
         } else {
-            if ($("#queue-cluster-durable").is(":checked")) {
-                // Have to use a timeout to call click() within an event handler.
-                setTimeout(function() {$("#queue-cluster-durable").click();}, 0);
-            }
-
             setTimeout(function() {
                 $("#file-count").parent().appendTo(hiddenList);
                 setTimeout(function() {
                     $("#file-size").parent().appendTo(hiddenList);
                     setTimeout(function() {
-                        $("#queue-cluster-durable").parent().appendTo(hiddenList);
                         iTablet.renderList(durableList);
                         $("#add-queue-additional").trigger("refresh"); // Refresh touch scroller.
                     }, 30);
