@@ -56,12 +56,6 @@ class QPID_CLIENT_CLASS_EXTERN QueueOptions: public framing::FieldTable
     QPID_CLIENT_EXTERN void setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t maxCount );
 
     /**
-     * Enables the persisting of a queue to the store module when a cluster fails down to it's last
-     * node. Does so optimistically. Will start persisting when cluster count >1 again.
-     */
-    QPID_CLIENT_EXTERN void setPersistLastNode();
-
-    /**
      * Sets the odering policy on the Queue, default ordering is FIFO.
      */
     QPID_CLIENT_EXTERN void setOrdering(QueueOrderingPolicy op);
@@ -70,11 +64,6 @@ class QPID_CLIENT_CLASS_EXTERN QueueOptions: public framing::FieldTable
      * Use broker defualt sizing ploicy
      */
     QPID_CLIENT_EXTERN void clearSizePolicy();
-
-    /**
-     * Clear Persist Last Node Policy
-     */
-    QPID_CLIENT_EXTERN void clearPersistLastNode();
 
     /**
      * get the key used match LVQ in args for message transfer
@@ -116,7 +105,6 @@ class QPID_CLIENT_CLASS_EXTERN QueueOptions: public framing::FieldTable
     static QPID_CLIENT_EXTERN const std::string strRING;
     static QPID_CLIENT_EXTERN const std::string strRING_STRICT;
     static QPID_CLIENT_EXTERN const std::string strLastValueQueue;
-    static QPID_CLIENT_EXTERN const std::string strPersistLastNode;
     static QPID_CLIENT_EXTERN const std::string strLVQMatchProperty;
     static QPID_CLIENT_EXTERN const std::string strLastValueQueueNoBrowse;
     static QPID_CLIENT_EXTERN const std::string strQueueEventMode;

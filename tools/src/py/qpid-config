@@ -86,7 +86,6 @@ class Config:
         self._altern_ex         = None
         self._durable           = False
         self._replicate       = None
-        self._clusterDurable    = False
         self._if_empty          = True
         self._if_unused         = True
         self._fileCount         = None
@@ -117,7 +116,6 @@ FILESIZE  = "qpid.file_size"
 MAX_QUEUE_SIZE  = "qpid.max_size"
 MAX_QUEUE_COUNT  = "qpid.max_count"
 POLICY_TYPE  = "qpid.policy_type"
-CLUSTER_DURABLE = "qpid.persist_last_node"
 LVQ_KEY = "qpid.last_value_queue_key"
 MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
@@ -136,7 +134,7 @@ REPLICATE = "qpid.replicate"
 #i.e. the arguments for which there is special processing on add and
 #list
 SPECIAL_ARGS=[
-    FILECOUNT,FILESIZE,MAX_QUEUE_SIZE,MAX_QUEUE_COUNT,POLICY_TYPE,CLUSTER_DURABLE,
+    FILECOUNT,FILESIZE,MAX_QUEUE_SIZE,MAX_QUEUE_COUNT,POLICY_TYPE,
     LVQ_KEY,MSG_SEQUENCE,IVE,QUEUE_EVENT_GENERATION,
     FLOW_STOP_COUNT,FLOW_RESUME_COUNT,FLOW_STOP_SIZE,FLOW_RESUME_SIZE,
     MSG_GROUP_HDR_KEY,SHARED_MSG_GROUP,REPLICATE]
@@ -191,7 +189,6 @@ def OptionsAndArguments(argv):
     parser.add_option_group(group2)
 
     group3 = OptionGroup(parser, "Options for Adding Queues")
-    group3.add_option("--cluster-durable", action="store_true", help="The new queue becomes durable if there is only one functioning cluster node")
     group3.add_option("--file-count", action="store", type="int", metavar="<n>", help="Number of files in queue's persistence journal")
     group3.add_option("--file-size", action="store", type="int", metavar="<n>", help="File size in pages (64KiB/page)")
     group3.add_option("--max-queue-size", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as bytes")
@@ -262,8 +259,6 @@ def OptionsAndArguments(argv):
             raise Exception("Invalid replication level '%s', should be one of: %s" % (opts.replicate, ", ".join(REPLICATE_LEVELS)))
         config._replicate = opts.replicate
     if opts.ha_admin: config._ha_admin = True
-    if opts.cluster_durable:
-        config._clusterDurable = True
     if opts.file:
         config._file = opts.file
     if opts.file_count is not None:
@@ -494,7 +489,6 @@ class BrokerManager:
                 if not args: args = {}
                 if q.durable:    print "--durable",
                 if REPLICATE in args: print "--replicate=%s" % args[REPLICATE],
-                if CLUSTER_DURABLE in args and args[CLUSTER_DURABLE] == 1: print "--cluster-durable",
                 if q.autoDelete: print "auto-del",
                 if q.exclusive:  print "excl",
                 if FILESIZE in args: print "--file-size=%s" % args[FILESIZE],
@@ -598,8 +592,6 @@ class BrokerManager:
             elif config._limitPolicy == "ring":
                 declArgs[POLICY_TYPE] = "ring"
 
-        if config._clusterDurable:
-            declArgs[CLUSTER_DURABLE] = 1
         if config._lvq_key:
             declArgs[LVQ_KEY] = config._lvq_key
         if config._eventGeneration:

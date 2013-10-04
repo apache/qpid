@@ -70,7 +70,6 @@ Options:
 
 Add Queue Options:
     --durable            Queue is durable
-    --cluster-durable    Queue becomes durable if there is only one functioning cluster node
     --file-count N (8)   Number of files in queue's persistence journal
     --file-size  N (24)  File size in pages (64Kib/page)
     --max-queue-size N   Maximum in-memory queue size as bytes
