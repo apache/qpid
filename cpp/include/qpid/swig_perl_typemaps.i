@@ -192,8 +192,10 @@
 }
 
 %typemap (out) uint8_t, uint16_t, uint32_t, uint64_t {
-    sv_setuv($result, (UV)$1);
-    argvi++;
+  SV* tmp = sv_newmortal();
+  sv_setuv(tmp, (UV)$1);
+  $result = tmp;
+  argvi++;
 }
 
 %typemap (in) int8_t, int16_t, int32_t, int64_t {
@@ -206,8 +208,10 @@
 }
 
 %typemap (out) int8_t, int16_t, int32_t, int64_t {
-    sv_setiv($result, (IV)$1);
-    argvi++;
+  SV* tmp = sv_newmortal();
+  sv_setiv(tmp, (IV)$1);
+  $result = tmp;
+  argvi++;
 }
 
 %typemap(in) bool {
