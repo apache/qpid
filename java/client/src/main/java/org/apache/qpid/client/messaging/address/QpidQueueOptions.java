@@ -27,7 +27,6 @@ public class QpidQueueOptions extends HashMap<String,Object>
 	public static final String QPID_MAX_COUNT = "qpid.max_count";
     public static final String QPID_MAX_SIZE = "qpid.max_size";
     public static final String QPID_POLICY_TYPE = "qpid.policy_type";    
-    public static final String QPID_PERSIST_LAST_NODE = "qpid.persist_last_node";
     public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
     public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
     public static final String QPID_LAST_VALUE_QUEUE_NO_BROWSE = "qpid.last_value_queue_no_browse";
@@ -60,11 +59,7 @@ public class QpidQueueOptions extends HashMap<String,Object>
         this.put(QPID_MAX_SIZE, i);
     }
     
-    public void setPersistLastNode()
-    {
-        this.put(QPID_PERSIST_LAST_NODE, 1);
-    }
-    
+
     public void setOrderingPolicy(String s)
     {
         if (QpidQueueOptions.QPID_LAST_VALUE_QUEUE.equals(s))
