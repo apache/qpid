@@ -55,7 +55,7 @@ class RouterEngine:
         self.domain         = "domain"
         self.router_adapter = router_adapter
         self.log_adapter    = LogAdapter("dispatch.router")
-        self.io_adapter     = IoAdapter(self, "qdxrouter")
+        self.io_adapter     = IoAdapter(self, ("qdxrouter", "qdxhello"))
         self.max_routers    = max_routers
         self.id             = router_id
         self.area           = area
@@ -71,14 +71,14 @@ class RouterEngine:
         ##
         ## Launch the sub-module engines
         ##
+        self.node_tracker          = NodeTracker(self, self.max_routers)
         self.neighbor_engine       = NeighborEngine(self)
         self.link_state_engine     = LinkStateEngine(self)
         self.path_engine           = PathEngine(self)
         self.mobile_address_engine = MobileAddressEngine(self)
-        self.routing_table_engine  = RoutingTableEngine(self)
+        self.routing_table_engine  = RoutingTableEngine(self, self.node_tracker)
         self.binding_engine        = BindingEngine(self)
         self.adapter_engine        = AdapterEngine(self)
-        self.node_tracker          = NodeTracker(self, self.max_routers)
 
 
 
@@ -278,7 +278,20 @@ class RouterEngine:
         self.log(LOG_DEBUG, "Event: lost_node: id=%s" % rid)
         self.node_tracker.lost_node(rid)
 
-    def node_updated(self, address, reachable, neighbor, link_bit, router_bit):
-        self.log(LOG_DEBUG, "Event: node_updated: address=%s, reachable=%r, neighbor=%r, link_bit=%d, router_bit=%d" % \
-                     (address, reachable, neighbor, link_bit, router_bit))
-        self.router_adapter.node_updated(address, reachable, neighbor, link_bit, router_bit)
+    def add_neighbor_router(self, address, router_bit, link_bit):
+        self.log(LOG_DEBUG, "Event: add_neighbor_router: address=%s, router_bit=%d, link_bit=%d" % \
+                     (address, router_bit, link_bit))
+        self.router_adapter.add_neighbor_router(address, router_bit, link_bit)
+
+    def del_neighbor_router(self, router_bit):
+        self.log(LOG_DEBUG, "Event: del_neighbor_router: router_bit=%d" % router_bit)
+        self.router_adapter.del_neighbor_router(router_bit)
+
+    def add_remote_router(self, address, router_bit):
+        self.log(LOG_DEBUG, "Event: add_remote_router: address=%s, router_bit=%d" % (address, router_bit))
+        self.router_adapter.add_remote_router(address, router_bit)
+
+    def del_remote_router(self, router_bit):
+        self.log(LOG_DEBUG, "Event: del_remote_router: router_bit=%d" % router_bit)
+        self.router_adapter.del_remote_router(router_bit)
+

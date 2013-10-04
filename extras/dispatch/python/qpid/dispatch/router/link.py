@@ -101,7 +101,7 @@ class LinkStateEngine(object):
         if self.id not in self.collection:
             return
         my_ls = self.collection[self.id]
-        self.container.send('_topo/%s/%s' % (msg.area, msg.id), MessageLSU(None, self.id, self.area, my_ls.ls_seq, my_ls))
+        self.container.send('amqp:/_topo/%s/%s/qdxrouter' % (msg.area, msg.id), MessageLSU(None, self.id, self.area, my_ls.ls_seq, my_ls))
 
 
     def new_local_link_state(self, link_state):
@@ -132,7 +132,7 @@ class LinkStateEngine(object):
 
     def _send_lsrs(self):
         for (_area, _id) in self.needed_lsrs.keys():
-            self.container.send('_topo/%s/%s' % (_area, _id), MessageLSR(None, self.id, self.area))
+            self.container.send('amqp:/_topo/%s/%s/qdxrouter' % (_area, _id), MessageLSR(None, self.id, self.area))
         self.needed_lsrs = {}
 
 
@@ -140,4 +140,4 @@ class LinkStateEngine(object):
         ls_seq = 0
         if self.id in self.collection:
             ls_seq = self.collection[self.id].ls_seq
-        self.container.send('_topo/%s/all' % self.area, MessageRA(None, self.id, self.area, ls_seq, self.mobile_seq))
+        self.container.send('amqp:/_topo/%s/all/qdxrouter' % self.area, MessageRA(None, self.id, self.area, ls_seq, self.mobile_seq))

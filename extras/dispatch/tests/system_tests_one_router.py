@@ -310,7 +310,7 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
       self.assertFalse('qdx.trace' in da)
 
     ##
@@ -346,7 +346,7 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
       self.assertFalse('qdx.trace' in da)
 
     ##
@@ -364,8 +364,8 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
-      self.assertEqual(da['qdx.trace'], ['Qpid.Dispatch.Router.A'])
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
+      self.assertEqual(da['qdx.trace'], ['_topo/area/Qpid.Dispatch.Router.A/'])
 
     ##
     ## Non-empty trace
@@ -382,8 +382,8 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
-      self.assertEqual(da['qdx.trace'], ['first.hop', 'Qpid.Dispatch.Router.A'])
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
+      self.assertEqual(da['qdx.trace'], ['first.hop', '_topo/area/Qpid.Dispatch.Router.A/'])
 
     M1.stop()
     M2.stop()
