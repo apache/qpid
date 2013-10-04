@@ -71,4 +71,11 @@ void dx_py_to_composed(PyObject *value, dx_composed_field_t *field);
  */
 PyObject *dx_field_to_py(dx_parsed_field_t *field);
 
+/**
+ * These are temporary and will eventually be replaced by having an internal python
+ * work queue that feeds a dedicated embedded-python thread.
+ */
+void dx_python_lock();
+void dx_python_unlock();
+
 #endif

@@ -452,6 +452,7 @@ static void dx_io_rx_handler(void *context, dx_message_t *msg, int link_id)
         return;
     }
 
+    sys_mutex_lock(lock);
     PyObject *pAP   = dx_field_to_py(ap_map);
     PyObject *pBody = dx_field_to_py(body_map);
 
@@ -465,6 +466,7 @@ static void dx_io_rx_handler(void *context, dx_message_t *msg, int link_id)
     if (pValue) {
         Py_DECREF(pValue);
     }
+    sys_mutex_unlock(lock);
 }
 
 
@@ -658,3 +660,14 @@ static void dx_python_setup()
         dispatch_module = m;
     }
 }
+
+void dx_python_lock()
+{
+    sys_mutex_lock(lock);
+}
+
+void dx_python_unlock()
+{
+    sys_mutex_unlock(lock);
+}
+
