@@ -1196,6 +1196,7 @@ install (DIRECTORY ../include/qpid
 install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
 set (qpidmessaging_SOURCES
+     ${amqpc_SOURCES}
      qpid/messaging/AddressImpl.h
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/ReceiverImpl.h
@@ -1243,7 +1244,7 @@ set (qpidmessaging_SOURCES
 add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
-target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon)
+target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon ${PROTON_LIBRARIES})
 set_target_properties (qpidmessaging PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}"
