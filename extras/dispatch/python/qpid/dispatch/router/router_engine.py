@@ -176,6 +176,7 @@ class RouterEngine:
         This is the IoAdapter message-receive handler
         """
         try:
+            #self.log(LOG_DEBUG, "Raw Receive: mp=%r body=%r link_id=%r" % (message_properties, body, link_id))
             self.handleControlMessage(message_properties['opcode'], body, link_id)
         except Exception, e:
             self.log(LOG_ERROR, "Exception in raw message processing: properties=%r body=%r exception=%r" %
