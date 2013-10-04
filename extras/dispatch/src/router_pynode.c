@@ -34,18 +34,268 @@ typedef struct {
 } RouterAdapter;
 
 
-static PyObject* dx_router_node_updated(PyObject *self, PyObject *args)
+static char *dx_add_router(dx_router_t *router, const char *address, int router_maskbit, int link_maskbit)
+{
+    if (router_maskbit >= dx_bitmask_width() || router_maskbit < 0)
+        return "Router bit mask out of range";
+
+    if (link_maskbit >= dx_bitmask_width() || link_maskbit < -1)
+        return "Link bit mask out of range";
+
+    sys_mutex_lock(router->lock);
+    if (router->routers_by_mask_bit[router_maskbit] != 0) {
+        sys_mutex_unlock(router->lock);
+        return "Adding router over already existing router";
+    }
+
+    if (link_maskbit >= 0 && router->out_links_by_mask_bit[link_maskbit] == 0) {
+        sys_mutex_unlock(router->lock);
+        return "Adding neighbor router with invalid link reference";
+    }
+
+    //
+    // Hash lookup the address to ensure there isn't an existing router address.
+    //
+    dx_field_iterator_t *iter = dx_field_iterator_string(address, ITER_VIEW_ADDRESS_HASH);
+    dx_address_t        *addr;
+
+    hash_retrieve(router->addr_hash, iter, (void**) &addr);
+    assert(addr == 0);
+
+    //
+    // Create an address record for this router and insert it in the hash table.
+    // This record will be found whenever a "foreign" topological address to this
+    // remote router is looked up.
+    //
+    addr = new_dx_address_t();
+    DEQ_ITEM_INIT(addr);
+    addr->handler         = 0;
+    addr->handler_context = 0;
+    DEQ_INIT(addr->rlinks);
+    DEQ_INIT(addr->rnodes);
+    hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
+    DEQ_INSERT_TAIL(router->addrs, addr);
+
+    //
+    // Create a router-node record to represent the remote router.
+    //
+    dx_router_node_t *rnode = new_dx_router_node_t();
+    DEQ_ITEM_INIT(rnode);
+    rnode->owning_addr   = addr;
+    rnode->mask_bit      = router_maskbit;
+    rnode->next_hop      = 0;
+    rnode->peer_link     = 0;
+    rnode->ref_count     = 0;
+    rnode->valid_origins = dx_bitmask(0);
+
+    DEQ_INSERT_TAIL(router->routers, rnode);
+
+    //
+    // Link the router record to the address record.
+    //
+    dx_router_add_node_ref_LH(&addr->rnodes, rnode);
+
+    //
+    // Link the router record to the router address record.
+    //
+    dx_router_add_node_ref_LH(&router->router_addr->rnodes, rnode);
+
+    //
+    // Add the router record to the mask-bit index.
+    //
+    router->routers_by_mask_bit[router_maskbit] = rnode;
+
+    //
+    // If this is a neighbor router, add the peer_link reference to the
+    // router record.
+    //
+    if (link_maskbit >= 0)
+        rnode->peer_link = router->out_links_by_mask_bit[link_maskbit];
+
+    sys_mutex_unlock(router->lock);
+    return 0;
+}
+
+
+static char *dx_del_router(dx_router_t *router, int router_maskbit)
+{
+    if (router_maskbit >= dx_bitmask_width() || router_maskbit < 0)
+        return "Router bit mask out of range";
+
+    sys_mutex_lock(router->lock);
+    if (router->routers_by_mask_bit[router_maskbit] == 0) {
+        sys_mutex_unlock(router->lock);
+        return "Deleting nonexistent router";
+    }
+
+    dx_router_node_t *rnode = router->routers_by_mask_bit[router_maskbit];
+    dx_address_t     *oaddr = rnode->owning_addr;
+    assert(oaddr);
+
+    //
+    // Unlink the router node from the address record
+    //
+    dx_router_del_node_ref_LH(&oaddr->rnodes, rnode);
+
+    //
+    // While the router node has a non-zero reference count, look for addresses
+    // to unlink the node from.
+    //
+    dx_address_t *addr = DEQ_HEAD(router->addrs);
+    while (addr && rnode->ref_count > 0) {
+        dx_router_del_node_ref_LH(&addr->rnodes, rnode);
+        addr = DEQ_NEXT(addr);
+    }
+    assert(rnode->ref_count == 0);
+
+    //
+    // Free the router node and the owning address records.
+    //
+    dx_bitmask_free(rnode->valid_origins);
+    free_dx_router_node_t(rnode);
+
+    hash_remove_by_handle(router->addr_hash, oaddr->hash_handle);
+    DEQ_REMOVE(router->addrs, oaddr);
+    hash_handle_free(oaddr->hash_handle);
+    router->routers_by_mask_bit[router_maskbit] = 0;
+    free_dx_address_t(oaddr);
+
+    sys_mutex_unlock(router->lock);
+    return 0;
+}
+
+
+static PyObject* dx_add_remote_router(PyObject *self, PyObject *args)
+{
+    RouterAdapter *adapter = (RouterAdapter*) self;
+    dx_router_t   *router  = adapter->router;
+    const char    *address;
+    int            router_maskbit;
+
+    if (!PyArg_ParseTuple(args, "si", &address, &router_maskbit))
+        return 0;
+
+    char *error = dx_add_router(router, address, router_maskbit, -1);
+    if (error) {
+        PyErr_SetString(PyExc_Exception, error);
+        return 0;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyObject* dx_del_remote_router(PyObject *self, PyObject *args)
+{
+    RouterAdapter *adapter = (RouterAdapter*) self;
+    dx_router_t   *router  = adapter->router;
+    int router_maskbit;
+
+    if (!PyArg_ParseTuple(args, "i", &router_maskbit))
+        return 0;
+
+    char *error = dx_del_router(router, router_maskbit);
+    if (error) {
+        PyErr_SetString(PyExc_Exception, error);
+        return 0;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyObject* dx_set_next_hop(PyObject *self, PyObject *args)
+{
+    RouterAdapter *adapter = (RouterAdapter*) self;
+    dx_router_t   *router  = adapter->router;
+    int            router_maskbit;
+    int            next_hop_maskbit;
+
+    if (!PyArg_ParseTuple(args, "ii", &router_maskbit, &next_hop_maskbit))
+        return 0;
+
+    if (router_maskbit >= dx_bitmask_width() || router_maskbit < 0) {
+        PyErr_SetString(PyExc_Exception, "Router bit mask out of range");
+        return 0;
+    }
+
+    if (next_hop_maskbit >= dx_bitmask_width() || next_hop_maskbit < 0) {
+        PyErr_SetString(PyExc_Exception, "Next Hop bit mask out of range");
+        return 0;
+    }
+
+    if (router->routers_by_mask_bit[router_maskbit] == 0) {
+        PyErr_SetString(PyExc_Exception, "Router Not Found");
+        return 0;
+    }
+
+    if (router->routers_by_mask_bit[next_hop_maskbit] == 0) {
+        PyErr_SetString(PyExc_Exception, "Next Hop Not Found");
+        return 0;
+    }
+
+    if (router_maskbit != next_hop_maskbit) {
+        dx_router_node_t *rnode = router->routers_by_mask_bit[router_maskbit];
+        rnode->next_hop = router->routers_by_mask_bit[next_hop_maskbit];
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyObject* dx_add_neighbor_router(PyObject *self, PyObject *args)
+{
+    RouterAdapter *adapter = (RouterAdapter*) self;
+    dx_router_t   *router  = adapter->router;
+    const char    *address;
+    int            router_maskbit;
+    int            link_maskbit;
+
+    if (!PyArg_ParseTuple(args, "sii", &address, &router_maskbit, &link_maskbit))
+        return 0;
+
+    char *error = dx_add_router(router, address, router_maskbit, link_maskbit);
+    if (error) {
+        PyErr_SetString(PyExc_Exception, error);
+        return 0;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyObject* dx_del_neighbor_router(PyObject *self, PyObject *args)
+{
+    RouterAdapter *adapter = (RouterAdapter*) self;
+    dx_router_t   *router  = adapter->router;
+    int router_maskbit;
+
+    if (!PyArg_ParseTuple(args, "i", &router_maskbit))
+        return 0;
+
+    char *error = dx_del_router(router, router_maskbit);
+    if (error) {
+        PyErr_SetString(PyExc_Exception, error);
+        return 0;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyObject* dx_map_destination(PyObject *self, PyObject *args)
 {
     //RouterAdapter *adapter = (RouterAdapter*) self;
     //dx_router_t   *router  = adapter->router;
-    const char    *address;
-    int            is_reachable;
-    int            is_neighbor;
-    int            link_maskbit;
-    int            router_maskbit;
+    const char *addr;
+    int         router_maskbit;
 
-    if (!PyArg_ParseTuple(args, "siiii", &address, &is_reachable, &is_neighbor,
-                          &link_maskbit, &router_maskbit))
+    if (!PyArg_ParseTuple(args, "si", &addr, &router_maskbit))
         return 0;
 
     // TODO
@@ -55,29 +305,14 @@ static PyObject* dx_router_node_updated(PyObject *self, PyObject *args)
 }
 
 
-static PyObject* dx_router_add_route(PyObject *self, PyObject *args)
+static PyObject* dx_unmap_destination(PyObject *self, PyObject *args)
 {
     //RouterAdapter *adapter = (RouterAdapter*) self;
-    const char    *addr;
-    const char    *peer;
+    //dx_router_t   *router  = adapter->router;
+    const char *addr;
+    int         router_maskbit;
 
-    if (!PyArg_ParseTuple(args, "ss", &addr, &peer))
-        return 0;
-
-    // TODO
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-static PyObject* dx_router_del_route(PyObject *self, PyObject *args)
-{
-    //RouterAdapter *adapter = (RouterAdapter*) self;
-    const char    *addr;
-    const char    *peer;
-
-    if (!PyArg_ParseTuple(args, "ss", &addr, &peer))
+    if (!PyArg_ParseTuple(args, "si", &addr, &router_maskbit))
         return 0;
 
     // TODO
@@ -88,9 +323,13 @@ static PyObject* dx_router_del_route(PyObject *self, PyObject *args)
 
 
 static PyMethodDef RouterAdapter_methods[] = {
-    {"node_updated", dx_router_node_updated, METH_VARARGS, "Update the status of a remote router node"},
-    {"add_route",    dx_router_add_route,    METH_VARARGS, "Add a newly discovered route"},
-    {"del_route",    dx_router_del_route,    METH_VARARGS, "Delete a route"},
+    {"add_remote_router",   dx_add_remote_router,   METH_VARARGS, "A new remote/reachable router has been discovered"},
+    {"del_remote_router",   dx_del_remote_router,   METH_VARARGS, "We've lost reachability to a remote router"},
+    {"set_next_hop",        dx_set_next_hop,        METH_VARARGS, "Set the next hop for a remote router"},
+    {"add_neighbor_router", dx_add_neighbor_router, METH_VARARGS, "A new neighbor router has been discovered"},
+    {"del_neighbor_router", dx_del_neighbor_router, METH_VARARGS, "We've lost reachability to a neighbor router"},
+    {"map_destination",     dx_map_destination,     METH_VARARGS, "Add a newly discovered destination mapping"},
+    {"unmap_destination",   dx_unmap_destination,   METH_VARARGS, "Delete a destination mapping"},
     {0, 0, 0, 0}
 };
 

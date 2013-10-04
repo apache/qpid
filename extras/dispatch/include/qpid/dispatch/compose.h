@@ -167,7 +167,8 @@ void dx_compose_insert_string(dx_composed_field_t *field, const char *value);
  * Insert a utf8-encoded string into the field from an iterator
  *
  * @param field A field created by dx_compose.
- * @param value A pointer to a null-terminated string.
+ * @param iter An iterator for a string value.  The caller is responsible for freeing
+ *        this iterator after the call is complete.
  */
 void dx_compose_insert_string_iterator(dx_composed_field_t *field, dx_field_iterator_t *iter);
 

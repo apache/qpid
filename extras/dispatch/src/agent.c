@@ -295,7 +295,7 @@ dx_agent_class_t *dx_agent_register_class(dx_dispatch_t        *dx,
     cls->query_handler  = query_handler;
 
     dx_field_iterator_t *iter = dx_field_iterator_string(fqname, ITER_VIEW_ALL);
-    int result = hash_insert_const(agent->class_hash, iter, cls);
+    int result = hash_insert_const(agent->class_hash, iter, cls, 0);
     dx_field_iterator_free(iter);
     if (result < 0)
         assert(false);

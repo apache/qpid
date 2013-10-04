@@ -398,7 +398,8 @@ typedef struct {
     PyObject       *handler;
     PyObject       *handler_rx_call;
     dx_dispatch_t  *dx;
-    dx_address_t   *address;
+    Py_ssize_t      addr_count;
+    dx_address_t  **addrs;
 } IoAdapter;
 
 
@@ -469,25 +470,35 @@ static void dx_io_rx_handler(void *context, dx_message_t *msg, int link_id)
 
 static int IoAdapter_init(IoAdapter *self, PyObject *args, PyObject *kwds)
 {
-    const char *address;
-    if (!PyArg_ParseTuple(args, "Os", &self->handler, &address))
+    PyObject *addrs;
+    if (!PyArg_ParseTuple(args, "OO", &self->handler, &addrs))
         return -1;
 
     self->handler_rx_call = PyObject_GetAttrString(self->handler, "receive");
     if (!self->handler_rx_call || !PyCallable_Check(self->handler_rx_call))
         return -1;
 
+    if (!PyTuple_Check(addrs))
+        return -1;
+
     Py_INCREF(self->handler);
     Py_INCREF(self->handler_rx_call);
-    self->dx = dispatch;
-    self->address = dx_router_register_address(self->dx, address, dx_io_rx_handler, self);
+    self->dx         = dispatch;
+    self->addr_count = PyTuple_Size(addrs);
+    self->addrs      = NEW_PTR_ARRAY(dx_address_t, self->addr_count);
+    for (Py_ssize_t idx = 0; idx < self->addr_count; idx++)
+        self->addrs[idx] = dx_router_register_address(self->dx,
+                                                      PyString_AS_STRING(PyTuple_GetItem(addrs, idx)),
+                                                      dx_io_rx_handler, self);
     return 0;
 }
 
 
 static void IoAdapter_dealloc(IoAdapter* self)
 {
-    dx_router_unregister_address(self->address);
+    for (Py_ssize_t idx = 0; idx < self->addr_count; idx++)
+        dx_router_unregister_address(self->addrs[idx]);
+    free(self->addrs);
     Py_DECREF(self->handler);
     Py_DECREF(self->handler_rx_call);
     self->ob_type->tp_free((PyObject*)self);

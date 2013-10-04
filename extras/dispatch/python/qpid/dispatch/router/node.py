@@ -50,10 +50,16 @@ class NodeTracker(object):
         A node, designated by node_id, has been discovered as a neighbor over a link with
         a maskbit of link_maskbit.
         """
-        if node_id not in self.nodes:
-            self.nodes[node_id] = RemoteNode(node_id, self._allocate_maskbit())
-        self.nodes[node_id].set_neighbor(link_maskbit)
-        self._notify(self.nodes[node_id])
+        if node_id in self.nodes:
+            node = self.nodes[node_id]
+            if node.neighbor:
+                return
+            self.container.del_remote_router(node.maskbit)
+            node.neighbor = True
+        else:
+            node = RemoteNode(node_id, self._allocate_maskbit(), True)
+            self.nodes[node_id] = node
+        self.container.add_neighbor_router(self._address(node_id), node.maskbit, link_maskbit)
 
 
     def lost_neighbor(self, node_id):
@@ -61,9 +67,11 @@ class NodeTracker(object):
         We have lost contact with a neighboring node node_id.
         """
         node = self.nodes[node_id]
-        node.clear_neighbor()
-        self._notify(node)
-        if node.to_delete():
+        node.neighbor = False
+        self.container.del_neighbor_router(node.maskbit)
+        if node.remote:
+            self.container.add_remote_router(self._address(node.id), node.maskbit)
+        else:
             self._free_maskbit(node.maskbit)
             self.nodes.pop(node_id)
 
@@ -74,9 +82,12 @@ class NodeTracker(object):
         remote peer.
         """
         if node_id not in self.nodes:
-            self.nodes[node_id] = RemoteNode(node_id, self._allocate_maskbit())
-        self.nodes[node_id].set_remote()
-        self._notify(self.nodes[node_id])
+            node = RemoteNode(node_id, self._allocate_maskbit(), False)
+            self.nodes[node_id] = node
+            self.container.add_remote_router(self._address(node.id), node.maskbit)
+        else:
+            node = self.nodes[node_id]
+            node.remote = True
 
 
     def lost_node(self, node_id):
@@ -84,11 +95,21 @@ class NodeTracker(object):
         A remote node, node_id, has not been heard from for too long and is being deemed lost.
         """
         node = self.nodes[node_id]
-        node.clear_remote()
-        self._notify(node)
-        if node.to_delete():
-            self._free_maskbit(node.maskbit)
-            self.nodes.pop(node_id)
+        if node.remote:
+            node.remote = False
+            if not node.neighbor:
+                self.container.del_remote_router(node.maskbit)
+                self._free_maskbit(node.maskbit)
+                self.nodes.pop(node_id)
+
+
+    def maskbit_for_node(self, node_id):
+        """
+        """
+        node = self.nodes[node_id]
+        if node:
+            return node.maskbit
+        return None
 
 
     def _allocate_maskbit(self):
@@ -110,39 +131,15 @@ class NodeTracker(object):
             self.next_maskbit = i
 
 
-    def _notify(self, node):
-        if node.to_delete():
-            self.container.node_updated("R%s" % node.id, 0, 0, 0, 0)
-        else:
-            is_neighbor = 0
-            if node.neighbor:
-                is_neighbor = 1
-            self.container.node_updated("R%s" % node.id, 1, is_neighbor, node.link_maskbit, node.maskbit)
+    def _address(self, node_id):
+        return "amqp:/_topo/%s/%s" % (self.container.area, node_id)
 
 
 class RemoteNode(object):
 
-    def __init__(self, node_id, maskbit):
-        self.id           = node_id
-        self.neighbor     = None
-        self.link_maskbit = None
-        self.maskbit      = maskbit
-        self.remote       = None
-
-    def set_neighbor(self, link_maskbit):
-        self.neighbor     = True
-        self.link_maskbit = link_maskbit
-
-    def set_remote(self):
-        self.remote = True
-
-    def clear_neighbor(self):
-        self.neighbor     = None
-        self.link_maskbit = None
-
-    def clear_remote(self):
-        self.remote = None
-
-    def to_delete(self):
-        return self.neighbor == None and self.remote == None
+    def __init__(self, node_id, maskbit, neighbor):
+        self.id       = node_id
+        self.maskbit  = maskbit
+        self.neighbor = neighbor
+        self.remote   = not neighbor
 

@@ -507,7 +507,7 @@ int dx_container_register_node_type(dx_dispatch_t *dx, const dx_node_type_t *nt)
     nt_item->ntype = nt;
 
     sys_mutex_lock(container->lock);
-    result = hash_insert_const(container->node_type_map, iter, nt);
+    result = hash_insert_const(container->node_type_map, iter, nt, 0);
     DEQ_INSERT_TAIL(container->node_type_list, nt_item);
     sys_mutex_unlock(container->lock);
 
@@ -565,7 +565,7 @@ dx_node_t *dx_container_create_node(dx_dispatch_t        *dx,
     if (name) {
         dx_field_iterator_t *iter = dx_field_iterator_string(name, ITER_VIEW_ALL);
         sys_mutex_lock(container->lock);
-        result = hash_insert(container->node_map, iter, node);
+        result = hash_insert(container->node_map, iter, node, 0);
         sys_mutex_unlock(container->lock);
         dx_field_iterator_free(iter);
         if (result < 0) {

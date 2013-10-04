@@ -66,10 +66,11 @@ DEQ_DECLARE(dx_router_link_t, dx_router_link_list_t);
 
 struct dx_router_node_t {
     DEQ_LINKS(dx_router_node_t);
-    const char       *id;
+    dx_address_t     *owning_addr;
     int               mask_bit;
     dx_router_node_t *next_hop;   // Next hop node _if_ this is not a neighbor node
     dx_router_link_t *peer_link;  // Outgoing link _if_ this is a neighbor node
+    uint32_t          ref_count;
     dx_bitmask_t     *valid_origins;
 };
 
@@ -107,6 +108,7 @@ struct dx_address_t {
     void                      *handler_context;  // In-Process Consumer context
     dx_router_link_ref_list_t  rlinks;           // Locally-Connected Consumers
     dx_router_ref_list_t       rnodes;           // Remotely-Connected Consumers
+    hash_handle_t             *hash_handle;      // Linkage back to the hash table entry
 };
 
 ALLOC_DECLARE(dx_address_t);
@@ -122,10 +124,12 @@ struct dx_router_t {
     dx_address_list_t       addrs;
     hash_t                 *addr_hash;
     dx_address_t           *router_addr;
+    dx_address_t           *hello_addr;
 
     dx_router_link_list_t   links;
     dx_router_node_list_t   routers;
     dx_router_link_t      **out_links_by_mask_bit;
+    dx_router_node_t      **routers_by_mask_bit;
 
     dx_bitmask_t           *neighbor_free_mask;
     sys_mutex_t            *lock;
@@ -135,5 +139,13 @@ struct dx_router_t {
     PyObject               *pyRouter;
     PyObject               *pyTick;
 };
+
+
+void dx_router_add_link_ref_LH(dx_router_link_ref_list_t *ref_list, dx_router_link_t *link);
+void dx_router_del_link_ref_LH(dx_router_link_ref_list_t *ref_list, dx_router_link_t *link);
+
+void dx_router_add_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t *rnode);
+void dx_router_del_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t *rnode);
+
 
 #endif
