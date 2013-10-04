@@ -163,15 +163,6 @@ if (BUILD_AMQP)
          qpid/messaging/amqp/TcpTransport.h
          qpid/messaging/amqp/TcpTransport.cpp
         )
-    add_library (amqpc MODULE ${amqpc_SOURCES})
-    target_link_libraries (amqpc qpidmessaging qpidtypes qpidclient qpidcommon ${PROTON_LIBRARIES})
-    set_target_properties (amqpc PROPERTIES
-                           PREFIX ""
-                           LINK_FLAGS "${CATCH_UNDEFINED}")
-
-    install (TARGETS amqpc
-             DESTINATION ${QPIDC_MODULE_DIR}
-             COMPONENT ${QPID_COMPONENT_CLIENT})
 
     if (WIN32)
         set(proton_dll  "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}.dll")
@@ -186,4 +177,8 @@ if (BUILD_AMQP)
                 COMPONENT   ${QPID_COMPONENT_COMMON}
                 CONFIGURATIONS Debug)
     endif (WIN32)
+else (BUILD_AMQP)
+    # ensure that qpid build ignores proton
+    UNSET( amqpc_SOURCES )
+    UNSET( PROTON_LIBRARIES )
 endif (BUILD_AMQP)
