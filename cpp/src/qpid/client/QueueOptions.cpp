@@ -38,7 +38,6 @@ const std::string QueueOptions::strFLOW_TO_DISK("flow_to_disk");
 const std::string QueueOptions::strRING("ring");
 const std::string QueueOptions::strRING_STRICT("ring_strict");
 const std::string QueueOptions::strLastValueQueue("qpid.last_value_queue");
-const std::string QueueOptions::strPersistLastNode("qpid.persist_last_node");
 const std::string QueueOptions::strLVQMatchProperty("qpid.LVQ_key");
 const std::string QueueOptions::strLastValueQueueNoBrowse("qpid.last_value_queue_no_browse");
 const std::string QueueOptions::strQueueEventMode("qpid.queue_event_generation");
@@ -74,11 +73,6 @@ void QueueOptions::setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t 
 }
 
 
-void QueueOptions::setPersistLastNode()
-{
-    setInt(strPersistLastNode, 1);
-}
-
 void QueueOptions::setOrdering(QueueOrderingPolicy op)
 {
     if (op == LVQ){
@@ -100,11 +94,6 @@ void QueueOptions::clearSizePolicy()
     erase(strMaxCountKey);
     erase(strMaxSizeKey);
     erase(strTypeKey);
-}
-
-void QueueOptions::clearPersistLastNode()
-{
-    erase(strPersistLastNode);
 }
 
 void QueueOptions::clearOrdering()

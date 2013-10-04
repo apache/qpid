@@ -52,9 +52,6 @@
                   <listitem><para>
                     <itemizedlist>
                       <listitem><para>
-                        <xref linkend="CheatSheetforconfiguringQueueOptions-PersistLastNode"/>
-                      </para></listitem>
-                      <listitem><para>
                         <xref linkend="CheatSheetforconfiguringQueueOptions-Queueeventgeneration"/>
                       </para></listitem>
                     </itemizedlist>
@@ -182,37 +179,6 @@
 	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"><title>
             Setting additional behaviors
           </title>
-          <section role="h4" id="CheatSheetforconfiguringQueueOptions-PersistLastNode"><title>
-            Persist
-            Last Node
-          </title>
-          <para>
-            This option is used in conjunction with clustering. It allows for
-            a queue configured with this option to persist transient messages
-            if the cluster fails down to the last node. If additional nodes
-            in the cluster are restored it will stop persisting transient
-            messages.
-          </para><para>
-            Note
-          </para><itemizedlist>
-            <listitem><para>if a cluster is started with only one active node, this mode
-            will not be triggered. It is only triggered the first time the
-            cluster fails down to 1 node.
-            </para></listitem>
-            <listitem><para>The queue MUST be configured durable
-            </para></listitem>
-          </itemizedlist><para>
-            Example:
-          </para>
-            <programlisting>
-#include "qpid/client/QueueOptions.h"
-
-    QueueOptions qo;
-    qo.clearPersistLastNode();
-
-    session.queueDeclare(arg::queue=queue, arg::durable=true, arg::arguments=qo);
-</programlisting>
-	  <!--h4--></section>
           <section role="h4" id="CheatSheetforconfiguringQueueOptions-Queueeventgeneration"><title>
             Queue
             event generation

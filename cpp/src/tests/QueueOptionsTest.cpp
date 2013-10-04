@@ -63,16 +63,9 @@ QPID_AUTO_TEST_CASE(testFlags)
 {
     QueueOptions ft;
 
-    ft.setPersistLastNode();
     ft.setOrdering(LVQ);
-
-    BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strPersistLastNode));
     BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strLastValueQueue));
-
-    ft.clearPersistLastNode();
     ft.setOrdering(FIFO);
-
-    BOOST_CHECK(!ft.isSet(QueueOptions::strPersistLastNode));
     BOOST_CHECK(!ft.isSet(QueueOptions::strLastValueQueue));
 
 }
@@ -86,16 +79,6 @@ QPID_AUTO_TEST_CASE(testSetOrdering)
     BOOST_CHECK(!ft.isSet(QueueOptions::strLastValueQueue));
 
 }
-
-QPID_AUTO_TEST_CASE(testClearPersistLastNode)
-{
-    //ensure clear works even if not preceded by the setting on the
-    //option
-    QueueOptions ft;
-    ft.clearPersistLastNode();
-    BOOST_CHECK(!ft.isSet(QueueOptions::strPersistLastNode));
-}
-
 
 QPID_AUTO_TEST_SUITE_END()
 
