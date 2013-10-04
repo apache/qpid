@@ -49,7 +49,7 @@ class PathEngine(object):
     def _calculate_tree_from_root(self, root):
         ##
         ## Make a copy of the current collection of link-states that contains
-        ## an empty link-state for nodes that are known-peers but are not in the
+        ## a fake link-state for nodes that are known-peers but are not in the
         ## collection currently.  This is needed to establish routes to those nodes
         ## so we can trade link-state information with them.
         ##
@@ -58,7 +58,7 @@ class PathEngine(object):
             link_states[_id] = ls.peers
             for p in ls.peers:
                 if p not in link_states:
-                    link_states[p] = []
+                    link_states[p] = [_id]
 
         ##
         ## Setup Dijkstra's Algorithm
@@ -102,11 +102,42 @@ class PathEngine(object):
         return prev
 
 
+    def _calculate_valid_origins(self, nodeset):
+        ##
+        ## Calculate the tree from each origin, determine the set of origins-per-dest
+        ## for which the path from origin to dest passes through us.  This is the set
+        ## of valid origins for forwarding to the destination.
+        ##
+        valid_origin = {}         # Map of destination => List of Valid Origins
+        for node in nodeset:
+            if node != self.id:
+                valid_origin[node] = []
+
+        for root in valid_origin.keys():
+            prev  = self._calculate_tree_from_root(root)
+            nodes = prev.keys()
+            while len(nodes) > 0:
+                u = nodes[0]
+                path = [u]
+                nodes.remove(u)
+                v = prev[u]
+                while v != root:
+                    if v in nodes:
+                        if v != self.id:
+                            path.append(v)
+                        nodes.remove(v)
+                    if v == self.id:
+                        valid_origin[root].extend(path)
+                    u = v
+                    v = prev[u]
+        return valid_origin
+
+
     def _calculate_routes(self):
         ##
         ## Generate the shortest-path tree with the local node as root
         ##
-        prev = self._calculate_tree_from_root(self.id)
+        prev  = self._calculate_tree_from_root(self.id)
         nodes = prev.keys()
 
         ##
@@ -127,12 +158,14 @@ class PathEngine(object):
             for w in path:        # mark each node in the path as reachable via the next hop
                 next_hops[w] = u
 
-        ##
-        ## TODO - Calculate the tree from each origin, determine the set of origins-per-dest
-        ##        for which the path from origin to dest passes through us.  This is the set
-        ##        of valid origins for forwarding to the destination.
-        ##
         self.container.next_hops_changed(next_hops)
+
+        ##
+        ## Calculate the valid origins for remote routers
+        ##
+        valid_origin = self._calculate_valid_origins(prev.keys())
+        self.container.valid_origins_changed(valid_origin)
+
 
 
 class NodeSet(object):

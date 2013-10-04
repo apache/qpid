@@ -247,6 +247,10 @@ class RouterEngine:
         self.routing_table_engine.next_hops_changed(next_hop_table)
         self.binding_engine.next_hops_changed()
 
+    def valid_origins_changed(self, valid_origins):
+        self.log(LOG_DEBUG, "Event: valid_origins_changed: %r" % valid_origins)
+        self.routing_table_engine.valid_origins_changed(valid_origins)
+
     def mobile_sequence_changed(self, mobile_seq):
         self.log(LOG_DEBUG, "Event: mobile_sequence_changed: %d" % mobile_seq)
         self.link_state_engine.set_mobile_sequence(mobile_seq)
