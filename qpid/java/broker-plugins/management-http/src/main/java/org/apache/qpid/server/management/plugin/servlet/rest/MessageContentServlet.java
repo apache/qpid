@@ -44,8 +44,8 @@ public class MessageContentServlet extends AbstractServlet
     @Override
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
-
-        if(request.getPathInfo() != null && request.getPathInfo().length()>0 && request.getPathInfo().substring(1).split("/").length > 2)
+        String[] pathInfoElements = getPathInfoElements(request);
+        if(pathInfoElements != null && pathInfoElements.length > 2)
         {
             getMessageContent(request, response);
         }
@@ -55,7 +55,7 @@ public class MessageContentServlet extends AbstractServlet
     private void getMessageContent(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         Queue queue = getQueueFromRequest(request);
-        String path[] = request.getPathInfo().substring(1).split("/");
+        String path[] = getPathInfoElements(request);
         MessageFinder finder = new MessageFinder(Long.parseLong(path[2]));
         queue.visit(finder);
         if(finder.isFound())
@@ -70,15 +70,15 @@ public class MessageContentServlet extends AbstractServlet
 
     private Queue getQueueFromRequest(HttpServletRequest request)
     {
-        List<String> names = new ArrayList<String>();
         // TODO - validation that there is a vhost and queue and only those in the path
-        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
+
+        String[] pathInfoElements = getPathInfoElements(request);
+        if(pathInfoElements == null || pathInfoElements.length < 2)
         {
-            String path = request.getPathInfo().substring(1);
-            names.addAll(Arrays.asList(path.split("/")));
+            throw new IllegalArgumentException("Invalid path is specified");
         }
-        String vhostName = names.get(0);
-        String queueName = names.get(1);
+        String vhostName = pathInfoElements[0];
+        String queueName = pathInfoElements[1];
 
         VirtualHost vhost = null;
 

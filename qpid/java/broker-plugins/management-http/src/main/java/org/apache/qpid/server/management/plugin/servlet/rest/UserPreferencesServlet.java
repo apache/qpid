@@ -50,11 +50,7 @@ public class UserPreferencesServlet extends AbstractServlet
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException,
             ServletException
     {
-        String[] pathElements = null;
-        if (request.getPathInfo() != null && request.getPathInfo().length() > 0)
-        {
-            pathElements = request.getPathInfo().substring(1).split("/");
-        }
+        String[] pathElements = getPathInfoElements(request);
         if (pathElements != null && pathElements.length > 1)
         {
             getUserPreferences(pathElements[0], pathElements[1], response);

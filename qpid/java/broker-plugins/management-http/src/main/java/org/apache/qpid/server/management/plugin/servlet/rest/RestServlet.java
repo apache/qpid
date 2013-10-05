@@ -115,16 +115,15 @@ public class RestServlet extends AbstractServlet
 
     protected Collection<ConfiguredObject> getObjects(HttpServletRequest request)
     {
+        String[] pathInfoElements = getPathInfoElements(request);
         List<String> names = new ArrayList<String>();
-        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
+        if(pathInfoElements != null)
         {
-            String path = request.getPathInfo().substring(1);
-            names.addAll(Arrays.asList(path.split("/")));
-
-            if(names.size() > _hierarchy.length)
+            if(pathInfoElements.length > _hierarchy.length)
             {
                 throw new IllegalArgumentException("Too many entries in path. Expected " + _hierarchy.length + "; path: " + names);
             }
+            names.addAll(Arrays.asList(pathInfoElements));
         }
 
         Collection<ConfiguredObject> parents = Collections.singleton((ConfiguredObject) getBroker());
@@ -329,16 +328,15 @@ public class RestServlet extends AbstractServlet
 
 
         List<String> names = new ArrayList<String>();
-        if(request.getPathInfo() != null && request.getPathInfo().length()>0)
+        String[] pathInfoElements = getPathInfoElements(request);
+        if(pathInfoElements != null )
         {
-            String path = request.getPathInfo().substring(1);
-            names.addAll(Arrays.asList(path.split("/")));
-
-            if(names.size() != _hierarchy.length)
+            if(pathInfoElements.length != _hierarchy.length)
             {
                 throw new IllegalArgumentException("Path to object to create must be fully specified. "
                        + "Found " + names + " of size " + names.size() + " expecting " + _hierarchy.length);
             }
+            names.addAll(Arrays.asList(pathInfoElements));
         }
 
         if (names.isEmpty())
