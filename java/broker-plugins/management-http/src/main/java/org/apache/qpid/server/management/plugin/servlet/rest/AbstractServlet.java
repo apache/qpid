@@ -275,4 +275,14 @@ public abstract class AbstractServlet extends HttpServlet
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, object);
     }
+
+    protected String[] getPathInfoElements(HttpServletRequest request)
+    {
+        String pathInfo = request.getPathInfo();
+        if (pathInfo != null && pathInfo.length() > 0)
+        {
+            return pathInfo.substring(1).split("/");
+        }
+        return null;
+    }
 }
