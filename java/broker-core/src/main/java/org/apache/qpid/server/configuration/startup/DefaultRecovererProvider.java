@@ -39,7 +39,6 @@ import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.model.adapter.PreferencesProviderCreator;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.AccessControlFactory;
@@ -65,13 +64,11 @@ public class DefaultRecovererProvider implements RecovererProvider
     private final TaskExecutor _taskExecutor;
     private final BrokerOptions _brokerOptions;
     private final StoreConfigurationChangeListener _storeChangeListener;
-    private final PreferencesProviderCreator _preferencesProviderCreator;
 
     public DefaultRecovererProvider(StatisticsGatherer brokerStatisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions, StoreConfigurationChangeListener storeChangeListener)
     {
-        _preferencesProviderCreator = new PreferencesProviderCreator();
-        _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>(), _preferencesProviderCreator);
+        _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
         _accessControlProviderFactory = new AccessControlProviderFactory(new QpidServiceLoader<AccessControlFactory>());
         _groupProviderFactory = new GroupProviderFactory(new QpidServiceLoader<GroupManagerFactory>());
         _portFactory = new PortFactory();
@@ -90,7 +87,7 @@ public class DefaultRecovererProvider implements RecovererProvider
     {
         if (Broker.class.getSimpleName().equals(type))
         {
-            return new BrokerRecoverer(_authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory, _portFactory, _preferencesProviderCreator,
+            return new BrokerRecoverer(_authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory, _portFactory,
                     _brokerStatisticsGatherer, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, _brokerOptions, _storeChangeListener);
         }
         else if(VirtualHost.class.getSimpleName().equals(type))
@@ -123,7 +120,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         }
         else if(PreferencesProvider.class.getSimpleName().equals(type))
         {
-            return new PreferencesProviderRecoverer(_preferencesProviderCreator);
+            return new PreferencesProviderRecoverer();
         }
         else if(Plugin.class.getSimpleName().equals(type))
         {

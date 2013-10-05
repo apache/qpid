@@ -40,7 +40,6 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.server.model.adapter.PreferencesProviderCreator;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
@@ -53,16 +52,14 @@ public class AuthenticationProviderRecovererTest extends QpidTestCase
     private Broker _broker;
     private AuthenticationProviderRecoverer _recoverer;
     private ConfigurationEntryStore _configurationStore;
-    private PreferencesProviderCreator _preferencesProviderCreator;
 
     public void setUp() throws Exception
     {
         super.setUp();
         BrokerTestHelper.setUp();
         _broker = BrokerTestHelper.createBrokerMock();
-        _preferencesProviderCreator = new PreferencesProviderCreator();
         QpidServiceLoader<AuthenticationManagerFactory> serviceLoader = new QpidServiceLoader<AuthenticationManagerFactory>();
-        AuthenticationProviderFactory authenticationProviderFactory = new AuthenticationProviderFactory(serviceLoader, _preferencesProviderCreator);
+        AuthenticationProviderFactory authenticationProviderFactory = new AuthenticationProviderFactory(serviceLoader);
         StoreConfigurationChangeListener storeChangeListener = mock(StoreConfigurationChangeListener.class);
         _recoverer = new AuthenticationProviderRecoverer(authenticationProviderFactory, storeChangeListener);
         _configurationStore = mock(ConfigurationEntryStore.class);
@@ -93,7 +90,7 @@ public class AuthenticationProviderRecovererTest extends QpidTestCase
                     authenticationProviderFile.getAbsolutePath());
             UUID authenticationId = UUID.randomUUID();
 
-            final PreferencesProviderRecoverer preferencesRecoverer = new PreferencesProviderRecoverer(_preferencesProviderCreator);
+            final PreferencesProviderRecoverer preferencesRecoverer = new PreferencesProviderRecoverer();
             RecovererProvider recovererProvider = new RecovererProvider()
             {
                 @Override
@@ -105,7 +102,7 @@ public class AuthenticationProviderRecovererTest extends QpidTestCase
 
             Map<String, Object> preferencesAttributes = new HashMap<String, Object>();
             UUID preferencesId = UUID.randomUUID();
-            preferencesAttributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.class);
+            preferencesAttributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.PROVIDER_TYPE);
             preferencesAttributes.put(PreferencesProvider.NAME, "test-provider");
             File file = TestFileUtils.createTempFile(this, ".prefs.json",
                     "{\"test_user\":{\"pref1\": \"pref1Value\", \"pref2\": 1.0} }");
