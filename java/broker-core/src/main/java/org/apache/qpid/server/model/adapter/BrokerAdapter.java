@@ -60,6 +60,7 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
+import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -178,7 +179,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final GroupProviderFactory _groupProviderFactory;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final AccessControlProviderFactory _accessControlProviderFactory;
-    private final PreferencesProviderCreator _preferencesProviderCreator;
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
 
@@ -192,7 +192,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
             LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
             GroupProviderFactory groupProviderFactory, AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory,
-            PreferencesProviderCreator preferencesProviderCreatory, TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
+            TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
@@ -201,7 +201,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _rootMessageLogger = rootMessageLogger;
         _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
-        _preferencesProviderCreator = preferencesProviderCreatory;
         _groupProviderFactory = groupProviderFactory;
         _accessControlProviderFactory = accessControlProviderFactory;
         _portFactory = portFactory;
@@ -214,7 +213,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
             AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
-                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet(), _preferencesProviderCreator);
+                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
             _managementAuthenticationProvider = authenticationProvider;
         }
     }
@@ -786,7 +785,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
         else if (SUPPORTED_PREFERENCES_PROVIDERS_TYPES.equals(name))
         {
-            return _preferencesProviderCreator.getSupportedPreferencesProviders();
+            return PreferencesProviderFactory.TYPES.get();
         }
         else if (MODEL_VERSION.equals(name))
         {
