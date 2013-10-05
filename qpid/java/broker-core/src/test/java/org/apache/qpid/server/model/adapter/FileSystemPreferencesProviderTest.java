@@ -69,6 +69,10 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
     {
         try
         {
+            if (_preferencesProvider != null)
+            {
+                _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.DELETED);
+            }
             BrokerTestHelper.tearDown();
             _preferencesFile.delete();
         }
@@ -86,7 +90,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
 
     public void testConstructionWithNonExistingFile()
     {
-        File nonExistingFile = new File(TMP_FOLDER, "preferences-" + UUID.randomUUID() + ".json");
+        File nonExistingFile = new File(TMP_FOLDER, "preferences-" + getTestName() + ".json");
         assertFalse("Preferences file exists", nonExistingFile.exists());
         try
         {
@@ -105,7 +109,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
 
     public void testConstructionWithEmptyFile() throws Exception
     {
-        File emptyPrefsFile = new File(TMP_FOLDER, "preferences-" + UUID.randomUUID() + ".json");
+        File emptyPrefsFile = new File(TMP_FOLDER, "preferences-" + getTestName() + ".json");
         emptyPrefsFile.createNewFile();
         assertTrue("Preferences file does notexists", emptyPrefsFile.exists());
         try
@@ -188,9 +192,11 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         newPreferences.put("pref5", pref5);
 
         _preferencesProvider.setPreferences(_user1, newPreferences);
+        _preferencesProvider.setDesiredState(State.ACTIVE, State.STOPPED);
 
-        FileSystemPreferencesProvider newProvider = createPreferencesProvider();
-        Map<String, Object> preferences1 = newProvider.getPreferences(_user1);
+        _preferencesProvider = createPreferencesProvider();
+        _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        Map<String, Object> preferences1 = _preferencesProvider.getPreferences(_user1);
         assertNotNull("Preferences should not be null for user 1", preferences1);
         assertEquals("Unexpected preference 1 for user 1", "pref1User1Value", preferences1.get("pref1"));
         assertEquals("Unexpected preference 2 for user 1", false, preferences1.get("pref2"));
@@ -199,11 +205,11 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         assertNotNull("Unexpected preference 5 for user 1", preferences1.get("pref5"));
         assertEquals("Unexpected preference 5 for user 1", pref5, preferences1.get("pref5"));
 
-        Map<String, Object> preferences2 = newProvider.getPreferences(_user2);
+        Map<String, Object> preferences2 = _preferencesProvider.getPreferences(_user2);
         assertUser2Preferences(preferences2);
 
         String user3 = "user3";
-        Map<String, Object> preferences3 = newProvider.getPreferences(user3);
+        Map<String, Object> preferences3 = _preferencesProvider.getPreferences(user3);
         assertTrue("No preference found for user3", preferences3.isEmpty());
     }
 
@@ -213,16 +219,18 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
 
         _preferencesProvider.deletePreferences(_user1);
+        _preferencesProvider.setDesiredState(State.ACTIVE, State.STOPPED);
 
-        FileSystemPreferencesProvider newProvider = createPreferencesProvider();
-        Map<String, Object> preferences1 = newProvider.getPreferences(_user1);
+        _preferencesProvider = createPreferencesProvider();
+        _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        Map<String, Object> preferences1 = _preferencesProvider.getPreferences(_user1);
         assertTrue("Preferences should not be set for user 1", preferences1.isEmpty());
 
-        Map<String, Object> preferences2 = newProvider.getPreferences(_user2);
+        Map<String, Object> preferences2 = _preferencesProvider.getPreferences(_user2);
         assertUser2Preferences(preferences2);
 
         String user3 = "user3";
-        Map<String, Object> preferences3 = newProvider.getPreferences(user3);
+        Map<String, Object> preferences3 = _preferencesProvider.getPreferences(user3);
         assertTrue("No preference found for user3", preferences3.isEmpty());
     }
 
