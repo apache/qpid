@@ -24,6 +24,7 @@ define([
         "dojo/dom-construct",
         "dojo/parser",
         "dojo/query",
+        "dojo/dom-style",
         "dojo/store/Memory",
         "dijit/_WidgetBase",
         "dijit/registry",
@@ -31,10 +32,11 @@ define([
         "qpid/common/timezone",
         "dijit/form/ComboBox",
         "dijit/form/FilteringSelect",
+        "dijit/form/CheckBox",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, registry, template, timezone) {
+function (declare, array, domConstruct, parser, query, domStyle, Memory, _WidgetBase, registry, template, timezone) {
 
   var preferencesRegions = ["Africa","America","Antarctica","Arctic","Asia","Atlantic","Australia","Europe","Indian","Pacific"];
 
@@ -54,6 +56,7 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
     domNode: null,
     _regionSelector: null,
     _citySelector: null,
+    _utcSelector: null,
 
     constructor: function(args)
     {
@@ -68,8 +71,17 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
     postCreate: function(){
       this.inherited(arguments);
 
+      var self = this;
+      if (this._args.labelStyle)
+      {
+        var nl = query(".labelClass", this.domNode);
+        array.forEach(nl, function(entry, i){
+          domStyle.set(entry, self._args.labelStyle)
+        });
+      }
       var supportedTimeZones = timezone.getAllTimeZones();
 
+      this._utcSelector = registry.byNode(query(".utcSelector", this.domNode)[0]);
       this._citySelector = registry.byNode(query(".timezoneCity", this.domNode)[0]);
       this._citySelector.set("searchAttr", "city");
       this._citySelector.set("query", {region: /.*/});
@@ -82,8 +94,27 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
       this._regionSelector = registry.byNode(query(".timezoneRegion", this.domNode)[0]);
       var supportedRegions = initSupportedRegions();
       this._regionSelector.set("store", new Memory({ data: supportedRegions }));
-      var self = this;
 
+      this._utcSelector.on("change", function(value){
+        var checked = this.get("checked");
+        if (checked)
+        {
+          self.value ="UTC";
+        }
+        else
+        {
+          if (self._citySelector.value && self._regionSelector.value)
+          {
+            self.value = self._citySelector.value;
+          }
+          else
+          {
+            self.value = null;
+          }
+        }
+        self._citySelector.set("disabled", checked);
+        self._regionSelector.set("disabled", checked);
+      });
       this._regionSelector.on("change", function(value){
         if (value=="undefined")
         {
@@ -119,20 +150,29 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
     {
       if (value)
       {
-        var elements = value.split("/");
-        if (elements.length > 1)
+        if (value == "UTC")
         {
-          this._regionSelector.timeZone = value;
-          this._regionSelector.set("value", elements[0]);
-          this._citySelector.set("value", value);
+          this._utcSelector.set("checked", true);
         }
         else
         {
-          this._regionSelector.set("value", "undefined");
+          this._utcSelector.set("checked", false);
+          var elements = value.split("/");
+          if (elements.length > 1)
+          {
+            this._regionSelector.timeZone = value;
+            this._regionSelector.set("value", elements[0]);
+            this._citySelector.set("value", value);
+          }
+          else
+          {
+            this._regionSelector.set("value", "undefined");
+          }
         }
       }
       else
       {
+        this._utcSelector.set("checked", false);
         this._regionSelector.set("value", "undefined");
       }
       this.value = value;
@@ -147,6 +187,7 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
       }
       _regionSelector: null;
       _citySelector: null;
+      _utcSelector: null;
     }
 
   });
