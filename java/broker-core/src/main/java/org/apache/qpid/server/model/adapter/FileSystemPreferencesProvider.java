@@ -23,8 +23,6 @@ package org.apache.qpid.server.model.adapter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Type;
@@ -44,7 +42,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -68,12 +65,9 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     public static String PATH = "path";
     public static final String PROVIDER_TYPE = "FileSystemPreferences";
 
-    // TODO: use resolver to resolve path from
-    // '${qpid.work_dir}/preferences/${authenticationProviderName}'
     @SuppressWarnings("serial")
     private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>()
     {{
-            put(PATH, System.getProperty("user.home") + File.separator + ".qpid" + File.separator + "preferences.json");
             put(TYPE, FileSystemPreferencesProvider.class.getSimpleName());
     }});
 
@@ -95,24 +89,17 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     private final AuthenticationProvider _authenticationProvider;
     private AtomicReference<State> _state;
 
-    private final ObjectMapper _objectMapper;
-    private final Map<String, Map<String, Object>> _preferences;
-    private File _preferencesLocation;
-    private FileLock _fileLock;
+    private FileSystemPreferencesStore _store;
 
-    protected FileSystemPreferencesProvider(UUID id, Map<String, Object> attributes, AuthenticationProvider authenticationProvider, TaskExecutor taskExecutor)
+    protected FileSystemPreferencesProvider(UUID id, Map<String, Object> attributes, AuthenticationProvider authenticationProvider,
+            TaskExecutor taskExecutor)
     {
         super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
         addParent(AuthenticationProvider.class, authenticationProvider);
         _authenticationProvider = authenticationProvider;
-        _objectMapper = new ObjectMapper();
-        _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-        _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-        _preferences = new TreeMap<String, Map<String, Object>>();
-        _preferencesLocation = new File(MapValueConverter.getStringAttribute(PATH, attributes));
-        _preferences.putAll(load(_objectMapper, _preferencesLocation));
+        _store = new FileSystemPreferencesStore(new File(MapValueConverter.getStringAttribute(PATH, attributes)));
     }
 
     @Override
@@ -224,8 +211,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     }
 
     @Override
-    public boolean setState(State currentState, State desiredState) throws IllegalStateTransitionException,
-            AccessControlException
+    public boolean setState(State currentState, State desiredState) throws IllegalStateTransitionException, AccessControlException
     {
         State state = _state.get();
         if (desiredState == State.DELETED)
@@ -235,11 +221,11 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
             {
                 try
                 {
-                    close();
+                    _store.close();
                 }
                 finally
                 {
-                    _preferencesLocation.delete();
+                    _store.delete();
                     _authenticationProvider.setPreferencesProvider(null);
                 }
                 return true;
@@ -256,9 +242,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
             {
                 try
                 {
-                    getFileLock();
-                    Map<String, Map<String, Object>> preferences = load(_objectMapper, _preferencesLocation);
-                    setPreferences(preferences);
+                    _store.open();
                     return true;
                 }
                 catch (Exception e)
@@ -284,7 +268,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         {
             if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
             {
-                close();
+                _store.close();
                 return true;
             }
         }
@@ -292,12 +276,12 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         {
             if (_state.compareAndSet(state, State.STOPPED))
             {
-                close();
+                _store.close();
                 return true;
             }
             else
             {
-                throw new IllegalStateException("Cannot stop authentication preferences in state: " + state);
+                throw new IllegalStateException("Cannot stop preferences preferences in state: " + state);
             }
         }
 
@@ -307,61 +291,25 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     @Override
     public Map<String, Object> getPreferences(String userId)
     {
-        Map<String, Object> userPreferences = null;
-        synchronized (_preferences)
-        {
-            userPreferences = _preferences.get(userId);
-        }
-        if (userPreferences != null)
-        {
-            return new HashMap<String, Object>(userPreferences);
-        }
-        return Collections.emptyMap();
+        return _store.getPreferences(userId);
     }
 
     @Override
     public Map<String, Object> setPreferences(String userId, Map<String, Object> preferences)
     {
-        Map<String, Object> userPreferences = null;
-        synchronized (_preferences)
-        {
-            userPreferences = _preferences.get(userId);
-            if (userPreferences == null)
-            {
-                userPreferences = new HashMap<String, Object>(preferences);
-                _preferences.put(userId, userPreferences);
-            }
-            else
-            {
-                userPreferences.putAll(preferences);
-            }
-            savePreferences();
-        }
-        return userPreferences;
+        return _store.setPreferences(userId, preferences);
     }
 
     @Override
     public Map<String, Object> deletePreferences(String userId)
     {
-        Map<String, Object> userPreferences = null;
-        synchronized (_preferences)
-        {
-            if (_preferences.containsKey(userId))
-            {
-                userPreferences = _preferences.remove(userId);
-                savePreferences();
-            }
-        }
-        return userPreferences;
+        return _store.deletePreferences(userId);
     }
 
     @Override
     public Set<String> listUserIDs()
     {
-        synchronized (_preferences)
-        {
-            return Collections.unmodifiableSet(_preferences.keySet());
-        }
+        return _store.listUserIDs();
     }
 
     public AuthenticationProvider getAuthenticationProvider()
@@ -377,36 +325,39 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         validateAttributes(effectiveAttributes);
         String effectivePath = (String) effectiveAttributes.get(PATH);
         String currentPath = (String) getAttribute(PATH);
-        Map<String, Map<String, Object>> newPreferences = null;
+
         File storeFile = new File(effectivePath);
+        FileSystemPreferencesStore newStore = null;
         if (!effectivePath.equals(currentPath))
         {
             if (!storeFile.exists())
             {
                 throw new IllegalConfigurationException("Path to preferences file does not exist!");
             }
-            newPreferences = load(_objectMapper, storeFile);
+            newStore = new FileSystemPreferencesStore(storeFile);
+            newStore.open();
         }
-        super.changeAttributes(attributes);
 
-        if (newPreferences != null)
+        try
         {
-            setPreferences(newPreferences);
-            _preferencesLocation = storeFile;
-        }
+            super.changeAttributes(attributes);
 
-        // if provider was previously in ERRORED state then set its state to
-        // ACTIVE
+            if (newStore != null)
+            {
+                _store.close();
+                _store = newStore;
+                newStore = null;
+            }
+        }
+        finally
+        {
+            if (newStore != null)
+            {
+                newStore.close();
+            }
+        }
+        // if provider was previously in ERRORED state then set its state to ACTIVE
         _state.compareAndSet(State.ERRORED, State.ACTIVE);
-    }
-
-    private void setPreferences(Map<String, Map<String, Object>> preferences)
-    {
-        synchronized (_preferences)
-        {
-            _preferences.clear();
-            _preferences.putAll(preferences);
-        }
     }
 
     private void validateAttributes(Map<String, Object> attributes)
@@ -432,161 +383,242 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         }
     }
 
-    public File createStoreIfNotExist()
+    public void createStoreIfNotExist()
     {
-        String path = (String)getAttribute(PATH);
-        File preferencesLocation = new File(path);
-        if (!preferencesLocation.exists())
+        _store.createIfNotExist();
+    }
+
+    public static class FileSystemPreferencesStore
+    {
+        private final ObjectMapper _objectMapper;
+        private final Map<String, Map<String, Object>> _preferences;
+        private File _storeFile;
+        private FileLock _storeLock;
+        private RandomAccessFile _storeRAF;
+
+        public FileSystemPreferencesStore(File preferencesFile)
         {
-            File parent = preferencesLocation.getParentFile();
-            if (!parent.exists() && !parent.mkdirs())
+            _storeFile = preferencesFile;
+            _objectMapper = new ObjectMapper();
+            _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+            _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+            _preferences = new TreeMap<String, Map<String, Object>>();
+        }
+
+        public void createIfNotExist()
+        {
+            if (!_storeFile.exists())
             {
-                throw new IllegalConfigurationException("Cannot store preferences at " + path);
+                File parent = _storeFile.getParentFile();
+                if (!parent.exists() && !parent.mkdirs())
+                {
+                    throw new IllegalConfigurationException("Cannot create preferences store folders");
+                }
+                try
+                {
+                    if (_storeFile.createNewFile() && !_storeFile.exists())
+                    {
+                        throw new IllegalConfigurationException("Preferences store file was not created:" + _storeFile.getAbsolutePath());
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalConfigurationException("Cannot create preferences store file");
+                }
+            }
+        }
+
+        public void delete()
+        {
+            if (_storeFile.exists() && !_storeFile.delete())
+            {
+                LOGGER.warn("Failed to delete preferences provider file '" + _storeFile.getName() + "'");
+            }
+        }
+
+        public void open()
+        {
+            if (!_storeFile.exists())
+            {
+                throw new IllegalConfigurationException("Preferences file does not exist");
+            }
+
+            if (_storeLock != null)
+            {
+                throw new IllegalStateException("Preferences store is already opened");
             }
             try
             {
-                preferencesLocation.createNewFile();
+                _storeRAF = new RandomAccessFile(_storeFile, "rw");
+                FileChannel fileChannel = _storeRAF.getChannel();
+                try
+                {
+                    _storeLock = fileChannel.tryLock();
+                }
+                catch (OverlappingFileLockException e)
+                {
+                    _storeLock = null;
+                }
+                if (_storeLock == null)
+                {
+                    throw new IllegalConfigurationException("Cannot get lock on store file " + _storeFile.getName()
+                            + " is another instance running?");
+                }
+                long fileSize = fileChannel.size();
+                if (fileSize > 0)
+                {
+                    ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
+                    fileChannel.read(buffer);
+                    buffer.rewind();
+                    buffer.flip();
+                    byte[] data = buffer.array();
+                    try
+                    {
+                        Map<String, Map<String, Object>> preferencesMap = _objectMapper.readValue(data,
+                                new TypeReference<Map<String, Map<String, Object>>>()
+                                {
+                                });
+                        _preferences.putAll(preferencesMap);
+                    }
+                    catch (JsonProcessingException e)
+                    {
+                        throw new IllegalConfigurationException("Cannot parse preferences json in " + _storeFile.getName(), e);
+                    }
+                }
             }
             catch (IOException e)
             {
-                throw new IllegalConfigurationException("Cannot store preferences at " + path);
+                throw new IllegalConfigurationException("Cannot load preferences from " + _storeFile.getName(), e);
             }
         }
-        return preferencesLocation;
-    }
 
-    private Map<String, Map<String, Object>> load(ObjectMapper mapper, File file)
-    {
-        if (!file.exists() || file.length() == 0)
+        public void close()
         {
-            return Collections.emptyMap();
-        }
-
-        try
-        {
-            return mapper.readValue(file, new TypeReference<Map<String, Map<String, Object>>>()
+            synchronized (_preferences)
             {
-            });
-        }
-        catch (JsonProcessingException e)
-        {
-            throw new IllegalConfigurationException("Cannot parse json", e);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException("Cannot read json", e);
-        }
-    }
-
-    private void savePreferences()
-    {
-        save(_objectMapper, _preferencesLocation, _preferences);
-    }
-
-    private void save(ObjectMapper mapper, File file, Map<String, Map<String, Object>> preferences)
-    {
-        try
-        {
-            RandomAccessFile raf = new RandomAccessFile(file, "rw");
-            try
-            {
-                FileChannel channel = raf.getChannel();
                 try
                 {
-                    FileLock lock = null;
-                    try
+                    if (_storeLock != null)
                     {
-                        lock = channel.tryLock();
-                        if (lock == null)
-                        {
-                            throw new IllegalConfigurationException("Cannot aquire exclusive lock on preferences file for "
-                                    + getName());
-                        }
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        mapper.writeValue(baos, preferences);
-                        channel.write(ByteBuffer.wrap(baos.toByteArray()));
+                        _storeLock.release();
                     }
-                    catch (OverlappingFileLockException e)
-                    {
-                        throw new IllegalConfigurationException("Cannot aquire exclusive lock on preferences file for "
-                                + getName(), e);
-                    }
-                    finally
-                    {
-                        if (lock != null)
-                        {
-                            lock.release();
-                        }
-                    }
+                }
+                catch (IOException e)
+                {
+                    LOGGER.error("Cannot release file lock for preferences file store", e);
                 }
                 finally
                 {
-                    channel.close();
+                    _storeLock = null;
+                    try
+                    {
+                        if (_storeRAF != null)
+                        {
+                            _storeRAF.close();
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        LOGGER.error("Cannot close preferences file", e);
+                    }
+                    finally
+                    {
+                        _storeRAF = null;
+                        _preferences.clear();
+                    }
                 }
             }
-            finally
+        }
+
+        public Map<String, Object> getPreferences(String userId)
+        {
+            checkStoreOpened();
+            Map<String, Object> userPreferences = null;
+            synchronized (_preferences)
             {
-                raf.close();
+                userPreferences = _preferences.get(userId);
+            }
+            if (userPreferences != null)
+            {
+                return new HashMap<String, Object>(userPreferences);
+            }
+            return Collections.emptyMap();
+        }
+
+        public Map<String, Object> setPreferences(String userId, Map<String, Object> preferences)
+        {
+            checkStoreOpened();
+            Map<String, Object> userPreferences = null;
+            synchronized (_preferences)
+            {
+                userPreferences = _preferences.get(userId);
+                if (userPreferences == null)
+                {
+                    userPreferences = new HashMap<String, Object>(preferences);
+                    _preferences.put(userId, userPreferences);
+                }
+                else
+                {
+                    userPreferences.putAll(preferences);
+                }
+                save();
+            }
+            return userPreferences;
+        }
+
+        public Map<String, Object> deletePreferences(String userId)
+        {
+            checkStoreOpened();
+            Map<String, Object> userPreferences = null;
+            synchronized (_preferences)
+            {
+                if (_preferences.containsKey(userId))
+                {
+                    userPreferences = _preferences.remove(userId);
+                    save();
+                }
+            }
+            return userPreferences;
+        }
+
+        public Set<String> listUserIDs()
+        {
+            checkStoreOpened();
+            synchronized (_preferences)
+            {
+                return Collections.unmodifiableSet(_preferences.keySet());
             }
         }
-        catch (FileNotFoundException e)
-        {
-            throw new IllegalConfigurationException("Cannot find preferences file for " + getName(), e);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException("Cannot store preferences file for " + getName(), e);
-        }
-    }
 
-    private void getFileLock() throws IOException, AMQStoreException
-    {
-        File lockFile = new File(getLockFileName());
-        lockFile.createNewFile();
+        private void save()
+        {
+            checkStoreOpened();
+            try
+            {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                _objectMapper.writeValue(baos, _preferences);
+                FileChannel channel = _storeRAF.getChannel();
+                long currentSize = channel.size();
+                channel.position(0);
+                channel.write(ByteBuffer.wrap(baos.toByteArray()));
+                if (currentSize > baos.size())
+                {
+                    channel.truncate(baos.size());
+                }
+            }
+            catch (IOException e)
+            {
+                throw new IllegalConfigurationException("Cannot store preferences", e);
+            }
+        }
 
-        FileOutputStream out = new FileOutputStream(lockFile);
-        FileChannel channel = out.getChannel();
-        try
+        private void checkStoreOpened()
         {
-            _fileLock = channel.tryLock();
+            if (_storeLock == null)
+            {
+                throw new IllegalStateException("Preferences store is not opened");
+            }
         }
-        catch(OverlappingFileLockException e)
-        {
-            _fileLock = null;
-        }
-        if(_fileLock == null)
-        {
-            throw new AMQStoreException("Cannot get lock on file " + lockFile.getAbsolutePath() + " is another instance running?");
-        }
-        lockFile.deleteOnExit();
-    }
 
-    private String getLockFileName()
-    {
-        return _preferencesLocation.getAbsolutePath() + ".lck";
-    }
-
-    public void close()
-    {
-        try
-        {
-            releaseFileLock();
-        }
-        catch(IOException e)
-        {
-            LOGGER.error("Cannot close file system preferences provider", e);
-        }
-        finally
-        {
-            new File(getLockFileName()).delete();
-            _fileLock = null;
-            _preferences.clear();
-        }
-    }
-
-    private void releaseFileLock() throws IOException
-    {
-        _fileLock.release();
-        _fileLock.channel().close();
     }
 }
