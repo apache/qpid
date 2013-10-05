@@ -25,13 +25,17 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -42,6 +46,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
 {
     private File _storeFile;
     private ObjectMapper _objectMapper;
+
 
     @Override
     public void setUp() throws Exception
@@ -93,10 +98,14 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     }
 
     @Override
-    protected void addConfiguration(UUID id, String type, Map<String, Object> attributes)
+    protected void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId)
     {
         ConfigurationEntryStore store = getStore();
-        store.save(new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), store));
+        ConfigurationEntry parentEntry = getStore().getEntry(parentId);
+        Set<UUID> children = new HashSet<UUID>(parentEntry.getChildrenIds());
+        children.add(id);
+        ConfigurationEntry newParentEntry = new ConfigurationEntry(parentEntry.getId(), parentEntry.getType(), parentEntry.getAttributes(), children, store);
+        store.save(newParentEntry, new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), store));
     }
 
     public void testAttributeIsResolvedFromSystemProperties()
@@ -232,5 +241,28 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
                 storeFile.delete();
             }
         }
+    }
+
+    public void testGetPreferencesProvider() throws Exception
+    {
+        UUID preferencesProviderId = UUID.randomUUID();
+        String path = TMP_FOLDER;
+        String name = getTestName();
+
+        addPreferencesProvider(preferencesProviderId, name, path);
+
+        // verify that store can deserialise child of a child
+        JsonConfigurationEntryStore newStore = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null, false, Collections.<String, String>emptyMap());
+
+        ConfigurationEntry authenticationProviderEntry = newStore.getEntry(_authenticationProviderId);
+        assertEquals("Unexpected preference provider ID in authentication provider children set", preferencesProviderId, authenticationProviderEntry.getChildrenIds().iterator().next());
+        ConfigurationEntry preferencesProviderEntry = newStore.getEntry(preferencesProviderId);
+        assertNotNull("Preferences providert is not found", preferencesProviderEntry);
+        assertEquals("Unexpected preferences providert id", preferencesProviderId, preferencesProviderEntry.getId());
+        Map<String, Object> attributes = preferencesProviderEntry.getAttributes();
+        assertEquals("Unexpected preferences provider name", name, attributes.get(PreferencesProvider.NAME));
+        assertEquals("Unexpected preferences provider path", path, attributes.get(FileSystemPreferencesProvider.PATH));
+        assertEquals("Unexpected preferences provider type", FileSystemPreferencesProvider.PROVIDER_TYPE,
+                attributes.get(PreferencesProvider.TYPE));
     }
 }

@@ -70,7 +70,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
     private final ObjectMapper _objectMapper;
     private final Map<UUID, ConfigurationEntry> _entries;
-    private final Map<String, Class<? extends ConfiguredObject>> _relationshipClasses;
+    private final Map<String, Class<? extends ConfiguredObject>> _brokerChildrenRelationshipMap;
     private final ConfigurationEntryStoreUtil _util = new ConfigurationEntryStoreUtil();
 
     private String _storeLocation;
@@ -86,7 +86,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
         _entries = new HashMap<UUID, ConfigurationEntry>();
-        _relationshipClasses = buildRelationshipClassMap();
+        _brokerChildrenRelationshipMap = buildRelationshipClassMap();
         _resolver = new Strings.ChainedResolver(Strings.SYSTEM_RESOLVER,
                                                 new Strings.MapResolver(configProperties));
     }
@@ -291,7 +291,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                         + " can not be loaded by store of version " + STORE_VERSION);
             }
 
-            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries, null);
+            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
             _rootId = brokerEntry.getId();
         }
         catch (IOException e)
@@ -370,7 +370,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             byte[] bytes = json.getBytes("UTF-8");
             bais = new ByteArrayInputStream(bytes);
             JsonNode node = loadJsonNodes(bais, _objectMapper);
-            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries, null);
+            ConfigurationEntry brokerEntry = toEntry(node, Broker.class, _entries);
             _rootId = brokerEntry.getId();
         }
         catch(Exception e)
@@ -490,7 +490,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         return root;
     }
 
-    private ConfigurationEntry toEntry(JsonNode parent, Class<? extends ConfiguredObject> expectedConfiguredObjectClass, Map<UUID, ConfigurationEntry> entries, Class<? extends ConfiguredObject> parentClass)
+    private ConfigurationEntry toEntry(JsonNode parent, Class<? extends ConfiguredObject> expectedConfiguredObjectClass, Map<UUID, ConfigurationEntry> entries)
     {
         Map<String, Object> attributes = null;
         Set<UUID> childrenIds = new TreeSet<UUID>();
@@ -519,23 +519,11 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                     JsonNode element = elements.next();
                     if (element.isObject())
                     {
-                        Class<? extends ConfiguredObject> expectedChildConfiguredObjectClass = _relationshipClasses.get(fieldName);
-                        if (expectedChildConfiguredObjectClass == null && expectedConfiguredObjectClass != null)
-                        {
-                            Collection<Class<? extends ConfiguredObject>> childTypes = Model.getInstance().getChildTypes(expectedConfiguredObjectClass);
-                            for (Class<? extends ConfiguredObject> childType : childTypes)
-                            {
-                                String relationship = childType.getSimpleName().toLowerCase();
-                                relationship += relationship.endsWith("s") ? "es": "s";
-                                if (fieldName.equals(relationship))
-                                {
-                                    expectedChildConfiguredObjectClass = childType;
-                                    break;
-                                }
-                            }
-                        }
+                        Class<? extends ConfiguredObject> expectedChildConfiguredObjectClass = findExpectedChildConfiguredObjectClass(
+                                fieldName, expectedConfiguredObjectClass);
+
                         // assuming it is a child node
-                        ConfigurationEntry entry = toEntry(element, expectedChildConfiguredObjectClass, entries, expectedConfiguredObjectClass);
+                        ConfigurationEntry entry = toEntry(element, expectedChildConfiguredObjectClass, entries);
                         childrenIds.add(entry.getId());
                     }
                     else
@@ -627,6 +615,34 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         }
         entries.put(id, entry);
         return entry;
+    }
+
+    private Class<? extends ConfiguredObject> findExpectedChildConfiguredObjectClass(String parentFieldName,
+            Class<? extends ConfiguredObject> parentConfiguredObjectClass)
+    {
+        if (parentConfiguredObjectClass == Broker.class)
+        {
+            return _brokerChildrenRelationshipMap.get(parentFieldName);
+        }
+
+        // for non-broker parent classes
+        // try to determine the child class from the model by iterating through the children classes
+        // for the parent configured object class
+        if (parentConfiguredObjectClass != null)
+        {
+            Collection<Class<? extends ConfiguredObject>> childTypes = Model.getInstance().getChildTypes(parentConfiguredObjectClass);
+            for (Class<? extends ConfiguredObject> childType : childTypes)
+            {
+                String relationship = childType.getSimpleName().toLowerCase();
+                relationship += relationship.endsWith("s") ? "es": "s";
+                if (parentFieldName.equals(relationship))
+                {
+                    return childType;
+                }
+            }
+        }
+
+        return null;
     }
 
     private Object toObject(JsonNode node)

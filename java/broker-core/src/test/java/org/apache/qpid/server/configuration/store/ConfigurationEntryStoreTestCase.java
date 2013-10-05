@@ -33,9 +33,11 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
@@ -47,7 +49,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 
     private UUID _brokerId;
     private UUID _virtualHostId;
-    private UUID _authenticationProviderId;
+    protected UUID _authenticationProviderId;
 
     private Map<String, Object> _brokerAttributes;
     private Map<String, Object> _virtualHostAttributes;
@@ -93,7 +95,12 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     // ??? perhaps it should not be abstract
     protected abstract ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception;
 
-    protected abstract void addConfiguration(UUID id, String type, Map<String, Object> attributes);
+    protected abstract void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId);
+
+    protected final void addConfiguration(UUID id, String type, Map<String, Object> attributes)
+    {
+        addConfiguration(id, type, attributes, _brokerId);
+    }
 
     protected ConfigurationEntryStore getStore()
     {
@@ -388,4 +395,43 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         assertNotNull("Virtual host is not found", _store.getEntry(virtualHostId));
         assertNotNull("Key store is not found", _store.getEntry(keyStoreId));
     }
+
+    public void testAddPreferencesProvider()
+    {
+        UUID preferencesProviderId = UUID.randomUUID();
+        String path = TMP_FOLDER;
+        String name = getTestName();
+
+        addPreferencesProvider(preferencesProviderId, name, path);
+
+        assertEquals("Unexpected preference provider ID in authentication provider children set", preferencesProviderId, _store
+                .getEntry(_authenticationProviderId).getChildrenIds().iterator().next());
+        ConfigurationEntry preferencesProviderEntry = _store.getEntry(preferencesProviderId);
+        assertNotNull("Preferences providert is not found", preferencesProviderEntry);
+        assertEquals("Unexpected preferences providert id", preferencesProviderId, preferencesProviderEntry.getId());
+        Map<String, Object> attributes = preferencesProviderEntry.getAttributes();
+        assertEquals("Unexpected preferences provider name", name, attributes.get(PreferencesProvider.NAME));
+        assertEquals("Unexpected preferences provider path", path, attributes.get(FileSystemPreferencesProvider.PATH));
+        assertEquals("Unexpected preferences provider type", FileSystemPreferencesProvider.PROVIDER_TYPE,
+                attributes.get(PreferencesProvider.TYPE));
+    }
+
+    protected void addPreferencesProvider(UUID preferencesProviderId, String name, String path)
+    {
+        ConfigurationEntry authenticationProviderEntry = _store.getEntry(_authenticationProviderId);
+        ConfigurationEntry newAuthenticationProviderConfigEntry = new ConfigurationEntry(authenticationProviderEntry.getId(),
+                authenticationProviderEntry.getType(), authenticationProviderEntry.getAttributes(),
+                Collections.<UUID>singleton(preferencesProviderId), _store);
+
+        Map<String, Object> preferencesProviderAttributes = new HashMap<String, Object>();
+        preferencesProviderAttributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.PROVIDER_TYPE);
+        preferencesProviderAttributes.put(FileSystemPreferencesProvider.PATH, path);
+        preferencesProviderAttributes.put(PreferencesProvider.NAME, name);
+
+        ConfigurationEntry preferencesProviderEntry = new ConfigurationEntry(preferencesProviderId, PreferencesProvider.class.getSimpleName(),
+                preferencesProviderAttributes, Collections.<UUID> emptySet(), _store);
+
+        _store.save(newAuthenticationProviderConfigEntry, preferencesProviderEntry);
+    }
+
 }
