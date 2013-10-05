@@ -39,7 +39,7 @@ import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.codehaus.jackson.map.ObjectMapper;
 
-public class PreferencesServlet extends AbstractServlet
+public class LoggedOnUserPreferencesServlet extends AbstractServlet
 {
     private static final long serialVersionUID = 1L;
 
