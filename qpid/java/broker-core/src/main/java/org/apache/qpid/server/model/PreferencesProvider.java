@@ -69,11 +69,11 @@ public interface PreferencesProvider extends ConfiguredObject
     Map<String, Object> setPreferences(String userId, Map<String, Object> preferences);
 
     /**
-     * Delete preferences for a given user ID
-     * @param userId user ID to delete preferences for
-     * @return user preferences before the deletion
+     * Delete preferences for given user IDs
+     * @param userIDs user IDs to delete preferences for
+     * @return user an array with user IDs having preferences deleted
      */
-    Map<String, Object> deletePreferences(String userId);
+    String[] deletePreferences(String... userIDs);
 
     /**
      * Returns set of the user IDs having preferences set

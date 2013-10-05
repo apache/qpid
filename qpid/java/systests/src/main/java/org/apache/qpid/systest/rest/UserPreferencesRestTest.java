@@ -125,6 +125,17 @@ public class UserPreferencesRestTest extends QpidRestTestCase
         assertNull("User webadmin is found", findUser("webadmin", users));
     }
 
+    public void testDeleteMultipleUser() throws Exception
+    {
+        int status = getRestTestHelper().submitRequest("/rest/userpreferences?user="
+                + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/webadmin", "UTF-8")
+                + "&user=" + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/admin", "UTF-8"),
+                "DELETE", null);
+        assertEquals("Unexpected status ", 200, status);
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/userpreferences");
+        assertEquals("Unexpected number of users", 0, users.size());
+    }
+
     private Map<String, Object> findUser(String userName, List<Map<String, Object>> users)
     {
         for (Map<String, Object> map : users)

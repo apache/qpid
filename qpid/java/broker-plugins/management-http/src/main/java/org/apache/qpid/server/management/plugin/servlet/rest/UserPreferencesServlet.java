@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -157,51 +157,73 @@ public class UserPreferencesServlet extends AbstractServlet
     @Override
     protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-        final List<String[]> userData = new ArrayList<String[]>();
-        for (String name : request.getParameterValues("user"))
+        Broker broker = getBroker();
+        Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
+        Map<String, Set<String>> providerUsers = new HashMap<String, Set<String>>();
+        Map<String, AuthenticationProvider> requestProviders = new HashMap<String, AuthenticationProvider>();
+        for (String path : request.getParameterValues("user"))
         {
-            String[] elements = name.split("/");
+            String[] elements = path.split("/");
             if (elements.length != 2)
             {
-                throw new IllegalArgumentException("Illegal parameter");
+                throw new IllegalArgumentException("Illegal user parameter " + path);
             }
-            userData.add(elements);
+
+            String userId = elements[1];
+
+            if (!userPreferencesOperationAuthorized(userId))
+            {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Deletion of preferences is not allowed");
+                return;
+            }
+            String providerName =  elements[0];
+            Set<String> users = providerUsers.get(providerName);
+
+            if (users == null)
+            {
+                AuthenticationProvider provider = findAuthenticationProviderByName(providerName, authenticationProviders);
+                if (provider == null)
+                {
+                    throw new IllegalArgumentException("Cannot find provider with name '" + providerName + "'");
+                }
+                users = new HashSet<String>();
+                providerUsers.put(providerName, users);
+                requestProviders.put(providerName, provider);
+            }
+            users.add(userId);
         }
 
-        if (!userData.isEmpty())
+        if (!providerUsers.isEmpty())
         {
-            Broker broker = getBroker();
-            Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
-            for (Iterator<String[]> it = userData.iterator(); it.hasNext();)
+            for (Map.Entry<String, Set<String>> entry : providerUsers.entrySet())
             {
-                String[] data = (String[]) it.next();
-                String authenticationProviderName = data[0];
-                String userId = data[1];
+                String providerName = entry.getKey();
+                AuthenticationProvider provider = requestProviders.get(providerName);
+                Set<String> usersToDelete = entry.getValue();
+                PreferencesProvider preferencesProvider = provider.getPreferencesProvider();
 
-                for (AuthenticationProvider authenticationProvider : authenticationProviders)
+                if (preferencesProvider != null && !usersToDelete.isEmpty())
                 {
-                    if (authenticationProviderName.equals(authenticationProvider.getName()))
-                    {
-                        PreferencesProvider preferencesProvider = authenticationProvider.getPreferencesProvider();
-                        if (preferencesProvider != null)
-                        {
-                            Set<String> usernames = preferencesProvider.listUserIDs();
-                            if (usernames.contains(userId))
-                            {
-                                if (!userPreferencesOperationAuthorized(userId))
-                                {
-                                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Deletion of preferences is not allowed");
-                                    return;
-                                }
-                                preferencesProvider.deletePreferences(userId);
-                            }
-                        }
-                        break;
-                    }
+                    String[] users = usersToDelete.toArray(new String[usersToDelete.size()]);
+                    preferencesProvider.deletePreferences(users);
                 }
             }
         }
 
+    }
+
+    protected AuthenticationProvider findAuthenticationProviderByName(String providerName, Collection<AuthenticationProvider> authenticationProviders)
+    {
+        AuthenticationProvider provider = null;
+        for (AuthenticationProvider authenticationProvider : authenticationProviders)
+        {
+            if(authenticationProvider.getName().equals(providerName))
+            {
+                provider = authenticationProvider;
+                break;
+            }
+        }
+        return provider;
     }
 
     private boolean userPreferencesOperationAuthorized(String userId)
