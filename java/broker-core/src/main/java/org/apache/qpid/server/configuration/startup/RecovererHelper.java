@@ -27,18 +27,28 @@ public class RecovererHelper
 {
     public static Broker verifyOnlyBrokerIsParent(ConfiguredObject... parents)
     {
+        return verifyOnlyParentIsOfType(Broker.class, parents);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends ConfiguredObject> T verifyOnlyParentIsOfType(Class<T> parentClass, ConfiguredObject... parents)
+    {
+        if (parentClass == null)
+        {
+            throw new IllegalArgumentException("Parent class is not specified!");
+        }
         if (parents == null || parents.length == 0)
         {
-            throw new IllegalArgumentException("Broker parent is not passed!");
+            throw new IllegalArgumentException("Parent of type " + parentClass.getSimpleName() +" is not passed!");
         }
         if (parents.length != 1)
         {
             throw new IllegalArgumentException("Only one parent is expected!");
         }
-        if (!(parents[0] instanceof Broker))
+        if (!parentClass.isAssignableFrom(parents[0].getClass()))
         {
-            throw new IllegalArgumentException("Parent is not a broker");
+            throw new IllegalArgumentException("Parent is not instance of " + parentClass.getSimpleName());
         }
-        return (Broker)parents[0];
+        return (T)parents[0];
     }
 }

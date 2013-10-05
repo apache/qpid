@@ -38,19 +38,7 @@ public class PreferencesProviderRecoverer implements ConfiguredObjectRecoverer<P
     public PreferencesProvider create(RecovererProvider recovererProvider, ConfigurationEntry entry,
             ConfiguredObject... parents)
     {
-        if (parents == null || parents.length == 0)
-        {
-            throw new IllegalArgumentException("AuthenticationProvider parent is not passed!");
-        }
-        if (parents.length != 1)
-        {
-            throw new IllegalArgumentException("Only one parent is expected!");
-        }
-        if (!(parents[0] instanceof AuthenticationProvider))
-        {
-            throw new IllegalArgumentException("Parent is not a AuthenticationProvider");
-        }
-        AuthenticationProvider authenticationProvider = (AuthenticationProvider)parents[0];
+        AuthenticationProvider authenticationProvider = RecovererHelper.verifyOnlyParentIsOfType(AuthenticationProvider.class, parents);
         Map<String, Object> attributes = entry.getAttributes();
         String type = MapValueConverter.getStringAttribute(PreferencesProvider.TYPE, attributes);
         PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORIES.get(type);
