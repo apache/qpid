@@ -47,7 +47,6 @@ import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.model.adapter.GroupProviderFactory;
 import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.model.adapter.PreferencesProviderCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -67,10 +66,9 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final BrokerOptions _brokerOptions;
     private final GroupProviderFactory _groupProviderFactory;
     private final StoreConfigurationChangeListener _storeChangeListener;
-    private final PreferencesProviderCreator _preferencesProviderCreator;
 
     public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, GroupProviderFactory groupProviderFactory,
-            AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, PreferencesProviderCreator preferencesProviderFactory, StatisticsGatherer statisticsGatherer,
+            AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, StatisticsGatherer statisticsGatherer,
             VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor,
             BrokerOptions brokerOptions, StoreConfigurationChangeListener storeChangeListener)
     {
@@ -85,7 +83,6 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         _taskExecutor = taskExecutor;
         _brokerOptions = brokerOptions;
         _storeChangeListener = storeChangeListener;
-        _preferencesProviderCreator = preferencesProviderFactory;
     }
 
     @Override
@@ -98,7 +95,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), attributesCopy, _statisticsGatherer, _virtualHostRegistry,
                 _logRecorder, _rootMessageLogger, _authenticationProviderFactory,_groupProviderFactory, _accessControlProviderFactory,
-                _portFactory , _preferencesProviderCreator, _taskExecutor, entry.getStore(), _brokerOptions);
+                _portFactory, _taskExecutor, entry.getStore(), _brokerOptions);
 
         broker.addChangeListener(_storeChangeListener);
 

@@ -27,10 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -42,11 +40,9 @@ public class AuthenticationProviderFactory
 {
     private final Iterable<AuthenticationManagerFactory> _factories;
     private Collection<String> _supportedAuthenticationProviders;
-    private final PreferencesProviderCreator _preferencesProviderCreator;
 
-    public AuthenticationProviderFactory(QpidServiceLoader<AuthenticationManagerFactory> authManagerFactoryServiceLoader, PreferencesProviderCreator preferencesProviderCreator)
+    public AuthenticationProviderFactory(QpidServiceLoader<AuthenticationManagerFactory> authManagerFactoryServiceLoader)
     {
-        _preferencesProviderCreator = preferencesProviderCreator;
         _factories = authManagerFactoryServiceLoader.atLeastOneInstanceOf(AuthenticationManagerFactory.class);
         List<String> supportedAuthenticationProviders = new ArrayList<String>();
         for (AuthenticationManagerFactory factory : _factories)
@@ -91,11 +87,11 @@ public class AuthenticationProviderFactory
                 if (manager instanceof PrincipalDatabaseAuthenticationManager)
                 {
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
-                            (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames(), _preferencesProviderCreator);
+                            (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames());
                 }
                 else
                 {
-                    authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames(), _preferencesProviderCreator);
+                    authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames());
                 }
                 return authenticationProvider;
             }

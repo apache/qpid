@@ -50,6 +50,7 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -72,10 +73,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     protected Collection<String> _supportedAttributes;
     protected Map<String, AuthenticationManagerFactory> _factories;
     private final AtomicReference<State> _state;
-    private PreferencesProviderCreator _preferencesProviderCreator;
     private PreferencesProvider _preferencesProvider;
 
-    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames, PreferencesProviderCreator preferencesProviderCreator)
+    private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
         super(id, null, null, broker.getTaskExecutor());
         _authManager = authManager;
@@ -86,8 +86,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
         addParent(Broker.class, broker);
-
-        _preferencesProviderCreator = preferencesProviderCreator;
 
         // set attributes now after all attribute names are known
         if (attributes != null)
@@ -440,7 +438,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         if(childClass == PreferencesProvider.class)
         {
             String name = MapValueConverter.getStringAttribute(PreferencesProvider.NAME, attributes);
-            PreferencesProvider pp = _preferencesProviderCreator.create(UUIDGenerator.generatePreferencesProviderUUID(name, getName()), attributes, this);
+            String type = MapValueConverter.getStringAttribute(PreferencesProvider.TYPE, attributes);
+            PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORIES.get(type);
+            UUID id = UUIDGenerator.generatePreferencesProviderUUID(name, getName());
+            PreferencesProvider pp = factory.createInstance(id, attributes, this);
             pp.setDesiredState(State.INITIALISING, State.ACTIVE);
             _preferencesProvider = pp;
             return (C)pp;
@@ -452,9 +453,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     {
 
         public SimpleAuthenticationProviderAdapter(
-                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames, PreferencesProviderCreator preferencesProviderCreator)
+                UUID id, Broker broker, AuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames)
         {
-            super(id, broker,authManager, attributes, attributeNames, preferencesProviderCreator);
+            super(id, broker,authManager, attributes, attributeNames);
         }
     }
 
@@ -463,9 +464,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             implements PasswordCredentialManagingAuthenticationProvider
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
-                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames, PreferencesProviderCreator preferencesProviderCreator)
+                UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames)
         {
-            super(id, broker, authManager, attributes, attributeNames, preferencesProviderCreator);
+            super(id, broker, authManager, attributes, attributeNames);
         }
 
         @Override
