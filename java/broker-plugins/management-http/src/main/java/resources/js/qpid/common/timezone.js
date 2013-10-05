@@ -23,6 +23,18 @@ define(["dojo/_base/xhr"], function (xhr) {
 
     var timezones = {};
 
+    var timeZoneSortFunction = function(a, b){
+      if (a.region == b.region)
+      {
+          if (a.city == b.city)
+          {
+            return 0;
+          }
+          return a.city < b.city ? -1 : 1;
+      }
+      return a.region < b.region ? -1 : 1;
+    }
+
     function loadTimezones()
     {
       xhr.get({
@@ -31,6 +43,7 @@ define(["dojo/_base/xhr"], function (xhr) {
         handleAs: "json",
         load: function(zones)
         {
+          zones.sort(timeZoneSortFunction);
           timezones.data = zones;
         },
         error: function(error)
@@ -53,6 +66,14 @@ define(["dojo/_base/xhr"], function (xhr) {
         return timezones.data;
       },
       getTimeZoneInfo: function(timeZone) {
+        if (timeZone == "UTC")
+        {
+          return {
+            "id" : "UTC",
+            "name" : "UTC",
+            "offset" : 0
+          }
+        }
         var tzi = timezones[timeZone];
         if (!tzi)
         {

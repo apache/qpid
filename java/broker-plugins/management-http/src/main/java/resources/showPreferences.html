@@ -22,15 +22,13 @@
   <div data-dojo-type="dijit/layout/TabContainer" style="width: 600px; height: 400px">
     <div data-dojo-type="dijit/layout/ContentPane" title="Own Preferences" data-dojo-props="selected:true" id="preferences.preferencesTab">
       <form method="post" data-dojo-type="dijit/form/Form" id="preferences.preferencesForm">
-        <table cellpadding="0" cellspacing="2" style="overflow: auto; height: 300px;">
+        <div style="height:300px">
+        <table cellpadding="0" cellspacing="2">
             <tr>
-                <td><strong>Time zone: </strong></td>
-                <td>
-                    <span id="preferences.timeZone" data-dojo-type="qpid/common/TimeZoneSelector" data-dojo-props="name: 'timeZone'"></span>
-                </td>
+                <td colspan="2"><span id="preferences.timeZone" data-dojo-type="qpid/common/TimeZoneSelector" data-dojo-props="name: 'timeZone', labelStyle: {width: '105px'}"></span></td>
             </tr>
             <tr>
-                <td><strong>Update period:</strong></td>
+                <td style="width: 105px"><strong>Update period:</strong></td>
                 <td><input id="preferences.updatePeriod" name="updatePeriod" data-dojo-type="dijit/form/NumberSpinner" data-dojo-props="
                                   invalidMessage: 'Invalid value',
                                   required: false,
@@ -41,6 +39,7 @@
                 </td>
             </tr>
         </table>
+        </div>
         <div class="dijitDialogPaneActionBar">
           <button data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Set'" id="preferences.setButton">Set</button>
           <button data-dojo-type="dijit/form/Button" data-dojo-props="label: 'Set and Close'" id="preferences.setAndCloseButton">Set and Close</button>

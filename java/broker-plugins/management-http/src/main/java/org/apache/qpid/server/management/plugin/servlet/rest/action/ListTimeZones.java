@@ -60,7 +60,7 @@ public class ListTimeZones implements Action
                         TimeZone tz = TimeZone.getTimeZone(id);
                         int offset = tz.getOffset(currentTime)/60000;
                         String city = id.substring(cityPos + 1).replace('_', ' ');
-                        timeZoneDetails.add(new TimeZoneDetails(id, tz.getDisplayName(), offset, city, region));
+                        timeZoneDetails.add(new TimeZoneDetails(id, tz.getDisplayName(true, TimeZone.SHORT), offset, city, region));
                         break;
                     }
                 }

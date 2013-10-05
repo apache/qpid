@@ -20,36 +20,47 @@
  -->
 <table cellpadding="0" cellspacing="2">
     <tr>
-        <td>Region</td>
+        <td class="labelClass"><strong>Use UTC time:</strong></td>
         <td>
-          <select class='timezoneRegion' name="region" data-dojo-type="dijit/form/FilteringSelect" data-dojo-props="
-                placeholder: 'Select region',
-                required: true,
-                missingMessage: 'A region must be supplied',
-                title: 'Select region',
-                autoComplete: true,
-                value:'undefined'">
-            <option value="undefined">Undefined</option>
-            <option value="Africa">Africa</option>
-            <option value="America">America</option>
-            <option value="Antarctica">Antarctica</option>
-            <option value="Arctic">Arctic</option>
-            <option value="Asia">Asia</option>
-            <option value="Atlantic">Atlantic</option>
-            <option value="Australia">Australia</option>
-            <option value="Europe">Europe</option>
-            <option value="Indian">Indian</option>
-            <option value="Pacific">Pacific</option>
-          </select>
+            <input type="checkbox" class='utcSelector' name="utc" data-dojo-type="dijit/form/CheckBox" value="UTC"></input>
         </td>
-        <td>City</td>
+    </tr>
+    <tr>
+        <td class="labelClass"><strong>Time Zone:</strong></td>
         <td>
-          <select class='timezoneCity' name="city" data-dojo-type="dijit/form/FilteringSelect" data-dojo-props="
-                placeholder: 'Select city',
-                required: true,
-                missingMessage: 'A city must be supplied',
-                title: 'Select city'">
-          </select>
-        </td>
+          <table cellpadding="0" cellspacing="2">
+            <tr>
+              <td>Region</td>
+              <td><select class='timezoneRegion' name="region" data-dojo-type="dijit/form/FilteringSelect"
+                data-dojo-props="
+                    placeholder: 'Select region',
+                    required: true,
+                    missingMessage: 'A region must be supplied',
+                    title: 'Select region',
+                    autoComplete: true,
+                    value:'undefined'">
+                  <option value="undefined">Undefined</option>
+                  <option value="Africa">Africa</option>
+                  <option value="America">America</option>
+                  <option value="Antarctica">Antarctica</option>
+                  <option value="Arctic">Arctic</option>
+                  <option value="Asia">Asia</option>
+                  <option value="Atlantic">Atlantic</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Europe">Europe</option>
+                  <option value="Indian">Indian</option>
+                  <option value="Pacific">Pacific</option>
+              </select></td>
+              <td>City</td>
+              <td><select class='timezoneCity' name="city" data-dojo-type="dijit/form/FilteringSelect"
+                data-dojo-props="
+                    placeholder: 'Select city',
+                    required: true,
+                    missingMessage: 'A city must be supplied',
+                    title: 'Select city'">
+              </select></td>
+            </tr>
+        </table>
+    </td>
     </tr>
 </table>
