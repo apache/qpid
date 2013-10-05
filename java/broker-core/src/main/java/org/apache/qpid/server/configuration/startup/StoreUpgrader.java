@@ -66,6 +66,22 @@ public abstract class StoreUpgrader
         }
     };
 
+    private final static StoreUpgrader UPGRADE_1_1 = new StoreUpgrader("1.1")
+    {
+        @Override
+        protected void doUpgrade(ConfigurationEntryStore store)
+        {
+            ConfigurationEntry root = store.getRootEntry();
+
+            Map<String, Object> attributes = new HashMap<String, Object>(root.getAttributes());
+            attributes.put(Broker.MODEL_VERSION, "1.2");
+            ConfigurationEntry newRoot = new ConfigurationEntry(root.getId(),root.getType(),attributes,root.getChildrenIds(),store);
+
+            store.save(newRoot);
+
+        }
+    };
+
     private StoreUpgrader(String version)
     {
         _upgraders.put(version, this);
@@ -73,8 +89,8 @@ public abstract class StoreUpgrader
 
     public static void upgrade(ConfigurationEntryStore store)
     {
-        StoreUpgrader upgrader = _upgraders.get(store.getRootEntry().getAttributes().get(Broker.MODEL_VERSION).toString());
-        if(upgrader != null)
+        StoreUpgrader upgrader = null;
+        while ((upgrader = _upgraders.get(store.getRootEntry().getAttributes().get(Broker.MODEL_VERSION).toString())) != null)
         {
             upgrader.doUpgrade(store);
         }

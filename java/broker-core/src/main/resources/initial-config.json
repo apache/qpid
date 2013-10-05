@@ -21,7 +21,7 @@
 {
   "name": "Broker",
   "storeVersion": 1,
-  "modelVersion": "1.1",
+  "modelVersion": "1.2",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
     "name" : "passwordFile",
@@ -30,7 +30,7 @@
     "preferencesproviders" : [{
         "name": "fileSystemPreferences",
         "type": "FileSystemPreferences",
-        "path" : "${qpid.work_dir}/preferences/passwordFile"
+        "path" : "${qpid.work_dir}/user.preferences.json"
     }]
   } ],
   "ports" : [  {
