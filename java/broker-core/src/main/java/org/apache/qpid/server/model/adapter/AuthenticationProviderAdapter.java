@@ -803,16 +803,15 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
 
             @Override
-            public Map<String, Object> replacePreferences(Map<String, Object> newPreferences)
+            public boolean deletePreferences()
             {
                 PreferencesProvider preferencesProvider = getPreferencesProvider();
                 if (preferencesProvider == null)
                 {
-                    return null;
+                    return false;
                 }
-                Map<String, Object> preferences = preferencesProvider.deletePreferences(this.getName());
-                preferencesProvider.setPreferences(this.getName(), newPreferences);
-                return preferences;
+                String[] deleted = preferencesProvider.deletePreferences(this.getName());
+                return deleted.length == 1;
             }
 
             private PreferencesProvider getPreferencesProvider()

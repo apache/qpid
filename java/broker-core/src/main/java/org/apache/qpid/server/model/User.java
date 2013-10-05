@@ -61,5 +61,5 @@ public interface User extends ConfiguredObject
 
     public Map<String, Object> setPreferences(Map<String, Object> preferences);
 
-    public Map<String, Object> replacePreferences(Map<String, Object> newPreferences);
+    public boolean deletePreferences();
 }

@@ -210,13 +210,16 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
 
         String user3 = "user3";
         Map<String, Object> preferences3 = _preferencesProvider.getPreferences(user3);
-        assertTrue("No preference found for user3", preferences3.isEmpty());
+        assertTrue("Unexpected preferences found for user3", preferences3.isEmpty());
     }
 
     public void testDeletePrefernces()
     {
         _preferencesProvider = createPreferencesProvider();
         _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+
+        assertUser1Preferences(_preferencesProvider.getPreferences(_user1));
+        assertUser2Preferences(_preferencesProvider.getPreferences(_user2));
 
         _preferencesProvider.deletePreferences(_user1);
         _preferencesProvider.setDesiredState(State.ACTIVE, State.STOPPED);
@@ -228,6 +231,30 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
 
         Map<String, Object> preferences2 = _preferencesProvider.getPreferences(_user2);
         assertUser2Preferences(preferences2);
+
+        String user3 = "user3";
+        Map<String, Object> preferences3 = _preferencesProvider.getPreferences(user3);
+        assertTrue("Unexpected preferences found for user3", preferences3.isEmpty());
+    }
+
+    public void testDeleteMultipleUsersPrefernces()
+    {
+        _preferencesProvider = createPreferencesProvider();
+        _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+
+        assertUser1Preferences(_preferencesProvider.getPreferences(_user1));
+        assertUser2Preferences(_preferencesProvider.getPreferences(_user2));
+
+        _preferencesProvider.deletePreferences(_user1, _user2);
+        _preferencesProvider.setDesiredState(State.ACTIVE, State.STOPPED);
+
+        _preferencesProvider = createPreferencesProvider();
+        _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        Map<String, Object> preferences1 = _preferencesProvider.getPreferences(_user1);
+        assertTrue("Preferences should not be set for user 1", preferences1.isEmpty());
+
+        Map<String, Object> preferences2 = _preferencesProvider.getPreferences(_user2);
+        assertTrue("Preferences should not be set for user 2", preferences2.isEmpty());
 
         String user3 = "user3";
         Map<String, Object> preferences3 = _preferencesProvider.getPreferences(user3);
