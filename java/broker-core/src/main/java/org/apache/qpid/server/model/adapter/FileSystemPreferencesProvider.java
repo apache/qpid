@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -301,9 +302,9 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     }
 
     @Override
-    public Map<String, Object> deletePreferences(String userId)
+    public String[] deletePreferences(String... userIDs)
     {
-        return _store.deletePreferences(userId);
+        return _store.deletePreferences(userIDs);
     }
 
     @Override
@@ -566,19 +567,26 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
             return userPreferences;
         }
 
-        public Map<String, Object> deletePreferences(String userId)
+        public String[] deletePreferences(String... userIDs)
         {
             checkStoreOpened();
-            Map<String, Object> userPreferences = null;
+            Set<String> deletedUsers = new HashSet<String>();
             synchronized (_preferences)
             {
-                if (_preferences.containsKey(userId))
+                for (String id : userIDs)
                 {
-                    userPreferences = _preferences.remove(userId);
+                    if (_preferences.containsKey(id))
+                    {
+                        _preferences.remove(id);
+                        deletedUsers.add(id);
+                    }
+                }
+                if (!deletedUsers.isEmpty())
+                {
                     save();
                 }
             }
-            return userPreferences;
+            return deletedUsers.toArray(new String[deletedUsers.size()]);
         }
 
         public Set<String> listUserIDs()
