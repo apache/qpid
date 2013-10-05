@@ -66,7 +66,7 @@ public class UserPreferencesServlet extends AbstractServlet
     {
         if (!userPreferencesOperationAuthorized(userId))
         {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Vieweing of preferences is not allowed");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Viewing of preferences is not allowed");
             return;
         }
         Map<String, Object> preferences = null;
