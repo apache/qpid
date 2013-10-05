@@ -32,6 +32,7 @@ import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
@@ -41,7 +42,6 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
 final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apache.qpid.server.exchange.Exchange.BindingListener
 {
@@ -126,9 +126,6 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
                                                               Map<String, Object> attributes)
             throws AccessControlException, IllegalStateException
     {
-        VirtualHost virtualHost = _vhost.getVirtualHost();
-
-
         AMQQueue amqQueue = ((QueueAdapter)queue).getAMQQueue();
 
         try
@@ -350,7 +347,10 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         }
         else if(ALTERNATE_EXCHANGE.equals(name))
         {
-            return _exchange.getAlternateExchange();
+            org.apache.qpid.server.exchange.Exchange alternateExchange = _exchange.getAlternateExchange();
+            return alternateExchange == null ? null :
+                                               ConfiguredObjectFinder.findConfiguredObjectByName(_vhost.getExchanges(),
+                                                                                                 alternateExchange.getName());
         }
         else if(TYPE.equals(name))
         {
