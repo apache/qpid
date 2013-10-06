@@ -50,7 +50,6 @@
   <property name="gentools.src" value="${basedir}/gentools/src"/>
   <property name="generated.package" value="org/apache/qpid/framing" />
 
-  <property name="version.file" location="${basedir}/target/classes/qpidversion.properties"/>
   <property file="${version.file}" prefix="old."/>
 
   <target name="check-version">

@@ -150,6 +150,13 @@
       </exclusions>
     </dependency>
 
+    <dependency>
+      <groupId>org.dojotoolkit</groupId>
+      <artifactId>dojo</artifactId>
+      <version>${dojo-version}</version>
+      <type>zip</type>
+    </dependency>
+
     <!-- test dependencies -->
     <dependency>
       <groupId>org.apache.qpid</groupId>
@@ -170,36 +177,28 @@
           <include>resources/</include>
         </includes>
       </resource>
+      <resource>
+        <directory>src/main/resources-maven</directory>
+        <filtering>true</filtering>
+      </resource>
     </resources>
 
     <plugins>
-       <plugin>
-         <groupId>org.apache.maven.plugins</groupId>
-         <artifactId>maven-dependency-plugin</artifactId>
-         <!--version specified in parent pluginManagement -->
-         <executions>
-           <execution>
-             <id>unpack-dojo</id>
-             <phase>generate-resources</phase>
-             <goals>
-               <goal>unpack</goal>
-             </goals>
-             <configuration>
-               <artifactItems>
-                 <artifactItem>
-                   <groupId>org.dojotoolkit</groupId>
-                   <artifactId>dojo-war</artifactId>
-                   <version>1.8.3</version>
-                   <type>war</type>
-                   <overWrite>false</overWrite>
-                   <outputDirectory>${project.build.directory}/classes/resources/dojo</outputDirectory>
-                   <excludes>META-INF/**,WEB-INF/**,**/*.uncompressed.js</excludes>
-                 </artifactItem>
-               </artifactItems>
-             </configuration>
-           </execution>
-         </executions>
-       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <!--version specified in parent pluginManagement -->
+        <configuration>
+          <archive>
+            <!-- add the dojo zip to the manifest Class-Path so that
+                 it gets picked up when using classpath wildcard
+                 expansion, which only collects .jar files -->
+            <manifestEntries>
+              <Class-Path>dojo-${dojo-version}.zip</Class-Path>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
