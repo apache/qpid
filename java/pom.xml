@@ -34,7 +34,6 @@
       - Dont deploy modules we aren't already doing so.
     - Decide on name for this parent module.
     - Fix the version numbers in all the modules.
-    - Remove groupid from all the modules, if possible?
     - Align the XML in the pom files consistently, fix whitepsace errors.
     - Complete setting properties for the dependency version numbers.
     - Use dependancy management sections to control the version numbers.
