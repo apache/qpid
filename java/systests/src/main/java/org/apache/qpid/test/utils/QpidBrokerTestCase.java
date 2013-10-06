@@ -171,7 +171,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
     protected static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
-    protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
+    protected static boolean _interleaveBrokerLog = Boolean.valueOf(System.getProperty(BROKER_LOG_INTERLEAVE,"true"));
 
     protected File _outputFile;
 
