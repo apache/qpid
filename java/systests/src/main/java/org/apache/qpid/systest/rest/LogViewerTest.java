@@ -49,11 +49,11 @@ public class LogViewerTest extends QpidRestTestCase
 
     public void testGetLogFiles() throws Exception
     {
-        List<Map<String, Object>> logFiles = getRestTestHelper().getJsonAsList("/rest/logfiles");
+        List<Map<String, Object>> logFiles = getRestTestHelper().getJsonAsList("/rest/logfilenames");
         assertNotNull("Log files data cannot be null", logFiles);
 
         // 1 file appender is configured in QPID default log4j xml:
-        assertEquals("Unexpected number of log files", 1, logFiles.size());
+        assertTrue("Unexpected number of log files", logFiles.size() > 0);
 
         Map<String, Object> logFileDetails = logFiles.get(0);
         assertEquals("Unexpected log file name", _expectedLogFileName, logFileDetails.get("name"));

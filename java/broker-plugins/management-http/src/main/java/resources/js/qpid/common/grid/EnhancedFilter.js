@@ -89,10 +89,7 @@ define([
       if(typeof args.ruleCount != 'number' || args.ruleCount < 0){
         args.ruleCount = 0;
       }
-      var rc = this.ruleCountToConfirmClearFilter = args.ruleCountToConfirmClearFilter;
-      if(rc === undefined){
-        this.ruleCountToConfirmClearFilter = 5;
-      }
+      this.ruleCountToConfirmClearFilter = args.ruleCountToConfirmClearFilter || 5;
 
       if (args.filterHidden){
           this.filterHidden = args.filterHidden;
@@ -117,6 +114,7 @@ define([
           });
 
           this.filterDefDialog = new FilterDefDialog(obj);
+          this.filterDefDialog.filterDefPane._clearFilterBtn.set("label", "Clear Filter");
 
           nls["statusTipTitleNoFilter"] = "Filter is not set";
           nls["statusTipMsg"] = "Click on 'Set Filter' button to specify filtering conditions";
@@ -149,7 +147,8 @@ define([
           filterDefDialog: this.filterDefDialog,
           defaulGridRowLimit: this.defaulGridRowLimit,
           disableFiltering: this.disableFiltering,
-          nls: nls
+          nls: nls,
+          ruleCountToConfirmClearFilter: this.ruleCountToConfirmClearFilter
         });
 
       this.filterBar.placeAt(this.grid.viewsHeaderNode, "before");
