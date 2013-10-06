@@ -68,10 +68,12 @@
     <dependency org="org.eclipse.jetty" name="jetty-security" rev="7.6.10.v20130312" transitive="false"/>
     <dependency org="org.eclipse.jetty" name="jetty-servlet" rev="7.6.10.v20130312" transitive="false"/>
     <dependency org="org.eclipse.jetty" name="jetty-util" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.dojotoolkit" name="dojo-war" rev="1.8.3" transitive="false"/>
     <dependency org="xalan" name="xalan" rev="2.7.0" transitive="false"/>
     <dependency org="velocity" name="velocity" rev="1.4" transitive="false"/>
     <dependency org="velocity" name="velocity-dep" rev="1.4" transitive="false"/>
+    <dependency org="org.dojotoolkit" name="dojo" rev="1.8.3" transitive="false">
+      <artifact name="dojo" type="zip"/>
+    </dependency>
 
     <!-- The following are optional dependencies, for modules providing optional functionlity or
     for use in optional build/test steps. Their optional status is usually indicative of licences

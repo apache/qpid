@@ -313,6 +313,10 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), "/");
         root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
 
+        root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDojoPath(), true)), "/dojo/dojo/*");
+        root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDijitPath(), true)), "/dojo/dijit/*");
+        root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDojoxPath(), true)), "/dojo/dojox/*");
+
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.html");
