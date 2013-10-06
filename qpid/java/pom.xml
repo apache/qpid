@@ -35,8 +35,6 @@
     - Decide on name for this parent module.
     - Fix the version numbers in all the modules.
     - Remove groupid from all the modules, if possible?
-    - Add enforcer check for maven versions.
-    - Add enforcer check for test profile property values, if possible?
     - Align the XML in the pom files consistently, fix whitepsace errors.
     - Complete setting properties for the dependency version numbers.
     - Use dependancy management sections to control the version numbers.
@@ -99,6 +97,10 @@
     <!-- javac source/target properties -->
     <java.source>1.6</java.source>
     <java.target>1.6</java.target>
+
+    <!-- enforcer plugin config properties -->
+    <supported-maven-version-range>[3.0.0,)</supported-maven-version-range>
+    <supported-test-profiles-regex>(java-mms.0-9-1|java-mms.0-10)</supported-test-profiles-regex>
 
     <!-- test properties -->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
@@ -449,6 +451,34 @@
             <test.output>${qpid.home.qbtc.output}</test.output>
           </systemPropertyVariables>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <!--version specified in pluginManagement -->
+        <executions>
+          <execution>
+            <id>enforce-versions-standard-properties</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>${supported-maven-version-range}</version>
+                </requireMavenVersion>
+                <requireProperty>
+                  <property>profile</property>
+                  <message>You must set a test profile!</message>
+                  <regex>${supported-test-profiles-regex}</regex>
+                  <regexMessage>You have set an unsupported test profile! Allowed values match: ${supported-test-profiles-regex}</regexMessage>
+                </requireProperty>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
