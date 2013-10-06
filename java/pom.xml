@@ -41,7 +41,6 @@
     - Add the test profiles, log4j config etc to a module which can be extracted by the others.
       - Then fix log4j configuration property to work with all modules.
       - Then fix what the systests/perftests do to copy the test-profiles dir to the encessary location.
-    - Default and remove broker log interleave property from tests.
     - Figure out dependency setup for optional bdbstore tests.
     - Add the other test profiles
     - Generate HTML reports of the test results
@@ -442,7 +441,6 @@
             <broker.command>${qpid.home}/bin/qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</broker.command>
 
             <broker.ready>BRK-1004</broker.ready>
-            <broker.log.interleave>true</broker.log.interleave>
             <profile>${profile}</profile>
 
             <!-- This must be a child of qpid home currently
