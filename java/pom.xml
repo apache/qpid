@@ -30,6 +30,7 @@
 
   <!-- ###### TODO ######
 
+    - Add project details such as Website, Mailing List, SCM.
     - Test deploying the modules to a local Nexus instance (overriding the repo properties).
       - Dont deploy modules we aren't already doing so.
     - Decide on name for this parent module.
@@ -91,6 +92,7 @@
     <maven-dependency-plugin-version>2.8</maven-dependency-plugin-version>
     <javacc-maven-plugin-version>2.6</javacc-maven-plugin-version>
     <maven-rar-plugin-version>2.3</maven-rar-plugin-version>
+    <maven-project-info-reports-plugin-version>2.7</maven-project-info-reports-plugin-version>
 
     <!-- javac source/target properties -->
     <java.source>1.6</java.source>
@@ -357,6 +359,11 @@
           <artifactId>maven-rar-plugin</artifactId>
           <version>${maven-rar-plugin-version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <version>${maven-project-info-reports-plugin-version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -479,6 +486,22 @@
       </plugin>
     </plugins>
   </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <!--While the version is specified in pluginManagement, it has to be set here otherwise the
+            version specified within the build.plugins section of the parent pom takes precendece -->
+        <version>${maven-project-info-reports-plugin-version}</version>
+        <configuration>
+          <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
+          <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 
   <profiles>
     <profile>
