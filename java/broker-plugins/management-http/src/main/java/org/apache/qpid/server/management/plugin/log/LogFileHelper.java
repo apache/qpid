@@ -55,14 +55,23 @@ public class LogFileHelper
         Map<String, List<LogFileDetails>> cache = new HashMap<String, List<LogFileDetails>>();
         for (int i = 0; i < requestedFiles.length; i++)
         {
-            String[] paths = requestedFiles[i].split("/");
-            if (paths.length != 2)
+            String logFile = requestedFiles[i];
+            if ("".equals(logFile))
             {
-                throw new IllegalArgumentException("Log file name '" + requestedFiles[i] + "' does not include an appender name");
+                throw new IllegalArgumentException("Log file parameter is empty");
+            }
+            int pos = logFile.indexOf("/");
+            if (pos == -1)
+            {
+                throw new IllegalArgumentException("Log file parameter '" + logFile + "' does not include an appender name");
+            }
+            if (pos == logFile.length())
+            {
+                throw new IllegalArgumentException("Log file parameter '" + logFile + "' does not include an file name");
             }
 
-            String appenderName = paths[0];
-            String fileName = paths[1];
+            String appenderName = logFile.substring(0, pos);
+            String fileName = logFile.substring(pos + 1);
 
             List<LogFileDetails> appenderFiles = cache.get(appenderName);
             if (appenderFiles == null)
@@ -92,6 +101,7 @@ public class LogFileHelper
                 if (logFileDetails.getName().equals(fileName))
                 {
                     logFiles.add(logFileDetails);
+                    break;
                 }
             }
         }
@@ -147,16 +157,16 @@ public class LogFileHelper
     {
         if (appender instanceof QpidCompositeRollingAppender)
         {
-            return listAppenderFiles((QpidCompositeRollingAppender) appender, includeLogFileLocation);
+            return listQpidCompositeRollingAppenderFiles((QpidCompositeRollingAppender) appender, includeLogFileLocation);
         }
         else if (appender instanceof FileAppender)
         {
-            return listAppenderFiles((FileAppender) appender, includeLogFileLocation);
+            return listFileAppenderFiles((FileAppender) appender, includeLogFileLocation);
         }
         return null;
     }
 
-    private List<LogFileDetails> listAppenderFiles(FileAppender appender, boolean includeLogFileLocation)
+    private List<LogFileDetails> listFileAppenderFiles(FileAppender appender, boolean includeLogFileLocation)
     {
         String appenderFilePath = appender.getFile();
         File appenderFile = new File(appenderFilePath);
@@ -167,17 +177,17 @@ public class LogFileHelper
         return Collections.emptyList();
     }
 
-    private List<LogFileDetails> listAppenderFiles(QpidCompositeRollingAppender appender, boolean includeLogFileLocation)
+    private List<LogFileDetails> listQpidCompositeRollingAppenderFiles(QpidCompositeRollingAppender appender, boolean includeLogFileLocation)
     {
-        List<LogFileDetails> files = listAppenderFiles((FileAppender) appender, includeLogFileLocation);
+        List<LogFileDetails> files = listFileAppenderFiles((FileAppender) appender, includeLogFileLocation);
         String appenderFilePath = appender.getFile();
         File appenderFile = new File(appenderFilePath);
         File backupFolder = new File(appender.getBackupFilesToPath());
         if (backupFolder.exists())
         {
-            String backFolderName = backupFolder.getName() + "/";
+            String backupFolderName = backupFolder.getName() + "/";
             List<LogFileDetails> backedUpFiles = listLogFiles(backupFolder, appenderFile.getName(), appender.getName(),
-                    backFolderName, includeLogFileLocation);
+                    backupFolderName, includeLogFileLocation);
             files.addAll(backedUpFiles);
         }
         return files;
@@ -192,7 +202,12 @@ public class LogFileHelper
             String name = file.getName();
             if (name.startsWith(baseFileName))
             {
-                files.add(new LogFileDetails(name, appenderName, includeLogFileLocation ? file : null, getMimeType(name), file.length(),
+                String diplayPath = name;
+                if (!relativePath.equals(""))
+                {
+                    diplayPath = relativePath + name;
+                }
+                files.add(new LogFileDetails(diplayPath, appenderName, includeLogFileLocation ? file : null, getMimeType(name), file.length(),
                         file.lastModified()));
             }
         }

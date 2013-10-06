@@ -64,6 +64,7 @@ define([
       this.filterStatusTip= params.filterStatusTip;
       this.clearFilterDialog = params.clearFilterDialog;
       this.filterDefDialog = params.filterDefDialog;
+      this.ruleCountToConfirmClearFilter = params.ruleCountToConfirmClearFilter;
 
       this._addRefreshButtons();
       this._addRowLimitButton(params.defaulGridRowLimit);

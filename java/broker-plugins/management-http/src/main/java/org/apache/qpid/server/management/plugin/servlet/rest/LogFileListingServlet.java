@@ -36,9 +36,6 @@ public class LogFileListingServlet extends AbstractServlet
 {
     private static final long serialVersionUID = 1L;
 
-    @SuppressWarnings("unchecked")
-    private LogFileHelper _helper = new LogFileHelper(Collections.list(LogManager.getRootLogger().getAllAppenders()));
-
     @Override
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException,
             ServletException
@@ -49,11 +46,13 @@ public class LogFileListingServlet extends AbstractServlet
 
         if (!getBroker().getSecurityManager().authoriseLogsAccess())
         {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Log files download is denied");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Log files access is denied");
             return;
         }
 
-        List<LogFileDetails> logFiles = _helper.getLogFileDetails(false);
+        @SuppressWarnings("unchecked")
+        LogFileHelper helper = new LogFileHelper(Collections.list(LogManager.getRootLogger().getAllAppenders()));
+        List<LogFileDetails> logFiles = helper.getLogFileDetails(false);
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 

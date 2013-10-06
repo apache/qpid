@@ -151,7 +151,7 @@ return declare("qpid.management.logs.LogFileDownloadDialog", null, {
 
     showDialog: function(){
         var self = this;
-        var requestArguments = {url: "rest/logfiles", sync: true, handleAs: "json"};
+        var requestArguments = {url: "rest/logfilenames", sync: true, handleAs: "json"};
         xhr.get(requestArguments).then(function(data){
           try
           {
