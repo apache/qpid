@@ -26,28 +26,27 @@
 
     <property name="broker.plugin" value="true"/>
 
-    <property name="broker-plugins-management-http.libs" value="" />
-
     <import file="../../module.xml" />
 
-    <!-- Flagfile used to determine if uwar needs to be done.  ._ is part of Ant's defaultexcludes so wont appear bundles -->
-    <property name="dojo.uptodate.flagfile" value="${module.classes}/resources/dojo/._dojouptodate.timestamp" />
+    <property name="module.manifest" value="${module.build}/MANIFEST.MF" />
+    <property name="dojo.config.file" value="${module.classes}/dojoconfig.properties" />
 
-    <target name="precompile" depends="unwardojo" />
+    <target name="precompile" depends="generate-manifest, generate-dojo-config"/>
 
-    <target name="unwardojo" depends="check-unwardojo.done" unless="unwardojo.done">
-        <unwar src="${project.root}/${dojo}" dest="${module.classes}/resources/dojo">
-            <patternset>
-                <exclude name="META-INF/**" />
-                <exclude name="WEB-INF/**" />
-                <exclude name="**/*.uncompressed.js" />
-            </patternset>
-        </unwar>
-        <touch file="${dojo.uptodate.flagfile}" />
+    <target name="generate-manifest">
+        <!-- Echos exactly as shown, so leave no spaces before/after lines -->
+        <echo file="${module.manifest}" append="false">Manifest-Version: 1.0
+Class-Path: dojo-${dojo-version}.zip
+</echo>
     </target>
 
-    <target name="check-unwardojo.done">
-        <uptodate property="unwardojo.done" targetfile="${dojo.uptodate.flagfile}" srcfile="${project.root}/${dojo}" />
+    <target name="generate-dojo-config">
+        <!-- Echos exactly as shown, so leave no spaces before/after lines -->
+        <echo file="${dojo.config.file}" append="false">dojo-version=${dojo-version}
+dojo-path=/dojo-${dojo-version}/dojo
+dijit-path=/dojo-${dojo-version}/dijit
+dojox-path=/dojo-${dojo-version}/dojox
+</echo>
     </target>
 
     <target name="bundle" depends="bundle-tasks" />
