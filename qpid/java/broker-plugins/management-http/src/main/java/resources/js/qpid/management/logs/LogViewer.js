@@ -155,7 +155,8 @@ define(["dojo/_base/xhr",
                      plugins:{
                        nestedSorting:true,
                        enhancedFilter:{defaulGridRowLimit: defaulGridRowLimit},
-                       indirectSelection: false
+                       indirectSelection: false,
+                       pagination: {defaultPageSize: 10}
                      }
                   }), gridNode);
                  var onStyleRow = function(row)
