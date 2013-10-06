@@ -15,8 +15,18 @@
         <include>LICENSE*</include>
         <include>NOTICE*</include>
         <include>etc/</include>
+      </includes>
+      <fileMode>0644</fileMode>
+      <directoryMode>0755</directoryMode>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
         <include>bin/</include>
       </includes>
+      <fileMode>0755</fileMode>
+      <directoryMode>0755</directoryMode>
     </fileSet>
     <fileSet>
       <directory>${project.basedir}/../common</directory>
@@ -24,6 +34,8 @@
       <includes>
         <include>bin/qpid-run</include>
       </includes>
+      <fileMode>0755</fileMode>
+      <directoryMode>0755</directoryMode>
     </fileSet>
   </fileSets>
   <dependencySets>
