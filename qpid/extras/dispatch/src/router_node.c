@@ -429,6 +429,12 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
 
             if (addr) {
                 //
+                // If the incoming link is an endpoint link, count this as an ingress delivery.
+                //
+                if (rlink->link_type == DX_LINK_ENDPOINT)
+                    addr->deliveries_ingress++;
+
+                //
                 // To field is valid and contains a known destination.  Handle the various
                 // cases for forwarding.
                 //
@@ -678,6 +684,7 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     const char  *r_src   = pn_terminus_get_address(dx_link_remote_source(link));
     int is_dynamic       = pn_terminus_is_dynamic(dx_link_remote_source(link));
     int is_router        = dx_router_terminus_is_router(dx_link_remote_target(link));
+    dx_field_iterator_t *iter = 0;
 
     //
     // If this link is not a router link and it has no source address, we can't
@@ -686,6 +693,25 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     if (r_src == 0 && !is_router && !is_dynamic) {
         pn_link_close(pn_link);
         return 0;
+    }
+
+
+    //
+    // If this is an endpoint link with a source address, make sure the address is
+    // appropriate for endpoint links.  If it is not a local or mobile address, (i.e.
+    // a router or area address), it cannot be bound to an endpoint link.
+    //
+    if(r_src && !is_router && !is_dynamic) {
+        iter = dx_field_iterator_string(r_src, ITER_VIEW_ADDRESS_HASH);
+        unsigned char prefix = dx_field_iterator_octet(iter);
+        dx_field_iterator_reset(iter);
+
+        if (prefix != 'L' && prefix != 'M') {
+            dx_field_iterator_free(iter);
+            pn_link_close(pn_link);
+            dx_log(module, LOG_WARNING, "Rejected an outgoing endpoint link with a router address: %s", r_src);
+            return 0;
+        }
     }
 
     //
@@ -725,19 +751,16 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
         // assign it an ephemeral and routable address.  If it has a non-dymanic
         // address, that address needs to be set up in the address list.
         //
-        dx_field_iterator_t *iter;
-        char                 temp_addr[1000]; // FIXME
-        dx_address_t        *addr;
+        char          temp_addr[1000]; // FIXME
+        dx_address_t *addr;
 
         if (is_dynamic) {
             dx_router_generate_temp_addr(router, temp_addr, 1000);
             iter = dx_field_iterator_string(temp_addr, ITER_VIEW_ADDRESS_HASH);
             pn_terminus_set_address(dx_link_source(link), temp_addr);
             dx_log(module, LOG_INFO, "Assigned temporary routable address: %s", temp_addr);
-        } else {
-            iter = dx_field_iterator_string(r_src, ITER_VIEW_ADDRESS_HASH);
+        } else
             dx_log(module, LOG_INFO, "Registered local address: %s", r_src);
-        }
 
         hash_retrieve(router->addr_hash, iter, (void**) &addr);
         if (!addr) {
