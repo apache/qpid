@@ -26,7 +26,7 @@
   messages from producers and routes them to matching <emphasis>Queue</emphasis>s within the <emphasis>Virtual Host</emphasis>.</para>
  <para>The server provides a set of exchange types with each exchange type implementing a different routing algorithm. For details of how
   these exchanges types work see <xref linkend="Java-Broker-Concepts-Exchanges-Types"/> below.</para>
- <para>The server predeclares a number of exchange instances with names starting with <literal>amq.</literal>. These are defined in
+ <para>The server predeclares a number of exchange instances with names starting with &quot;<literal>amq.</literal>&quot;. These are defined in
   <xref linkend="Java-Broker-Concepts-Exchanges-Predeclared"/>.</para>
  <para>Applications can make use the pre-declared exchanges, or they may declare their own. The number of exchanges within a virtual host is
   limited only by resource constraints.</para>
@@ -42,10 +42,11 @@
     <listitem>amq.match (an instance of a headers exchange)</listitem>
    </itemizedlist>
   </para>
-  <para>An exchange known as the default exchange is also pre-declared. This is a direct exchange but is special in that all
-   queues are automatically bound to it once using their name as a binding key. It is not possible to manually add or remove
+  <para>The conceptual &quot;<literal>default exchange</literal>&quot; always exists, effectively a special instance of
+   direct exchange which uses the empty string as its name. All queues are automatically bound to it upon their creation
+   using the queue name as the binding key, and unbound upon their deletion. It is not possible to manually add or remove
    bindings within this exchange.</para>
-  <para>Applications may not declare exchanges with names beginning with <literal>amq.</literal>. Such names are reserved for system use.</para>
+  <para>Applications may not declare exchanges with names beginning with &quot;<literal>amq.</literal>&quot;. Such names are reserved for system use.</para>
  </section>
  <section id="Java-Broker-Concepts-Exchanges-Types">
   <title>Exchange Types</title>
@@ -76,9 +77,9 @@
     </mediaobject>
    </figure>
    <para>The figure above illustrates the operation of direct exchange type. The yellow messages published with the routing key
-    <literal>myqueue</literal> match the binding key corresponding to queue <literal>myqueue</literal> to are routes there.  The red
-    messages published with the routing key <literal>foo</literal> match two bindings in the table so a copy of the message is
-    routed to both <literal>bar1</literal> and <literal>bar2</literal>.</para>
+    &quot;<literal>myqueue</literal>&quot; match the binding key corresponding to queue &quot;<literal>myqueue</literal>&quot; and so are routed there.  The red
+    messages published with the routing key &quot;<literal>foo</literal>&quot; match two bindings in the table so a copy of the message is
+    routed to both the &quot;<literal>bar1</literal>&quot; and &quot;<literal>bar2</literal>&quot; queues.</para>
     <para>The routing key of the blue message matches no binding keys, so the message is unroutable. It is handled as described
      in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
   </section>
@@ -101,7 +102,7 @@
       </imageobject>
      </mediaobject>
     </figure>
-   <para>The figure above illustrates publishing messages with routing key <literal>weather</literal>. The exchange routes each
+   <para>The figure above illustrates publishing messages with routing key &quot;<literal>weather</literal>&quot;. The exchange routes each
     message to every bound queue whose binding key matches the routing key.</para>
    <para>In the case illustrated, this means that each subscriber's queue receives every yellow message.</para>
    <figure>
@@ -115,9 +116,9 @@
    <para>The figure above illustrates publishing messages with hierarchical routing keys. As before, the exchange routes each
     message to every bound queue whose binding key matches the routing key but as the binding keys contain wildcards, the
     wildcard rules described above apply.</para>
-   <para>In the case illustrated, <literal>sub1</literal> has received the red and green message as <literal>news.uk</literal> and <literal>news.de</literal>
-    match binding key <literal>news.#</literal>. The red message has also gone to <literal>sub2</literal> and <literal>sub3</literal> as it's routing key
-    is matched exactly by <literal>news.uk</literal> and by <literal>*.uk</literal>.</para>
+   <para>In the case illustrated, <literal>sub1</literal> has received the red and green message as &quot;<literal>news.uk</literal>&quot; and &quot;<literal>news.de</literal>&quot;
+    match binding key &quot;<literal>news.#</literal>&quot;. The red message has also gone to <literal>sub2</literal> and <literal>sub3</literal> as it's routing key
+    is matched exactly by &quot;<literal>news.uk</literal>&quot; and by &quot;<literal>*.uk</literal>&quot;.</para>
    <para>The routing key of the yellow message matches no binding keys, so the message is unroutable. It is handled as described
     in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
    <figure>
@@ -128,13 +129,13 @@
      </imageobject>
     </mediaobject>
    </figure>
-   <para>The figure above illustrates messages with properties published with routing key <literal>shipping</literal>.</para>
+   <para>The figure above illustrates messages with properties published with routing key &quot;<literal>shipping</literal>&quot;.</para>
    <para>As before, the exchange routes each message to every bound queue whose binding key matches the routing key but as a JMS selector
-    argument has been specified, the expression is evalutated against each matching message. Only messages whose message's header values or properties
+    argument has been specified, the expression is evalutated against each matching message. Only messages whose message header values or properties
     match the expression are routed to the queue.</para>
-   <para>In the case illustrated, <literal>sub1</literal> has received the yellow and blue message as their property <literal>area</literal>
-    cause expression <literal>area in ('Forties', 'Cromarty')</literal> to evaluate true.  Similarly, the yellow message has also gone to
-    <literal>gale_alert</literal> as its property <literal>speed</literal> causes expression <literal>speed &gt; 7 and speed &lt; 10</literal>.
+   <para>In the case illustrated, <literal>sub1</literal> has received the yellow and blue message as their property &quot;<literal>area</literal>&quot;
+    cause expression &quot;<literal>area in ('Forties', 'Cromarty')</literal>&quot; to evaluate true.  Similarly, the yellow message has also gone to
+    <literal>gale_alert</literal> as its property &quot;<literal>speed</literal>&quot; causes expression &quot;<literal>speed &gt; 7 and speed &lt; 10</literal>&quot;
     to evaluate true.</para>
    <para>The properties of purple message cause expressions no evaluate true, so the message is unroutable. It is handled as described in
     <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
@@ -154,7 +155,7 @@
   <section id="Java-Broker-Concepts-Exchanges-Types-Headers">
     <title>Headers</title>
     <para>The headers exchange type routes messages to queues based on header properties within the AMQP message. The message is
-     passed to a queue if the header properties of the message satisfy header matching arguments table with which the queue was bound.
+     passed to a queue if the header properties of the message satisfy the header matching arguments table with which the queue was bound.
    </para>
   </section>
  </section>
