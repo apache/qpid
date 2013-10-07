@@ -27,6 +27,7 @@ typedef struct dx_router_conn_t     dx_router_conn_t;
 
 void dx_router_python_setup(dx_router_t *router);
 void dx_pyrouter_tick(dx_router_t *router);
+void dx_router_agent_setup(dx_router_t *router);
 
 typedef enum {
     DX_LINK_ENDPOINT,   // A link to a connected endpoint
@@ -109,6 +110,10 @@ struct dx_address_t {
     dx_router_link_ref_list_t  rlinks;           // Locally-Connected Consumers
     dx_router_ref_list_t       rnodes;           // Remotely-Connected Consumers
     hash_handle_t             *hash_handle;      // Linkage back to the hash table entry
+
+    uint64_t deliveries_ingress;
+    uint64_t deliveries_egress;
+    uint64_t deliveries_transit;
 };
 
 ALLOC_DECLARE(dx_address_t);
@@ -138,6 +143,11 @@ struct dx_router_t {
 
     PyObject               *pyRouter;
     PyObject               *pyTick;
+
+    dx_agent_class_t       *class_router;
+    dx_agent_class_t       *class_link;
+    dx_agent_class_t       *class_node;
+    dx_agent_class_t       *class_address;
 };
 
 
