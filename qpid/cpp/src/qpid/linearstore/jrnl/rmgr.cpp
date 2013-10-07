@@ -53,10 +53,10 @@ rmgr::initialize(aio_callback* const cbp)
     pmgr::initialize(cbp, JRNL_RMGR_PAGE_SIZE, JRNL_RMGR_PAGES);
     clean();
     // Allocate memory for reading file header
-    if (::posix_memalign(&_fhdr_buffer, _sblksize, _sblksize))
+    if (::posix_memalign(&_fhdr_buffer, _sblkSizeBytes, _sblkSizeBytes))
     {
         std::ostringstream oss;
-        oss << "posix_memalign(): blksize=" << _sblksize << " size=" << _sblksize;
+        oss << "posix_memalign(): blksize=" << _sblkSizeBytes << " size=" << _sblkSizeBytes;
         oss << FORMAT_SYSERR(errno);
         throw jexception(jerrno::JERR__MALLOC, oss.str(), "rmgr", "initialize");
     }

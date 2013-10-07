@@ -38,7 +38,7 @@ void
 JournalLog::log(log_level_t ll, const char* jid, const char* const log_stmt) const {
     if (ll > LOG_ERROR) {
         std::cerr << log_level_str(ll) << ": Journal \"" << jid << "\": " << log_stmt << std::endl;
-    } else if (ll > LOG_INFO) {
+    } else if (ll >= LOG_INFO) {
         std::cout << log_level_str(ll) << ": Journal \"" << jid << "\": " << log_stmt << std::endl;
     }
 

@@ -54,3 +54,10 @@ void set_enq_external(enq_hdr_t *eh, const bool external) {
     eh->_rhdr._uflag = external ? eh->_rhdr._uflag | ENQ_HDR_EXTERNAL_MASK :
                                   eh->_rhdr._uflag & (~ENQ_HDR_EXTERNAL_MASK);
 }
+
+bool validate_enq_hdr(enq_hdr_t *eh, const uint32_t magic, const uint16_t version, const uint64_t rid) {
+    return eh->_rhdr._magic == magic &&
+           eh->_rhdr._version == version &&
+           rid > 0 ? eh->_rhdr._rid == rid /* If rid == 0, don't compare rids */
+                   : true;
+}

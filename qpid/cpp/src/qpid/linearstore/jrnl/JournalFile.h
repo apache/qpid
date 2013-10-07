@@ -22,7 +22,13 @@
 #ifndef QPID_LINEARSTORE_JOURNALFILE_H_
 #define QPID_LINEARSTORE_JOURNALFILE_H_
 
+#include "qpid/linearstore/jrnl/aio.h"
+#include "qpid/linearstore/jrnl/AtomicCounter.h"
+#include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
+#include <stdint.h>
 #include <string>
+
+class file_hdr_t;
 
 namespace qpid {
 namespace qls_jrnl {
@@ -30,15 +36,76 @@ namespace qls_jrnl {
 class JournalFile
 {
 protected:
-    const std::string fqfn;
+    const std::string fqFileName;
+    const uint64_t fileSeqNum;
+    int fileHandle;
+    bool fileCloseFlag;
+    void* fileHeaderBasePtr;
+    ::file_hdr_t* fileHeaderPtr;
+    aio_cb* aioControlBlockPtr;
+    uint32_t fileSizeDblks;                            ///< File size in data blocks, including file header
+    AtomicCounter<uint32_t> enqueuedRecordCount;       ///< Count of enqueued records
+    AtomicCounter<uint32_t> submittedDblkCount;        ///< Write file count (data blocks) for submitted AIO
+    AtomicCounter<uint32_t> completedDblkCount;        ///< Write file count (data blocks) for completed AIO
+    AtomicCounter<uint16_t> outstandingAioOpsCount;    ///< Outstanding AIO operations on this file
+
 public:
-    JournalFile(const std::string& fqFileName_);
+    JournalFile(const std::string& fqFileName,
+                const uint64_t fileSeqNum,
+                const uint32_t fileSize_kib);
     virtual ~JournalFile();
 
-    const std::string directory() const;
-    const std::string fileName() const;
-    const std::string fqFileName() const;
-    bool empty() const;
+    void initialize();
+    void finalize();
+
+    const std::string getDirectory() const;
+    const std::string getFileName() const;
+    const std::string getFqFileName() const;
+    uint64_t getFileSeqNum() const;
+
+    int open();
+    bool isOpen() const;
+    void close();
+    void asyncFileHeaderWrite(io_context_t ioContextPtr,
+                              const efpPartitionNumber_t efpPartitionNumber,
+                              const efpDataSize_kib_t efpDataSize_kib,
+                              const uint16_t userFlags,
+                              const uint64_t recordId,
+                              const uint64_t firstRecordOffset,
+                              const std::string queueName);
+    void asyncPageWrite(io_context_t ioContextPtr,
+                        aio_cb* aioControlBlockPtr,
+                        void* data,
+                        uint32_t dataSize_dblks);
+
+    uint32_t getEnqueuedRecordCount() const;
+    uint32_t incrEnqueuedRecordCount();
+    uint32_t addEnqueuedRecordCount(const uint32_t a);
+    uint32_t decrEnqueuedRecordCount();
+    uint32_t subtrEnqueuedRecordCount(const uint32_t s);
+
+    uint32_t getSubmittedDblkCount() const;
+    uint32_t addSubmittedDblkCount(const uint32_t a);
+
+    uint32_t getCompletedDblkCount() const;
+    uint32_t addCompletedDblkCount(const uint32_t a);
+
+    uint16_t getOutstandingAioOperationCount() const;
+    uint16_t incrOutstandingAioOperationCount();
+    uint16_t decrOutstandingAioOperationCount();
+
+    // Status helper functions
+    bool isEmpty() const;                      ///< True if no writes of any kind have occurred
+    bool isDataEmpty() const;                  ///< True if only file header written, data is still empty
+    u_int32_t dblksRemaining() const;          ///< Dblks remaining until full
+    bool isFull() const;                       ///< True if all possible dblks have been submitted (but may not yet have returned from AIO)
+    bool isFullAndComplete() const;            ///< True if all submitted dblks have returned from AIO
+    u_int32_t getOutstandingAioDblks() const;  ///< Dblks still to be written
+    bool getNextFile() const;                  ///< True when next file is needed
+    bool isNoEnqueuedRecordsRemaining() const; ///< True when all enqueued records (or parts) have been dequeued
+
+    // Debug aid
+    const std::string status_str(const uint8_t indentDepth) const;
 };
 
 }} // namespace qpid::qls_jrnl

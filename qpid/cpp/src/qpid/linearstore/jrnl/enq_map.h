@@ -64,44 +64,46 @@ namespace qls_jrnl
     {
     public:
         // return/error codes
-        static int16_t EMAP_DUP_RID;
-        static int16_t EMAP_LOCKED;
-        static int16_t EMAP_RID_NOT_FOUND;
-        static int16_t EMAP_OK;
-        static int16_t EMAP_FALSE;
-        static int16_t EMAP_TRUE;
+        static short EMAP_DUP_RID;
+        static short EMAP_LOCKED;
+        static short EMAP_RID_NOT_FOUND;
+        static short EMAP_OK;
+        static short EMAP_FALSE;
+        static short EMAP_TRUE;
 
-    private:
-
-        struct emap_data_struct
-        {
-            uint16_t    _pfid;
-            bool        _lock;
-            emap_data_struct(const uint16_t pfid, const bool lock) : _pfid(pfid), _lock(lock) {}
-        };
-        typedef std::pair<uint64_t, emap_data_struct> emap_param;
-        typedef std::map<uint64_t, emap_data_struct> emap;
+        typedef struct emap_data_struct_t {
+            uint16_t        _pfid;
+            std::streampos  _file_posn;
+            bool            _lock;
+            emap_data_struct_t() : _pfid(0), _file_posn(0), _lock(false) {}
+            emap_data_struct_t(const uint16_t pfid, const std::streampos file_posn, const bool lock) : _pfid(pfid), _file_posn(file_posn), _lock(lock) {}
+        } emqp_data_struct_t;
+        typedef std::pair<uint64_t, emap_data_struct_t> emap_param;
+        typedef std::map<uint64_t, emap_data_struct_t> emap;
         typedef emap::iterator emap_itr;
 
+    private:
         emap _map;
         smutex _mutex;
-        std::vector<uint32_t> _pfid_enq_cnt;
+//        std::vector<uint32_t> _pfid_enq_cnt;
 
     public:
         enq_map();
         virtual ~enq_map();
 
-        void set_num_jfiles(const uint16_t num_jfiles);
-        inline uint32_t get_enq_cnt(const uint16_t pfid) const { return _pfid_enq_cnt.at(pfid); };
+//        void set_num_jfiles(const uint16_t num_jfiles);
+//        inline uint32_t get_enq_cnt(const uint16_t pfid) const { return _pfid_enq_cnt.at(pfid); };
 
-        int16_t insert_pfid(const uint64_t rid, const uint16_t pfid); // 0=ok; -3=duplicate rid;
-        int16_t insert_pfid(const uint64_t rid, const uint16_t pfid, const bool locked); // 0=ok; -3=duplicate rid;
-        int16_t get_pfid(const uint64_t rid); // >=0=pfid; -1=rid not found; -2=locked
-        int16_t get_remove_pfid(const uint64_t rid, const bool txn_flag = false); // >=0=pfid; -1=rid not found; -2=locked
+        short insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn); // 0=ok; -3=duplicate rid;
+        short insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn, const bool locked); // 0=ok; -3=duplicate rid;
+        short get_pfid(const uint64_t rid, int16_t& pfid); // >=0=pfid; -1=rid not found; -2=locked
+        short get_remove_pfid(const uint64_t rid, int16_t& pfid, const bool txn_flag = false); // >=0=pfid; -1=rid not found; -2=locked
+        short get_file_posn(const uint64_t rid, std::streampos& file_posn); // -1=rid not found; -2=locked
+        short get_data(const uint64_t rid, emap_data_struct_t& eds);
         bool is_enqueued(const uint64_t rid, bool ignore_lock = false);
-        int16_t lock(const uint64_t rid); // 0=ok; -1=rid not found
-        int16_t unlock(const uint64_t rid); // 0=ok; -1=rid not found
-        int16_t is_locked(const uint64_t rid); // 1=true; 0=false; -1=rid not found
+        short lock(const uint64_t rid); // 0=ok; -1=rid not found
+        short unlock(const uint64_t rid); // 0=ok; -1=rid not found
+        short is_locked(const uint64_t rid); // 1=true; 0=false; -1=rid not found
         inline void clear() { _map.clear(); }
         inline bool empty() const { return _map.empty(); }
         inline uint32_t size() const { return uint32_t(_map.size()); }

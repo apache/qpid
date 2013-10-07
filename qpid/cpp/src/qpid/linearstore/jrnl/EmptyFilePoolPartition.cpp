@@ -63,7 +63,7 @@ void
 EmptyFilePoolPartition::findEmptyFilePools() {
     //std::cout << "Reading " << partitionDir << std::endl; // DEBUG
     std::vector<std::string> dirList;
-    jdir::read_dir(partitionDir, dirList, true, false, false);
+    jdir::read_dir(partitionDir, dirList, true, false, false, false);
     bool foundEfpDir = false;
     for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
         if (i->compare(efpTopLevelDir) == 0) {
@@ -75,15 +75,14 @@ EmptyFilePoolPartition::findEmptyFilePools() {
         std::string efpDir(partitionDir + "/" + efpTopLevelDir);
         //std::cout << "Reading " << efpDir << std::endl; // DEBUG
         dirList.clear();
-        jdir::read_dir(efpDir, dirList, true, false, false);
+        jdir::read_dir(efpDir, dirList, true, false, false, true);
         for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
-            std::string efpSizeDir(efpDir + "/" + (*i));
             EmptyFilePool* efpp = 0;
             try {
-                efpp = new EmptyFilePool(efpSizeDir, this);
+                efpp = new EmptyFilePool(*i, this);
                 {
                     slock l(efpMapMutex);
-                    efpMap[efpp->fileSizeKib()] = efpp;
+                    efpMap[efpp->dataSize_kib()] = efpp;
                 }
             }
             catch (const std::exception& e) {
@@ -110,7 +109,7 @@ EmptyFilePoolPartition::partitionDirectory() const {
 }
 
 EmptyFilePool*
-EmptyFilePoolPartition::getEmptyFilePool(const efpFileSizeKib_t efpFileSizeKb) {
+EmptyFilePoolPartition::getEmptyFilePool(const efpDataSize_kib_t efpFileSizeKb) {
     efpMapItr_t i = efpMap.find(efpFileSizeKb);
     if (i == efpMap.end())
         return 0;
@@ -118,7 +117,7 @@ EmptyFilePoolPartition::getEmptyFilePool(const efpFileSizeKib_t efpFileSizeKb) {
 }
 
 void
-EmptyFilePoolPartition::getEmptyFilePoolSizesKb(std::vector<efpFileSizeKib_t>& efpFileSizesKbList) const {
+EmptyFilePoolPartition::getEmptyFilePoolSizesKb(std::vector<efpDataSize_kib_t>& efpFileSizesKbList) const {
     for (efpMapConstItr_t i=efpMap.begin(); i!=efpMap.end(); ++i) {
         efpFileSizesKbList.push_back(i->first);
     }

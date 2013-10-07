@@ -61,6 +61,7 @@ namespace qls_jrnl
         static const uint32_t JERR__UNEXPRESPONSE;     ///< Unexpected response to call or event
         static const uint32_t JERR__RECNFOUND;         ///< Record not found
         static const uint32_t JERR__NOTIMPL;           ///< Not implemented
+        static const uint32_t JERR__NULL;              ///< Operation on null pointer
 
         // class jcntl
         static const uint32_t JERR_JCNTL_STOPPED;      ///< Operation on stopped journal
@@ -68,8 +69,10 @@ namespace qls_jrnl
         static const uint32_t JERR_JCNTL_AIOCMPLWAIT;  ///< Timeout waiting for AIOs to complete
         static const uint32_t JERR_JCNTL_UNKNOWNMAGIC; ///< Found record with unknown magic
         static const uint32_t JERR_JCNTL_NOTRECOVERED; ///< Req' recover() to be called first
-        static const uint32_t JERR_JCNTL_RECOVERJFULL; ///< Journal data files full, cannot write
-        static const uint32_t JERR_JCNTL_OWIMISMATCH;  ///< OWI change found in unexpected location
+        static const uint32_t JERR_JCNTL_OPENRD;       ///< Unable to open file for read
+        static const uint32_t JERR_JCNTL_READ;         ///< Read error: no or insufficient data to read
+        static const uint32_t JERR_JCNTL_ENQSTATE;     ///< Read error: Record not in ENQ state
+        static const uint32_t JERR_JCNTL_INVALIDENQHDR;///< Invalid ENQ header
 
         // class jdir
         static const uint32_t JERR_JDIR_NOTDIR;        ///< Exists but is not a directory
@@ -84,21 +87,14 @@ namespace qls_jrnl
         static const uint32_t JERR_JDIR_UNLINK;        ///< File delete failed
         static const uint32_t JERR_JDIR_BADFTYPE;      ///< Bad or unknown file type (stat mode)
 
-        // class fcntl
-//        static const uint32_t JERR_FCNTL_OPENWR;       ///< Unable to open file for write
-//        static const uint32_t JERR_FCNTL_WRITE;        ///< Unable to write to file
-//        static const uint32_t JERR_FCNTL_CLOSE;        ///< File close failed
-//        static const uint32_t JERR_FCNTL_FILEOFFSOVFL; ///< Increased offset past file size
-//        static const uint32_t JERR_FCNTL_CMPLOFFSOVFL; ///< Increased cmpl offs past subm offs
-//        static const uint32_t JERR_FCNTL_RDOFFSOVFL;   ///< Increased read offs past write offs
+        // class JournalFile
+        static const uint32_t JERR_JNLF_OPEN;           ///< Unable to open file for write
+        static const uint32_t JERR_JNLF_CLOSE;          ///< Unable to close file
+        static const uint32_t JERR_JNLF_FILEOFFSOVFL;   ///< Increased offset past file size
+        static const uint32_t JERR_JNLF_CMPLOFFSOVFL;   ///< Increased cmpl offs past subm offs
 
-        // class lfmgr
-//        static const uint32_t JERR_LFMGR_BADAEFNUMLIM; ///< Bad auto-expand file number limit
-//        static const uint32_t JERR_LFMGR_AEFNUMLIMIT;  ///< Exceeded auto-expand file number limit
-//        static const uint32_t JERR_LFMGR_AEDISABLED;   ///< Attempted to expand with auto-expand disabled
-
-        // class rrfc
-//        static const uint32_t JERR_RRFC_OPENRD;        ///< Unable to open file for read
+        // class LinearFileController
+        static const uint32_t JERR_LFCR_SEQNUMNOTFOUND;///< File sequence number not found
 
         // class jrec, enq_rec, deq_rec, txn_rec
         static const uint32_t JERR_JREC_BADRECHDR;     ///< Invalid data record header
@@ -110,13 +106,14 @@ namespace qls_jrnl
         static const uint32_t JERR_WMGR_ENQDISCONT;    ///< Enq. new dtok when previous part compl.
         static const uint32_t JERR_WMGR_DEQDISCONT;    ///< Deq. new dtok when previous part compl.
         static const uint32_t JERR_WMGR_DEQRIDNOTENQ;  ///< Deq. rid not enqueued
+        static const uint32_t JERR_WMGR_BADFH;         ///< Bad file handle
 
-        // class rmgr
-        static const uint32_t JERR_RMGR_UNKNOWNMAGIC;  ///< Found record with unknown magic
-        static const uint32_t JERR_RMGR_RIDMISMATCH;   ///< RID mismatch between rec and dtok
-        //static const uint32_t JERR_RMGR_FIDMISMATCH;   ///< FID mismatch between emap and rrfc
-        static const uint32_t JERR_RMGR_ENQSTATE;      ///< Attempted read when wstate not ENQ
-        static const uint32_t JERR_RMGR_BADRECTYPE;    ///< Attempted op on incorrect rec type
+//        // class rmgr
+//        static const uint32_t JERR_RMGR_UNKNOWNMAGIC;  ///< Found record with unknown magic
+//        static const uint32_t JERR_RMGR_RIDMISMATCH;   ///< RID mismatch between rec and dtok
+//        //static const uint32_t JERR_RMGR_FIDMISMATCH;   ///< FID mismatch between emap and rrfc
+//        static const uint32_t JERR_RMGR_ENQSTATE;      ///< Attempted read when wstate not ENQ
+//        static const uint32_t JERR_RMGR_BADRECTYPE;    ///< Attempted op on incorrect rec type
 
         // class data_tok
         static const uint32_t JERR_DTOK_ILLEGALSTATE;  ///< Attempted to change to illegal state
@@ -126,19 +123,6 @@ namespace qls_jrnl
         static const uint32_t JERR_MAP_DUPLICATE;      ///< Attempted to insert using duplicate key
         static const uint32_t JERR_MAP_NOTFOUND;       ///< Key not found in map
         static const uint32_t JERR_MAP_LOCKED;         ///< rid locked by pending txn
-
-        // class jinf
-//        static const uint32_t JERR_JINF_CVALIDFAIL;    ///< Compatibility validation failure
-//        static const uint32_t JERR_JINF_NOVALUESTR;    ///< No value attr found in jinf file
-//        static const uint32_t JERR_JINF_BADVALUESTR;   ///< Bad format for value attr in jinf file
-//        static const uint32_t JERR_JINF_JDATEMPTY;     ///< Journal data files empty
-//        static const uint32_t JERR_JINF_TOOMANYFILES;  ///< Too many journal data files
-//        static const uint32_t JERR_JINF_INVALIDFHDR;   ///< Invalid file header
-//        static const uint32_t JERR_JINF_STAT;          ///< Error while trying to stat a file
-//        static const uint32_t JERR_JINF_NOTREGFILE;    ///< Target file is not a regular file
-//        static const uint32_t JERR_JINF_BADFILESIZE;   ///< File is of incorrect or unexpected size
-//        static const uint32_t JERR_JINF_OWIBAD;        ///< OWI inconsistent (>1 transition in non-ae journal)
-//        static const uint32_t JERR_JINF_ZEROLENFILE;   ///< Journal info file is zero length (empty).
 
         // EFP errors
         static const uint32_t JERR_EFP_BADPARTITIONNAME;  ///< Partition name invalid or of value 0

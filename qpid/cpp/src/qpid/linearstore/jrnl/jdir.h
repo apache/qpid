@@ -336,7 +336,7 @@ namespace qls_jrnl
         */
         static bool exists(const std::string& name);
 
-        static void read_dir(const std::string& name, std::vector<std::string>& dir_list, const bool incl_dirs, const bool incl_files, const bool incl_links);
+        static void read_dir(const std::string& name, std::vector<std::string>& dir_list, const bool incl_dirs, const bool incl_files, const bool incl_links, const bool return_fqfn);
 
         /**
         * \brief Stream operator

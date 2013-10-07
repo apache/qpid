@@ -89,7 +89,7 @@ typedef struct file_hdr_t {
 
 void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t fhdr_size_sblks,
                      const uint16_t efp_partition, const uint64_t file_size);
-int file_hdr_init(file_hdr_t* dest, const uint16_t uflag, const uint64_t rid, const uint64_t fro,
+int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, const uint64_t rid, const uint64_t fro,
                   const uint64_t file_number, const uint16_t queue_name_len, const char* queue_name);
 void file_hdr_reset(file_hdr_t* target);
 int is_file_hdr_reset(file_hdr_t* target);

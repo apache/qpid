@@ -39,10 +39,10 @@ smutex data_tok::_mutex;
 
 data_tok::data_tok():
     _wstate(NONE),
-    _rstate(UNREAD),
+//    _rstate(UNREAD),
     _dsize(0),
     _dblks_written(0),
-    _dblks_read(0),
+//    _dblks_read(0),
     _pg_cnt(0),
     _fid(0),
     _rid(0),
@@ -106,12 +106,15 @@ data_tok::wstate_str(write_state wstate)
     return "<wstate unknown>";
 }
 
+/*
 const char*
 data_tok::rstate_str() const
 {
     return rstate_str(_rstate);
 }
+*/
 
+/*
 const char*
 data_tok::rstate_str(read_state rstate)
 {
@@ -129,7 +132,9 @@ data_tok::rstate_str(read_state rstate)
     }
     return "<rstate unknown>";
 }
+*/
 
+/*
 void
 data_tok::set_rstate(const read_state rstate)
 {
@@ -143,15 +148,16 @@ data_tok::set_rstate(const read_state rstate)
     }
     _rstate = rstate;
 }
+*/
 
 void
 data_tok::reset()
 {
     _wstate = NONE;
-    _rstate = UNREAD;
+//    _rstate = UNREAD;
     _dsize = 0;
     _dblks_written = 0;
-    _dblks_read = 0;
+//    _dblks_read = 0;
     _pg_cnt = 0;
     _fid = 0;
     _rid = 0;
@@ -164,7 +170,7 @@ data_tok::status_str() const
 {
     std::ostringstream oss;
     oss << std::hex << std::setfill('0');
-    oss << "dtok id=0x" << _icnt << "; ws=" << wstate_str() << "; rs=" << rstate_str();
+    oss << "dtok id=0x" << _icnt << "; ws=" << wstate_str()/* << "; rs=" << rstate_str()*/;
     oss << "; fid=0x" << _fid << "; rid=0x" << _rid << "; xid=";
     for (unsigned i=0; i<_xid.size(); i++)
     {
@@ -174,8 +180,8 @@ data_tok::status_str() const
             oss << "/" << std::setw(2) << (int)((char)_xid[i]);
     }
     oss << "; drid=0x" << _dequeue_rid << " extrid=" << (_external_rid?"T":"F");
-    oss << "; ds=0x" << _dsize << "; dw=0x" << _dblks_written << "; dr=0x" << _dblks_read;
-    oss << " pc=0x" << _pg_cnt;
+    oss << "; ds=0x" << _dsize << "; dw=0x" << _dblks_written/* << "; dr=0x" << _dblks_read*/;
+    oss << "; pc=0x" << _pg_cnt;
     return oss.str();
 }
 

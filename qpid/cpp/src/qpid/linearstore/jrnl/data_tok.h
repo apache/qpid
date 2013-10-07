@@ -72,6 +72,7 @@ namespace qls_jrnl
             COMMITTED
         };
 
+/*
         enum read_state
         {
             UNREAD,     ///< Data block not read
@@ -79,18 +80,19 @@ namespace qls_jrnl
             SKIP_PART,  ///< Prev. dequeued dblock is part-skipped; waiting for page buffer to fill
             READ        ///< Data block is fully read
         };
+*/
 
     protected:
         static smutex _mutex;
         static uint64_t _cnt;
         uint64_t    _icnt;
         write_state _wstate;        ///< Enqueued / dequeued state of data
-        read_state  _rstate;        ///< Read state of data
+//        read_state  _rstate;        ///< Read state of data
         std::size_t _dsize;         ///< Data size in bytes
         uint32_t    _dblks_written; ///< Data blocks read/written
-        uint32_t    _dblks_read;    ///< Data blocks read/written
+//        uint32_t    _dblks_read;    ///< Data blocks read/written
         uint32_t    _pg_cnt;        ///< Page counter - incr for each page containing part of data
-        uint16_t    _fid;           ///< FID containing header of enqueue record
+        uint64_t    _fid;           ///< FID containing header of enqueue record
         uint64_t    _rid;           ///< RID of data set by enqueue operation
         std::string _xid;           ///< XID set by enqueue operation
         uint64_t    _dequeue_rid;   ///< RID of data set by dequeue operation
@@ -104,16 +106,16 @@ namespace qls_jrnl
         inline write_state wstate() const { return _wstate; }
         const char* wstate_str() const;
         static const char* wstate_str(write_state wstate);
-        inline read_state rstate() const { return _rstate; }
-        const char* rstate_str() const;
-        static const char* rstate_str(read_state rstate);
+//        inline read_state rstate() const { return _rstate; }
+//        const char* rstate_str() const;
+//        static const char* rstate_str(read_state rstate);
         inline bool is_writable() const { return _wstate == NONE || _wstate == ENQ_PART; }
         inline bool is_enqueued() const { return _wstate == ENQ; }
         inline bool is_readable() const { return _wstate == ENQ; }
-        inline bool is_read() const { return _rstate == READ; }
+//        inline bool is_read() const { return _rstate == READ; }
         inline bool is_dequeueable() const { return _wstate == ENQ || _wstate == DEQ_PART; }
         inline void set_wstate(const write_state wstate) { _wstate = wstate; }
-        void set_rstate(const read_state rstate);
+//        void set_rstate(const read_state rstate);
         inline std::size_t dsize() const { return _dsize; }
         inline void set_dsize(std::size_t dsize) { _dsize = dsize; }
 
@@ -122,16 +124,16 @@ namespace qls_jrnl
                 { _dblks_written += dblks_written; }
         inline void set_dblocks_written(uint32_t dblks_written) { _dblks_written = dblks_written; }
 
-        inline uint32_t dblocks_read() const { return _dblks_read; }
-        inline void incr_dblocks_read(uint32_t dblks_read) { _dblks_read += dblks_read; }
-        inline void set_dblocks_read(uint32_t dblks_read) { _dblks_read = dblks_read; }
+//        inline uint32_t dblocks_read() const { return _dblks_read; }
+//        inline void incr_dblocks_read(uint32_t dblks_read) { _dblks_read += dblks_read; }
+//        inline void set_dblocks_read(uint32_t dblks_read) { _dblks_read = dblks_read; }
 
         inline uint32_t pg_cnt() const { return _pg_cnt; }
         inline uint32_t incr_pg_cnt() { return ++_pg_cnt; }
         inline uint32_t decr_pg_cnt() { assert(_pg_cnt != 0); return --_pg_cnt; }
 
-        inline uint16_t fid() const { return _fid; }
-        inline void set_fid(const uint16_t fid) { _fid = fid; }
+        inline uint64_t fid() const { return _fid; }
+        inline void set_fid(const uint64_t fid) { _fid = fid; }
         inline uint64_t rid() const { return _rid; }
         inline void set_rid(const uint64_t rid) { _rid = rid; }
         inline uint64_t dequeue_rid() const {return _dequeue_rid; }

@@ -50,23 +50,27 @@ txn_data_struct::txn_data_struct(const uint64_t rid, const uint64_t drid, const 
 {}
 
 txn_map::txn_map():
-        _map(),
-        _pfid_txn_cnt()
+        _map()/*,
+        _pfid_txn_cnt()*/
 {}
 
 txn_map::~txn_map() {}
 
+/*
 void
 txn_map::set_num_jfiles(const uint16_t num_jfiles)
 {
     _pfid_txn_cnt.resize(num_jfiles, 0);
 }
+*/
 
+/*
 uint32_t
 txn_map::get_txn_pfid_cnt(const uint16_t pfid) const
 {
     return _pfid_txn_cnt.at(pfid);
 }
+*/
 
 bool
 txn_map::insert_txn_data(const std::string& xid, const txn_data& td)
@@ -84,7 +88,7 @@ txn_map::insert_txn_data(const std::string& xid, const txn_data& td)
     }
     else
         itr->second.push_back(td);
-    _pfid_txn_cnt.at(td._pfid)++;
+//    _pfid_txn_cnt.at(td._pfid)++;
     return ok;
 }
 
@@ -113,8 +117,8 @@ txn_map::get_remove_tdata_list(const std::string& xid)
         return _empty_data_list;
     txn_data_list list = itr->second;
     _map.erase(itr);
-    for (tdl_itr i=list.begin(); i!=list.end(); i++)
-        _pfid_txn_cnt.at(i->_pfid)--;
+//    for (tdl_itr i=list.begin(); i!=list.end(); i++)
+//        _pfid_txn_cnt.at(i->_pfid)--;
     return list;
 }
 

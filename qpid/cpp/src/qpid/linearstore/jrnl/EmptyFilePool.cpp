@@ -40,7 +40,7 @@ namespace qls_jrnl {
 EmptyFilePool::EmptyFilePool(const std::string& efpDirectory_,
                              const EmptyFilePoolPartition* partitionPtr_) :
                 efpDirectory(efpDirectory_),
-                efpFileSizeKib(fileSizeKbFromDirName(efpDirectory_, partitionPtr_->partitionNumber())),
+                efpDataSize_kib(fileSizeKbFromDirName(efpDirectory_, partitionPtr_->partitionNumber())),
                 partitionPtr(partitionPtr_)
 {}
 
@@ -50,7 +50,7 @@ void
 EmptyFilePool::initialize() {
     //std::cout << "Reading " << efpDirectory << std::endl; // DEBUG
     std::vector<std::string> dirList;
-    jdir::read_dir(efpDirectory, dirList, false, true, false);
+    jdir::read_dir(efpDirectory, dirList, false, true, false, false);
     for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
         size_t dotPos = i->rfind(".");
         if (dotPos != std::string::npos) {
@@ -65,9 +65,24 @@ EmptyFilePool::initialize() {
     //std::cout << "Found " << emptyFileList.size() << " files" << std::endl; // DEBUG
 }
 
-efpFileSizeKib_t
-EmptyFilePool::fileSizeKib() const {
-    return efpFileSizeKib;
+efpDataSize_kib_t
+EmptyFilePool::dataSize_kib() const {
+    return efpDataSize_kib;
+}
+
+efpFileSize_kib_t
+EmptyFilePool::fileSize_kib() const {
+    return efpDataSize_kib + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * JRNL_SBLK_SIZE_KIB);
+}
+
+efpDataSize_sblks_t
+EmptyFilePool::dataSize_sblks() const {
+    return efpDataSize_kib / JRNL_SBLK_SIZE_KIB;
+}
+
+efpFileSize_sblks_t
+EmptyFilePool::fileSize_sblks() const {
+    return (efpDataSize_kib / JRNL_SBLK_SIZE_KIB) + QLS_JRNL_FHDR_RES_SIZE_SBLKS;
 }
 
 efpFileCount_t
@@ -76,10 +91,10 @@ EmptyFilePool::numEmptyFiles() const {
     return efpFileCount_t(emptyFileList.size());
 }
 
-efpFileSizeKib_t
-EmptyFilePool::cumFileSizeKib() const {
+efpDataSize_kib_t
+EmptyFilePool::cumFileSize_kib() const {
     slock l(emptyFileListMutex);
-    return efpFileSizeKib_t(emptyFileList.size()) * efpFileSizeKib;
+    return efpDataSize_kib_t(emptyFileList.size()) * efpDataSize_kib;
 }
 
 efpPartitionNumber_t
@@ -94,7 +109,7 @@ EmptyFilePool::getPartition() const {
 
 const efpIdentity_t
 EmptyFilePool::getIdentity() const {
-    return efpIdentity_t(partitionPtr->partitionNumber(), efpFileSizeKib);
+    return efpIdentity_t(partitionPtr->partitionNumber(), efpDataSize_kib);
 }
 
 std::string
@@ -112,9 +127,9 @@ EmptyFilePool::takeEmptyFile(const std::string& destDirectory) {
 
 bool
 EmptyFilePool::returnEmptyFile(const JournalFile* srcFile) {
-    std::string emptyFileName(efpDirectory + srcFile->fileName());
+    std::string emptyFileName(efpDirectory + srcFile->getFileName());
     // TODO: reset file here
-    if (::rename(srcFile->fqFileName().c_str(), emptyFileName.c_str())) {
+    if (::rename(srcFile->getFqFileName().c_str(), emptyFileName.c_str())) {
         std::ostringstream oss;
         oss << "file=\"" << srcFile << "\" dest=\"" <<  emptyFileName << "\"" << FORMAT_SYSERR(errno);
         throw jexception(jerrno::JERR_JDIR_FMOVE, oss.str(), "EmptyFilePool", "returnEmptyFile");
@@ -152,14 +167,13 @@ EmptyFilePool::popEmptyFile() {
 
 void
 EmptyFilePool::createEmptyFile() {
-    file_hdr_t fh;
-    ::file_hdr_create(&fh, QLS_FILE_MAGIC, QLS_JRNL_VERSION, QLS_JRNL_FHDRSIZESBLKS, partitionPtr->partitionNumber(),
-                      efpFileSizeKib);
+    ::file_hdr_t fh;
+    ::file_hdr_create(&fh, QLS_FILE_MAGIC, QLS_JRNL_VERSION, QLS_JRNL_FHDR_RES_SIZE_SBLKS, partitionPtr->partitionNumber(), efpDataSize_kib);
     std::string efpfn = getEfpFileName();
     std::ofstream ofs(efpfn.c_str(), std::ofstream::out | std::ofstream::binary);
     if (ofs.good()) {
-        ofs.write((char*)&fh, sizeof(file_hdr_t));
-        uint64_t rem = ((efpFileSizeKib + (QLS_JRNL_FHDRSIZESBLKS * JRNL_SBLK_SIZE_KIB)) * 1024) - sizeof(file_hdr_t);
+        ofs.write((char*)&fh, sizeof(::file_hdr_t));
+        uint64_t rem = ((efpDataSize_kib + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * JRNL_SBLK_SIZE_KIB)) * 1024) - sizeof(::file_hdr_t);
         while (rem--)
             ofs.put('\0');
         ofs.close();
@@ -180,8 +194,8 @@ EmptyFilePool::validateEmptyFile(const std::string& emptyFileName_) const {
         oss << "stat: file=\"" << emptyFileName_ << "\"" << FORMAT_SYSERR(errno);
         throw jexception(jerrno::JERR_JDIR_STAT, oss.str(), "EmptyFilePool", "validateEmptyFile");
     }
-    efpFileSizeKib_t expectedSize = (JRNL_SBLK_SIZE_KIB + efpFileSizeKib) * 1024;
-    if ((efpFileSizeKib_t)s.st_size != expectedSize) {
+    efpDataSize_kib_t expectedSize = (JRNL_SBLK_SIZE_KIB + efpDataSize_kib) * 1024;
+    if ((efpDataSize_kib_t)s.st_size != expectedSize) {
         //std::cout << "ERROR: File " << emptyFileName << ": Incorrect size: Expected=" << expectedSize << "; actual=" << s.st_size << std::endl; // DEBUG
         return false;
     }
@@ -194,8 +208,8 @@ EmptyFilePool::validateEmptyFile(const std::string& emptyFileName_) const {
 
     const uint8_t fhFileNameBuffLen = 50;
     char fhFileNameBuff[fhFileNameBuffLen];
-    file_hdr_t fh;
-    ifs.read((char*)&fh, sizeof(file_hdr_t));
+    ::file_hdr_t fh;
+    ifs.read((char*)&fh, sizeof(::file_hdr_t));
     uint16_t fhFileNameLen = fh._queue_name_len > fhFileNameBuffLen ? fhFileNameBuffLen : fh._queue_name_len;
     ifs.read(fhFileNameBuff, fhFileNameLen);
     std::string fhFileName(fhFileNameBuff, fhFileNameLen);
@@ -204,7 +218,7 @@ EmptyFilePool::validateEmptyFile(const std::string& emptyFileName_) const {
     if (fh._rhdr._magic != QLS_FILE_MAGIC ||
         fh._rhdr._version != QLS_JRNL_VERSION ||
         fh._efp_partition != partitionPtr->partitionNumber() ||
-        fh._file_size_kib != efpFileSizeKib ||
+        fh._file_size_kib != efpDataSize_kib ||
         !::is_file_hdr_reset(&fh))
     {
         //std::cout << "ERROR: File " << emptyFileName << ": Invalid file header" << std::endl;
@@ -227,7 +241,7 @@ EmptyFilePool::getEfpFileName() {
 
 // protected
 // static
-efpFileSizeKib_t
+efpDataSize_kib_t
 EmptyFilePool::fileSizeKbFromDirName(const std::string& dirName_,
                                      const efpPartitionNumber_t partitionNumber_) {
     // Check for dirName format 'NNNk', where NNN is a number, convert NNN into an integer. NNN cannot be 0.
@@ -243,7 +257,7 @@ EmptyFilePool::fileSizeKbFromDirName(const std::string& dirName_,
             valid = n[charNum] == 'k';
         }
     }
-    efpFileSizeKib_t s = ::atol(n.c_str());
+    efpDataSize_kib_t s = ::atol(n.c_str());
     if (!valid || s == 0 || s % JRNL_SBLK_SIZE_KIB != 0) {
         std::ostringstream oss;
         oss << "Partition: " << partitionNumber_ << "; EFP directory: \'" << n << "\'";

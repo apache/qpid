@@ -83,27 +83,20 @@ if (BUILD_LINEARSTORE)
         qpid/linearstore/jrnl/EmptyFilePool.cpp
         qpid/linearstore/jrnl/EmptyFilePoolManager.cpp
         qpid/linearstore/jrnl/EmptyFilePoolPartition.cpp
-        #qpid/linearstore/jrnl/fcntl.cpp
         qpid/linearstore/jrnl/jcntl.cpp
         qpid/linearstore/jrnl/jdir.cpp
         qpid/linearstore/jrnl/jerrno.cpp
         qpid/linearstore/jrnl/jexception.cpp
-        #qpid/linearstore/jrnl/jinf.cpp
 		qpid/linearstore/jrnl/JournalFile.cpp
-		qpid/linearstore/jrnl/JournalFileController.cpp
 		qpid/linearstore/jrnl/JournalLog.cpp
         qpid/linearstore/jrnl/jrec.cpp
-        #qpid/linearstore/jrnl/lp_map.cpp
-        #qpid/linearstore/jrnl/lpmgr.cpp
+        qpid/linearstore/jrnl/LinearFileController.cpp
         qpid/linearstore/jrnl/pmgr.cpp
-        qpid/linearstore/jrnl/rmgr.cpp
-        #qpid/linearstore/jrnl/rfc.cpp
-        #qpid/linearstore/jrnl/rrfc.cpp
+        qpid/linearstore/jrnl/RecoveryManager.cpp
         qpid/linearstore/jrnl/time_ns.cpp
         qpid/linearstore/jrnl/txn_map.cpp
         qpid/linearstore/jrnl/txn_rec.cpp
         qpid/linearstore/jrnl/wmgr.cpp
-        #qpid/linearstore/jrnl/wrfc.cpp
     )
 
     # linearstore source files

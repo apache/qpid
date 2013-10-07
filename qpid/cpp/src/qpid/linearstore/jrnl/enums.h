@@ -29,7 +29,7 @@ namespace qls_jrnl
 
     // TODO: Change this to flags, as multiple of these conditions may exist simultaneously
     /**
-    * \brief Enumeration of possilbe return states from journal read and write operations.
+    * \brief Enumeration of possible return states from journal read and write operations.
     */
     enum _iores
     {
@@ -37,12 +37,12 @@ namespace qls_jrnl
         RHM_IORES_PAGE_AIOWAIT, ///< IO operation suspended - next page is waiting for AIO.
         RHM_IORES_FILE_AIOWAIT, ///< IO operation suspended - next file is waiting for AIO.
         RHM_IORES_EMPTY,        ///< During read operations, nothing further is available to read.
-        RHM_IORES_RCINVALID,    ///< Read page cache is invalid (ie obsolete or uninitialized)
-        RHM_IORES_ENQCAPTHRESH, ///< Enqueue capacity threshold (limit) reached.
-        RHM_IORES_FULL,         ///< During write operations, the journal files are full.
+//        RHM_IORES_RCINVALID,    ///< Read page cache is invalid (ie obsolete or uninitialized)
+//        RHM_IORES_ENQCAPTHRESH, ///< Enqueue capacity threshold (limit) reached.
+//        RHM_IORES_FULL,         ///< During write operations, the journal files are full.
         RHM_IORES_BUSY,         ///< Another blocking operation is in progress.
         RHM_IORES_TXPENDING,    ///< Operation blocked by pending transaction.
-        RHM_IORES_NOTIMPL       ///< Function is not yet implemented.
+        RHM_IORES_NOTIMPL       ///< Function is not implemented.
     };
     typedef _iores iores;
 
@@ -54,9 +54,9 @@ namespace qls_jrnl
             case RHM_IORES_PAGE_AIOWAIT: return "RHM_IORES_PAGE_AIOWAIT";
             case RHM_IORES_FILE_AIOWAIT: return "RHM_IORES_FILE_AIOWAIT";
             case RHM_IORES_EMPTY: return "RHM_IORES_EMPTY";
-            case RHM_IORES_RCINVALID: return "RHM_IORES_RCINVALID";
-            case RHM_IORES_ENQCAPTHRESH: return "RHM_IORES_ENQCAPTHRESH";
-            case RHM_IORES_FULL: return "RHM_IORES_FULL";
+//            case RHM_IORES_RCINVALID: return "RHM_IORES_RCINVALID";
+//            case RHM_IORES_ENQCAPTHRESH: return "RHM_IORES_ENQCAPTHRESH";
+//            case RHM_IORES_FULL: return "RHM_IORES_FULL";
             case RHM_IORES_BUSY: return "RHM_IORES_BUSY";
             case RHM_IORES_TXPENDING: return "RHM_IORES_TXPENDING";
             case RHM_IORES_NOTIMPL: return "RHM_IORES_NOTIMPL";

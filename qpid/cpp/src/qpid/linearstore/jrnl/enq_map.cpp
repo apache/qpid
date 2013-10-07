@@ -41,42 +41,33 @@ int16_t enq_map::EMAP_FALSE = 0;
 int16_t enq_map::EMAP_TRUE = 1;
 
 enq_map::enq_map():
-        _map(),
-        _pfid_enq_cnt()
-{}
+        _map(){}
 
 enq_map::~enq_map() {}
 
-void
-enq_map::set_num_jfiles(const uint16_t num_jfiles)
+
+short
+enq_map::insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn)
 {
-    _pfid_enq_cnt.resize(num_jfiles, 0);
+    return insert_pfid(rid, pfid, file_posn, false);
 }
 
-
-int16_t
-enq_map::insert_pfid(const uint64_t rid, const uint16_t pfid)
-{
-    return insert_pfid(rid, pfid, false);
-}
-
-int16_t
-enq_map::insert_pfid(const uint64_t rid, const uint16_t pfid, const bool locked)
+short
+enq_map::insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn, const bool locked)
 {
     std::pair<emap_itr, bool> ret;
-    emap_data_struct rec(pfid, locked);
+    emap_data_struct_t rec(pfid, file_posn, locked);
     {
         slock s(_mutex);
         ret = _map.insert(emap_param(rid, rec));
     }
     if (ret.second == false)
         return EMAP_DUP_RID;
-    _pfid_enq_cnt.at(pfid)++;
     return EMAP_OK;
 }
 
-int16_t
-enq_map::get_pfid(const uint64_t rid)
+short
+enq_map::get_pfid(const uint64_t rid, int16_t& pfid)
 {
     slock s(_mutex);
     emap_itr itr = _map.find(rid);
@@ -84,11 +75,12 @@ enq_map::get_pfid(const uint64_t rid)
         return EMAP_RID_NOT_FOUND;
     if (itr->second._lock)
         return EMAP_LOCKED;
-    return itr->second._pfid;
+    pfid = itr->second._pfid;
+    return EMAP_OK;
 }
 
-int16_t
-enq_map::get_remove_pfid(const uint64_t rid, const bool txn_flag)
+short
+enq_map::get_remove_pfid(const uint64_t rid, int16_t& pfid, const bool txn_flag)
 {
     slock s(_mutex);
     emap_itr itr = _map.find(rid);
@@ -96,10 +88,33 @@ enq_map::get_remove_pfid(const uint64_t rid, const bool txn_flag)
         return EMAP_RID_NOT_FOUND;
     if (itr->second._lock && !txn_flag) // locked, but not a commit/abort
         return EMAP_LOCKED;
-    uint16_t pfid = itr->second._pfid;
+    pfid = itr->second._pfid;
     _map.erase(itr);
-    _pfid_enq_cnt.at(pfid)--;
-    return pfid;
+    return EMAP_OK;
+}
+
+short
+enq_map::get_file_posn(const uint64_t rid, std::streampos& file_posn) {
+    slock s(_mutex);
+    emap_itr itr = _map.find(rid);
+    if (itr == _map.end()) // not found in map
+        return EMAP_RID_NOT_FOUND;
+    if (itr->second._lock)
+        return EMAP_LOCKED;
+    file_posn = itr->second._file_posn;
+    return EMAP_OK;
+}
+
+short
+enq_map::get_data(const uint64_t rid, emap_data_struct_t& eds) {
+    slock s(_mutex);
+    emap_itr itr = _map.find(rid);
+    if (itr == _map.end()) // not found in map
+        return EMAP_RID_NOT_FOUND;
+    eds._pfid = itr->second._pfid;
+    eds._file_posn = itr->second._file_posn;
+    eds._lock = itr->second._lock;
+    return EMAP_OK;
 }
 
 bool
@@ -114,7 +129,7 @@ enq_map::is_enqueued(const uint64_t rid, bool ignore_lock)
     return true;
 }
 
-int16_t
+short
 enq_map::lock(const uint64_t rid)
 {
     slock s(_mutex);
@@ -125,7 +140,7 @@ enq_map::lock(const uint64_t rid)
     return EMAP_OK;
 }
 
-int16_t
+short
 enq_map::unlock(const uint64_t rid)
 {
     slock s(_mutex);
@@ -136,7 +151,7 @@ enq_map::unlock(const uint64_t rid)
     return EMAP_OK;
 }
 
-int16_t
+short
 enq_map::is_locked(const uint64_t rid)
 {
     slock s(_mutex);

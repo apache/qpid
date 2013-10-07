@@ -148,9 +148,9 @@ namespace qls_jrnl
         virtual std::size_t rec_size() const = 0;
         inline virtual uint32_t rec_size_dblks() const { return size_dblks(rec_size()); }
         static inline uint32_t size_dblks(const std::size_t size)
-                { return size_blks(size, JRNL_DBLK_SIZE); }
+                { return size_blks(size, JRNL_DBLK_SIZE_BYTES); }
         static inline uint32_t size_sblks(const std::size_t size)
-                { return size_blks(size, JRNL_SBLK_SIZE); }
+                { return size_blks(size, JRNL_SBLK_SIZE_BYTES); }
         static inline uint32_t size_blks(const std::size_t size, const std::size_t blksize)
                 { return (size + blksize - 1)/blksize; }
         virtual uint64_t rid() const = 0;

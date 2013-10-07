@@ -45,6 +45,7 @@ namespace qpid
 {
 namespace qls_jrnl
 {
+class JournalFile;
 
     /**
     * \brief Abstract class for managing either read or write page cache of arbitrary size and
@@ -64,7 +65,6 @@ namespace qls_jrnl
             AIO_COMPLETE                ///< An AIO request is complete.
         };
 
-    protected:
         /**
         * \brief Page control block, carries control and state information for each page in the
         *     cache.
@@ -79,13 +79,15 @@ namespace qls_jrnl
             std::deque<data_tok*>* _pdtokl; ///< Page message tokens list
             //fcntl* _wfh;                ///< File handle for incrementing write compl counts
             //fcntl* _rfh;                ///< File handle for incrementing read compl counts
+            JournalFile* _jfp;          ///< Journal file for incrementing compl counts
             void* _pbuff;               ///< Page buffer
 
             page_cb(uint16_t index);   ///< Convenience constructor
             const char* state_str() const; ///< Return state as string for this pcb
         };
 
-        static const uint32_t _sblksize; ///< Disk softblock size
+    protected:
+        static const uint32_t _sblkSizeBytes; ///< Disk softblock size
         uint32_t _cache_pgsize_sblks;   ///< Size of page cache cache_num_pages
         uint16_t _cache_num_pages;      ///< Number of page cache cache_num_pages
         jcntl* _jc;                     ///< Pointer to journal controller

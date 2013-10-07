@@ -79,29 +79,15 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     typedef boost::function<void (JournalImpl&)> DeleteCallback;
 
   private:
-//    static qpid::sys::Mutex _static_lock;
-//    static uint32_t cnt;
-
     qpid::sys::Timer& timer;
     bool getEventsTimerSetFlag;
     boost::intrusive_ptr<qpid::sys::TimerTask> getEventsFireEventsPtr;
     qpid::sys::Mutex _getf_lock;
     qpid::sys::Mutex _read_lock;
-    qpid::qls_jrnl::EmptyFilePool* efpp;
-
-//    uint64_t lastReadRid; // rid of last read msg for loadMsgContent() - detects out-of-order read requests
-//    std::vector<uint64_t> oooRidList; // list of out-of-order rids (greater than current rid) encountered during read sequence
 
     bool writeActivityFlag;
     bool flushTriggeredFlag;
     boost::intrusive_ptr<qpid::sys::TimerTask> inactivityFireEventPtr;
-
-    // temp local vars for loadMsgContent below
-//    void* _xidp;
-//    void* _datap;
-//    size_t _dlen;
-//    qpid::qls_jrnl::data_tok _dtok;
-//    bool _external;
 
     qpid::management::ManagementAgent* _agent;
     qmf::org::apache::qpid::linearstore::Journal::shared_ptr _mgmtObject;
@@ -112,7 +98,6 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     JournalImpl(qpid::sys::Timer& timer,
                 const std::string& journalId,
                 const std::string& journalDirectory,
-//                const std::string& journalBaseFilename,
                 const qpid::sys::Duration getEventsTimeout,
                 const qpid::sys::Duration flushTimeout,
                 qpid::management::ManagementAgent* agent,
@@ -122,29 +107,18 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
 
     void initManagement(qpid::management::ManagementAgent* agent);
 
-    void initialize(/*const uint16_t num_jfiles,
-                    const bool auto_expand,
-                    const uint16_t ae_max_jfiles,
-                    const uint32_t jfsize_sblks,*/
-                    qpid::qls_jrnl::EmptyFilePool* efp,
+    void initialize(qpid::qls_jrnl::EmptyFilePool* efp,
                     const uint16_t wcache_num_pages,
                     const uint32_t wcache_pgsize_sblks,
                     qpid::qls_jrnl::aio_callback* const cbp);
 
-    inline void initialize(/*const uint16_t num_jfiles,
-                           const bool auto_expand,
-                           const uint16_t ae_max_jfiles,
-                           const uint32_t jfsize_sblks,*/
-                           qpid::qls_jrnl::EmptyFilePool* efp,
+    inline void initialize(qpid::qls_jrnl::EmptyFilePool* efpp,
                            const uint16_t wcache_num_pages,
                            const uint32_t wcache_pgsize_sblks) {
-        initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ efp, wcache_num_pages, wcache_pgsize_sblks, this);
+        initialize(efpp, wcache_num_pages, wcache_pgsize_sblks, this);
     }
 
-    void recover(/*const uint16_t num_jfiles,
-                 const bool auto_expand,
-                 const uint16_t ae_max_jfiles,
-                 const uint32_t jfsize_sblks,*/
+    void recover(boost::shared_ptr<qpid::qls_jrnl::EmptyFilePoolManager> efpm,
                  const uint16_t wcache_num_pages,
                  const uint32_t wcache_pgsize_sblks,
                  qpid::qls_jrnl::aio_callback* const cbp,
@@ -152,17 +126,13 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
                  uint64_t& highest_rid,
                  uint64_t queue_id);
 
-    inline void recover(/*const uint16_t num_jfiles,
-                        const bool auto_expand,
-                        const uint16_t ae_max_jfiles,
-                        const uint32_t jfsize_sblks,*/
+    inline void recover(boost::shared_ptr<qpid::qls_jrnl::EmptyFilePoolManager> efpm,
                         const uint16_t wcache_num_pages,
                         const uint32_t wcache_pgsize_sblks,
                         boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
                         uint64_t& highest_rid,
                         uint64_t queue_id) {
-        recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
-                this, prep_tx_list_ptr, highest_rid, queue_id);
+        recover(efpm, wcache_num_pages, wcache_pgsize_sblks, this, prep_tx_list_ptr, highest_rid, queue_id);
     }
 
     void recover_complete();
@@ -196,10 +166,6 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     void txn_commit(qpid::qls_jrnl::data_tok* const dtokp, const std::string& xid);
 
     void stop(bool block_till_aio_cmpl = false);
-
-    // Logging
-//    void log(qpid::qls_jrnl::log_level level, const std::string& log_stmt) const;
-//    void log(qpid::qls_jrnl::log_level level, const char* const log_stmt) const;
 
     // Overrides for get_events timer
     qpid::qls_jrnl::iores flush(const bool block_till_aio_cmpl = false);
@@ -249,15 +215,15 @@ class TplJournalImpl : public JournalImpl
     TplJournalImpl(qpid::sys::Timer& timer,
                    const std::string& journalId,
                    const std::string& journalDirectory,
-//                   const std::string& journalBaseFilename,
                    const qpid::sys::Duration getEventsTimeout,
                    const qpid::sys::Duration flushTimeout,
                    qpid::management::ManagementAgent* agent) :
-        JournalImpl(timer, journalId, journalDirectory/*, journalBaseFilename*/, getEventsTimeout, flushTimeout, agent)
+        JournalImpl(timer, journalId, journalDirectory, getEventsTimeout, flushTimeout, agent)
     {}
 
     virtual ~TplJournalImpl() {}
 
+/*
     // Special version of read_data_record that ignores transactions - needed when reading the TPL
     inline qpid::qls_jrnl::iores read_data_record(void** const datapp, std::size_t& dsize,
                                                 void** const xidpp, std::size_t& xidsize, bool& transient, bool& external,
@@ -265,6 +231,7 @@ class TplJournalImpl : public JournalImpl
         return JournalImpl::read_data_record(datapp, dsize, xidpp, xidsize, transient, external, dtokp, true);
     }
     inline void read_reset() { _rmgr.invalidate(); }
+*/
 }; // class TplJournalImpl
 
 } // namespace msgstore

@@ -70,6 +70,7 @@ bool is_enq_transient(const enq_hdr_t *eh);
 void set_enq_transient(enq_hdr_t *eh, const bool transient);
 bool is_enq_external(const enq_hdr_t *eh);
 void set_enq_external(enq_hdr_t *eh, const bool external);
+bool validate_enq_hdr(enq_hdr_t *eh, const uint32_t magic, const uint16_t version, const uint64_t rid);
 
 #pragma pack()
 

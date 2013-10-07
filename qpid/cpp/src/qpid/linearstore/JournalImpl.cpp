@@ -62,7 +62,6 @@ JournalImpl::JournalImpl(qpid::sys::Timer& timer_,
                          jcntl(journalId, journalDirectory/*, journalBaseFilename*/),
                          timer(timer_),
                          getEventsTimerSetFlag(false),
-                         efpp(0),
 //                         lastReadRid(0),
                          writeActivityFlag(false),
                          flushTriggeredFlag(true),
@@ -119,8 +118,8 @@ JournalImpl::initManagement(qpid::management::ManagementAgent* a)
         _mgmtObject->set_name(_jid);
         _mgmtObject->set_directory(_jdir.dirname());
 //        _mgmtObject->set_baseFileName(_base_filename);
-        _mgmtObject->set_readPageSize(JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE);
-        _mgmtObject->set_readPages(JRNL_RMGR_PAGES);
+//        _mgmtObject->set_readPageSize(JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE);
+//        _mgmtObject->set_readPages(JRNL_RMGR_PAGES);
 
         // The following will be set on initialize(), but being properties, these must be set to 0 in the meantime
         //_mgmtObject->set_initialFileCount(0);
@@ -140,7 +139,6 @@ JournalImpl::initialize(qpid::qls_jrnl::EmptyFilePool* efpp_,
                         const uint32_t wcache_pgsize_sblks,
                         qpid::qls_jrnl::aio_callback* const cbp)
 {
-    efpp = efpp_;
 //    efpp->createJournal(_jdir);
 //    QLS_LOG2(notice, _jid, "Initialized");
 //    std::ostringstream oss;
@@ -150,7 +148,7 @@ JournalImpl::initialize(qpid::qls_jrnl::EmptyFilePool* efpp_,
 //    oss << " wcache_pgsize_sblks=" << wcache_pgsize_sblks;
 //    oss << " wcache_num_pages=" << wcache_num_pages;
 //    QLS_LOG2(debug, _jid, oss.str());
-    jcntl::initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ efpp, wcache_num_pages, wcache_pgsize_sblks, cbp);
+    jcntl::initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ efpp_, wcache_num_pages, wcache_pgsize_sblks, cbp);
 //    QLS_LOG2(debug, _jid, "Initialization complete");
     // TODO: replace for linearstore: _lpmgr
 /*
@@ -175,6 +173,7 @@ JournalImpl::recover(/*const uint16_t num_jfiles,
                      const bool auto_expand,
                      const uint16_t ae_max_jfiles,
                      const uint32_t jfsize_sblks,*/
+                     boost::shared_ptr<qpid::qls_jrnl::EmptyFilePoolManager> efpm,
                      const uint16_t wcache_num_pages,
                      const uint32_t wcache_pgsize_sblks,
                      qpid::qls_jrnl::aio_callback* const cbp,
@@ -210,10 +209,10 @@ JournalImpl::recover(/*const uint16_t num_jfiles,
             prep_xid_list.push_back(i->xid);
         }
 
-        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
+        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/efpm.get(), wcache_num_pages, wcache_pgsize_sblks,
                 cbp, &prep_xid_list, highest_rid);
     } else {
-        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ wcache_num_pages, wcache_pgsize_sblks,
+        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/efpm.get(), wcache_num_pages, wcache_pgsize_sblks,
                 cbp, 0, highest_rid);
     }
 
@@ -559,9 +558,11 @@ JournalImpl::wr_aio_cb(std::vector<data_tok*>& dtokl)
 		    switch (dtokp->wstate())
 		    {
  			    case data_tok::ENQ:
+ 			        std::cout << "<<<>>> JournalImpl::wr_aio_cb() ENQ dtokp rid=" << dtokp->rid() << std::endl << std::flush; // DEBUG
              	    dtokp->getSourceMessage()->enqueueComplete();
  				    break;
 			    case data_tok::DEQ:
+			        std::cout << "<<<>>> JournalImpl::wr_aio_cb() DEQ dtokp rid=" << dtokp->rid() << std::endl << std::flush; // DEBUG
 /* Don't need to signal until we have a way to ack completion of dequeue in AMQP
                     dtokp->getSourceMessage()->dequeueComplete();
                     if ( dtokp->getSourceMessage()->isDequeueComplete()  ) // clear id after last dequeue
@@ -607,16 +608,7 @@ JournalImpl::handleIoResult(const iores r)
     {
         case qpid::qls_jrnl::RHM_IORES_SUCCESS:
             return;
-        case qpid::qls_jrnl::RHM_IORES_ENQCAPTHRESH:
-            {
-                std::ostringstream oss;
-                oss << "Enqueue capacity threshold exceeded.";
-                QLS_LOG2(warning, _jid, oss.str());
-                if (_agent != 0)
-                    _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventEnqThresholdExceeded(_jid, "Journal enqueue capacity threshold exceeded"),
-                                       qpid::management::ManagementAgent::SEV_WARN);
-                THROW_STORE_FULL_EXCEPTION(oss.str());
-            }
+/*
         case qpid::qls_jrnl::RHM_IORES_FULL:
             {
                 std::ostringstream oss;
@@ -626,6 +618,7 @@ JournalImpl::handleIoResult(const iores r)
                     _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventFull(_jid, "Journal full"), qpid::management::ManagementAgent::SEV_ERROR);
                 THROW_STORE_FULL_EXCEPTION(oss.str());
             }
+*/
         default:
             {
                 std::ostringstream oss;

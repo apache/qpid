@@ -409,7 +409,7 @@ jdir::exists(const std::string& name)
 }
 
 void
-jdir::read_dir(const std::string& name, std::vector<std::string>& dir_list, const bool incl_dirs, const bool incl_files, const bool incl_links) {
+jdir::read_dir(const std::string& name, std::vector<std::string>& dir_list, const bool incl_dirs, const bool incl_files, const bool incl_links, const bool return_fqfn) {
     struct stat s;
     if (is_dir(name)) {
         DIR* dir = ::opendir(name.c_str());
@@ -425,8 +425,13 @@ jdir::read_dir(const std::string& name, std::vector<std::string>& dir_list, cons
                         oss << "stat: file=\"" << full_name << "\"" << FORMAT_SYSERR(errno);
                         throw jexception(jerrno::JERR_JDIR_STAT, oss.str(), "jdir", "delete_dir");
                     }
-                    if ((S_ISREG(s.st_mode) && incl_files) || (S_ISDIR(s.st_mode) && incl_dirs) || (S_ISLNK(s.st_mode) && incl_links))
-                        dir_list.push_back(entry->d_name);
+                    if ((S_ISREG(s.st_mode) && incl_files) || (S_ISDIR(s.st_mode) && incl_dirs) || (S_ISLNK(s.st_mode) && incl_links)) {
+                        if (return_fqfn) {
+                            dir_list.push_back(name + "/" + entry->d_name);
+                        } else {
+                            dir_list.push_back(entry->d_name);
+                        }
+                    }
                 }
             }
         }

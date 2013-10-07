@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_JCNTL_H
-#define QPID_LEGACYSTORE_JRNL_JCNTL_H
+#ifndef QPID_LINEARSTORE_JRNL_JCNTL_H
+#define QPID_LINEARSTORE_JRNL_JCNTL_H
 
 namespace qpid
 {
@@ -31,6 +31,7 @@ namespace qls_jrnl
 
 #include <cstddef>
 #include <deque>
+#include <qpid/linearstore/jrnl/LinearFileController.h>
 #include <qpid/linearstore/jrnl/JournalLog.h>
 #include "qpid/linearstore/jrnl/jdir.h"
 //#include "qpid/linearstore/jrnl/fcntl.h"
@@ -46,8 +47,8 @@ namespace qpid
 {
 namespace qls_jrnl
 {
-class EmptyFilePool;
-class JournalFileController;
+    class EmptyFilePool;
+    class EmptyFilePoolManager;
 
     /**
     * \brief Access and control interface for the journal. This is the top-level class for the
@@ -127,17 +128,14 @@ class JournalFileController;
         //bool _autostop;             ///< Autostop flag - stops journal when overrun occurs
 
         // Journal control structures
-        JournalFileController* _jfcp;///< Journal File Controller
-        //uint32_t _jfsize_sblks;    ///< Journal file size in sblks
-        //lpmgr _lpmgr;               ///< LFID-PFID manager tracks inserted journal files
-        enq_map _emap;              ///< Enqueue map for low water mark management
-        txn_map _tmap;              ///< Transaction map open transactions
-        //rrfc _rrfc;                 ///< Read journal rotating file controller
-        //wrfc _wrfc;                 ///< Write journal rotating file controller
-        rmgr _rmgr;                 ///< Read page manager which manages AIO
-        wmgr _wmgr;                 ///< Write page manager which manages AIO
-        rcvdat _rcvdat;             ///< Recovery data used for recovery
-        smutex _wr_mutex;           ///< Mutex for journal writes
+        LinearFileController _linearFileController; ///< Linear File Controller
+        EmptyFilePool* _emptyFilePoolPtr;           ///< Pointer to Empty File Pool for this queue
+        enq_map _emap;                              ///< Enqueue map for low water mark management
+        txn_map _tmap;                              ///< Transaction map open transactions
+        //rmgr _rmgr;                                 ///< Read page manager which manages AIO
+        wmgr _wmgr;                                 ///< Write page manager which manages AIO
+        rcvdat _rcvdat;                             ///< Recovery data used for recovery
+        smutex _wr_mutex;                           ///< Mutex for journal writes
 
     public:
         static timespec _aio_cmpl_timeout; ///< Timeout for blocking libaio returns
@@ -230,9 +228,12 @@ class JournalFileController;
         *
         * \exception TODO
         */
-        void recover(/*const uint16_t num_jfiles, const bool auto_expand, const uint16_t ae_max_jfiles,
-                const uint32_t jfsize_sblks,*/ const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
-                aio_callback* const cbp, const std::vector<std::string>* prep_txn_list_ptr, uint64_t& highest_rid);
+        void recover(EmptyFilePoolManager* efpm,
+                     const uint16_t wcache_num_pages,
+                     const uint32_t wcache_pgsize_sblks,
+                     aio_callback* const cbp,
+                     const std::vector<std::string>* prep_txn_list_ptr,
+                     uint64_t& highest_rid);
 
         /**
         * \brief Notification to the journal that recovery is complete and that normal operation
@@ -532,7 +533,7 @@ class JournalFileController;
         * operations, but if these operations cease, then this call needs to be made to force the
         * processing of any outstanding AIO operations.
         */
-        int32_t get_rd_events(timespec* const timeout);
+//        int32_t get_rd_events(timespec* const timeout);
 
         /**
         * \brief Stop the journal from accepting any further requests to read or write data.
@@ -554,11 +555,11 @@ class JournalFileController;
         */
         iores flush(const bool block_till_aio_cmpl = false);
 
-        inline uint32_t get_enq_cnt() const { return _emap.size(); }
+        inline uint32_t get_enq_cnt() const { return _emap.size(); } // TODO: Thread safe?
 
         inline uint32_t get_wr_aio_evt_rem() const { slock l(_wr_mutex); return _wmgr.get_aio_evt_rem(); }
 
-        inline uint32_t get_rd_aio_evt_rem() const { return _rmgr.get_aio_evt_rem(); }
+//        inline uint32_t get_rd_aio_evt_rem() const { return _rmgr.get_aio_evt_rem(); }
 
         inline uint32_t get_wr_outstanding_aio_dblks() const;
                 /*{ return _wrfc.aio_outstanding_dblks(); }*/
@@ -575,6 +576,7 @@ class JournalFileController;
 //        inline uint16_t get_rd_fid() const { return _rrfc.index(); }
 //        inline uint16_t get_wr_fid() const { return _wrfc.index(); }
 //        uint16_t get_earliest_fid();
+        LinearFileController& getLinearFileControllerRef();
 
         /**
         * \brief Check if a particular rid is enqueued. Note that this function will return
@@ -692,22 +694,25 @@ class JournalFileController;
         /**
         * \brief Analyze journal for recovery.
         */
-        void rcvr_janalyze(rcvdat& rd, const std::vector<std::string>* prep_txn_list_ptr);
+        static void rcvr_read_jfile(const std::string& jfn, ::file_hdr_t* fh, std::string& queueName);
 
-        bool rcvr_get_next_record(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& rd);
+        void rcvr_analyze_fhdrs(EmptyFilePoolManager* efpmp);
+
+        void rcvr_janalyze(const std::vector<std::string>* prep_txn_list_ptr, EmptyFilePoolManager* efpmp);
+
+        bool rcvr_get_next_record(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi, rcvdat& rd*/);
 
         bool decode(jrec& rec, uint16_t& fid, std::ifstream* ifsp, std::size_t& cum_size_read,
-                rec_hdr_t& h/*, bool& lowi*/, rcvdat& rd, std::streampos& rec_offset);
+                rec_hdr_t& h, /*bool& lowi, rcvdat& rd,*/ std::streampos& rec_offset);
 
-        bool jfile_cycle(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi*/, rcvdat& rd,
-                const bool jump_fro);
+        bool jfile_cycle(uint16_t& fid, std::ifstream* ifsp, /*bool& lowi, rcvdat& rd,*/ const bool jump_fro);
 
         //bool check_owi(const uint16_t fid, rec_hdr_t& h, bool& lowi, rcvdat& rd,
         //        std::streampos& read_pos);
 
-        void check_journal_alignment(const uint16_t fid, std::streampos& rec_offset, rcvdat& rd);
+        void check_journal_alignment(const uint16_t fid, std::streampos& rec_offset/*, rcvdat& rd*/);
     };
 
 }}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_JCNTL_H
+#endif // ifndef QPID_LINEARSTORE_JRNL_JCNTL_H

@@ -49,7 +49,7 @@ void
 EmptyFilePoolManager::findEfpPartitions() {
     //std::cout << "*** Reading " << qlsStorePath << std::endl; // DEBUG
     std::vector<std::string> dirList;
-    jdir::read_dir(qlsStorePath, dirList, true, false, true);
+    jdir::read_dir(qlsStorePath, dirList, true, false, true, false);
     for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
         if ((*i)[0] == 'p' && i->length() == 4) { // Filter: look only at names pNNN
             efpPartitionNumber_t pn = ::atoi(i->c_str() + 1);
@@ -90,15 +90,15 @@ EmptyFilePoolManager::getEfpPartition(const efpPartitionNumber_t partitionNumber
 
 void
 EmptyFilePoolManager::getEfpPartitionNumbers(std::vector<efpPartitionNumber_t>& partitionNumberList,
-                                             const efpFileSizeKib_t efpFileSizeKb) const {
+                                             const efpDataSize_kib_t efpFileSizeKb) const {
     slock l(partitionMapMutex);
     for (partitionMapConstItr_t i=partitionMap.begin(); i!=partitionMap.end(); ++i) {
         if (efpFileSizeKb == 0) {
             partitionNumberList.push_back(i->first);
         } else {
-            std::vector<efpFileSizeKib_t> efpFileSizeList;
+            std::vector<efpDataSize_kib_t> efpFileSizeList;
             i->second->getEmptyFilePoolSizesKb(efpFileSizeList);
-            for (std::vector<efpFileSizeKib_t>::iterator j=efpFileSizeList.begin(); j!=efpFileSizeList.end(); ++j) {
+            for (std::vector<efpDataSize_kib_t>::iterator j=efpFileSizeList.begin(); j!=efpFileSizeList.end(); ++j) {
                 if (*j == efpFileSizeKb) {
                     partitionNumberList.push_back(i->first);
                     break;
@@ -110,15 +110,15 @@ EmptyFilePoolManager::getEfpPartitionNumbers(std::vector<efpPartitionNumber_t>& 
 
 void
 EmptyFilePoolManager::getEfpPartitions(std::vector<EmptyFilePoolPartition*>& partitionList,
-                                       const efpFileSizeKib_t efpFileSizeKb) {
+                                       const efpDataSize_kib_t efpFileSizeKb) {
     slock l(partitionMapMutex);
     for (partitionMapConstItr_t i=partitionMap.begin(); i!=partitionMap.end(); ++i) {
         if (efpFileSizeKb == 0) {
             partitionList.push_back(i->second);
         } else {
-            std::vector<efpFileSizeKib_t> efpFileSizeList;
+            std::vector<efpDataSize_kib_t> efpFileSizeList;
             i->second->getEmptyFilePoolSizesKb(efpFileSizeList);
-            for (std::vector<efpFileSizeKib_t>::iterator j=efpFileSizeList.begin(); j!=efpFileSizeList.end(); ++j) {
+            for (std::vector<efpDataSize_kib_t>::iterator j=efpFileSizeList.begin(); j!=efpFileSizeList.end(); ++j) {
                 if (*j == efpFileSizeKb) {
                     partitionList.push_back(i->second);
                     break;
@@ -129,7 +129,7 @@ EmptyFilePoolManager::getEfpPartitions(std::vector<EmptyFilePoolPartition*>& par
 }
 
 void
-EmptyFilePoolManager::getEfpFileSizes(std::vector<efpFileSizeKib_t>& efpFileSizeList,
+EmptyFilePoolManager::getEfpFileSizes(std::vector<efpDataSize_kib_t>& efpFileSizeList,
                                       const efpPartitionNumber_t efpPartitionNumber) const {
     if (efpPartitionNumber == 0) {
         for (partitionMapConstItr_t i=partitionMap.begin(); i!=partitionMap.end(); ++i) {
@@ -160,7 +160,7 @@ EmptyFilePoolManager::getEmptyFilePools(std::vector<EmptyFilePool*>& emptyFilePo
 
 EmptyFilePool*
 EmptyFilePoolManager::getEmptyFilePool(const efpPartitionNumber_t partitionNumber,
-                                       const efpFileSizeKib_t efpFileSizeKib) {
+                                       const efpDataSize_kib_t efpFileSizeKib) {
     EmptyFilePoolPartition* efppp = getEfpPartition(partitionNumber);
     if (efppp != 0)
         return efppp->getEmptyFilePool(efpFileSizeKib);

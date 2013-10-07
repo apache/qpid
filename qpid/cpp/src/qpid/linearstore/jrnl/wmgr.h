@@ -30,15 +30,18 @@ class wmgr;
 }}
 
 #include <cstring>
+#include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/jrnl/enums.h"
 #include "qpid/linearstore/jrnl/pmgr.h"
-//#include "qpid/linearstore/jrnl/wrfc.h"
 #include <set>
+
+class file_hdr_t;
 
 namespace qpid
 {
 namespace qls_jrnl
 {
+    class LinearFileController;
 
     /**
     * \brief Class for managing a write page cache of arbitrary size and number of pages.
@@ -59,17 +62,11 @@ namespace qls_jrnl
     class wmgr : public pmgr
     {
     private:
-//        wrfc& _wrfc;                    ///< Ref to write rotating file controller
+        LinearFileController& _lfc;     ///< Linear File Controller ref
         uint32_t _max_dtokpp;           ///< Max data writes per page
         uint32_t _max_io_wait_us;       ///< Max wait in microseconds till submit
-        void* _fhdr_base_ptr;           ///< Base pointer to file header memory
-        void** _fhdr_ptr_arr;           ///< Array of pointers to file headers memory
-        aio_cb** _fhdr_aio_cb_arr;      ///< Array of iocb pointers for file header writes
         uint32_t _cached_offset_dblks;  ///< Amount of unwritten data in page (dblocks)
         std::deque<data_tok*> _ddtokl;  ///< Deferred dequeue data_tok list
-//        uint32_t _jfsize_dblks;         ///< Journal file size in dblks (NOT sblks!)
-//        uint32_t _jfsize_pgs;           ///< Journal file size in cache pages
-//        uint16_t _num_jfiles;           ///< Number of files used in iocb mallocs
 
         // TODO: Convert _enq_busy etc into a proper threadsafe lock
         // TODO: Convert to enum? Are these encodes mutually exclusive?
@@ -87,9 +84,8 @@ namespace qls_jrnl
         std::set<std::string> _txn_pending_set; ///< Set containing xids of pending commits/aborts
 
     public:
-        wmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, wrfc& wrfc*/);
-        wmgr(jcntl* jc, enq_map& emap, txn_map& tmap/*, wrfc& wrfc*/, const uint32_t max_dtokpp,
-                const uint32_t max_iowait_us);
+        wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, LinearFileController& lfc);
+        wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, LinearFileController& lfc, const uint32_t max_dtokpp, const uint32_t max_iowait_us);
         virtual ~wmgr();
 
         void initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks,
@@ -106,7 +102,6 @@ namespace qls_jrnl
         int32_t get_events(page_state state, timespec* const timeout, bool flush = false);
         bool is_txn_synced(const std::string& xid);
         inline bool curr_pg_blocked() const { return _page_cb_arr[_pg_index]._state != UNUSED; }
-//        inline bool curr_file_blocked() const; { return _wrfc.aio_cnt() > 0; }
         inline uint32_t unflushed_dblks() { return _cached_offset_dblks; }
 
         // Debug aid
@@ -122,9 +117,8 @@ namespace qls_jrnl
         void file_header_check(const uint64_t rid, const bool cont, const uint32_t rec_dblks_rem);
         void flush_check(iores& res, bool& cont, bool& done);
         iores write_flush();
-        iores rotate_file();
+        void get_next_file();
         void dblk_roundup();
-        void write_fhdr(uint64_t rid, uint16_t fid, uint16_t lid, std::size_t fro);
         void rotate_page();
         void clean();
     };

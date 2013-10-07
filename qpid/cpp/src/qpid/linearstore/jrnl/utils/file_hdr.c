@@ -36,19 +36,21 @@ void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t vers
     dest->_queue_name_len = 0;
 }
 
-int file_hdr_init(file_hdr_t* dest, const uint16_t uflag, const uint64_t rid, const uint64_t fro,
+int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, const uint64_t rid, const uint64_t fro,
                   const uint64_t file_number, const uint16_t queue_name_len, const char* queue_name) {
-    dest->_rhdr._uflag = uflag;
-    dest->_rhdr._rid = rid;
-    dest->_fro = fro;
-    dest->_file_number = file_number;
+    file_hdr_t* fhp = (file_hdr_t*)dest;
+    fhp->_rhdr._uflag = uflag;
+    fhp->_rhdr._rid = rid;
+    fhp->_fro = fro;
+    fhp->_file_number = file_number;
     if (sizeof(file_hdr_t) + queue_name_len < MAX_FILE_HDR_LEN) {
-        dest->_queue_name_len = queue_name_len;
+        fhp->_queue_name_len = queue_name_len;
     } else {
-        dest->_queue_name_len = MAX_FILE_HDR_LEN - sizeof(file_hdr_t);
+        fhp->_queue_name_len = MAX_FILE_HDR_LEN - sizeof(file_hdr_t);
     }
-    dest->_queue_name_len = queue_name_len;
-    memcpy(dest + sizeof(file_hdr_t), queue_name, queue_name_len);
+    fhp->_queue_name_len = queue_name_len;
+    memcpy((char*)dest + sizeof(file_hdr_t), queue_name, queue_name_len);
+    memset((char*)dest + sizeof(file_hdr_t) + queue_name_len, 0, dest_len - sizeof(file_hdr_t) - queue_name_len);
     return set_time_now(dest);
 }
 

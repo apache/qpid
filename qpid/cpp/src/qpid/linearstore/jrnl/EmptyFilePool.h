@@ -47,7 +47,7 @@ protected:
     typedef emptyFileList_t::iterator emptyFileListItr_t;
 
     const std::string efpDirectory;
-    const efpFileSizeKib_t efpFileSizeKib;
+    const efpDataSize_kib_t efpDataSize_kib;
     const EmptyFilePoolPartition* partitionPtr;
 
 private:
@@ -60,9 +60,12 @@ public:
     virtual ~EmptyFilePool();
 
     void initialize();
-    efpFileSizeKib_t fileSizeKib() const;
+    efpDataSize_kib_t dataSize_kib() const;
+    efpFileSize_kib_t fileSize_kib() const;
+    efpDataSize_sblks_t dataSize_sblks() const;
+    efpFileSize_sblks_t fileSize_sblks() const;
     efpFileCount_t numEmptyFiles() const;
-    efpFileSizeKib_t cumFileSizeKib() const;
+    efpDataSize_kib_t cumFileSize_kib() const;
     efpPartitionNumber_t getPartitionNumber() const;
     const EmptyFilePoolPartition* getPartition() const;
     const efpIdentity_t getIdentity() const;
@@ -76,8 +79,8 @@ protected:
     void createEmptyFile();
     bool validateEmptyFile(const std::string& emptyFileName_) const;
     std::string getEfpFileName();
-    static efpFileSizeKib_t fileSizeKbFromDirName(const std::string& dirName_,
-                                                  const efpPartitionNumber_t partitionNumber_);
+    static efpDataSize_kib_t fileSizeKbFromDirName(const std::string& dirName_,
+                                                   const efpPartitionNumber_t partitionNumber_);
 };
 
 }} // namespace qpid::qls_jrnl

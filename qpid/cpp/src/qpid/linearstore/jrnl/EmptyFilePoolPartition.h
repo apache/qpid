@@ -44,7 +44,7 @@ class EmptyFilePoolPartition
 public:
     static const std::string efpTopLevelDir;
 protected:
-    typedef std::map<efpFileSizeKib_t, EmptyFilePool*> efpMap_t;
+    typedef std::map<efpDataSize_kib_t, EmptyFilePool*> efpMap_t;
     typedef efpMap_t::iterator efpMapItr_t;
     typedef efpMap_t::const_iterator efpMapConstItr_t;
 
@@ -62,8 +62,8 @@ public:
     efpPartitionNumber_t partitionNumber() const;
     std::string partitionDirectory() const;
 
-    EmptyFilePool* getEmptyFilePool(const efpFileSizeKib_t efpFileSizeKb);
-    void getEmptyFilePoolSizesKb(std::vector<efpFileSizeKib_t>& efpFileSizesKbList) const;
+    EmptyFilePool* getEmptyFilePool(const efpDataSize_kib_t efpFileSizeKb);
+    void getEmptyFilePoolSizesKb(std::vector<efpDataSize_kib_t>& efpFileSizesKbList) const;
     void getEmptyFilePools(std::vector<EmptyFilePool*>& efpList);
 };
 

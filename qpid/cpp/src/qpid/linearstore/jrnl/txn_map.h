@@ -112,15 +112,15 @@ namespace qls_jrnl
 
         xmap _map;
         smutex _mutex;
-        std::vector<uint32_t> _pfid_txn_cnt;
+//        std::vector<uint32_t> _pfid_txn_cnt;
         const txn_data_list _empty_data_list;
 
     public:
         txn_map();
         virtual ~txn_map();
 
-        void set_num_jfiles(const uint16_t num_jfiles);
-        uint32_t get_txn_pfid_cnt(const uint16_t pfid) const;
+//        void set_num_jfiles(const uint16_t num_jfiles);
+//        uint32_t get_txn_pfid_cnt(const uint16_t pfid) const;
         bool insert_txn_data(const std::string& xid, const txn_data& td);
         const txn_data_list get_tdata_list(const std::string& xid);
         const txn_data_list get_remove_tdata_list(const std::string& xid);
