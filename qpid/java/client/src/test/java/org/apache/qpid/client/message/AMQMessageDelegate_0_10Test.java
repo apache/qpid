@@ -124,7 +124,7 @@ public class AMQMessageDelegate_0_10Test extends QpidTestCase
             for (Enumeration props = delegate.getPropertyNames(); props.hasMoreElements();)
             {
                 String key = (String)props.nextElement();
-                if (key.equals("JMS_" + QpidMessageProperties.QPID_SUBJECT))
+                if (key.equals("JMS_" + QpidMessageProperties.QPID_SUBJECT_JMS_PROPER))
                 {
                     propFound = true;
                 }
