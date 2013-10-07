@@ -101,6 +101,7 @@ set(server_SOURCES
     src/parse.c
     src/posix/threading.c
     src/python_embedded.c
+    src/router_agent.c
     src/router_node.c
     src/router_pynode.c
     src/server.c
