@@ -145,6 +145,11 @@ for jar in jars:
       <scope>%s</scope>""" % (group, artifactId, version,
        scopes.get(artifactId, "compile")))
 
+  deptype = lookup(dep, "deptype")
+  if deptype is not None:
+    deps.append("""
+      <type>%s</type>""" % deptype)
+
   exclusions = lookupElement(dep, "exclusions")
   if exclusions is not None:
     deps.append("""
