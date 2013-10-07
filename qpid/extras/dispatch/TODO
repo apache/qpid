@@ -39,9 +39,9 @@ enhancements to be fixed by going to the Apache Qpid JIRA instance:
                          detection of topology change.
   o All PyRouter stimulus through a work queue.
   o Router Code Updates
-    . Remove all vestiges of "binding"
-    . Calculate the valid-origin mask for each path
     . Report address mappings to routers
+    . Generate RA immediately after updating routing tables
+    . Generate unsolicited updates for mobile addresses?
   o Expose idle-timeout/keepalive on connectors and listeners
 
 - Major Roadmap Features

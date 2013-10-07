@@ -35,7 +35,7 @@ dx_container_t *dx_container(dx_dispatch_t *dx);
 void            dx_container_setup_agent(dx_dispatch_t *dx);
 void            dx_container_free(dx_container_t *container);
 dx_router_t    *dx_router(dx_dispatch_t *dx, const char *area, const char *id);
-void            dx_router_setup_agent(dx_dispatch_t *dx);
+void            dx_router_setup_late(dx_dispatch_t *dx);
 void            dx_router_free(dx_router_t *router);
 dx_agent_t     *dx_agent(dx_dispatch_t *dx);
 void            dx_agent_free(dx_agent_t *agent);
@@ -103,7 +103,7 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
     dx_alloc_setup_agent(dx);
     dx_server_setup_agent(dx);
     dx_container_setup_agent(dx);
-    dx_router_setup_agent(dx);
+    dx_router_setup_late(dx);
 
     return dx;
 }
