@@ -746,7 +746,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
         else if (isStrictJMS && QpidMessageProperties.QPID_SUBJECT.equals(propertyName))
         {
-            return (String)getApplicationHeaders().get("JMS_" + QpidMessageProperties.QPID_SUBJECT);
+            return (String)getApplicationHeaders().get("JMS_" + QpidMessageProperties.QPID_SUBJECT_JMS_PROPER);
         }
         else
         {

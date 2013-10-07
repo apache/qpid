@@ -30,6 +30,7 @@ public class QpidMessageProperties
     }
 
     public static final String QPID_SUBJECT = "qpid.subject";
+    public static final String QPID_SUBJECT_JMS_PROPER = "qpid_subject";
     
     // AMQP 0-10 related properties
     public static final String AMQP_0_10_APP_ID = "x-amqp-0-10.app-id";
