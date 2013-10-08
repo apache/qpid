@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,25 +17,8 @@
 # under the License.
 #
 
-source ../test_env.sh
+# Do not delete - marks this directory as a python package.
 
-#Add our directory to the python path
-export PYTHONPATH=$srcdir/legacystore:$PYTHONPATH
-
-MODULENAME=python_tests
-
-echo "Running Python tests in module ${MODULENAME}..."
-
-test -d $PYTHON_DIR || { echo "Skipping python tests, no python dir."; exit 0; }
-QPID_PORT=${QPID_PORT:-5672}
-FAILING=${FAILING:-/dev/null}
-PYTHON_TESTS=${PYTHON_TESTS:-$*}
-
-OUTDIR=${MODULENAME}.tmp
-rm -rf $OUTDIR
-
-# To debug a test, add the following options to the end of the following line:
-# -v DEBUG -c qpid.messaging.io.ops [*.testName]
-${QPID_PYTHON_TEST} -m ${MODULENAME} -I $FAILING -DOUTDIR=$OUTDIR \
-  $PYTHON_TEST || exit 1
+from client_persistence import *
+from resize import *
 
