@@ -138,6 +138,65 @@ class RouterTest(unittest.TestCase):
     M4.stop()
 
 
+  def test_2a_multicast_unsettled(self):
+    addr = "amqp://0.0.0.0:20000/pre_settled/multicast/1"
+    M1 = Messenger()
+    M2 = Messenger()
+    M3 = Messenger()
+    M4 = Messenger()
+
+    M1.timeout = 1.0
+    M2.timeout = 1.0
+    M3.timeout = 1.0
+    M4.timeout = 1.0
+
+    M1.outgoing_window = 5
+    M2.incoming_window = 5
+    M3.incoming_window = 5
+    M4.incoming_window = 5
+
+    M1.start()
+    M2.start()
+    M3.start()
+    M4.start()
+    self.subscribe(M2, addr)
+    self.subscribe(M3, addr)
+    self.subscribe(M4, addr)
+
+    tm = Message()
+    rm = Message()
+
+    tm.address = addr
+    for i in range(2):
+      tm.body = {'number': i}
+      M1.put(tm)
+    M1.send(0)
+
+    for i in range(2):
+      M2.recv(1)
+      trk = M2.get(rm)
+      M2.accept(trk)
+      M2.settle(trk)
+      self.assertEqual(i, rm.body['number'])
+
+      M3.recv(1)
+      trk = M3.get(rm)
+      M3.accept(trk)
+      M3.settle(trk)
+      self.assertEqual(i, rm.body['number'])
+
+      M4.recv(1)
+      trk = M4.get(rm)
+      M4.accept(trk)
+      M4.settle(trk)
+      self.assertEqual(i, rm.body['number'])
+
+    M1.stop()
+    M2.stop()
+    M3.stop()
+    M4.stop()
+
+
   def test_3_propagated_disposition(self):
     addr = "amqp://0.0.0.0:20000/unsettled/1"
     M1 = Messenger()

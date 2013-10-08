@@ -547,7 +547,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                                     DEQ_INSERT_TAIL(dest_link->msg_fifo, re);
 
                                     fanout++;
-                                    if (fanout == 1)
+                                    if (fanout == 1 && !dx_delivery_settled(delivery))
                                         re->delivery = delivery;
                                 
                                     addr->deliveries_transit++;
@@ -569,8 +569,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                 dx_delivery_free(delivery, PN_ACCEPTED);
             } else if (fanout == 0) {
                 dx_delivery_free(delivery, PN_RELEASED);
-            } else if (fanout > 1)
-                dx_delivery_free(delivery, PN_ACCEPTED);
+            }
         }
     } else {
         //
