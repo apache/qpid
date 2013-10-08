@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,25 +17,30 @@
 # under the License.
 #
 
-source ../test_env.sh
 
-#Add our directory to the python path
-export PYTHONPATH=$srcdir/legacystore:$PYTHONPATH
+abs_srcdir=@abs_srcdir@
 
-MODULENAME=python_tests
+TMP_DATA_DIR=$(abs_srcdir)/../tmp_data_dir
 
-echo "Running Python tests in module ${MODULENAME}..."
+TESTS = \
+  run_federation_sys_tests
 
-test -d $PYTHON_DIR || { echo "Skipping python tests, no python dir."; exit 0; }
-QPID_PORT=${QPID_PORT:-5672}
-FAILING=${FAILING:-/dev/null}
-PYTHON_TESTS=${PYTHON_TESTS:-$*}
+LONG_TESTS = \
+  run_long_federation_sys_tests
 
-OUTDIR=${MODULENAME}.tmp
-rm -rf $OUTDIR
+EXTRA_DIST = \
+  federation_tests_env.sh \
+  run_federation_sys_tests \
+  run_long_federation_sys_tests
 
-# To debug a test, add the following options to the end of the following line:
-# -v DEBUG -c qpid.messaging.io.ops [*.testName]
-${QPID_PYTHON_TEST} -m ${MODULENAME} -I $FAILING -DOUTDIR=$OUTDIR \
-  $PYTHON_TEST || exit 1
+TESTS_ENVIRONMENT = \
+  QPID_DIR=$(QPID_DIR) \
+  QPID_BLD=$(QPID_BLD) \
+  TMP_DATA_DIR=$(TMP_DATA_DIR) \
+  abs_srcdir=$(abs_srcdir)
+  
+check-long: all
+	$(MAKE) check TESTS="$(LONG_TESTS)" SUBDIRS=.
 
+# END
+    
