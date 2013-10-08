@@ -59,7 +59,7 @@ static char *dx_add_router(dx_router_t *router, const char *address, int router_
     dx_field_iterator_t *iter = dx_field_iterator_string(address, ITER_VIEW_ADDRESS_HASH);
     dx_address_t        *addr;
 
-    hash_retrieve(router->addr_hash, iter, (void**) &addr);
+    dx_hash_retrieve(router->addr_hash, iter, (void**) &addr);
     assert(addr == 0);
 
     //
@@ -72,7 +72,7 @@ static char *dx_add_router(dx_router_t *router, const char *address, int router_
     DEQ_ITEM_INIT(addr);
     DEQ_INIT(addr->rlinks);
     DEQ_INIT(addr->rnodes);
-    hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
+    dx_hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
     DEQ_INSERT_TAIL(router->addrs, addr);
     dx_field_iterator_free(iter);
 
@@ -154,9 +154,9 @@ static char *dx_del_router(dx_router_t *router, int router_maskbit)
     dx_bitmask_free(rnode->valid_origins);
     free_dx_router_node_t(rnode);
 
-    hash_remove_by_handle(router->addr_hash, oaddr->hash_handle);
+    dx_hash_remove_by_handle(router->addr_hash, oaddr->hash_handle);
     DEQ_REMOVE(router->addrs, oaddr);
-    hash_handle_free(oaddr->hash_handle);
+    dx_hash_handle_free(oaddr->hash_handle);
     router->routers_by_mask_bit[router_maskbit] = 0;
     free_dx_address_t(oaddr);
 
