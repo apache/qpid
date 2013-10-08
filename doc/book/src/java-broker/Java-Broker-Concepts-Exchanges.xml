@@ -63,7 +63,9 @@
    <section id="Java-Broker-Concepts-Exchanges-Types-Direct">
    <title>Direct</title>
    <para>The direct exchange type routes messages to queues based on an exact match between
-    the routing key of the message, and the binding key used to bind the queue to the exchange.
+    the routing key of the message, and the binding key used to bind the queue to the exchange. Additional
+    filter rules may be specified using a <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+    binding argument specifying a JMS message selector</link>.
    </para>
    <para>This exchange type is often used to implement point to point messaging. When used in this manner, the normal
    convention is that the binding key matches the name of the queue. It is also possible to use this exchange type
@@ -90,9 +92,9 @@
      binding key pattern defined by the queue binding. Routing keys are formed from one or more words, with each word delimited
      by a full-stop (.). The pattern matching characters are the * and # symbols. The * symbol matches a single word  and the #
      symbol matches zero or more words.</para>
-    <para>The topic exchange is also capable of routing messages according to whether a message's header values or properties match
-     a JMS message selector <footnote><para>This is a Qpid specific extension.</para></footnote>.</para>
-    <para>The following three figures help explain how the topic exchange functions.</para>
+   <para>Additional filter rules may be specified using a <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+     binding argument specifying a JMS message selector</link>.</para>
+   <para>The following three figures help explain how the topic exchange functions.</para>
     <para></para>
     <figure>
      <title>Topic exchange - exact match on topic name</title>
@@ -143,6 +145,8 @@
   <section id="Java-Broker-Concepts-Exchanges-Types-Fanout">
     <title>Fanout</title>
     <para>The fanout exchange type routes messages to all queues bound to the exchange, regardless of the message's routing key.</para>
+    <para>Filter rules may be specified using a <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+    binding argument specifying a JMS message selector</link>.</para>
     <figure>
      <title>Fanout exchange</title>
      <mediaobject>
@@ -154,9 +158,35 @@
   </section>
   <section id="Java-Broker-Concepts-Exchanges-Types-Headers">
     <title>Headers</title>
-    <para>The headers exchange type routes messages to queues based on header properties within the AMQP message. The message is
-     passed to a queue if the header properties of the message satisfy the header matching arguments table with which the queue was bound.
+    <para>The headers exchange type routes messages to queues based on header properties within the message. The message is passed to
+     a queue if the header properties of the message satisfy the <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-x-match">
+     x-match expression</link> specified by the binding arguments with which the queue was bound.
    </para>
+  </section>
+ </section>
+ <section id="Java-Broker-Concepts-Exchanges-BindingArguments">
+  <title>Binding Arguments</title>
+  <para>Binding arguments are used by certain exchange types to further filter messages.</para>
+  <section id="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+   <title>JMS Selector</title>
+   <para>The binding argument <literal>x-filter-jms-selector</literal> specifies a JMS selector conditional expression. The expression
+    is written in terms of message header and message property names.  If the expression evaluates to true, the message is routed to the queue.
+    This type of binding argument is understood by exchange types direct, topic and fanout.<footnote><para>
+    This is a Qpid specific extension.</para></footnote>.</para>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-BindingArguments-x-match">
+   <title>x-match</title>
+   <para>The binding argument <literal>x-match</literal> is understood by exchange type headers.  It can take two values, dictating how the
+    rest of the name value pairs are treated during matching.</para>
+   <itemizedlist>
+     <listitem><literal>all</literal> implies that all the other pairs must match the headers property of a message for that message to be routed
+      (i.e. an AND match)</listitem>
+     <listitem>any<literal></literal> implies that the message should be routed if any of the fields in the headers property match one of the
+      fields in the arguments table (i.e. an OR match)</listitem>
+   </itemizedlist>
+   <para>A field in the bind arguments matches a field in the message if either the field in the bind arguments has no value and a field of the
+    same name is present in the message headers or if the field in the bind arguments has a value and a field of the same name exists in the
+    message headers and has that same value.</para>
   </section>
  </section>
  <section id="Java-Broker-Concepts-Exchanges-UnroutableMessage">
