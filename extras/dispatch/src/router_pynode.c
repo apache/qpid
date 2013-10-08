@@ -68,13 +68,13 @@ static char *dx_add_router(dx_router_t *router, const char *address, int router_
     // remote router is looked up.
     //
     addr = new_dx_address_t();
+    memset(addr, 0, sizeof(dx_address_t));
     DEQ_ITEM_INIT(addr);
-    addr->handler         = 0;
-    addr->handler_context = 0;
     DEQ_INIT(addr->rlinks);
     DEQ_INIT(addr->rnodes);
     hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
     DEQ_INSERT_TAIL(router->addrs, addr);
+    dx_field_iterator_free(iter);
 
     //
     // Create a router-node record to represent the remote router.
