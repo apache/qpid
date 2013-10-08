@@ -37,7 +37,7 @@
 
 struct dx_agent_t {
     dx_dispatch_t     *dx;
-    hash_t            *class_hash;
+    dx_hash_t         *class_hash;
     dx_message_list_t  in_fifo;
     dx_message_list_t  out_fifo;
     sys_mutex_t       *lock;
@@ -71,7 +71,7 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_parsed_field_t *map, dx_f
 
     dx_field_iterator_t    *cls_string = dx_parse_raw(cls);
     const dx_agent_class_t *cls_record;
-    hash_retrieve_const(agent->class_hash, cls_string, (const void**) &cls_record);
+    dx_hash_retrieve_const(agent->class_hash, cls_string, (const void**) &cls_record);
     if (cls_record == 0)
         return;
 
@@ -257,7 +257,7 @@ dx_agent_t *dx_agent(dx_dispatch_t *dx)
 {
     dx_agent_t *agent = NEW(dx_agent_t);
     agent->dx         = dx;
-    agent->class_hash = hash(6, 10, 1);
+    agent->class_hash = dx_hash(6, 10, 1);
     DEQ_INIT(agent->in_fifo);
     DEQ_INIT(agent->out_fifo);
     agent->lock    = sys_mutex();
@@ -273,7 +273,7 @@ void dx_agent_free(dx_agent_t *agent)
     dx_router_unregister_address(agent->address);
     sys_mutex_free(agent->lock);
     dx_timer_free(agent->timer);
-    hash_free(agent->class_hash);
+    dx_hash_free(agent->class_hash);
     free(agent);
 }
 
@@ -295,7 +295,7 @@ dx_agent_class_t *dx_agent_register_class(dx_dispatch_t        *dx,
     cls->query_handler  = query_handler;
 
     dx_field_iterator_t *iter = dx_field_iterator_string(fqname, ITER_VIEW_ALL);
-    int result = hash_insert_const(agent->class_hash, iter, cls, 0);
+    int result = dx_hash_insert_const(agent->class_hash, iter, cls, 0);
     dx_field_iterator_free(iter);
     if (result < 0)
         assert(false);

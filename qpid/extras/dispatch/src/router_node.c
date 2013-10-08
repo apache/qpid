@@ -421,7 +421,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
 
         if (iter) {
             dx_field_iterator_reset_view(iter, ITER_VIEW_ADDRESS_HASH);
-            hash_retrieve(router->addr_hash, iter, (void*) &addr);
+            dx_hash_retrieve(router->addr_hash, iter, (void*) &addr);
             dx_field_iterator_reset_view(iter, ITER_VIEW_NO_HOST);
             int is_local  = dx_field_iterator_prefix(iter, local_prefix);
             int is_direct = dx_field_iterator_prefix(iter, direct_prefix);
@@ -497,7 +497,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                         int origin = -1;
                         if (ingress_iter) {
                             dx_address_t *origin_addr;
-                            hash_retrieve(router->addr_hash, ingress_iter, (void*) &origin_addr);
+                            dx_hash_retrieve(router->addr_hash, ingress_iter, (void*) &origin_addr);
                             if (origin_addr && DEQ_SIZE(origin_addr->rnodes) == 1) {
                                 dx_router_ref_t *rref = DEQ_HEAD(origin_addr->rnodes);
                                 origin = rref->router->mask_bit;
@@ -764,14 +764,14 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
         } else
             dx_log(module, LOG_INFO, "Registered local address: %s", r_src);
 
-        hash_retrieve(router->addr_hash, iter, (void**) &addr);
+        dx_hash_retrieve(router->addr_hash, iter, (void**) &addr);
         if (!addr) {
             addr = new_dx_address_t();
             memset(addr, 0, sizeof(dx_address_t));
             DEQ_ITEM_INIT(addr);
             DEQ_INIT(addr->rlinks);
             DEQ_INIT(addr->rnodes);
-            hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
+            dx_hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
             DEQ_INSERT_TAIL(router->addrs, addr);
         }
         dx_field_iterator_free(iter);
@@ -989,7 +989,7 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
     router->router_id    = id;
     router->node         = dx_container_set_default_node_type(dx, &router_node, (void*) router, DX_DIST_BOTH);
     DEQ_INIT(router->addrs);
-    router->addr_hash    = hash(10, 32, 0);
+    router->addr_hash    = dx_hash(10, 32, 0);
 
     DEQ_INIT(router->links);
     DEQ_INIT(router->routers);
@@ -1069,14 +1069,14 @@ dx_address_t *dx_router_register_address(dx_dispatch_t        *dx,
     iter = dx_field_iterator_string(addr_string, ITER_VIEW_NO_HOST);
 
     sys_mutex_lock(router->lock);
-    hash_retrieve(router->addr_hash, iter, (void**) &addr);
+    dx_hash_retrieve(router->addr_hash, iter, (void**) &addr);
     if (!addr) {
         addr = new_dx_address_t();
         memset(addr, 0, sizeof(dx_address_t));
         DEQ_ITEM_INIT(addr);
         DEQ_INIT(addr->rlinks);
         DEQ_INIT(addr->rnodes);
-        hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
+        dx_hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
         DEQ_ITEM_INIT(addr);
         DEQ_INSERT_TAIL(router->addrs, addr);
     }
@@ -1108,7 +1108,7 @@ void dx_router_send(dx_dispatch_t       *dx,
 
     dx_field_iterator_reset_view(address, ITER_VIEW_ADDRESS_HASH);
     sys_mutex_lock(router->lock);
-    hash_retrieve(router->addr_hash, address, (void*) &addr);
+    dx_hash_retrieve(router->addr_hash, address, (void*) &addr);
     if (addr) {
         //
         // Forward to all of the local links receiving this address.

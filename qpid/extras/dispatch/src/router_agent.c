@@ -48,7 +48,7 @@ static void dx_router_schema_handler(void *context, void *correlator)
 static const char *dx_router_addr_text(dx_address_t *addr)
 {
     if (addr) {
-        const unsigned char *text = hash_key_by_handle(addr->hash_handle);
+        const unsigned char *text = dx_hash_key_by_handle(addr->hash_handle);
         if (text)
             return (const char*) text;
     }
