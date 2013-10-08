@@ -96,7 +96,7 @@ typedef enum {
  * @return A pointer to a dx_message_t that is the sole reference to a newly allocated
  *         message.
  */
-dx_message_t *dx_allocate_message(void);
+dx_message_t *dx_message(void);
 
 /**
  * Free a message reference.  If this is the last reference to the message, free the
@@ -104,7 +104,7 @@ dx_message_t *dx_allocate_message(void);
  *
  * @param msg A pointer to a dx_message_t that is no longer needed.
  */
-void dx_free_message(dx_message_t *msg);
+void dx_message_free(dx_message_t *msg);
 
 /**
  * Make a new reference to an existing message.
