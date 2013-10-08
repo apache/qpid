@@ -106,9 +106,18 @@ void dx_router_del_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t 
  * Depending on its policy, the address may be eligible for being closed out
  * (i.e. Logging its terminal statistics and freeing its resources).
  */
-static void dx_router_check_addr_LH(dx_address_t *addr)
+static void dx_router_check_addr_LH(dx_router_t *router, dx_address_t *addr)
 {
-    // TODO
+    if (addr == 0)
+        return;
+
+    if (addr->handler || DEQ_SIZE(addr->rlinks) > 0 || DEQ_SIZE(addr->rnodes) > 0)
+        return;
+
+    dx_hash_remove_by_handle(router->addr_hash, addr->hash_handle);
+    DEQ_REMOVE(router->addrs, addr);
+    dx_hash_handle_free(addr->hash_handle);
+    free_dx_address_t(addr);
 }
 
 
@@ -537,7 +546,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                             while (dx_bitmask_first_set(link_set, &link_bit)) {
                                 dx_bitmask_clear_bit(link_set, link_bit);
                                 dest_link = router->out_links_by_mask_bit[link_bit];
-                                if (link) {
+                                if (dest_link) {
                                     dx_routed_event_t *re = new_dx_routed_event_t();
                                     DEQ_ITEM_INIT(re);
                                     re->delivery    = 0;
@@ -811,7 +820,7 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
     //
     if (rlink->link_direction == DX_OUTGOING && rlink->owning_addr) {
         dx_router_del_link_ref_LH(&rlink->owning_addr->rlinks, rlink);
-        dx_router_check_addr_LH(rlink->owning_addr);
+        dx_router_check_addr_LH(router, rlink->owning_addr);
     }
 
     //
@@ -1131,15 +1140,25 @@ void dx_router_send(dx_dispatch_t       *dx,
 
         //
         // Forward to the next-hops for remote destinations.
-        // FIXME - use link-mask to avoid dups.
         //
         dx_router_ref_t  *dest_node_ref = DEQ_HEAD(addr->rnodes);
         dx_router_link_t *dest_link;
+        dx_bitmask_t     *link_set = dx_bitmask(0);
+
         while (dest_node_ref) {
             if (dest_node_ref->router->next_hop)
                 dest_link = dest_node_ref->router->next_hop->peer_link;
             else
                 dest_link = dest_node_ref->router->peer_link;
+            if (dest_link)
+                dx_bitmask_set_bit(link_set, dest_link->mask_bit);
+            dest_node_ref = DEQ_NEXT(dest_node_ref);
+        }
+
+        int link_bit;
+        while (dx_bitmask_first_set(link_set, &link_bit)) {
+            dx_bitmask_clear_bit(link_set, link_bit);
+            dest_link = router->out_links_by_mask_bit[link_bit];
             if (dest_link) {
                 dx_routed_event_t *re = new_dx_routed_event_t();
                 DEQ_ITEM_INIT(re);
@@ -1151,8 +1170,9 @@ void dx_router_send(dx_dispatch_t       *dx,
                 dx_link_activate(dest_link->link);
                 addr->deliveries_transit++;
             }
-            dest_node_ref = DEQ_NEXT(dest_node_ref);
         }
+
+        dx_bitmask_free(link_set);
     }
     sys_mutex_unlock(router->lock); // TOINVESTIGATE Move this higher?
 }
