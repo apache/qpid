@@ -253,7 +253,7 @@ static int router_writable_link_handler(void* context, dx_link_t *link)
         pn_link_advance(pn_link);
         event_count++;
 
-        dx_free_message(re->message);
+        dx_message_free(re->message);
         free_dx_routed_event_t(re);
         re = DEQ_HEAD(to_send);
     }
@@ -580,14 +580,14 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
     }
 
     sys_mutex_unlock(router->lock);
-    dx_free_message(msg);
+    dx_message_free(msg);
 
     //
     // Invoke the in-process handler now that the lock is released.
     //
     if (handler) {
         handler(handler_context, in_process_copy, rlink->mask_bit);
-        dx_free_message(in_process_copy);
+        dx_message_free(in_process_copy);
     }
 }
 

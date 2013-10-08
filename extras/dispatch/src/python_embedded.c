@@ -549,10 +549,10 @@ static PyObject* dx_python_send(PyObject *self, PyObject *args)
     field = dx_compose(DX_PERFORMATIVE_BODY_AMQP_VALUE, field);
     dx_py_to_composed(body, field);
 
-    dx_message_t *msg = dx_allocate_message();
+    dx_message_t *msg = dx_message();
     dx_message_compose_2(msg, field);
     dx_router_send2(ioa->dx, address, msg);
-    dx_free_message(msg);
+    dx_message_free(msg);
     dx_compose_free(field);
 
     Py_INCREF(Py_None);

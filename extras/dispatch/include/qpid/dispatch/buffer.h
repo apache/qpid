@@ -36,12 +36,12 @@ void dx_buffer_set_size(size_t size);
 
 /**
  */
-dx_buffer_t *dx_allocate_buffer(void);
+dx_buffer_t *dx_buffer(void);
 
 /**
  * @param buf A pointer to an allocated buffer
  */
-void dx_free_buffer(dx_buffer_t *buf);
+void dx_buffer_free(dx_buffer_t *buf);
 
 /**
  * @param buf A pointer to an allocated buffer
