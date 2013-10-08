@@ -298,14 +298,14 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
       set (CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-   set (COMPILER_FLAGS "-fvisibility-inlines-hidden -Wl,--as-needed")
+   set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
    # gcc 4.1.2 on RHEL 5 needs -Wno-attributes to avoid an error that's fixed
    # in later gcc versions.
    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                    OUTPUT_VARIABLE GCC_VERSION)
    if (GCC_VERSION VERSION_EQUAL 4.1.2)
-     set (COMPILER_FLAGS "-Wl,--as-needed")
-     message (STATUS "Cannot use -fvisibility=hidden on gcc 4.1.2")
+     message (STATUS "Cannot restrict library symbol export on gcc 4.1.2")
+     set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden")
    else (GCC_VERSION VERSION_EQUAL 4.1.2)
      set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden -fvisibility=hidden")
    endif (GCC_VERSION VERSION_EQUAL 4.1.2)
