@@ -43,7 +43,7 @@ static void dx_insert(dx_composed_field_t *field, const uint8_t *seq, size_t len
 
     while (len > 0) {
         if (buf == 0 || dx_buffer_capacity(buf) == 0) {
-            buf = dx_allocate_buffer();
+            buf = dx_buffer();
             if (buf == 0)
                 return;
             DEQ_INSERT_TAIL(field->buffers, buf);
@@ -212,7 +212,7 @@ void dx_compose_free(dx_composed_field_t *field)
     dx_buffer_t *buf = DEQ_HEAD(field->buffers);
     while (buf) {
         DEQ_REMOVE_HEAD(field->buffers);
-        dx_free_buffer(buf);
+        dx_buffer_free(buf);
         buf = DEQ_HEAD(field->buffers);
     }
 

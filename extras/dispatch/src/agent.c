@@ -138,11 +138,11 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_parsed_field_t *map, dx_f
     //
     // Create a message and send it.
     //
-    dx_message_t *msg = dx_allocate_message();
+    dx_message_t *msg = dx_message();
     dx_message_compose_2(msg, field);
     dx_router_send(agent->dx, reply_to, msg);
 
-    dx_free_message(msg);
+    dx_message_free(msg);
     dx_compose_free(field);
 }
 
@@ -234,7 +234,7 @@ static void dx_agent_deferred_handler(void *context)
 
         if (msg) {
             dx_agent_process_request(agent, msg);
-            dx_free_message(msg);
+            dx_message_free(msg);
         }
     } while (msg);
 }

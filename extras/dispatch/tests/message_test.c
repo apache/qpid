@@ -47,7 +47,7 @@ static void set_content(dx_message_content_t *content, size_t len)
     dx_buffer_t *buf;
 
     while (len > (size_t) (cursor - buffer)) {
-        buf = dx_allocate_buffer();
+        buf = dx_buffer();
         size_t segment   = dx_buffer_capacity(buf);
         size_t remaining = len - (size_t) (cursor - buffer);
         if (segment > remaining)
@@ -62,7 +62,7 @@ static void set_content(dx_message_content_t *content, size_t len)
 
 static char* test_send_to_messenger(void *context)
 {
-    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_t         *msg     = dx_message();
     dx_message_content_t *content = MSG_CONTENT(msg);
 
     dx_message_compose_1(msg, "test_addr_0", 0);
@@ -78,7 +78,7 @@ static char* test_send_to_messenger(void *context)
         return "Address mismatch in received message";
 
     pn_message_free(pn_msg);
-    dx_free_message(msg);
+    dx_message_free(msg);
 
     return 0;
 }
@@ -93,7 +93,7 @@ static char* test_receive_from_messenger(void *context)
     int result = pn_message_encode(pn_msg, buffer, &size);
     if (result != 0) return "Error in pn_message_encode";
 
-    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_t         *msg     = dx_message();
     dx_message_content_t *content = MSG_CONTENT(msg);
 
     set_content(content, size);
@@ -118,7 +118,7 @@ static char* test_receive_from_messenger(void *context)
         return "Incorrect field content returned from field_copy";
 
     pn_message_free(pn_msg);
-    dx_free_message(msg);
+    dx_message_free(msg);
 
     return 0;
 }
@@ -133,7 +133,7 @@ static char* test_insufficient_check_depth(void *context)
     int result = pn_message_encode(pn_msg, buffer, &size);
     if (result != 0) return "Error in pn_message_encode";
 
-    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_t         *msg     = dx_message();
     dx_message_content_t *content = MSG_CONTENT(msg);
 
     set_content(content, size);
@@ -144,7 +144,7 @@ static char* test_insufficient_check_depth(void *context)
     dx_field_iterator_t *iter = dx_message_field_iterator(msg, DX_FIELD_TO);
     if (iter) return "Expected no iterator for the 'to' field";
 
-    dx_free_message(msg);
+    dx_message_free(msg);
 
     return 0;
 }
@@ -159,7 +159,7 @@ static char* test_check_multiple(void *context)
     int result = pn_message_encode(pn_msg, buffer, &size);
     if (result != 0) return "Error in pn_message_encode";
 
-    dx_message_t         *msg     = dx_allocate_message();
+    dx_message_t         *msg     = dx_message();
     dx_message_content_t *content = MSG_CONTENT(msg);
 
     set_content(content, size);
@@ -173,7 +173,7 @@ static char* test_check_multiple(void *context)
     valid = dx_message_check(msg, DX_DEPTH_PROPERTIES);
     if (!valid) return "dx_message_check returns 'invalid' for PROPERTIES";
 
-    dx_free_message(msg);
+    dx_message_free(msg);
 
     return 0;
 }
