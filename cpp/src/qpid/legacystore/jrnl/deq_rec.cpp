@@ -270,12 +270,14 @@ deq_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
         // Get and check header
         _deq_hdr.hdr_copy(h);
         rd_cnt = sizeof(rec_hdr);
-        _deq_hdr._deq_rid = *(u_int64_t*)((char*)rptr + rd_cnt);
+        //_deq_hdr._deq_rid = *(u_int64_t*)((char*)rptr + rd_cnt);
+        std::memcpy((void*)&_deq_hdr._deq_rid, (char*)rptr + rd_cnt, sizeof(u_int64_t));
         rd_cnt += sizeof(u_int64_t);
 #if defined(JRNL_BIG_ENDIAN) && defined(JRNL_32_BIT)
         rd_cnt += sizeof(u_int32_t); // Filler 0
 #endif
-        _deq_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        //_deq_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        std::memcpy((void*)&_deq_hdr._xidsize, (char*)rptr + rd_cnt, sizeof(std::size_t));
         rd_cnt = _deq_hdr.size();
         chk_hdr();
         if (_deq_hdr._xidsize)
