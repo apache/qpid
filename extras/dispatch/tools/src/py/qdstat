@@ -164,6 +164,48 @@ class BusManager:
         dispRows = rows
         disp.formattedTable(title, heads, dispRows)
 
+    def displayRouterNodes(self):
+        disp = Display(prefix="  ")
+        heads = []
+        heads.append(Header("class"))
+        heads.append(Header("address"))
+        heads.append(Header("rindex"))
+        heads.append(Header("next-hop"))
+        heads.append(Header("link"))
+        rows = []
+
+        request = Message()
+        response = Message()
+
+        request.address = self.address
+        request.reply_to = self.reply
+        request.correlation_id = 1
+        request.properties = {u'operation':u'GET', u'type':u'org.apache.qpid.dispatch.router.node'}
+
+        self.M.put(request)
+        self.M.send()
+
+        self.M.recv()
+        self.M.get(response)
+
+        for node in response.body:
+            row = []
+            row.append(self._addr_class(node['addr']))
+            row.append(self._addr_text(node['addr']))
+            row.append(node['index'])
+            if node['next-hop'] != None:
+                row.append(node['next-hop'])
+            else:
+                row.append('-')
+            if node['router-link'] != None:
+                row.append(node['router-link'])
+            else:
+                row.append('-')
+            rows.append(row)
+        title = "Router Nodes"
+        dispRows = rows
+        disp.formattedTable(title, heads, dispRows)
+
     def displayAddresses(self):
         disp = Display(prefix="  ")
         heads = []
