@@ -152,6 +152,26 @@ if (BUILD_LEGACYSTORE)
         ${DB_LIBRARY}
     )
 
+    # For use in the store tests only
+    add_library (legacystore_shared SHARED
+        ${legacy_jrnl_SOURCES}
+        ${legacy_store_SOURCES}
+        ${legacy_qmf_SOURCES}
+    )
+
+    set_target_properties (legacystore_shared PROPERTIES
+        COMPILE_DEFINITIONS _IN_QPID_BROKER
+        INCLUDE_DIRECTORIES "${legacy_include_DIRECTORIES}"
+    )
+
+    target_link_libraries (legacystore_shared
+        aio
+        uuid
+        qpidcommon qpidtypes qpidbroker
+        ${Boost_PROGRAM_OPTIONS_LIBRARY}
+        ${DB_LIBRARY}
+    )
+
 install(TARGETS legacystore
         DESTINATION ${QPIDD_MODULE_DIR}
         COMPONENT ${QPID_COMPONENT_BROKER})

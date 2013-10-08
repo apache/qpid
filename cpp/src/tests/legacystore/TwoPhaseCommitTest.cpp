@@ -20,17 +20,19 @@
  */
 
 #include "unit_test.h"
-
-#include "qpid/legacystore/MessageStoreImpl.h"
-#include <iostream>
 #include "MessageUtils.h"
+
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/RecoveryManagerImpl.h"
+#include "qpid/broker/PersistableObject.h"
 #include "qpid/framing/AMQHeaderBody.h"
-#include "qpid/log/Statement.h"
+#include "qpid/legacystore/MessageStoreImpl.h"
 #include "qpid/legacystore/TxnCtxt.h"
 #include "qpid/log/Logger.h"
+#include "qpid/log/Statement.h"
 #include "qpid/sys/Timer.h"
+
+#include <iostream>
 
 using namespace mrg::msgstore;
 using namespace qpid;
@@ -54,7 +56,7 @@ QPID_AUTO_TEST_SUITE(TwoPhaseCommitTest)
 
 const string test_filename("TwoPhaseCommitTest");
 const char* tdp = getenv("TMP_DATA_DIR");
-string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/tmp/TwoPhaseCommitTest");
+string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/var/tmp/TwoPhaseCommitTest");
 
 // === Helper fns ===
 
@@ -386,7 +388,8 @@ class TwoPhaseCommitTest
         links = std::auto_ptr<LinkRegistry>(new LinkRegistry);
         dtxmgr = std::auto_ptr<DtxManager>(new DtxManager(t));
         dtxmgr->setStore (store.get());
-        RecoveryManagerImpl recovery(*queues, exchanges, *links, *dtxmgr, br.getProtocolRegistry());
+        RecoveredObjects ro;
+        RecoveryManagerImpl recovery(*queues, exchanges, *links, *dtxmgr, br.getProtocolRegistry(), ro);
         store->recover(recovery);
 
         queueA = queues->find(nameA);

@@ -20,20 +20,22 @@
  */
 
 #include "unit_test.h"
+#include "MessageUtils.h"
 
-#include "qpid/legacystore/MessageStoreImpl.h"
-#include <iostream>
-#include "tests/legacystore/MessageUtils.h"
-#include "qpid/legacystore/StoreException.h"
 #include "qpid/broker/DirectExchange.h"
-#include <qpid/broker/Queue.h>
-#include <qpid/broker/QueueSettings.h>
-#include <qpid/broker/RecoveryManagerImpl.h>
-#include <qpid/framing/AMQHeaderBody.h>
-#include <qpid/framing/FieldTable.h>
-#include <qpid/framing/FieldValue.h>
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueSettings.h"
+#include "qpid/broker/RecoveryManagerImpl.h"
+#include "qpid/broker/PersistableObject.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
+#include "qpid/legacystore/MessageStoreImpl.h"
+#include "qpid/legacystore/StoreException.h"
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Timer.h"
+
+#include <iostream>
 
 qpid::broker::Broker::Options opts;
 qpid::broker::Broker br(opts);
@@ -57,15 +59,15 @@ QPID_AUTO_TEST_SUITE(SimpleTest)
 
 const string test_filename("SimpleTest");
 const char* tdp = getenv("TMP_DATA_DIR");
-const string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/tmp/SimpleTest");
+const string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/var/tmp/SimpleTest");
 
 // === Helper fns ===
 
-struct DummyHandler : OutputHandler
+struct DummyHandler : FrameHandler
 {
     std::vector<AMQFrame> frames;
 
-    virtual void send(AMQFrame& frame){
+    virtual void handle(AMQFrame& frame){
         frames.push_back(frame);
     }
 };
@@ -75,7 +77,8 @@ void recover(MessageStoreImpl& store, QueueRegistry& queues, ExchangeRegistry& e
     sys::Timer t;
     DtxManager mgr(t);
     mgr.setStore (&store);
-    RecoveryManagerImpl recovery(queues, exchanges, links, mgr, br.getProtocolRegistry());
+    RecoveredObjects ro;
+    RecoveryManagerImpl recovery(queues, exchanges, links, mgr, br.getProtocolRegistry(), ro);
     store.recover(recovery);
 }
 
@@ -307,7 +310,7 @@ QPID_AUTO_TEST_CASE(Enqueue)
         BOOST_CHECK_EQUAL(routingKey, msg.getRoutingKey());
         BOOST_CHECK_EQUAL(messageId, MessageUtils::getMessageId(msg));
         BOOST_CHECK_EQUAL(std::string("xyz"), msg.getAnnotation("abc"));
-        BOOST_CHECK_EQUAL((u_int64_t) 14, msg.getContentSize());
+        BOOST_CHECK_EQUAL((u_int64_t) 14, msg.getContent().size());
 
         DummyHandler handler;
         MessageUtils::deliver(msg, handler, 100);

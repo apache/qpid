@@ -70,36 +70,28 @@ set (qpid_test_boost_libs
 # womp on each other's store directory.
 
 #
-# define_selftest
+# define_legacystore_test
 # macro to accept the name of a single source file and to create a
 #  unit test executable that runs the source.
 #
-MACRO (define_selftest theSourceFile)
+MACRO (define_legacystore_test theSourceFile)
 add_executable (legacystore_${theSourceFile}
-            unit_test
             ${theSourceFile}
+            unit_test
             ${platform_test_additions})
 target_link_libraries (legacystore_${theSourceFile}
                        ${qpid_test_boost_libs}
-                       qpidmessaging qpidbroker qmfconsole legacystore)
-get_property(ls_include TARGET legacystore_${theSourceFile} PROPERTY INCLUDE_DIRECTORIES)
-list(APPEND  ls_include ${abs_top_srcdir}/src/qpid/legacystore)
-list(APPEND  ls_include ${abs_top_srcdir}/src/tests)
-set_target_properties (legacystore_${theSourceFile} PROPERTIES
-            INCLUDE_DIRECTORIES "${ls_include}"
-            COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                       qpidmessaging qpidtypes qpidbroker qpidcommon legacystore_shared)
+set_target_properties (legacystore_${theSourceFile} PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(legacystore_${theSourceFile})
-set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix})
 
 add_test (legacystore_${theSourceFile} ${test_wrap} ${legacystore_${theSourceFile}_LOCATION})
-ENDMACRO (define_selftest)
+ENDMACRO (define_legacystore_test)
 
-# add_definitions(-H)
-
-define_selftest (SimpleTest)
-define_selftest (OrderingTest)
-define_selftest (TransactionalTest)
-define_selftest (TwoPhaseCommitTest)
+define_legacystore_test (SimpleTest)
+define_legacystore_test (OrderingTest)
+define_legacystore_test (TransactionalTest)
+define_legacystore_test (TwoPhaseCommitTest)
 
 #
 # Other test programs

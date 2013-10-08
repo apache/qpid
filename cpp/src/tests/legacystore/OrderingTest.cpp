@@ -20,15 +20,17 @@
  */
 
 #include "unit_test.h"
-
-#include "qpid/legacystore/MessageStoreImpl.h"
-#include <iostream>
 #include "MessageUtils.h"
-#include <qpid/broker/Queue.h>
-#include <qpid/broker/RecoveryManagerImpl.h>
-#include <qpid/framing/AMQHeaderBody.h>
+
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/RecoveryManagerImpl.h"
+#include "qpid/broker/PersistableObject.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/legacystore/MessageStoreImpl.h"
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Timer.h"
+
+#include <iostream>
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -48,7 +50,7 @@ QPID_AUTO_TEST_SUITE(OrderingTest)
 
 const std::string test_filename("OrderingTest");
 const char* tdp = getenv("TMP_DATA_DIR");
-const std::string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/tmp/OrderingTest");
+const std::string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/var/tmp/OrderingTest");
 
 // === Helper fns ===
 
@@ -118,7 +120,8 @@ void restart()
     sys::Timer t;
     DtxManager mgr(t);
     mgr.setStore (store.get());
-    RecoveryManagerImpl recoveryMgr(queues, exchanges, links, mgr, br.getProtocolRegistry());
+    RecoveredObjects ro;
+    RecoveryManagerImpl recoveryMgr(queues, exchanges, links, mgr, br.getProtocolRegistry(), ro);
     store->recover(recoveryMgr);
 
     queue = queues.find(name);
