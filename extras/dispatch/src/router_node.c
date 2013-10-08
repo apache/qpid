@@ -585,8 +585,10 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
     //
     // Invoke the in-process handler now that the lock is released.
     //
-    if (handler)
+    if (handler) {
         handler(handler_context, in_process_copy, rlink->mask_bit);
+        dx_free_message(in_process_copy);
+    }
 }
 
 

@@ -467,6 +467,11 @@ static void dx_io_rx_handler(void *context, dx_message_t *msg, int link_id)
         Py_DECREF(pValue);
     }
     sys_mutex_unlock(lock);
+
+    dx_field_iterator_free(ap);
+    dx_field_iterator_free(body);
+    dx_parse_free(ap_map);
+    dx_parse_free(body_map);
 }
 
 

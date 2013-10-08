@@ -474,9 +474,11 @@ dx_parsed_field_t *dx_message_delivery_annotations(dx_message_t *in_msg)
         !dx_parse_is_map(content->parsed_delivery_annotations)) {
         dx_field_iterator_free(da);
         dx_parse_free(content->parsed_delivery_annotations);
+        content->parsed_delivery_annotations = 0;
         return 0;
     }
 
+    dx_field_iterator_free(da);
     return content->parsed_delivery_annotations;
 }
 
