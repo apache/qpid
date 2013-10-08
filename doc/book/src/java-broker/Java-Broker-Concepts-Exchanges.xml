@@ -131,13 +131,13 @@
    </figure>
    <para>The figure above illustrates messages with properties published with routing key &quot;<literal>shipping</literal>&quot;.</para>
    <para>As before, the exchange routes each message to every bound queue whose binding key matches the routing key but as a JMS selector
-    argument has been specified, the expression is evalutated against each matching message. Only messages whose message header values or properties
+    argument has been specified, the expression is evaluated against each matching message. Only messages whose message header values or properties
     match the expression are routed to the queue.</para>
    <para>In the case illustrated, <literal>sub1</literal> has received the yellow and blue message as their property &quot;<literal>area</literal>&quot;
     cause expression &quot;<literal>area in ('Forties', 'Cromarty')</literal>&quot; to evaluate true.  Similarly, the yellow message has also gone to
     <literal>gale_alert</literal> as its property &quot;<literal>speed</literal>&quot; causes expression &quot;<literal>speed &gt; 7 and speed &lt; 10</literal>&quot;
     to evaluate true.</para>
-   <para>The properties of purple message cause expressions no evaluate true, so the message is unroutable. It is handled as described in
+   <para>The properties of purple message cause no expressions to evaluate true, so the message is unroutable. It is handled as described in
     <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
   </section>
   <section id="Java-Broker-Concepts-Exchanges-Types-Fanout">
