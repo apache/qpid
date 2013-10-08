@@ -360,7 +360,8 @@ enq_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
 #if defined(JRNL_BIG_ENDIAN) && defined(JRNL_32_BIT)
         rd_cnt += sizeof(u_int32_t); // Filler 0
 #endif
-        _enq_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        //_enq_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        std::memcpy((void*)&_enq_hdr._xidsize, (char*)rptr + rd_cnt, sizeof(std::size_t));
         rd_cnt += sizeof(std::size_t);
 #if defined(JRNL_LITTLE_ENDIAN) && defined(JRNL_32_BIT)
         rd_cnt += sizeof(u_int32_t); // Filler 0
@@ -368,7 +369,8 @@ enq_rec::decode(rec_hdr& h, void* rptr, u_int32_t rec_offs_dblks, u_int32_t max_
 #if defined(JRNL_BIG_ENDIAN) && defined(JRNL_32_BIT)
         rd_cnt += sizeof(u_int32_t); // Filler 1
 #endif
-        _enq_hdr._dsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        //_enq_hdr._dsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        std::memcpy((void*)&_enq_hdr._dsize, (char*)rptr + rd_cnt, sizeof(std::size_t));
         rd_cnt = _enq_hdr.size();
         chk_hdr();
         if (_enq_hdr._xidsize + (_enq_hdr.is_external() ? 0 : _enq_hdr._dsize))
