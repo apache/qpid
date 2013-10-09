@@ -152,6 +152,7 @@ static char *dx_del_router(dx_router_t *router, int router_maskbit)
     // Free the router node and the owning address records.
     //
     dx_bitmask_free(rnode->valid_origins);
+    DEQ_REMOVE(router->routers, rnode);
     free_dx_router_node_t(rnode);
 
     dx_hash_remove_by_handle(router->addr_hash, oaddr->hash_handle);

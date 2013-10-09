@@ -505,6 +505,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                         //
                         int origin = -1;
                         if (ingress_iter) {
+                            dx_field_iterator_reset_view(ingress_iter, ITER_VIEW_ADDRESS_HASH);
                             dx_address_t *origin_addr;
                             dx_hash_retrieve(router->addr_hash, ingress_iter, (void*) &origin_addr);
                             if (origin_addr && DEQ_SIZE(origin_addr->rnodes) == 1) {
