@@ -24,6 +24,7 @@
 #include "dispatch_private.h"
 #include "alloc_private.h"
 #include "log_private.h"
+#include "router_private.h"
 
 /**
  * Private Function Prototypes
@@ -34,7 +35,7 @@ void            dx_server_free(dx_server_t *server);
 dx_container_t *dx_container(dx_dispatch_t *dx);
 void            dx_container_setup_agent(dx_dispatch_t *dx);
 void            dx_container_free(dx_container_t *container);
-dx_router_t    *dx_router(dx_dispatch_t *dx, const char *area, const char *id);
+dx_router_t    *dx_router(dx_dispatch_t *dx, dx_router_mode_t mode, const char *area, const char *id);
 void            dx_router_setup_late(dx_dispatch_t *dx);
 void            dx_router_free(dx_router_t *router);
 dx_agent_t     *dx_agent(dx_dispatch_t *dx);
@@ -53,10 +54,13 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
 {
     dx_dispatch_t *dx = NEW(dx_dispatch_t);
 
-    int         thread_count   = 0;
-    const char *container_name = 0;
-    const char *router_area    = 0;
-    const char *router_id      = 0;
+    int         thread_count    = 0;
+    const char *container_name  = 0;
+    const char *router_mode_str = 0;
+    const char *router_area     = 0;
+    const char *router_id       = 0;
+
+    dx_router_mode_t  router_mode = DX_ROUTER_MODE_STANDALONE;
 
     DEQ_INIT(dx->config_listeners);
     DEQ_INIT(dx->config_connectors);
@@ -78,8 +82,9 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
 
         count = dx_config_item_count(dx->config, CONF_ROUTER);
         if (count == 1) {
-            router_area = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "area");
-            router_id   = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "router-id");
+            router_mode_str = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "mode");
+            router_area     = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "area");
+            router_id       = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "router-id");
         }
     }
 
@@ -89,6 +94,12 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
     if (!container_name)
         container_name = "00000000-0000-0000-0000-000000000000";  // TODO - gen a real uuid
 
+    if (router_mode_str && strcmp(router_mode_str, "interior") == 0)
+        router_mode = DX_ROUTER_MODE_INTERIOR;
+
+    if (router_mode_str && strcmp(router_mode_str, "edge") == 0)
+        router_mode = DX_ROUTER_MODE_EDGE;
+
     if (!router_area)
         router_area = "area";
 
@@ -97,7 +108,7 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
 
     dx->server    = dx_server(thread_count, container_name);
     dx->container = dx_container(dx);
-    dx->router    = dx_router(dx, router_area, router_id);
+    dx->router    = dx_router(dx, router_mode, router_area, router_id);
     dx->agent     = dx_agent(dx);
 
     dx_alloc_setup_agent(dx);

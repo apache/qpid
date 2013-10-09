@@ -30,6 +30,12 @@ void dx_pyrouter_tick(dx_router_t *router);
 void dx_router_agent_setup(dx_router_t *router);
 
 typedef enum {
+    DX_ROUTER_MODE_STANDALONE,  // Standalone router.  No routing protocol participation
+    DX_ROUTER_MODE_INTERIOR,    // Interior router.  Full participation in routing protocol.
+    DX_ROUTER_MODE_EDGE         // Edge router.  No routing protocol participation, access via other protocols.
+} dx_router_mode_t;
+
+typedef enum {
     DX_LINK_ENDPOINT,   // A link to a connected endpoint
     DX_LINK_ROUTER,     // A link to a peer router in the same area
     DX_LINK_AREA        // A link to a peer router in a different area (area boundary)
@@ -122,6 +128,7 @@ DEQ_DECLARE(dx_address_t, dx_address_list_t);
 
 struct dx_router_t {
     dx_dispatch_t          *dx;
+    dx_router_mode_t        router_mode;
     const char             *router_area;
     const char             *router_id;
     dx_node_t              *node;
