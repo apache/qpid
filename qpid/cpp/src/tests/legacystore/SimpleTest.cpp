@@ -235,8 +235,8 @@ QPID_AUTO_TEST_CASE(QueueCreateWithSettings)
         recover(store, registry);
         Queue::shared_ptr queue = registry.find(name);
         BOOST_REQUIRE(queue);
-        BOOST_CHECK_EQUAL(settings.maxDepth.getCount(), 202);
-        BOOST_CHECK_EQUAL(settings.maxDepth.getSize(), 1003);
+        BOOST_CHECK_EQUAL(settings.maxDepth.getCount(), 202u);
+        BOOST_CHECK_EQUAL(settings.maxDepth.getSize(), 1003u);
         BOOST_CHECK_EQUAL(settings.maxDepth.getCount(), queue->getSettings().maxDepth.getCount());
         BOOST_CHECK_EQUAL(settings.maxDepth.getSize(), queue->getSettings().maxDepth.getSize());
     }
