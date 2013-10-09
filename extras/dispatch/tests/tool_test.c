@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <qpid/dispatch/ctools.h>
+#include <qpid/dispatch/bitmask.h>
+#include "alloc_private.h"
 
 typedef struct item_t {
     DEQ_LINKS(struct item_t);
@@ -188,12 +190,43 @@ static char* test_deq_basic2(void *context)
 }
 
 
+static char* test_bitmask(void *context)
+{
+    dx_bitmask_t *bm;
+    int           num;
+
+    bm = dx_bitmask(0);
+    if (!bm)                            return "Can't allocate a bit mask";
+    if (dx_bitmask_first_set(bm, &num)) return "Expected no first set bit";
+
+    dx_bitmask_set_bit(bm, 3);
+    dx_bitmask_set_bit(bm, 500);
+
+    if (!dx_bitmask_first_set(bm, &num)) return "Expected first set bit";
+    if (num != 3)                        return "Expected first set bit to be 3";
+
+    dx_bitmask_clear_bit(bm, num);
+
+    if (!dx_bitmask_first_set(bm, &num)) return "Expected first set bit (2)";
+    if (num != 500)                      return "Expected first set bit to be 500";
+
+    dx_bitmask_clear_bit(bm, num);
+    if (dx_bitmask_first_set(bm, &num)) return "Expected no first set bit (2)";
+
+    dx_bitmask_free(bm);
+
+    return 0;
+}
+
+
 int tool_tests(void)
 {
     int result = 0;
+    dx_alloc_initialize();
 
     TEST_CASE(test_deq_basic, 0);
     TEST_CASE(test_deq_basic2, 0);
+    TEST_CASE(test_bitmask, 0);
 
     return result;
 }
