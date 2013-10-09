@@ -33,7 +33,7 @@ ALLOC_DECLARE(dx_bitmask_t);
 ALLOC_DEFINE(dx_bitmask_t);
 
 #define MASK_INDEX(num)  (num / 64)
-#define MASK_ONEHOT(num) (1 << (num % 64))
+#define MASK_ONEHOT(num) (((uint64_t) 1) << (num % 64))
 #define FIRST_NONE    -1
 #define FIRST_UNKNOWN -2
 
@@ -81,7 +81,7 @@ void dx_bitmask_set_bit(dx_bitmask_t *b, int bitnum)
 {
     assert(bitnum < DX_BITMASK_BITS);
     b->array[MASK_INDEX(bitnum)] |= MASK_ONEHOT(bitnum);
-    if (b->first_set > bitnum)
+    if (b->first_set > bitnum || b->first_set < 0)
         b->first_set = bitnum;
 }
 
@@ -108,7 +108,7 @@ int dx_bitmask_first_set(dx_bitmask_t *b, int *bitnum)
         for (int i = 0; i < DX_BITMASK_LONGS; i++)
             if (b->array[i]) {
                 for (int j = 0; j < 64; j++)
-                    if ((1 << j) & b->array[i]) {
+                    if ((((uint64_t) 1) << j) & b->array[i]) {
                         b->first_set = i * 64 + j;
                         break;
                     }
