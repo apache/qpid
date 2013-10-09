@@ -143,28 +143,28 @@ class RouterEngine:
 
             elif opcode == 'RA':
                 msg = MessageRA(body)
-                self.log(LOG_TRACE, "RCVD: %r" % msg)
+                self.log(LOG_DEBUG, "RCVD: %r" % msg)
                 self.link_state_engine.handle_ra(msg, now)
                 self.mobile_address_engine.handle_ra(msg, now)
 
             elif opcode == 'LSU':
                 msg = MessageLSU(body)
-                self.log(LOG_TRACE, "RCVD: %r" % msg)
+                self.log(LOG_DEBUG, "RCVD: %r" % msg)
                 self.link_state_engine.handle_lsu(msg, now)
 
             elif opcode == 'LSR':
                 msg = MessageLSR(body)
-                self.log(LOG_TRACE, "RCVD: %r" % msg)
+                self.log(LOG_DEBUG, "RCVD: %r" % msg)
                 self.link_state_engine.handle_lsr(msg, now)
 
             elif opcode == 'MAU':
                 msg = MessageMAU(body)
-                self.log(LOG_TRACE, "RCVD: %r" % msg)
+                self.log(LOG_DEBUG, "RCVD: %r" % msg)
                 self.mobile_address_engine.handle_mau(msg, now)
 
             elif opcode == 'MAR':
                 msg = MessageMAR(body)
-                self.log(LOG_TRACE, "RCVD: %r" % msg)
+                self.log(LOG_DEBUG, "RCVD: %r" % msg)
                 self.mobile_address_engine.handle_mar(msg, now)
 
         except Exception, e:
@@ -223,7 +223,10 @@ class RouterEngine:
         """
         app_props = {'opcode' : msg.get_opcode() }
         self.io_adapter.send(dest, app_props, msg.to_dict())
-        self.log(LOG_TRACE, "SENT: %r dest=%s" % (msg, dest))
+        if "qdxhello" in dest:
+            self.log(LOG_TRACE, "SENT: %r dest=%s" % (msg, dest))
+        else:
+            self.log(LOG_DEBUG, "SENT: %r dest=%s" % (msg, dest))
 
 
     def node_updated(self, addr, reachable, neighbor):
