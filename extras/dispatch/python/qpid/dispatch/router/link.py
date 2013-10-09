@@ -92,6 +92,7 @@ class LinkStateEngine(object):
         # Schedule LSRs for any routers referenced in this LS that we don't know about
         for _id in msg.ls.peers:
             if _id not in self.collection:
+                self.container.new_node(_id)
                 self.needed_lsrs[(msg.area, _id)] = None
 
 
