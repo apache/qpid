@@ -973,7 +973,7 @@ static dx_node_type_t router_node = {"router", 0, 0,
 static int type_registered = 0;
 
 
-dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
+dx_router_t *dx_router(dx_dispatch_t *dx, dx_router_mode_t mode, const char *area, const char *id)
 {
     if (!type_registered) {
         type_registered = 1;
@@ -994,6 +994,7 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
 
     dx->router = router;
     router->dx           = dx;
+    router->router_mode  = mode;
     router->router_area  = area;
     router->router_id    = id;
     router->node         = dx_container_set_default_node_type(dx, &router_node, (void*) router, DX_DIST_BOTH);
@@ -1021,8 +1022,10 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
     // Create addresses for all of the routers in the topology.  It will be registered
     // locally later in the initialization sequence.
     //
-    router->router_addr = dx_router_register_address(dx, "qdxrouter", 0, 0);
-    router->hello_addr  = dx_router_register_address(dx, "qdxhello", 0, 0);
+    if (router->router_mode == DX_ROUTER_MODE_INTERIOR) {
+        router->router_addr = dx_router_register_address(dx, "qdxrouter", 0, 0);
+        router->hello_addr  = dx_router_register_address(dx, "qdxhello", 0, 0);
+    }
 
     //
     // Inform the field iterator module of this router's id and area.  The field iterator
@@ -1035,7 +1038,12 @@ dx_router_t *dx_router(dx_dispatch_t *dx, const char *area, const char *id)
     //
     dx_python_start();
 
-    dx_log(module, LOG_INFO, "Router started, area=%s id=%s", area, id);
+    switch (router->router_mode) {
+    case DX_ROUTER_MODE_STANDALONE:  dx_log(module, LOG_INFO, "Router started in Standalone mode");  break;
+    case DX_ROUTER_MODE_INTERIOR:    dx_log(module, LOG_INFO, "Router started in Interior mode, area=%s id=%s", area, id);  break;
+    case DX_ROUTER_MODE_EDGE:        dx_log(module, LOG_INFO, "Router started in Edge mode");  break;
+    }
+
     return router;
 }
 

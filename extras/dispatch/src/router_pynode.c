@@ -444,6 +444,13 @@ static PyTypeObject RouterAdapterType = {
 
 void dx_router_python_setup(dx_router_t *router)
 {
+    //
+    // If we are not operating as an interior router, don't start the
+    // router module.
+    //
+    if (router->router_mode != DX_ROUTER_MODE_INTERIOR)
+        return;
+
     PyObject *pDispatchModule = dx_python_module();
 
     RouterAdapterType.tp_new = PyType_GenericNew;
@@ -534,7 +541,7 @@ void dx_pyrouter_tick(dx_router_t *router)
     PyObject *pArgs;
     PyObject *pValue;
 
-    if (router->pyTick) {
+    if (router->pyTick && router->router_mode == DX_ROUTER_MODE_INTERIOR) {
         dx_python_lock();
         pArgs  = PyTuple_New(0);
         pValue = PyObject_CallObject(router->pyTick, pArgs);
