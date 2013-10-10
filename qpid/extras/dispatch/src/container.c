@@ -687,6 +687,27 @@ pn_link_t *dx_link_pn(dx_link_t *link)
 }
 
 
+dx_connection_t *dx_link_connection(dx_link_t *link)
+{
+    if (!link || !link->pn_link)
+        return 0;
+
+    pn_session_t *sess = pn_link_session(link->pn_link);
+    if (!sess)
+        return 0;
+
+    pn_connection_t *conn = pn_session_connection(sess);
+    if (!conn)
+        return 0;
+
+    dx_connection_t *ctx = pn_connection_get_context(conn);
+    if (!ctx)
+        return 0;
+
+    return ctx;
+}
+
+
 pn_terminus_t *dx_link_source(dx_link_t *link)
 {
     return pn_link_source(link->pn_link);

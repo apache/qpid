@@ -28,6 +28,7 @@
 
 static char *module = "ROUTER";
 
+static char *router_role   = "inter-router";
 static char *local_prefix  = "_local/";
 static char *topo_prefix   = "_topo/";
 static char *direct_prefix;
@@ -118,6 +119,22 @@ static void dx_router_check_addr_LH(dx_router_t *router, dx_address_t *addr)
     DEQ_REMOVE(router->addrs, addr);
     dx_hash_handle_free(addr->hash_handle);
     free_dx_address_t(addr);
+}
+
+
+/**
+ * Determine whether a connection is configured in the inter-router role.
+ */
+static int dx_router_connection_is_inter_router(const dx_connection_t *conn)
+{
+    if (!conn)
+        return 0;
+
+    const dx_server_config_t *cf = dx_connection_config(conn);
+    if (cf && strcmp(cf->role, router_role) == 0)
+        return 1;
+
+    return 0;
 }
 
 
@@ -648,11 +665,17 @@ static void router_disp_handler(void* context, dx_link_t *link, dx_delivery_t *d
  */
 static int router_incoming_link_handler(void* context, dx_link_t *link)
 {
-    dx_router_t      *router  = (dx_router_t*) context;
-    dx_router_link_t *rlink   = new_dx_router_link_t();
-    pn_link_t        *pn_link = dx_link_pn(link);
-    int is_router             = dx_router_terminus_is_router(dx_link_remote_source(link));
+    dx_router_t *router    = (dx_router_t*) context;
+    pn_link_t   *pn_link   = dx_link_pn(link);
+    int          is_router = dx_router_terminus_is_router(dx_link_remote_source(link));
 
+    if (is_router && !dx_router_connection_is_inter_router(dx_link_connection(link))) {
+        dx_log(module, LOG_WARNING, "Incoming link claims router capability but is not on an inter-router connection");
+        pn_link_close(pn_link);
+        return 0;
+    }
+
+    dx_router_link_t *rlink = new_dx_router_link_t();
     DEQ_ITEM_INIT(rlink);
     rlink->link_type      = is_router ? DX_LINK_ROUTER : DX_LINK_ENDPOINT;
     rlink->link_direction = DX_INCOMING;
@@ -696,6 +719,12 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     int is_dynamic       = pn_terminus_is_dynamic(dx_link_remote_source(link));
     int is_router        = dx_router_terminus_is_router(dx_link_remote_target(link));
     dx_field_iterator_t *iter = 0;
+
+    if (is_router && !dx_router_connection_is_inter_router(dx_link_connection(link))) {
+        dx_log(module, LOG_WARNING, "Outgoing link claims router capability but is not on an inter-router connection");
+        pn_link_close(pn_link);
+        return 0;
+    }
 
     //
     // If this link is not a router link and it has no source address, we can't
@@ -861,8 +890,14 @@ static void router_inbound_open_handler(void *type_context, dx_connection_t *con
 
 static void router_outbound_open_handler(void *type_context, dx_connection_t *conn)
 {
-    // TODO - Make sure this connection is annotated as an inter-router transport.
-    //        Ignore otherwise
+    //
+    // Check the configured role of this connection.  If it is not the inter-router
+    // role, ignore it.
+    //
+    if (!dx_router_connection_is_inter_router(conn)) {
+        dx_log(module, LOG_WARNING, "Outbound connection set up without inter-router role");
+        return;
+    }
 
     dx_router_t         *router = (dx_router_t*) type_context;
     dx_link_t           *sender;
