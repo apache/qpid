@@ -137,6 +137,7 @@ static void load_server_config(dx_dispatch_t *dx, dx_server_config_t *config, co
 {
     config->host = dx_config_item_value_string(dx->config, section, i, "addr");
     config->port = dx_config_item_value_string(dx->config, section, i, "port");
+    config->role = dx_config_item_value_string(dx->config, section, i, "role");
     config->sasl_mechanisms =
         dx_config_item_value_string(dx->config, section, i, "sasl-mechanisms");
     config->ssl_enabled =

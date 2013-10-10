@@ -166,6 +166,7 @@ void *dx_link_get_context(dx_link_t *link);
 void dx_link_set_conn_context(dx_link_t *link, void *link_context);
 void *dx_link_get_conn_context(dx_link_t *link);
 
+dx_connection_t *dx_link_connection(dx_link_t *link);
 pn_link_t *dx_link_pn(dx_link_t *link);
 pn_terminus_t *dx_link_source(dx_link_t *link);
 pn_terminus_t *dx_link_target(dx_link_t *link);

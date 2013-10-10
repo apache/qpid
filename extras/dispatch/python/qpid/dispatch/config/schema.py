@@ -57,6 +57,7 @@ config_schema = {
     'addr'              : (str,  0,    "M"),
     'port'              : (str,  1,    "M"),
     'label'             : (str,  None, "",  None),
+    'role'              : (str,  None, "",  'normal'),
     'sasl-mechanisms'   : (str,  None, "M"),
     'ssl-profile'       : (str,  None, "E", None),
     'require-peer-auth' : (bool, None, "",  True),
@@ -66,6 +67,7 @@ config_schema = {
     'addr'            : (str,  0,    "M"),
     'port'            : (str,  1,    "M"),
     'label'           : (str,  None, "",  None),
+    'role'            : (str,  None, "",  'normal'),
     'sasl-mechanisms' : (str,  None, "M"),
     'ssl-profile'     : (str,  None, "E", None),
     'allow-redirect'  : (bool, None, "",  True)
