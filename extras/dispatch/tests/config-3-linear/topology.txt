@@ -1,0 +1,12 @@
+
+
+  +----------+          +----------+          +----------+
+  |QDR.A     |          |QDR.B     |          |QDR.C     |
+  |port:     |          |port:     |          |port:     |
+  | 20001    |--------->| 20002    |--------->| 20003    |
+  |          |          |          |          |          |
+  |          |          |          |          |          |
+  +----------+          +----------+          +----------+
+
+ * The direction of the arrow shows the direction of the connection setup
+   Connector --> Listener
