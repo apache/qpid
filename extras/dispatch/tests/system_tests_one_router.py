@@ -29,7 +29,7 @@ class RouterTest(unittest.TestCase):
       if 'CTEST_SOURCE_DIR' not in os.environ:
         raise Exception("Environment variable 'CTEST_SOURCE_DIR' not set")
       srcdir = os.environ['CTEST_SOURCE_DIR']
-      self.router = subprocess.Popen(['../router/dispatch-router', '-c', '%s/onerouter.conf' % srcdir],
+      self.router = subprocess.Popen(['../router/dispatch-router', '-c', '%s/config-1/A.conf' % srcdir],
                                      stderr=subprocess.PIPE, stdout=subprocess.PIPE)
       time.sleep(1)
 
