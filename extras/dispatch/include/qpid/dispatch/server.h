@@ -186,7 +186,7 @@ typedef struct dx_connector_t dx_connector_t;
 typedef struct dx_connection_t dx_connection_t;
 
 /**
- * Event type for the connection callback.
+ * \brief Event type for the connection callback.
  */
 typedef enum {
     /// The connection just opened via a listener (inbound).
@@ -201,6 +201,106 @@ typedef enum {
     /// The connection requires processing.
     DX_CONN_EVENT_PROCESS
 } dx_conn_event_t;
+
+
+/**
+ * \brief Configuration block for a connector or a listener.
+ */
+typedef struct dx_server_config_t {
+    /**
+     * Host name or network address to bind to a listener or use in the connector.
+     */
+    const char *host;
+
+    /**
+     * Port name or number to bind to a listener or use in the connector.
+     */
+    const char *port;
+
+    /**
+     * Space-separated list of SASL mechanisms to be accepted for the connection.
+     */
+    const char *sasl_mechanisms;
+
+    /**
+     * If appropriate for the mechanism, the username for authentication
+     * (connector only)
+     */
+    const char *sasl_username;
+
+    /**
+     * If appropriate for the mechanism, the password for authentication
+     * (connector only)
+     */
+    const char *sasl_password;
+
+    /**
+     * If appropriate for the mechanism, the minimum acceptable security strength factor
+     */
+    int sasl_minssf;
+
+    /**
+     * If appropriate for the mechanism, the maximum acceptable security strength factor
+     */
+    int sasl_maxssf;
+
+    /**
+     * SSL is enabled for this connection iff non-zero.
+     */
+    int ssl_enabled;
+
+    /**
+     * Connection will take on the role of SSL server iff non-zero.
+     */
+    int ssl_server;
+
+    /**
+     * Iff non-zero AND ssl_enabled is non-zero, this listener will detect the client's use
+     * of SSL or non-SSL and conform to the client's protocol.
+     * (listener only)
+     */
+    int ssl_allow_unsecured_client;
+
+    /**
+     * Path to the file containing the PEM-formatted public certificate for the local end
+     * of the connection.
+     */
+    const char *ssl_certificate_file;
+
+    /**
+     * Path to the file containing the PEM-formatted private key for the local end of the
+     * connection.
+     */
+    const char *ssl_private_key_file;
+
+    /**
+     * The password used to sign the private key, or NULL if the key is not protected.
+     */
+    const char *ssl_password;
+
+    /**
+     * Path to the file containing the PEM-formatted set of certificates of trusted CAs.
+     */
+    const char *ssl_trusted_certificate_db;
+
+    /**
+     * Iff non-zero, require that the peer's certificate be supplied and that it be authentic
+     * according to the set of trusted CAs.
+     */
+    int ssl_require_peer_authentication;
+
+    /**
+     * Allow the connection to be redirected by the peer (via CLOSE->Redirect).  This is
+     * meaningful for outgoing (connector) connections only.
+     */
+    int allow_redirect;
+
+    /**
+     * The specified role of the connection.  This can be used to control the behavior and
+     * capabilities of the connections.
+     */
+    const char *role;
+} dx_server_config_t;
 
 
 /**
@@ -295,97 +395,12 @@ pn_connection_t *dx_connection_pn(dx_connection_t *conn);
 
 
 /**
- * \brief Configuration block for a connector or a listener.
+ * \brief Get the configuration that was used in the setup of this connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @return A pointer to the server configuration used in the establishment of this connection.
  */
-typedef struct dx_server_config_t {
-    /**
-     * Host name or network address to bind to a listener or use in the connector.
-     */
-    const char *host;
-
-    /**
-     * Port name or number to bind to a listener or use in the connector.
-     */
-    const char *port;
-
-    /**
-     * Space-separated list of SASL mechanisms to be accepted for the connection.
-     */
-    const char *sasl_mechanisms;
-
-    /**
-     * If appropriate for the mechanism, the username for authentication
-     * (connector only)
-     */
-    const char *sasl_username;
-
-    /**
-     * If appropriate for the mechanism, the password for authentication
-     * (connector only)
-     */
-    const char *sasl_password;
-
-    /**
-     * If appropriate for the mechanism, the minimum acceptable security strength factor
-     */
-    int sasl_minssf;
-
-    /**
-     * If appropriate for the mechanism, the maximum acceptable security strength factor
-     */
-    int sasl_maxssf;
-
-    /**
-     * SSL is enabled for this connection iff non-zero.
-     */
-    int ssl_enabled;
-
-    /**
-     * Connection will take on the role of SSL server iff non-zero.
-     */
-    int ssl_server;
-
-    /**
-     * Iff non-zero AND ssl_enabled is non-zero, this listener will detect the client's use
-     * of SSL or non-SSL and conform to the client's protocol.
-     * (listener only)
-     */
-    int ssl_allow_unsecured_client;
-
-    /**
-     * Path to the file containing the PEM-formatted public certificate for the local end
-     * of the connection.
-     */
-    const char *ssl_certificate_file;
-
-    /**
-     * Path to the file containing the PEM-formatted private key for the local end of the
-     * connection.
-     */
-    const char *ssl_private_key_file;
-
-    /**
-     * The password used to sign the private key, or NULL if the key is not protected.
-     */
-    const char *ssl_password;
-
-    /**
-     * Path to the file containing the PEM-formatted set of certificates of trusted CAs.
-     */
-    const char *ssl_trusted_certificate_db;
-
-    /**
-     * Iff non-zero, require that the peer's certificate be supplied and that it be authentic
-     * according to the set of trusted CAs.
-     */
-    int ssl_require_peer_authentication;
-
-    /**
-     * Allow the connection to be redirected by the peer (via CLOSE->Redirect).  This is
-     * meaningful for outgoing (connector) connections only.
-     */
-    int allow_redirect;
-} dx_server_config_t;
+const dx_server_config_t *dx_connection_config(const dx_connection_t *conn);
 
 
 /**

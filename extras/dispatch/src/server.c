@@ -880,6 +880,14 @@ pn_connection_t *dx_connection_pn(dx_connection_t *conn)
 }
 
 
+const dx_server_config_t *dx_connection_config(const dx_connection_t *conn)
+{
+    if (conn->listener)
+        return conn->listener->config;
+    return conn->connector->config;
+}
+
+
 dx_listener_t *dx_server_listen(dx_dispatch_t *dx, const dx_server_config_t *config, void *context)
 {
     dx_server_t   *dx_server = dx->server;
