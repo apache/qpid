@@ -135,54 +135,47 @@ class NodeTrackerTest(unittest.TestCase):
         tracker.new_neighbor('A', 1)
         self.assertEqual(self.address, 'amqp:/_topo/area/A')
         self.assertEqual(self.link_bit, 1)
-        self.assertEqual(self.router_bit, 0)
+        self.assertEqual(self.router_bit, 1)
         self.assertEqual(self.calls, 1)
 
         self.reset()
         tracker.new_neighbor('B', 5)
         self.assertEqual(self.address, 'amqp:/_topo/area/B')
         self.assertEqual(self.link_bit, 5)
-        self.assertEqual(self.router_bit, 1)
+        self.assertEqual(self.router_bit, 2)
         self.assertEqual(self.calls, 1)
 
         self.reset()
         tracker.new_neighbor('C', 6)
         self.assertEqual(self.address, 'amqp:/_topo/area/C')
         self.assertEqual(self.link_bit, 6)
-        self.assertEqual(self.router_bit, 2)
+        self.assertEqual(self.router_bit, 3)
         self.assertEqual(self.calls, 1)
 
         self.reset()
         tracker.new_neighbor('D', 7)
         self.assertEqual(self.address, 'amqp:/_topo/area/D')
         self.assertEqual(self.link_bit, 7)
-        self.assertEqual(self.router_bit, 3)
-        self.assertEqual(self.calls, 1)
-
-        self.reset()
-        tracker.new_neighbor('E', 8)
-        self.assertEqual(self.address, 'amqp:/_topo/area/E')
-        self.assertEqual(self.link_bit, 8)
         self.assertEqual(self.router_bit, 4)
         self.assertEqual(self.calls, 1)
 
         self.reset()
         try:
-            tracker.new_neighbor('F', 9)
+            tracker.new_neighbor('E', 9)
             AssertFalse("We shouldn't be here")
         except:
             pass
 
         self.reset()
         tracker.lost_neighbor('C')
-        self.assertEqual(self.router_bit, 2)
+        self.assertEqual(self.router_bit, 3)
         self.assertEqual(self.calls, 1)
 
         self.reset()
-        tracker.new_neighbor('F', 9)
-        self.assertEqual(self.address, 'amqp:/_topo/area/F')
+        tracker.new_neighbor('E', 9)
+        self.assertEqual(self.address, 'amqp:/_topo/area/E')
         self.assertEqual(self.link_bit, 9)
-        self.assertEqual(self.router_bit, 2)
+        self.assertEqual(self.router_bit, 3)
         self.assertEqual(self.calls, 1)
 
 
@@ -193,14 +186,14 @@ class NodeTrackerTest(unittest.TestCase):
         tracker.new_node('A')
         self.assertEqual(self.address, 'amqp:/_topo/area/A')
         self.assertFalse(self.link_bit)
-        self.assertEqual(self.router_bit, 0)
+        self.assertEqual(self.router_bit, 1)
         self.assertEqual(self.calls, 1)
 
         self.reset()
         tracker.new_neighbor('A', 3)
         self.assertEqual(self.address, 'amqp:/_topo/area/A')
         self.assertEqual(self.link_bit, 3)
-        self.assertEqual(self.router_bit, 0)
+        self.assertEqual(self.router_bit, 1)
         self.assertEqual(self.calls, 2)
 
         self.reset()
@@ -212,7 +205,7 @@ class NodeTrackerTest(unittest.TestCase):
 
         self.reset()
         tracker.lost_neighbor('A')
-        self.assertEqual(self.router_bit, 0)
+        self.assertEqual(self.router_bit, 1)
         self.assertEqual(self.calls, 1)
 
 
@@ -223,7 +216,7 @@ class NodeTrackerTest(unittest.TestCase):
         tracker.new_neighbor('A', 3)
         self.assertEqual(self.address, 'amqp:/_topo/area/A')
         self.assertEqual(self.link_bit, 3)
-        self.assertEqual(self.router_bit, 0)
+        self.assertEqual(self.router_bit, 1)
         self.assertEqual(self.calls, 1)
 
         self.reset()
@@ -236,12 +229,12 @@ class NodeTrackerTest(unittest.TestCase):
         self.reset()
         tracker.lost_neighbor('A')
         self.assertEqual(self.address, 'amqp:/_topo/area/A')
-        self.assertEqual(self.router_bit, 0)
+        self.assertEqual(self.router_bit, 1)
         self.assertEqual(self.calls, 2)
 
         self.reset()
         tracker.lost_node('A')
-        self.assertEqual(self.router_bit, 0)
+        self.assertEqual(self.router_bit, 1)
         self.assertEqual(self.calls, 1)
 
 

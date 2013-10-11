@@ -292,6 +292,7 @@ static PyObject* dx_set_valid_origins(PyObject *self, PyObject *args)
     }
 
     dx_bitmask_clear_all(rnode->valid_origins);
+    dx_bitmask_set_bit(rnode->valid_origins, 0);  // This router is a valid origin for all destinations
     for (idx = 0; idx < origin_count; idx++) {
         maskbit = PyInt_AS_LONG(PyList_GetItem(origin_list, idx));
         dx_bitmask_set_bit(rnode->valid_origins, maskbit);
