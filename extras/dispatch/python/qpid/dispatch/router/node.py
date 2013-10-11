@@ -36,9 +36,10 @@ class NodeTracker(object):
         self.max_routers  = max_routers
         self.nodes        = {}  # id => RemoteNode
         self.maskbits     = []
-        self.next_maskbit = 0
+        self.next_maskbit = 1   # Reserve bit '0' to represent this router
         for i in range(max_routers):
             self.maskbits.append(None)
+        self.maskbits[0] = True
 
 
     def tick(self, now):

@@ -406,7 +406,7 @@ class RouterTest(unittest.TestCase):
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
       self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
-      self.assertFalse('qdx.trace' in da)
+      self.assertEqual(da['qdx.trace'], ['_topo/area/Qpid.Dispatch.Router.A/'])
 
     ##
     ## Empty trace

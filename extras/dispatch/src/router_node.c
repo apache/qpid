@@ -333,17 +333,19 @@ static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_mess
     //
     // If there is a trace field, append this router's ID to the trace.
     //
-    if (trace && dx_parse_is_list(trace)) {
+    if (trace) {
         dx_compose_insert_string(out_da, DX_DA_TRACE);
         dx_compose_start_list(out_da);
 
-        uint32_t idx = 0;
-        dx_parsed_field_t *trace_item = dx_parse_sub_value(trace, idx);
-        while (trace_item) {
-            dx_field_iterator_t *iter = dx_parse_raw(trace_item);
-            dx_compose_insert_string_iterator(out_da, iter);
-            idx++;
-            trace_item = dx_parse_sub_value(trace, idx);
+        if (dx_parse_is_list(trace)) {
+            uint32_t idx = 0;
+            dx_parsed_field_t *trace_item = dx_parse_sub_value(trace, idx);
+            while (trace_item) {
+                dx_field_iterator_t *iter = dx_parse_raw(trace_item);
+                dx_compose_insert_string_iterator(out_da, iter);
+                idx++;
+                trace_item = dx_parse_sub_value(trace, idx);
+            }
         }
 
         dx_compose_insert_string(out_da, direct_prefix);
@@ -366,6 +368,10 @@ static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_mess
     dx_message_set_delivery_annotations(msg, out_da);
     dx_compose_free(out_da);
 
+    //
+    // Return the iterator to the ingress field _if_ it was present.
+    // If we added the ingress, return NULL.
+    //
     return ingress_iter;
 }
 
@@ -529,7 +535,8 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                                 dx_router_ref_t *rref = DEQ_HEAD(origin_addr->rnodes);
                                 origin = rref->router->mask_bit;
                             }
-                        }
+                        } else
+                            origin = 0;
 
                         //
                         // Forward to the next-hops for remote destinations.
