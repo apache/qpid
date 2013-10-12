@@ -116,7 +116,7 @@ jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${geronimo-openejb} ${
 jca.test.libs=${test.libs}
 
 # optional bdbstore module deps
-bdb-je=lib/bdbstore/je-5.0.84.jar
+bdb-je=lib/bdbstore/je-5.0.97.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
 
