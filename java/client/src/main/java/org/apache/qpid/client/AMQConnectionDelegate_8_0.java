@@ -22,7 +22,6 @@ package org.apache.qpid.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
@@ -35,13 +34,14 @@ import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
@@ -51,11 +51,10 @@ import org.apache.qpid.transport.network.security.SecurityLayerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.XASession;
-import javax.net.ssl.SSLContext;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
-import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -383,5 +382,34 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public void setHeartbeatListener(HeartbeatListener listener)
     {
         _conn.getProtocolHandler().setHeartbeatListener(listener);
+    }
+
+    @Override
+    public boolean supportsIsBound()
+    {
+        //Rough check whether the 'isBound' AMQP extension method is supported, by trying to determine if we are connected to Qpid.
+        //As older versions of the Qpid broker did not send properties, the value will be assumed true if no server properties
+        //are found, or the 'product' entry isn't present, and will only be false if it is present but doesn't match expectation.
+        boolean connectedToQpid = true;
+
+        FieldTable serverProperties = _conn.getProtocolHandler().getProtocolSession().getConnectionStartServerProperties();
+        if(serverProperties != null)
+        {
+            if(serverProperties.containsKey(ConnectionStartProperties.PRODUCT))
+            {
+                //String.valueof to ensure it is non-null, then lowercase it
+                String product = String.valueOf(serverProperties.getString(ConnectionStartProperties.PRODUCT)).toLowerCase();
+
+                //value is "unknown" when the naming properties file hasn't been found, e.g in IDE.
+                connectedToQpid = product.contains("qpid") || product.equals("unknown");
+            }
+        }
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("supportsIsBound: " + connectedToQpid);
+        }
+
+        return connectedToQpid;
     }
 }
