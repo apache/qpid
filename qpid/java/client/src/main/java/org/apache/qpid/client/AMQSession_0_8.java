@@ -397,10 +397,19 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         }
     }
 
+    /**
+     * Checks if a particular queue is bound to an exchange with a given key.
+     *
+     * Returns false if not connected to a Qpid broker which supports the necessary AMQP extension.
+     */
     @Override
     protected boolean isBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
             throws AMQException
     {
+        if(!getAMQConnection().getDelegate().supportsIsBound())
+        {
+            return false;
+        }
 
         AMQMethodEvent response = new FailoverNoopSupport<AMQMethodEvent, AMQException>(
                 new FailoverProtectedOperation<AMQMethodEvent, AMQException>()
