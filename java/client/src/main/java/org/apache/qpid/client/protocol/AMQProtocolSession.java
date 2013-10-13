@@ -22,7 +22,6 @@ package org.apache.qpid.client.protocol;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -36,6 +35,7 @@ import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
@@ -101,6 +101,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     private final AMQConnection _connection;
 
     private ConnectionTuneParameters _connectionTuneParameters;
+    private FieldTable _connectionStartServerProperties;
 
     private SaslClient _saslClient;
 
@@ -528,5 +529,15 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     protected AMQConnection getConnection()
     {
         return _connection;
+    }
+
+    public void setConnectionStartServerProperties(FieldTable serverProperties)
+    {
+        _connectionStartServerProperties = serverProperties;
+    }
+
+    public FieldTable getConnectionStartServerProperties()
+    {
+        return _connectionStartServerProperties;
     }
 }
