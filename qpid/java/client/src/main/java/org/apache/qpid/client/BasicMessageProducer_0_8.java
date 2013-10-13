@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
@@ -32,7 +33,6 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +40,14 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.Topic;
+
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
 public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {
-	private static final Logger _logger = LoggerFactory.getLogger(BasicMessageProducer_0_8.class);
+    private static final Logger _logger = LoggerFactory.getLogger(BasicMessageProducer_0_8.class);
+    private static final boolean SET_EXPIRATION_AS_TTL = Boolean.getBoolean(ClientProperties.SET_EXPIRATION_AS_TTL);
 
     BasicMessageProducer_0_8(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
             AMQSession session, AMQProtocolHandler protocolHandler, long producerId, Boolean immediate, Boolean mandatory) throws AMQException
@@ -118,7 +120,16 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
             if (timeToLive > 0)
             {
-                contentHeaderProperties.setExpiration(currentTime + timeToLive);
+                if(!SET_EXPIRATION_AS_TTL)
+                {
+                    //default behaviour used by Qpid
+                    contentHeaderProperties.setExpiration(currentTime + timeToLive);
+                }
+                else
+                {
+                    //alternative behaviour for brokers interpreting the expiration header directly as a TTL.
+                    contentHeaderProperties.setExpiration(timeToLive);
+                }
             }
             else
             {
