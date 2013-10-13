@@ -208,6 +208,13 @@ public class ClientProperties
     public static final String QPID_MAX_CACHED_ADDR_OPTION_STRINGS = "qpid.max_cached_address_option_strings";
     public static final int DEFAULT_MAX_CACHED_ADDR_OPTION_STRINGS = 10;
 
+    /**
+     * System property to control whether the 0-8/0-9/0-9-1 client will set the message
+     * 'expiration' header using the computed expiration value (default, when false) or instead set
+     * it to the raw TTL (when true). May be necessary for interop with other vendors.
+     */
+    public static final String SET_EXPIRATION_AS_TTL = "qpid.set_expiration_as_ttl";
+
     private ClientProperties()
     {
         //No instances
