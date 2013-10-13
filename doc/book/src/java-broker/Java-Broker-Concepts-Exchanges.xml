@@ -197,7 +197,7 @@
     The alternate exchange routes the message according to its routing algorithm and its binding table.  If the messages is still unroutable,
     the message is discarded.</listitem>
     <listitem>If using AMQP protocols 0-8..0-9-1, and the publisher set the mandatory flag and the<link linkend="Java-Broker-Close-Connection-When-No-Route">
-     close when no route</link> feature is disabled, the message is returned to the Producer.</listitem>
+     close when no route</link> feature did not close the connection, the message is returned to the Producer.</listitem>
     <listitem>Otherwise, the message is discarded.</listitem>
    </itemizedlist>
   </para>
