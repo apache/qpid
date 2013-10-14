@@ -48,6 +48,9 @@ define(["dojo/_base/xhr",
   {
     if(type && string.trim(type) != "")
     {
+      var disableOnEditing = PreferencesProviderFields.data? true: false;
+      PreferencesProviderFields.name.set("disabled", disableOnEditing);
+      PreferencesProviderFields.type.set("disabled", disableOnEditing);
       if (PreferencesProviderFields.currentType != type)
       {
         require(["qpid/management/authenticationprovider/preferences/" + type.toLowerCase() + "/add"],
@@ -58,9 +61,6 @@ define(["dojo/_base/xhr",
           {
             PreferencesProviderFields.details.destroy();
           }
-          var disableOnEditing = PreferencesProviderFields.data? true: false;
-          PreferencesProviderFields.name.set("disabled", disableOnEditing);
-          PreferencesProviderFields.type.set("disabled", disableOnEditing);
           PreferencesProviderFields.details = typeFields;
           typeFields.show(PreferencesProviderFields.fieldsContainer, PreferencesProviderFields.data);
           PreferencesProviderFields.currentType = type;
@@ -68,7 +68,7 @@ define(["dojo/_base/xhr",
       }
       else
       {
-        PreferencesProviderFields.disable(false);
+        PreferencesProviderFields.details.disable(false);
       }
     }
     else

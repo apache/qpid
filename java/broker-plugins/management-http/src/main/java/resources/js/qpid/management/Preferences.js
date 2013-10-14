@@ -71,20 +71,21 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
       {
         var name = preferenceNames[i];
         this[name] = registry.byId("preferences." + name);
+        this[name].on("change", function(val){that._toggleSetButtons();});
       }
 
       this.setButton = registry.byId("preferences.setButton");
       this.setAndCloseButton = registry.byId("preferences.setAndCloseButton");
-      this.setButton.on("click", function(e){that._savePreferences(e, false)});
-      this.setAndCloseButton.on("click", function(e){that._savePreferences(e, true)});
+      this.setButton.on("click", function(e){that._savePreferences(e, false);});
+      this.setAndCloseButton.on("click", function(e){that._savePreferences(e, true);});
       this.theForm = registry.byId("preferences.preferencesForm");
       this.usersGrid = registry.byId("preferences.users");
       this.usersGrid.set("structure", [ { name: "User", field: "name", width: "50%"},
                                  { name: "Authentication Provider", field: "authenticationProvider", width: "50%"}]);
       this.deleteButton = registry.byId("preferences.deleteButton");
       this.deleteAndCloseButton = registry.byId("preferences.deleteAndCloseButton");
-      this.deleteButton.on("click", function(e){that._deletePreferences(false)});
-      this.deleteAndCloseButton.on("click", function(e){that._deletePreferences(true)});
+      this.deleteButton.on("click", function(e){that._deletePreferences(false);});
+      this.deleteAndCloseButton.on("click", function(e){that._deletePreferences(true);});
 
       var deletePreferencesButtonToggler = function(rowIndex){
         var data = that.usersGrid.selection.getSelected();
@@ -160,8 +161,8 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
                 {
                   that._loadUserPreferences();
                 }
-                alert("Preferences stored successfully");
               }
+              that._toggleSetButtons();
             },
             function(error){alert("Error:" + error);}
         );
@@ -220,6 +221,7 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
           }
         }
       }
+      this._toggleSetButtons();
     },
 
     _loadUserPreferences : function()
@@ -245,6 +247,27 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
              that.usersGrid.set("store", usersDataStore);
              that.usersGrid._refresh();
       });
+    },
+
+    _toggleSetButtons: function()
+    {
+      var changed = false;
+      for(var i=0; i<preferenceNames.length; i++)
+      {
+        var name = preferenceNames[i];
+        var preferenceWidget = this[name];
+        if (preferenceWidget)
+        {
+          var value = preferenceWidget.hasOwnProperty("checked") ? preferenceWidget.checked : preferenceWidget.get("value");
+          if (value != UserPreferences[name])
+          {
+            changed = true;
+            break;
+          }
+        }
+      }
+      this.setButton.set("disabled", !changed);
+      this.setAndCloseButton.set("disabled", !changed);
     }
 
   });

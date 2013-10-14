@@ -57,33 +57,24 @@
     </script>
 
     <script>
-        var qpidHelpLocation = "http://qpid.apache.org/releases/qpid-";
-        var qpidHelpURL = null;
-        var qpidPreferences = null;
+        var qpidManagementHelper = null;
         require([
-                    "dojo/_base/xhr",
                     "dojo/parser",
-                    "qpid/management/Preferences",
                     "qpid/authorization/checkUser",
+                    "qpid/common/ConsoleHelper",
                     "dijit/layout/BorderContainer",
                     "dijit/layout/TabContainer",
                     "dijit/layout/ContentPane",
                     "dijit/TitlePane",
+                    "dijit/Menu",
+                    "dijit/MenuItem",
                     "qpid/management/treeView",
                     "qpid/management/controller",
                     "qpid/common/footer"
-                    ], function(xhr, parser, Preferences, User){
+                    ], function(parser, User, ConsoleHelper){
                         parser.parse();
+                        qpidManagementHelper = ConsoleHelper;
                         User.getUserAndUpdateUI();
-                        qpidPreferences = new Preferences();
-                         xhr.get({
-                                sync: true,
-                                url: "rest/helper?action=version",
-                                handleAs: "json"
-                         }).then(function(qpidVersion) {
-                            qpidHelpURL = qpidHelpLocation + qpidVersion + "/java-broker/book/index.html";
-                         });
-
                     });
     </script>
 
@@ -98,20 +89,10 @@
             <div id="authenticatedUserControls" data-dojo-type="dijit.form.DropDownButton" data-dojo-props="iconClass: 'preferencesIcon', style:{'max-width': '100px'}">
             <div data-dojo-type="dijit.Menu">
                 <div data-dojo-type="dijit.MenuItem" data-dojo-props="onClick: function(){window.location='logout';}" >Log out</div>
-                <div data-dojo-type="dijit.MenuItem" data-dojo-props="
-                        iconClass: 'dijitIconFunction',
-                        onClick: function(){ qpidPreferences.showDialog(); } ">
-                    Preferences
-                </div>
-                <!--
-                <div data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass: 'dijitIconMail', onClick: function(){ console.log('TODO'); }">
-                    Contacts
-                </div>
-                 -->
-                <div data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass: 'helpIcon', onClick: function(){
-                     var newWindow = window.open(qpidHelpURL,'QpidHelp','height=600,width=600,scrollbars=1,location=1,resizable=1,status=0,toolbar=0,titlebar=1,menubar=0',true); newWindow.focus(); } ">
-                    Help
-                </div>
+                <div data-dojo-type="dijit.MenuItem"
+                    data-dojo-props="iconClass:'dijitIconFunction',onClick: function(){qpidManagementHelper.showPreferencesDialog();}">Preferences</div>
+                <div data-dojo-type="dijit.MenuItem"
+                    data-dojo-props="iconClass: 'helpIcon', onClick: function(){qpidManagementHelper.showHelp();}">Help</div>
             </div>
           </div>
         </div>
