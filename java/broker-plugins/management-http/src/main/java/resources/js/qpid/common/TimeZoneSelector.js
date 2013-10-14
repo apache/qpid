@@ -114,6 +114,7 @@ function (declare, array, domConstruct, parser, query, domStyle, Memory, _Widget
         }
         self._citySelector.set("disabled", checked);
         self._regionSelector.set("disabled", checked);
+        self._handleOnChange(self.value);
       });
       this._regionSelector.on("change", function(value){
         if (value=="undefined")
@@ -122,6 +123,7 @@ function (declare, array, domConstruct, parser, query, domStyle, Memory, _Widget
           self._citySelector.query.region = /.*/;
           self.value = null;
           self._citySelector.set("value", null);
+          self._handleOnChange(self.value);
         }
         else
         {
@@ -141,6 +143,7 @@ function (declare, array, domConstruct, parser, query, domStyle, Memory, _Widget
 
       this._citySelector.on("change", function(value){
         self.value = value;
+        self._handleOnChange(value);
       });
 
       this._setValueAttr(this._args.value);
@@ -176,6 +179,7 @@ function (declare, array, domConstruct, parser, query, domStyle, Memory, _Widget
         this._regionSelector.set("value", "undefined");
       }
       this.value = value;
+      this._handleOnChange(value);
     },
 
     destroy: function()
@@ -188,6 +192,25 @@ function (declare, array, domConstruct, parser, query, domStyle, Memory, _Widget
       _regionSelector: null;
       _citySelector: null;
       _utcSelector: null;
+    },
+
+    onChange: function(newValue){},
+
+    _handleOnChange: function(newValue)
+    {
+      if (this._lastValueReported != newValue)
+      {
+        this._lastValueReported = newValue;
+        if(this._onChangeHandle)
+        {
+          this._onChangeHandle.remove();
+        }
+        this._onChangeHandle = this.defer(function()
+        {
+            this._onChangeHandle = null;
+            this.onChange(newValue);
+        });
+      }
     }
 
   });
