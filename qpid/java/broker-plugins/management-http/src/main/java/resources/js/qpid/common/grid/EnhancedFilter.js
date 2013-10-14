@@ -96,6 +96,7 @@ define([
       }
       this.defaulGridRowLimit = args.defaulGridRowLimit;
       this.disableFiltering = args.disableFiltering;
+      this.displayLastUpdateTime = args.displayLastUpdateTime;
 
       //Install UI components
       var obj = { "plugin": this };
@@ -147,6 +148,7 @@ define([
           filterDefDialog: this.filterDefDialog,
           defaulGridRowLimit: this.defaulGridRowLimit,
           disableFiltering: this.disableFiltering,
+          displayLastUpdateTime: this.displayLastUpdateTime,
           nls: nls,
           ruleCountToConfirmClearFilter: this.ruleCountToConfirmClearFilter
         });

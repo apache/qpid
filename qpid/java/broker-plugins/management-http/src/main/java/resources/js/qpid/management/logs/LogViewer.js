@@ -154,7 +154,7 @@ define(["dojo/_base/xhr",
                      sortFields: [{attribute: 'id', descending: true}],
                      plugins:{
                        nestedSorting:true,
-                       enhancedFilter:{defaulGridRowLimit: defaulGridRowLimit},
+                       enhancedFilter:{defaulGridRowLimit: defaulGridRowLimit,displayLastUpdateTime:true},
                        indirectSelection: false,
                        pagination: {defaultPageSize: 10}
                      }

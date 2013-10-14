@@ -29,6 +29,9 @@ define(["dojo/_base/xhr",
 
   var UserPreferences = {
 
+    /* set time zone to 'UTC' by default*/
+    timeZone: "UTC",
+
     loadPreferences : function(callbackSuccessFunction, callbackErrorFunction)
     {
       var that = this;
