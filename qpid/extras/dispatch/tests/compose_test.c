@@ -27,6 +27,105 @@
 #include "compose_private.h"
 
 
+static char *vector0 =
+    "\x00\x53\x77"                             // amqp-value
+    "\xd0\x00\x00\x01\x26\x00\x00\x00\x0a"     // list32 with ten items
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x0a"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x0b"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    "\xd1\x00\x00\x00\x18\x00\x00\x00\x04"     // map32 with two pairs
+    "\xa1\x06key001"                           // str8-utf8
+    "\x52\x14"                                 // smalluint
+    "\xa1\x06key002"                           // str8-utf8
+    "\x52\x15"                                 // smalluint
+    ;
+
+static int vector0_length = 302;
+
+static char *test_compose_list_of_maps(void *context)
+{
+    dx_composed_field_t *field = dx_compose(DX_PERFORMATIVE_BODY_AMQP_VALUE, 0);
+
+    dx_compose_start_list(field);
+
+    dx_compose_start_map(field);
+    dx_compose_insert_string(field, "key001");
+    dx_compose_insert_uint(field, 10);
+    dx_compose_insert_string(field, "key002");
+    dx_compose_insert_uint(field, 11);
+    dx_compose_end_map(field);
+
+    for (int j = 0; j < 9; j++) {
+        dx_compose_start_map(field);
+        dx_compose_insert_string(field, "key001");
+        dx_compose_insert_uint(field, 20);
+        dx_compose_insert_string(field, "key002");
+        dx_compose_insert_uint(field, 21);
+        dx_compose_end_map(field);
+    }
+
+    dx_compose_end_list(field);
+
+    dx_buffer_t *buf = DEQ_HEAD(field->buffers);
+
+    if (dx_buffer_size(buf) != vector0_length) return "Incorrect Length of Buffer";
+
+    char *left  = vector0;
+    char *right = (char*) dx_buffer_base(buf);
+    int   idx;
+
+    for (idx = 0; idx < vector0_length; idx++) {
+        if (*left != *right) return "Pattern Mismatch";
+        left++;
+        right++;
+    }
+
+    dx_compose_free(field);
+    return 0;
+}
+
 static char *vector1 =
     "\x00\x53\x71"                             // delivery annotations
     "\xd1\x00\x00\x00\x3d\x00\x00\x00\x04"     // map32 with two item pairs
@@ -184,6 +283,7 @@ int compose_tests()
     int result = 0;
     dx_log_set_mask(LOG_NONE);
 
+    TEST_CASE(test_compose_list_of_maps, 0);
     TEST_CASE(test_compose_nested_composites, 0);
     TEST_CASE(test_compose_scalars, 0);
 
