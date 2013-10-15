@@ -490,7 +490,7 @@ void SessionImpl::releaseImpl(qpid::messaging::Message& m)
 {
     SequenceSet set;
     set.add(MessageImplAccess::get(m).getInternalId());
-    session.messageRelease(set);
+    session.messageRelease(set, true);
 }
 
 void SessionImpl::receiverCancelled(const std::string& name)
