@@ -28,7 +28,7 @@ from shlex       import split
 from threading   import Lock
 from time        import strftime, gmtime
 from qpid.disp   import Display
-import qpid_messaging
+import cqpid
 import qmf2
 
 class OptsAndArgs(object):
@@ -266,7 +266,7 @@ class QmfData:
     self.conn_options = conn_options
     self.qmf_options = qmf_options
     self.agent_filter = '[]'
-    self.connection = qpid_messaging.Connection(self.url, **self.conn_options)
+    self.connection = cqpid.Connection(self.url, **self.conn_options)
     self.connection.open()
     self.session = qmf2.ConsoleSession(self.connection, self.qmf_options)
     self.session.setAgentFilter(self.agent_filter)
