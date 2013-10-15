@@ -115,8 +115,8 @@ static void dx_overwrite_32(dx_field_location_t *field, uint32_t value)
     size_t       cursor = field->offset;
 
     dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0xFF000000) >> 24));
-    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x00FF0000) >> 24));
-    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x0000FF00) >> 24));
+    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x00FF0000) >> 16));
+    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x0000FF00) >> 8));
     dx_overwrite(&buf, &cursor, (uint8_t)  (value & 0x000000FF));
 }
 
