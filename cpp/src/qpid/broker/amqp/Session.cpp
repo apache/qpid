@@ -397,10 +397,12 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         bool shared = is_capability_requested(SHARED, pn_terminus_capabilities(source));
         bool durable = pn_terminus_get_durability(source);
         QueueSettings settings(durable, !durable);
+        std::string altExchange;
         if (node.topic) {
             settings = node.topic->getPolicy();
             settings.durable = durable;
             settings.autodelete = !durable;
+            altExchange = node.topic->getAlternateExchange();
         }
         settings.autoDeleteDelay = pn_terminus_get_timeout(source);
         if (settings.autoDeleteDelay) {
@@ -419,7 +421,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
             queueName << connection.getContainerId() << "_" << pn_link_name(link);
         }
         boost::shared_ptr<qpid::broker::Queue> queue
-            = connection.getBroker().createQueue(queueName.str(), settings, this, "", connection.getUserId(), connection.getId()).first;
+            = connection.getBroker().createQueue(queueName.str(), settings, this, altExchange, connection.getUserId(), connection.getId()).first;
         if (!shared) queue->setExclusiveOwner(this);
         authorise.outgoing(node.exchange, queue, filter);
         filter.bind(node.exchange, queue);
