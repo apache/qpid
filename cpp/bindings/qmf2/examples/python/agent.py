@@ -19,7 +19,7 @@
 # under the License.
 #
 
-import qpid_messaging
+import cqpid
 from qmf2 import *
 
 
@@ -34,7 +34,7 @@ class ExampleAgent(AgentHandler):
     ##
     ## Create and open a messaging connection to a broker.
     ##
-    self.connection = qpid_messaging.Connection(url, "{reconnect:True}")
+    self.connection = cqpid.Connection(url, "{reconnect:True}")
     self.session = None
     self.connection.open()
 

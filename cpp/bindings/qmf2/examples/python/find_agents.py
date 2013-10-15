@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import qpid_messaging
+import cqpid
 import qmf2
 
 class FindAgents(qmf2.ConsoleHandler):
@@ -45,7 +45,7 @@ class FindAgents(qmf2.ConsoleHandler):
 url     = "localhost"
 options = ""
 
-connection = qpid_messaging.Connection(url, options)
+connection = cqpid.Connection(url, options)
 connection.open()
 
 session = qmf2.ConsoleSession(connection)
