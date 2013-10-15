@@ -146,6 +146,7 @@ if (BUILD_LEGACYSTORE)
     )
 
     target_link_libraries (legacystore
+        ${clock_gettime_LIB}
         aio
         uuid
         qpidcommon qpidtypes qpidbroker
@@ -165,6 +166,7 @@ if (BUILD_LEGACYSTORE)
     )
 
     target_link_libraries (legacystore_shared
+        ${clock_gettime_LIB}
         aio
         uuid
         qpidcommon qpidtypes qpidbroker
