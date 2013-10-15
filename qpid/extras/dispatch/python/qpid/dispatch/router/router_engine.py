@@ -27,8 +27,6 @@ from link import LinkStateEngine
 from path import PathEngine
 from mobile import MobileAddressEngine
 from routing import RoutingTableEngine
-from binding import BindingEngine
-from adapter import AdapterEngine
 from node import NodeTracker
 
 ##
@@ -75,10 +73,8 @@ class RouterEngine:
         self.neighbor_engine       = NeighborEngine(self)
         self.link_state_engine     = LinkStateEngine(self)
         self.path_engine           = PathEngine(self)
-        self.mobile_address_engine = MobileAddressEngine(self)
+        self.mobile_address_engine = MobileAddressEngine(self, self.node_tracker)
         self.routing_table_engine  = RoutingTableEngine(self, self.node_tracker)
-        self.binding_engine        = BindingEngine(self)
-        self.adapter_engine        = AdapterEngine(self)
 
 
 
@@ -92,24 +88,26 @@ class RouterEngine:
         return self.id
 
 
-    def addLocalAddress(self, key):
+    def addressAdded(self, addr):
         """
         """
         try:
-            if key.find('_topo') == 0 or key.find('_local') == 0:
+            if addr.find('Mtemp.') == 0:
                 return
-            self.mobile_address_engine.add_local_address(key)
+            if addr.find('M') == 0:
+                self.mobile_address_engine.add_local_address(addr[1:])
         except Exception, e:
             self.log(LOG_ERROR, "Exception in new-address processing: exception=%r" % e)
 
 
-    def delLocalAddress(self, key):
+    def addressRemoved(self, addr):
         """
         """
         try:
-            if key.find('_topo') == 0 or key.find('_local') == 0:
+            if addr.find('Mtemp.') == 0:
                 return
-            self.mobile_address_engine.del_local_address(key)
+            if key.find('M') == 0:
+                self.mobile_address_engine.del_local_address(addr[1:])
         except Exception, e:
             self.log(LOG_ERROR, "Exception in del-address processing: exception=%r" % e)
 
@@ -124,8 +122,6 @@ class RouterEngine:
             self.path_engine.tick(now)
             self.mobile_address_engine.tick(now)
             self.routing_table_engine.tick(now)
-            self.binding_engine.tick(now)
-            self.adapter_engine.tick(now)
             self.node_tracker.tick(now)
         except Exception, e:
             self.log(LOG_ERROR, "Exception in timer processing: exception=%r" % e)
@@ -190,14 +186,10 @@ class RouterEngine:
             return { 'help'           : "Get list of supported values for kind",
                      'link-state'     : "This router's link state",
                      'link-state-set' : "The set of link states from known routers",
-                     'next-hops'      : "Next hops to each known router",
-                     'topo-table'     : "Topological routing table",
-                     'mobile-table'   : "Mobile key routing table"
+                     'next-hops'      : "Next hops to each known router"
                      }
         if kind == 'link-state'     : return self.neighbor_engine.link_state.to_dict()
         if kind == 'next-hops'      : return self.routing_table_engine.next_hops
-        if kind == 'topo-table'     : return {'table': self.adapter_engine.key_classes['topological']}
-        if kind == 'mobile-table'   : return {'table': self.adapter_engine.key_classes['mobile-key']}
         if kind == 'link-state-set' :
             copy = {}
             for _id,_ls in self.link_state_engine.collection.items():
@@ -249,7 +241,6 @@ class RouterEngine:
     def next_hops_changed(self, next_hop_table):
         self.log(LOG_DEBUG, "Event: next_hops_changed: %r" % next_hop_table)
         self.routing_table_engine.next_hops_changed(next_hop_table)
-        self.binding_engine.next_hops_changed()
 
     def valid_origins_changed(self, valid_origins):
         self.log(LOG_DEBUG, "Event: valid_origins_changed: %r" % valid_origins)
@@ -259,16 +250,8 @@ class RouterEngine:
         self.log(LOG_DEBUG, "Event: mobile_sequence_changed: %d" % mobile_seq)
         self.link_state_engine.set_mobile_sequence(mobile_seq)
 
-    def mobile_keys_changed(self, keys):
-        self.log(LOG_DEBUG, "Event: mobile_keys_changed: %r" % keys)
-        self.binding_engine.mobile_keys_changed(keys)
-
     def get_next_hops(self):
         return self.routing_table_engine.get_next_hops()
-
-    def remote_routes_changed(self, key_class, routes):
-        self.log(LOG_DEBUG, "Event: remote_routes_changed: class=%s routes=%r" % (key_class, routes))
-        self.adapter_engine.remote_routes_changed(key_class, routes)
 
     def new_neighbor(self, rid, link_id):
         self.log(LOG_DEBUG, "Event: new_neighbor: id=%s link_id=%d" % (rid, link_id))
