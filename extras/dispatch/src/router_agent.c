@@ -140,6 +140,8 @@ static void dx_router_query_address(dx_router_t *router, void *cor)
         dx_agent_value_uint(cor, "deliveries-ingress", addr->deliveries_ingress);
         dx_agent_value_uint(cor, "deliveries-egress", addr->deliveries_egress);
         dx_agent_value_uint(cor, "deliveries-transit", addr->deliveries_transit);
+        dx_agent_value_uint(cor, "deliveries-to-container", addr->deliveries_to_container);
+        dx_agent_value_uint(cor, "deliveries-from-container", addr->deliveries_from_container);
         addr = DEQ_NEXT(addr);
         dx_agent_value_complete(cor, addr != 0);
     }

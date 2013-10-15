@@ -113,6 +113,33 @@ class NodeTracker(object):
         return None
 
 
+    def add_addresses(self, node_id, addrs):
+        node = self.nodes[node_id]
+        for a in addrs:
+            node.addrs[a] = 1
+
+
+    def del_addresses(self, node_id, addrs):
+        node = self.nodes[node_id]
+        for a in addrs:
+            node.addrs.pop(a)
+
+
+    def overwrite_addresses(self, node_id, addrs):
+        node    = self.nodes[node_id]
+        added   = []
+        deleted = []
+        for a in addrs:
+            if a not in node.addrs.keys():
+                added.append(a)
+        for a in node.addrs.keys():
+            if a not in addrs:
+                deleted.append(a)
+        for a in addrs:
+            node.addrs[a] = 1
+        return (added, deleted)
+
+
     def _allocate_maskbit(self):
         if self.next_maskbit == None:
             raise Exception("Exceeded Maximum Router Count")
@@ -143,4 +170,5 @@ class RemoteNode(object):
         self.maskbit  = maskbit
         self.neighbor = neighbor
         self.remote   = not neighbor
+        self.addrs    = {}  # Address => Count at Node (1 only for the present)
 

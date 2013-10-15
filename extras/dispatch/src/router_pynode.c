@@ -347,15 +347,48 @@ static PyObject* dx_del_neighbor_router(PyObject *self, PyObject *args)
 
 static PyObject* dx_map_destination(PyObject *self, PyObject *args)
 {
-    //RouterAdapter *adapter = (RouterAdapter*) self;
-    //dx_router_t   *router  = adapter->router;
-    const char *addr;
-    int         router_maskbit;
+    RouterAdapter       *adapter = (RouterAdapter*) self;
+    dx_router_t         *router  = adapter->router;
+    const char          *addr_string;
+    int                  maskbit;
+    dx_address_t        *addr;
+    dx_field_iterator_t *iter;
 
-    if (!PyArg_ParseTuple(args, "si", &addr, &router_maskbit))
+    if (!PyArg_ParseTuple(args, "si", &addr_string, &maskbit))
         return 0;
 
-    // TODO
+    if (maskbit >= dx_bitmask_width() || maskbit < 0) {
+        PyErr_SetString(PyExc_Exception, "Router bit mask out of range");
+        return 0;
+    }
+        
+    if (router->routers_by_mask_bit[maskbit] == 0) {
+        PyErr_SetString(PyExc_Exception, "Router Not Found");
+        return 0;
+    }
+
+    iter = dx_field_iterator_string(addr_string, ITER_VIEW_ADDRESS_HASH);
+
+    sys_mutex_lock(router->lock);
+    dx_hash_retrieve(router->addr_hash, iter, (void**) &addr);
+    if (!addr) {
+        addr = new_dx_address_t();
+        memset(addr, 0, sizeof(dx_address_t));
+        DEQ_ITEM_INIT(addr);
+        DEQ_INIT(addr->rlinks);
+        DEQ_INIT(addr->rnodes);
+        dx_hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
+        DEQ_ITEM_INIT(addr);
+        DEQ_INSERT_TAIL(router->addrs, addr);
+    }
+    dx_field_iterator_free(iter);
+
+    dx_router_node_t *rnode = router->routers_by_mask_bit[maskbit];
+    dx_router_add_node_ref_LH(&addr->rnodes, rnode);
+
+    sys_mutex_unlock(router->lock);
+
+    dx_log(module, LOG_DEBUG, "Remote Destination '%s' Mapped to router %d", addr_string, maskbit);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -364,15 +397,43 @@ static PyObject* dx_map_destination(PyObject *self, PyObject *args)
 
 static PyObject* dx_unmap_destination(PyObject *self, PyObject *args)
 {
-    //RouterAdapter *adapter = (RouterAdapter*) self;
-    //dx_router_t   *router  = adapter->router;
-    const char *addr;
-    int         router_maskbit;
+    RouterAdapter *adapter = (RouterAdapter*) self;
+    dx_router_t   *router  = adapter->router;
+    const char    *addr_string;
+    int            maskbit;
+    dx_address_t  *addr;
 
-    if (!PyArg_ParseTuple(args, "si", &addr, &router_maskbit))
+    if (!PyArg_ParseTuple(args, "si", &addr_string, &maskbit))
         return 0;
 
-    // TODO
+    if (maskbit >= dx_bitmask_width() || maskbit < 0) {
+        PyErr_SetString(PyExc_Exception, "Router bit mask out of range");
+        return 0;
+    }
+        
+    if (router->routers_by_mask_bit[maskbit] == 0) {
+        PyErr_SetString(PyExc_Exception, "Router Not Found");
+        return 0;
+    }
+
+    dx_router_node_t    *rnode = router->routers_by_mask_bit[maskbit];
+    dx_field_iterator_t *iter  = dx_field_iterator_string(addr_string, ITER_VIEW_ADDRESS_HASH);
+
+    sys_mutex_lock(router->lock);
+    dx_hash_retrieve(router->addr_hash, iter, (void**) &addr);
+    dx_field_iterator_free(iter);
+
+    if (!addr) {
+        PyErr_SetString(PyExc_Exception, "Address Not Found");
+        sys_mutex_unlock(router->lock);
+        return 0;
+    }
+        
+    dx_router_del_node_ref_LH(&addr->rnodes, rnode);
+    dx_router_check_addr_LH(router, addr);
+    sys_mutex_unlock(router->lock);
+
+    dx_log(module, LOG_DEBUG, "Remote Destination '%s' Unmapped from router %d", addr_string, maskbit);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -534,6 +595,18 @@ void dx_router_python_setup(dx_router_t *router)
         dx_log(module, LOG_CRITICAL, "'RouterEngine' class has no handleTimerTick method");
         return;
     }
+
+    router->pyAdded = PyObject_GetAttrString(router->pyRouter, "addressAdded");
+    if (!router->pyAdded || !PyCallable_Check(router->pyAdded)) {
+        dx_log(module, LOG_CRITICAL, "'RouterEngine' class has no addressAdded method");
+        return;
+    }
+
+    router->pyRemoved = PyObject_GetAttrString(router->pyRouter, "addressRemoved");
+    if (!router->pyRemoved || !PyCallable_Check(router->pyRemoved)) {
+        dx_log(module, LOG_CRITICAL, "'RouterEngine' class has no addressRemoved method");
+        return;
+    }
 }
 
 
@@ -555,5 +628,37 @@ void dx_pyrouter_tick(dx_router_t *router)
         }
         dx_python_unlock();
     }
+}
+
+
+void dx_router_global_added(dx_router_t *router, dx_field_iterator_t *iter)
+{
+    PyObject *pArgs;
+    PyObject *pValue;
+
+    if (router->pyAdded && router->router_mode == DX_ROUTER_MODE_INTERIOR) {
+        dx_field_iterator_reset_view(iter, ITER_VIEW_ADDRESS_HASH);
+        char *address = (char*) dx_field_iterator_copy(iter);
+
+        dx_python_lock();
+        pArgs  = PyTuple_New(1);
+        PyTuple_SetItem(pArgs, 0, PyString_FromString(address));
+        pValue = PyObject_CallObject(router->pyAdded, pArgs);
+        if (PyErr_Occurred()) {
+            PyErr_Print();
+        }
+        Py_DECREF(pArgs);
+        if (pValue) {
+            Py_DECREF(pValue);
+        }
+        dx_python_unlock();
+
+        free(address);
+    }
+}
+
+
+void dx_router_global_removed(dx_router_t *router, const char *addr)
+{
 }
 

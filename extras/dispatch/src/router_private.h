@@ -120,6 +120,8 @@ struct dx_address_t {
     uint64_t deliveries_ingress;
     uint64_t deliveries_egress;
     uint64_t deliveries_transit;
+    uint64_t deliveries_to_container;
+    uint64_t deliveries_from_container;
 };
 
 ALLOC_DECLARE(dx_address_t);
@@ -150,6 +152,8 @@ struct dx_router_t {
 
     PyObject               *pyRouter;
     PyObject               *pyTick;
+    PyObject               *pyAdded;
+    PyObject               *pyRemoved;
 
     dx_agent_class_t       *class_router;
     dx_agent_class_t       *class_link;
@@ -158,11 +162,16 @@ struct dx_router_t {
 };
 
 
+
+void dx_router_check_addr_LH(dx_router_t *router, dx_address_t *addr);
 void dx_router_add_link_ref_LH(dx_router_link_ref_list_t *ref_list, dx_router_link_t *link);
 void dx_router_del_link_ref_LH(dx_router_link_ref_list_t *ref_list, dx_router_link_t *link);
 
 void dx_router_add_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t *rnode);
 void dx_router_del_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t *rnode);
+
+void dx_router_global_added(dx_router_t *router, dx_field_iterator_t *iter);
+void dx_router_global_removed(dx_router_t *router, const char *addr);
 
 
 #endif
