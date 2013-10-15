@@ -22,6 +22,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest.action;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -47,6 +48,7 @@ public class ListTimeZones implements Action
         List<TimeZoneDetails> timeZoneDetails = new ArrayList<TimeZoneDetails>();
         String[] ids = TimeZone.getAvailableIDs();
         long currentTime = System.currentTimeMillis();
+        Date currentDate = new Date(currentTime);
         for (String id : ids)
         {
             int cityPos = id.indexOf("/");
@@ -60,7 +62,7 @@ public class ListTimeZones implements Action
                         TimeZone tz = TimeZone.getTimeZone(id);
                         int offset = tz.getOffset(currentTime)/60000;
                         String city = id.substring(cityPos + 1).replace('_', ' ');
-                        timeZoneDetails.add(new TimeZoneDetails(id, tz.getDisplayName(true, TimeZone.SHORT), offset, city, region));
+                        timeZoneDetails.add(new TimeZoneDetails(id, tz.getDisplayName(tz.inDaylightTime(currentDate), TimeZone.SHORT), offset, city, region));
                         break;
                     }
                 }
