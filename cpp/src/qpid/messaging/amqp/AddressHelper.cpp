@@ -812,6 +812,13 @@ void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMod
     }
     if (isUnreliable()) {
         pn_link_set_snd_settle_mode(link, PN_SND_SETTLED);
+    } else if (!reliability.empty()) {
+        if (reliability == EXACTLY_ONCE ) {
+            QPID_LOG(warning, "Unsupported reliability mode: " << reliability);
+        } else if (reliability != AT_LEAST_ONCE ) {
+            QPID_LOG(warning, "Unrecognised reliability mode: " << reliability);
+        }
+        pn_link_set_snd_settle_mode(link, PN_SND_UNSETTLED);
     }
 }
 
