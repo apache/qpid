@@ -106,7 +106,7 @@ add_executable (${testname}
                 ${platform_test_additions})
 target_link_libraries (${testname}
                        ${qpid_test_boost_libs}
-                       legacystore_shared)
+                       ${clock_gettime_LIB} legacystore_shared)
 if ("${ARGV1}" STREQUAL "LONG")
   set_target_properties(${testname} PROPERTIES COMPILE_DEFINITIONS LONG_TEST)
 endif ()
@@ -148,7 +148,7 @@ add_executable(jtt
 
 target_link_libraries (jtt
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                       legacystore_shared)
+                       ${clock_gettime_LIB} legacystore_shared)
 
 add_test(journal_jtt ${CMAKE_CURRENT_BINARY_DIR}/jtt -c ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt/jtt.csv)
 
@@ -175,7 +175,7 @@ add_executable (jtt__ut
 target_link_libraries (jtt__ut
                        ${qpid_test_boost_libs}
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                       legacystore_shared)
+                       ${clock_gettime_LIB} legacystore_shared)
 
 add_test(NAME journal_jtt_ut WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt COMMAND ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
 
