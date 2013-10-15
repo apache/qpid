@@ -397,6 +397,14 @@ QPID_AUTO_TEST_CASE(testBrowse)
     receive(browser1, 10);
     Receiver browser2 = fix.session.createReceiver(fix.queue + "; {mode:browse}");
     receive(browser2, 10);
+    Receiver releaser1 = fix.session.createReceiver(fix.queue);
+    Message m1 = releaser1.fetch(messaging::Duration::SECOND*5);
+    BOOST_CHECK(!m1.getRedelivered());
+    fix.session.release(m1);
+    Receiver releaser2 = fix.session.createReceiver(fix.queue);
+    Message m2 = releaser2.fetch(messaging::Duration::SECOND*5);
+    BOOST_CHECK(m2.getRedelivered());
+    fix.session.release(m2);
     Receiver consumer = fix.session.createReceiver(fix.queue);
     receive(consumer, 10);
     fix.session.acknowledge();
@@ -738,6 +746,7 @@ QPID_AUTO_TEST_CASE(testRelease)
     Message m2 = receiver.fetch(Duration::SECOND * 1);
     BOOST_CHECK_EQUAL(m1.getContent(), out.getContent());
     BOOST_CHECK_EQUAL(m1.getContent(), m2.getContent());
+    BOOST_CHECK(m2.getRedelivered());
     fix.session.acknowledge(true);
 }
 
