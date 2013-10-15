@@ -136,11 +136,12 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
                 outgoingMessageRejected();
                 break;
               case PN_RELEASED:
-                if (preAcquires()) queue->release(r.cursor, false);//TODO: for PN_RELEASED, delivery count should not be incremented
+                if (preAcquires()) queue->release(r.cursor, false);//for PN_RELEASED, delivery count should not be incremented
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               case PN_MODIFIED:
-                if (preAcquires()) queue->release(r.cursor, true);//TODO: proper handling of modified
+                if (preAcquires()) queue->release(r.cursor, pn_disposition_is_failed(pn_delivery_remote(delivery)));
+                //TODO: handle undeliverable-here and message-annotations
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               default:

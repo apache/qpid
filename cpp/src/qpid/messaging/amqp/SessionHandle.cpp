@@ -57,18 +57,17 @@ void SessionHandle::acknowledge(bool /*sync*/)
 
 void SessionHandle::acknowledge(qpid::messaging::Message& msg, bool cumulative)
 {
-    //TODO: handle cumulative
     connection->acknowledge(session, &msg, cumulative);
 }
 
-void SessionHandle::reject(qpid::messaging::Message&)
+void SessionHandle::reject(qpid::messaging::Message& msg)
 {
-
+    connection->nack(session, msg, true);
 }
 
-void SessionHandle::release(qpid::messaging::Message&)
+void SessionHandle::release(qpid::messaging::Message& msg)
 {
-
+    connection->nack(session, msg, false);
 }
 
 void SessionHandle::close()

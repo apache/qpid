@@ -140,6 +140,23 @@ void SessionContext::acknowledge(const qpid::framing::SequenceNumber& id, bool c
     }
 }
 
+void SessionContext::nack(const qpid::framing::SequenceNumber& id, bool reject)
+{
+    DeliveryMap::iterator i = unacked.find(id);
+    if (i != unacked.end()) {
+        if (reject) {
+            QPID_LOG(debug, "rejecting message with id=" << id);
+            pn_delivery_update(i->second, PN_REJECTED);
+        } else {
+            QPID_LOG(debug, "releasing message with id=" << id);
+            pn_delivery_update(i->second, PN_MODIFIED);
+            pn_disposition_set_failed(pn_delivery_local(i->second), true);
+        }
+        pn_delivery_settle(i->second);
+        unacked.erase(i);
+    }
+}
+
 bool SessionContext::settled()
 {
     bool result = true;
