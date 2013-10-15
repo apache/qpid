@@ -107,7 +107,7 @@ void dx_router_del_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t 
  * Depending on its policy, the address may be eligible for being closed out
  * (i.e. Logging its terminal statistics and freeing its resources).
  */
-static void dx_router_check_addr_LH(dx_router_t *router, dx_address_t *addr)
+void dx_router_check_addr_LH(dx_router_t *router, dx_address_t *addr)
 {
     if (addr == 0)
         return;
@@ -314,7 +314,7 @@ static int router_writable_link_handler(void* context, dx_link_t *link)
 }
 
 
-static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_message_t *msg)
+static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_message_t *msg, int *drop)
 {
     dx_parsed_field_t   *in_da        = dx_message_delivery_annotations(msg);
     dx_composed_field_t *out_da       = dx_compose(DX_PERFORMATIVE_DELIVERY_ANNOTATIONS, 0);
@@ -333,24 +333,26 @@ static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_mess
     //
     // If there is a trace field, append this router's ID to the trace.
     //
+    dx_compose_insert_string(out_da, DX_DA_TRACE);
+    dx_compose_start_list(out_da);
     if (trace) {
-        dx_compose_insert_string(out_da, DX_DA_TRACE);
-        dx_compose_start_list(out_da);
-
         if (dx_parse_is_list(trace)) {
             uint32_t idx = 0;
             dx_parsed_field_t *trace_item = dx_parse_sub_value(trace, idx);
             while (trace_item) {
                 dx_field_iterator_t *iter = dx_parse_raw(trace_item);
+                if (dx_field_iterator_equal(iter, (unsigned char*) direct_prefix))
+                    *drop = 1;
+                dx_field_iterator_reset(iter);
                 dx_compose_insert_string_iterator(out_da, iter);
                 idx++;
                 trace_item = dx_parse_sub_value(trace, idx);
             }
         }
-
-        dx_compose_insert_string(out_da, direct_prefix);
-        dx_compose_end_list(out_da);
     }
+
+    dx_compose_insert_string(out_da, direct_prefix);
+    dx_compose_end_list(out_da);
 
     //
     // If there is no ingress field, annotate the ingress as this router else
@@ -475,25 +477,26 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                 // Interpret and update the delivery annotations of the message.  As a convenience,
                 // this function returns the iterator to the ingress field (if it exists).
                 //
-                dx_field_iterator_t *ingress_iter = router_annotate_message(router, msg);
+                int drop = 0;
+                dx_field_iterator_t *ingress_iter = router_annotate_message(router, msg, &drop);
 
                 //
                 // Forward to the in-process handler for this message if there is one.  The
                 // actual invocation of the handler will occur later after we've released
                 // the lock.
                 //
-                if (addr->handler) {
+                if (!drop && addr->handler) {
                     in_process_copy = dx_message_copy(msg);
                     handler         = addr->handler;
                     handler_context = addr->handler_context;
-                    addr->deliveries_egress++;
+                    addr->deliveries_to_container++;
                 }
 
                 //
                 // If the address form is local (i.e. is prefixed by _local), don't forward
                 // outside of the router process.
                 //
-                if (!is_local) {
+                if (!drop && !is_local) {
                     //
                     // Forward to all of the local links receiving this address.
                     //
@@ -725,6 +728,7 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     const char  *r_src   = pn_terminus_get_address(dx_link_remote_source(link));
     int is_dynamic       = pn_terminus_is_dynamic(dx_link_remote_source(link));
     int is_router        = dx_router_terminus_is_router(dx_link_remote_target(link));
+    int propagate        = 0;
     dx_field_iterator_t *iter = 0;
 
     if (is_router && !dx_router_connection_is_inter_router(dx_link_connection(link))) {
@@ -745,15 +749,15 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
 
     //
     // If this is an endpoint link with a source address, make sure the address is
-    // appropriate for endpoint links.  If it is not a local or mobile address, (i.e.
-    // a router or area address), it cannot be bound to an endpoint link.
+    // appropriate for endpoint links.  If it is not mobile address, it cannot be
+    // bound to an endpoint link.
     //
     if(r_src && !is_router && !is_dynamic) {
         iter = dx_field_iterator_string(r_src, ITER_VIEW_ADDRESS_HASH);
         unsigned char prefix = dx_field_iterator_octet(iter);
         dx_field_iterator_reset(iter);
 
-        if (prefix != 'L' && prefix != 'M') {
+        if (prefix != 'M') {
             dx_field_iterator_free(iter);
             pn_link_close(pn_link);
             dx_log(module, LOG_WARNING, "Rejected an outgoing endpoint link with a router address: %s", r_src);
@@ -819,15 +823,26 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
             dx_hash_insert(router->addr_hash, iter, addr, &addr->hash_handle);
             DEQ_INSERT_TAIL(router->addrs, addr);
         }
-        dx_field_iterator_free(iter);
 
         rlink->owning_addr = addr;
         dx_router_add_link_ref_LH(&addr->rlinks, rlink);
+
+        //
+        // If this is not a dynamic address and it is the first local subscription
+        // to the address, supply the address to the router module for propagation
+        // to other nodes.
+        //
+        propagate = (!is_dynamic) && (DEQ_SIZE(addr->rlinks) == 1);
     }
 
     DEQ_INSERT_TAIL(router->links, rlink);
     sys_mutex_unlock(router->lock);
 
+    if (propagate)
+        dx_router_global_added(router, iter);
+
+    if (iter)
+        dx_field_iterator_free(iter);
     pn_link_open(pn_link);
     return 0;
 }
@@ -1059,6 +1074,8 @@ dx_router_t *dx_router(dx_dispatch_t *dx, dx_router_mode_t mode, const char *are
     router->dtag               = 1;
     router->pyRouter           = 0;
     router->pyTick             = 0;
+    router->pyAdded            = 0;
+    router->pyRemoved          = 0;
 
     //
     // Create addresses for all of the routers in the topology.  It will be registered
@@ -1172,7 +1189,7 @@ void dx_router_send(dx_dispatch_t       *dx,
         //
         // Forward to all of the local links receiving this address.
         //
-        addr->deliveries_ingress++;
+        addr->deliveries_from_container++;
         dx_router_link_ref_t *dest_link_ref = DEQ_HEAD(addr->rlinks);
         while (dest_link_ref) {
             dx_routed_event_t *re = new_dx_routed_event_t();
