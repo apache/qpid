@@ -79,6 +79,7 @@ class SessionContext
     void acknowledge();
     void acknowledge(const qpid::framing::SequenceNumber& id, bool cummulative);
     void acknowledge(DeliveryMap::iterator begin, DeliveryMap::iterator end);
+    void nack(const qpid::framing::SequenceNumber& id, bool reject);
 };
 }}} // namespace qpid::messaging::amqp
 

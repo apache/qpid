@@ -234,6 +234,14 @@ void ConnectionContext::acknowledge(boost::shared_ptr<SessionContext> ssn, qpid:
     wakeupDriver();
 }
 
+void ConnectionContext::nack(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message& message, bool reject)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    checkClosed(ssn);
+    ssn->nack(MessageImplAccess::get(message).getInternalId(), reject);
+    wakeupDriver();
+}
+
 void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
