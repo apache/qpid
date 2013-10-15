@@ -51,6 +51,7 @@ class Topic : public PersistableObject, public management::Manageable
     ~Topic();
     const std::string& getName() const;
     const QueueSettings& getPolicy() const;
+    const std::string& getAlternateExchange() const;
     boost::shared_ptr<Exchange> getExchange();
     bool isDurable() const;
     boost::shared_ptr<qpid::management::ManagementObject> GetManagementObject() const;
@@ -59,6 +60,7 @@ class Topic : public PersistableObject, public management::Manageable
     bool durable;
     boost::shared_ptr<Exchange> exchange;
     QueueSettings policy;
+    std::string alternateExchange;
     qmf::org::apache::qpid::broker::Topic::shared_ptr topic;
 };
 
