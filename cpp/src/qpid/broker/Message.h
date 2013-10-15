@@ -83,7 +83,7 @@ public:
     QPID_BROKER_EXTERN Message();
     QPID_BROKER_EXTERN ~Message();
 
-    bool isRedelivered() const { return deliveryCount; }
+    bool isRedelivered() const { return deliveryCount > 0; }
     void deliver() { ++deliveryCount; }
     void undeliver() { --deliveryCount; }
     int getDeliveryCount() const { return deliveryCount; }
