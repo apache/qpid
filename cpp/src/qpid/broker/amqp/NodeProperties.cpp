@@ -26,6 +26,7 @@
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/amqp/Descriptor.h"
 #include "qpid/amqp/descriptors.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/types/Variant.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/log/Statement.h"
@@ -316,6 +317,7 @@ QueueSettings NodeProperties::getQueueSettings()
     qpid::types::Variant::Map unused;
     settings.populate(properties, unused);
     settings.lifetime = lifetime;
+    qpid::amqp_0_10::translate(unused, settings.storeSettings);
     return settings;
 }
 
