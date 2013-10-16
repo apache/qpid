@@ -393,10 +393,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
     // Receive the message into a local representation.  If the returned message
     // pointer is NULL, we have not yet received a complete message.
     //
-    sys_mutex_lock(router->lock);
     msg = dx_message_receive(delivery);
-    sys_mutex_unlock(router->lock);
-
     if (!msg)
         return;
 
