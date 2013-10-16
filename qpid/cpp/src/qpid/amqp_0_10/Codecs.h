@@ -80,6 +80,7 @@ QPID_COMMON_EXTERN void translate(const boost::shared_ptr<qpid::framing::FieldVa
                                   qpid::types::Variant& to);
 QPID_COMMON_EXTERN void translate(const types::Variant& from,
                                   boost::shared_ptr<qpid::framing::FieldValue> to);
+QPID_COMMON_EXTERN boost::shared_ptr<qpid::framing::FieldValue> translate(const types::Variant& from);
 
 }} // namespace qpid::amqp_0_10
 

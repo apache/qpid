@@ -185,7 +185,7 @@ class SendHeader
                     copy.castBody<AMQHeaderBody>()->get<MessageProperties>(true);
                 for (qpid::types::Variant::Map::const_iterator i = annotations.begin();
                      i != annotations.end(); ++i) {
-                    props->getApplicationHeaders().setString(i->first, i->second.asString());
+                    props->getApplicationHeaders().set(i->first, qpid::amqp_0_10::translate(i->second));
                 }
             }
             if (redelivered || ttl || timestamp) {
@@ -402,7 +402,7 @@ boost::intrusive_ptr<PersistableMessage> MessageTransfer::merge(const std::map<s
     boost::intrusive_ptr<MessageTransfer> clone(new MessageTransfer(this->frames));
     qpid::framing::MessageProperties* mp = clone->frames.getHeaders()->get<qpid::framing::MessageProperties>(true);
     for (qpid::types::Variant::Map::const_iterator i = annotations.begin(); i != annotations.end(); ++i) {
-        mp->getApplicationHeaders().setString(i->first, i->second);
+        mp->getApplicationHeaders().set(i->first, qpid::amqp_0_10::translate(i->second));
     }
     return clone;
 }
