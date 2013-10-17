@@ -110,10 +110,10 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
     private void simpleGroupAssignment(boolean sharedGroups) throws AMQException, JMSException
     {
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put("qpid.group_header_key","group");
+        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"group");
         if(sharedGroups)
         {
-            arguments.put("qpid.shared_msg_group","1");
+            arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
         }
         ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), true, false, false, arguments);
         queue = (Queue) producerSession.createQueue("direct://amq.direct/"+QUEUE+"/"+QUEUE+"?durable='false'&autodelete='true'");
@@ -200,10 +200,10 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
     private void consumerCloseGroupAssignment(boolean sharedGroups) throws AMQException, JMSException
     {
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put("qpid.group_header_key","group");
+        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"group");
         if(sharedGroups)
         {
-            arguments.put("qpid.shared_msg_group","1");
+            arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
         }
         ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), true, false, false, arguments);
         queue = (Queue) producerSession.createQueue("direct://amq.direct/"+QUEUE+"/"+QUEUE+"?durable='false'&autodelete='true'");
@@ -299,10 +299,10 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
     private void consumerCloseWithRelease(boolean sharedGroups) throws AMQException, JMSException
     {
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put("qpid.group_header_key","group");
+        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"group");
         if(sharedGroups)
         {
-            arguments.put("qpid.shared_msg_group","1");
+            arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
         }
 
         ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), true, false, false, arguments);
@@ -391,10 +391,10 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
     private void groupAssignmentOnEmpty(boolean sharedGroups) throws AMQException, JMSException
     {
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put("qpid.group_header_key","group");
+        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"group");
         if(sharedGroups)
         {
-            arguments.put("qpid.shared_msg_group","1");
+            arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
         }
 
         ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), true, false, false, arguments);

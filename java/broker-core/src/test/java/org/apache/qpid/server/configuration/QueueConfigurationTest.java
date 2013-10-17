@@ -29,6 +29,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class QueueConfigurationTest extends TestCase
@@ -247,9 +248,9 @@ public class QueueConfigurationTest extends TestCase
         assertTrue(qConf.getArguments().isEmpty());
 
         // Check explicit value
-        final VirtualHostConfiguration vhostConfig = overrideConfiguration("argument", "qpid.group_header_key=mykey");
+        final VirtualHostConfiguration vhostConfig = overrideConfiguration("argument", QueueArgumentsConverter.QPID_GROUP_HEADER_KEY + "=mykey");
         qConf = new QueueConfiguration("test", vhostConfig);
-        assertEquals(Collections.singletonMap("qpid.group_header_key","mykey"), qConf.getArguments());
+        assertEquals(Collections.singletonMap(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"mykey"), qConf.getArguments());
     }
 
 
@@ -261,8 +262,8 @@ public class QueueConfigurationTest extends TestCase
 
 
         PropertiesConfiguration queueConfig = new PropertiesConfiguration();
-        queueConfig.addProperty("queues.queue.test.argument", "qpid.group_header_key=mykey");
-        queueConfig.addProperty("queues.queue.test.argument", "qpid.shared_msg_group=1");
+        queueConfig.addProperty("queues.queue.test.argument", QueueArgumentsConverter.QPID_GROUP_HEADER_KEY + "=mykey");
+        queueConfig.addProperty("queues.queue.test.argument", QueueArgumentsConverter.QPID_SHARED_MSG_GROUP + "=1");
 
         CompositeConfiguration config = new CompositeConfiguration();
         config.addConfiguration(_fullHostConf.getConfig());
@@ -271,8 +272,8 @@ public class QueueConfigurationTest extends TestCase
         final VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration("test", config, _broker);;
         qConf = new QueueConfiguration("test", vhostConfig);
         assertEquals(2, qConf.getArguments().size());
-        assertEquals("mykey", qConf.getArguments().get("qpid.group_header_key"));
-        assertEquals("1", qConf.getArguments().get("qpid.shared_msg_group"));
+        assertEquals("mykey", qConf.getArguments().get(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY));
+        assertEquals("1", qConf.getArguments().get(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP));
     }
 
 

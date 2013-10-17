@@ -65,9 +65,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -405,22 +403,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             else if (queueType == QueueType.SORTED && attributes.get(Queue.SORT_KEY) == null)
             {
                 throw new IllegalArgumentException("Sort key is not specified for sorted queue");
-            }
-        }
-
-        if (attributes.containsKey(Queue.MESSAGE_GROUP_KEY))
-        {
-            String key = MapValueConverter.getStringAttribute(Queue.MESSAGE_GROUP_KEY, attributes);
-            attributes.remove(Queue.MESSAGE_GROUP_KEY);
-            attributes.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY, key);
-        }
-
-        if (attributes.containsKey(Queue.MESSAGE_GROUP_SHARED_GROUPS))
-        {
-            if(MapValueConverter.getBooleanAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS, attributes))
-            {
-                attributes.remove(Queue.MESSAGE_GROUP_SHARED_GROUPS);
-                attributes.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
             }
         }
 
