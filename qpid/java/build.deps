@@ -57,7 +57,7 @@ jetty-servlet=lib/required/jetty-servlet-7.6.10.v20130312.jar
 jetty-websocket=lib/required/jetty-websocket-7.6.10.v20130312.jar
 servlet-api=${geronimo-servlet}
 
-dojo-version=1.8.3
+dojo-version=1.9.1
 dojo=lib/required/dojo-${dojo-version}.zip
 
 jackson-core=lib/required/jackson-core-asl-1.9.0.jar

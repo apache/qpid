@@ -18,7 +18,8 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr", "dojox/encoding/base64", "dojox/encoding/digests/_base", "dojox/encoding/digests/MD5"], function () {
+define(["dojo/_base/xhr", "dojox/encoding/base64", "dojox/encoding/digests/_base", "dojox/encoding/digests/MD5"],
+    function (xhr, base64, digestsBase, MD5) {
 
 var encodeUTF8 = function encodeUTF8(str) {
     var byteArray = [];
@@ -65,7 +66,7 @@ var errorHandler = function errorHandler(error)
 var saslPlain = function saslPlain(user, password, callbackFunction)
 {
     var responseArray = [ 0 ].concat(encodeUTF8( user )).concat( [ 0 ] ).concat( encodeUTF8( password ) );
-    var plainResponse = dojox.encoding.base64.encode(responseArray);
+    var plainResponse = base64.encode(responseArray);
 
     // Using dojo.xhrGet, as very little information is being sent
     dojo.xhrPost({
@@ -95,19 +96,19 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
     }).then(function(data)
             {
 
-                var challengeBytes = dojox.encoding.base64.decode(data.challenge);
+                var challengeBytes = base64.decode(data.challenge);
                 var wa=[];
                 var bitLength = challengeBytes.length*8;
                 for(var i=0; i<bitLength; i+=8)
                 {
                     wa[i>>5] |= (challengeBytes[i/8] & 0xFF)<<(i%32);
                 }
-                var challengeStr = dojox.encoding.digests.wordToString(wa).substring(0,challengeBytes.length);
+                var challengeStr = digestsBase.wordToString(wa).substring(0,challengeBytes.length);
 
-                var digest =  user + " " + dojox.encoding.digests.MD5._hmac(challengeStr, password, dojox.encoding.digests.outputTypes.Hex);
+                var digest =  user + " " + MD5._hmac(challengeStr, password, digestsBase.outputTypes.Hex);
                 var id = data.id;
 
-                var response = dojox.encoding.base64.encode(encodeUTF8( digest ));
+                var response = base64.encode(encodeUTF8( digest ));
 
                 dojo.xhrPost({
                         // The URL of the request
@@ -162,7 +163,7 @@ SaslClient.authenticate = function(username, password, callbackFunction)
                }
                else if (containsMechanism(mechMap, "CRAM-MD5-HEX"))
                {
-                   var hashedPassword = dojox.encoding.digests.MD5(password, dojox.encoding.digests.outputTypes.Hex);
+                   var hashedPassword = MD5(password, digestsBase.outputTypes.Hex);
                    saslCramMD5(username, hashedPassword, "CRAM-MD5-HEX", callbackFunction);
                }
                else if (containsMechanism(mechMap, "PLAIN"))
