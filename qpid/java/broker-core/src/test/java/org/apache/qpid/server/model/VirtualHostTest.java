@@ -41,8 +41,9 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class VirtualHostTest extends TestCase
+public class VirtualHostTest extends QpidTestCase
 {
 
     private Broker _broker;
@@ -123,6 +124,28 @@ public class VirtualHostTest extends TestCase
 
         host.setDesiredState(State.INITIALISING, State.DELETED);
         assertEquals("Unexpected state", State.DELETED, host.getAttribute(VirtualHost.STATE));
+    }
+
+    public void testCreateQueueChildHavingMessageGrouppingAttributes()
+    {
+        VirtualHost host = createHost();
+        host.setDesiredState(State.INITIALISING, State.ACTIVE);
+
+        String queueName = getTestName();
+        Map<String, Object> arguments = new HashMap<String, Object>();
+        arguments.put(Queue.MESSAGE_GROUP_KEY, "mykey");
+        arguments.put(Queue.MESSAGE_GROUP_SHARED_GROUPS, true);
+        arguments.put(Queue.NAME, queueName);
+
+        host.createChild(Queue.class, arguments);
+
+        Queue queue = ConfiguredObjectFinder.findConfiguredObjectByName(host.getQueues(), queueName);
+        Object messageGroupKey = queue.getAttribute(Queue.MESSAGE_GROUP_KEY);
+        assertEquals("Unexpected message group key attribute", "mykey", messageGroupKey);
+
+        Object sharedGroups = queue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS);
+        assertEquals("Unexpected shared groups attribute", true, sharedGroups);
+
     }
 
     private VirtualHost createHost()
