@@ -390,10 +390,12 @@ define(["dojo/_base/xhr",
                        var bindings = thisObj.queueData[ "bindings" ];
                        var consumers = thisObj.queueData[ "consumers" ];
 
-                       for(i=0; i < bindings.length; i++) {
+                       if (bindings)
+                       {
+                         for(i=0; i < bindings.length; i++) {
                            bindings[i].argumentString = json.stringify(bindings[i].arguments);
+                         }
                        }
-
                        thisObj.updateHeader();
 
 

@@ -59,7 +59,7 @@
 
   <properties>
     <!-- dependency version numbers -->
-    <dojo-version>1.8.3</dojo-version>
+    <dojo-version>1.9.1</dojo-version>
 
     <!-- test dependency version numbers -->
     <junit-version>3.8.1</junit-version>
