@@ -534,8 +534,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
 
         Map<String,String> arguments = new HashMap<String, String>();
-        arguments.put("qpid.group_header_key","mykey");
-        arguments.put("qpid.shared_msg_group","1");
+        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"mykey");
+        arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
 
         QueueConfiguration qConf = mock(QueueConfiguration.class);
         when(qConf.getArguments()).thenReturn(arguments);
