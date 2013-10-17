@@ -19,41 +19,81 @@
  -
  -->
 <div class="queue">
-    <span style="">Name:</span><span class="name" style="position:absolute; left:6em"></span>
-    <span style="position:absolute; left:26em">Size:</span>
-    <span class="queueDepthMessages" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msgs</span>
-    <span class="queueDepthBytes" style="position:absolute; right: 3.3em">(</span>
-    <span class="queueDepthBytesUnits" style="position:absolute; right: 0em; width: 3em">)</span>
-    <br/>
-    <span style="">State:</span><span class="state" style="position:absolute; left:6em"></span>
-    <span style="position:absolute; left:26em">Pre-fetched:</span>
-    <span class="unacknowledgedMessages" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msgs</span>
-    <span class="unacknowledgedBytes" style="position:absolute; right: 3.3em"></span>
-    <span class="unacknowledgedBytesUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">Durable:</span><span class="durable" style="position:absolute; left:6em"></span>
-    <span style="position:absolute; left:26em">Inbound:</span>
-    <span class="msgInRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesInRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesInRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">Lifespan:</span><span style="position:absolute; left:6em" class="lifetimePolicy"></span>
-    <span style="position:absolute; left:26em">Outbound:</span>
-    <span class="msgOutRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesOutRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesOutRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">AlternateExchange:</span><span class="alternateExchange" style="position:absolute; left:10em"></span>
-    <span style="position:absolute; left:26em">Type:</span><span style="position:absolute; left:29em" class="type"></span>
-    <span style="position:absolute; right:1em" class="typeQualifier"></span>
-    <br/>
-    <div class="messageGroups">
-       <span style="" class="messageGroupKeyLabel">Message Group Key:</span><span class="messageGroupKey" style="position:absolute; left:11em"></span>
-       <span style="position:absolute; left:26em" class="messageGroupSharedGroupsLabel">Shared Message Groups:</span><span style="position:absolute; left:39em" class="messageGroupSharedGroups"></span>
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queue Attributes',  open: true">
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Name:</div>
+            <div class="name" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">State:</div>
+            <div class="state" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Durable:</div>
+            <div class="durable" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Lifespan:</div>
+            <div class="lifetimePolicy" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Type:</div>
+            <div style="float:left;">
+                <span class="type"></span>
+                <span class="typeQualifier"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Size:</div>
+            <div style="float:left;">
+                <span class="queueDepthMessages"></span>
+                <span> msgs</span>
+                <span class="queueDepthBytes">(</span>
+                <span class="queueDepthBytesUnits">)</span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Pre-fetched:</div>
+            <div style="float:left;">
+                <span class="unacknowledgedMessages"></span>
+                <span> msgs</span>
+                <span class="unacknowledgedBytes">(</span>
+                <span class="unacknowledgedBytesUnits">)</span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Inbound:</div>
+            <div style="float:left;">
+                <span class="msgInRate"></span>
+                <span> msg/s</span>
+                <span class="bytesInRate">(</span>
+                <span class="bytesInRateUnits">)</span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Outbound:</div>
+            <div style="float:left;">
+                <span class="msgOutRate"></span>
+                <span> msg/s</span>
+                <span class="bytesOutRate">(</span>
+                <span class="bytesOutRateUnits">)</span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">AlternateExchange:</div>
+            <div class="alternateExchange" style="float:left;"></div>
+        </div>
+        <div class="messageGroups" style="clear:both">
+          <div style="clear:both">
+            <div style="float:left; width: 150px;" class="messageGroupKeyLabel formLabel-labelCell ">Message Group Key:</div>
+            <div style="float:left;" class="messageGroupKey"></div>
+          </div>
+          <div style="clear:both">
+            <div style="float:left; width: 150px;" class="messageGroupSharedGroupsLabel formLabel-labelCell">Shared Message Groups:</div>
+            <div style="float:left;" class="messageGroupSharedGroups"></div>
+          </div>
+        </div>
+        <div style="clear:both"></div>
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
@@ -73,31 +113,42 @@
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
-        <span style="">Queue Depth:</span>
-        <span class="alertThresholdQueueDepthMessages"
-              style="position:absolute; left:4em; width:8em; text-align:right"></span>
-        <span style="position:absolute; left:12.2em">msgs</span>
-
-        <span style="position:absolute; left:21em">Queue Depth:</span>
-        <span class="alertThresholdQueueDepthBytes"
-              style="position:absolute; left:22em; width:8em; text-align:right"></span>
-        <span class="alertThresholdQueueDepthBytesUnits" style="position:absolute; left:30.2em"></span>
-        <br>
-        <span style="">Message Age:</span>
-        <span class="alertThresholdMessageAge"
-              style="position:absolute; left:4em; width:8em; text-align:right"></span>
-        <span class="alertThresholdMessageAgeUnits" style="position:absolute; left:12.2em"></span>
-
-        <span style="position:absolute; left:21em">Message Size: </span>
-        <span class="alertThresholdMessageSize"
-              style="position:absolute; left:25em; width:5em; text-align:right"></span>
-        <span class="alertThresholdMessageSizeUnits" style="position:absolute; left:30.2em"></span>
-        <br/>
-        <br/>
-        <span style="">Alert frequency:</span>
-        <span class="alertRepeatGap"
-              style="position:absolute; left:4em; width:8em; text-align:right"></span>
-        <span class="alertRepeatGapUnits" style="position:absolute; left:12.2em"></span>
+      <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Queue Depth:</div>
+            <div style="float:left;">
+                <span class="alertThresholdQueueDepthMessages"></span>
+                <span>msgs</span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Queue Depth:</div>
+            <div style="float:left;">
+                <span class="alertThresholdQueueDepthBytes"></span>
+                <span class="alertThresholdQueueDepthBytesUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Message Age:</div>
+            <div style="float:left;">
+                <span class="alertThresholdMessageAge"></span>
+                <span class="alertThresholdMessageAgeUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Message Size:</div>
+            <div style="float:left;">
+                <span class="alertThresholdMessageSize"></span>
+                <span class="alertThresholdMessageSizeUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Alert frequency:</div>
+            <div style="float:left;">
+                <span class="alertRepeatGap"></span>
+                <span class="alertRepeatGapUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both"></div>
     </div>
 
     <div class="dijitDialogPaneActionBar">

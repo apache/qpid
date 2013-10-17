@@ -21,31 +21,55 @@
  -->
 
 <div class="virtualhost">
-    <span style="">Name:</span><span class="name" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">State:</span><span class="state" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">Durable:</span><span class="durable" style="position:absolute; left:6em"></span>
-    <span style="position:absolute; left:26em">Inbound:</span>
-    <span class="msgInRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesInRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesInRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">Lifespan:</span><span style="position:absolute; left:6em" class="lifetimePolicy"></span>
-    <span style="position:absolute; left:26em">Outbound:</span>
-    <span class="msgOutRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesOutRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesOutRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">Store Type:</span><span style="position:absolute; left:6em" class="storeType"></span>
-    <span style="position:absolute; left:26em">Store Path:</span>
-    <span class="storePath" style="position:absolute; right: 1em"></span>
-    <div class="configPathDiv">
-        <span style="">ConfigPath:</span><span style="position:absolute; left:6em" class="configPath"></span>
-    </div>
-
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Virtual Host Attributes',  open: true">
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Name:</div>
+            <div class="name" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">State:</div>
+            <div class="state" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Durable:</div>
+            <div class="durable" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Lifespan:</div>
+            <div class="lifetimePolicy" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Inbound:</div>
+            <div style="float:left;">
+                <span class="msgInRate"></span>
+                <span> msg/s</span>
+                <span class="bytesInRate"></span>
+                <span class="bytesInRateUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Outbound:</div>
+            <div style="float:left;">
+                <span class="msgOutRate"></span>
+                <span> msg/s</span>
+                <span class="bytesOutRate"></span>
+                <span class="bytesOutRateUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Type:</div>
+            <div class="storeType" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Path:</div>
+            <div class="storePath" style="float:left;"></div>
+        </div>
+        <div class="configPathDiv" style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Config Path:</div>
+            <div class="configPath" style="float:left;"></div>
+        </div>
+        <div style="clear:both"></div>
+      </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchanges'">
         <div class="exchanges"></div>
@@ -64,31 +88,42 @@
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
-        <span style="">Queue Depth:</span>
-        <span class="alertThresholdQueueDepthMessages"
-              style="position:absolute; left:4em; width:8em; text-align:right"></span>
-        <span style="position:absolute; left:12.2em">msgs</span>
-
-        <span style="position:absolute; left:21em">Queue Depth:</span>
-        <span class="alertThresholdQueueDepthBytes"
-              style="position:absolute; left:22em; width:8em; text-align:right"></span>
-        <span class="alertThresholdQueueDepthBytesUnits" style="position:absolute; left:30.2em"></span>
-        <br>
-        <span style="">Message Age:</span>
-        <span class="alertThresholdMessageAge"
-              style="position:absolute; left:4em; width:8em; text-align:right"></span>
-        <span class="alertThresholdMessageAgeUnits" style="position:absolute; left:12.2em"></span>
-
-        <span style="position:absolute; left:21em">Message Size: </span>
-        <span class="alertThresholdMessageSize"
-              style="position:absolute; left:25em; width:5em; text-align:right"></span>
-        <span class="alertThresholdMessageSizeUnits" style="position:absolute; left:30.2em"></span>
-        <br/>
-        <br/>
-        <span style="">Alert frequency:</span>
-        <span class="alertRepeatGap"
-              style="position:absolute; left:4em; width:8em; text-align:right"></span>
-        <span class="alertRepeatGapUnits" style="position:absolute; left:12.2em"></span>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Queue Depth:</div>
+            <div style="float:left;">
+                <span class="alertThresholdQueueDepthMessages"></span>
+                <span>msgs</span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Queue Depth:</div>
+            <div style="float:left;">
+                <span class="alertThresholdQueueDepthBytes"></span>
+                <span class="alertThresholdQueueDepthBytesUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Message Age:</div>
+            <div style="float:left;">
+                <span class="alertThresholdMessageAge"></span>
+                <span class="alertThresholdMessageAgeUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Message Size:</div>
+            <div style="float:left;">
+                <span class="alertThresholdMessageSize"></span>
+                <span class="alertThresholdMessageSizeUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 150px;">Alert frequency:</div>
+            <div style="float:left;">
+                <span class="alertRepeatGap"></span>
+                <span class="alertRepeatGapUnits"></span>
+            </div>
+        </div>
+        <div style="clear:both"></div>
     </div>
 </div>
 

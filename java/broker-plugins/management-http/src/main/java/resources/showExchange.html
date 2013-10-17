@@ -19,24 +19,43 @@
  -
  -->
 <div class="exchange">
-    <span style="">Name:</span><span class="name" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">State:</span><span class="state" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">Durable:</span><span class="durable" style="position:absolute; left:6em"></span>
-    <span style="position:absolute; left:26em">Inbound:</span>
-    <span class="msgInRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesInRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesInRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">Lifespan:</span><span style="position:absolute; left:6em" class="lifetimePolicy"></span>
-    <span style="position:absolute; left:26em">Dropped:</span>
-    <span class="msgDropRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesDropRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesDropRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchange Attributes',  open: true">
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Name:</div>
+            <div class="name" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">State:</div>
+            <div class="state" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Durable:</div>
+            <div class="durable" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Lifespan:</div>
+            <div class="lifetimePolicy" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Inbound:</div>
+            <div style="float:left;">
+                <span class="msgInRate"></span>
+                <span> msg/s</span>
+                <span class="bytesInRate">(</span>
+                <span class="bytesInRateUnits">)</span>
+            </div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Dropped:</div>
+            <div style="float:left;">
+                <span class="msgDropRate"></span>
+                <span> msg/s</span>
+                <span class="bytesDropRate">(</span>
+                <span class="bytesDropRateUnits">)</span>
+            </div>
+        </div>
+        <div style="clear:both"></div>
+    </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
         <div class="bindings"></div>
