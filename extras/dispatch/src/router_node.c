@@ -107,18 +107,51 @@ void dx_router_del_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t 
  * Depending on its policy, the address may be eligible for being closed out
  * (i.e. Logging its terminal statistics and freeing its resources).
  */
-void dx_router_check_addr_LH(dx_router_t *router, dx_address_t *addr)
+void dx_router_check_addr(dx_router_t *router, dx_address_t *addr, int was_local)
 {
     if (addr == 0)
         return;
 
-    if (addr->handler || DEQ_SIZE(addr->rlinks) > 0 || DEQ_SIZE(addr->rnodes) > 0)
-        return;
+    unsigned char       *key            = 0;
+    const unsigned char *key_const      = 0;
+    int                  to_delete      = 0;
+    int                  no_more_locals = 0;
 
-    dx_hash_remove_by_handle(router->addr_hash, addr->hash_handle);
-    DEQ_REMOVE(router->addrs, addr);
-    dx_hash_handle_free(addr->hash_handle);
-    free_dx_address_t(addr);
+    sys_mutex_lock(router->lock);
+    if (addr->handler == 0 && DEQ_SIZE(addr->rlinks) == 0 && DEQ_SIZE(addr->rnodes) == 0)
+        to_delete = 1;
+
+    if (was_local && DEQ_SIZE(addr->rlinks) == 0)
+        no_more_locals = 1;
+
+    if (to_delete) {
+        dx_hash_remove_by_handle2(router->addr_hash, addr->hash_handle, &key);
+        DEQ_REMOVE(router->addrs, addr);
+        dx_hash_handle_free(addr->hash_handle);
+        free_dx_address_t(addr);
+    }
+
+    if (!to_delete && no_more_locals)
+        key_const = dx_hash_key_by_handle(addr->hash_handle);
+
+    sys_mutex_unlock(router->lock);
+
+    //
+    // If the address is mobile-class and it was just removed from a local link,
+    // tell the router module that it is no longer attached locally.
+    //
+    if (no_more_locals) {
+        if (key && key[0] == 'M')
+            dx_router_mobile_removed(router, (const char*) key);
+        if (key_const && key_const[0] == 'M')
+            dx_router_mobile_removed(router, (const char*) key_const);
+    }
+
+    //
+    // Free the key that was not freed by the hash table.
+    //
+    if (key)
+        free(key);
 }
 
 
@@ -452,6 +485,16 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
 
         if (iter) {
             dx_field_iterator_reset_view(iter, ITER_VIEW_ADDRESS_HASH);
+
+            //
+            // Note: This function is going to need to be refactored so we can put an
+            //       asynchronous address lookup here.  In the event there is a translation
+            //       of the address (via namespace), it will have to be done here after
+            //       obtaining the iterator and before doing the hash lookup.
+            //
+            //       Note that this lookup is only done for global/mobile class addresses.
+            //
+
             dx_hash_retrieve(router->addr_hash, iter, (void*) &addr);
             dx_field_iterator_reset_view(iter, ITER_VIEW_NO_HOST);
             int is_local  = dx_field_iterator_prefix(iter, local_prefix);
@@ -836,7 +879,7 @@ static int router_outgoing_link_handler(void* context, dx_link_t *link)
     sys_mutex_unlock(router->lock);
 
     if (propagate)
-        dx_router_global_added(router, iter);
+        dx_router_mobile_added(router, iter);
 
     if (iter)
         dx_field_iterator_free(iter);
@@ -853,6 +896,7 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
     dx_router_t      *router = (dx_router_t*) context;
     dx_router_link_t *rlink  = (dx_router_link_t*) dx_link_get_context(link);
     dx_router_conn_t *shared = (dx_router_conn_t*) dx_link_get_conn_context(link);
+    dx_address_t     *oaddr  = 0;
 
     if (shared) {
         dx_link_set_conn_context(link, 0);
@@ -869,7 +913,7 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
     //
     if (rlink->link_direction == DX_OUTGOING && rlink->owning_addr) {
         dx_router_del_link_ref_LH(&rlink->owning_addr->rlinks, rlink);
-        dx_router_check_addr_LH(router, rlink->owning_addr);
+        oaddr = rlink->owning_addr;
     }
 
     //
@@ -894,6 +938,11 @@ static int router_link_detach_handler(void* context, dx_link_t *link, int closed
     //
     DEQ_REMOVE(router->links, rlink);
     sys_mutex_unlock(router->lock);
+
+    //
+    // Check to see if the owning address should be deleted
+    //
+    dx_router_check_addr(router, oaddr, 1);
 
     // TODO - wrap the free to handle the recursive items
     free_dx_router_link_t(rlink);
