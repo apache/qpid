@@ -29,6 +29,9 @@ from mobile import MobileAddressEngine
 from routing import RoutingTableEngine
 from node import NodeTracker
 
+import sys
+import traceback
+
 ##
 ## Import the Dispatch adapters from the environment.  If they are not found
 ## (i.e. we are in a test bench, etc.), load the stub versions.
@@ -106,7 +109,7 @@ class RouterEngine:
         try:
             if addr.find('Mtemp.') == 0:
                 return
-            if key.find('M') == 0:
+            if addr.find('M') == 0:
                 self.mobile_address_engine.del_local_address(addr[1:])
         except Exception, e:
             self.log(LOG_ERROR, "Exception in del-address processing: exception=%r" % e)
@@ -165,6 +168,8 @@ class RouterEngine:
 
         except Exception, e:
             self.log(LOG_ERROR, "Exception in message processing: opcode=%s body=%r exception=%r" % (opcode, body, e))
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback)
 
 
     def receive(self, message_properties, body, link_id):

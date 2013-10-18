@@ -163,15 +163,15 @@ struct dx_router_t {
 
 
 
-void dx_router_check_addr_LH(dx_router_t *router, dx_address_t *addr);
+void dx_router_check_addr(dx_router_t *router, dx_address_t *addr, int was_local);
 void dx_router_add_link_ref_LH(dx_router_link_ref_list_t *ref_list, dx_router_link_t *link);
 void dx_router_del_link_ref_LH(dx_router_link_ref_list_t *ref_list, dx_router_link_t *link);
 
 void dx_router_add_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t *rnode);
 void dx_router_del_node_ref_LH(dx_router_ref_list_t *ref_list, dx_router_node_t *rnode);
 
-void dx_router_global_added(dx_router_t *router, dx_field_iterator_t *iter);
-void dx_router_global_removed(dx_router_t *router, const char *addr);
+void dx_router_mobile_added(dx_router_t *router, dx_field_iterator_t *iter);
+void dx_router_mobile_removed(dx_router_t *router, const char *addr);
 
 
 #endif

@@ -264,9 +264,19 @@ const unsigned char *dx_hash_key_by_handle(const dx_hash_handle_t *handle)
 
 dx_error_t dx_hash_remove_by_handle(dx_hash_t *h, dx_hash_handle_t *handle)
 {
+    unsigned char *key   = 0;
+    dx_error_t     error = dx_hash_remove_by_handle2(h, handle, &key);
+    if (key)
+        free(key);
+    return error;
+}
+
+
+dx_error_t dx_hash_remove_by_handle2(dx_hash_t *h, dx_hash_handle_t *handle, unsigned char **key)
+{
     if (!handle)
         return DX_ERROR_NOT_FOUND;
-    free(handle->item->key);
+    *key = handle->item->key;
     DEQ_REMOVE(handle->bucket->items, handle->item);
     free_dx_hash_item_t(handle->item);
     h->size--;

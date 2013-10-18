@@ -114,7 +114,7 @@ class BusManager:
     def _addr_class(self, addr):
         if not addr:
             return "-"
-        if addr[0] == 'M' : return "global"
+        if addr[0] == 'M' : return "mobile"
         if addr[0] == 'R' : return "router"
         if addr[0] == 'A' : return "area"
         if addr[0] == 'L' : return "local"
