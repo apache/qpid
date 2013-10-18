@@ -112,27 +112,45 @@ void dx_router_check_addr(dx_router_t *router, dx_address_t *addr, int was_local
     if (addr == 0)
         return;
 
-    unsigned char       *key            = 0;
-    const unsigned char *key_const      = 0;
-    int                  to_delete      = 0;
-    int                  no_more_locals = 0;
+    unsigned char *key            = 0;
+    int            to_delete      = 0;
+    int            no_more_locals = 0;
 
     sys_mutex_lock(router->lock);
+
+    //
+    // If the address has no handlers or destinations, it should be deleted.
+    //
     if (addr->handler == 0 && DEQ_SIZE(addr->rlinks) == 0 && DEQ_SIZE(addr->rnodes) == 0)
         to_delete = 1;
 
+    //
+    // If we have just removed a local linkage and it was the last local linkage,
+    // we need to notify the router module that there is no longer a local
+    // presence of this address.
+    //
     if (was_local && DEQ_SIZE(addr->rlinks) == 0)
         no_more_locals = 1;
 
     if (to_delete) {
+        //
+        // Delete the address but grab the hash key so we can use it outside the
+        // critical section.
+        //
         dx_hash_remove_by_handle2(router->addr_hash, addr->hash_handle, &key);
         DEQ_REMOVE(router->addrs, addr);
         dx_hash_handle_free(addr->hash_handle);
         free_dx_address_t(addr);
     }
 
-    if (!to_delete && no_more_locals)
-        key_const = dx_hash_key_by_handle(addr->hash_handle);
+    //
+    // If we're not deleting but there are no more locals, get a copy of the hash key.
+    //
+    if (!to_delete && no_more_locals) {
+        const unsigned char *key_const = dx_hash_key_by_handle(addr->hash_handle);
+        key = (unsigned char*) malloc(strlen((const char*) key_const) + 1);
+        strcpy((char*) key, (const char*) key_const);
+    }
 
     sys_mutex_unlock(router->lock);
 
@@ -140,12 +158,8 @@ void dx_router_check_addr(dx_router_t *router, dx_address_t *addr, int was_local
     // If the address is mobile-class and it was just removed from a local link,
     // tell the router module that it is no longer attached locally.
     //
-    if (no_more_locals) {
-        if (key && key[0] == 'M')
-            dx_router_mobile_removed(router, (const char*) key);
-        if (key_const && key_const[0] == 'M')
-            dx_router_mobile_removed(router, (const char*) key_const);
-    }
+    if (no_more_locals && key && key[0] == 'M')
+        dx_router_mobile_removed(router, (const char*) key);
 
     //
     // Free the key that was not freed by the hash table.
