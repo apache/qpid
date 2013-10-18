@@ -430,8 +430,9 @@ static PyObject* dx_unmap_destination(PyObject *self, PyObject *args)
     }
         
     dx_router_del_node_ref_LH(&addr->rnodes, rnode);
-    dx_router_check_addr_LH(router, addr);
     sys_mutex_unlock(router->lock);
+
+    dx_router_check_addr(router, addr, 0);
 
     dx_log(module, LOG_DEBUG, "Remote Destination '%s' Unmapped from router %d", addr_string, maskbit);
 
@@ -631,7 +632,7 @@ void dx_pyrouter_tick(dx_router_t *router)
 }
 
 
-void dx_router_global_added(dx_router_t *router, dx_field_iterator_t *iter)
+void dx_router_mobile_added(dx_router_t *router, dx_field_iterator_t *iter)
 {
     PyObject *pArgs;
     PyObject *pValue;
@@ -641,7 +642,7 @@ void dx_router_global_added(dx_router_t *router, dx_field_iterator_t *iter)
         char *address = (char*) dx_field_iterator_copy(iter);
 
         dx_python_lock();
-        pArgs  = PyTuple_New(1);
+        pArgs = PyTuple_New(1);
         PyTuple_SetItem(pArgs, 0, PyString_FromString(address));
         pValue = PyObject_CallObject(router->pyAdded, pArgs);
         if (PyErr_Occurred()) {
@@ -658,7 +659,24 @@ void dx_router_global_added(dx_router_t *router, dx_field_iterator_t *iter)
 }
 
 
-void dx_router_global_removed(dx_router_t *router, const char *addr)
+void dx_router_mobile_removed(dx_router_t *router, const char *address)
 {
+    PyObject *pArgs;
+    PyObject *pValue;
+
+    if (router->pyRemoved && router->router_mode == DX_ROUTER_MODE_INTERIOR) {
+        dx_python_lock();
+        pArgs = PyTuple_New(1);
+        PyTuple_SetItem(pArgs, 0, PyString_FromString(address));
+        pValue = PyObject_CallObject(router->pyRemoved, pArgs);
+        if (PyErr_Occurred()) {
+            PyErr_Print();
+        }
+        Py_DECREF(pArgs);
+        if (pValue) {
+            Py_DECREF(pValue);
+        }
+        dx_python_unlock();
+    }
 }
 

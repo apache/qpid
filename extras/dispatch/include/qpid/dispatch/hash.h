@@ -39,6 +39,7 @@ dx_error_t dx_hash_remove(dx_hash_t *h, dx_field_iterator_t *key);
 void dx_hash_handle_free(dx_hash_handle_t *handle);
 const unsigned char *dx_hash_key_by_handle(const dx_hash_handle_t *handle);
 dx_error_t dx_hash_remove_by_handle(dx_hash_t *h, dx_hash_handle_t *handle);
+dx_error_t dx_hash_remove_by_handle2(dx_hash_t *h, dx_hash_handle_t *handle, unsigned char **key);
 
 
 #endif
