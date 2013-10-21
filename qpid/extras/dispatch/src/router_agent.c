@@ -185,3 +185,24 @@ void dx_router_agent_setup(dx_router_t *router)
         dx_router_setup_class(router, "org.apache.qpid.dispatch.router.address", DX_ROUTER_CLASS_ADDRESS);
 }
 
+
+void dx_router_build_node_list(dx_dispatch_t *dx, dx_composed_field_t *field)
+{
+    dx_router_t *router = dx->router;
+    char         temp[1000];  // FIXME
+
+    sys_mutex_lock(router->lock);
+    dx_router_node_t *rnode = DEQ_HEAD(router->routers);
+    while (rnode) {
+        strcpy(temp, "amqp:/_topo/");
+        strcat(temp, router->router_area);
+        strcat(temp, "/");
+        const unsigned char* addr = dx_hash_key_by_handle(rnode->owning_addr->hash_handle);
+        strcat(temp, &((char*) addr)[1]);
+        strcat(temp, "/$management");
+        dx_compose_insert_string(field, temp);
+        rnode = DEQ_NEXT(rnode);
+    }
+    sys_mutex_unlock(router->lock);
+}
+

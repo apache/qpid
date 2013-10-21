@@ -47,5 +47,6 @@ void dx_router_send2(dx_dispatch_t *dx,
                      const char    *address,
                      dx_message_t  *msg);
 
+void dx_router_build_node_list(dx_dispatch_t *dx, dx_composed_field_t *field);
 
 #endif
