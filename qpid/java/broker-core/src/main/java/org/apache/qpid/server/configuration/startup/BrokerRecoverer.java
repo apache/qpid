@@ -21,10 +21,14 @@
 package org.apache.qpid.server.configuration.startup;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.qpid.server.BrokerOptions;
@@ -88,7 +92,6 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     @Override
     public Broker create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
     {
-        //Map<String, Object> attributes = entry.getAttributes();
         Map<String, Object> attributesCopy = validateAttributes(entry);
 
         attributesCopy.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
@@ -99,34 +102,34 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 
         broker.addChangeListener(_storeChangeListener);
 
-        //Recover the SSL keystores / truststores first, then others that depend on them
         Map<String, Collection<ConfigurationEntry>> childEntries = new HashMap<String, Collection<ConfigurationEntry>>(entry.getChildren());
-        Map<String, Collection<ConfigurationEntry>> priorityChildEntries = new HashMap<String, Collection<ConfigurationEntry>>(childEntries);
-        List<String> types = new ArrayList<String>(childEntries.keySet());
 
-        for(String type : types)
-        {
-            if(KeyStore.class.getSimpleName().equals(type) || TrustStore.class.getSimpleName().equals(type)
-                        || AuthenticationProvider.class.getSimpleName().equals(type))
-            {
-                childEntries.remove(type);
-            }
-            else
-            {
-                priorityChildEntries.remove(type);
-            }
-        }
+        List<String> types = makePrioritisedListOfTypes(childEntries.keySet(), TrustStore.class.getSimpleName(), KeyStore.class.getSimpleName(), AuthenticationProvider.class.getSimpleName());
 
-        for (String type : priorityChildEntries.keySet())
-        {
-            recoverType(recovererProvider, _storeChangeListener, broker, priorityChildEntries, type);
-        }
-        for (String type : childEntries.keySet())
+        for (String type : types)
         {
             recoverType(recovererProvider, _storeChangeListener, broker, childEntries, type);
         }
 
         return broker;
+    }
+
+    private List<String> makePrioritisedListOfTypes(Set<String> allTypes, String... priorityOrderedTypes)
+    {
+        List<String> prioritisedList = new ArrayList<String>(allTypes.size());
+        Set<String> remainder = new HashSet<String>(allTypes);
+
+        for (String type : priorityOrderedTypes)
+        {
+            Set<String> singleton = Collections.singleton(type);
+            Set<String> intersection = new HashSet<String>(allTypes);
+            intersection.retainAll(singleton);
+            remainder.removeAll(singleton);
+            prioritisedList.addAll(intersection);
+        }
+
+        prioritisedList.addAll(remainder);
+        return prioritisedList;
     }
 
     private Map<String, Object> validateAttributes(ConfigurationEntry entry)

@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
@@ -46,7 +47,7 @@ public abstract class AbstractPrincipalDatabaseAuthManagerFactory implements Aut
 
 
     @Override
-    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    public AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes)
     {
         if (attributes == null || !getType().equals(attributes.get(ATTRIBUTE_TYPE)))
         {

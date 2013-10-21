@@ -379,7 +379,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         {
             throw new IllegalConfigurationException("Cannot find authentication provider factory for type " + newType);
         }
-        AuthenticationManager manager = managerFactory.createInstance(attributes);
+        AuthenticationManager manager = managerFactory.createInstance(_broker, attributes);
         if (manager == null)
         {
             throw new IllegalConfigurationException("Cannot change authentication provider " + newName + " of type " + newType + " with the given attributes");

@@ -42,6 +42,7 @@
     <dependency org="commons-digester" name="commons-digester" rev="1.8.1" transitive="false"/>
     <dependency org="commons-lang" name="commons-lang" rev="2.6" transitive="false"/>
     <dependency org="commons-logging" name="commons-logging" rev="1.1.1" transitive="false"/>
+    <dependency org="org.apache.bcel" name="bcel" rev="5.2" transitive="false"/>
     <dependency org="org.apache.derby" name="derby" rev="10.8.2.2" transitive="false"/>
     <dependency org="org.apache.geronimo.framework" name="geronimo-kernel" rev="2.2.1" transitive="false"/>
     <dependency org="org.apache.geronimo.specs" name="geronimo-ejb_3.0_spec" rev="1.0.1" transitive="false"/>

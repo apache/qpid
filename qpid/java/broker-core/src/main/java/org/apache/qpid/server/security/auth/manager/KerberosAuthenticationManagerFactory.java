@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
 public class KerberosAuthenticationManagerFactory implements AuthenticationManagerFactory
@@ -30,7 +31,7 @@ public class KerberosAuthenticationManagerFactory implements AuthenticationManag
     public static final String PROVIDER_TYPE = "Kerberos";
 
     @Override
-    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    public AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes)
     {
         if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
         {

@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 public interface AuthenticationManagerFactory extends Pluggable
@@ -36,15 +37,17 @@ public interface AuthenticationManagerFactory extends Pluggable
 
     /**
      * Creates authentication manager from the provided attributes
-     *
+     * @param broker
+     *            broker model object
      * @param attributes
      *            attributes to create authentication manager
+     *
      * @return authentication manager instance
      */
-    AuthenticationManager createInstance(Map<String, Object> attributes);
+    AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes);
 
     /**
-     * Get the names of attributes the authentication manager which can be passed into {@link #createInstance(Map)} to create the
+     * Get the names of attributes the authentication manager which can be passed into {@link #createInstance(Broker, Map)} to create the
      * authentication manager
      *
      * @return the collection of attribute names

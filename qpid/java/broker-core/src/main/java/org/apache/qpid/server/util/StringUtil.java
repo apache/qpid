@@ -22,6 +22,8 @@ package org.apache.qpid.server.util;
 
 import java.util.Random;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 public class StringUtil
 {
     private static final String NUMBERS = "0123456789";
@@ -39,6 +41,35 @@ public class StringUtil
             result[i] = (char) CHARACTERS[_random.nextInt(CHARACTERS.length)];
         }
         return new String(result);
+    }
+
+    /**
+     * Builds a legal java name, based on manager name if possible,
+     * this is unique for the given input.
+     *
+     * @param managerName
+     * @return unique java name
+     */
+    public String createUniqueJavaName(String managerName)
+    {
+        StringBuilder builder = new StringBuilder();
+        boolean initialChar = true;
+        for (int i = 0; i < managerName.length(); i++)
+        {
+            char c = managerName.charAt(i);
+            if ((initialChar && Character.isJavaIdentifierStart(c))
+                    || (!initialChar && Character.isJavaIdentifierPart(c)))
+            {
+                builder.append(c);
+                initialChar = false;
+            }
+        }
+        if (builder.length() > 0)
+        {
+            builder.append("_");
+        }
+        builder.append(DigestUtils.md5Hex(managerName));
+        return builder.toString();
     }
 
 }

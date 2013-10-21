@@ -24,6 +24,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.util.ResourceBundleLoader;
 
@@ -34,9 +37,11 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
 
     public static final String PROVIDER_TYPE = "SimpleLDAP";
 
+    public static final String ATTRIBUTE_NAME = "name";
     public static final String ATTRIBUTE_LDAP_CONTEXT_FACTORY = "ldapContextFactory";
     public static final String ATTRIBUTE_SEARCH_FILTER = "searchFilter";
     public static final String ATTRIBUTE_SEARCH_CONTEXT = "searchContext";
+    public static final String ATTRIBUTE_TRUST_STORE = "trustStore";
     public static final String ATTRIBUTE_PROVIDER_AUTH_URL = "providerAuthUrl";
     public static final String ATTRIBUTE_PROVIDER_URL = "providerUrl";
 
@@ -45,19 +50,23 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
             ATTRIBUTE_PROVIDER_URL,
             ATTRIBUTE_SEARCH_CONTEXT,
             ATTRIBUTE_SEARCH_FILTER,
+            ATTRIBUTE_TRUST_STORE,
             ATTRIBUTE_PROVIDER_AUTH_URL,
             ATTRIBUTE_LDAP_CONTEXT_FACTORY
             ));
 
     @Override
-    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    public AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes)
     {
         if (attributes == null || !PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
         {
             return null;
         }
+
+        String name = (String) attributes.get(ATTRIBUTE_NAME);
         String providerUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_URL);
         String providerAuthUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_AUTH_URL);
+
         if (providerAuthUrl == null)
         {
             providerAuthUrl = providerUrl;
@@ -65,13 +74,24 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
         String searchContext = (String) attributes.get(ATTRIBUTE_SEARCH_CONTEXT);
         String searchFilter = (String) attributes.get(ATTRIBUTE_SEARCH_FILTER);
         String ldapContextFactory = (String) attributes.get(ATTRIBUTE_LDAP_CONTEXT_FACTORY);
+        String trustStoreName = (String) attributes.get(ATTRIBUTE_TRUST_STORE);
         if (ldapContextFactory == null)
         {
             ldapContextFactory = DEFAULT_LDAP_CONTEXT_FACTORY;
         }
 
-        return new SimpleLDAPAuthenticationManager(providerUrl, providerAuthUrl, searchContext, searchFilter,
-                ldapContextFactory);
+        TrustStore trustStore = null;
+        if (trustStoreName != null)
+        {
+            trustStore = broker.findTrustStoreByName(trustStoreName);
+            if (trustStore == null)
+            {
+                throw new IllegalConfigurationException("Can't find truststore with name '" + trustStoreName + "'");
+            }
+        }
+
+        return new SimpleLDAPAuthenticationManager(name, providerUrl, providerAuthUrl, searchContext,
+                searchFilter, ldapContextFactory, trustStore);
     }
 
     @Override
