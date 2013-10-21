@@ -22,14 +22,15 @@
 #ifndef QPID_LEGACYSTORE_MESSAGESTOREIMPL_H
 #define QPID_LEGACYSTORE_MESSAGESTOREIMPL_H
 
+#include <iomanip>
 #include <string>
 
 #include "db-inc.h"
 #include "qpid/linearstore/Cursor.h"
-#include "qpid/linearstore/EmptyFilePoolManagerImpl.h"
 #include "qpid/linearstore/IdDbt.h"
 #include "qpid/linearstore/IdSequence.h"
 #include "qpid/linearstore/JournalImpl.h"
+#include "qpid/linearstore/JournalLogImpl.h"
 #include "qpid/linearstore/jrnl/jcfg.h"
 #include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/PreparedTransaction.h"
@@ -101,10 +102,10 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     // Default store settings
     static const bool defTruncateFlag = false;
-    static const uint32_t defWCachePageSizeKib = JRNL_WMGR_DEF_PAGE_SIZE_KIB;
+    static const uint32_t defWCachePageSizeKib = QLS_WMGR_DEF_PAGE_SIZE_KIB;
     static const uint32_t defTplWCachePageSizeKib = defWCachePageSizeKib / 8;
     static const uint16_t defEfpPartition = 1;
-    static const uint64_t defEfpFileSizeKib = 512 * JRNL_SBLK_SIZE_KIB;
+    static const uint64_t defEfpFileSizeKib = 512 * QLS_SBLK_SIZE_KIB;
     static const std::string storeTopLevelDir;
 
     static qpid::sys::Duration defJournalGetEventsTimeout;
@@ -143,7 +144,8 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     bool isInit;
     const char* envPath;
     qpid::broker::Broker* broker;
-    boost::shared_ptr<EmptyFilePoolManagerImpl> efpMgr;
+    JournalLogImpl jrnlLog;
+    boost::shared_ptr<qpid::qls_jrnl::EmptyFilePoolManager> efpMgr;
 
     qmf::org::apache::qpid::linearstore::Store::shared_ptr mgmtObject;
     qpid::management::ManagementAgent* agent;

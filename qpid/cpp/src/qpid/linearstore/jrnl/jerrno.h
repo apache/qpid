@@ -69,8 +69,6 @@ namespace qls_jrnl
         static const uint32_t JERR_JCNTL_AIOCMPLWAIT;  ///< Timeout waiting for AIOs to complete
         static const uint32_t JERR_JCNTL_UNKNOWNMAGIC; ///< Found record with unknown magic
         static const uint32_t JERR_JCNTL_NOTRECOVERED; ///< Req' recover() to be called first
-        static const uint32_t JERR_JCNTL_OPENRD;       ///< Unable to open file for read
-        static const uint32_t JERR_JCNTL_READ;         ///< Read error: no or insufficient data to read
         static const uint32_t JERR_JCNTL_ENQSTATE;     ///< Read error: Record not in ENQ state
         static const uint32_t JERR_JCNTL_INVALIDENQHDR;///< Invalid ENQ header
 
@@ -107,6 +105,11 @@ namespace qls_jrnl
         static const uint32_t JERR_WMGR_DEQDISCONT;    ///< Deq. new dtok when previous part compl.
         static const uint32_t JERR_WMGR_DEQRIDNOTENQ;  ///< Deq. rid not enqueued
         static const uint32_t JERR_WMGR_BADFH;         ///< Bad file handle
+
+        // class RecoveryManager
+        static const uint32_t JERR_RCVM_OPENRD;       ///< Unable to open file for read
+        static const uint32_t JERR_RCVM_READ;         ///< Read error: no or insufficient data to read
+        static const uint32_t JERR_RCVM_WRITE;          ///< Write error
 
 //        // class rmgr
 //        static const uint32_t JERR_RMGR_UNKNOWNMAGIC;  ///< Found record with unknown magic

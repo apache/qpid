@@ -21,20 +21,20 @@
 
 #include "qpid/linearstore/JournalImpl.h"
 
+#include "qpid/linearstore/JournalLogImpl.h"
 #include "qpid/linearstore/jrnl/jerrno.h"
 #include "qpid/linearstore/jrnl/jexception.h"
 #include "qpid/linearstore/jrnl/EmptyFilePool.h"
+#include "qpid/linearstore/StoreException.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
-//#include "qmf/org/apache/qpid/linearstore/ArgsJournalExpand.h"
+#include "qpid/sys/Monitor.h"
+#include "qpid/sys/Timer.h"
+
 #include "qmf/org/apache/qpid/linearstore/EventCreated.h"
 #include "qmf/org/apache/qpid/linearstore/EventEnqThresholdExceeded.h"
 #include "qmf/org/apache/qpid/linearstore/EventFull.h"
 #include "qmf/org/apache/qpid/linearstore/EventRecovered.h"
-#include "qpid/sys/Monitor.h"
-#include "qpid/sys/Timer.h"
-#include "qpid/linearstore/QpidLog.h"
-#include "qpid/linearstore/StoreException.h"
 
 using namespace qpid::qls_jrnl;
 using namespace qpid::linearstore;
@@ -54,13 +54,14 @@ void GetEventsFireEvent::fire() { qpid::sys::Mutex::ScopedLock sl(_gefe_lock); i
 JournalImpl::JournalImpl(qpid::sys::Timer& timer_,
                          const std::string& journalId,
                          const std::string& journalDirectory,
-//                         const std::string& journalBaseFilename,
+                         JournalLogImpl& journalLogRef,
                          const qpid::sys::Duration getEventsTimeout,
                          const qpid::sys::Duration flushTimeout,
                          qpid::management::ManagementAgent* a,
                          DeleteCallback onDelete):
-                         jcntl(journalId, journalDirectory/*, journalBaseFilename*/),
+                         jcntl(journalId, journalDirectory, journalLogRef),
                          timer(timer_),
+                         _journalLogRef(journalLogRef),
                          getEventsTimerSetFlag(false),
 //                         lastReadRid(0),
                          writeActivityFlag(false),
@@ -163,7 +164,7 @@ JournalImpl::initialize(qpid::qls_jrnl::EmptyFilePool* efpp_,
         _mgmtObject->set_writePages(wcache_num_pages);
     }
     if (_agent != 0)
-        _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventCreated(_jid, _jfsize_sblks * JRNL_SBLK_SIZE, _lpmgr.num_jfiles()),
+        _agent->raiseEvent::(qmf::org::apache::qpid::linearstore::EventCreated(_jid, _jfsize_sblks * JRNL_SBLK_SIZE, _lpmgr.num_jfiles()),
                            qpid::management::ManagementAgent::SEV_NOTE);
 */
 }
@@ -558,11 +559,11 @@ JournalImpl::wr_aio_cb(std::vector<data_tok*>& dtokl)
 		    switch (dtokp->wstate())
 		    {
  			    case data_tok::ENQ:
- 			        std::cout << "<<<>>> JournalImpl::wr_aio_cb() ENQ dtokp rid=" << dtokp->rid() << std::endl << std::flush; // DEBUG
+//std::cout << "<<<>>> JournalImpl::wr_aio_cb() ENQ dtokp rid=0x" << std::hex << dtokp->rid() << std::dec << std::endl << std::flush; // DEBUG
              	    dtokp->getSourceMessage()->enqueueComplete();
  				    break;
 			    case data_tok::DEQ:
-			        std::cout << "<<<>>> JournalImpl::wr_aio_cb() DEQ dtokp rid=" << dtokp->rid() << std::endl << std::flush; // DEBUG
+//std::cout << "<<<>>> JournalImpl::wr_aio_cb() DEQ dtokp rid=0x" << std::hex << dtokp->rid() << std::dec << std::endl << std::flush; // DEBUG
 /* Don't need to signal until we have a way to ack completion of dequeue in AMQP
                     dtokp->getSourceMessage()->dequeueComplete();
                     if ( dtokp->getSourceMessage()->isDequeueComplete()  ) // clear id after last dequeue

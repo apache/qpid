@@ -38,33 +38,38 @@ namespace qls_jrnl {
 
 namespace qpid {
 namespace qls_jrnl {
+class JournalLog;
 
 class EmptyFilePoolPartition
 {
 public:
-    static const std::string efpTopLevelDir;
+    static const std::string s_efpTopLevelDir_;
 protected:
     typedef std::map<efpDataSize_kib_t, EmptyFilePool*> efpMap_t;
     typedef efpMap_t::iterator efpMapItr_t;
     typedef efpMap_t::const_iterator efpMapConstItr_t;
 
-    const efpPartitionNumber_t partitionNum;
-    const std::string partitionDir;
-    efpMap_t efpMap;
-    smutex efpMapMutex;
-
-    void validatePartitionDir();
+    const efpPartitionNumber_t partitionNum_;
+    const std::string partitionDir_;
+    JournalLog& journalLogRef_;
+    efpMap_t efpMap_;
+    smutex efpMapMutex_;
 
 public:
-    EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum_, const std::string& partitionDir_);
+    EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum,
+                           const std::string& partitionDir,
+                           JournalLog& journalLogRef);
     virtual ~EmptyFilePoolPartition();
-    void findEmptyFilePools();
-    efpPartitionNumber_t partitionNumber() const;
-    std::string partitionDirectory() const;
 
-    EmptyFilePool* getEmptyFilePool(const efpDataSize_kib_t efpFileSizeKb);
-    void getEmptyFilePoolSizesKb(std::vector<efpDataSize_kib_t>& efpFileSizesKbList) const;
+    void findEmptyFilePools();
+    EmptyFilePool* getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib);
     void getEmptyFilePools(std::vector<EmptyFilePool*>& efpList);
+    void getEmptyFilePoolSizes_kib(std::vector<efpDataSize_kib_t>& efpDataSizesList) const;
+    std::string getPartitionDirectory() const;
+    efpPartitionNumber_t getPartitionNumber() const;
+
+protected:
+    void validatePartitionDir();
 };
 
 }} // namespace qpid::qls_jrnl

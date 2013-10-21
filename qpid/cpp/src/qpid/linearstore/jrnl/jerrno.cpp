@@ -50,8 +50,6 @@ const uint32_t jerrno::JERR_JCNTL_READONLY       = 0x0201;
 const uint32_t jerrno::JERR_JCNTL_AIOCMPLWAIT    = 0x0202;
 const uint32_t jerrno::JERR_JCNTL_UNKNOWNMAGIC   = 0x0203;
 const uint32_t jerrno::JERR_JCNTL_NOTRECOVERED   = 0x0204;
-const uint32_t jerrno::JERR_JCNTL_OPENRD         = 0x0205;
-const uint32_t jerrno::JERR_JCNTL_READ           = 0x0206;
 const uint32_t jerrno::JERR_JCNTL_ENQSTATE       = 0x0207;
 const uint32_t jerrno::JERR_JCNTL_INVALIDENQHDR  = 0x0208;
 
@@ -89,6 +87,11 @@ const uint32_t jerrno::JERR_WMGR_ENQDISCONT      = 0x0803;
 const uint32_t jerrno::JERR_WMGR_DEQDISCONT      = 0x0804;
 const uint32_t jerrno::JERR_WMGR_DEQRIDNOTENQ    = 0x0805;
 const uint32_t jerrno::JERR_WMGR_BADFH           = 0x0806;
+
+// class RecoveryManager
+const uint32_t jerrno::JERR_RCVM_OPENRD          = 0x0900;
+const uint32_t jerrno::JERR_RCVM_READ            = 0x0901;
+const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0902;
 
 //// class rmgr
 //const uint32_t jerrno::JERR_RMGR_UNKNOWNMAGIC    = 0x0900;
@@ -143,8 +146,6 @@ jerrno::__init()
     _err_map[JERR_JCNTL_AIOCMPLWAIT] = "JERR_JCNTL_AIOCMPLWAIT: Timeout waiting for AIOs to complete.";
     _err_map[JERR_JCNTL_UNKNOWNMAGIC] = "JERR_JCNTL_UNKNOWNMAGIC: Found record with unknown magic.";
     _err_map[JERR_JCNTL_NOTRECOVERED] = "JERR_JCNTL_NOTRECOVERED: Operation requires recover() to be run first.";
-    _err_map[JERR_JCNTL_OPENRD] = "JERR_JCNTL_OPENRD: Unable to open file for write";
-    _err_map[JERR_JCNTL_READ] = "JERR_JCNTL_READ: Read error: no or insufficient data to read";
     _err_map[JERR_JCNTL_ENQSTATE] = "JERR_JCNTL_ENQSTATE: Read error: Record not in ENQ state";
     _err_map[JERR_JCNTL_INVALIDENQHDR] = "JERR_JCNTL_INVALIDENQHDR: Invalid ENQ header";
 
@@ -182,6 +183,10 @@ jerrno::__init()
     _err_map[JERR_WMGR_DEQRIDNOTENQ] = "JERR_WMGR_DEQRIDNOTENQ: Dequeue rid is not enqueued.";
     _err_map[JERR_WMGR_BADFH] = "JERR_WMGR_BADFH: Bad file handle.";
 
+    // class RecoveryManager
+    _err_map[JERR_RCVM_OPENRD] = "JERR_JCNTL_OPENRD: Unable to open file for write";
+    _err_map[JERR_RCVM_READ] = "JERR_JCNTL_READ: Read error: no or insufficient data to read";
+    _err_map[JERR_RCVM_WRITE] = "JERR_RCVM_WRITE: Write error";
 //    // class rmgr
 //    _err_map[JERR_RMGR_UNKNOWNMAGIC] = "JERR_RMGR_UNKNOWNMAGIC: Found record with unknown magic.";
 //    _err_map[JERR_RMGR_RIDMISMATCH] = "JERR_RMGR_RIDMISMATCH: RID mismatch between current record and dtok RID";

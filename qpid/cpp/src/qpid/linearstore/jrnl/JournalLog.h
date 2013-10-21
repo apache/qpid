@@ -30,8 +30,7 @@ namespace qls_jrnl {
 class JournalLog
 {
 public:
-    typedef enum _log_level
-    {
+    typedef enum _log_level {
         LOG_TRACE = 0,
         LOG_DEBUG,
         LOG_INFO,
@@ -42,13 +41,17 @@ public:
     } log_level_t;
 
 protected:
-    JournalLog();
-    virtual ~JournalLog();
+    const log_level_t logLevelThreshold_;
 
 public:
-    virtual void log(log_level_t level, const std::string& jid, const std::string& log_stmt) const;
-    virtual void log(log_level_t level, const char* jid, const char* const log_stmt) const;
-    static const char* log_level_str(log_level_t ll);
+    JournalLog(log_level_t logLevelThreshold);
+    virtual ~JournalLog();
+    virtual void log(const log_level_t logLevel,
+                     const std::string& logStatement) const;
+    virtual void log(const log_level_t logLevel,
+                     const std::string& journalId,
+                     const std::string& logStatement) const;
+    static const char* log_level_str(const log_level_t logLevel);
 };
 
 }} // namespace qpid::qls_jrnl

@@ -40,9 +40,9 @@ namespace qls_jrnl
 //        RHM_IORES_RCINVALID,    ///< Read page cache is invalid (ie obsolete or uninitialized)
 //        RHM_IORES_ENQCAPTHRESH, ///< Enqueue capacity threshold (limit) reached.
 //        RHM_IORES_FULL,         ///< During write operations, the journal files are full.
-        RHM_IORES_BUSY,         ///< Another blocking operation is in progress.
-        RHM_IORES_TXPENDING,    ///< Operation blocked by pending transaction.
-        RHM_IORES_NOTIMPL       ///< Function is not implemented.
+//        RHM_IORES_BUSY,         ///< Another blocking operation is in progress.
+        RHM_IORES_TXPENDING     ///< Operation blocked by pending transaction.
+//        RHM_IORES_NOTIMPL       ///< Function is not implemented.
     };
     typedef _iores iores;
 
@@ -57,9 +57,9 @@ namespace qls_jrnl
 //            case RHM_IORES_RCINVALID: return "RHM_IORES_RCINVALID";
 //            case RHM_IORES_ENQCAPTHRESH: return "RHM_IORES_ENQCAPTHRESH";
 //            case RHM_IORES_FULL: return "RHM_IORES_FULL";
-            case RHM_IORES_BUSY: return "RHM_IORES_BUSY";
+//            case RHM_IORES_BUSY: return "RHM_IORES_BUSY";
             case RHM_IORES_TXPENDING: return "RHM_IORES_TXPENDING";
-            case RHM_IORES_NOTIMPL: return "RHM_IORES_NOTIMPL";
+//            case RHM_IORES_NOTIMPL: return "RHM_IORES_NOTIMPL";
         }
         return "<iores unknown>";
     }

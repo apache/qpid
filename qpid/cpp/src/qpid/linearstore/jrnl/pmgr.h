@@ -37,7 +37,6 @@ namespace qls_jrnl
 #include "qpid/linearstore/jrnl/deq_rec.h"
 #include "qpid/linearstore/jrnl/enq_map.h"
 #include "qpid/linearstore/jrnl/enq_rec.h"
-//#include "qpid/linearstore/jrnl/fcntl.h"
 #include "qpid/linearstore/jrnl/txn_map.h"
 #include "qpid/linearstore/jrnl/txn_rec.h"
 
@@ -61,8 +60,7 @@ class JournalFile;
         {
             UNUSED,                     ///< A page is uninitialized, contains no data.
             IN_USE,                     ///< Page is in use.
-            AIO_PENDING,                ///< An AIO request outstanding.
-            AIO_COMPLETE                ///< An AIO request is complete.
+            AIO_PENDING                 ///< An AIO request outstanding.
         };
 
         /**
@@ -77,8 +75,6 @@ class JournalFile;
             uint32_t _wdblks;           ///< Total number of dblks in page so far
             uint32_t _rdblks;           ///< Total number of dblks in page
             std::deque<data_tok*>* _pdtokl; ///< Page message tokens list
-            //fcntl* _wfh;                ///< File handle for incrementing write compl counts
-            //fcntl* _rfh;                ///< File handle for incrementing read compl counts
             JournalFile* _jfp;          ///< Journal file for incrementing compl counts
             void* _pbuff;               ///< Page buffer
 
@@ -113,7 +109,7 @@ class JournalFile;
         pmgr(jcntl* jc, enq_map& emap, txn_map& tmap);
         virtual ~pmgr();
 
-        virtual int32_t get_events(page_state state, timespec* const timeout, bool flush = false) = 0;
+        virtual int32_t get_events(timespec* const timeout, bool flush) = 0;
         inline uint32_t get_aio_evt_rem() const { return _aio_evt_rem; }
         static const char* page_state_str(page_state ps);
         inline uint32_t cache_pgsize_sblks() const { return _cache_pgsize_sblks; }

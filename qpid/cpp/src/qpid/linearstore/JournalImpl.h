@@ -48,6 +48,7 @@ class EmptyFilePool;
 namespace linearstore{
 
 class JournalImpl;
+class JournalLogImpl;
 
 class InactivityFireEvent : public qpid::sys::TimerTask
 {
@@ -78,8 +79,9 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
   public:
     typedef boost::function<void (JournalImpl&)> DeleteCallback;
 
-  private:
+  protected:
     qpid::sys::Timer& timer;
+    JournalLogImpl& _journalLogRef;
     bool getEventsTimerSetFlag;
     boost::intrusive_ptr<qpid::sys::TimerTask> getEventsFireEventsPtr;
     qpid::sys::Mutex _getf_lock;
@@ -98,6 +100,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     JournalImpl(qpid::sys::Timer& timer,
                 const std::string& journalId,
                 const std::string& journalDirectory,
+                JournalLogImpl& journalLogRef,
                 const qpid::sys::Duration getEventsTimeout,
                 const qpid::sys::Duration flushTimeout,
                 qpid::management::ManagementAgent* agent,
@@ -187,7 +190,7 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
 
     void resetDeleteCallback() { deleteCallback = DeleteCallback(); }
 
-  private:
+  protected:
 //    void free_read_buffers();
     void createStore();
 
@@ -215,10 +218,11 @@ class TplJournalImpl : public JournalImpl
     TplJournalImpl(qpid::sys::Timer& timer,
                    const std::string& journalId,
                    const std::string& journalDirectory,
+                   JournalLogImpl& journalLogRef,
                    const qpid::sys::Duration getEventsTimeout,
                    const qpid::sys::Duration flushTimeout,
                    qpid::management::ManagementAgent* agent) :
-        JournalImpl(timer, journalId, journalDirectory, getEventsTimeout, flushTimeout, agent)
+        JournalImpl(timer, journalId, journalDirectory, journalLogRef, getEventsTimeout, flushTimeout, agent)
     {}
 
     virtual ~TplJournalImpl() {}

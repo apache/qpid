@@ -25,28 +25,27 @@
 namespace qpid {
 namespace qls_jrnl {
 
-JournalLog::JournalLog() {}
+JournalLog::JournalLog(log_level_t logLevelThreshold) : logLevelThreshold_(logLevelThreshold) {}
 
 JournalLog::~JournalLog() {}
 
-void
-JournalLog::log(log_level_t ll, const std::string& jid, const std::string& log_stmt) const {
-    log(ll, jid.c_str(), log_stmt.c_str());
-}
-
-void
-JournalLog::log(log_level_t ll, const char* jid, const char* const log_stmt) const {
-    if (ll > LOG_ERROR) {
-        std::cerr << log_level_str(ll) << ": Journal \"" << jid << "\": " << log_stmt << std::endl;
-    } else if (ll >= LOG_INFO) {
-        std::cout << log_level_str(ll) << ": Journal \"" << jid << "\": " << log_stmt << std::endl;
+void JournalLog::log(const log_level_t logLevel,
+                     const std::string& logStatement) const {
+    if (logLevel >= logLevelThreshold_) {
+        std::cerr << log_level_str(logLevel) << ": " << logStatement << std::endl;
     }
-
 }
 
-const char*
-JournalLog::log_level_str(log_level_t ll) {
-    switch (ll)
+void JournalLog::log(log_level_t logLevel,
+                     const std::string& journalId,
+                     const std::string& logStatement) const {
+    if (logLevel >= logLevelThreshold_) {
+        std::cerr << log_level_str(logLevel) << ": Journal \"" << journalId << "\": " << logStatement << std::endl;
+    }
+}
+
+const char* JournalLog::log_level_str(log_level_t logLevel) {
+    switch (logLevel)
     {
         case LOG_TRACE: return "TRACE";
         case LOG_DEBUG: return "DEBUG";

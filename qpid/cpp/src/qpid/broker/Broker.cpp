@@ -998,7 +998,7 @@ Manageable::status_t Broker::queryQueue( const std::string& name,
         return Manageable::STATUS_UNKNOWN_OBJECT;
     }
     q->query( results );
-    return Manageable::STATUS_OK;;
+    return Manageable::STATUS_OK;
 }
 
 Manageable::status_t Broker::getTimestampConfig(bool& receive,

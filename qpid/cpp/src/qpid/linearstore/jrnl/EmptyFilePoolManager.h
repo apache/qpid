@@ -25,7 +25,6 @@
 #include <map>
 #include "qpid/linearstore/jrnl/EmptyFilePoolPartition.h"
 #include "qpid/linearstore/jrnl/smutex.h"
-#include <string>
 
 namespace qpid {
 namespace qls_jrnl {
@@ -37,25 +36,30 @@ protected:
     typedef partitionMap_t::iterator partitionMapItr_t;
     typedef partitionMap_t::const_iterator partitionMapConstItr_t;
 
-    std::string qlsStorePath;
-    partitionMap_t partitionMap;
-    smutex partitionMapMutex;
+    std::string qlsStorePath_;
+    JournalLog& journalLogRef_;
+    partitionMap_t partitionMap_;
+    smutex partitionMapMutex_;
 
 public:
-    EmptyFilePoolManager(const std::string& qlsStorePath_);
+    EmptyFilePoolManager(const std::string& qlsStorePath_,
+                         JournalLog& journalLogRef_);
     virtual ~EmptyFilePoolManager();
+
     void findEfpPartitions();
-
-    uint16_t getNumEfpPartitions() const;
+    void getEfpFileSizes(std::vector<efpDataSize_kib_t>& efpFileSizeList,
+                         const efpPartitionNumber_t efpPartitionNumber = 0) const;
     EmptyFilePoolPartition* getEfpPartition(const efpPartitionNumber_t partitionNumber);
-    void getEfpPartitionNumbers(std::vector<efpPartitionNumber_t>& partitionNumberList, const efpDataSize_kib_t efpFileSizeKb = 0) const;
-    void getEfpPartitions(std::vector<EmptyFilePoolPartition*>& partitionList, const efpDataSize_kib_t efpFileSizeKb = 0);
-
-    void getEfpFileSizes(std::vector<efpDataSize_kib_t>& efpFileSizeList, const efpPartitionNumber_t efpPartitionNumber = 0) const;
-    void getEmptyFilePools(std::vector<EmptyFilePool*>& emptyFilePoolList, const efpPartitionNumber_t efpPartitionNumber = 0);
-
-    EmptyFilePool* getEmptyFilePool(const efpPartitionNumber_t partitionNumber, const efpDataSize_kib_t efpFileSizeKb);
+    void getEfpPartitionNumbers(std::vector<efpPartitionNumber_t>& partitionNumberList,
+                                const efpDataSize_kib_t efpDataSize_kib = 0) const;
+    void getEfpPartitions(std::vector<EmptyFilePoolPartition*>& partitionList,
+                          const efpDataSize_kib_t efpDataSize_kib = 0);
     EmptyFilePool* getEmptyFilePool(const efpIdentity_t efpIdentity);
+    EmptyFilePool* getEmptyFilePool(const efpPartitionNumber_t partitionNumber,
+                                    const efpDataSize_kib_t efpDataSize_kib);
+    void getEmptyFilePools(std::vector<EmptyFilePool*>& emptyFilePoolList,
+                           const efpPartitionNumber_t efpPartitionNumber = 0);
+    uint16_t getNumEfpPartitions() const;
 };
 
 }} // namespace qpid::qls_jrnl

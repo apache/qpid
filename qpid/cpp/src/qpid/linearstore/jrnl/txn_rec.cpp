@@ -94,8 +94,8 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
     assert(max_size_dblks > 0);
     assert(_xidp != 0 && _txn_hdr._xidsize > 0);
 
-    std::size_t rec_offs = rec_offs_dblks * JRNL_DBLK_SIZE_BYTES;
-    std::size_t rem = max_size_dblks * JRNL_DBLK_SIZE_BYTES;
+    std::size_t rec_offs = rec_offs_dblks * QLS_DBLK_SIZE_BYTES;
+    std::size_t rem = max_size_dblks * QLS_DBLK_SIZE_BYTES;
     std::size_t wr_cnt = 0;
     if (rec_offs_dblks) // Continuation of split dequeue record (over 2 or more pages)
     {
@@ -145,10 +145,10 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
             {
                 std::memcpy((char*)wptr + wr_cnt, (char*)&_txn_tail + rec_offs, wsize);
                 wr_cnt += wsize;
-#ifdef RHM_CLEAN
-                std::size_t rec_offs = rec_offs_dblks * JRNL_DBLK_SIZE_BYTES;
-                std::size_t dblk_rec_size = size_dblks(rec_size() - rec_offs) * JRNL_DBLK_SIZE_BYTES;
-                std::memset((char*)wptr + wr_cnt, RHM_CLEAN_CHAR, dblk_rec_size - wr_cnt);
+#ifdef QLS_CLEAN
+                std::size_t rec_offs = rec_offs_dblks * QLS_DBLK_SIZE_BYTES;
+                std::size_t dblk_rec_size = size_dblks(rec_size() - rec_offs) * QLS_DBLK_SIZE_BYTES;
+                std::memset((char*)wptr + wr_cnt, QLS_CLEAN_CHAR, dblk_rec_size - wr_cnt);
 #endif
             }
             rec_offs -= sizeof(_txn_tail) - wsize;
@@ -186,9 +186,9 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
             wr_cnt += _txn_hdr._xidsize;
             std::memcpy((char*)wptr + wr_cnt, (void*)&_txn_tail, sizeof(_txn_tail));
             wr_cnt += sizeof(_txn_tail);
-#ifdef RHM_CLEAN
-            std::size_t dblk_rec_size = size_dblks(rec_size()) * JRNL_DBLK_SIZE_BYTES;
-            std::memset((char*)wptr + wr_cnt, RHM_CLEAN_CHAR, dblk_rec_size - wr_cnt);
+#ifdef QLS_CLEAN
+            std::size_t dblk_rec_size = size_dblks(rec_size()) * QLS_DBLK_SIZE_BYTES;
+            std::memset((char*)wptr + wr_cnt, QLS_CLEAN_CHAR, dblk_rec_size - wr_cnt);
 #endif
         }
     }
@@ -206,7 +206,7 @@ txn_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
     {
         const uint32_t hdr_xid_dblks = size_dblks(sizeof(txn_hdr_t) + _txn_hdr._xidsize);
         const uint32_t hdr_xid_tail_dblks = size_dblks(sizeof(txn_hdr_t) +  _txn_hdr._xidsize + sizeof(rec_tail_t));
-        const std::size_t rec_offs = rec_offs_dblks * JRNL_DBLK_SIZE_BYTES;
+        const std::size_t rec_offs = rec_offs_dblks * QLS_DBLK_SIZE_BYTES;
 
         if (hdr_xid_tail_dblks - rec_offs_dblks <= max_size_dblks)
         {
@@ -239,7 +239,7 @@ txn_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
             const std::size_t xid_rem = _txn_hdr._xidsize - xid_offs;
             std::memcpy((char*)_buff + xid_offs, rptr, xid_rem);
             rd_cnt += xid_rem;
-            const std::size_t tail_rem = (max_size_dblks * JRNL_DBLK_SIZE_BYTES) - rd_cnt;
+            const std::size_t tail_rem = (max_size_dblks * QLS_DBLK_SIZE_BYTES) - rd_cnt;
             if (tail_rem)
             {
                 std::memcpy((void*)&_txn_tail, ((char*)rptr + xid_rem), tail_rem);
@@ -249,7 +249,7 @@ txn_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
         else
         {
             // Remainder of xid split
-            const std::size_t xid_cp_size = (max_size_dblks * JRNL_DBLK_SIZE_BYTES);
+            const std::size_t xid_cp_size = (max_size_dblks * QLS_DBLK_SIZE_BYTES);
             std::memcpy((char*)_buff + rec_offs - sizeof(txn_hdr_t), rptr, xid_cp_size);
             rd_cnt += xid_cp_size;
         }
@@ -288,7 +288,7 @@ txn_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
             // Entire header and xid fit within this page, tail split
             std::memcpy(_buff, (char*)rptr + rd_cnt, _txn_hdr._xidsize);
             rd_cnt += _txn_hdr._xidsize;
-            const std::size_t tail_rem = (max_size_dblks * JRNL_DBLK_SIZE_BYTES) - rd_cnt;
+            const std::size_t tail_rem = (max_size_dblks * QLS_DBLK_SIZE_BYTES) - rd_cnt;
             if (tail_rem)
             {
                 std::memcpy((void*)&_txn_tail, (char*)rptr + rd_cnt, tail_rem);
@@ -298,7 +298,7 @@ txn_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
         else
         {
             // Header fits within this page, xid split
-            const std::size_t xid_cp_size = (max_size_dblks * JRNL_DBLK_SIZE_BYTES) - rd_cnt;
+            const std::size_t xid_cp_size = (max_size_dblks * QLS_DBLK_SIZE_BYTES) - rd_cnt;
             std::memcpy(_buff, (char*)rptr + rd_cnt, xid_cp_size);
             rd_cnt += xid_cp_size;
         }
@@ -357,7 +357,7 @@ txn_rec::rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs)
             return false;
         }
     }
-    ifsp->ignore(rec_size_dblks() * JRNL_DBLK_SIZE_BYTES - rec_size());
+    ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
     chk_tail(); // Throws if tail invalid or record incomplete
     assert(!ifsp->fail() && !ifsp->bad());
     return true;

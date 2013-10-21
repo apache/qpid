@@ -73,7 +73,6 @@ void file_hdr_reset(file_hdr_t* target) {
     target->_ts_nsec = 0;
     target->_file_number = 0;
     target->_queue_name_len = 0;
-    memset(target + sizeof(file_hdr_t), 0, MAX_FILE_HDR_LEN - sizeof(file_hdr_t));
 }
 
 int is_file_hdr_reset(file_hdr_t* target) {

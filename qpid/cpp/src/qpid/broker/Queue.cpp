@@ -835,7 +835,7 @@ bool Queue::checkAutoDelete(const Mutex::ScopedLock& lock) const
 
 bool Queue::isUnused(const Mutex::ScopedLock&) const
 {
-    return !owner && !users.isUsed();;
+    return !owner && !users.isUsed();
 }
 
 bool Queue::isEmpty(const Mutex::ScopedLock&) const

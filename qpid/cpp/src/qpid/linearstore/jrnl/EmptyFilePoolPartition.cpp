@@ -27,62 +27,54 @@
 #include "qpid/linearstore/jrnl/jexception.h"
 #include "qpid/linearstore/jrnl/slock.h"
 
-//#include <iostream> // DEBUG
-
 namespace qpid {
 namespace qls_jrnl {
 
-const std::string EmptyFilePoolPartition::efpTopLevelDir("efp"); // Sets the top-level efp dir within a partition
+// static
+const std::string EmptyFilePoolPartition::s_efpTopLevelDir_("efp"); // Sets the top-level efp dir within a partition
 
-EmptyFilePoolPartition::EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum_, const std::string& partitionDir_) :
-                partitionNum(partitionNum_),
-                partitionDir(partitionDir_)
+EmptyFilePoolPartition::EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum,
+                                               const std::string& partitionDir,
+                                               JournalLog& journalLogRef) :
+                partitionNum_(partitionNum),
+                partitionDir_(partitionDir),
+                journalLogRef_(journalLogRef)
 {
     validatePartitionDir();
 }
 
 EmptyFilePoolPartition::~EmptyFilePoolPartition() {
-    slock l(efpMapMutex);
-    for (efpMapItr_t i = efpMap.begin(); i != efpMap.end(); ++i) {
+    slock l(efpMapMutex_);
+    for (efpMapItr_t i = efpMap_.begin(); i != efpMap_.end(); ++i) {
         delete i->second;
     }
-    efpMap.clear();
-}
-
-void
-EmptyFilePoolPartition::validatePartitionDir() {
-    if (!jdir::is_dir(partitionDir)) {
-        std::ostringstream ss;
-        ss << "Invalid partition directory: \'" << partitionDir << "\' is not a directory";
-        throw jexception(jerrno::JERR_EFP_BADPARTITIONDIR, ss.str(), "EmptyFilePoolPartition", "validatePartitionDir");
-    }
-    // TODO: other validity checks here
+    efpMap_.clear();
 }
 
 void
 EmptyFilePoolPartition::findEmptyFilePools() {
     //std::cout << "Reading " << partitionDir << std::endl; // DEBUG
     std::vector<std::string> dirList;
-    jdir::read_dir(partitionDir, dirList, true, false, false, false);
+    jdir::read_dir(partitionDir_, dirList, true, false, false, false);
     bool foundEfpDir = false;
     for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
-        if (i->compare(efpTopLevelDir) == 0) {
+        if (i->compare(s_efpTopLevelDir_) == 0) {
             foundEfpDir = true;
             break;
         }
     }
     if (foundEfpDir) {
-        std::string efpDir(partitionDir + "/" + efpTopLevelDir);
+        std::string efpDir(partitionDir_ + "/" + s_efpTopLevelDir_);
         //std::cout << "Reading " << efpDir << std::endl; // DEBUG
         dirList.clear();
         jdir::read_dir(efpDir, dirList, true, false, false, true);
         for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
             EmptyFilePool* efpp = 0;
             try {
-                efpp = new EmptyFilePool(*i, this);
+                efpp = new EmptyFilePool(*i, this, journalLogRef_);
                 {
-                    slock l(efpMapMutex);
-                    efpMap[efpp->dataSize_kib()] = efpp;
+                    slock l(efpMapMutex_);
+                    efpMap_[efpp->dataSize_kib()] = efpp;
                 }
             }
             catch (const std::exception& e) {
@@ -98,36 +90,42 @@ EmptyFilePoolPartition::findEmptyFilePools() {
     }
 }
 
-efpPartitionNumber_t
-EmptyFilePoolPartition::partitionNumber() const {
-    return partitionNum;
-}
-
-std::string
-EmptyFilePoolPartition::partitionDirectory() const {
-    return partitionDir;
-}
-
-EmptyFilePool*
-EmptyFilePoolPartition::getEmptyFilePool(const efpDataSize_kib_t efpFileSizeKb) {
-    efpMapItr_t i = efpMap.find(efpFileSizeKb);
-    if (i == efpMap.end())
+EmptyFilePool* EmptyFilePoolPartition::getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib) {
+    efpMapItr_t i = efpMap_.find(efpDataSize_kib);
+    if (i == efpMap_.end())
         return 0;
     return i->second;
 }
 
-void
-EmptyFilePoolPartition::getEmptyFilePoolSizesKb(std::vector<efpDataSize_kib_t>& efpFileSizesKbList) const {
-    for (efpMapConstItr_t i=efpMap.begin(); i!=efpMap.end(); ++i) {
-        efpFileSizesKbList.push_back(i->first);
+void EmptyFilePoolPartition::getEmptyFilePools(std::vector<EmptyFilePool*>& efpList) {
+    for (efpMapItr_t i=efpMap_.begin(); i!=efpMap_.end(); ++i) {
+        efpList.push_back(i->second);
     }
 }
 
-void
-EmptyFilePoolPartition::getEmptyFilePools(std::vector<EmptyFilePool*>& efpList) {
-    for (efpMapItr_t i=efpMap.begin(); i!=efpMap.end(); ++i) {
-        efpList.push_back(i->second);
+void EmptyFilePoolPartition::getEmptyFilePoolSizes_kib(std::vector<efpDataSize_kib_t>& efpDataSizesList_kib) const {
+    for (efpMapConstItr_t i=efpMap_.begin(); i!=efpMap_.end(); ++i) {
+        efpDataSizesList_kib.push_back(i->first);
     }
+}
+
+std::string EmptyFilePoolPartition::getPartitionDirectory() const {
+    return partitionDir_;
+}
+
+efpPartitionNumber_t EmptyFilePoolPartition::getPartitionNumber() const {
+    return partitionNum_;
+}
+
+// --- protected functions ---
+
+void EmptyFilePoolPartition::validatePartitionDir() {
+    if (!jdir::is_dir(partitionDir_)) {
+        std::ostringstream ss;
+        ss << "Invalid partition directory: \'" << partitionDir_ << "\' is not a directory";
+        throw jexception(jerrno::JERR_EFP_BADPARTITIONDIR, ss.str(), "EmptyFilePoolPartition", "validatePartitionDir");
+    }
+    // TODO: other validity checks here
 }
 
 }} // namespace qpid::qls_jrnl

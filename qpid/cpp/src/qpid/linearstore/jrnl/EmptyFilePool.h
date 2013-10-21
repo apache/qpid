@@ -30,15 +30,16 @@ namespace qls_jrnl {
 }} // namespace qpid::qls_jrnl
 
 #include <deque>
-#include "qpid/linearstore/jrnl/EmptyFilePoolPartition.h"
 #include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/jrnl/smutex.h"
 #include <string>
 
 namespace qpid {
 namespace qls_jrnl {
+class EmptyFilePoolPartition;
 class jdir;
 class JournalFile;
+class JournalLog;
 
 class EmptyFilePool
 {
@@ -46,17 +47,19 @@ protected:
     typedef std::deque<std::string> emptyFileList_t;
     typedef emptyFileList_t::iterator emptyFileListItr_t;
 
-    const std::string efpDirectory;
-    const efpDataSize_kib_t efpDataSize_kib;
-    const EmptyFilePoolPartition* partitionPtr;
+    const std::string efpDirectory_;
+    const efpDataSize_kib_t efpDataSize_kib_;
+    const EmptyFilePoolPartition* partitionPtr_;
+    JournalLog& journalLogRef_;
 
 private:
-    emptyFileList_t emptyFileList;
-    smutex emptyFileListMutex;
+    emptyFileList_t emptyFileList_;
+    smutex emptyFileListMutex_;
 
 public:
-    EmptyFilePool(const std::string& efpDirectory_,
-                  const EmptyFilePoolPartition* partitionPtr_);
+    EmptyFilePool(const std::string& efpDirectory,
+                  const EmptyFilePoolPartition* partitionPtr,
+                  JournalLog& journalLogRef);
     virtual ~EmptyFilePool();
 
     void initialize();
@@ -70,17 +73,21 @@ public:
     const EmptyFilePoolPartition* getPartition() const;
     const efpIdentity_t getIdentity() const;
 
-    std::string takeEmptyFile(const std::string& destDirectory_);
-    bool returnEmptyFile(const JournalFile* srcFile_);
+    std::string takeEmptyFile(const std::string& destDirectory);
+    void returnEmptyFile(const std::string& srcFile);
 
 protected:
-    void pushEmptyFile(const std::string fqFileName_);
-    std::string popEmptyFile();
     void createEmptyFile();
-    bool validateEmptyFile(const std::string& emptyFileName_) const;
     std::string getEfpFileName();
-    static efpDataSize_kib_t fileSizeKbFromDirName(const std::string& dirName_,
-                                                   const efpPartitionNumber_t partitionNumber_);
+    std::string popEmptyFile();
+    void pushEmptyFile(const std::string fqFileName);
+    void resetEmptyFileHeader(const std::string& fqFileName);
+    bool validateEmptyFile(const std::string& emptyFileName) const;
+
+    static efpDataSize_kib_t fileSizeKbFromDirName(const std::string& dirName,
+                                                   const efpPartitionNumber_t partitionNumber);
+    static int moveEmptyFile(const std::string& fromFqPath,
+                             const std::string& toFqPath);
 };
 
 }} // namespace qpid::qls_jrnl

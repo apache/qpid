@@ -227,6 +227,7 @@ rmgr::read(void** const datapp, std::size_t& dsize, void** const xidpp, std::siz
                 return RHM_IORES_EMPTY;
         }
     }
+    return RHM_IORES_SUCCESS;
 }
 
 int32_t
@@ -529,6 +530,7 @@ rmgr::skip(data_tok* dtokp)
             return RHM_IORES_SUCCESS;
         }
     }
+    return RHM_IORES_SUCCESS;
 }
 
 iores

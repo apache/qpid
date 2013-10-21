@@ -41,12 +41,11 @@ pmgr::page_cb::page_cb(uint16_t index):
         _wdblks(0),
         _rdblks(0),
         _pdtokl(0),
-//        _wfh(0),
-//        _rfh(0),
         _jfp(0),
         _pbuff(0)
 {}
 
+// TODO: almost identical to pmgr::page_state_str() below - resolve
 const char*
 pmgr::page_cb::state_str() const
 {
@@ -58,14 +57,12 @@ pmgr::page_cb::state_str() const
             return "IN_USE";
         case AIO_PENDING:
             return "AIO_PENDING";
-        case AIO_COMPLETE:
-            return "AIO_COMPLETE";
     }
     return "<unknown>";
 }
 
 // static
-const uint32_t pmgr::_sblkSizeBytes = JRNL_SBLK_SIZE_BYTES;
+const uint32_t pmgr::_sblkSizeBytes = QLS_SBLK_SIZE_BYTES;
 
 pmgr::pmgr(jcntl* jc, enq_map& emap, txn_map& tmap):
         _cache_pgsize_sblks(0),
@@ -109,11 +106,11 @@ pmgr::initialize(aio_callback* const cbp, const uint32_t cache_pgsize_sblks, con
 
     // 1. Allocate page memory (as a single block)
     std::size_t cache_pgsize = _cache_num_pages * _cache_pgsize_sblks * _sblkSizeBytes;
-    if (::posix_memalign(&_page_base_ptr, QLS_AIO_ALIGN_BOUNDARY, cache_pgsize))
+    if (::posix_memalign(&_page_base_ptr, QLS_AIO_ALIGN_BOUNDARY_BYTES, cache_pgsize))
     {
         clean();
         std::ostringstream oss;
-        oss << "posix_memalign(): alignment=" << QLS_AIO_ALIGN_BOUNDARY << " size=" << cache_pgsize;
+        oss << "posix_memalign(): alignment=" << QLS_AIO_ALIGN_BOUNDARY_BYTES << " size=" << cache_pgsize;
         oss << FORMAT_SYSERR(errno);
         throw jexception(jerrno::JERR__MALLOC, oss.str(), "pmgr", "initialize");
     }
@@ -186,6 +183,7 @@ pmgr::clean()
     _aio_event_arr = 0;
 }
 
+// TODO: almost identical to pmgr::page_cb::state_str() above - resolve
 const char*
 pmgr::page_state_str(page_state ps)
 {
@@ -197,8 +195,6 @@ pmgr::page_state_str(page_state ps)
             return "IN_USE";
         case AIO_PENDING:
             return "AIO_PENDING";
-        case AIO_COMPLETE:
-            return "AIO_COMPLETE";
     }
     return "<page_state unknown>";
 }

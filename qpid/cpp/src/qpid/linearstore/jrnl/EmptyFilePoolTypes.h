@@ -28,13 +28,13 @@
 namespace qpid {
 namespace qls_jrnl {
 
-    typedef uint64_t efpDataSize_kib_t;   // Size of data part of file (excluding file header) in kib
-    typedef uint64_t efpFileSize_kib_t;   // Size of file (header + data) in kib
-    typedef uint32_t efpDataSize_sblks_t; // Size of data part of file (excluding file header) in sblks
-    typedef uint32_t efpFileSize_sblks_t; // Size of file (header + data) in sblks
-    typedef uint32_t efpFileCount_t;
-    typedef uint16_t efpPartitionNumber_t;
-    typedef std::pair<efpPartitionNumber_t, efpDataSize_kib_t> efpIdentity_t;
+    typedef uint64_t efpDataSize_kib_t;     ///< Size of data part of file (excluding file header) in kib
+    typedef uint64_t efpFileSize_kib_t;     ///< Size of file (header + data) in kib
+    typedef uint32_t efpDataSize_sblks_t;   ///< Size of data part of file (excluding file header) in sblks
+    typedef uint32_t efpFileSize_sblks_t;   ///< Size of file (header + data) in sblks
+    typedef uint32_t efpFileCount_t;        ///< Number of files in a partition or pool
+    typedef uint16_t efpPartitionNumber_t;  ///< Number assigned to a partition
+    typedef std::pair<efpPartitionNumber_t, efpDataSize_kib_t> efpIdentity_t; ///< Unique identity of a pool, consisting of the partition number and data size
 
 }} // namespace qpid::qls_jrnl
 

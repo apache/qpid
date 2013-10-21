@@ -72,11 +72,11 @@ namespace qls_jrnl
         static short EMAP_TRUE;
 
         typedef struct emap_data_struct_t {
-            uint16_t        _pfid;
+            uint64_t        _pfid;
             std::streampos  _file_posn;
             bool            _lock;
             emap_data_struct_t() : _pfid(0), _file_posn(0), _lock(false) {}
-            emap_data_struct_t(const uint16_t pfid, const std::streampos file_posn, const bool lock) : _pfid(pfid), _file_posn(file_posn), _lock(lock) {}
+            emap_data_struct_t(const uint64_t pfid, const std::streampos file_posn, const bool lock) : _pfid(pfid), _file_posn(file_posn), _lock(lock) {}
         } emqp_data_struct_t;
         typedef std::pair<uint64_t, emap_data_struct_t> emap_param;
         typedef std::map<uint64_t, emap_data_struct_t> emap;
@@ -85,19 +85,15 @@ namespace qls_jrnl
     private:
         emap _map;
         smutex _mutex;
-//        std::vector<uint32_t> _pfid_enq_cnt;
 
     public:
         enq_map();
         virtual ~enq_map();
 
-//        void set_num_jfiles(const uint16_t num_jfiles);
-//        inline uint32_t get_enq_cnt(const uint16_t pfid) const { return _pfid_enq_cnt.at(pfid); };
-
-        short insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn); // 0=ok; -3=duplicate rid;
-        short insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn, const bool locked); // 0=ok; -3=duplicate rid;
-        short get_pfid(const uint64_t rid, int16_t& pfid); // >=0=pfid; -1=rid not found; -2=locked
-        short get_remove_pfid(const uint64_t rid, int16_t& pfid, const bool txn_flag = false); // >=0=pfid; -1=rid not found; -2=locked
+        short insert_pfid(const uint64_t rid, const uint64_t pfid, const std::streampos file_posn); // 0=ok; -3=duplicate rid;
+        short insert_pfid(const uint64_t rid, const uint64_t pfid, const std::streampos file_posn, const bool locked); // 0=ok; -3=duplicate rid;
+        short get_pfid(const uint64_t rid, uint64_t& pfid); // >=0=pfid; -1=rid not found; -2=locked
+        short get_remove_pfid(const uint64_t rid, uint64_t& pfid, const bool txn_flag = false); // >=0=pfid; -1=rid not found; -2=locked
         short get_file_posn(const uint64_t rid, std::streampos& file_posn); // -1=rid not found; -2=locked
         short get_data(const uint64_t rid, emap_data_struct_t& eds);
         bool is_enqueued(const uint64_t rid, bool ignore_lock = false);
@@ -108,7 +104,7 @@ namespace qls_jrnl
         inline bool empty() const { return _map.empty(); }
         inline uint32_t size() const { return uint32_t(_map.size()); }
         void rid_list(std::vector<uint64_t>& rv);
-        void pfid_list(std::vector<uint16_t>& fv);
+        void pfid_list(std::vector<uint64_t>& fv);
     };
 
 }}

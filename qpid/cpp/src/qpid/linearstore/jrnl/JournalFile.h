@@ -36,26 +36,27 @@ namespace qls_jrnl {
 class JournalFile
 {
 protected:
-    const std::string fqFileName;
-    const uint64_t fileSeqNum;
-    int fileHandle;
-    bool fileCloseFlag;
-    void* fileHeaderBasePtr;
-    ::file_hdr_t* fileHeaderPtr;
-    aio_cb* aioControlBlockPtr;
-    uint32_t fileSizeDblks;                            ///< File size in data blocks, including file header
-    AtomicCounter<uint32_t> enqueuedRecordCount;       ///< Count of enqueued records
-    AtomicCounter<uint32_t> submittedDblkCount;        ///< Write file count (data blocks) for submitted AIO
-    AtomicCounter<uint32_t> completedDblkCount;        ///< Write file count (data blocks) for completed AIO
-    AtomicCounter<uint16_t> outstandingAioOpsCount;    ///< Outstanding AIO operations on this file
+    const std::string fqFileName_;
+    const uint64_t fileSeqNum_;
+    int fileHandle_;
+    bool fileCloseFlag_;
+    void* fileHeaderBasePtr_;
+    ::file_hdr_t* fileHeaderPtr_;
+    aio_cb* aioControlBlockPtr_;
+    uint32_t fileSize_dblks_;                           ///< File size in data blocks, including file header
+
+    AtomicCounter<uint32_t> enqueuedRecordCount_;       ///< Count of enqueued records
+    AtomicCounter<uint32_t> submittedDblkCount_;        ///< Write file count (data blocks) for submitted AIO
+    AtomicCounter<uint32_t> completedDblkCount_;        ///< Write file count (data blocks) for completed AIO
+    AtomicCounter<uint16_t> outstandingAioOpsCount_;    ///< Outstanding AIO operations on this file
 
 public:
     JournalFile(const std::string& fqFileName,
                 const uint64_t fileSeqNum,
-                const uint32_t fileSize_kib);
+                const efpDataSize_kib_t efpDataSize_kib);
     virtual ~JournalFile();
 
-    void initialize();
+    void initialize(const uint32_t completedDblkCount);
     void finalize();
 
     const std::string getDirectory() const;
@@ -63,8 +64,8 @@ public:
     const std::string getFqFileName() const;
     uint64_t getFileSeqNum() const;
 
-    int open();
     bool isOpen() const;
+    int open();
     void close();
     void asyncFileHeaderWrite(io_context_t ioContextPtr,
                               const efpPartitionNumber_t efpPartitionNumber,
@@ -104,7 +105,7 @@ public:
     bool getNextFile() const;                  ///< True when next file is needed
     bool isNoEnqueuedRecordsRemaining() const; ///< True when all enqueued records (or parts) have been dequeued
 
-    // Debug aid
+    // debug aid
     const std::string status_str(const uint8_t indentDepth) const;
 };
 

@@ -31,105 +31,93 @@ template <class T>
 class AtomicCounter
 {
 private:
-    T count;
+    T count_;
     mutable smutex countMutex;
 
 public:
-    AtomicCounter(const T& initValue = T(0)) : count(initValue) {}
+    AtomicCounter(const T& initValue = T(0)) : count_(initValue) {}
 
     virtual ~AtomicCounter() {}
 
     T get() const {
         slock l(countMutex);
-        return count;
+        return count_;
     }
 
     T increment() {
         slock l(countMutex);
-        return ++count;
+        return ++count_;
     }
 
     T add(const T& a) {
         slock l(countMutex);
-        count += a;
-        return count;
+        count_ += a;
+        return count_;
     }
 
     T addLimit(const T& a, const T& limit, const uint32_t jerr) {
         slock l(countMutex);
-        if (count + a > limit) throw jexception(jerr, "AtomicCounter", "addLimit");
-        count += a;
-        return count;
+        if (count_ + a > limit) throw jexception(jerr, "AtomicCounter", "addLimit");
+        count_ += a;
+        return count_;
     }
 
     T decrement() {
         slock l(countMutex);
-        return --count;
+        return --count_;
     }
 
     T decrementLimit(const T& limit = T(0), const uint32_t jerr = jerrno::JERR__UNDERFLOW) {
         slock l(countMutex);
-        if (count < limit + 1) {
+        if (count_ < limit + 1) {
             throw jexception(jerr, "AtomicCounter", "decrementLimit");
         }
-        return --count;
+        return --count_;
     }
 
     T subtract(const T& s) {
         slock l(countMutex);
-        count -= s;
-        return count;
+        count_ -= s;
+        return count_;
     }
 
     T subtractLimit(const T& s, const T& limit = T(0), const uint32_t jerr = jerrno::JERR__UNDERFLOW) {
         slock l(countMutex);
-        if (count < limit + s) throw jexception(jerr, "AtomicCounter", "subtractLimit");
-        count -= s;
-        return count;
+        if (count_ < limit + s) throw jexception(jerr, "AtomicCounter", "subtractLimit");
+        count_ -= s;
+        return count_;
     }
 
     bool operator==(const T& o) const {
         slock l(countMutex);
-        return count == o;
+        return count_ == o;
     }
 
     bool operator<(const T& o) const {
         slock l(countMutex);
-        return count < o;
+        return count_ < o;
     }
 
     bool operator<=(const T& o) const {
         slock l(countMutex);
-        return count <= o;
+        return count_ <= o;
     }
 
     friend T operator-(const T& a, const AtomicCounter& b) {
         slock l(b.countMutex);
-        return a - b.count;
+        return a - b.count_;
     }
 
     friend T operator-(const AtomicCounter& a, const T& b) {
         slock l(a.countMutex);
-        return a.count - b;
+        return a.count_ - b;
     }
 
     friend T operator-(const AtomicCounter&a, const AtomicCounter& b) {
         slock l1(a.countMutex);
         slock l2(b.countMutex);
-        return a.count - b.count;
+        return a.count_ - b.count_;
     }
-
-/*
-    friend std::ostream& operator<<(std::ostream& out, const AtomicCounter& a) {
-        T temp; // Use temp so lock is not held while streaming to out.
-        {
-            slock l(a.countMutex);
-            temp = a.count;
-        }
-        out << temp;
-        return out;
-    }
-*/
 };
 
 }} // namespace qpid::qls_jrnl

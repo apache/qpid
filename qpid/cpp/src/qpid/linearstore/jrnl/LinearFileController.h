@@ -23,14 +23,16 @@
 #define QPID_LINEARSTORE_LINEARFILECONTROLLER_H_
 
 #include <deque>
-#include "qpid/linearstore/jrnl/aio.h"
 #include "qpid/linearstore/jrnl/AtomicCounter.h"
 #include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
-#include "qpid/linearstore/jrnl/smutex.h"
 
-struct file_hdr_t;
+// libaio forward declares
+typedef struct io_context* io_context_t;
+typedef struct iocb aio_cb;
+
 namespace qpid {
 namespace qls_jrnl {
+
 class EmptyFilePool;
 class jcntl;
 class JournalFile;
@@ -41,35 +43,44 @@ protected:
     typedef std::deque<JournalFile*> JournalFileList_t;
     typedef JournalFileList_t::iterator JournalFileListItr_t;
 
-    jcntl& jcntlRef;
-    std::string journalDirectory;
-    EmptyFilePool* emptyFilePoolPtr;
-    JournalFile* currentJournalFilePtr;
-    AtomicCounter<uint64_t> fileSeqCounter;
-    AtomicCounter<uint64_t> recordIdCounter;
+    jcntl& jcntlRef_;
+    std::string journalDirectory_;
+    EmptyFilePool* emptyFilePoolPtr_;
+    JournalFile* currentJournalFilePtr_;
+    AtomicCounter<uint64_t> fileSeqCounter_;
+    AtomicCounter<uint64_t> recordIdCounter_;
 
-    JournalFileList_t journalFileList;
-    smutex journalFileListMutex;
+    JournalFileList_t journalFileList_;
+    smutex journalFileListMutex_;
 
 public:
-    LinearFileController(jcntl& jcntlRef_);
+    LinearFileController(jcntl& jcntlRef);
     virtual ~LinearFileController();
 
-    void initialize(const std::string& journalDirectory_, EmptyFilePool* emptyFilePoolPtr_);
+    void initialize(const std::string& journalDirectory,
+                    EmptyFilePool* emptyFilePoolPtr,
+                    uint64_t initialFileNumberVal);
     void finalize();
 
+    void addJournalFile(const std::string& fileName,
+                        const uint64_t fileNumber,
+                        const uint32_t fileSize_kib,
+                        const uint32_t completedDblkCount);
+
+    efpDataSize_kib_t dataSize_kib() const;
+    efpDataSize_sblks_t dataSize_sblks() const;
+    efpFileSize_kib_t fileSize_kib() const;
+    efpFileSize_sblks_t fileSize_sblks() const;
+    uint64_t getNextRecordId();
     void pullEmptyFileFromEfp();
     void purgeFilesToEfp();
-    efpDataSize_kib_t dataSize_kib() const;
-    efpFileSize_kib_t fileSize_kib() const;
-    efpDataSize_sblks_t dataSize_sblks() const;
-    efpFileSize_sblks_t fileSize_sblks() const;
 
-    uint64_t getNextRecordId();
-
-    // Functions for manipulating counts of non-current JournalFile instances in journalFileList
+    // Functions for manipulating counts of non-current JournalFile instances in journalFileList_
+    uint32_t getEnqueuedRecordCount(const efpFileCount_t fileSeqNumber);
+    uint32_t incrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber);
     uint32_t decrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber);
-    uint32_t addWriteCompletedDblkCount(const efpFileCount_t fileSeqNumber, const uint32_t a);
+    uint32_t addWriteCompletedDblkCount(const efpFileCount_t fileSeqNumber,
+                                        const uint32_t a);
     uint16_t decrOutstandingAioOperationCount(const efpFileCount_t fileSeqNumber);
 
     // Pass-through functions for JournalFile class
@@ -106,17 +117,19 @@ public:
     bool isFull() const;                       // True if all possible dblks have been submitted (but may not yet have returned from AIO)
     bool isFullAndComplete() const;            // True if all submitted dblks have returned from AIO
     u_int32_t getOutstandingAioDblks() const;  // Dblks still to be written
-    bool getNextFile() const;                  // True when next file is needed
+    bool needNextFile() const;                 // True when next file is needed
 
     // Debug aid
     const std::string status(const uint8_t indentDepth) const;
 
 protected:
-    bool checkCurrentJournalFileValid() const;
     void assertCurrentJournalFileValid(const char* const functionName) const;
-    JournalFile* find(const efpFileCount_t fileSeqNumber); // NOT THREAD SAFE - use under external lock
+    bool checkCurrentJournalFileValid() const;
+    JournalFile* find(const efpFileCount_t fileSeqNumber);
     uint64_t getNextFileSeqNum();
 };
+
+typedef void (LinearFileController::*lfcAddJournalFileFn)(const std::string&, const uint64_t, const uint32_t, const uint32_t);
 
 }} // namespace qpid::qls_jrnl
 

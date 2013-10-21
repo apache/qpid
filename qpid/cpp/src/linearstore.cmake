@@ -78,11 +78,11 @@ if (BUILD_LINEARSTORE)
     set (linear_jrnl_SOURCES
         qpid/linearstore/jrnl/data_tok.cpp
         qpid/linearstore/jrnl/deq_rec.cpp
-        qpid/linearstore/jrnl/enq_map.cpp
-        qpid/linearstore/jrnl/enq_rec.cpp
         qpid/linearstore/jrnl/EmptyFilePool.cpp
         qpid/linearstore/jrnl/EmptyFilePoolManager.cpp
         qpid/linearstore/jrnl/EmptyFilePoolPartition.cpp
+        qpid/linearstore/jrnl/enq_map.cpp
+        qpid/linearstore/jrnl/enq_rec.cpp
         qpid/linearstore/jrnl/jcntl.cpp
         qpid/linearstore/jrnl/jdir.cpp
         qpid/linearstore/jrnl/jerrno.cpp
@@ -105,12 +105,12 @@ if (BUILD_LINEARSTORE)
         qpid/linearstore/BindingDbt.cpp
         qpid/linearstore/BufferValue.cpp
         qpid/linearstore/DataTokenImpl.cpp
-        qpid/linearstore/EmptyFilePoolManagerImpl.cpp
         qpid/linearstore/IdDbt.cpp
         qpid/linearstore/IdSequence.cpp
         qpid/linearstore/JournalImpl.cpp
         qpid/linearstore/MessageStoreImpl.cpp
         qpid/linearstore/PreparedTransaction.cpp
+        qpid/linearstore/JournalLogImpl.cpp
         qpid/linearstore/TxnCtxt.cpp
     )
 

@@ -84,22 +84,45 @@ namespace qls_jrnl
         std::set<std::string> _txn_pending_set; ///< Set containing xids of pending commits/aborts
 
     public:
-        wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, LinearFileController& lfc);
-        wmgr(jcntl* jc, enq_map& emap, txn_map& tmap, LinearFileController& lfc, const uint32_t max_dtokpp, const uint32_t max_iowait_us);
+        wmgr(jcntl* jc,
+             enq_map& emap,
+             txn_map& tmap,
+             LinearFileController& lfc);
+        wmgr(jcntl* jc,
+             enq_map& emap,
+             txn_map& tmap,
+             LinearFileController& lfc,
+             const uint32_t max_dtokpp,
+             const uint32_t max_iowait_us);
         virtual ~wmgr();
 
-        void initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks,
-                const uint16_t wcache_num_pages, const uint32_t max_dtokpp,
-                const uint32_t max_iowait_us, std::size_t eo = 0);
-        iores enqueue(const void* const data_buff, const std::size_t tot_data_len,
-                const std::size_t this_data_len, data_tok* dtokp, const void* const xid_ptr,
-                const std::size_t xid_len, const bool transient, const bool external);
-        iores dequeue(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_len,
-                const bool txn_coml_commit);
-        iores abort(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_len);
-        iores commit(data_tok* dtokp, const void* const xid_ptr, const std::size_t xid_len);
+        void initialize(aio_callback* const cbp,
+                        const uint32_t wcache_pgsize_sblks,
+                        const uint16_t wcache_num_pages,
+                        const uint32_t max_dtokpp,
+                        const uint32_t max_iowait_us,
+                        std::size_t eo = 0);
+        iores enqueue(const void* const data_buff,
+                      const std::size_t tot_data_len,
+                      const std::size_t this_data_len,
+                      data_tok* dtokp,
+                      const void* const xid_ptr,
+                      const std::size_t xid_len,
+                      const bool transient,
+                      const bool external);
+        iores dequeue(data_tok* dtokp,
+                      const void* const xid_ptr,
+                      const std::size_t xid_len,
+                      const bool txn_coml_commit);
+        iores abort(data_tok* dtokp,
+                    const void* const xid_ptr,
+                    const std::size_t xid_len);
+        iores commit(data_tok* dtokp,
+                     const void* const xid_ptr,
+                     const std::size_t xid_len);
         iores flush();
-        int32_t get_events(page_state state, timespec* const timeout, bool flush = false);
+        int32_t get_events(timespec* const timeout,
+                           bool flush);
         bool is_txn_synced(const std::string& xid);
         inline bool curr_pg_blocked() const { return _page_cb_arr[_pg_index]._state != UNUSED; }
         inline uint32_t unflushed_dblks() { return _cached_offset_dblks; }
@@ -108,14 +131,22 @@ namespace qls_jrnl
         const std::string status_str() const;
 
     private:
-        void initialize(aio_callback* const cbp, const uint32_t wcache_pgsize_sblks,
-                const uint16_t wcache_num_pages);
-        iores pre_write_check(const _op_type op, const data_tok* const dtokp,
-                const std::size_t xidsize = 0, const std::size_t dsize = 0, const bool external = false)
-                const;
-        void dequeue_check(const std::string& xid, const uint64_t drid);
-        void file_header_check(const uint64_t rid, const bool cont, const uint32_t rec_dblks_rem);
-        void flush_check(iores& res, bool& cont, bool& done);
+        void initialize(aio_callback* const cbp,
+                        const uint32_t wcache_pgsize_sblks,
+                        const uint16_t wcache_num_pages);
+        iores pre_write_check(const _op_type op,
+                              const data_tok* const dtokp,
+                              const std::size_t xidsize = 0,
+                              const std::size_t dsize = 0,
+                              const bool external = false) const;
+        void dequeue_check(const std::string& xid,
+                           const uint64_t drid);
+        void file_header_check(const uint64_t rid,
+                               const bool cont,
+                               const uint32_t rec_dblks_rem);
+        void flush_check(iores& res,
+                         bool& cont,
+                         bool& done, const uint64_t rid);
         iores write_flush();
         void get_next_file();
         void dblk_roundup();

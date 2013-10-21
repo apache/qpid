@@ -47,13 +47,13 @@ enq_map::~enq_map() {}
 
 
 short
-enq_map::insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn)
+enq_map::insert_pfid(const uint64_t rid, const uint64_t pfid, const std::streampos file_posn)
 {
     return insert_pfid(rid, pfid, file_posn, false);
 }
 
 short
-enq_map::insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streampos file_posn, const bool locked)
+enq_map::insert_pfid(const uint64_t rid, const uint64_t pfid, const std::streampos file_posn, const bool locked)
 {
     std::pair<emap_itr, bool> ret;
     emap_data_struct_t rec(pfid, file_posn, locked);
@@ -67,7 +67,7 @@ enq_map::insert_pfid(const uint64_t rid, const uint16_t pfid, const std::streamp
 }
 
 short
-enq_map::get_pfid(const uint64_t rid, int16_t& pfid)
+enq_map::get_pfid(const uint64_t rid, uint64_t& pfid)
 {
     slock s(_mutex);
     emap_itr itr = _map.find(rid);
@@ -80,7 +80,7 @@ enq_map::get_pfid(const uint64_t rid, int16_t& pfid)
 }
 
 short
-enq_map::get_remove_pfid(const uint64_t rid, int16_t& pfid, const bool txn_flag)
+enq_map::get_remove_pfid(const uint64_t rid, uint64_t& pfid, const bool txn_flag)
 {
     slock s(_mutex);
     emap_itr itr = _map.find(rid);
@@ -173,7 +173,7 @@ enq_map::rid_list(std::vector<uint64_t>& rv)
 }
 
 void
-enq_map::pfid_list(std::vector<uint16_t>& fv)
+enq_map::pfid_list(std::vector<uint64_t>& fv)
 {
     fv.clear();
     {

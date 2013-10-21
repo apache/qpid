@@ -32,16 +32,11 @@ namespace qls_jrnl
 #include <cstddef>
 #include <deque>
 #include <qpid/linearstore/jrnl/LinearFileController.h>
-#include <qpid/linearstore/jrnl/JournalLog.h>
 #include "qpid/linearstore/jrnl/jdir.h"
-//#include "qpid/linearstore/jrnl/fcntl.h"
-//#include "qpid/linearstore/jrnl/lpmgr.h"
-#include "qpid/linearstore/jrnl/rcvdat.h"
+#include "qpid/linearstore/jrnl/RecoveryManager.h"
 #include "qpid/linearstore/jrnl/slock.h"
 #include "qpid/linearstore/jrnl/smutex.h"
-#include "qpid/linearstore/jrnl/rmgr.h"
 #include "qpid/linearstore/jrnl/wmgr.h"
-//#include "qpid/linearstore/jrnl/wrfc.h"
 
 namespace qpid
 {
@@ -60,7 +55,7 @@ namespace qls_jrnl
     * which is used per data block written to the journal, and is used to track its status through
     * the AIO enqueue, read and dequeue process.
     */
-    class jcntl : public JournalLog
+    class jcntl
     {
     protected:
         /**
@@ -80,16 +75,6 @@ namespace qls_jrnl
         * "/fastdisk/jdata/" is not.)
         */
         jdir _jdir;
-
-        /**
-        * \brief Base filename
-        *
-        * This string contains the base filename used for the journal files. The filenames will
-        * start with this base, and have various sections added to it to derive the final file names
-        * that will be written to disk. No file separator characters should be included here, but
-        * all other legal filename characters are valid.
-        */
-//        std::string _base_filename;
 
         /**
         * \brief Initialized flag
@@ -120,21 +105,14 @@ namespace qls_jrnl
         */
         bool _readonly_flag;
 
-        /**
-        * \brief If set, calls stop() if the jouranl write pointer overruns dequeue low water
-        *     marker. If not set, then attempts to write will throw exceptions until the journal
-        *     file low water marker moves to the next journal file.
-        */
-        //bool _autostop;             ///< Autostop flag - stops journal when overrun occurs
-
         // Journal control structures
+        JournalLog& _jrnl_log;                      ///< Ref to Journal Log instance
         LinearFileController _linearFileController; ///< Linear File Controller
         EmptyFilePool* _emptyFilePoolPtr;           ///< Pointer to Empty File Pool for this queue
         enq_map _emap;                              ///< Enqueue map for low water mark management
         txn_map _tmap;                              ///< Transaction map open transactions
-        //rmgr _rmgr;                                 ///< Read page manager which manages AIO
         wmgr _wmgr;                                 ///< Write page manager which manages AIO
-        rcvdat _rcvdat;                             ///< Recovery data used for recovery
+        RecoveryManager _recoveryManager;           ///< Recovery data used for recovery
         smutex _wr_mutex;                           ///< Mutex for journal writes
 
     public:
@@ -150,7 +128,9 @@ namespace qls_jrnl
         * \param jdir The directory which will contain the journal files.
         * \param base_filename The string which will be used to start all journal filenames.
         */
-        jcntl(const std::string& jid, const std::string& jdir/*, const std::string& base_filename*/);
+        jcntl(const std::string& jid,
+              const std::string& jdir,
+              JournalLog& jrnl_log);
 
         /**
         * \brief Destructor.
@@ -158,6 +138,7 @@ namespace qls_jrnl
         virtual ~jcntl();
 
         inline const std::string& id() const { return _jid; }
+
         inline const std::string& jrnl_dir() const { return _jdir.dirname(); }
 
         /**
@@ -191,9 +172,10 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        void initialize(/*const uint16_t num_jfiles, const bool auto_expand, const uint16_t ae_max_jfiles,
-                const uint32_t jfsize_sblks,*/EmptyFilePool* efpp, const uint16_t wcache_num_pages, const uint32_t wcache_pgsize_sblks,
-                aio_callback* const cbp);
+        void initialize(EmptyFilePool* efpp,
+                        const uint16_t wcache_num_pages,
+                        const uint32_t wcache_pgsize_sblks,
+                        aio_callback* const cbp);
 
         /**
         * /brief Initialize journal by recovering state from previously written journal.
@@ -294,11 +276,15 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        iores enqueue_data_record(const void* const data_buff, const std::size_t tot_data_len,
-                const std::size_t this_data_len, data_tok* dtokp, const bool transient = false);
+        iores enqueue_data_record(const void* const data_buff,
+                                  const std::size_t tot_data_len,
+                                  const std::size_t this_data_len,
+                                  data_tok* dtokp,
+                                  const bool transient = false);
 
-        iores enqueue_extern_data_record(const std::size_t tot_data_len, data_tok* dtokp,
-                const bool transient = false);
+        iores enqueue_extern_data_record(const std::size_t tot_data_len,
+                                         data_tok* dtokp,
+                                         const bool transient = false);
 
         /**
         * \brief Enqueue data.
@@ -313,84 +299,17 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        iores enqueue_txn_data_record(const void* const data_buff, const std::size_t tot_data_len,
-                const std::size_t this_data_len, data_tok* dtokp, const std::string& xid,
-                const bool transient = false);
-        iores enqueue_extern_txn_data_record(const std::size_t tot_data_len, data_tok* dtokp,
-                const std::string& xid, const bool transient = false);
+        iores enqueue_txn_data_record(const void* const data_buff,
+                                      const std::size_t tot_data_len,
+                                      const std::size_t this_data_len,
+                                      data_tok* dtokp,
+                                      const std::string& xid,
+                                      const bool transient = false);
 
-        /* TODO
-        **
-        * \brief Retrieve details of next record to be read without consuming the record.
-        *
-        * Retrieve information about current read record. A pointer to the data is returned, along
-        * with the data size and available data size. Data is considered "available" when the AIO
-        * operations to fill page-cache pages from disk have returned, and is ready for consumption.
-        *
-        * If <i>dsize_avail</i> &lt; <i>dsize</i>, then not all of the data is available or part of
-        * the data is in non-contiguous memory, and a subsequent call will update both the pointer
-        * and <i>dsize_avail</i> if more pages have returned from AIO.
-        *
-        * The <i>dsize_avail</i> parameter will return the amount of data from this record that is
-        * available in the page cache as contiguous memory, even if it spans page cache boundaries.
-        * However, if a record spans the end of the page cache and continues at the beginning, even
-        * if both parts are ready for consumption, then this must be divided into at least two
-        * get_data_record() operations, as the data is contained in at least two non-contiguous
-        * segments of the page cache.
-        *
-        * Once all the available data for a record is exposed, it can not be read again using
-        * this function. It must be consumed prior to getting the next record. This can be done by
-        * calling discard_data_record() or read_data_record(). However, if parameter
-        * <i>auto_discard</i> is set to <b><i>true</i></b>, then this record will be automatically
-        * consumed when the entire record has become available without having to explicitly call
-        * discard_next_data_record() or read_data_record().
-        *
-        * If the current record is an open transactional record, then it cannot be read until it is
-        * committed. If it is aborted, it can never be read. Under this condition, get_data_record()
-        * will return RHM_IORES_TXPENDING, the data pointer will be set to NULL and all data
-        * lengths will be set to 0.
-        *
-        * Example: Read a record of 30k. Assume a read page cache of 10 pages of size 10k starting
-        * at address base_ptr (page0 = base_ptr, page1 = page_ptr+10k, etc.). The first 15k of
-        * the record falls at the end of the page cache, the remaining 15k folded to the beginning.
-        * The current page (page 8) containing 5k is available, the remaining pages which contain
-        * this record are pending AIO return:
-        * <pre>
-        * call       dsize
-        * no.  dsize avail data ptr     Return   Comment
-        * ----+-----+-----+------------+--------+--------------------------------------------------
-        * 1    30k   5k    base_ptr+85k SUCCESS  Initial call, read first 5k
-        * 2    30k   0k    base_ptr+90k AIO_WAIT AIO still pending; no further pages avail
-        * 3    30k   10k   base_ptr+90k SUCCESS  AIO now returned; now read till end of page cache
-        * 4    30k   15k   base_ptr     SUCCESS  data_ptr now pointing to start of page cache
-        * </pre>
-        *
-        * \param rid Reference that returns the record ID (rid)
-        * \param dsize Reference that returns the total data size of the record data .
-        * \param dsize_avail Reference that returns the amount of the data that is available for
-        *     consumption.
-        * \param data Pointer to data pointer which will point to the first byte of the next record
-        *     data.
-        * \param auto_discard If <b><i>true</i></b>, automatically discard the record being read if
-        *     the entire record is available (i.e. dsize == dsize_avail). Otherwise
-        *     discard_next_data_record() must be explicitly called.
-        *
-        * \exception TODO
-        *
-        // *** NOT YET IMPLEMENTED ***
-        iores get_data_record(const uint64_t& rid, const std::size_t& dsize,
-                const std::size_t& dsize_avail, const void** const data, bool auto_discard = false);
-        */
-
-        /* TODO
-        **
-        * \brief Discard (skip) next record to be read without reading or retrieving it.
-        *
-        * \exception TODO
-        *
-        // *** NOT YET IMPLEMENTED ***
-        iores discard_data_record(data_tok* const dtokp);
-        */
+        iores enqueue_extern_txn_data_record(const std::size_t tot_data_len,
+                                             data_tok* dtokp,
+                                             const std::string& xid,
+                                             const bool transient = false);
 
         /**
         * \brief Reads data from the journal. It is the responsibility of the reader to free
@@ -434,9 +353,14 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        iores read_data_record(void** const datapp, std::size_t& dsize, void** const xidpp,
-                std::size_t& xidsize, bool& transient, bool& external, data_tok* const dtokp,
-                bool ignore_pending_txns = false);
+        iores read_data_record(void** const datapp,
+                               std::size_t& dsize,
+                               void** const xidpp,
+                               std::size_t& xidsize,
+                               bool& transient,
+                               bool& external,
+                               data_tok* const dtokp,
+                               bool ignore_pending_txns = false);
 
         /**
         * \brief Dequeues (marks as no longer needed) data record in journal.
@@ -455,7 +379,8 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        iores dequeue_data_record(data_tok* const dtokp, const bool txn_coml_commit = false);
+        iores dequeue_data_record(data_tok* const dtokp,
+                                  const bool txn_coml_commit = false);
 
         /**
         * \brief Dequeues (marks as no longer needed) data record in journal.
@@ -476,7 +401,9 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        iores dequeue_txn_data_record(data_tok* const dtokp, const std::string& xid, const bool txn_coml_commit = false);
+        iores dequeue_txn_data_record(data_tok* const dtokp,
+                                      const std::string& xid,
+                                      const bool txn_coml_commit = false);
 
         /**
         * \brief Abort the transaction for all records enqueued or dequeued with the matching xid.
@@ -491,7 +418,8 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        iores txn_abort(data_tok* const dtokp, const std::string& xid);
+        iores txn_abort(data_tok* const dtokp,
+                        const std::string& xid);
 
         /**
         * \brief Commit the transaction for all records enqueued or dequeued with the matching xid.
@@ -506,7 +434,8 @@ namespace qls_jrnl
         *
         * \exception TODO
         */
-        iores txn_commit(data_tok* const dtokp, const std::string& xid);
+        iores txn_commit(data_tok* const dtokp,
+                         const std::string& xid);
 
         /**
         * \brief Check whether all the enqueue records for the given xid have reached disk.
@@ -525,15 +454,6 @@ namespace qls_jrnl
         * force the processing of any outstanding AIO operations.
         */
         int32_t get_wr_events(timespec* const timeout);
-
-        /**
-        * \brief Forces a check for returned AIO read events.
-        *
-        * Forces a check for returned AIO read events. This is normally performed by read_data()
-        * operations, but if these operations cease, then this call needs to be made to force the
-        * processing of any outstanding AIO operations.
-        */
-//        int32_t get_rd_events(timespec* const timeout);
 
         /**
         * \brief Stop the journal from accepting any further requests to read or write data.
@@ -555,27 +475,14 @@ namespace qls_jrnl
         */
         iores flush(const bool block_till_aio_cmpl = false);
 
-        inline uint32_t get_enq_cnt() const { return _emap.size(); } // TODO: Thread safe?
+        inline uint32_t get_enq_cnt() const { return _emap.size(); } // TODO: _emap: Thread safe?
 
         inline uint32_t get_wr_aio_evt_rem() const { slock l(_wr_mutex); return _wmgr.get_aio_evt_rem(); }
 
-//        inline uint32_t get_rd_aio_evt_rem() const { return _rmgr.get_aio_evt_rem(); }
+        uint32_t get_wr_outstanding_aio_dblks() const;
 
-        inline uint32_t get_wr_outstanding_aio_dblks() const;
-                /*{ return _wrfc.aio_outstanding_dblks(); }*/
+        uint32_t get_rd_outstanding_aio_dblks() const;
 
-//        inline uint32_t get_wr_outstanding_aio_dblks(uint16_t lfid) const;
-//                { return _lpmgr.get_fcntlp(lfid)->wr_aio_outstanding_dblks(); }
-
-        inline uint32_t get_rd_outstanding_aio_dblks() const;
-//                { return _rrfc.aio_outstanding_dblks(); }
-
-//        inline uint32_t get_rd_outstanding_aio_dblks(uint16_t lfid) const;
-//                { return _lpmgr.get_fcntlp(lfid)->rd_aio_outstanding_dblks(); }
-
-//        inline uint16_t get_rd_fid() const { return _rrfc.index(); }
-//        inline uint16_t get_wr_fid() const { return _wrfc.index(); }
-//        uint16_t get_earliest_fid();
         LinearFileController& getLinearFileControllerRef();
 
         /**
@@ -583,13 +490,20 @@ namespace qls_jrnl
         *     false if the rid is transactionally enqueued and is not committed, or if it is
         *     locked (i.e. transactionally dequeued, but the dequeue has not been committed).
         */
-        inline bool is_enqueued(const uint64_t rid, bool ignore_lock = false)
-                { return _emap.is_enqueued(rid, ignore_lock); }
-        inline bool is_locked(const uint64_t rid)
-                { if (_emap.is_enqueued(rid, true) < enq_map::EMAP_OK) return false; return _emap.is_locked(rid) == enq_map::EMAP_TRUE; }
+        inline bool is_enqueued(const uint64_t rid, bool ignore_lock = false) { return _emap.is_enqueued(rid, ignore_lock); }
+
+        inline bool is_locked(const uint64_t rid) {
+            if (_emap.is_enqueued(rid, true) < enq_map::EMAP_OK)
+                return false;
+            return _emap.is_locked(rid) == enq_map::EMAP_TRUE;
+        }
+
         inline void enq_rid_list(std::vector<uint64_t>& rids) { _emap.rid_list(rids); }
+
         inline void enq_xid_list(std::vector<std::string>& xids) { _tmap.xid_list(xids); }
+
         inline uint32_t get_open_txn_cnt() const { return _tmap.size(); }
+
         // TODO Make this a const, but txn_map must support const first.
         inline txn_map& get_txn_map() { return _tmap; }
 
@@ -626,40 +540,9 @@ namespace qls_jrnl
         */
         inline const std::string& dirname() const { return _jdir.dirname(); }
 
-        /**
-        * \brief Get the journal base filename.
-        *
-        * Get the journal base filename as set during initialization. This is the prefix used in all
-        * journal files of this instance. Note that if more than one instance of the journal shares
-        * the same directory, their base filenames <b>MUST</b> be different or else the instances
-        * will overwrite one another.
-        */
-//        inline const std::string& base_filename() const { return _base_filename; }
-
-//        inline uint16_t num_jfiles() const; { return _lpmgr.num_jfiles(); }
-
-//        inline fcntl* get_fcntlp(const uint16_t lfid) const { return _lpmgr.get_fcntlp(lfid); }
-
-//        inline uint32_t jfsize_sblks() const { return _jfsize_sblks; }
-
-        // Logging
-//        virtual void log(log_level_t level, const std::string& log_stmt) const;
-//        virtual void log(log_level_t level, const char* const log_stmt) const;
-
-        // FIXME these are _rmgr to _wmgr interactions, remove when _rmgr contains ref to _wmgr:
-        //void chk_wr_frot();
-        inline uint32_t unflushed_dblks() { return _wmgr.unflushed_dblks(); }
-        void fhdr_wr_sync(const uint16_t lid);
-        inline uint32_t wr_subm_cnt_dblks(const uint16_t lfid) const; /*{ return _lpmgr.get_fcntlp(lfid)->wr_subm_cnt_dblks(); }*/
-
         // Management instrumentation callbacks
         inline virtual void instr_incr_outstanding_aio_cnt() {}
         inline virtual void instr_decr_outstanding_aio_cnt() {}
-
-        /**
-        * /brief Static function for creating new fcntl objects for use with obj_arr.
-        */
-//        static fcntl* new_fcntl(jcntl* const jcp, const uint16_t lid, const uint16_t fid, const rcvdat* const rdp);
 
     protected:
         static bool _init;
@@ -676,11 +559,6 @@ namespace qls_jrnl
         void check_rstatus(const char* fn_name) const;
 
         /**
-        * \brief Write info file &lt;basefilename&gt;.jinf to disk
-        */
-//        void write_infofile() const;
-
-        /**
         * \brief Call that blocks while waiting for all outstanding AIOs to complete
         */
         void aio_cmpl_wait();
@@ -690,27 +568,6 @@ namespace qls_jrnl
         *     AIO wait conditions to clear.
         */
         bool handle_aio_wait(const iores res, iores& resout, const data_tok* dtp);
-
-        /**
-        * \brief Analyze journal for recovery.
-        */
-        static void rcvr_read_jfile(const std::string& jfn, ::file_hdr_t* fh, std::string& queueName);
-
-        void rcvr_analyze_fhdrs(EmptyFilePoolManager* efpmp);
-
-        void rcvr_janalyze(const std::vector<std::string>* prep_txn_list_ptr, EmptyFilePoolManager* efpmp);
-
-        bool rcvr_get_next_record(uint16_t& fid, std::ifstream* ifsp/*, bool& lowi, rcvdat& rd*/);
-
-        bool decode(jrec& rec, uint16_t& fid, std::ifstream* ifsp, std::size_t& cum_size_read,
-                rec_hdr_t& h, /*bool& lowi, rcvdat& rd,*/ std::streampos& rec_offset);
-
-        bool jfile_cycle(uint16_t& fid, std::ifstream* ifsp, /*bool& lowi, rcvdat& rd,*/ const bool jump_fro);
-
-        //bool check_owi(const uint16_t fid, rec_hdr_t& h, bool& lowi, rcvdat& rd,
-        //        std::streampos& read_pos);
-
-        void check_journal_alignment(const uint16_t fid, std::streampos& rec_offset/*, rcvdat& rd*/);
     };
 
 }}
