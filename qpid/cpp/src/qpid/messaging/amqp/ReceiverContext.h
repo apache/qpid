@@ -55,7 +55,6 @@ class ReceiverContext
     void close();
     const std::string& getName() const;
     const std::string& getSource() const;
-    bool isClosed() const;
     void configure();
     void verify();
     Address getAddress() const;

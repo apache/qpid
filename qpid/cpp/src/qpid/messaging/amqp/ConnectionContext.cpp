@@ -476,6 +476,15 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn)
     }
 }
 
+bool ConnectionContext::isClosed(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
+{
+    try {
+        checkClosed(ssn, lnk->receiver);
+        return false;
+    } catch (const LinkError&) {
+        return true;
+    }
+}
 void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
 {
     checkClosed(ssn, lnk->receiver);
