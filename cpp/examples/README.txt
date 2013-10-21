@@ -221,9 +221,4 @@ On Windows:
   C:\Program Files\qpidc-0.7\examples\request-response> server
   C:\Program Files\qpidc-0.7\examples\request-response> client
 
-== qmf-console ==
-
-This directory contains examples which demonstrate integration with
-the Qpid Management Framework (QMF).  Refer to the README.txt file
-within the directory for more information.
 
