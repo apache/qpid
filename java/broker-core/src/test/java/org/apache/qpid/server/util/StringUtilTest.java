@@ -55,4 +55,13 @@ public class StringUtilTest extends QpidTestCase
         }
     }
 
+    public void testCreateUniqueJavaName()
+    {
+        assertEquals("MyName_973de1b4e26b629d4817c8255090e58e", _util.createUniqueJavaName("MyName"));
+        assertEquals("ContaisIllegalJavaCharacters_a68b2484f2eb790558d6527e56c595fa", _util.createUniqueJavaName("Contais+Illegal-Java*Characters"));
+        assertEquals("StartsWithIllegalInitial_93031eec569608c60c6a98ac9e84a0a7", _util.createUniqueJavaName("9StartsWithIllegalInitial"));
+        assertEquals("97b247ba19ff869340d3797cc73ca065", _util.createUniqueJavaName("1++++----"));
+        assertEquals("d41d8cd98f00b204e9800998ecf8427e", _util.createUniqueJavaName(""));
+    }
+
 }

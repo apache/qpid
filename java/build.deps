@@ -26,6 +26,8 @@ commons-digester=lib/required/commons-digester-1.8.1.jar
 commons-lang=lib/required/commons-lang-2.6.jar
 commons-logging=lib/required/commons-logging-1.1.1.jar
 
+bcel=lib/required/bcel-5.2.jar
+
 derby-db=lib/required/derby-10.8.2.2.jar
 
 geronimo-jms=lib/required/geronimo-jms_1.1_spec-1.0.jar
@@ -75,7 +77,7 @@ amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
 broker-core.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${derby-db} ${commons-configuration.libs} \
-    ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket}
+    ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket} ${bcel}
 
 #Borrow the broker-core libs, hack for release binary generation
 broker.libs=${broker-core.libs}

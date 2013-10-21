@@ -80,7 +80,7 @@ public class AuthenticationProviderFactory
     {
         for (AuthenticationManagerFactory factory : _factories)
         {
-            AuthenticationManager manager = factory.createInstance(attributes);
+            AuthenticationManager manager = factory.createInstance(broker, attributes);
             if (manager != null)
             {
                 AuthenticationProviderAdapter<?> authenticationProvider;

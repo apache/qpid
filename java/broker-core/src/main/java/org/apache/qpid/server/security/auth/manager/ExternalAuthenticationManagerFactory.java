@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.util.ResourceBundleLoader;
 
@@ -38,7 +39,7 @@ public class ExternalAuthenticationManagerFactory implements AuthenticationManag
             ATTRIBUTE_USE_FULL_DN));
 
     @Override
-    public AuthenticationManager createInstance(Map<String, Object> attributes)
+    public AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes)
     {
         if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
         {
