@@ -93,7 +93,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
 
         when(authManagerFactoryServiceLoader.atLeastOneInstanceOf(AuthenticationManagerFactory.class)).thenReturn(
                 Collections.singleton(authenticationManagerFactory));
-        when(authenticationManagerFactory.createInstance(attributes)).thenReturn(authenticationManager);
+        when(authenticationManagerFactory.createInstance(broker, attributes)).thenReturn(authenticationManager);
 
         AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(authManagerFactoryServiceLoader);
 
@@ -121,7 +121,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
 
         QpidServiceLoader<AuthenticationManagerFactory> loader = mock(QpidServiceLoader.class);
         AuthenticationManagerFactory managerFactory = mock(AuthenticationManagerFactory.class);
-        when(managerFactory.createInstance(any(Map.class))).thenReturn(mock(PrincipalDatabaseAuthenticationManager.class));
+        when(managerFactory.createInstance(any(Broker.class), any(Map.class))).thenReturn(mock(PrincipalDatabaseAuthenticationManager.class));
         when(loader.atLeastOneInstanceOf(AuthenticationManagerFactory.class)).thenReturn(Collections.singleton(managerFactory));
 
         AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(loader);
@@ -142,7 +142,7 @@ public class AuthenticationProviderFactoryTest extends TestCase
 
         QpidServiceLoader<AuthenticationManagerFactory> loader = mock(QpidServiceLoader.class);
         AuthenticationManagerFactory managerFactory = mock(AuthenticationManagerFactory.class);
-        when(managerFactory.createInstance(any(Map.class))).thenReturn(mock(AuthenticationManager.class));
+        when(managerFactory.createInstance(any(Broker.class), any(Map.class))).thenReturn(mock(AuthenticationManager.class));
         when(loader.atLeastOneInstanceOf(AuthenticationManagerFactory.class)).thenReturn(Collections.singleton(managerFactory));
 
         AuthenticationProviderFactory providerFactory = new AuthenticationProviderFactory(loader);

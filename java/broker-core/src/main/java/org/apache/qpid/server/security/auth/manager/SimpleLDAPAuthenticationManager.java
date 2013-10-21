@@ -27,10 +27,11 @@ import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -38,35 +39,63 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.manager.ldap.AbstractLDAPSSLSocketFactory;
+import org.apache.qpid.server.security.auth.manager.ldap.LDAPSSLSocketFactoryGenerator;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
+import org.apache.qpid.server.util.StringUtil;
+import org.apache.qpid.ssl.SSLContextFactory;
 
 public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 {
     private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManager.class);
 
+    /**
+     * Environment key to instruct {@link InitialDirContext} to override the socket factory.
+     */
+    private static final String JAVA_NAMING_LDAP_FACTORY_SOCKET = "java.naming.ldap.factory.socket";
+
+    private final String _authManagerName;
     private final String _providerSearchURL;
     private final String _providerAuthURL;
     private final String _searchContext;
     private final String _searchFilter;
     private final String _ldapContextFactory;
 
-    SimpleLDAPAuthenticationManager(String providerSearchUrl, String providerAuthUrl, String searchContext, String searchFilter, String ldapContextFactory)
+    /**
+     * Trust store - typically used when the Directory has been secured with a certificate signed by a
+     * private CA (or self-signed certificate).
+     */
+    private final TrustStore _trustStore;
+
+    /**
+     * Dynamically created SSL Socket Factory implementation used in the case where user has specified a trust store.
+     */
+    private Class<? extends SocketFactory> _sslSocketFactoryOverride;
+
+
+    SimpleLDAPAuthenticationManager(String authManagerName, String providerSearchUrl, String providerAuthUrl, String searchContext, String searchFilter, String ldapContextFactory, TrustStore trustStore)
     {
+        _authManagerName = authManagerName;
         _providerSearchURL = providerSearchUrl;
         _providerAuthURL = providerAuthUrl;
         _searchContext = searchContext;
         _searchFilter = searchFilter;
         _ldapContextFactory = ldapContextFactory;
+        _trustStore = trustStore;
     }
 
     @Override
     public void initialise()
     {
+        _sslSocketFactoryOverride = createSslSocketFactoryOverride();
+
         validateInitialDirContext();
     }
 
@@ -145,19 +174,16 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
             return new AuthenticationResult(AuthenticationStatus.CONTINUE);
         }
 
-        Hashtable<Object,Object> env = new Hashtable<Object,Object>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, _ldapContextFactory);
-        env.put(Context.PROVIDER_URL, _providerAuthURL);
+        Hashtable<String, Object> env = createInitialDirContentEnvironment(_providerAuthURL);
 
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
-
         env.put(Context.SECURITY_PRINCIPAL, name);
         env.put(Context.SECURITY_CREDENTIALS, password);
 
-        DirContext ctx = null;
+        InitialDirContext ctx = null;
         try
         {
-            ctx = new InitialDirContext(env);
+            ctx = createInitialDirContext(env);
 
             //Authentication succeeded
             return new AuthenticationResult(new UsernamePrincipal(name));
@@ -176,14 +202,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         {
             if(ctx != null)
             {
-                try
-                {
-                    ctx.close();
-                }
-                catch (Exception e)
-                {
-                    _logger.warn("Exception closing InitialDirContext", e);
-                }
+                closeSafely(ctx);
             }
         }
     }
@@ -193,26 +212,94 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     {
     }
 
-    private void validateInitialDirContext()
+    private Hashtable<String, Object> createInitialDirContentEnvironment(String providerUrl)
     {
-        Hashtable<String,Object> env = new Hashtable<String, Object>();
+        Hashtable<String,Object> env = new Hashtable<String,Object>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, _ldapContextFactory);
-        env.put(Context.PROVIDER_URL, _providerSearchURL);
-        env.put(Context.SECURITY_AUTHENTICATION, "none");
+        env.put(Context.PROVIDER_URL, providerUrl);
+        return env;
+    }
 
+    private InitialDirContext createInitialDirContext(Hashtable<String, Object> env) throws NamingException
+    {
+        ClassLoader existingContextClassloader = null;
+
+        boolean isLdaps = ((String)env.get(Context.PROVIDER_URL)).startsWith("ldaps:");
+
+        boolean revertContentClassLoader = false;
         try
         {
-            new InitialDirContext(env).close();
+            if (isLdaps && _sslSocketFactoryOverride != null)
+            {
+                existingContextClassloader = Thread.currentThread().getContextClassLoader();
+                env.put(JAVA_NAMING_LDAP_FACTORY_SOCKET, _sslSocketFactoryOverride.getName());
+                Thread.currentThread().setContextClassLoader(_sslSocketFactoryOverride.getClassLoader());
+                revertContentClassLoader = true;
+            }
+            return new InitialDirContext(env);
+        }
+        finally
+        {
+            if (revertContentClassLoader)
+            {
+                Thread.currentThread().setContextClassLoader(existingContextClassloader);
+            }
+        }
+    }
+
+    /**
+     * If a trust store has been specified, create a {@link SSLContextFactory} class that is
+     * associated with the {@link SSLContext} generated from that trust store.
+     *
+     * @return generated socket factory class
+     */
+    private Class<? extends SocketFactory> createSslSocketFactoryOverride()
+    {
+        if (_trustStore != null)
+        {
+            String clazzName = new StringUtil().createUniqueJavaName(_authManagerName);
+            SSLContext sslContext = null;
+            try
+            {
+                sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, _trustStore.getTrustManagers(), null);
+            }
+            catch (Exception e)
+            {
+                _logger.error("Exception creating SSLContext", e);
+                throw new RuntimeException(e);
+            }
+            Class<? extends AbstractLDAPSSLSocketFactory> clazz = LDAPSSLSocketFactoryGenerator.createSubClass(clazzName, sslContext.getSocketFactory());
+            _logger.debug("Connection to Directory will use custom SSL socket factory : " +  clazz);
+            return clazz;
+        }
+
+        return null;
+    }
+
+    private void validateInitialDirContext()
+    {
+        Hashtable<String,Object> env = createInitialDirContentEnvironment(_providerSearchURL);
+        env.put(Context.SECURITY_AUTHENTICATION, "none");
+
+        InitialDirContext ctx = null;
+        try
+        {
+            ctx = createInitialDirContext(env);
         }
         catch (NamingException e)
         {
             throw new RuntimeException("Unable to establish anonymous connection to the ldap server at " + _providerSearchURL, e);
         }
+        finally
+        {
+            closeSafely(ctx);
+        }
     }
+
 
     private class SimpleLDAPPlainCallbackHandler implements CallbackHandler
     {
-
         @Override
         public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
         {
@@ -263,14 +350,10 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
     private String getNameFromId(String id) throws NamingException
     {
-        Hashtable<Object,Object> env = new Hashtable<Object,Object>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, _ldapContextFactory);
-        env.put(Context.PROVIDER_URL, _providerSearchURL);
+        Hashtable<String,Object> env = createInitialDirContentEnvironment(_providerSearchURL);
 
         env.put(Context.SECURITY_AUTHENTICATION, "none");
-        DirContext ctx = null;
-
-        ctx = new InitialDirContext(env);
+        InitialDirContext ctx = createInitialDirContext(env);
 
         try
         {
@@ -291,16 +374,21 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         }
         finally
         {
-            try
-            {
-                ctx.close();
-            }
-            catch (Exception e)
-            {
-                _logger.warn("Exception closing InitialDirContext", e);
-            }
+            closeSafely(ctx);
         }
 
+    }
+
+    private void closeSafely(InitialDirContext ctx)
+    {
+        try
+        {
+            ctx.close();
+        }
+        catch (Exception e)
+        {
+            _logger.warn("Exception closing InitialDirContext", e);
+        }
     }
 
     @Override
