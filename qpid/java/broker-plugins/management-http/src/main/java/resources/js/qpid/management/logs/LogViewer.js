@@ -23,14 +23,25 @@ define(["dojo/_base/xhr",
         "dojo/query",
         "dojo/date/locale",
         "dijit/registry",
+        "qpid/management/UserPreferences",
         "qpid/common/grid/GridUpdater",
         "qpid/common/grid/UpdatableGrid",
         "qpid/management/logs/LogFileDownloadDialog",
         "dojo/text!../../../logs/showLogViewer.html",
         "dojo/domReady!"],
-       function (xhr, parser, query, locale, registry, GridUpdater, UpdatableGrid, LogFileDownloadDialog, markup) {
+       function (xhr, parser, query, locale, registry, UserPreferences, GridUpdater, UpdatableGrid, LogFileDownloadDialog, markup) {
 
            var defaulGridRowLimit = 4096;
+           var currentTimeZone;
+
+           function dataTransformer(data)
+           {
+             for(var i=0; i < data.length; i++)
+             {
+               data[i].time = UserPreferences.addTimeZoneOffsetToUTC(data[i].timestamp);
+             }
+             return data;
+           }
 
            function LogViewer(name, parent, controller) {
                var self = this;
@@ -64,10 +75,11 @@ define(["dojo/_base/xhr",
 
            LogViewer.prototype._buildGrid = function() {
                var self = this;
+               currentTimeZone = UserPreferences.getTimeZoneDescription();
 
                var gridStructure = [
                     {
-                      hidden: true,
+                      hidden: false,
                       name: "ID",
                       field: "id",
                       width: "50px",
@@ -75,27 +87,26 @@ define(["dojo/_base/xhr",
                       filterable: true
                     },
                     {
-                      name: "Date", field: "timestamp", width: "100px", datatype: "date",
+                      name: "Date", field: "time", width: "100px", datatype: "date",
                         formatter: function(val) {
-                        var d = new Date(0);
-                        d.setUTCSeconds(val/1000);
-                        return locale.format(d, {selector:"date", datePattern: "EEE, MMM d yy"});
-                      },
-                      dataTypeArgs: {
-                        selector: "date",
-                        datePattern: "EEE MMMM d yyy"
+                        return UserPreferences.formatDateTime(val, {selector:"date"});
                       }
                     },
-                    { name: "Time", field: "timestamp", width: "150px", datatype: "time",
+                    { name: "Time ", field: "time", width: "100px", datatype: "time",
                      formatter: function(val) {
-                       var d = new Date(0);
-                       d.setUTCSeconds(val/1000);
-                       return locale.format(d, {selector:"time", timePattern: "HH:mm:ss z (ZZZZ)"});
-                     },
-                     dataTypeArgs: {
-                       selector: "time",
-                       timePattern: "HH:mm:ss ZZZZ"
+                       return UserPreferences.formatDateTime(val, {selector:"time"});
                      }
+                   },
+                   {
+                     name: "Time zone",
+                     field: "time",
+                     width: "80px",
+                     datatype: "string",
+                     hidden: true,
+                     filterable: false,
+                     formatter: function(val) {
+                       return currentTimeZone;
+                     },
                    },
                    { name: "Level", field: "level", width: "50px", datatype: "string", autoComplete: true, hidden: true},
                    { name: "Logger", field: "logger", width: "150px", datatype: "string", autoComplete: false, hidden: true},
@@ -132,18 +143,20 @@ define(["dojo/_base/xhr",
                        }
                      },
                      append: true,
-                     appendLimit: defaulGridRowLimit
+                     appendLimit: defaulGridRowLimit,
+                     dataTransformer: dataTransformer
                  });
                  this.grid = new UpdatableGrid(updater.buildUpdatableGridArguments({
                      structure: gridStructure,
                      selectable: true,
                      selectionMode: "none",
                      sortInfo: -1,
-                     sortFields: [{attribute: 'timestamp', descending: true}],
+                     sortFields: [{attribute: 'id', descending: true}],
                      plugins:{
                        nestedSorting:true,
-                       enhancedFilter:{defaulGridRowLimit: defaulGridRowLimit},
-                       indirectSelection: false
+                       enhancedFilter:{defaulGridRowLimit: defaulGridRowLimit,displayLastUpdateTime:true},
+                       indirectSelection: false,
+                       pagination: {defaultPageSize: 10}
                      }
                   }), gridNode);
                  var onStyleRow = function(row)
@@ -170,14 +183,19 @@ define(["dojo/_base/xhr",
                  };
                  this.grid.on("styleRow", onStyleRow);
                  this.grid.startup();
+                 UserPreferences.addListener(this);
                }
                catch(err)
                {
-                 console.error(err);
+                 if (console && console.error)
+                 {
+                   console.error(err);
+                 }
                }
            };
 
            LogViewer.prototype.close = function() {
+             UserPreferences.removeListener(this);
              if (this.grid)
              {
                  this.grid.destroy();
@@ -193,6 +211,13 @@ define(["dojo/_base/xhr",
                  this.downloadLogsButton.destroy();
                  this.downloadLogsButton = null;
              }
+           };
+
+           LogViewer.prototype.onPreferencesChange = function(data)
+           {
+             currentTimeZone = UserPreferences.getTimeZoneDescription();
+             dataTransformer(this.grid.updater.memoryStore.data);
+             this.grid._refresh();
            };
 
            return LogViewer;

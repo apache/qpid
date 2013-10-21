@@ -34,7 +34,7 @@ void dx_buffer_set_size(size_t size)
 }
 
 
-dx_buffer_t *dx_allocate_buffer(void)
+dx_buffer_t *dx_buffer(void)
 {
     size_locked = 1;
     dx_buffer_t *buf = new_dx_buffer_t();
@@ -45,7 +45,7 @@ dx_buffer_t *dx_allocate_buffer(void)
 }
 
 
-void dx_free_buffer(dx_buffer_t *buf)
+void dx_buffer_free(dx_buffer_t *buf)
 {
     free_dx_buffer_t(buf);
 }

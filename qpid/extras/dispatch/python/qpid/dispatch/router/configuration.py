@@ -18,30 +18,30 @@
 #
 
 class Configuration(object):
-  """
-  This module manages and holds the configuration and tuning parameters for a router.
-  """
-  def __init__(self, overrides={}):
-    ##
-    ## Load default values
-    ##
-    self.values = { 'hello_interval'      :  1.0,
-                    'hello_max_age'       :  3.0,
-                    'ra_interval'         : 30.0,
-                    'remote_ls_max_age'   : 60.0,
-                    'mobile_addr_max_age' : 60.0  }
+    """
+    This module manages and holds the configuration and tuning parameters for a router.
+    """
+    def __init__(self, overrides={}):
+        ##
+        ## Load default values
+        ##
+        self.values = { 'hello_interval'      :  1.0,
+                        'hello_max_age'       :  3.0,
+                        'ra_interval'         : 30.0,
+                        'remote_ls_max_age'   : 60.0,
+                        'mobile_addr_max_age' : 60.0  }
 
-    ##
-    ## Apply supplied overrides
-    ##
-    for k, v in overrides.items():
-      self.values[k] = v
+        ##
+        ## Apply supplied overrides
+        ##
+        for k, v in overrides.items():
+            self.values[k] = v
 
-  def __getattr__(self, key):
-    if key in self.values:
-      return self.values[key]
-    raise KeyError
+    def __getattr__(self, key):
+        if key in self.values:
+            return self.values[key]
+        raise KeyError
 
-  def __repr__(self):
-    return "%r" % self.values
+    def __repr__(self):
+        return "%r" % self.values
 

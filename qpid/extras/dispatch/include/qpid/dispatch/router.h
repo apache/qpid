@@ -27,7 +27,7 @@
 typedef struct dx_address_t dx_address_t;
 
 
-typedef void (*dx_router_message_cb)(void *context, dx_message_t *msg);
+typedef void (*dx_router_message_cb)(void *context, dx_message_t *msg, int link_id);
 
 const char *dx_router_id(const dx_dispatch_t *dx);
 

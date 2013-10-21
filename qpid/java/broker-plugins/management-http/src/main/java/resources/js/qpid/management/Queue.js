@@ -33,6 +33,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addBinding",
         "qpid/management/moveCopyMessages",
         "qpid/management/showMessage",
+        "qpid/management/UserPreferences",
         "dojo/store/JsonRest",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
@@ -41,7 +42,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
        function (xhr, parser, query, registry, connect, event, json, properties, updater, util, formatter,
-                 UpdatableStore, addBinding, moveMessages, showMessage, JsonRest, EnhancedGrid, ObjectStore, entities) {
+                 UpdatableStore, addBinding, moveMessages, showMessage, UserPreferences, JsonRest, EnhancedGrid, ObjectStore, entities) {
 
            function Queue(name, parent, controller) {
                this.name = name;
@@ -98,10 +99,7 @@ define(["dojo/_base/xhr",
 
                                     {name:"Arrival", field:"arrivalTime", width: "100%",
                                         formatter: function(val) {
-                                            var d = new Date(0);
-                                            d.setUTCSeconds(val/1000);
-
-                                            return d.toLocaleString();
+                                            return UserPreferences.formatDateTime(val, {addOffset: true, appendTimeZone: true});
                                         } }
                                 ],
                                 plugins: {
@@ -164,6 +162,7 @@ define(["dojo/_base/xhr",
                                         event.stop(evt);
                                         that.deleteQueue();
                                     });
+                            UserPreferences.addListener(that);
                         }});
 
 
@@ -237,6 +236,12 @@ define(["dojo/_base/xhr",
 
            Queue.prototype.close = function() {
                updater.remove( this.queueUpdater );
+               UserPreferences.removeListener(this);
+           };
+
+           Queue.prototype.onPreferencesChange = function(data)
+           {
+             this.grid._refresh();
            };
 
            var queueTypeKeys = {
@@ -385,10 +390,12 @@ define(["dojo/_base/xhr",
                        var bindings = thisObj.queueData[ "bindings" ];
                        var consumers = thisObj.queueData[ "consumers" ];
 
-                       for(i=0; i < bindings.length; i++) {
+                       if (bindings)
+                       {
+                         for(i=0; i < bindings.length; i++) {
                            bindings[i].argumentString = json.stringify(bindings[i].arguments);
+                         }
                        }
-
                        thisObj.updateHeader();
 
 

@@ -47,7 +47,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.PreferencesServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LoggedOnUserPreferencesServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
@@ -300,7 +300,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "preferencesprovider", AuthenticationProvider.class, PreferencesProvider.class);
 
         root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/rest/userpreferences/*");
-        root.addServlet(new ServletHolder(new PreferencesServlet()), "/rest/preferences");
+        root.addServlet(new ServletHolder(new LoggedOnUserPreferencesServlet()), "/rest/preferences");
         root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
         root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
         root.addServlet(new ServletHolder(new MessageContentServlet()), "/rest/message-content/*");
@@ -313,6 +313,10 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), "/");
         root.addServlet(new ServletHolder(new LogoutServlet()), "/logout");
 
+        root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDojoPath(), true)), "/dojo/dojo/*");
+        root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDijitPath(), true)), "/dojo/dijit/*");
+        root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDojoxPath(), true)), "/dojo/dojox/*");
+
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.html");
@@ -324,15 +328,8 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.txt");
         root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.xsl");
         root.addServlet(new ServletHolder(new HelperServlet()), "/rest/helper");
-        root.addServlet(new ServletHolder(new LogFileListingServlet()), "/rest/logfiles");
+        root.addServlet(new ServletHolder(new LogFileListingServlet()), "/rest/logfilenames");
         root.addServlet(new ServletHolder(new LogFileServlet()), "/rest/logfile");
-
-        String[] timeZoneFiles = {"africa", "antarctica", "asia", "australasia", "backward",
-                "etcetera", "europe", "northamerica", "pacificnew",  "southamerica"};
-        for (String timeZoneFile : timeZoneFiles)
-        {
-            root.addServlet(new ServletHolder(FileServlet.INSTANCE), "/dojo/dojox/date/zoneinfo/" + timeZoneFile);
-        }
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
         sessionManager.setSessionCookie(JSESSIONID_COOKIE_PREFIX + lastPort);

@@ -31,6 +31,7 @@ namespace {
 const std::string TOPIC("topic");
 const std::string EXCHANGE("exchange");
 const std::string DURABLE("durable");
+const std::string ALTERNATE_EXCHANGE("alternate-exchange");
 const std::string EMPTY;
 
 std::string getProperty(const std::string& k, const qpid::types::Variant::Map& m)
@@ -52,22 +53,25 @@ qpid::types::Variant::Map filter(const qpid::types::Variant::Map& properties)
     qpid::types::Variant::Map filtered = properties;
     filtered.erase(DURABLE);
     filtered.erase(EXCHANGE);
+    filtered.erase(ALTERNATE_EXCHANGE);
     return filtered;
 }
 }
 
 Topic::Topic(Broker& broker, const std::string& n, const qpid::types::Variant::Map& properties)
-    : PersistableObject(n, TOPIC, properties), name(n), durable(testProperty(DURABLE, properties)), exchange(broker.getExchanges().get(getProperty(EXCHANGE, properties)))
+    : PersistableObject(n, TOPIC, properties), name(n), durable(testProperty(DURABLE, properties)), exchange(broker.getExchanges().get(getProperty(EXCHANGE, properties))),
+      alternateExchange(getProperty(ALTERNATE_EXCHANGE, properties))
 {
     if (exchange->getName().empty()) throw qpid::Exception("Exchange must be specified.");
 
     qpid::types::Variant::Map unused;
-    policy.populate(properties, unused);
+    qpid::types::Variant::Map filtered = filter(properties);
+    policy.populate(filtered, unused);
 
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent != 0) {
         topic = _qmf::Topic::shared_ptr(new _qmf::Topic(agent, this, name, exchange->GetManagementObject()->getObjectId(), durable));
-        topic->set_properties(filter(properties));
+        topic->set_properties(filtered);
         agent->addObject(topic);
     }
 }
@@ -99,7 +103,10 @@ const std::string& Topic::getName() const
 {
     return name;
 }
-
+const std::string& Topic::getAlternateExchange() const
+{
+    return alternateExchange;
+}
 boost::shared_ptr<Topic> TopicRegistry::createTopic(Broker& broker, const std::string& name, const qpid::types::Variant::Map& properties)
 {
     boost::shared_ptr<Topic> topic(new Topic(broker, name, properties));

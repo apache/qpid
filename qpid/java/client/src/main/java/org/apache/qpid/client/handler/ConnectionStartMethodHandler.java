@@ -168,6 +168,8 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
                         ConnectionStartProperties.getPID());
 
                 FieldTable serverProperties = body.getServerProperties();
+                session.setConnectionStartServerProperties(serverProperties);
+
                 ConnectionURL url = getConnectionURL(session);
                 _closeWhenNoRouteHelper.setClientProperties(clientProperties, url, serverProperties);
 

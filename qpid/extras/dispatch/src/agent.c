@@ -37,7 +37,7 @@
 
 struct dx_agent_t {
     dx_dispatch_t     *dx;
-    hash_t            *class_hash;
+    dx_hash_t         *class_hash;
     dx_message_list_t  in_fifo;
     dx_message_list_t  out_fifo;
     sys_mutex_t       *lock;
@@ -71,7 +71,7 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_parsed_field_t *map, dx_f
 
     dx_field_iterator_t    *cls_string = dx_parse_raw(cls);
     const dx_agent_class_t *cls_record;
-    hash_retrieve_const(agent->class_hash, cls_string, (const void**) &cls_record);
+    dx_hash_retrieve_const(agent->class_hash, cls_string, (const void**) &cls_record);
     if (cls_record == 0)
         return;
 
@@ -138,11 +138,11 @@ static void dx_agent_process_get(dx_agent_t *agent, dx_parsed_field_t *map, dx_f
     //
     // Create a message and send it.
     //
-    dx_message_t *msg = dx_allocate_message();
+    dx_message_t *msg = dx_message();
     dx_message_compose_2(msg, field);
     dx_router_send(agent->dx, reply_to, msg);
 
-    dx_free_message(msg);
+    dx_message_free(msg);
     dx_compose_free(field);
 }
 
@@ -234,13 +234,13 @@ static void dx_agent_deferred_handler(void *context)
 
         if (msg) {
             dx_agent_process_request(agent, msg);
-            dx_free_message(msg);
+            dx_message_free(msg);
         }
     } while (msg);
 }
 
 
-static void dx_agent_rx_handler(void *context, dx_message_t *msg)
+static void dx_agent_rx_handler(void *context, dx_message_t *msg, int unused_link_id)
 {
     dx_agent_t   *agent = (dx_agent_t*) context;
     dx_message_t *copy  = dx_message_copy(msg);
@@ -257,12 +257,12 @@ dx_agent_t *dx_agent(dx_dispatch_t *dx)
 {
     dx_agent_t *agent = NEW(dx_agent_t);
     agent->dx         = dx;
-    agent->class_hash = hash(6, 10, 1);
+    agent->class_hash = dx_hash(6, 10, 1);
     DEQ_INIT(agent->in_fifo);
     DEQ_INIT(agent->out_fifo);
     agent->lock    = sys_mutex();
     agent->timer   = dx_timer(dx, dx_agent_deferred_handler, agent);
-    agent->address = dx_router_register_address(dx, "agent", dx_agent_rx_handler, agent);
+    agent->address = dx_router_register_address(dx, "$management", dx_agent_rx_handler, agent);
 
     return agent;
 }
@@ -273,7 +273,7 @@ void dx_agent_free(dx_agent_t *agent)
     dx_router_unregister_address(agent->address);
     sys_mutex_free(agent->lock);
     dx_timer_free(agent->timer);
-    hash_free(agent->class_hash);
+    dx_hash_free(agent->class_hash);
     free(agent);
 }
 
@@ -295,7 +295,7 @@ dx_agent_class_t *dx_agent_register_class(dx_dispatch_t        *dx,
     cls->query_handler  = query_handler;
 
     dx_field_iterator_t *iter = dx_field_iterator_string(fqname, ITER_VIEW_ALL);
-    int result = hash_insert_const(agent->class_hash, iter, cls);
+    int result = dx_hash_insert_const(agent->class_hash, iter, cls, 0);
     dx_field_iterator_free(iter);
     if (result < 0)
         assert(false);

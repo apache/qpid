@@ -70,48 +70,119 @@ set (qpid_test_boost_libs
 # womp on each other's store directory.
 
 #
-# define_selftest
+# define_legacystore_test
 # macro to accept the name of a single source file and to create a
 #  unit test executable that runs the source.
 #
-MACRO (define_selftest theSourceFile)
+MACRO (define_legacystore_test theSourceFile)
 add_executable (legacystore_${theSourceFile}
-            unit_test
             ${theSourceFile}
+            unit_test
             ${platform_test_additions})
 target_link_libraries (legacystore_${theSourceFile}
                        ${qpid_test_boost_libs}
-                       qpidmessaging qpidbroker qmfconsole legacystore)
-get_property(ls_include TARGET legacystore_${theSourceFile} PROPERTY INCLUDE_DIRECTORIES)
-list(APPEND  ls_include ${abs_top_srcdir}/src/qpid/legacystore)
-list(APPEND  ls_include ${abs_top_srcdir}/src/tests)
-set_target_properties (legacystore_${theSourceFile} PROPERTIES
-            INCLUDE_DIRECTORIES "${ls_include}"
-            COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                       qpidmessaging qpidtypes qpidbroker qpidcommon legacystore_shared)
+set_target_properties (legacystore_${theSourceFile} PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(legacystore_${theSourceFile})
-set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix})
 
 add_test (legacystore_${theSourceFile} ${test_wrap} ${legacystore_${theSourceFile}_LOCATION})
-ENDMACRO (define_selftest)
+ENDMACRO (define_legacystore_test)
 
-# add_definitions(-H)
+define_legacystore_test (SimpleTest)
+define_legacystore_test (OrderingTest)
+define_legacystore_test (TransactionalTest)
+define_legacystore_test (TwoPhaseCommitTest)
 
-define_selftest (SimpleTest)
-define_selftest (OrderingTest)
-define_selftest (TransactionalTest)
-define_selftest (TwoPhaseCommitTest)
+# Journal tests
+MACRO (define_journal_test mainSourceFile)
+if ("${ARGV1}" STREQUAL "LONG")
+  set (testname "journal_long_${mainSourceFile}")
+else ()
+  set (testname "journal_${mainSourceFile}")
+endif ()
+add_executable (${testname}
+                jrnl/${mainSourceFile}
+                unit_test
+                ${platform_test_additions})
+target_link_libraries (${testname}
+                       ${qpid_test_boost_libs}
+                       ${clock_gettime_LIB} legacystore_shared)
+if ("${ARGV1}" STREQUAL "LONG")
+  set_target_properties(${testname} PROPERTIES COMPILE_DEFINITIONS LONG_TEST)
+endif ()
+remember_location(${testname})
+add_test (${testname} ${test_wrap} ${${testname}_LOCATION})
+unset (testname)
+ENDMACRO (define_journal_test)
+
+define_journal_test (_ut_time_ns)
+define_journal_test (_ut_jexception)
+define_journal_test (_ut_jerrno)
+define_journal_test (_ut_rec_hdr)
+define_journal_test (_ut_jinf)
+define_journal_test (_ut_jdir)
+define_journal_test (_ut_enq_map)
+define_journal_test (_ut_txn_map)
+define_journal_test (_ut_lpmgr)
+define_journal_test (_st_basic)
+define_journal_test (_st_basic_txn)
+define_journal_test (_st_read)
+define_journal_test (_st_read_txn)
+define_journal_test (_st_auto_expand)
+define_journal_test (_ut_lpmgr LONG)
+define_journal_test (_st_basic LONG)
+define_journal_test (_st_read LONG)
+
+add_executable(jtt
+    jrnl/jtt/args.cpp
+    jrnl/jtt/data_src.cpp
+    jrnl/jtt/jrnl_init_params.cpp
+    jrnl/jtt/jrnl_instance.cpp
+    jrnl/jtt/main.cpp
+    jrnl/jtt/read_arg.cpp
+    jrnl/jtt/test_case.cpp
+    jrnl/jtt/test_case_result.cpp
+    jrnl/jtt/test_case_result_agregation.cpp
+    jrnl/jtt/test_case_set.cpp
+    jrnl/jtt/test_mgr.cpp)
+
+target_link_libraries (jtt
+                       ${Boost_PROGRAM_OPTIONS_LIBRARY}
+                       ${clock_gettime_LIB} legacystore_shared)
+
+add_test(journal_jtt ${CMAKE_CURRENT_BINARY_DIR}/jtt -c ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt/jtt.csv)
+
+add_executable (jtt__ut
+    jrnl/jtt/_ut_data_src.cpp
+    jrnl/jtt/_ut_jrnl_init_params.cpp
+    jrnl/jtt/_ut_read_arg.cpp
+    jrnl/jtt/_ut_jrnl_instance.cpp
+    jrnl/jtt/_ut_test_case.cpp
+    jrnl/jtt/_ut_test_case_result.cpp
+    jrnl/jtt/_ut_test_case_result_agregation.cpp
+    jrnl/jtt/_ut_test_case_set.cpp
+    jrnl/jtt/args.cpp
+    jrnl/jtt/data_src.cpp
+    jrnl/jtt/jrnl_init_params.cpp
+    jrnl/jtt/jrnl_instance.cpp
+    jrnl/jtt/read_arg.cpp
+    jrnl/jtt/test_case.cpp
+    jrnl/jtt/test_case_set.cpp
+    jrnl/jtt/test_case_result.cpp
+    jrnl/jtt/test_case_result_agregation.cpp
+    unit_test.cpp)
+
+target_link_libraries (jtt__ut
+                       ${qpid_test_boost_libs}
+                       ${Boost_PROGRAM_OPTIONS_LIBRARY}
+                       ${clock_gettime_LIB} legacystore_shared)
+
+add_test(NAME journal_jtt_ut WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt COMMAND ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
 
 #
 # Other test programs
 #
 
-# This should ideally be done as part of the test run, but I don't know a way
-# to get these arguments and the working directory set like Makefile.am does,
-# and have that run during the test pass.
-if (PYTHON_EXECUTABLE)
-  set (python_bld ${CMAKE_CURRENT_BINARY_DIR}/python)
-  execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --prefix=${pythoon_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
-                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../python)
-endif (PYTHON_EXECUTABLE)
+add_test (legacystore_python_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_python_tests${test_script_suffix})
 
 endif (BUILD_LEGACYSTORE)

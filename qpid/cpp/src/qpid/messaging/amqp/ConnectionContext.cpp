@@ -234,6 +234,14 @@ void ConnectionContext::acknowledge(boost::shared_ptr<SessionContext> ssn, qpid:
     wakeupDriver();
 }
 
+void ConnectionContext::nack(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message& message, bool reject)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    checkClosed(ssn);
+    ssn->nack(MessageImplAccess::get(message).getInternalId(), reject);
+    wakeupDriver();
+}
+
 void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
@@ -468,6 +476,15 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn)
     }
 }
 
+bool ConnectionContext::isClosed(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
+{
+    try {
+        checkClosed(ssn, lnk->receiver);
+        return false;
+    } catch (const LinkError&) {
+        return true;
+    }
+}
 void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
 {
     checkClosed(ssn, lnk->receiver);
@@ -584,7 +601,7 @@ std::size_t ConnectionContext::decodePlain(const char* buffer, std::size_t size)
         lock.notifyAll();
         return n;
     } else if (n == PN_ERR) {
-        throw qpid::Exception(QPID_MSG("Error on input: " << getError()));
+        throw MessagingException(QPID_MSG("Error on input: " << getError()));
     } else {
         return 0;
     }
@@ -608,7 +625,7 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
         haveOutput = true;
         return n;
     } else if (n == PN_ERR) {
-        throw qpid::Exception(QPID_MSG("Error on output: " << getError()));
+        throw MessagingException(QPID_MSG("Error on output: " << getError()));
     } else if (n == PN_EOS) {
         haveOutput = false;
         return 0;//Is this right?

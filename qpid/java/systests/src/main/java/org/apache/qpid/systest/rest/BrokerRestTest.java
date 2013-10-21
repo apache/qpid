@@ -237,7 +237,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
                 brokerDetails.get(Broker.BUILD_VERSION));
-        assertEquals("Unexpected value of attribute " + Broker.OPERATING_SYSTEM, System.getProperty("os.name") + " "
+        assertEquals("Unexpected value of attribute " + Broker.OPERATING_SYSTEM, OS_NAME + " "
                 + System.getProperty("os.version") + " " + System.getProperty("os.arch"),
                 brokerDetails.get(Broker.OPERATING_SYSTEM));
         assertEquals(

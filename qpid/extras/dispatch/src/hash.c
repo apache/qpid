@@ -23,18 +23,18 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct hash_item_t {
-    DEQ_LINKS(struct hash_item_t);
+typedef struct dx_hash_item_t {
+    DEQ_LINKS(struct dx_hash_item_t);
     unsigned char *key;
     union {
         void       *val;
         const void *val_const;
     } v;
-} hash_item_t;
+} dx_hash_item_t;
 
-ALLOC_DECLARE(hash_item_t);
-ALLOC_DEFINE(hash_item_t);
-DEQ_DECLARE(hash_item_t, items_t);
+ALLOC_DECLARE(dx_hash_item_t);
+ALLOC_DEFINE(dx_hash_item_t);
+DEQ_DECLARE(dx_hash_item_t, items_t);
 
 
 typedef struct bucket_t {
@@ -42,7 +42,7 @@ typedef struct bucket_t {
 } bucket_t;
 
 
-struct hash_t {
+struct dx_hash_t {
     bucket_t     *buckets;
     unsigned int  bucket_count;
     unsigned int  bucket_mask;
@@ -52,8 +52,17 @@ struct hash_t {
 };
 
 
+struct dx_hash_handle_t {
+    bucket_t    *bucket;
+    dx_hash_item_t *item;
+};
+
+ALLOC_DECLARE(dx_hash_handle_t);
+ALLOC_DEFINE(dx_hash_handle_t);
+
+
 // djb2 hash algorithm
-static unsigned long hash_function(dx_field_iterator_t *iter)
+static unsigned long dx_hash_function(dx_field_iterator_t *iter)
 {
     unsigned long hash = 5381;
     int c;
@@ -68,10 +77,10 @@ static unsigned long hash_function(dx_field_iterator_t *iter)
 }
 
 
-hash_t *hash(int bucket_exponent, int batch_size, int value_is_const)
+dx_hash_t *dx_hash(int bucket_exponent, int batch_size, int value_is_const)
 {
     int i;
-    hash_t *h = NEW(hash_t);
+    dx_hash_t *h = NEW(dx_hash_t);
 
     if (!h)
         return 0;
@@ -90,22 +99,22 @@ hash_t *hash(int bucket_exponent, int batch_size, int value_is_const)
 }
 
 
-void hash_free(hash_t *h)
+void dx_hash_free(dx_hash_t *h)
 {
     // TODO - Implement this
 }
 
 
-size_t hash_size(hash_t *h)
+size_t dx_hash_size(dx_hash_t *h)
 {
     return h ? h->size : 0;
 }
 
 
-static hash_item_t *hash_internal_insert(hash_t *h, dx_field_iterator_t *key, int *exists)
+static dx_hash_item_t *dx_hash_internal_insert(dx_hash_t *h, dx_field_iterator_t *key, int *exists, dx_hash_handle_t **handle)
 {
-    unsigned long  idx  = hash_function(key) & h->bucket_mask;
-    hash_item_t   *item = DEQ_HEAD(h->buckets[idx].items);
+    unsigned long   idx  = dx_hash_function(key) & h->bucket_mask;
+    dx_hash_item_t *item = DEQ_HEAD(h->buckets[idx].items);
 
     while (item) {
         if (dx_field_iterator_equal(key, item->key))
@@ -115,10 +124,12 @@ static hash_item_t *hash_internal_insert(hash_t *h, dx_field_iterator_t *key, in
 
     if (item) {
         *exists = 1;
+        if (handle)
+            *handle = 0;
         return item;
     }
 
-    item = new_hash_item_t();
+    item = new_dx_hash_item_t();
     if (!item)
         return 0;
 
@@ -128,14 +139,24 @@ static hash_item_t *hash_internal_insert(hash_t *h, dx_field_iterator_t *key, in
     DEQ_INSERT_TAIL(h->buckets[idx].items, item);
     h->size++;
     *exists = 0;
+
+    //
+    // If a pointer to a handle-pointer was supplied, create a handle for this item.
+    //
+    if (handle) {
+        *handle = new_dx_hash_handle_t();
+        (*handle)->bucket = &h->buckets[idx];
+        (*handle)->item   = item;
+    }
+
     return item;
 }
 
 
-dx_error_t hash_insert(hash_t *h, dx_field_iterator_t *key, void *val)
+dx_error_t dx_hash_insert(dx_hash_t *h, dx_field_iterator_t *key, void *val, dx_hash_handle_t **handle)
 {
-    int          exists = 0;
-    hash_item_t *item   = hash_internal_insert(h, key, &exists);
+    int             exists = 0;
+    dx_hash_item_t *item   = dx_hash_internal_insert(h, key, &exists, handle);
 
     if (!item)
         return DX_ERROR_ALLOC;
@@ -149,12 +170,12 @@ dx_error_t hash_insert(hash_t *h, dx_field_iterator_t *key, void *val)
 }
 
 
-dx_error_t hash_insert_const(hash_t *h, dx_field_iterator_t *key, const void *val)
+dx_error_t dx_hash_insert_const(dx_hash_t *h, dx_field_iterator_t *key, const void *val, dx_hash_handle_t **handle)
 {
     assert(h->is_const);
 
-    int          error = 0;
-    hash_item_t *item  = hash_internal_insert(h, key, &error);
+    int             error = 0;
+    dx_hash_item_t *item  = dx_hash_internal_insert(h, key, &error, handle);
 
     if (item)
         item->v.val_const = val;
@@ -162,10 +183,10 @@ dx_error_t hash_insert_const(hash_t *h, dx_field_iterator_t *key, const void *va
 }
 
 
-static hash_item_t *hash_internal_retrieve(hash_t *h, dx_field_iterator_t *key)
+static dx_hash_item_t *dx_hash_internal_retrieve(dx_hash_t *h, dx_field_iterator_t *key)
 {
-    unsigned long  idx  = hash_function(key) & h->bucket_mask;
-    hash_item_t   *item = DEQ_HEAD(h->buckets[idx].items);
+    unsigned long   idx  = dx_hash_function(key) & h->bucket_mask;
+    dx_hash_item_t *item = DEQ_HEAD(h->buckets[idx].items);
 
     while (item) {
         if (dx_field_iterator_equal(key, item->key))
@@ -177,9 +198,9 @@ static hash_item_t *hash_internal_retrieve(hash_t *h, dx_field_iterator_t *key)
 }
 
 
-dx_error_t hash_retrieve(hash_t *h, dx_field_iterator_t *key, void **val)
+dx_error_t dx_hash_retrieve(dx_hash_t *h, dx_field_iterator_t *key, void **val)
 {
-    hash_item_t *item = hash_internal_retrieve(h, key);
+    dx_hash_item_t *item = dx_hash_internal_retrieve(h, key);
     if (item)
         *val = item->v.val;
     else
@@ -189,11 +210,11 @@ dx_error_t hash_retrieve(hash_t *h, dx_field_iterator_t *key, void **val)
 }
 
 
-dx_error_t hash_retrieve_const(hash_t *h, dx_field_iterator_t *key, const void **val)
+dx_error_t dx_hash_retrieve_const(dx_hash_t *h, dx_field_iterator_t *key, const void **val)
 {
     assert(h->is_const);
 
-    hash_item_t *item = hash_internal_retrieve(h, key);
+    dx_hash_item_t *item = dx_hash_internal_retrieve(h, key);
     if (item)
         *val = item->v.val_const;
     else
@@ -203,10 +224,10 @@ dx_error_t hash_retrieve_const(hash_t *h, dx_field_iterator_t *key, const void *
 }
 
 
-dx_error_t hash_remove(hash_t *h, dx_field_iterator_t *key)
+dx_error_t dx_hash_remove(dx_hash_t *h, dx_field_iterator_t *key)
 {
-    unsigned long  idx  = hash_function(key) & h->bucket_mask;
-    hash_item_t   *item = DEQ_HEAD(h->buckets[idx].items);
+    unsigned long   idx  = dx_hash_function(key) & h->bucket_mask;
+    dx_hash_item_t *item = DEQ_HEAD(h->buckets[idx].items);
 
     while (item) {
         if (dx_field_iterator_equal(key, item->key))
@@ -217,11 +238,48 @@ dx_error_t hash_remove(hash_t *h, dx_field_iterator_t *key)
     if (item) {
         free(item->key);
         DEQ_REMOVE(h->buckets[idx].items, item);
-        free_hash_item_t(item);
+        free_dx_hash_item_t(item);
         h->size--;
         return DX_ERROR_NONE;
     }
 
     return DX_ERROR_NOT_FOUND;
+}
+
+
+void dx_hash_handle_free(dx_hash_handle_t *handle)
+{
+    if (handle)
+        free_dx_hash_handle_t(handle);
+}
+
+
+const unsigned char *dx_hash_key_by_handle(const dx_hash_handle_t *handle)
+{
+    if (handle)
+        return handle->item->key;
+    return 0;
+}
+
+
+dx_error_t dx_hash_remove_by_handle(dx_hash_t *h, dx_hash_handle_t *handle)
+{
+    unsigned char *key   = 0;
+    dx_error_t     error = dx_hash_remove_by_handle2(h, handle, &key);
+    if (key)
+        free(key);
+    return error;
+}
+
+
+dx_error_t dx_hash_remove_by_handle2(dx_hash_t *h, dx_hash_handle_t *handle, unsigned char **key)
+{
+    if (!handle)
+        return DX_ERROR_NOT_FOUND;
+    *key = handle->item->key;
+    DEQ_REMOVE(handle->bucket->items, handle->item);
+    free_dx_hash_item_t(handle->item);
+    h->size--;
+    return DX_ERROR_NONE;
 }
 

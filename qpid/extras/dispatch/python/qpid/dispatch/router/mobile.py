@@ -20,169 +20,170 @@
 from data import MessageRA, MessageMAR, MessageMAU
 
 try:
-  from dispatch import *
+    from dispatch import *
 except ImportError:
-  from ..stubs import *
+    from ..stubs import *
 
 class MobileAddressEngine(object):
-  """
-  This module is responsible for maintaining an up-to-date list of mobile addresses in the domain.
-  It runs the Mobile-Address protocol and generates an un-optimized routing table for mobile addresses.
-  Note that this routing table maps from the mobile address to the remote router where that address
-  is directly bound.
-  """
-  def __init__(self, container):
-    self.container = container
-    self.id = self.container.id
-    self.area = self.container.area
-    self.mobile_addr_max_age = self.container.config.mobile_addr_max_age
-    self.mobile_seq = 0
-    self.local_keys = []
-    self.added_keys = []
-    self.deleted_keys = []
-    self.remote_lists = {}      # map router_id => (sequence, list of keys)
-    self.remote_last_seen = {}  # map router_id => time of last seen advertizement/update
-    self.remote_changed = False
-    self.needed_mars = {}
-
-
-  def tick(self, now):
-    self._expire_remotes(now)
-    self._send_mars()
-
-    ##
-    ## If local keys have changed, collect the changes and send a MAU with the diffs
-    ## Note: it is important that the differential-MAU be sent before a RA is sent
-    ##
-    if len(self.added_keys) > 0 or len(self.deleted_keys) > 0:
-      self.mobile_seq += 1
-      self.container.send('_topo.%s.all' % self.area,
-                          MessageMAU(None, self.id, self.area, self.mobile_seq, self.added_keys, self.deleted_keys))
-      self.local_keys.extend(self.added_keys)
-      for key in self.deleted_keys:
-        self.local_keys.remove(key)
-      self.added_keys = []
-      self.deleted_keys = []
-      self.container.mobile_sequence_changed(self.mobile_seq)
-
-    ##
-    ## If remotes have changed, start the process of updating local bindings
-    ##
-    if self.remote_changed:
-      self.remote_changed = False
-      self._update_remote_keys()
-
-
-  def add_local_address(self, key):
     """
+    This module is responsible for maintaining an up-to-date list of mobile addresses in the domain.
+    It runs the Mobile-Address protocol and generates an un-optimized routing table for mobile addresses.
+    Note that this routing table maps from the mobile address to the remote router where that address
+    is directly bound.
     """
-    if self.local_keys.count(key) == 0:
-      if self.added_keys.count(key) == 0:
-        self.added_keys.append(key)
-    else:
-      if self.deleted_keys.count(key) > 0:
-        self.deleted_keys.remove(key)
+    def __init__(self, container, node_tracker):
+        self.container = container
+        self.node_tracker = node_tracker
+        self.id = self.container.id
+        self.area = self.container.area
+        self.mobile_addr_max_age = self.container.config.mobile_addr_max_age
+        self.mobile_seq = 0
+        self.local_addrs = []
+        self.added_addrs = []
+        self.deleted_addrs = []
+        self.remote_lists = {}      # map router_id => (sequence, list of addrs)
+        self.remote_last_seen = {}  # map router_id => time of last seen advertizement/update
+        self.needed_mars = {}
 
 
-  def del_local_address(self, key):
-    """
-    """
-    if self.local_keys.count(key) > 0:
-      if self.deleted_keys.count(key) == 0:
-        self.deleted_keys.append(key)
-    else:
-      if self.added_keys.count(key) > 0:
-        self.added_keys.remove(key)
+    def tick(self, now):
+        self._expire_remotes(now)
+        self._send_mars()
+
+        ##
+        ## If local addrs have changed, collect the changes and send a MAU with the diffs
+        ## Note: it is important that the differential-MAU be sent before a RA is sent
+        ##
+        if len(self.added_addrs) > 0 or len(self.deleted_addrs) > 0:
+            self.mobile_seq += 1
+            self.container.send('amqp:/_topo/%s/all/qdxrouter' % self.area,
+                                MessageMAU(None, self.id, self.area, self.mobile_seq, self.added_addrs, self.deleted_addrs))
+            self.local_addrs.extend(self.added_addrs)
+            for addr in self.deleted_addrs:
+                self.local_addrs.remove(addr)
+            self.added_addrs = []
+            self.deleted_addrs = []
+            self.container.mobile_sequence_changed(self.mobile_seq)
 
 
-  def handle_ra(self, msg, now):
-    if msg.id == self.id:
-      return
-
-    if msg.mobile_seq == 0:
-      return
-
-    if msg.id in self.remote_lists:
-      _seq, _list = self.remote_lists[msg.id]
-      self.remote_last_seen[msg.id] = now
-      if _seq < msg.mobile_seq:
-        self.needed_mars[(msg.id, msg.area, _seq)] = None
-    else:
-      self.needed_mars[(msg.id, msg.area, 0)] = None
-
-
-  def handle_mau(self, msg, now):
-    ##
-    ## If the MAU is differential, we can only use it if its sequence is exactly one greater
-    ## than our stored sequence.  If not, we will ignore the content and schedule a MAR.
-    ##
-    ## If the MAU is absolute, we can use it in all cases.
-    ##
-    if msg.id == self.id:
-      return
-
-    if msg.exist_list:
-      ##
-      ## Absolute MAU
-      ##
-      if msg.id in self.remote_lists:
-        _seq, _list = self.remote_lists[msg.id]
-        if _seq >= msg.mobile_seq:  # ignore duplicates
-          return
-      self.remote_lists[msg.id] = (msg.mobile_seq, msg.exist_list)
-      self.remote_last_seen[msg.id] = now
-      self.remote_changed = True
-    else:
-      ##
-      ## Differential MAU
-      ##
-      if msg.id in self.remote_lists:
-        _seq, _list = self.remote_lists[msg.id]
-        if _seq == msg.mobile_seq:  # ignore duplicates
-          return
-        self.remote_last_seen[msg.id] = now
-        if _seq + 1 == msg.mobile_seq:
-          ##
-          ## This is one greater than our stored value, incorporate the deltas
-          ##
-          if msg.add_list and msg.add_list.__class__ == list:
-            _list.extend(msg.add_list)
-          if msg.del_list and msg.del_list.__class__ == list:
-            for key in msg.del_list:
-              _list.remove(key)
-          self.remote_lists[msg.id] = (msg.mobile_seq, _list)
-          self.remote_changed = True
+    def add_local_address(self, addr):
+        """
+        """
+        if self.local_addrs.count(addr) == 0:
+            if self.added_addrs.count(addr) == 0:
+                self.added_addrs.append(addr)
         else:
-          self.needed_mars[(msg.id, msg.area, _seq)] = None
-      else:
-        self.needed_mars[(msg.id, msg.area, 0)] = None
+            if self.deleted_addrs.count(addr) > 0:
+                self.deleted_addrs.remove(addr)
 
 
-  def handle_mar(self, msg, now):
-    if msg.id == self.id:
-      return
-    if msg.have_seq < self.mobile_seq:
-      self.container.send('_topo.%s.%s' % (msg.area, msg.id),
-                          MessageMAU(None, self.id, self.area, self.mobile_seq, None, None, self.local_keys))
+    def del_local_address(self, addr):
+        """
+        """
+        if self.local_addrs.count(addr) > 0:
+            if self.deleted_addrs.count(addr) == 0:
+                self.deleted_addrs.append(addr)
+        else:
+            if self.added_addrs.count(addr) > 0:
+                self.added_addrs.remove(addr)
 
 
-  def _update_remote_keys(self):
-    keys = {}
-    for _id,(seq,key_list) in self.remote_lists.items():
-      keys[_id] = key_list
-    self.container.mobile_keys_changed(keys)
+    def handle_ra(self, msg, now):
+        if msg.id == self.id:
+            return
+
+        if msg.mobile_seq == 0:
+            return
+
+        if msg.id in self.remote_lists:
+            _seq, _list = self.remote_lists[msg.id]
+            self.remote_last_seen[msg.id] = now
+            if _seq < msg.mobile_seq:
+                self.needed_mars[(msg.id, msg.area, _seq)] = None
+        else:
+            self.needed_mars[(msg.id, msg.area, 0)] = None
 
 
-  def _expire_remotes(self, now):
-    for _id, t in self.remote_last_seen.items():
-      if now - t > self.mobile_addr_max_age:
-        self.remote_lists.pop(_id)
-        self.remote_last_seen.pop(_id)
-        self.remote_changed = True
+    def handle_mau(self, msg, now):
+        ##
+        ## If the MAU is differential, we can only use it if its sequence is exactly one greater
+        ## than our stored sequence.  If not, we will ignore the content and schedule a MAR.
+        ##
+        ## If the MAU is absolute, we can use it in all cases.
+        ##
+        if msg.id == self.id:
+            return
+
+        if msg.exist_list:
+            ##
+            ## Absolute MAU
+            ##
+            if msg.id in self.remote_lists:
+                _seq, _list = self.remote_lists[msg.id]
+                if _seq >= msg.mobile_seq:  # ignore duplicates
+                    return
+            self.remote_lists[msg.id] = (msg.mobile_seq, msg.exist_list)
+            self.remote_last_seen[msg.id] = now
+            (add_list, del_list) = self.node_tracker.overwrite_addresses(msg.id, msg.exist_list)
+            self._activate_remotes(msg.id, add_list, del_list)
+        else:
+            ##
+            ## Differential MAU
+            ##
+            if msg.id in self.remote_lists:
+                _seq, _list = self.remote_lists[msg.id]
+                if _seq == msg.mobile_seq:  # ignore duplicates
+                    return
+                self.remote_last_seen[msg.id] = now
+                if _seq + 1 == msg.mobile_seq:
+                    ##
+                    ## This is one greater than our stored value, incorporate the deltas
+                    ##
+                    if msg.add_list and msg.add_list.__class__ == list:
+                        _list.extend(msg.add_list)
+                    if msg.del_list and msg.del_list.__class__ == list:
+                        for addr in msg.del_list:
+                            _list.remove(addr)
+                    self.remote_lists[msg.id] = (msg.mobile_seq, _list)
+                    if msg.add_list:
+                        self.node_tracker.add_addresses(msg.id, msg.add_list)
+                    if msg.del_list:
+                        self.node_tracker.del_addresses(msg.id, msg.del_list)
+                    self._activate_remotes(msg.id, msg.add_list, msg.del_list)
+                else:
+                    self.needed_mars[(msg.id, msg.area, _seq)] = None
+            else:
+                self.needed_mars[(msg.id, msg.area, 0)] = None
 
 
-  def _send_mars(self):
-    for _id, _area, _seq in self.needed_mars.keys():
-      self.container.send('_topo.%s.%s' % (_area, _id), MessageMAR(None, self.id, self.area, _seq))
-    self.needed_mars = {}
+    def handle_mar(self, msg, now):
+        if msg.id == self.id:
+            return
+        if msg.have_seq < self.mobile_seq:
+            self.container.send('amqp:/_topo/%s/%s/qdxrouter' % (msg.area, msg.id),
+                                MessageMAU(None, self.id, self.area, self.mobile_seq, None, None, self.local_addrs))
+
+
+    def _expire_remotes(self, now):
+        for _id, t in self.remote_last_seen.items():
+            if now - t > self.mobile_addr_max_age:
+                self.remote_lists.pop(_id)
+                self.remote_last_seen.pop(_id)
+                self.remote_changed = True
+
+
+    def _send_mars(self):
+        for _id, _area, _seq in self.needed_mars.keys():
+            self.container.send('amqp:/_topo/%s/%s/qdxrouter' % (_area, _id), MessageMAR(None, self.id, self.area, _seq))
+        self.needed_mars = {}
+
+
+    def _activate_remotes(self, _id, added, deleted):
+        bit = self.node_tracker.maskbit_for_node(_id)
+        if added:
+            for a in added:
+                self.container.router_adapter.map_destination(a, bit)
+        if deleted:
+            for d in deleted:
+                self.container.router_adapter.unmap_destination(d, bit)
 

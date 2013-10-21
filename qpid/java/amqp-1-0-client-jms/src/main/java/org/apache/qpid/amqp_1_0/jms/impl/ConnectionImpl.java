@@ -28,7 +28,9 @@ import org.apache.qpid.amqp_1_0.transport.Container;
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 import javax.jms.Queue;
+
 import java.util.*;
+
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
@@ -57,6 +59,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private String _queuePrefix;
     private String _topicPrefix;
     private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
+    private boolean _syncPublish = Boolean.parseBoolean(System.getProperty("qpid.sync_publish", "false"));
+    private int _maxSessions;
 
     private static enum State
     {
@@ -80,6 +84,11 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public ConnectionImpl(String host, int port, String username, String password, String clientId, String remoteHost, boolean ssl) throws JMSException
     {
+        this(host, port, username, password, clientId, remoteHost, ssl,0);
+    }
+
+    public ConnectionImpl(String host, int port, String username, String password, String clientId, String remoteHost, boolean ssl, int maxSessions) throws JMSException
+    {
         _host = host;
         _port = port;
         _username = username;
@@ -87,6 +96,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         _clientId = clientId;
         _remoteHost = remoteHost;
         _ssl = ssl;
+        _maxSessions = maxSessions;
     }
 
     private void connect() throws JMSException
@@ -103,7 +113,9 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 try
                 {
                     _conn = new org.apache.qpid.amqp_1_0.client.Connection(_host,
-                            _port, _username, _password, container, _remoteHost, _ssl);
+                            _port, _username, _password, container, _remoteHost, _ssl,
+                            _maxSessions - 1);
+                    _conn.setConnectionErrorTask(new ConnectionErrorTask());
                     // TODO - retrieve negotiated AMQP version
                     _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
                 }
@@ -231,8 +243,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     public void setClientID(final String value) throws JMSException
     {
         checkNotConnected("Cannot set client-id to \""
-                                        + value
-                                        + "\"; client-id must be set before the connection is used");
+                          + value
+                          + "\"; client-id must be set before the connection is used");
         if( _clientId !=null )
         {
             throw new IllegalStateException("client-id has already been set");
@@ -521,5 +533,42 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         return _useBinaryMessageId;
     }
 
+    void setSyncPublish(boolean syncPublish)
+    {
+        _syncPublish = syncPublish;
+    }
+
+    boolean syncPublish()
+    {
+        return _syncPublish;
+    }
+
+    private class ConnectionErrorTask implements Runnable
+    {
+
+        @Override
+        public void run()
+        {
+
+            try
+            {
+                final ExceptionListener exceptionListener = getExceptionListener();
+
+                if(exceptionListener != null)
+                {
+                    final org.apache.qpid.amqp_1_0.type.transport.Error connectionError = _conn.getConnectionError();
+                    if(connectionError != null)
+                    {
+                        exceptionListener.onException(new JMSException(connectionError.getDescription(),
+                                connectionError.getCondition().toString()));
+                    }
+                }
+            }
+            catch (JMSException ignored)
+            {
+                // ignored
+            }
+        }
+    }
 
 }

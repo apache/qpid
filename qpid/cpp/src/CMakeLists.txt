@@ -299,14 +299,14 @@ if (CMAKE_COMPILER_IS_GNUCXX)
    if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
       set (CATCH_UNDEFINED "")
    endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-   set (COMPILER_FLAGS "-fvisibility-inlines-hidden -Wl,--as-needed")
+   set (COMPILER_FLAGS "-fvisibility-inlines-hidden")
    # gcc 4.1.2 on RHEL 5 needs -Wno-attributes to avoid an error that's fixed
    # in later gcc versions.
    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                    OUTPUT_VARIABLE GCC_VERSION)
    if (GCC_VERSION VERSION_EQUAL 4.1.2)
-     set (COMPILER_FLAGS "-Wl,--as-needed")
-     message (STATUS "Cannot use -fvisibility=hidden on gcc 4.1.2")
+     message (STATUS "Cannot restrict library symbol export on gcc 4.1.2")
+     set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden")
    else (GCC_VERSION VERSION_EQUAL 4.1.2)
      set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden -fvisibility=hidden")
    endif (GCC_VERSION VERSION_EQUAL 4.1.2)
@@ -890,10 +890,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     windows/SCM.cpp
   )
 
-  set (qpidmessaging_platform_SOURCES
-     qpid/messaging/HandleInstantiator.cpp
-  )
-
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   # POSIX (Non-Windows) platforms have a lot of overlap in sources; the only
@@ -990,9 +986,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidd_platform_SOURCES
     posix/QpiddBroker.cpp
-  )
-
-  set (qpidmessaging_platform_SOURCES
   )
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
@@ -1203,8 +1196,8 @@ install (DIRECTORY ../include/qpid
          PATTERN ".svn" EXCLUDE)
 install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
-set (qpidmessaging_SOURCES_hidden
-     qpid/messaging/AddressParser.h
+set (qpidmessaging_SOURCES
+     ${amqpc_SOURCES}
      qpid/messaging/AddressImpl.h
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/ReceiverImpl.h
@@ -1228,16 +1221,8 @@ set (qpidmessaging_SOURCES_hidden
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
-)
-set_source_files_properties(
-     ${qpidmessaging_SOURCES_hidden}
-     PROPERTIES
-     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
-
-set (qpidmessaging_SOURCES
-     ${qpidmessaging_platform_SOURCES}
-     ${qpidmessaging_SOURCES_hidden}
      qpid/messaging/Address.cpp
+     qpid/messaging/AddressParser.h
      qpid/messaging/AddressParser.cpp # The functions in here are not in the public interface, but qmf uses them
      qpid/messaging/Connection.cpp
      qpid/messaging/Duration.cpp
@@ -1256,17 +1241,14 @@ set (qpidmessaging_SOURCES
      qpid/messaging/amqp/EncodedMessage.h
      qpid/messaging/amqp/EncodedMessage.cpp
 )
-set_source_files_properties(
-     ${qpidmessaging_SOURCES}
-     PROPERTIES
-     COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}")
 
 add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
-target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon)
+target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon ${PROTON_LIBRARIES})
 set_target_properties (qpidmessaging PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
+                       COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}"
                        VERSION ${qpidmessaging_version}
                        SOVERSION ${qpidmessaging_version_major})
 install (TARGETS qpidmessaging
@@ -1533,6 +1515,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 add_subdirectory(qpid/store)
 add_subdirectory(tests)
+add_subdirectory(tests/legacystore)
 
 # Support for pkg-config
 

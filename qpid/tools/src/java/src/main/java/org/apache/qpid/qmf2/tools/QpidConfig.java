@@ -120,7 +120,7 @@ import org.apache.qpid.qmf2.util.GetOpt;
  *                         seconds)
  *     --sasl-mechanism=&lt;mech&gt;
  *                         SASL mechanism for authentication (e.g. EXTERNAL,
- *                         ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL
+ *                         ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL
  *                         automatically picks the most secure available
  *                         mechanism - use this option to override.
  * 
@@ -139,8 +139,6 @@ import org.apache.qpid.qmf2.util.GetOpt;
  *     --durable           The new queue or exchange is durable.
  * 
  *   Options for Adding Queues:
- *     --cluster-durable   The new queue becomes durable if there is only one
- *                         functioning cluster node
  *     --file-count=&lt;n&gt;    Number of files in queue's persistence journal
  *     --file-size=&lt;n&gt;     File size in pages (64Kib/page)
  *     --max-queue-size=&lt;n&gt;
@@ -258,7 +256,7 @@ public final class QpidConfig
     "                        seconds)\n" +
     "    --sasl-mechanism=<mech>\n" +
     "                        SASL mechanism for authentication (e.g. EXTERNAL,\n" +
-    "                        ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL\n" +
+    "                        ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL\n" +
     "                        automatically picks the most secure available\n" +
     "                        mechanism - use this option to override.\n" +
     "\n" +
@@ -277,8 +275,6 @@ public final class QpidConfig
     "    --durable           The new queue or exchange is durable.\n" +
     "\n" +
     "  Options for Adding Queues:\n" +
-    "    --cluster-durable   The new queue becomes durable if there is only one\n" +
-    "                        functioning cluster node\n" +
     "    --file-count=<n>    Number of files in queue's persistence journal\n" +
     "    --file-size=<n>     File size in pages (64Kib/page)\n" +
     "    --max-queue-size=<n>\n" +
@@ -337,7 +333,6 @@ public final class QpidConfig
     private String _altExchange = null;
     private boolean _passive = false;
     private boolean _durable = false;
-    private boolean _clusterDurable = false;
     private boolean _ifEmpty = true;
     private boolean _ifUnused = true;
     private long _fileCount = 8;
@@ -364,7 +359,6 @@ public final class QpidConfig
     private static final String MAX_QUEUE_SIZE  = "qpid.max_size";
     private static final String MAX_QUEUE_COUNT  = "qpid.max_count";
     private static final String POLICY_TYPE  = "qpid.policy_type";
-    private static final String CLUSTER_DURABLE = "qpid.persist_last_node";
     private static final String LVQ = "qpid.last_value_queue";
     private static final String LVQNB = "qpid.last_value_queue_no_browse";
     private static final String MSG_SEQUENCE = "qpid.msg_sequence";
@@ -388,7 +382,6 @@ public final class QpidConfig
         SPECIAL_ARGS.add(MAX_QUEUE_SIZE);
         SPECIAL_ARGS.add(MAX_QUEUE_COUNT);
         SPECIAL_ARGS.add(POLICY_TYPE);
-        SPECIAL_ARGS.add(CLUSTER_DURABLE);
         SPECIAL_ARGS.add(LVQ);
         SPECIAL_ARGS.add(LVQNB);
         SPECIAL_ARGS.add(MSG_SEQUENCE);
@@ -673,11 +666,6 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
                     System.out.printf("--durable ");
                 }
 
-                if (args.containsKey(CLUSTER_DURABLE) && QmfData.getLong(args.get(CLUSTER_DURABLE)) == 1)
-                {
-                    System.out.printf("--cluster-durable ");
-                }
-
                 if (queue.getBooleanValue("autoDelete"))
                 {
                     System.out.printf("auto-del ");
@@ -934,11 +922,6 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
         else if (_limitPolicy.equals("ring-strict"))
         {
             properties.put(POLICY_TYPE, "ring_strict");
-        }
-
-        if (_clusterDurable)
-        {
-            properties.put(CLUSTER_DURABLE, 1l);
         }
 
         if (_order.equals("lvq"))
@@ -1255,7 +1238,7 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
      */
     public QpidConfig(final String[] args)
     {
-        String[] longOpts = {"help", "durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
+        String[] longOpts = {"help", "durable", "bindings", "broker-addr=", "file-count=",
                              "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
                              "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
                              "force-if-used", "alternate-exchange=", "passive", "timeout=", "file=", "flow-stop-size=",
@@ -1311,11 +1294,6 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
                 if (opt[0].equals("--durable"))
                 {
                     _durable = true;
-                }
-
-                if (opt[0].equals("--cluster-durable"))
-                {
-                    _clusterDurable = true;
                 }
 
                 if (opt[0].equals("--file-count"))

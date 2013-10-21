@@ -26,6 +26,8 @@ commons-digester=lib/required/commons-digester-1.8.1.jar
 commons-lang=lib/required/commons-lang-2.6.jar
 commons-logging=lib/required/commons-logging-1.1.1.jar
 
+bcel=lib/required/bcel-5.2.jar
+
 derby-db=lib/required/derby-10.8.2.2.jar
 
 geronimo-jms=lib/required/geronimo-jms_1.1_spec-1.0.jar
@@ -57,7 +59,8 @@ jetty-servlet=lib/required/jetty-servlet-7.6.10.v20130312.jar
 jetty-websocket=lib/required/jetty-websocket-7.6.10.v20130312.jar
 servlet-api=${geronimo-servlet}
 
-dojo=lib/required/dojo-war-1.8.3.war
+dojo-version=1.9.1
+dojo=lib/required/dojo-${dojo-version}.zip
 
 jackson-core=lib/required/jackson-core-asl-1.9.0.jar
 jackson-mapper=lib/required/jackson-mapper-asl-1.9.0.jar
@@ -72,11 +75,14 @@ amqp-1-0-client.libs=
 amqp-1-0-client-example.libs=${commons-cli}
 amqp-1-0-client-jms.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
-broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
+broker-core.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${derby-db} ${commons-configuration.libs} \
-    ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket}
+    ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket} ${bcel}
 
-broker-plugins-management-http.libs=${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api}  ${jackson-core} ${jackson-mapper}
+#Borrow the broker-core libs, hack for release binary generation
+broker.libs=${broker-core.libs}
+
+broker-plugins-management-http.libs=${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api}  ${jackson-core} ${jackson-mapper} ${dojo}
 broker-plugins.libs=${log4j} ${commons-configuration.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
@@ -87,11 +93,13 @@ management-common.libs=
 
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
+broker-core.test.libs=${test.libs}
 client.test.libs=${test.libs}
 client-example.test.libs=${test.libs}
 tools.test.libs=
 systests.libs=${test.libs}
 perftests.test.libs=${test.libs}
+qpid-test-utils.libs = ${test.libs} ${geronimo-jms}
 
 broker-plugins-access-control.test.libs=${test.libs}
 broker-plugins-management-http.test.libs=${test.libs}
@@ -110,7 +118,7 @@ jca.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${geronimo-openejb} ${
 jca.test.libs=${test.libs}
 
 # optional bdbstore module deps
-bdb-je=lib/bdbstore/je-5.0.84.jar
+bdb-je=lib/bdbstore/je-5.0.97.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
 

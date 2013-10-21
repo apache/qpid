@@ -117,7 +117,7 @@ int main(int argc, char **argv)
         }
     }
 
-    dx_log_set_mask(0xFFFFFFFF);
+    dx_log_set_mask(0xFFFFFFFE);
 
     dispatch = dx_dispatch(config_path);
 

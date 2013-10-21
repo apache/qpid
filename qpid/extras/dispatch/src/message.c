@@ -376,7 +376,7 @@ static dx_field_location_t *dx_message_field_location(dx_message_t *msg, dx_mess
 }
 
 
-dx_message_t *dx_allocate_message()
+dx_message_t *dx_message()
 {
     dx_message_pvt_t *msg = (dx_message_pvt_t*) new_dx_message_t();
     if (!msg)
@@ -400,7 +400,7 @@ dx_message_t *dx_allocate_message()
 }
 
 
-void dx_free_message(dx_message_t *in_msg)
+void dx_message_free(dx_message_t *in_msg)
 {
     uint32_t rc;
     dx_message_pvt_t     *msg     = (dx_message_pvt_t*) in_msg;
@@ -417,14 +417,14 @@ void dx_free_message(dx_message_t *in_msg)
         dx_buffer_t *buf = DEQ_HEAD(content->buffers);
         while (buf) {
             DEQ_REMOVE_HEAD(content->buffers);
-            dx_free_buffer(buf);
+            dx_buffer_free(buf);
             buf = DEQ_HEAD(content->buffers);
         }
 
         buf = DEQ_HEAD(content->new_delivery_annotations);
         while (buf) {
             DEQ_REMOVE_HEAD(content->new_delivery_annotations);
-            dx_free_buffer(buf);
+            dx_buffer_free(buf);
             buf = DEQ_HEAD(content->new_delivery_annotations);
         }
 
@@ -474,9 +474,11 @@ dx_parsed_field_t *dx_message_delivery_annotations(dx_message_t *in_msg)
         !dx_parse_is_map(content->parsed_delivery_annotations)) {
         dx_field_iterator_free(da);
         dx_parse_free(content->parsed_delivery_annotations);
+        content->parsed_delivery_annotations = 0;
         return 0;
     }
 
+    dx_field_iterator_free(da);
     return content->parsed_delivery_annotations;
 }
 
@@ -506,7 +508,7 @@ dx_message_t *dx_message_receive(dx_delivery_t *delivery)
     // link it and the delivery together.
     //
     if (!msg) {
-        msg = (dx_message_pvt_t*) dx_allocate_message();
+        msg = (dx_message_pvt_t*) dx_message();
         dx_delivery_set_context(delivery, (void*) msg);
     }
 
@@ -517,7 +519,7 @@ dx_message_t *dx_message_receive(dx_delivery_t *delivery)
     //
     buf = DEQ_TAIL(msg->content->buffers);
     if (!buf) {
-        buf = dx_allocate_buffer();
+        buf = dx_buffer();
         DEQ_INSERT_TAIL(msg->content->buffers, buf);
     }
 
@@ -538,7 +540,7 @@ dx_message_t *dx_message_receive(dx_delivery_t *delivery)
             //
             if (dx_buffer_size(buf) == 0) {
                 DEQ_REMOVE_TAIL(msg->content->buffers);
-                dx_free_buffer(buf);
+                dx_buffer_free(buf);
             }
             dx_delivery_set_context(delivery, 0);
             return (dx_message_t*) msg;
@@ -556,7 +558,7 @@ dx_message_t *dx_message_receive(dx_delivery_t *delivery)
             // tail of the message's list.
             //
             if (dx_buffer_capacity(buf) == 0) {
-                buf = dx_allocate_buffer();
+                buf = dx_buffer();
                 DEQ_INSERT_TAIL(msg->content->buffers, buf);
             }
         } else

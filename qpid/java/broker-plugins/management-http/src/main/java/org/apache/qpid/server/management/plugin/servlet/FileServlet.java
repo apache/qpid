@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -34,6 +35,8 @@ import javax.servlet.http.HttpServletResponse;
 
 public class FileServlet extends HttpServlet
 {
+    private static final String RESOURCES_PREFIX = "/resources";
+
     public static final FileServlet INSTANCE = new FileServlet();
     
     private static final Map<String, String> CONTENT_TYPES;
@@ -52,14 +55,33 @@ public class FileServlet extends HttpServlet
         CONTENT_TYPES = Collections.unmodifiableMap(contentTypes);
     }
 
+    private final String _resourcePathPrefix;
+    private boolean _usePathInfo;
 
     public FileServlet()
     {
+        _resourcePathPrefix = RESOURCES_PREFIX;
+        _usePathInfo = false;
+    }
+
+    public FileServlet(String resourcePathPrefix, boolean usePathInfo)
+    {
+        _resourcePathPrefix = resourcePathPrefix;
+        _usePathInfo = usePathInfo;
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-        String filename = request.getServletPath();
+        String filename = null;
+        if(_usePathInfo)
+        {
+            filename = request.getPathInfo();
+        }
+        else
+        {
+            filename = request.getServletPath();
+        }
+
         if(filename.contains("."))
         {
             String suffix = filename.substring(filename.lastIndexOf('.')+1);
@@ -69,7 +91,8 @@ public class FileServlet extends HttpServlet
                 response.setContentType(contentType);
             }
         }
-        URL resourceURL = getClass().getResource("/resources" + filename);
+
+        URL resourceURL = getClass().getResource(_resourcePathPrefix + filename);
         if(resourceURL != null)
         {
             response.setStatus(HttpServletResponse.SC_OK);

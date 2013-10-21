@@ -1,0 +1,115 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<project name="Qpid Common Generate Sources" default="generate-sources">
+
+  <fail message="A required property was not set">
+    <condition>
+      <not>
+        <and>
+          <isset property="generated-amqp-0-8-dir"/>
+          <isset property="generated-amqp-0-10-dir"/>
+          <isset property="gentools.classes"/>
+          <isset property="version.file"/>
+        </and>
+      </not>
+    </condition>
+  </fail>
+
+  <condition property="generate.protocol.sources" value="true">
+    <istrue value="${generate}"/>
+  </condition>
+
+  <property name="mllib.dir" value="${basedir}/../../python"/>
+  <property name="xml.spec.dir" value="${basedir}/../../specs"/>
+
+  <property name="xml.spec.0-8" value="amqp0-8-qpid.stripped.xml"/>
+  <property name="xml.spec.0-9" value="amqp0-9-qpid.stripped.xml"/>
+  <property name="xml.spec.0-9-1" value="amqp0-9-1.stripped.xml"/>
+  <property name="xml.spec.0-10" value="amqp.0-10-qpid-errata.stripped.xml"/>
+  <property name="xml.spec.deps.0-8" value="${xml.spec.0-8} ${xml.spec.0-9} ${xml.spec.0-9-1}"/>
+  <property name="xml.spec.list.0-8" value='"${xml.spec.dir}/${xml.spec.0-8}" "${xml.spec.dir}/${xml.spec.0-9}" "${xml.spec.dir}/${xml.spec.0-9-1}"'/>
+
+  <property name="gentools.src" value="${basedir}/gentools/src"/>
+  <property name="generated.package" value="org/apache/qpid/framing" />
+
+  <property file="${version.file}" prefix="old."/>
+
+  <target name="check-version">
+    <exec executable="svnversion" spawn="false" failifexecutionfails="false"
+        dir="${basedir}" outputproperty="svnversion.output">
+      <arg line="."/>
+    </exec>
+    <condition property="version.stale">
+      <not>
+        <equals arg1="${svnversion.output}" arg2="${old.qpid.svnversion}"/>
+      </not>
+    </condition>
+  </target>
+
+  <target name="create-version" depends="check-version" if="version.stale">
+    <echo message="Writing new qpidversion.properties file with svnversion: '${svnversion.output}'"/>
+    <!-- Write the version.properties out.-->
+    <!-- Echos exactly as shown, so leave no spaces before/after lines -->
+    <echo file="${version.file}" append="false">qpid.version=${project.version}
+qpid.svnversion=${svnversion.output}
+qpid.name=qpid
+</echo>
+  </target>
+
+  <target name="amqp-0-10-generation" if="generate.protocol.sources">
+      <mkdir dir="${generated-amqp-0-10-dir}"/>
+      <echo message="Generating AMQP 0-10 protocol classes..."/>
+      <java classname="org.python.util.jython" dir="${generated-amqp-0-10-dir}" fork="true" failonerror="true">
+        <arg value="${basedir}/codegen"/>
+        <arg value="${generated-amqp-0-10-dir}"/>
+        <arg value="${xml.spec.dir}/${xml.spec.0-10}"/>
+        <arg value="${basedir}"/>
+        <classpath>
+          <path refid="source.generation.classpathref"/>
+        </classpath>
+        <sysproperty key="python.path" value ="${mllib.dir}"/>
+      </java>
+  </target>
+
+  <target name="compile-gentools">
+    <mkdir dir="${gentools.classes}"/>
+    <javac srcdir="${gentools.src}" destdir="${gentools.classes}" source="${java.source}" target="${java.target}" fork="true" includeantruntime="false">
+      <classpath>
+        <path refid="source.generation.classpathref"/>
+      </classpath>
+    </javac>
+  </target>
+
+  <target name="amqp-0-8-generation" depends="compile-gentools" if="generate.protocol.sources">
+    <mkdir dir="${generated-amqp-0-8-dir}/${generated.package}"/>
+    <echo message="Generating AMQP 0-8/0-9/0-9-1 protocol classes..."/>
+    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.classes}" failonerror="true">
+      <arg line='-j -o "${generated-amqp-0-8-dir}/${generated.package}" -t "${basedir}/templates" ${xml.spec.list.0-8}'/>
+      <classpath>
+        <pathelement path="${gentools.classes}" />
+        <path refid="source.generation.classpathref"/>
+      </classpath>
+    </java>
+  </target>
+
+  <target name="generate-sources" depends="amqp-0-8-generation, amqp-0-10-generation, create-version"/>
+
+</project>

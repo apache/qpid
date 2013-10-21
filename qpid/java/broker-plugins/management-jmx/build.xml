@@ -17,11 +17,11 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Management JMX" default="build">
-    <property name="module.depends" value="common broker management/common" />
-    <property name="module.test.depends" value="broker/tests common/tests management/common client" />
+    <property name="module.depends" value="common broker-core management/common" />
+    <property name="module.test.depends" value="broker-core/tests qpid-test-utils management/common client" />
     
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-management-common=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided -Sqpid-management-common=provided"/>
 
     <property name="broker.plugin" value="true"/>
 

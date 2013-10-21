@@ -88,8 +88,8 @@ typedef struct container_class_t {
 struct dx_container_t {
     dx_dispatch_t        *dx;
     dx_server_t          *server;
-    hash_t               *node_type_map;
-    hash_t               *node_map;
+    dx_hash_t            *node_type_map;
+    dx_hash_t            *node_map;
     sys_mutex_t          *lock;
     dx_node_t            *default_node;
     dxc_node_type_list_t  node_type_list;
@@ -108,7 +108,7 @@ static void setup_outgoing_link(dx_container_t *container, pn_link_t *pn_link)
 
     if (source) {
         iter   = dx_field_iterator_string(source, ITER_VIEW_NODE_ID);
-        hash_retrieve(container->node_map, iter, (void*) &node);
+        dx_hash_retrieve(container->node_map, iter, (void*) &node);
         dx_field_iterator_free(iter);
     }
     sys_mutex_unlock(container->lock);
@@ -149,7 +149,7 @@ static void setup_incoming_link(dx_container_t *container, pn_link_t *pn_link)
 
     if (target) {
         iter   = dx_field_iterator_string(target, ITER_VIEW_NODE_ID);
-        hash_retrieve(container->node_map, iter, (void*) &node);
+        dx_hash_retrieve(container->node_map, iter, (void*) &node);
         dx_field_iterator_free(iter);
     }
     sys_mutex_unlock(container->lock);
@@ -429,8 +429,8 @@ static void container_query_handler(void* context, const char *id, void *correla
     container_class_t *cls = (container_class_t*) context;
 
     if (cls->class_id == DX_CONTAINER_CLASS_CONTAINER) {
-        dx_agent_value_uint(correlator, "node_type_count", hash_size(cls->container->node_type_map));
-        dx_agent_value_uint(correlator, "node_count",      hash_size(cls->container->node_map));
+        dx_agent_value_uint(correlator, "node_type_count", dx_hash_size(cls->container->node_type_map));
+        dx_agent_value_uint(correlator, "node_count",      dx_hash_size(cls->container->node_map));
         if (cls->container->default_node)
             dx_agent_value_string(correlator, "default_node_type", cls->container->default_node->ntype->type_name);
         else
@@ -463,8 +463,8 @@ dx_container_t *dx_container(dx_dispatch_t *dx)
 
     container->dx            = dx;
     container->server        = dx->server;
-    container->node_type_map = hash(6,  4, 1);  // 64 buckets, item batches of 4
-    container->node_map      = hash(10, 32, 0); // 1K buckets, item batches of 32
+    container->node_type_map = dx_hash(6,  4, 1);  // 64 buckets, item batches of 4
+    container->node_map      = dx_hash(10, 32, 0); // 1K buckets, item batches of 32
     container->lock          = sys_mutex();
     container->default_node  = 0;
     DEQ_INIT(container->node_type_list);
@@ -507,7 +507,7 @@ int dx_container_register_node_type(dx_dispatch_t *dx, const dx_node_type_t *nt)
     nt_item->ntype = nt;
 
     sys_mutex_lock(container->lock);
-    result = hash_insert_const(container->node_type_map, iter, nt);
+    result = dx_hash_insert_const(container->node_type_map, iter, nt, 0);
     DEQ_INSERT_TAIL(container->node_type_list, nt_item);
     sys_mutex_unlock(container->lock);
 
@@ -565,7 +565,7 @@ dx_node_t *dx_container_create_node(dx_dispatch_t        *dx,
     if (name) {
         dx_field_iterator_t *iter = dx_field_iterator_string(name, ITER_VIEW_ALL);
         sys_mutex_lock(container->lock);
-        result = hash_insert(container->node_map, iter, node);
+        result = dx_hash_insert(container->node_map, iter, node, 0);
         sys_mutex_unlock(container->lock);
         dx_field_iterator_free(iter);
         if (result < 0) {
@@ -591,7 +591,7 @@ void dx_container_destroy_node(dx_node_t *node)
     if (node->name) {
         dx_field_iterator_t *iter = dx_field_iterator_string(node->name, ITER_VIEW_ALL);
         sys_mutex_lock(container->lock);
-        hash_remove(container->node_map, iter);
+        dx_hash_remove(container->node_map, iter);
         sys_mutex_unlock(container->lock);
         dx_field_iterator_free(iter);
         free(node->name);
@@ -651,9 +651,60 @@ void *dx_link_get_context(dx_link_t *link)
 }
 
 
+void dx_link_set_conn_context(dx_link_t *link, void *context)
+{
+    pn_session_t *pn_sess = pn_link_session(link->pn_link);
+    if (!pn_sess)
+        return;
+    pn_connection_t *pn_conn = pn_session_connection(pn_sess);
+    if (!pn_conn)
+        return;
+    dx_connection_t *conn = (dx_connection_t*) pn_connection_get_context(pn_conn);
+    if (!conn)
+        return;
+    dx_connection_set_link_context(conn, context);
+}
+
+
+void *dx_link_get_conn_context(dx_link_t *link)
+{
+    pn_session_t *pn_sess = pn_link_session(link->pn_link);
+    if (!pn_sess)
+        return 0;
+    pn_connection_t *pn_conn = pn_session_connection(pn_sess);
+    if (!pn_conn)
+        return 0;
+    dx_connection_t *conn = (dx_connection_t*) pn_connection_get_context(pn_conn);
+    if (!conn)
+        return 0;
+    return dx_connection_get_link_context(conn);
+}
+
+
 pn_link_t *dx_link_pn(dx_link_t *link)
 {
     return link->pn_link;
+}
+
+
+dx_connection_t *dx_link_connection(dx_link_t *link)
+{
+    if (!link || !link->pn_link)
+        return 0;
+
+    pn_session_t *sess = pn_link_session(link->pn_link);
+    if (!sess)
+        return 0;
+
+    pn_connection_t *conn = pn_session_connection(sess);
+    if (!conn)
+        return 0;
+
+    dx_connection_t *ctx = pn_connection_get_context(conn);
+    if (!ctx)
+        return 0;
+
+    return ctx;
 }
 
 

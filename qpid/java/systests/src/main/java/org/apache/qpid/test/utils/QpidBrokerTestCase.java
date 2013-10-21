@@ -19,6 +19,7 @@ package org.apache.qpid.test.utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -157,6 +158,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", DEFAULT_JMXPORT_REGISTRYSERVER);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", DEFAULT_SSL_PORT_VALUE);
+    public static final String OS_NAME = System.getProperty("os.name");
+    public static final boolean IS_OS_WINDOWS = String.valueOf(OS_NAME).toLowerCase().contains("windows");
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
@@ -168,7 +171,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
     protected static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
-    protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
+    protected static boolean _interleaveBrokerLog = Boolean.valueOf(System.getProperty(BROKER_LOG_INTERLEAVE,"true"));
 
     protected File _outputFile;
 
@@ -643,7 +646,32 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         File configLocation = new File(file);
         File workingDirectory = new File(System.getProperty("user.dir"));
-        return configLocation.getAbsolutePath().replace(workingDirectory.getAbsolutePath(), "").substring(1);
+
+        _logger.debug("Converting path to be relative to working directory: " + file);
+
+        try
+        {
+            String configPath = configLocation.getAbsolutePath();
+            String workingDirectoryPath = workingDirectory.getCanonicalPath();
+            if (IS_OS_WINDOWS)
+            {
+                configPath = configPath.toLowerCase();
+                workingDirectoryPath = workingDirectoryPath.toLowerCase();
+            }
+            if(!configPath.startsWith(workingDirectoryPath))
+            {
+                throw new RuntimeException("Provided path is not a child of the working directory: " + workingDirectoryPath);
+            }
+
+            String substring = configPath.replace(workingDirectoryPath, "").substring(1);
+            _logger.debug("Converted relative path: " + substring);
+
+            return substring;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Problem while converting to relative path", e);
+        }
     }
 
     protected String saveTestConfiguration(int port, TestBrokerConfiguration testConfiguration)

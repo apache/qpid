@@ -19,19 +19,27 @@
  *
  */
 
-require(["dojo/dom",
+define(["dojo/dom",
          "qpid/authorization/sasl",
+         "dijit/registry",
          "dojox/html/entities",
-         "dojo/domReady!"], function(dom, sasl, entities){
+         "dojo/domReady!"], function(dom, sasl, registry, entities){
 
 var updateUI = function updateUI(data)
 {
     if(data.user)
     {
-        dom.byId("authenticatedUser").innerHTML = entities.encode(String(data.user));
-        dom.byId("login").style.display = "inline";
+      var userName = entities.encode(String(data.user));
+      var controlButton = registry.byId("authenticatedUserControls");
+      if (controlButton)
+      {
+        controlButton.set("label", userName);
+      }
+      dom.byId("authenticatedUser").innerHTML = userName;
+      dom.byId("login").style.display = "inline";
     }
 };
 
-sasl.getUser(updateUI);
+return {getUserAndUpdateUI: function(){sasl.getUser(updateUI);}}
+
 });

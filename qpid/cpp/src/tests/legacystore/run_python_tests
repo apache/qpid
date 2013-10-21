@@ -18,47 +18,25 @@
 # under the License.
 #
 
-if test -z ${QPID_DIR} ; then
-    cat <<EOF
+source ../test_env.sh
 
-	===========  WARNING: PYTHON TESTS DISABLED ==============
-
-	QPID_DIR not set.
-
-	===========================================================
-
-EOF
-	exit
-fi
-
-. `dirname $0`/tests_env.sh
+#Add our directory to the python path
+export PYTHONPATH=$srcdir/legacystore:$PYTHONPATH
 
 MODULENAME=python_tests
 
 echo "Running Python tests in module ${MODULENAME}..."
 
-case x$1 in
-    xSHORT_TEST)
-        DEFAULT_PYTHON_TESTS="*.client_persistence.ExchangeQueueTests.* *.flow_to_disk.SimpleMaxSizeCountTest.test_browse_recover *.flow_to_disk.SimpleMaxSizeCountTest.test_durable_browse_recover *.flow_to_disk.MultiDurableQueueDurableMsgBrowseRecoverTxPTxCTest.test_mixed_limit_2" ;;
-    xLONG_TEST)
-        DEFAULT_PYTHON_TESTS= ;;
-    x)
-        DEFAULT_PYTHON_TESTS="*.client_persistence.* *.flow_to_disk.SimpleMaxSizeCountTest.* *.flow_to_disk.MultiDurableQueue*.test_mixed_limit_1 *.flow_to_disk.MultiQueue*.test_mixed_limit_1 *.resize.SimpleTest.* *.federation.*" ;;
-    *)
-        DEFAULT_PYTHON_TESTS=$1
-esac
-
-PYTHON_TESTS=${PYTHON_TESTS:-${DEFAULT_PYTHON_TESTS}}
+test -d $PYTHON_DIR || { echo "Skipping python tests, no python dir."; exit 0; }
+QPID_PORT=${QPID_PORT:-5672}
+FAILING=${FAILING:-/dev/null}
+PYTHON_TESTS=${PYTHON_TESTS:-$*}
 
 OUTDIR=${MODULENAME}.tmp
 rm -rf $OUTDIR
 
 # To debug a test, add the following options to the end of the following line:
 # -v DEBUG -c qpid.messaging.io.ops [*.testName]
-${PYTHON_DIR}/qpid-python-test -m ${MODULENAME} -I ${FAILING_PYTHON_TESTS} ${PYTHON_TESTS} -DOUTDIR=$OUTDIR #-v DEBUG
-RETCODE=$?
+${QPID_PYTHON_TEST} -m ${MODULENAME} -I $FAILING -DOUTDIR=$OUTDIR \
+  $PYTHON_TEST || exit 1
 
-if test x${RETCODE} != x0; then
-    exit 1;
-fi
-exit 0

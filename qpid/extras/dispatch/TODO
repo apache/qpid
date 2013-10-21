@@ -5,3 +5,50 @@ enhancements to be fixed by going to the Apache Qpid JIRA instance:
 
     http://issues.apache.org/jira/browse/QPID
 ==============================================================================
+
+- Router Mode:
+  o Stand-Alone-Router - Does not participate in routing protocol, does not permit inter-router
+                         links, acts as a normal interior-router otherwise.
+  o Interior-Router - Participates in the routing protocol
+  o Edge-Concentrator - Does not participate in routing protocol, requires uplink connection(s)
+                        This mode should be used when Dispatch is integrated into an endpoint
+                        application or when it is acting as a connection concentrator.
+                        Proxy and access-protocol functions will be available in this mode.
+
+- Connection Annotation:
+  o Type: Inter-router, uplink, endpoint, etc.  This formal annotation can be accessed internally
+    by the connection handlers to guide Dispatch's handling of new connections.
+  o Weight-{in,out}: Weight/Cost metrics for inter-router links
+
+- Statistics for Instrumentation:
+  o Link
+    . delivery count {unsettled, pre-settled}
+    . deliveries {accepted, rejected, released, modified}
+    . octets of delivery {accepted, rejected, released, modified}
+    . flow frame count
+    . disposition frame count {forward, backward}
+  o Address
+    . deliveries {ingress, egress, transit}
+    . octets of delivery {ingress, egress, transit}
+
+- Infrastructure
+  o Router_Link - Buffer and Iterator for a copy of the link's target address (for use
+                  as an address for messages with no 'to' field).
+  o Router Event Queue - Event queue to feed alerts to the Python router code.
+                         Neighbor-link-loss is a valuable event because it accelerates the
+                         detection of topology change.
+  o All PyRouter stimulus through a work queue.
+  o Router Code Updates
+    . Report address mappings to routers
+    . Generate RA immediately after updating routing tables
+    . Generate unsolicited updates for mobile addresses?
+  o Expose idle-timeout/keepalive on connectors and listeners
+
+- Major Roadmap Features
+  o Security Policy Enforcement
+  o Proxy (Translation Node) Capability
+  o Address Provisioning with variable semantics
+  o Link Routing
+  o Management, Instrumentation, and Accounting
+  o Link Cost
+  o Area Routing

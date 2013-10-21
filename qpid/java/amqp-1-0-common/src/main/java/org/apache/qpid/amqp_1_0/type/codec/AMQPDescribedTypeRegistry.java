@@ -49,6 +49,7 @@ import org.apache.qpid.amqp_1_0.codec.UnsignedShortWriter;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
 
 
+import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.RestrictedType;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.codec.*;

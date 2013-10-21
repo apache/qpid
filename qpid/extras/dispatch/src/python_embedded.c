@@ -398,11 +398,12 @@ typedef struct {
     PyObject       *handler;
     PyObject       *handler_rx_call;
     dx_dispatch_t  *dx;
-    dx_address_t   *address;
+    Py_ssize_t      addr_count;
+    dx_address_t  **addrs;
 } IoAdapter;
 
 
-static void dx_io_rx_handler(void *context, dx_message_t *msg)
+static void dx_io_rx_handler(void *context, dx_message_t *msg, int link_id)
 {
     IoAdapter *self = (IoAdapter*) context;
 
@@ -451,42 +452,60 @@ static void dx_io_rx_handler(void *context, dx_message_t *msg)
         return;
     }
 
+    sys_mutex_lock(lock);
     PyObject *pAP   = dx_field_to_py(ap_map);
     PyObject *pBody = dx_field_to_py(body_map);
 
-    PyObject *pArgs = PyTuple_New(2);
+    PyObject *pArgs = PyTuple_New(3);
     PyTuple_SetItem(pArgs, 0, pAP);
     PyTuple_SetItem(pArgs, 1, pBody);
+    PyTuple_SetItem(pArgs, 2, PyInt_FromLong((long) link_id));
 
     PyObject *pValue = PyObject_CallObject(self->handler_rx_call, pArgs);
     Py_DECREF(pArgs);
     if (pValue) {
         Py_DECREF(pValue);
     }
+    sys_mutex_unlock(lock);
+
+    dx_field_iterator_free(ap);
+    dx_field_iterator_free(body);
+    dx_parse_free(ap_map);
+    dx_parse_free(body_map);
 }
 
 
 static int IoAdapter_init(IoAdapter *self, PyObject *args, PyObject *kwds)
 {
-    const char *address;
-    if (!PyArg_ParseTuple(args, "Os", &self->handler, &address))
+    PyObject *addrs;
+    if (!PyArg_ParseTuple(args, "OO", &self->handler, &addrs))
         return -1;
 
     self->handler_rx_call = PyObject_GetAttrString(self->handler, "receive");
     if (!self->handler_rx_call || !PyCallable_Check(self->handler_rx_call))
         return -1;
 
+    if (!PyTuple_Check(addrs))
+        return -1;
+
     Py_INCREF(self->handler);
     Py_INCREF(self->handler_rx_call);
-    self->dx = dispatch;
-    self->address = dx_router_register_address(self->dx, address, dx_io_rx_handler, self);
+    self->dx         = dispatch;
+    self->addr_count = PyTuple_Size(addrs);
+    self->addrs      = NEW_PTR_ARRAY(dx_address_t, self->addr_count);
+    for (Py_ssize_t idx = 0; idx < self->addr_count; idx++)
+        self->addrs[idx] = dx_router_register_address(self->dx,
+                                                      PyString_AS_STRING(PyTuple_GetItem(addrs, idx)),
+                                                      dx_io_rx_handler, self);
     return 0;
 }
 
 
 static void IoAdapter_dealloc(IoAdapter* self)
 {
-    dx_router_unregister_address(self->address);
+    for (Py_ssize_t idx = 0; idx < self->addr_count; idx++)
+        dx_router_unregister_address(self->addrs[idx]);
+    free(self->addrs);
     Py_DECREF(self->handler);
     Py_DECREF(self->handler_rx_call);
     self->ob_type->tp_free((PyObject*)self);
@@ -507,10 +526,10 @@ static PyObject* dx_python_send(PyObject *self, PyObject *args)
     field = dx_compose(DX_PERFORMATIVE_DELIVERY_ANNOTATIONS, field);
     dx_compose_start_map(field);
 
-    dx_compose_insert_string(field, "qdx.ingress");
+    dx_compose_insert_string(field, DX_DA_INGRESS);
     dx_compose_insert_string(field, dx_router_id(ioa->dx));
 
-    dx_compose_insert_string(field, "qdx.trace");
+    dx_compose_insert_string(field, DX_DA_TRACE);
     dx_compose_start_list(field);
     dx_compose_insert_string(field, dx_router_id(ioa->dx));
     dx_compose_end_list(field);
@@ -530,10 +549,10 @@ static PyObject* dx_python_send(PyObject *self, PyObject *args)
     field = dx_compose(DX_PERFORMATIVE_BODY_AMQP_VALUE, field);
     dx_py_to_composed(body, field);
 
-    dx_message_t *msg = dx_allocate_message();
+    dx_message_t *msg = dx_message();
     dx_message_compose_2(msg, field);
     dx_router_send2(ioa->dx, address, msg);
-    dx_free_message(msg);
+    dx_message_free(msg);
     dx_compose_free(field);
 
     Py_INCREF(Py_None);
@@ -625,7 +644,8 @@ static void dx_python_setup()
         //
         // Add LogAdapter
         //
-        Py_INCREF(&LogAdapterType);
+        PyTypeObject *laType = &LogAdapterType;
+        Py_INCREF(laType);
         PyModule_AddObject(m, "LogAdapter", (PyObject*) &LogAdapterType);
 
         dx_register_log_constant(m, "LOG_TRACE",    LOG_TRACE);
@@ -637,10 +657,22 @@ static void dx_python_setup()
         dx_register_log_constant(m, "LOG_CRITICAL", LOG_CRITICAL);
 
         //
-        Py_INCREF(&IoAdapterType);
+        PyTypeObject *ioaType = &IoAdapterType;
+        Py_INCREF(ioaType);
         PyModule_AddObject(m, "IoAdapter", (PyObject*) &IoAdapterType);
 
         Py_INCREF(m);
         dispatch_module = m;
     }
 }
+
+void dx_python_lock()
+{
+    sys_mutex_lock(lock);
+}
+
+void dx_python_unlock()
+{
+    sys_mutex_unlock(lock);
+}
+

@@ -17,11 +17,11 @@
  - under the License.
  -->
 <project name="bdbstore-jmx" default="build">
-    <property name="module.depends" value="common broker broker-plugins/management-jmx management/common bdbstore" />
-    <property name="module.test.depends" value="broker/tests common/tests management/common client systests bdbstore/tests broker-plugins/memory-store" />
+    <property name="module.depends" value="common broker-core broker-plugins/management-jmx management/common bdbstore" />
+    <property name="module.test.depends" value="broker-core/tests qpid-test-utils management/common client systests bdbstore/tests broker-plugins/memory-store" />
 
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided -Sqpid-broker-plugins-management-jmx=provided -Sqpid-management-common=provided -Sqpid-bdbstore=provided -Sje=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided -Sqpid-broker-plugins-management-jmx=provided -Sqpid-management-common=provided -Sqpid-bdbstore=provided -Sje=provided"/>
 
     <property name="broker.plugin" value="true"/>
 

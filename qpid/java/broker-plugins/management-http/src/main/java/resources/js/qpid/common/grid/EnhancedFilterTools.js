@@ -22,12 +22,15 @@
 define([
   "dojo/_base/declare",
   "dojo/_base/event",
+  "dojo/dom-construct",
+  "dojo/date/locale",
   "dijit/form/Button",
   "dijit/form/ToggleButton",
   "qpid/common/grid/RowNumberLimitDialog",
   "qpid/common/grid/ColumnDefDialog",
-  "qpid/common/grid/FilterSummary"
-], function(declare, event, Button, ToggleButton, RowNumberLimitDialog, ColumnDefDialog, FilterSummary){
+  "qpid/common/grid/FilterSummary",
+  "qpid/management/UserPreferences"
+], function(declare, event, domConstruct, locale, Button, ToggleButton, RowNumberLimitDialog, ColumnDefDialog, FilterSummary, UserPreferences){
 
   var _stopEvent = function (evt){
     try{
@@ -64,6 +67,8 @@ define([
       this.filterStatusTip= params.filterStatusTip;
       this.clearFilterDialog = params.clearFilterDialog;
       this.filterDefDialog = params.filterDefDialog;
+      this.ruleCountToConfirmClearFilter = params.ruleCountToConfirmClearFilter;
+      this.displayLastUpdateTime = params.hasOwnProperty("displayLastUpdateTime")?params.displayLastUpdateTime:true;
 
       this._addRefreshButtons();
       this._addRowLimitButton(params.defaulGridRowLimit);
@@ -167,6 +172,38 @@ define([
 
       this.filterBar.addChild(this.autoRefreshButton);
       this.filterBar.addChild(this.refreshButton);
+
+      if (this.displayLastUpdateTime)
+      {
+        var updateStatusPanel = domConstruct.create("div");
+        var updateTimeLabel = domConstruct.create("span", {innerHTML: "Update time: ", "class": "formLabel-labelCell", "style": "padding-right: 5px;padding-left: 5px"}, updateStatusPanel);
+        var updateTimeLabelPreferredTZ = domConstruct.create("span", {innerHTML: "Preferred timezone:", "style": "padding-right: 5px"}, updateStatusPanel);
+        var updateTimePreferredTZ = domConstruct.create("span", {"style": "padding-right: 5px"}, updateStatusPanel);
+        var updateTimeLabelBrowserTZ = domConstruct.create("span", {innerHTML: "Browser timezone:", "style": "padding-right: 5px"}, updateStatusPanel);
+        var updateTimeBrowserTZ = domConstruct.create("span", {"style": "padding-right: 5px"}, updateStatusPanel);
+
+        var lastUpdateTimeUpdater = function(data)
+        {
+          var userTimeZone = UserPreferences.timeZone;
+          var displayStyle = userTimeZone? "inline" : "none";
+          updateTimeLabelPreferredTZ.style.display = displayStyle;
+          updateTimePreferredTZ.style.display = displayStyle;
+          var formatOptions = {selector: "time", timePattern: "HH:mm:ss.SSS", appendTimeZone: true, addOffset: true};
+          var updateTime = new Date();
+          updateTimePreferredTZ.innerHTML = UserPreferences.formatDateTime(updateTime.getTime(), formatOptions);
+          updateTimeBrowserTZ.innerHTML = locale.format(updateTime, formatOptions);
+        };
+
+        if (self.grid.updater.store)
+        {
+          // data have been already provided/or fetched
+          // set last update time to current time
+          lastUpdateTimeUpdater();
+        }
+
+        self.grid.updater.addOnUpdate(lastUpdateTimeUpdater);
+        domConstruct.place(updateStatusPanel, this.grid.viewsHeaderNode, "before");
+      }
     },
 
     _addRowLimitButton: function(defaulGridRowLimit)
@@ -240,6 +277,9 @@ define([
 
       this.filterDefButton.on("click", function(e){
         _stopEvent(e);
+
+        // a bit of a hack to force dialog to rebuild the criteria controls in order to get rid from empty rule controls
+        self.filterDefDialog._criteriasChanged = true;
         self.filterDefDialog.showDialog();
       });
 

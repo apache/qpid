@@ -17,11 +17,11 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins JDBC Store" default="build">
-    <property name="module.depends" value="common broker" />
-    <property name="module.test.depends" value="common/tests broker/tests" />
+    <property name="module.depends" value="common broker-core" />
+    <property name="module.test.depends" value="qpid-test-utils broker-core/tests" />
 
     <property name="module.genpom" value="true"/>
-    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker=provided"/>
+    <property name="module.genpom.args" value="-Sqpid-common=provided -Sqpid-broker-core=provided"/>
     <property name="broker-plugins-jdbc-store.libs" value="" />
 
     <property name="broker.plugin" value="true"/>

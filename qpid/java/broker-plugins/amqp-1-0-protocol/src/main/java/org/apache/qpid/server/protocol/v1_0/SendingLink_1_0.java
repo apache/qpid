@@ -164,7 +164,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-            _subscription = new Subscription_1_0(this, qd);
+            _subscription = new Subscription_1_0(this, qd, source.getDistributionMode() != StdDistMode.COPY);
         }
         else if(destination instanceof ExchangeDestination)
         {

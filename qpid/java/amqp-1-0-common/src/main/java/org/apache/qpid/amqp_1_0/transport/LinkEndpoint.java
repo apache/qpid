@@ -444,13 +444,25 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
         sendFlow(_flowTransactionId != null);
     }
 
+    public void sendFlowWithEcho()
+    {
+        sendFlow(_flowTransactionId != null, true);
+    }
+
+
     public void sendFlow(boolean setTransactionId)
+    {
+        sendFlow(setTransactionId, false);
+    }
+
+    public void sendFlow(boolean setTransactionId, boolean echo)
     {
         if(_state == State.ATTACHED || _state == State.ATTACH_SENT)
         {
             Flow flow = new Flow();
             flow.setLinkCredit(_linkCredit);
             flow.setDeliveryCount(_deliveryCount);
+            flow.setEcho(echo);
             _lastSentCreditLimit = _linkCredit.add(_deliveryCount);
             flow.setAvailable(_available);
             flow.setDrain(_drain);

@@ -110,7 +110,7 @@ struct QueueSettings
     void validate() const;
     QPID_BROKER_EXTERN void populate(const std::map<std::string, qpid::types::Variant>& inputs, std::map<std::string, qpid::types::Variant>& unused);
     QPID_BROKER_EXTERN void populate(const qpid::framing::FieldTable& inputs, qpid::framing::FieldTable& unused);
-    std::map<std::string, qpid::types::Variant> asMap() const;
+    QPID_BROKER_EXTERN std::map<std::string, qpid::types::Variant> asMap() const;
 
     struct Aliases : std::map<std::string, std::string>
     {

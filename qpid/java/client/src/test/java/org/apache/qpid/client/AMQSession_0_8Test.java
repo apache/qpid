@@ -21,10 +21,10 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.transport.TestNetworkConnection;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.amqp_0_91.QueueDeclareOkBodyImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.transport.TestNetworkConnection;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.url.AMQBindingURL;
 

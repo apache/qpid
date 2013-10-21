@@ -51,6 +51,7 @@ set(INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
 set(LIB_INSTALL_DIR "lib${LIB_SUFFIX}" CACHE PATH "Library object file directory")
 set(SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
 set(SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
+set(DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc CACHE PATH "Shared read-only data directory")
 set(MAN_INSTALL_DIR share/man CACHE PATH "Manpage directory")
 
 # determine the location for installing the python packages
@@ -61,13 +62,6 @@ if (PYTHONLIBS_FOUND)
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif (PYTHONLIBS_FOUND)
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${proton_include}
-    ${PYTHON_INCLUDE_PATH}
-    )
-
 ##
 ## Find dependencies
 ##
@@ -75,6 +69,13 @@ find_library(proton_lib qpid-proton)
 find_library(pthread_lib pthread)
 find_library(rt_lib rt)
 find_path(proton_include proton/driver.h)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${proton_include}
+    ${PYTHON_INCLUDE_PATH}
+    )
 
 set(CMAKE_C_FLAGS "-pthread -Wall -Werror -std=gnu99")
 set(CATCH_UNDEFINED "-Wl,--no-undefined")
@@ -85,6 +86,8 @@ set(CATCH_UNDEFINED "-Wl,--no-undefined")
 set(server_SOURCES
     src/agent.c
     src/alloc.c
+    src/amqp.c
+    src/bitmask.c
     src/buffer.c
     src/compose.c
     src/config.c
@@ -98,10 +101,16 @@ set(server_SOURCES
     src/parse.c
     src/posix/threading.c
     src/python_embedded.c
+    src/router_agent.c
     src/router_node.c
+    src/router_pynode.c
     src/server.c
     src/timer.c
     src/work_queue.c
+    )
+
+set_property(SOURCE src/python_embedded.c src/router_pynode.c
+    PROPERTY COMPILE_FLAGS -Wno-strict-aliasing
     )
 
 add_library(qpid-dispatch SHARED ${server_SOURCES})
@@ -116,7 +125,7 @@ install(TARGETS qpid-dispatch
 file(GLOB headers "include/qpid/dispatch/*.h")
 install(FILES ${headers} DESTINATION ${INCLUDE_INSTALL_DIR}/qpid/dispatch)
 install(FILES include/qpid/dispatch.h DESTINATION ${INCLUDE_INSTALL_DIR}/qpid)
-install(FILES etc/qpid-dispatch.conf DESTINATION ${SYSCONF_INSTALL_DIR})
+install(FILES etc/qpid-dispatch.conf DESTINATION ${SYSCONF_INSTALL_DIR}/qpid)
 
 ##
 ## Python modules installation
@@ -149,6 +158,13 @@ set(PYTHON_CONFIG_SOURCES
     python/qpid/dispatch/__init__.py
 )
 
+set(DOC_FILES
+    ChangeLog
+    LICENSE
+    README.md
+    TODO
+)
+
 install(FILES ${PYTHON_STUBS_SOURCES}
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch/stubs)
 
@@ -163,6 +179,9 @@ install(FILES python/qpid/__init__.py
 
 install(FILES python/qpid/dispatch/__init__.py
         DESTINATION ${PYTHON_SITELIB_PACKAGES}/qpid/dispatch)
+
+install(FILES ${DOC_FILES}
+        DESTINATION ${DOC_INSTALL_DIR}/qpid-dispatch)
 ##
 ## Build Tests
 ##

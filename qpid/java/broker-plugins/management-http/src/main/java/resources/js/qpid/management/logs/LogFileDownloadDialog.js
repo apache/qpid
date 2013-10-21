@@ -28,7 +28,7 @@ define([
   "dojo/parser",
   "dojo/store/Memory",
   "dojo/data/ObjectStore",
-  "dojo/date/locale",
+  "qpid/management/UserPreferences",
   "dojo/number",
   "dijit/registry",
   "dijit/Dialog",
@@ -36,7 +36,7 @@ define([
   "dojox/grid/EnhancedGrid",
   "dojo/text!../../../logs/showLogFileDownloadDialog.html",
   "dojo/domReady!"
-], function(declare, event, xhr, connect, domConstruct, query, parser, Memory, ObjectStore, locale, number,
+], function(declare, event, xhr, connect, domConstruct, query, parser, Memory, ObjectStore, UserPreferences, number,
     registry, Dialog, Button, EnhancedGrid, template){
 
 
@@ -79,8 +79,7 @@ return declare("qpid.management.logs.LogFileDownloadDialog", null, {
           },
           { name: "Last Modified", field: "lastModified", width: "250px",
               formatter: function(val) {
-                var d = new Date(val);
-                return locale.format(d, {selector:"date", datePattern: "EEE, MMM d yy, HH:mm:ss z (ZZZZ)"});
+                return UserPreferences.formatDateTime(val, {addOffset: true, appendTimeZone: true});
               }
           }
         ];
@@ -152,7 +151,7 @@ return declare("qpid.management.logs.LogFileDownloadDialog", null, {
 
     showDialog: function(){
         var self = this;
-        var requestArguments = {url: "rest/logfiles", sync: true, handleAs: "json"};
+        var requestArguments = {url: "rest/logfilenames", sync: true, handleAs: "json"};
         xhr.get(requestArguments).then(function(data){
           try
           {

@@ -355,6 +355,11 @@ Broker::Broker(const Broker::Options& conf) :
     //recover any objects via object factories
     objects.restore(*this);
 
+    // Assign to queues their users who created them (can be done after ACL is loaded in Plugin::initializeAll above
+    if ((getAcl()) && (store.get())) {
+        queues.eachQueue(boost::bind(&qpid::broker::Queue::updateAclUserQueueCount, _1));
+    }
+
     if(conf.enableMgmt) {
         if (getAcl()) {
             mgmtObject->set_maxConns(getAcl()->getMaxConnectTotal());
@@ -1289,8 +1294,9 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
 
-        if (!acl->approveCreateQueue(userId,name) )
-            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
+        if (!queues.find(name))
+            if (!acl->approveCreateQueue(userId,name) )
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
     }
 
     Exchange::shared_ptr alternate;

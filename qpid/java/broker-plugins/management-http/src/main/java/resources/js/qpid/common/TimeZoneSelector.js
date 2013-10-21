@@ -24,42 +24,21 @@ define([
         "dojo/dom-construct",
         "dojo/parser",
         "dojo/query",
+        "dojo/dom-style",
         "dojo/store/Memory",
         "dijit/_WidgetBase",
         "dijit/registry",
         "dojo/text!common/TimeZoneSelector.html",
+        "qpid/common/timezone",
         "dijit/form/ComboBox",
         "dijit/form/FilteringSelect",
-        "dojox/date/timezone",
+        "dijit/form/CheckBox",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, registry, template) {
+function (declare, array, domConstruct, parser, query, domStyle, Memory, _WidgetBase, registry, template, timezone) {
 
   var preferencesRegions = ["Africa","America","Antarctica","Arctic","Asia","Atlantic","Australia","Europe","Indian","Pacific"];
-
-  function initSupportedTimeZones()
-  {
-    var supportedTimeZones = [];
-    var allTimeZones = dojox.date.timezone.getAllZones();
-    for(var i = 0; i < allTimeZones.length; i++)
-    {
-      var timeZone = allTimeZones[i];
-      var elements = timeZone.split("/");
-      if (elements.length > 1)
-      {
-        for(var j = 0; j<preferencesRegions.length; j++)
-        {
-          if (elements[0] == preferencesRegions[j])
-          {
-            supportedTimeZones.push({id: timeZone, region: elements[0], city: elements.slice(1).join("/").replace("_", " ") })
-            break;
-          }
-        }
-      }
-    }
-    return supportedTimeZones;
-  }
 
   function initSupportedRegions()
   {
@@ -77,6 +56,7 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
     domNode: null,
     _regionSelector: null,
     _citySelector: null,
+    _utcSelector: null,
 
     constructor: function(args)
     {
@@ -91,8 +71,17 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
     postCreate: function(){
       this.inherited(arguments);
 
-      var supportedTimeZones = initSupportedTimeZones();
+      var self = this;
+      if (this._args.labelStyle)
+      {
+        var nl = query(".labelClass", this.domNode);
+        array.forEach(nl, function(entry, i){
+          domStyle.set(entry, self._args.labelStyle)
+        });
+      }
+      var supportedTimeZones = timezone.getAllTimeZones();
 
+      this._utcSelector = registry.byNode(query(".utcSelector", this.domNode)[0]);
       this._citySelector = registry.byNode(query(".timezoneCity", this.domNode)[0]);
       this._citySelector.set("searchAttr", "city");
       this._citySelector.set("query", {region: /.*/});
@@ -105,8 +94,28 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
       this._regionSelector = registry.byNode(query(".timezoneRegion", this.domNode)[0]);
       var supportedRegions = initSupportedRegions();
       this._regionSelector.set("store", new Memory({ data: supportedRegions }));
-      var self = this;
 
+      this._utcSelector.on("change", function(value){
+        var checked = this.get("checked");
+        if (checked)
+        {
+          self.value ="UTC";
+        }
+        else
+        {
+          if (self._citySelector.value && self._regionSelector.value)
+          {
+            self.value = self._citySelector.value;
+          }
+          else
+          {
+            self.value = null;
+          }
+        }
+        self._citySelector.set("disabled", checked);
+        self._regionSelector.set("disabled", checked);
+        self._handleOnChange(self.value);
+      });
       this._regionSelector.on("change", function(value){
         if (value=="undefined")
         {
@@ -114,6 +123,7 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
           self._citySelector.query.region = /.*/;
           self.value = null;
           self._citySelector.set("value", null);
+          self._handleOnChange(self.value);
         }
         else
         {
@@ -133,6 +143,7 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
 
       this._citySelector.on("change", function(value){
         self.value = value;
+        self._handleOnChange(value);
       });
 
       this._setValueAttr(this._args.value);
@@ -142,23 +153,33 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
     {
       if (value)
       {
-        var elements = value.split("/");
-        if (elements.length > 1)
+        if (value == "UTC")
         {
-          this._regionSelector.timeZone = value;
-          this._regionSelector.set("value", elements[0]);
-          this._citySelector.set("value", value);
+          this._utcSelector.set("checked", true);
         }
         else
         {
-          this._regionSelector.set("value", "undefined");
+          this._utcSelector.set("checked", false);
+          var elements = value.split("/");
+          if (elements.length > 1)
+          {
+            this._regionSelector.timeZone = value;
+            this._regionSelector.set("value", elements[0]);
+            this._citySelector.set("value", value);
+          }
+          else
+          {
+            this._regionSelector.set("value", "undefined");
+          }
         }
       }
       else
       {
+        this._utcSelector.set("checked", false);
         this._regionSelector.set("value", "undefined");
       }
       this.value = value;
+      this._handleOnChange(value);
     },
 
     destroy: function()
@@ -170,6 +191,26 @@ function (declare, array, domConstruct, parser, query, Memory, _WidgetBase, regi
       }
       _regionSelector: null;
       _citySelector: null;
+      _utcSelector: null;
+    },
+
+    onChange: function(newValue){},
+
+    _handleOnChange: function(newValue)
+    {
+      if (this._lastValueReported != newValue)
+      {
+        this._lastValueReported = newValue;
+        if(this._onChangeHandle)
+        {
+          this._onChangeHandle.remove();
+        }
+        this._onChangeHandle = this.defer(function()
+        {
+            this._onChangeHandle = null;
+            this.onChange(newValue);
+        });
+      }
     }
 
   });

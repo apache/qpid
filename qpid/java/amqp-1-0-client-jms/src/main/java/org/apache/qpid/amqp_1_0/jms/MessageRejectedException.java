@@ -22,8 +22,13 @@ import javax.jms.JMSException;
 
 public class MessageRejectedException extends JMSException
 {
-    public MessageRejectedException(String s)
+    public MessageRejectedException(String reason)
     {
-        super(s);
+        super(reason);
+    }
+
+    public MessageRejectedException(java.lang.String reason, java.lang.String errorCode)
+    {
+        super(reason, errorCode);
     }
 }

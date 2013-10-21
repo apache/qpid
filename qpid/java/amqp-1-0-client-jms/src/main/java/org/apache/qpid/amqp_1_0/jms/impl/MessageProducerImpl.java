@@ -18,9 +18,8 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
-import org.apache.qpid.amqp_1_0.client.ConnectionClosedException;
-import org.apache.qpid.amqp_1_0.client.LinkDetachedException;
-import org.apache.qpid.amqp_1_0.client.Sender;
+import org.apache.qpid.amqp_1_0.client.*;
+import org.apache.qpid.amqp_1_0.client.Session;
 import org.apache.qpid.amqp_1_0.jms.MessageProducer;
 import org.apache.qpid.amqp_1_0.jms.MessageRejectedException;
 import org.apache.qpid.amqp_1_0.jms.QueueSender;
@@ -32,9 +31,14 @@ import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
+import javax.jms.Message;
 import java.util.UUID;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
-import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.messaging.Rejected;
+import org.apache.qpid.amqp_1_0.type.messaging.Source;
+import org.apache.qpid.amqp_1_0.type.messaging.codec.AcceptedConstructor;
+import org.apache.qpid.amqp_1_0.type.messaging.codec.RejectedConstructor;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class MessageProducerImpl implements MessageProducer, QueueSender, TopicPublisher
 {
@@ -64,12 +68,20 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         }
 
         _session = session;
+        _syncPublish = session.getConnection().syncPublish();
 
         if(_destination != null)
         {
             try
             {
-                _sender = _session.getClientSession().createSender(_session.toAddress(_destination));
+                _sender = _session.getClientSession().createSender(_session.toAddress(_destination), new Session.SourceConfigurator()
+                {
+                    public void configureSource(final Source source)
+                    {
+                        source.setDefaultOutcome(new Accepted());
+                        source.setOutcomes(AcceptedConstructor.SYMBOL_CONSTRUCTOR, RejectedConstructor.SYMBOL_CONSTRUCTOR);
+                    }
+                });
             }
             catch (Sender.SenderCreationException e)
             {
@@ -299,9 +311,24 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             throw jmsException;
         }
 
-        if(_syncPublish && !action.wasAccepted(_syncPublishTimeout + System.currentTimeMillis()))
+        if(_syncPublish && !action.wasAccepted(_syncPublishTimeout))
         {
-            throw new MessageRejectedException("Message was rejected");
+            if (action.getOutcome() instanceof Rejected)
+            {
+                Error err = ((Rejected) action.getOutcome()).getError();
+                if(err != null)
+                {
+                    throw new MessageRejectedException(err.getDescription(), err.getCondition().toString());
+                }
+                else
+                {
+                    throw new MessageRejectedException("Message was rejected: " + action.getOutcome());
+                }
+            }
+            else
+            {
+                throw new MessageRejectedException("Message was not accepted.  Outcome was: " + action.getOutcome());
+            }
         }
 
         if(getDestination() != null)
@@ -460,7 +487,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
                 {
                     try
                     {
-                        _lock.wait(timeout - System.currentTimeMillis());
+                        _lock.wait(timeout);
                     }
                     catch (InterruptedException e)
                     {
@@ -484,6 +511,11 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
                     return _outcome instanceof Accepted;
                 }
             }
+        }
+
+        Outcome getOutcome()
+        {
+            return _outcome;
         }
     }
 }

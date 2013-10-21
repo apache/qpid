@@ -29,8 +29,9 @@ define(["dojo/_base/xhr",
         "dojo/_base/connect",
         "qpid/common/properties",
         "dojox/html/entities",
+        "qpid/management/UserPreferences",
         "dojo/domReady!"],
-    function (xhr, dom, construct, domClass, win, registry, parser, array, event, json, query, connect, properties, entities) {
+    function (xhr, dom, construct, domClass, win, registry, parser, array, event, json, query, connect, properties, entities, UserPreferences) {
 
 
         function encode(val){
@@ -88,9 +89,7 @@ define(["dojo/_base/xhr",
                                 }
                                 tableStr += "</table>";
                             } else if(domClass.contains(field,"datetime")) {
-                                var d = new Date(0);
-                                d.setUTCSeconds(val/1000);
-                                field.innerHTML = d.toLocaleString();
+                                field.innerHTML = UserPreferences.formatDateTime(val, {addOffset: true, appendTimeZone: true});
                             } else {
                                 field.innerHTML = encode(val);
                             }

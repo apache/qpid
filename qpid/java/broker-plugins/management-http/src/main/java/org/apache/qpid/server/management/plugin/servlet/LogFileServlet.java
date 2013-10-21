@@ -35,13 +35,12 @@ import org.apache.qpid.server.management.plugin.servlet.rest.AbstractServlet;
 
 public class LogFileServlet extends AbstractServlet
 {
+    private static final String PARAMETER_LOG_FILE = "l";
+
     private static final long serialVersionUID = 1L;
 
     public static final String LOGS_FILE_NAME = "qpid-logs-%s.zip";
     public static final String DATE_FORMAT = "yyyy-MM-dd-mmHHss";
-
-    @SuppressWarnings("unchecked")
-    private LogFileHelper _helper = new LogFileHelper(Collections.list(LogManager.getRootLogger().getAllAppenders()));
 
     @Override
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws IOException,
@@ -57,7 +56,7 @@ public class LogFileServlet extends AbstractServlet
             return;
         }
 
-        String[] requestedFiles = request.getParameterValues("l");
+        String[] requestedFiles = request.getParameterValues(PARAMETER_LOG_FILE);
 
         if (requestedFiles == null || requestedFiles.length == 0)
         {
@@ -65,11 +64,14 @@ public class LogFileServlet extends AbstractServlet
             return;
         }
 
+        @SuppressWarnings("unchecked")
+        LogFileHelper helper = new LogFileHelper(Collections.list(LogManager.getRootLogger().getAllAppenders()));
+
         List<LogFileDetails> logFiles = null;
 
         try
         {
-            logFiles = _helper.findLogFileDetails(requestedFiles);
+            logFiles = helper.findLogFileDetails(requestedFiles);
         }
         catch(IllegalArgumentException e)
         {
@@ -91,7 +93,7 @@ public class LogFileServlet extends AbstractServlet
         OutputStream os = response.getOutputStream();
         try
         {
-            _helper.writeLogFiles(logFiles, os);
+            helper.writeLogFiles(logFiles, os);
         }
         finally
         {

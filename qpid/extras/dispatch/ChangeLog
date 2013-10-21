@@ -1,2 +1,26 @@
 Version 0.1:
 	* Initial development work.
+	* QPID-5186: Install documentation files.
+	* QPID-5185: Install qpid-dispatch.conf to /etc/qpid
+	* QPID-4612: Dispatch - Change server and container pattern to be consistent with other objects
+	* QPID-4613: Dispatch Message API Improvement
+	* QPID-4614: CTEST for Dispatch
+	* QPID-4913: Dispatch - Add a configuration file reader to configure the service
+	* QPID-4968: Dispatch - Generalized framework for embedded Python modules
+	* QPID-4974: Dispatch - Improve the API for parsing and composing AMQP-typed fields
+	* QPID-5066: Dispatch - move Python code into the qpid.dispatch package
+	* QPID-5068: Dispatch - Internal feature to easily add and update Delivery Annotations
+	* QPID-5096: Dispatch - Install the configuration file
+	* QPID-5097: Dispatch - create a source tarball
+	* QPID-5181: Dispatch - Assign temporary source addresses for dynamic listener links
+	* QPID-5185: Move the qpid-dispatch.conf file to /etc/qpid
+	* QPID-5186: Installing Dispatch should also install the LICENSE, TODO and related files
+	* QPID-5189: Add a config.sh file for Qpid Dispatch to set an environment for running the router
+
+	* QPID-4788: Dispatch - Re-schedule of an "immediate" timer causes crash
+	* QPID-4816: dispatch-router crashes when incomplete (but valid) url specified by client.
+	* QPID-4997: Dispatch - Thread safety issues in the usage of Proton
+	* QPID-5064: Dispatch - make-install doesn't install the Python artifacts
+	* QPID-5173: [dispatch] cmake ignores overrides to CMAKE_INCLUDE_PATH and CMAKE_LIBRARY_PATH
+	* QPID-5201: Dispatch - Fix build errors in Release mode
+	* QPID-5218: [dispatch] Crash when outgoing window > 0 and multiple subscribed Messenger clients

@@ -186,7 +186,7 @@ typedef struct dx_connector_t dx_connector_t;
 typedef struct dx_connection_t dx_connection_t;
 
 /**
- * Event type for the connection callback.
+ * \brief Event type for the connection callback.
  */
 typedef enum {
     /// The connection just opened via a listener (inbound).
@@ -201,79 +201,6 @@ typedef enum {
     /// The connection requires processing.
     DX_CONN_EVENT_PROCESS
 } dx_conn_event_t;
-
-
-/**
- * \brief Connection Event Handler
- *
- * Callback invoked when processing is needed on a proton connection.  This
- * callback shall be invoked on one of the server's worker threads.  The
- * server guarantees that no two threads shall be allowed to process a single
- * connection concurrently.  The implementation of this handler may assume
- * that it has exclusive access to the connection and its subservient
- * components (sessions, links, deliveries, etc.).
- *
- * @param handler_context The handler context supplied in dx_server_set_conn_handler.
- * @param conn_context The handler context supplied in dx_server_{connect,listen}.
- * @param event The event/reason for the invocation of the handler.
- * @param conn The connection that requires processing by the handler.
- * @return A value greater than zero if the handler did any proton processing for
- *         the connection.  If no work was done, zero is returned.
- */
-typedef int (*dx_conn_handler_cb_t)(void *handler_context, void* conn_context, dx_conn_event_t event, dx_connection_t *conn);
-
-
-/**
- * \brief Set the connection event handler callback.
- *
- * Set the connection handler callback for the server.  This callback is
- * mandatory and must be set prior to the invocation of dx_server_run.
- *
- * @param dx The dispatch handle returned by dx_dispatch.
- * @param conn_hander The handler for processing connection-related events.
- */
-void dx_server_set_conn_handler(dx_dispatch_t *dx, dx_conn_handler_cb_t conn_handler, void *handler_context);
-
-
-/**
- * \brief Set the user context for a connection.
- *
- * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
- * @param context User context to be stored with the connection.
- */
-void dx_connection_set_context(dx_connection_t *conn, void *context);
-
-
-/**
- * \brief Get the user context from a connection.
- *
- * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
- * @return The user context stored with the connection.
- */
-void *dx_connection_get_context(dx_connection_t *conn);
-
-
-/**
- * \brief Activate a connection for output.
- *
- * This function is used to request that the server activate the indicated
- * connection.  It is assumed that the connection is one that the caller does
- * not have permission to access (i.e. it may be owned by another thread
- * currently).  An activated connection will, when writable, appear in the
- * internal work list and be invoked for processing by a worker thread.
- *
- * @param conn The connection over which the application wishes to send data
- */
-void dx_server_activate(dx_connection_t *conn);
-
-
-/**
- * \brief Get the wrapped proton-engine connection object.
- *
- * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
- * @return The proton connection object.
- */
-pn_connection_t *dx_connection_pn(dx_connection_t *conn);
 
 
 /**
@@ -367,7 +294,113 @@ typedef struct dx_server_config_t {
      * meaningful for outgoing (connector) connections only.
      */
     int allow_redirect;
+
+    /**
+     * The specified role of the connection.  This can be used to control the behavior and
+     * capabilities of the connections.
+     */
+    const char *role;
 } dx_server_config_t;
+
+
+/**
+ * \brief Connection Event Handler
+ *
+ * Callback invoked when processing is needed on a proton connection.  This
+ * callback shall be invoked on one of the server's worker threads.  The
+ * server guarantees that no two threads shall be allowed to process a single
+ * connection concurrently.  The implementation of this handler may assume
+ * that it has exclusive access to the connection and its subservient
+ * components (sessions, links, deliveries, etc.).
+ *
+ * @param handler_context The handler context supplied in dx_server_set_conn_handler.
+ * @param conn_context The handler context supplied in dx_server_{connect,listen}.
+ * @param event The event/reason for the invocation of the handler.
+ * @param conn The connection that requires processing by the handler.
+ * @return A value greater than zero if the handler did any proton processing for
+ *         the connection.  If no work was done, zero is returned.
+ */
+typedef int (*dx_conn_handler_cb_t)(void *handler_context, void* conn_context, dx_conn_event_t event, dx_connection_t *conn);
+
+
+/**
+ * \brief Set the connection event handler callback.
+ *
+ * Set the connection handler callback for the server.  This callback is
+ * mandatory and must be set prior to the invocation of dx_server_run.
+ *
+ * @param dx The dispatch handle returned by dx_dispatch.
+ * @param conn_hander The handler for processing connection-related events.
+ */
+void dx_server_set_conn_handler(dx_dispatch_t *dx, dx_conn_handler_cb_t conn_handler, void *handler_context);
+
+
+/**
+ * \brief Set the user context for a connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @param context User context to be stored with the connection.
+ */
+void dx_connection_set_context(dx_connection_t *conn, void *context);
+
+
+/**
+ * \brief Get the user context from a connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @return The user context stored with the connection.
+ */
+void *dx_connection_get_context(dx_connection_t *conn);
+
+
+/**
+ * \brief Set the link context for a connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @param context Link context to be stored with the connection.
+ */
+void dx_connection_set_link_context(dx_connection_t *conn, void *context);
+
+
+/**
+ * \brief Get the link context from a connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @return The link context stored with the connection.
+ */
+void *dx_connection_get_link_context(dx_connection_t *conn);
+
+
+/**
+ * \brief Activate a connection for output.
+ *
+ * This function is used to request that the server activate the indicated
+ * connection.  It is assumed that the connection is one that the caller does
+ * not have permission to access (i.e. it may be owned by another thread
+ * currently).  An activated connection will, when writable, appear in the
+ * internal work list and be invoked for processing by a worker thread.
+ *
+ * @param conn The connection over which the application wishes to send data
+ */
+void dx_server_activate(dx_connection_t *conn);
+
+
+/**
+ * \brief Get the wrapped proton-engine connection object.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @return The proton connection object.
+ */
+pn_connection_t *dx_connection_pn(dx_connection_t *conn);
+
+
+/**
+ * \brief Get the configuration that was used in the setup of this connection.
+ *
+ * @param conn Connection object supplied in DX_CONN_EVENT_{LISTENER,CONNETOR}_OPEN
+ * @return A pointer to the server configuration used in the establishment of this connection.
+ */
+const dx_server_config_t *dx_connection_config(const dx_connection_t *conn);
 
 
 /**

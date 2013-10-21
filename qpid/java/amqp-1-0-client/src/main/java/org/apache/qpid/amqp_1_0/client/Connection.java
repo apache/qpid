@@ -28,7 +28,10 @@ import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.net.ssl.SSLSocketFactory;
+
+import org.apache.qpid.amqp_1_0.framing.SocketExceptionHandler;
 import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
 import org.apache.qpid.amqp_1_0.transport.AMQPTransport;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
@@ -38,8 +41,10 @@ import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
-public class Connection
+public class Connection implements SocketExceptionHandler
 {
     private static final Logger RAW_LOGGER = Logger.getLogger("RAW");
     private static final int MAX_FRAME_SIZE = 65536;
@@ -47,6 +52,8 @@ public class Connection
     private String _address;
     private ConnectionEndpoint _conn;
     private int _sessionCount;
+    private Runnable _connectionErrorTask;
+    private Error _socketError;
 
 
     public Connection(final String address,
@@ -101,7 +108,7 @@ public class Connection
                   final Container container,
                   final String remoteHostname) throws ConnectionException
     {
-        this(address,port,username,password,maxFrameSize,container,remoteHostname,false);
+        this(address,port,username,password,maxFrameSize,container,remoteHostname,false,-1);
     }
 
     public Connection(final String address,
@@ -111,7 +118,7 @@ public class Connection
                   final Container container,
                   final boolean ssl) throws ConnectionException
     {
-        this(address, port, username, password, MAX_FRAME_SIZE,container,null,ssl);
+        this(address, port, username, password, MAX_FRAME_SIZE,container,null,ssl,-1);
     }
 
     public Connection(final String address,
@@ -121,28 +128,32 @@ public class Connection
                   final String remoteHost,
                   final boolean ssl) throws ConnectionException
     {
-        this(address, port, username, password, MAX_FRAME_SIZE,new Container(),remoteHost,ssl);
+        this(address, port, username, password, MAX_FRAME_SIZE,new Container(),remoteHost,ssl,-1);
     }
 
     public Connection(final String address,
-                  final int port,
-                  final String username,
-                  final String password,
-                  final Container container,
-                  final String remoteHost,
-                  final boolean ssl) throws ConnectionException
+                      final int port,
+                      final String username,
+                      final String password,
+                      final Container container,
+                      final String remoteHost,
+                      final boolean ssl,
+                      final int channelMax) throws ConnectionException
     {
-        this(address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,ssl);
+        this(address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,ssl,
+             channelMax);
     }
 
 
     public Connection(final String address,
-                  final int port,
-                  final String username,
-                  final String password,
-                  final int maxFrameSize,
-                  final Container container,
-                  final String remoteHostname, boolean ssl) throws ConnectionException
+                      final int port,
+                      final String username,
+                      final String password,
+                      final int maxFrameSize,
+                      final Container container,
+                      final String remoteHostname,
+                      boolean ssl,
+                      int channelMax) throws ConnectionException
     {
 
         _address = address;
@@ -169,6 +180,10 @@ public class Connection
                 }
             };
             _conn = new ConnectionEndpoint(container, principal, password);
+            if(channelMax >= 0)
+            {
+                _conn.setChannelMax((short)channelMax);
+            }
             _conn.setDesiredMaxFrameSize(UnsignedInteger.valueOf(maxFrameSize));
             _conn.setRemoteAddress(s.getRemoteSocketAddress());
             _conn.setRemoteHostname(remoteHostname);
@@ -223,7 +238,7 @@ public class Connection
             }
 
 
-            ConnectionHandler.BytesOutputHandler outputHandler = new ConnectionHandler.BytesOutputHandler(outputStream, src, _conn);
+            ConnectionHandler.BytesOutputHandler outputHandler = new ConnectionHandler.BytesOutputHandler(outputStream, src, _conn, this);
             Thread outputThread = new Thread(outputHandler);
             outputThread.setDaemon(true);
             outputThread.start();
@@ -383,9 +398,18 @@ public class Connection
 
 
             }
+            if(!handler.isDone())
+            {
+                _conn.inputClosed();
+                if(_conn.getConnectionEventListener() != null)
+                {
+                    _conn.getConnectionEventListener().closeReceived();
+                }
+            }
         }
         catch (IOException e)
         {
+            _conn.inputClosed();
             e.printStackTrace();
         }
     }
@@ -407,6 +431,40 @@ public class Connection
 
                 }
             }
+        }
+    }
+
+    /**
+     * Set the connection error task that will be used as a callback for any socket read/write errors.
+     *
+     * @param connectionErrorTask connection error task
+     */
+    public void setConnectionErrorTask(Runnable connectionErrorTask)
+    {
+        _connectionErrorTask = connectionErrorTask;
+    }
+
+    /**
+     * Return the connection error for any socket read/write error that has occurred
+     *
+     * @return connection error
+     */
+    public Error getConnectionError()
+    {
+        return _socketError;
+    }
+
+    @Override
+    public void processSocketException(Exception exception)
+    {
+        Error socketError = new Error();
+        socketError.setDescription(exception.getClass() + ": " + exception.getMessage());
+        socketError.setCondition(ConnectionError.SOCKET_ERROR);
+        _socketError = socketError;
+        if(_connectionErrorTask != null)
+        {
+            Thread thread = new Thread(_connectionErrorTask);
+            thread.run();
         }
     }
 }

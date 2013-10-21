@@ -23,8 +23,12 @@ package org.apache.qpid.server.protocol.v1_0;
 import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
 import org.apache.qpid.amqp_1_0.type.Binary;
@@ -92,6 +96,7 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
                 {
                     String propName = reader.readStringImpl();
                     Object value = reader.readObject();
+
                     map.put(propName, value);
                 }
                 catch (EOFException e)
@@ -105,21 +110,23 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
 
             }
 
-            return new AmqpValue(map);
+            return new AmqpValue(fixMapValues(map));
 
         }
         else if("amqp/map".equals(mimeType))
         {
             BBDecoder decoder = new BBDecoder();
             decoder.init(ByteBuffer.wrap(data));
-            return new AmqpValue(decoder.readMap());
+            final Map<String,Object> map = decoder.readMap();
+
+            return new AmqpValue(fixMapValues(map));
 
         }
         else if("amqp/list".equals(mimeType))
         {
             BBDecoder decoder = new BBDecoder();
             decoder.init(ByteBuffer.wrap(data));
-            return new AmqpValue(decoder.readList());
+            return new AmqpValue(fixListValues(decoder.readList()));
         }
         else if("jms/stream-message".equals(mimeType))
         {
@@ -130,7 +137,7 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
             {
                 try
                 {
-                    list.add(reader.readObject());
+                    list.add(fixValue(reader.readObject()));
                 }
                 catch (TypedBytesFormatException e)
                 {
@@ -148,6 +155,47 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
             return new Data(new Binary(data));
 
         }
+    }
+
+    private static Map fixMapValues(final Map<String, Object> map)
+    {
+        for(Map.Entry<String,Object> entry : map.entrySet())
+        {
+            entry.setValue(fixValue(entry.getValue()));
+        }
+        return map;
+    }
+
+    private static Object fixValue(final Object value)
+    {
+        if(value instanceof byte[])
+        {
+            return new Binary((byte[])value);
+        }
+        else if(value instanceof Map)
+        {
+            return fixMapValues((Map)value);
+        }
+        else if(value instanceof List)
+        {
+            return fixListValues((List)value);
+        }
+        else
+        {
+            return value;
+        }
+    }
+
+    private static List fixListValues(final List list)
+    {
+        ListIterator iterator = list.listIterator();
+        while(iterator.hasNext())
+        {
+            Object value = iterator.next();
+            iterator.set(fixValue(value));
+
+        }
+        return list;
     }
 
     private StoredMessage<MessageMetaData_1_0> convertServerMessage(final MessageMetaData_1_0 metaData,

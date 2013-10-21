@@ -46,7 +46,6 @@ class AmqpBrokerTest(BrokerTest):
     """
     def setUp(self):
         BrokerTest.setUp(self)
-        os.putenv("QPID_LOAD_MODULE", BrokerTest.amqpc_lib)
         self.port_holder = HaPort(self)
         self.broker = self.amqp_broker(port_holder=self.port_holder)
         self.default_config = Config(self.broker)

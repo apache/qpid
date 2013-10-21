@@ -29,7 +29,7 @@ class RouterTest(unittest.TestCase):
       if 'CTEST_SOURCE_DIR' not in os.environ:
         raise Exception("Environment variable 'CTEST_SOURCE_DIR' not set")
       srcdir = os.environ['CTEST_SOURCE_DIR']
-      self.router = subprocess.Popen(['../router/dispatch-router', '-c', '%s/onerouter.conf' % srcdir],
+      self.router = subprocess.Popen(['../router/dispatch-router', '-c', '%s/config-1/A.conf' % srcdir],
                                      stderr=subprocess.PIPE, stdout=subprocess.PIPE)
       time.sleep(1)
 
@@ -130,6 +130,65 @@ class RouterTest(unittest.TestCase):
 
       M4.recv(1)
       M4.get(rm)
+      self.assertEqual(i, rm.body['number'])
+
+    M1.stop()
+    M2.stop()
+    M3.stop()
+    M4.stop()
+
+
+  def test_2a_multicast_unsettled(self):
+    addr = "amqp://0.0.0.0:20000/pre_settled/multicast/1"
+    M1 = Messenger()
+    M2 = Messenger()
+    M3 = Messenger()
+    M4 = Messenger()
+
+    M1.timeout = 1.0
+    M2.timeout = 1.0
+    M3.timeout = 1.0
+    M4.timeout = 1.0
+
+    M1.outgoing_window = 5
+    M2.incoming_window = 5
+    M3.incoming_window = 5
+    M4.incoming_window = 5
+
+    M1.start()
+    M2.start()
+    M3.start()
+    M4.start()
+    self.subscribe(M2, addr)
+    self.subscribe(M3, addr)
+    self.subscribe(M4, addr)
+
+    tm = Message()
+    rm = Message()
+
+    tm.address = addr
+    for i in range(2):
+      tm.body = {'number': i}
+      M1.put(tm)
+    M1.send(0)
+
+    for i in range(2):
+      M2.recv(1)
+      trk = M2.get(rm)
+      M2.accept(trk)
+      M2.settle(trk)
+      self.assertEqual(i, rm.body['number'])
+
+      M3.recv(1)
+      trk = M3.get(rm)
+      M3.accept(trk)
+      M3.settle(trk)
+      self.assertEqual(i, rm.body['number'])
+
+      M4.recv(1)
+      trk = M4.get(rm)
+      M4.accept(trk)
+      M4.settle(trk)
       self.assertEqual(i, rm.body['number'])
 
     M1.stop()
@@ -310,8 +369,8 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
-      self.assertFalse('qdx.trace' in da)
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
+      self.assertEqual(da['qdx.trace'], ['_topo/area/Qpid.Dispatch.Router.A/'])
 
     ##
     ## Pre-existing ingress
@@ -329,7 +388,7 @@ class RouterTest(unittest.TestCase):
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
       self.assertEqual(da['qdx.ingress'], 'ingress-router')
-      self.assertFalse('qdx.trace' in da)
+      self.assertEqual(da['qdx.trace'], ['_topo/area/Qpid.Dispatch.Router.A/'])
 
     ##
     ## Invalid trace type
@@ -346,8 +405,8 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
-      self.assertFalse('qdx.trace' in da)
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
+      self.assertEqual(da['qdx.trace'], ['_topo/area/Qpid.Dispatch.Router.A/'])
 
     ##
     ## Empty trace
@@ -364,8 +423,8 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
-      self.assertEqual(da['qdx.trace'], ['Qpid.Dispatch.Router.A'])
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
+      self.assertEqual(da['qdx.trace'], ['_topo/area/Qpid.Dispatch.Router.A/'])
 
     ##
     ## Non-empty trace
@@ -382,8 +441,8 @@ class RouterTest(unittest.TestCase):
       self.assertEqual(i, rm.body['number'])
       da = rm.instructions
       self.assertEqual(da.__class__, dict)
-      self.assertEqual(da['qdx.ingress'], 'Qpid.Dispatch.Router.A')
-      self.assertEqual(da['qdx.trace'], ['first.hop', 'Qpid.Dispatch.Router.A'])
+      self.assertEqual(da['qdx.ingress'], '_topo/area/Qpid.Dispatch.Router.A/')
+      self.assertEqual(da['qdx.trace'], ['first.hop', '_topo/area/Qpid.Dispatch.Router.A/'])
 
     M1.stop()
     M2.stop()

@@ -45,6 +45,17 @@ void Outgoing::wakeup()
     session.wakeup();
 }
 
+namespace {
+bool requested_reliable(pn_link_t* link)
+{
+    return pn_link_remote_snd_settle_mode(link) == PN_SND_UNSETTLED;
+}
+bool requested_unreliable(pn_link_t* link)
+{
+    return pn_link_remote_snd_settle_mode(link) == PN_SND_SETTLED;
+}
+}
+
 OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session& session,
                                      qpid::sys::OutputControl& o, SubscriptionType type, bool e, bool p)
     : Outgoing(broker, session, source, target, pn_link_name(l)),
@@ -54,7 +65,8 @@ OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, 
       queue(q), deliveries(5000), link(l), out(o),
       current(0), outstanding(0),
       buffer(1024)/*used only for header at present*/,
-      unreliable(pn_link_remote_snd_settle_mode(link) == PN_SND_SETTLED)
+      //for exclusive queues, assume unreliable unless reliable is explicitly requested; otherwise assume reliable unless unreliable requested
+      unreliable(exclusive ? !requested_reliable(link) : requested_unreliable(link))
 {
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         deliveries[i].init(i);
@@ -106,8 +118,8 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
         write(&buffer[0], encoder.getPosition());
         Translation t(r.msg);
         t.write(*this);
-        if (unreliable) pn_delivery_settle(delivery);
         if (pn_link_advance(link)) {
+            if (unreliable) pn_delivery_settle(delivery);
             --outstanding;
             outgoingMessageSent();
             QPID_LOG(debug, "Sent message " << r.msg.getSequence() << " from " << queue->getName() << ", index=" << r.index);
@@ -121,6 +133,10 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
     } else if (pn_delivery_updated(delivery)) {
         assert(r.delivery == delivery);
         r.disposition = pn_delivery_remote_state(delivery);
+        if (!r.disposition && pn_delivery_settled(delivery)) {
+            //if peer has settled without setting state, assume accepted
+            r.disposition = PN_ACCEPTED;
+        }
         if (r.disposition) {
             switch (r.disposition) {
               case PN_ACCEPTED:
@@ -132,17 +148,18 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
                 outgoingMessageRejected();
                 break;
               case PN_RELEASED:
-                if (preAcquires()) queue->release(r.cursor, false);//TODO: for PN_RELEASED, delivery count should not be incremented
+                if (preAcquires()) queue->release(r.cursor, false);//for PN_RELEASED, delivery count should not be incremented
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               case PN_MODIFIED:
-                if (preAcquires()) queue->release(r.cursor, true);//TODO: proper handling of modified
+                if (preAcquires()) queue->release(r.cursor, pn_disposition_is_failed(pn_delivery_remote(delivery)));
+                //TODO: handle undeliverable-here and message-annotations
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               default:
                 QPID_LOG(warning, "Unhandled disposition: " << r.disposition);
             }
-            //TODO: ony settle once any dequeue on store has completed
+            //TODO: only settle once any dequeue on store has completed
             pn_delivery_settle(delivery);
             r.reset();
         }

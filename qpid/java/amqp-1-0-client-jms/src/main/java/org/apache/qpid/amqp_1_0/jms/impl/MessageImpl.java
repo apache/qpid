@@ -42,7 +42,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
-import java.nio.charset.Charset;
 import java.util.*;
 
 public abstract class MessageImpl implements Message
@@ -62,6 +61,8 @@ public abstract class MessageImpl implements Message
     static final Set<String> JMS_TOPIC_ATTRIBUTES = set(TOPIC_ATTRIBUTE);
     static final Set<String> JMS_TEMP_QUEUE_ATTRIBUTES = set(QUEUE_ATTRIBUTE, TEMPORARY_ATTRIBUTE);
     static final Set<String> JMS_TEMP_TOPIC_ATTRIBUTES = set(TOPIC_ATTRIBUTE, TEMPORARY_ATTRIBUTE);
+
+    private static final String JMSXGROUP_ID = "JMSXGroupID";
 
     private Header _header;
     private Properties _properties;
@@ -456,6 +457,10 @@ public abstract class MessageImpl implements Message
 
     private Object getProperty(final Object name)
     {
+        if(JMSXGROUP_ID.equals(name))
+        {
+            return _properties.getGroupId();
+        }
         return _applicationProperties.getValue().get(name);
     }
 
@@ -722,6 +727,10 @@ public abstract class MessageImpl implements Message
                 names.add((String)key);
             }
         }
+        if(_properties.getGroupId() != null)
+        {
+            names.add(JMSXGROUP_ID);
+        }
         return Collections.enumeration(names);
     }
 
@@ -883,79 +892,91 @@ public abstract class MessageImpl implements Message
         }
     }
 
-    public void setBooleanProperty(Object name, boolean b) throws JMSException
+    public void setBooleanProperty(Object name, boolean b)
     {
-        _applicationProperties.getValue().put(name, b);
+        setProperty(name, b);
     }
 
-    public void setByteProperty(Object name, byte b) throws JMSException
+    public void setByteProperty(Object name, byte b)
     {
-        _applicationProperties.getValue().put(name, b);
+        setProperty(name, b);
     }
 
-    public void setShortProperty(Object name, short i) throws JMSException
+    public void setShortProperty(Object name, short i)
     {
-        _applicationProperties.getValue().put(name, i);
+        setProperty(name, i);
     }
 
-    public void setIntProperty(Object name, int i) throws JMSException
+    public void setIntProperty(Object name, int i)
     {
-        _applicationProperties.getValue().put(name, i);
+        setProperty(name, i);
     }
 
-    public void setLongProperty(Object name, long l) throws JMSException
+    public void setLongProperty(Object name, long l)
     {
-        _applicationProperties.getValue().put(name, l);
+        setProperty(name, l);
     }
 
-    public void setFloatProperty(Object name, float v) throws JMSException
+    public void setFloatProperty(Object name, float v)
     {
-        _applicationProperties.getValue().put(name, v);
+        setProperty(name, v);
     }
 
-    public void setDoubleProperty(Object name, double v) throws JMSException
+    public void setDoubleProperty(Object name, double v)
     {
-        _applicationProperties.getValue().put(name, v);
+        setProperty(name, v);
     }
 
-    public void setStringProperty(Object name, String value) throws JMSException
+    public void setStringProperty(Object name, String value)
     {
-        _applicationProperties.getValue().put(name, value);
+        setProperty(name, value);
     }
 
-    public void setObjectProperty(Object name, Object value) throws JMSException
+    public void setObjectProperty(Object name, Object value)
     {
-        _applicationProperties.getValue().put(name, value);
+        setProperty(name, value);
     }
 
-    public void setListProperty(final Object name, final List<Object> list) throws JMSException
+    private void setProperty(Object name, Object value)
     {
-        _applicationProperties.getValue().put(name, list);
+        if(JMSXGROUP_ID.equals(name))
+        {
+            _properties.setGroupId(value == null ? null : value.toString());
+        }
+        else
+        {
+            _applicationProperties.getValue().put(name, value);
+        }
     }
 
-    public void setMapProperty(final Object name, final Map<Object, Object> map) throws JMSException
+    public void setListProperty(final Object name, final List<Object> list)
     {
-        _applicationProperties.getValue().put(name, map);
+        setProperty(name, list);
     }
 
-    public void setUnsignedByteProperty(final Object name, final UnsignedByte b) throws JMSException
+    public void setMapProperty(final Object name, final Map<Object, Object> map)
     {
-        _applicationProperties.getValue().put(name, b);
+        setProperty(name, map);
     }
 
-    public void setUnsignedShortProperty(final Object name, final UnsignedShort s) throws JMSException
+    public void setUnsignedByteProperty(final Object name, final UnsignedByte b)
     {
-        _applicationProperties.getValue().put(name, s);
+        setProperty(name, b);
     }
 
-    public void setUnsignedIntProperty(final Object name, final UnsignedInteger i) throws JMSException
+    public void setUnsignedShortProperty(final Object name, final UnsignedShort s)
     {
-        _applicationProperties.getValue().put(name, i);
+        setProperty(name, s);
     }
 
-    public void setUnsignedLongProperty(final Object name, final UnsignedLong l) throws JMSException
+    public void setUnsignedIntProperty(final Object name, final UnsignedInteger i)
     {
-        _applicationProperties.getValue().put(name, l);
+        setProperty(name, i);
+    }
+
+    public void setUnsignedLongProperty(final Object name, final UnsignedLong l)
+    {
+        setProperty(name, l);
     }
 
     public UnsignedInteger getDeliveryFailures()

@@ -33,7 +33,7 @@ const std::string DELIVERY_ANNOTATIONS_SYMBOL("amqp:delivery-annotations:map");
 const std::string MESSAGE_ANNOTATIONS_SYMBOL("amqp:message-annotations:map");
 const std::string APPLICATION_PROPERTIES_SYMBOL("amqp:application-properties:map");
 const std::string AMQP_SEQUENCE_SYMBOL("amqp:amqp-sequence:list");
-const std::string AMQP_VALUE_SYMBOL("amqp:amqp-sequence:*");
+const std::string AMQP_VALUE_SYMBOL("amqp:amqp-value:*");
 const std::string DATA_SYMBOL("amqp:data:binary");
 const std::string FOOTER_SYMBOL("amqp:footer:map");
 

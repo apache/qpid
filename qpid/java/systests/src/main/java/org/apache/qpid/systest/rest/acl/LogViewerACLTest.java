@@ -69,7 +69,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfiles", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/rest/logfilenames", "GET", null);
         assertEquals("Access to log files should be allowed", 200, responseCode);
     }
 
@@ -77,7 +77,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfiles", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/rest/logfilenames", "GET", null);
         assertEquals("Access to log files should be denied", 403, responseCode);
     }
 

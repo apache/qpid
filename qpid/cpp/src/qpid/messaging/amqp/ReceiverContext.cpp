@@ -123,11 +123,6 @@ Address ReceiverContext::getAddress() const
     return address;
 }
 
-bool ReceiverContext::isClosed() const
-{
-    return false;//TODO
-}
-
 void ReceiverContext::reset(pn_session_t* session)
 {
     receiver = pn_receiver(session, name.c_str());

@@ -31,6 +31,9 @@
 namespace qpid {
 namespace messaging {
 
+// Explicitly instantiate Handle superclass
+template class Handle<ConnectionImpl>;
+
 using namespace qpid::types;
 
 typedef PrivateImplRef<qpid::messaging::Connection> PI;

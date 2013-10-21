@@ -23,16 +23,23 @@
 #include <qpid/dispatch/iterator.h>
 #include <qpid/dispatch/error.h>
 
-typedef struct hash_t hash_t;
+typedef struct dx_hash_t        dx_hash_t;
+typedef struct dx_hash_handle_t dx_hash_handle_t;
 
-hash_t *hash(int bucket_exponent, int batch_size, int value_is_const);
-void hash_free(hash_t *h);
+dx_hash_t *dx_hash(int bucket_exponent, int batch_size, int value_is_const);
+void dx_hash_free(dx_hash_t *h);
 
-size_t hash_size(hash_t *h);
-dx_error_t hash_insert(hash_t *h, dx_field_iterator_t *key, void *val);
-dx_error_t hash_insert_const(hash_t *h, dx_field_iterator_t *key, const void *val);
-dx_error_t hash_retrieve(hash_t *h, dx_field_iterator_t *key, void **val);
-dx_error_t hash_retrieve_const(hash_t *h, dx_field_iterator_t *key, const void **val);
-dx_error_t hash_remove(hash_t *h, dx_field_iterator_t *key);
+size_t dx_hash_size(dx_hash_t *h);
+dx_error_t dx_hash_insert(dx_hash_t *h, dx_field_iterator_t *key, void *val, dx_hash_handle_t **handle);
+dx_error_t dx_hash_insert_const(dx_hash_t *h, dx_field_iterator_t *key, const void *val, dx_hash_handle_t **handle);
+dx_error_t dx_hash_retrieve(dx_hash_t *h, dx_field_iterator_t *key, void **val);
+dx_error_t dx_hash_retrieve_const(dx_hash_t *h, dx_field_iterator_t *key, const void **val);
+dx_error_t dx_hash_remove(dx_hash_t *h, dx_field_iterator_t *key);
+
+void dx_hash_handle_free(dx_hash_handle_t *handle);
+const unsigned char *dx_hash_key_by_handle(const dx_hash_handle_t *handle);
+dx_error_t dx_hash_remove_by_handle(dx_hash_t *h, dx_hash_handle_t *handle);
+dx_error_t dx_hash_remove_by_handle2(dx_hash_t *h, dx_hash_handle_t *handle, unsigned char **key);
+
 
 #endif

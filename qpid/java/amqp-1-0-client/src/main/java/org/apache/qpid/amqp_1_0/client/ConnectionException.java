@@ -22,6 +22,11 @@ package org.apache.qpid.amqp_1_0.client;
 
 public class ConnectionException extends Exception
 {
+    protected ConnectionException(final String message)
+    {
+        super(message);
+    }
+
     public ConnectionException(Throwable cause)
     {
         super(cause);

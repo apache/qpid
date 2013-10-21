@@ -288,7 +288,7 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
             setDrain(true);
             _creditWindow = false;
             _drainLimit = getDeliveryCount().add(getLinkCredit());
-            sendFlow();
+            sendFlowWithEcho();
             getLock().notifyAll();
         }
     }

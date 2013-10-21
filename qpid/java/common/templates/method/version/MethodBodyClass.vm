@@ -19,9 +19,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,10 +36,9 @@
  * Supported AMQP version:
  *   $version.getMajor()-$version.getMinor()
  */
- 
+
 #set( $clazz = $amqpClass.asSingleVersionClass( $version ) ) 
 #set( $method = $amqpMethod.asSingleVersionMethod( $version ) )
- 
 package org.apache.qpid.framing.amqp_$version.getMajor()_$version.getMinor();
 
 import org.apache.qpid.codec.MarkableDataInput;
@@ -57,37 +56,29 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
         {
             return new ${javaClassName}(in);
         }
-		
- 
     };
-    
-	
+
     public static AMQMethodBodyInstanceFactory getFactory()
     {
         return FACTORY_INSTANCE;
     }
 
-    public static final int CLASS_ID =  $clazz.ClassId; 
-    
-    public static final int METHOD_ID = $method.MethodId; 
-    
+    public static final int CLASS_ID =  $clazz.ClassId;
+    public static final int METHOD_ID = $method.MethodId;
 
-	
     // Fields declared in specification
 #foreach( $field in $method.ConsolidatedFields )
     private final $field.NativeType _$field.getName(); // $field.UnderlyingFields
 #end
 
-    
     // Constructor
-
     public ${javaClassName}(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
 #foreach( $field in $method.ConsolidatedFields )
         _$field.Name = read$field.getEncodingType()( buffer );
 #end
-	}
-	
+    }
+
     public ${javaClassName}(
 #foreach( $field in $method.FieldList )
 #if( $velocityCount == $method.getFieldList().size() )
@@ -109,35 +100,34 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
         byte $consolidatedFieldName = (byte)0;
 #end
         if( $field.Name )
-		{		    
+        {
             $consolidatedFieldName = (byte) (((int) $consolidatedFieldName) | (1 << $method.getPositionInBitField( $field.Name )));
-		}
+        }
 #if( $velocityCount == $method.getFieldList().size())
-        _$consolidatedFieldName = $consolidatedFieldName; 
-#else  
- 
-#end 
+        _$consolidatedFieldName = $consolidatedFieldName;
+#else
+
+#end
 #else
 #if( !$consolidatedFieldName.equals("") )
-        _$consolidatedFieldName = $consolidatedFieldName; 
+        _$consolidatedFieldName = $consolidatedFieldName;
 #end
 #set( $consolidatedFieldName = "" )
         _$field.Name = $field.Name;
 #end
 #end
     }
-    
-    public int getClazz() 
-    { 
-        return CLASS_ID; 
-    }
-    
-    public int getMethod() 
-    { 
-        return METHOD_ID; 
+
+    public int getClazz()
+    {
+        return CLASS_ID;
     }
 
-    
+    public int getMethod()
+    {
+        return METHOD_ID;
+    }
+
 #foreach( $field in $method.FieldList )
     public final $field.NativeType get#toUpperCamel( ${field.Name} )()
     {
@@ -150,20 +140,20 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
 #end
 
     protected int getBodySize()
-    {      
+    {
 #set( $fixedSize = 0 )
 #foreach( $field in $method.ConsolidatedFields )
-#if( $field.isFixedSize() )        
+#if( $field.isFixedSize() )
 #set( $fixedSize = $fixedSize + $field.Size )
 #end
 #end
-	    int size = $fixedSize;
+        int size = $fixedSize;
 #foreach( $field in $method.ConsolidatedFields )
-#if( ! $field.isFixedSize() )        
+#if( ! $field.isFixedSize() )
         size += getSizeOf( _$field.Name );
 #end
 #end
-        return size;        
+        return size;
     }
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
@@ -179,32 +169,28 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
 #set( $amqpMethodNameFirstCharU = $amqpMethodNameFirstChar.toUpperCase() )
 #set( $amqpMethodNameUpperCamel = "$amqpMethodNameFirstCharU$amqpMethod.getName().substring(1)" )
 #if( $amqpMethod.inAllVersions() )
-    return dispatcher.dispatch${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}(this, channelId);	
+    return dispatcher.dispatch${amqpClassNameUpperCamel}${amqpMethodNameUpperCamel}(this, channelId);
 #else
-    return ((MethodDispatcher_$version.getMajor()_$version.getMinor())dispatcher).dispatch${amqp_ClassName}${amqpMethodNameUpperCamel}(this, channelId);	
-
-#end	
-	    
+    return ((MethodDispatcher_$version.getMajor()_$version.getMinor())dispatcher).dispatch${amqp_ClassName}${amqpMethodNameUpperCamel}(this, channelId);
+#end
 	}
-	
-	
+
     public String toString()
     {
         StringBuilder buf = new StringBuilder("[$javaClassName: ");
 #foreach( $field in $method.FieldList )
         buf.append( "$field.Name=" );
 #if( $field.NativeType == "byte[]" )
-		buf.append(  get#toUpperCamel( $field.Name )() == null  ? "null" : java.util.Arrays.toString( get#toUpperCamel( $field.Name )() ) );
+        buf.append(  get#toUpperCamel( $field.Name )() == null  ? "null" : java.util.Arrays.toString( get#toUpperCamel( $field.Name )() ) );
 #else
-		buf.append(  get#toUpperCamel( $field.Name )() );
+        buf.append(  get#toUpperCamel( $field.Name )() );
 #end
 #if( $velocityCount	!= $method.FieldList.size() )
-		buf.append( ", " );		
+        buf.append( ", " );
 #end		
 #end
         buf.append("]");
         return buf.toString();
     }
-
 
 }

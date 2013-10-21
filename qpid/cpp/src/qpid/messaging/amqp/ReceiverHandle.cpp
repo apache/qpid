@@ -100,7 +100,7 @@ qpid::messaging::Session ReceiverHandle::getSession() const
 
 bool ReceiverHandle::isClosed() const
 {
-    return receiver->isClosed();
+    return connection->isClosed(session, receiver);
 }
 
 Address ReceiverHandle::getAddress() const

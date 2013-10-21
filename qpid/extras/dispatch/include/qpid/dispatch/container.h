@@ -152,8 +152,21 @@ dx_dist_mode_t dx_container_node_get_dist_modes(const dx_node_t *node);
 dx_lifetime_policy_t dx_container_node_get_life_policy(const dx_node_t *node);
 
 dx_link_t *dx_link(dx_node_t *node, dx_connection_t *conn, dx_direction_t dir, const char *name);
+
+/**
+ * Context associated with the link for storing link-specific state.
+ */
 void dx_link_set_context(dx_link_t *link, void *link_context);
 void *dx_link_get_context(dx_link_t *link);
+
+/**
+ * Link context associated with the link's connection for storing state shared across
+ * all links in a connection.
+ */
+void dx_link_set_conn_context(dx_link_t *link, void *link_context);
+void *dx_link_get_conn_context(dx_link_t *link);
+
+dx_connection_t *dx_link_connection(dx_link_t *link);
 pn_link_t *dx_link_pn(dx_link_t *link);
 pn_terminus_t *dx_link_source(dx_link_t *link);
 pn_terminus_t *dx_link_target(dx_link_t *link);

@@ -78,6 +78,7 @@ struct dx_connection_t {
     dx_connector_t  *connector;
     void            *context; // Copy of context from listener or connector
     void            *user_context;
+    void            *link_context; // Context shared by this connection's links
     dx_user_fd_t    *ufd;
 };
 

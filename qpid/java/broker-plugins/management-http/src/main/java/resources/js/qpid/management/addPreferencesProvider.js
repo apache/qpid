@@ -34,6 +34,7 @@ define(["dojo/_base/xhr",
         "dojo/dom-style",
         "dojo/string",
         "dojox/html/entities",
+        "qpid/management/PreferencesProviderFields",
         "dojox/validate/us",
         "dojox/validate/web",
         "dijit/Dialog",
@@ -47,46 +48,11 @@ define(["dojo/_base/xhr",
         "dojox/form/CheckedMultiSelect",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (xhr, dom, construct, query, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, string, entities) {
+    function (xhr, dom, construct, query, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, string, entities, PreferencesProviderFields) {
 
         var addPreferencesProvider = {};
 
         var node = construct.create("div", null, win.body(), "last");
-
-        var convertToPreferencesProvider = function convertToPreferencesProvider(formValues)
-        {
-            var newProvider = {};
-
-            newProvider.name = dijit.byId("preferencesProvider.name").value;
-            newProvider.type = dijit.byId("preferencesProvider.type").value;
-            var id = dojo.byId("preferencesProvider.id").value;
-            if (id)
-            {
-                newProvider.id = id;
-            }
-            for(var propName in formValues)
-            {
-                if(formValues.hasOwnProperty(propName))
-                {
-                    if(formValues[ propName ] !== "") {
-                        newProvider[ propName ] = formValues[propName];
-                    }
-
-                }
-            }
-            return newProvider;
-        }
-
-        var selectPreferencesProviderType = function(type) {
-            if(type && string.trim(type) != "")
-            {
-                require(["qpid/management/authenticationprovider/preferences/" + type.toLowerCase() + "/add"],
-                function(addType)
-                {
-                  addType.show(dom.byId("preferencesProvider.fieldsContainer"), addPreferencesProvider.data)
-                });
-            }
-        }
 
         xhr.get({url: "addPreferencesProvider.html",
                  sync: true,
@@ -104,22 +70,9 @@ define(["dojo/_base/xhr",
 
                                 event.stop(e);
                                 if(theForm.validate()){
-                                    var newProvider = convertToPreferencesProvider(theForm.getValues());
-                                    var that = this;
-                                    var nameWidget = registry.byId("preferencesProvider.name")
-                                    xhr.put({url: "rest/preferencesprovider/" +encodeURIComponent(addPreferencesProvider.authenticationProviderName) + "/" + encodeURIComponent(nameWidget.value),
-                                             sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newProvider),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
-                                    if(this.success === true)
+                                    if(PreferencesProviderFields.save(addPreferencesProvider.authenticationProviderName))
                                     {
                                         registry.byId("addPreferencesProvider").hide();
-                                    }
-                                    else
-                                    {
-                                        alert("Error:" + this.failureReason);
                                     }
                                     return false;
                                 }else{
@@ -127,71 +80,14 @@ define(["dojo/_base/xhr",
                                     return false;
                                 }
                             });
-                            xhr.get({
-                                sync: true,
-                                url: "rest/helper?action=ListPreferencesProvidersTypes",
-                                handleAs: "json"
-                            }).then(
-                                function(data) {
-                                    var preferencesProvidersTypes =  data;
-                                    var storeData = [];
-                                    for (var i =0 ; i < preferencesProvidersTypes.length; i++)
-                                    {
-                                        storeData[i]= {id: preferencesProvidersTypes[i], name: preferencesProvidersTypes[i]};
-                                    }
-                                    var store = new Memory({ data: storeData });
-                                    var preferencesProviderTypesDiv = dom.byId("addPreferencesProvider.selectPreferencesProviderDiv");
-                                    var input = construct.create("input", {id: "preferencesProviderType", required: true}, preferencesProviderTypesDiv);
-                                    addPreferencesProvider.preferencesProviderTypeChooser = new FilteringSelect({ id: "preferencesProvider.type",
-                                                                              name: "type",
-                                                                              store: store,
-                                                                              searchAttr: "name",
-                                                                              required: true,
-                                                                              onChange: selectPreferencesProviderType }, input);
-                                    addPreferencesProvider.preferencesProviderTypeChooser.startup();
-                            });
                         }});
 
         addPreferencesProvider.show = function(authenticationProviderName, providerName) {
             this.authenticationProviderName = authenticationProviderName;
-            this.data = null;
-            var that = this;
-            var theForm = registry.byId("formAddPreferencesProvider");
-            theForm.reset();
-            dojo.byId("preferencesProvider.id").value="";
-            var nameWidget = registry.byId("preferencesProvider.name");
-            nameWidget.set("disabled", false);
-            registry.byId("preferencesProvider.type").set("disabled", false);
-            if (this.preferencesProviderTypeChooser)
-            {
-                this.preferencesProviderTypeChooser.set("disabled", false);
-                this.preferencesProviderTypeChooser.set("value", null);
-            }
+            PreferencesProviderFields.show(dom.byId("addPreferencesProvider.preferencesProvider"), providerName, authenticationProviderName)
             var dialog = registry.byId("addPreferencesProvider");
-            dialog.set("title", (providerName ? "Edit preference provider '" + entities.encode(String(providerName)) + "' " : "Add preferences provider ") + " for authentication provider '" + entities.encode(String(authenticationProviderName)) + "' ")
-            if (providerName)
-            {
-                xhr.get({
-                    url: "rest/preferencesprovider/"  +encodeURIComponent(authenticationProviderName) + "/" + encodeURIComponent(providerName),
-                    sync: false,
-                    handleAs: "json"
-                }).then(
-                   function(data) {
-                       var provider = data[0];
-                       var providerType = provider.type;
-                       that.data = provider;
-                       nameWidget.set("value",  entities.encode(String(provider.name)));
-                       nameWidget.set("disabled", true);
-                       that.preferencesProviderTypeChooser.set("value", providerType);
-                       that.preferencesProviderTypeChooser.set("disabled", true);
-                       dojo.byId("preferencesProvider.id").value=provider.id;
-                       dialog.show();
-               });
-            }
-            else
-            {
-              dialog.show();
-            }
+            dialog.set("title", (providerName ? "Edit preferences provider '" + entities.encode(String(providerName)) + "' " : "Add preferences provider ") + " for '" + entities.encode(String(authenticationProviderName)) + "' ")
+            dialog.show();
         }
 
         return addPreferencesProvider;

@@ -50,8 +50,8 @@
   <property name="build.coverage.src"    location="${build}/coverage/src"/>
   <property name="build.findbugs"        location="${build}/findbugs"/>
 
-  <property name="java.target"           value="1.5"/>
-  <property name="java.source"           value="1.5"/>
+  <property name="java.target"           value="1.6"/>
+  <property name="java.source"           value="1.6"/>
 
   <property name="release"               location="${project.root}/release"/>
 
@@ -286,8 +286,8 @@
   <!-- targets for downloading ivy and retrieving dependencies -->
   <target name="retrieve-dependencies" depends="load-ivy, configure-ivy, retrieve-optional-dependencies" unless="${ivy.dont.retrieve}">
     <echo message="Resolving and retrieving dependencies..."/>
-    <ivy:resolve type="jar,bundle,war" file="${project.root}/ivy.retrieve.xml" conf="required"/>
-    <ivy:retrieve type="jar,bundle,war" conf="required" sync="true"
+    <ivy:resolve type="jar,bundle,zip" file="${project.root}/ivy.retrieve.xml" conf="required"/>
+    <ivy:retrieve type="jar,bundle,zip" conf="required" sync="true"
         pattern="${project.root}/lib/required/[artifact]-[revision].[ext]" />
   </target>
 
@@ -314,7 +314,7 @@
          fail so long as Ivy is in at least one of the locations. -->
     <mkdir dir="${ivy.jar.dir}"/>
     <path id="ivy.lib.path">
-        <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+        <fileset dir="${ivy.jar.dir}" includes="*${ivy.install.version}*.jar"/>
     </path>
     <taskdef resource="org/apache/ivy/ant/antlib.xml"
               uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>

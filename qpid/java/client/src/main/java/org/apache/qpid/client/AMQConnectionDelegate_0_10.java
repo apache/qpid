@@ -530,4 +530,11 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
         return true;
     }
+
+    @Override
+    public boolean supportsIsBound()
+    {
+        //0-10 supports the isBound method
+        return true;
+    }
 }

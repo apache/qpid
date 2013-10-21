@@ -39,7 +39,12 @@ define(["dojo/_base/xhr",
              this.updatable = args.hasOwnProperty("updatable") ? args.updatable : true ;
              this.serviceUrl = args.serviceUrl;
 
-             this.onUpdate = args.onUpdate;
+             this.onUpdate = [];
+             if (args.onUpdate)
+             {
+               this.onUpdate.push(args.onUpdate);
+             }
+             this.dataTransformer = args.dataTransformer;
 
              this.appendData = args.append;
              this.appendLimit = args.appendLimit;
@@ -122,6 +127,10 @@ define(["dojo/_base/xhr",
 
              function processData(data)
              {
+                 if (self.dataTransformer)
+                 {
+                   data = self.dataTransformer(data);
+                 }
                  var dataSet = false;
                  if (!store)
                  {
@@ -141,17 +150,10 @@ define(["dojo/_base/xhr",
 
                  if (data)
                  {
-                     try
-                     {
-                         if ((dataSet || self.updateOrAppend(data)) && self.onUpdate)
-                         {
-                             self.onUpdate(data);
-                         }
-                     }
-                     catch(e)
-                     {
-                         console.error(e);
-                     }
+                   if ((dataSet || self.updateOrAppend(data)) && self.onUpdate.length > 0)
+                   {
+                     self.fireUpdate(data);
+                   }
                  }
              };
 
@@ -186,6 +188,7 @@ define(["dojo/_base/xhr",
              this.store = null;
              this.memoryStore = null;
              this.grid = null;
+             this.onUpdate = null;
            };
 
            GridUpdater.prototype.updateOrAppend = function(data)
@@ -197,6 +200,10 @@ define(["dojo/_base/xhr",
 
            GridUpdater.prototype.refresh = function(data)
            {
+               if (this.dataTransformer && data)
+               {
+                 data = this.dataTransformer(data);
+               }
                this.updating = true;
                try
                {
@@ -223,10 +230,7 @@ define(["dojo/_base/xhr",
                finally
                {
                    this.updating = false;
-                   if (this.onUpdate)
-                   {
-                     this.onUpdate(data);
-                   }
+                   this.fireUpdate(data);
                }
            }
 
@@ -252,6 +256,41 @@ define(["dojo/_base/xhr",
                {
                    this.refresh(data);
                }
+           };
+
+           GridUpdater.prototype.fireUpdate=function(data)
+           {
+             if (this.onUpdate.length > 0)
+             {
+               for(var i=0; i<this.onUpdate.length;i++)
+               {
+                 var onUpdate= this.onUpdate[i];
+                 try
+                 {
+                   onUpdate(data);
+                 }
+                 catch(e)
+                 {
+                   if (console && console.error)
+                   {
+                     console.error(e);
+                   }
+                 }
+               }
+             }
+           };
+
+           GridUpdater.prototype.addOnUpdate = function(obj) {
+             this.onUpdate.push(obj);
+           };
+
+           GridUpdater.prototype.removeOnUpdate = function(obj) {
+             for(var i = 0; i < this.onUpdate.length; i++) {
+                 if(this.onUpdate[i] === obj) {
+                   this.onUpdate.splice(i,1);
+                   return;
+                 }
+             }
            };
 
            return GridUpdater;

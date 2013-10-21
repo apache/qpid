@@ -43,7 +43,7 @@ static void dx_insert(dx_composed_field_t *field, const uint8_t *seq, size_t len
 
     while (len > 0) {
         if (buf == 0 || dx_buffer_capacity(buf) == 0) {
-            buf = dx_allocate_buffer();
+            buf = dx_buffer();
             if (buf == 0)
                 return;
             DEQ_INSERT_TAIL(field->buffers, buf);
@@ -115,8 +115,8 @@ static void dx_overwrite_32(dx_field_location_t *field, uint32_t value)
     size_t       cursor = field->offset;
 
     dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0xFF000000) >> 24));
-    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x00FF0000) >> 24));
-    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x0000FF00) >> 24));
+    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x00FF0000) >> 16));
+    dx_overwrite(&buf, &cursor, (uint8_t) ((value & 0x0000FF00) >> 8));
     dx_overwrite(&buf, &cursor, (uint8_t)  (value & 0x000000FF));
 }
 
@@ -212,7 +212,7 @@ void dx_compose_free(dx_composed_field_t *field)
     dx_buffer_t *buf = DEQ_HEAD(field->buffers);
     while (buf) {
         DEQ_REMOVE_HEAD(field->buffers);
-        dx_free_buffer(buf);
+        dx_buffer_free(buf);
         buf = DEQ_HEAD(field->buffers);
     }
 

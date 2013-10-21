@@ -20,17 +20,19 @@
  */
 
 #include "unit_test.h"
-
-#include "qpid/legacystore/MessageStoreImpl.h"
-#include <iostream>
 #include "MessageUtils.h"
-#include "qpid/legacystore/StoreException.h"
+
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/RecoveryManagerImpl.h"
+#include "qpid/broker/PersistableObject.h"
 #include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/legacystore/MessageStoreImpl.h"
+#include "qpid/legacystore/StoreException.h"
 #include "qpid/log/Statement.h"
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Timer.h"
+
+#include <iostream>
 
 using namespace mrg::msgstore;
 using namespace qpid;
@@ -53,7 +55,7 @@ QPID_AUTO_TEST_SUITE(TransactionalTest)
 
 const string test_filename("TransactionalTest");
 const char* tdp = getenv("TMP_DATA_DIR");
-const string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/tmp/TransactionalTest");
+const string test_dir(tdp && strlen(tdp) > 0 ? tdp : "/var/tmp/TransactionalTest");
 
 // Test txn context which has special setCompleteFailure() method which prevents entire "txn complete" process from hapenning
 class TestTxnCtxt : public TxnCtxt
@@ -141,7 +143,8 @@ void restart()
     sys::Timer t;
     DtxManager mgr(t);
     mgr.setStore (store.get());
-    RecoveryManagerImpl recovery(*queues, exchanges, links, mgr, br.getProtocolRegistry());
+    RecoveredObjects ro;
+    RecoveryManagerImpl recovery(*queues, exchanges, links, mgr, br.getProtocolRegistry(), ro);
     store->recover(recovery);
 
     queueA = queues->find(nameA);

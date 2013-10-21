@@ -398,7 +398,6 @@
   <property name="test.output" value="${module.results}"/>
   <property name="QPID_HOME" value="${qpid.home}"/>
   <property name="QPID_WORK" value="${qpid.work}"/>
-  <property name="broker.existing.qpid.work" value=""/>
 
   <propertyset id="all.test.systemproperties">
     <propertyref prefix="test"/>
@@ -423,7 +422,6 @@
 
     <propertyref name="QPID_HOME"/>
     <propertyref name="QPID_WORK"/>
-    <propertyref name="example.plugin.target"/>
   </propertyset>
 
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
@@ -539,7 +537,14 @@
     </copy>
   </target>
 
-  <target name="copy-resources" if="module.src.resources.exists">
+  <target name="copy-extra-resources" if="module.src.resources.extra">
+      <echo message="Copying extra resources from ${module.src.resources.extra} to ${module.classes}..."/>
+      <copy todir="${module.classes}" failonerror="true">
+        <fileset dir="${module.src.resources.extra}"/>
+      </copy>
+  </target>
+
+  <target name="copy-resources" depends="copy-extra-resources" if="module.src.resources.exists">
       <echo message="Copying resources from ${module.src.resources} to ${module.classes}..."/>
       <copy todir="${module.classes}" failonerror="true">
         <fileset dir="${module.src.resources}" excludes="META-INF/**"/>
@@ -795,104 +800,6 @@
       <fileset dir="${module.src}" includes="**/*.java" />
     </cobertura-report>
   </target>
-
-  <property name="version.file" location="${module.classes}/qpidversion.properties"/>
-  <property file="${version.file}" prefix="old."/>
-
-  <target name="check-version">
-    <exec executable="svnversion" spawn="false" failifexecutionfails="false"
-        dir="${project.root}" outputproperty="svnversion.output">
-      <arg line="."/>
-    </exec>
-    <condition property="version.stale">
-      <not>
-        <equals arg1="${svnversion.output}" arg2="${old.qpid.svnversion}"/>
-      </not>
-    </condition>
-  </target>
-
-  <target name="create-version" depends="check-version" if="version.stale">
-    <!-- Write the version.properties out.-->
-    <!-- Echos exactly as shown, so leave no spaces before/after lines -->
-    <echo file="${version.file}" append="false">qpid.version=${project.version}
-qpid.svnversion=${svnversion.output}
-qpid.name=${project.name}
-</echo>
-  </target>
-
-   <!-- Additions to perform LogMessage generation
-    To activate for your plugin add the following to your plugin build.xml
-
-    <target name="precompile" depends="gen_logging"/>
-
-   -->
-
-    <property name="gentools.home" location="${project.root}/common/gentools" />
-    <property name="gentools.build" location="${build.scratch}/common/gentools" />
-    <property name="generated.dir" location="${module.precompiled}" />
-    <property name="velocity.compile.dir" value="${build.scratch}/broker/velocity"/>
-    <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
-
-    <target name="compile_velocity" >
-        <mkdir dir="${velocity.compile.dir}" />
-        <!-- Compile LogMessages Velocity Generator -->
-        <javac source="${java.source}" target="${java.target}"
-               destdir="${velocity.compile.dir}" debug="on" includeantruntime="false"
-               deprecation="${javac.deprecation}"
-               srcdir="${project.root}/broker/src/velocity/java" >
-          <classpath>
-            <pathelement path="${project.root}/${velocity.jar}" />
-          </classpath>
-          <compilerarg line="${javac.compiler.args}"/>
-        </javac>
-    </target>
-
-
-    <target name="check_velocity_deps">
-      <uptodate property="velocity.notRequired" targetfile="${velocity.timestamp}">
-        <srcfiles dir="${module.src}" includes="**/*_logmessages.properties" />
-        <srcfiles dir="${project.root}/broker/src/velocity/" includes="**/*.java **/*.vm" />
-      </uptodate>
-    </target>
-
-
-    <target name="gen_logging" depends="compile_velocity,check_velocity_deps" unless="velocity.notRequired">
-      <mkdir dir="${generated.dir}"/>
-
-      <path id="logmessages.path">
-        <fileset  dir="${module.src}">
-          <include name="**/*_logmessages.properties"/>
-        </fileset>
-      </path>
-
-      <pathconvert property="logmessages"
-                   refid="logmessages.path"
-                   pathsep="' '"/>
-
-      <echo message="logmessages is ${logmessages}"/>
-
-      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.build}/classes" failonerror="true">
-        <arg line="'${logmessages}'"/>
-          <arg value="-j"/>
-          <arg value="-o"/>
-          <arg value="${generated.dir}"/>
-          <arg value="-t"/>
-          <arg value="${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
-          <arg value="-s"/>
-          <arg value="${module.src}"/>
-
-
-        <classpath>
-          <pathelement path="${module.src}"/>
-          <pathelement path="${velocity.compile.dir}" />
-          <fileset dir="${project.root}/lib/required">
-            <include name="**/*.jar"/>
-          </fileset>
-          <pathelement path="${project.root}/${velocity.jar}" />
-        </classpath>
-      </java>
-      <touch file="${velocity.timestamp}" />
-    </target>
 
     <target name="eclipse" depends="eclipse-setup,eclipse-project,eclipse-source-only,eclipse-source-and-test"/>
 

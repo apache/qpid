@@ -51,10 +51,14 @@ public class Session
     private TransactionController _sessionLocalTC;
     private Connection _connection;
 
-    public Session(final Connection connection, String name)
+    public Session(final Connection connection, String name) throws SessionCreationException
     {
         _connection = connection;
         _endpoint = connection.getEndpoint().createSession(name);
+        if(_endpoint == null)
+        {
+            throw new SessionCreationException("Cannot create session as all channels are in use");
+        }
         _sectionEncoder = new SectionEncoderImpl(connection.getEndpoint().getDescribedTypeRegistry());
         _sectionDecoder = new SectionDecoderImpl(connection.getEndpoint().getDescribedTypeRegistry());
     }
@@ -63,15 +67,26 @@ public class Session
     public synchronized Sender createSender(final String targetName)
             throws Sender.SenderCreationException, ConnectionClosedException
     {
-        return createSender(targetName, false);
+
+        final String sourceName = UUID.randomUUID().toString();
+        return new Sender(this, targetName +"<-"+sourceName, targetName, sourceName, false);
+
     }
 
-    public synchronized Sender createSender(final String targetName, boolean synchronous)
+
+    public synchronized Sender createSender(final String targetName, final SourceConfigurator configurator)
             throws Sender.SenderCreationException, ConnectionClosedException
     {
 
         final String sourceName = UUID.randomUUID().toString();
-        return new Sender(this, targetName+"<-"+sourceName, targetName, sourceName, synchronous);
+        return new Sender(this, targetName +"<-"+sourceName, targetName, sourceName, false)
+        {
+            @Override
+            protected void configureSource(final Source source)
+            {
+                configurator.configureSource(source);
+            }
+        };
 
     }
 
@@ -83,22 +98,10 @@ public class Session
 
     }
 
-    public Sender createSender(String targetName, int window, AcknowledgeMode mode)
-            throws Sender.SenderCreationException, ConnectionClosedException
-    {
-
-        return createSender(targetName, window, mode, null);
-    }
-
     public Sender createSender(String targetName, int window, AcknowledgeMode mode, String linkName)
             throws Sender.SenderCreationException, ConnectionClosedException
     {
-        return createSender(targetName, window, mode, linkName, null);
-    }
-    public Sender createSender(String targetName, int window, AcknowledgeMode mode, String linkName, Map<Binary, Outcome> unsettled)
-            throws Sender.SenderCreationException, ConnectionClosedException
-    {
-        return createSender(targetName, window, mode, linkName, false, unsettled);
+        return createSender(targetName, window, mode, linkName, false, null);
     }
 
     public Sender createSender(String targetName, int window, AcknowledgeMode mode, String linkName,
@@ -380,5 +383,20 @@ public class Session
                 }
             }
         }
+    }
+
+    public static interface SourceConfigurator
+    {
+        public void configureSource(final Source source);
+    }
+
+    private class SessionCreationException extends ConnectionException
+    {
+
+        private SessionCreationException(final String message)
+        {
+            super(message);
+        }
+
     }
 }
