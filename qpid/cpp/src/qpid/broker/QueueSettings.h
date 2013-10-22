@@ -111,6 +111,7 @@ struct QueueSettings
     QPID_BROKER_EXTERN void populate(const std::map<std::string, qpid::types::Variant>& inputs, std::map<std::string, qpid::types::Variant>& unused);
     QPID_BROKER_EXTERN void populate(const qpid::framing::FieldTable& inputs, qpid::framing::FieldTable& unused);
     QPID_BROKER_EXTERN std::map<std::string, qpid::types::Variant> asMap() const;
+    std::string getLimitPolicy() const;
 
     struct Aliases : std::map<std::string, std::string>
     {
