@@ -1521,7 +1521,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
 add_subdirectory(qpid/store)
 add_subdirectory(tests)
 add_subdirectory(tests/legacystore)
-add_subdirectory(tests/linearstore)
 
 # Support for pkg-config
 
