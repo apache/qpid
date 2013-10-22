@@ -76,13 +76,22 @@ typedef struct dx_field_iterator_t dx_field_iterator_t;
  *    amqp:/<mobile>
  *         M^^^^^^^^
  *
+ * ITER_VIEW_NODE_HASH - Isolate the hashable part of a router-id, used for headers
+ *
+ *    <area>/<router>
+ *   A^^^^^^
+ *
+ *    <my_area>/<router>
+ *             R^^^^^^^^
+ *
  */
 typedef enum {
     ITER_VIEW_ALL,
     ITER_VIEW_NO_HOST,
     ITER_VIEW_NODE_ID,
     ITER_VIEW_NODE_SPECIFIC,
-    ITER_VIEW_ADDRESS_HASH
+    ITER_VIEW_ADDRESS_HASH,
+    ITER_VIEW_NODE_HASH
 } dx_iterator_view_t;
 
 

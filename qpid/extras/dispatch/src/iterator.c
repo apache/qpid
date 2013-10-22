@@ -114,6 +114,29 @@ static void parse_address_view(dx_field_iterator_t *iter)
 }
 
 
+static void parse_node_view(dx_field_iterator_t *iter)
+{
+    //
+    // This function starts with an iterator view that is identical to
+    // ITER_VIEW_NO_HOST.  We will now further refine the view in order
+    // to aid the router in looking up nodes.
+    //
+
+    if (dx_field_iterator_prefix(iter, my_area)) {
+        iter->prefix      = 'R';
+        iter->at_prefix   = 1;
+        iter->view_prefix = 1;
+        iter->mode        = MODE_TO_END;
+        return;
+    }
+
+    iter->prefix      = 'A';
+    iter->at_prefix   = 1;
+    iter->view_prefix = 1;
+    iter->mode        = MODE_TO_SLASH;
+}
+
+
 static void view_initialize(dx_field_iterator_t *iter)
 {
     //
@@ -207,6 +230,12 @@ static void view_initialize(dx_field_iterator_t *iter)
     if (iter->view == ITER_VIEW_ADDRESS_HASH) {
         iter->mode = MODE_TO_END;
         parse_address_view(iter);
+        return;
+    }
+
+    if (iter->view == ITER_VIEW_NODE_HASH) {
+        iter->mode = MODE_TO_END;
+        parse_node_view(iter);
         return;
     }
 
