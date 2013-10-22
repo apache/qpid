@@ -227,6 +227,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
+                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/linearstore/management-schema.xml
   )
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
@@ -1509,6 +1510,10 @@ endif (NOT WIN32)
 # Legacy store
 #
 include (legacystore.cmake)
+#
+# Linear store
+#
+include (linearstore.cmake)
 
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
@@ -1516,6 +1521,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
 add_subdirectory(qpid/store)
 add_subdirectory(tests)
 add_subdirectory(tests/legacystore)
+add_subdirectory(tests/linearstore)
 
 # Support for pkg-config
 
