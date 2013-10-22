@@ -636,6 +636,8 @@ if (BUILD_SSL)
   if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set (sslcommon_SOURCES
          qpid/sys/windows/SslAsynchIO.cpp
+         qpid/sys/windows/util.cpp
+         qpid/sys/windows/util.h
     )
 
     set (ssl_SOURCES
@@ -647,7 +649,7 @@ if (BUILD_SSL)
     )
     set (ssl_INCLUDES "")
     set (ssl_LIBDIRS "")
-    set (ssl_LIBS Secur32.lib)
+    set (ssl_LIBS Crypt32.lib Secur32.lib)
     set (ssl_server_LIBS Crypt32.lib Secur32.lib)
   else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     if (NOT NSS_FOUND)
