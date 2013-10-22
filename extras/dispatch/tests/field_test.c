@@ -137,6 +137,30 @@ static char* test_view_address_hash(void *context)
 }
 
 
+static char* test_view_node_hash(void *context)
+{
+    struct {const char *addr; const char *view;} cases[] = {
+    {"area/router",       "Aarea"},
+    {"my-area/router",    "Rrouter"},
+    {"my-area/my-router", "Rmy-router"},
+    {0, 0}
+    };
+    int idx;
+
+    for (idx = 0; cases[idx].addr; idx++) {
+        dx_field_iterator_t *iter = dx_field_iterator_string(cases[idx].addr, ITER_VIEW_NODE_HASH);
+        if (!dx_field_iterator_equal(iter, (unsigned char*) cases[idx].view)) {
+            char *got = (char*) dx_field_iterator_copy(iter);
+            snprintf(fail_text, FAIL_TEXT_SIZE, "Addr '%s' failed.  Expected '%s', got '%s'",
+                     cases[idx].addr, cases[idx].view, got);
+            return fail_text;
+        }
+    }
+
+    return 0;
+}
+
+
 int field_tests(void)
 {
     int result = 0;
@@ -147,6 +171,7 @@ int field_tests(void)
     TEST_CASE(test_view_global_non_dns, 0);
     TEST_CASE(test_view_global_no_host, 0);
     TEST_CASE(test_view_address_hash, 0);
+    TEST_CASE(test_view_node_hash, 0);
 
     return result;
 }

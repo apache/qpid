@@ -32,6 +32,7 @@ static char *router_role   = "inter-router";
 static char *local_prefix  = "_local/";
 static char *topo_prefix   = "_topo/";
 static char *direct_prefix;
+static char *node_id;
 
 /**
  * Address Types and Processing:
@@ -388,7 +389,7 @@ static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_mess
             dx_parsed_field_t *trace_item = dx_parse_sub_value(trace, idx);
             while (trace_item) {
                 dx_field_iterator_t *iter = dx_parse_raw(trace_item);
-                if (dx_field_iterator_equal(iter, (unsigned char*) direct_prefix))
+                if (dx_field_iterator_equal(iter, (unsigned char*) node_id))
                     *drop = 1;
                 dx_field_iterator_reset(iter);
                 dx_compose_insert_string_iterator(out_da, iter);
@@ -398,7 +399,7 @@ static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_mess
         }
     }
 
-    dx_compose_insert_string(out_da, direct_prefix);
+    dx_compose_insert_string(out_da, node_id);
     dx_compose_end_list(out_da);
 
     //
@@ -410,7 +411,7 @@ static dx_field_iterator_t *router_annotate_message(dx_router_t *router, dx_mess
         ingress_iter = dx_parse_raw(ingress);
         dx_compose_insert_string_iterator(out_da, ingress_iter);
     } else
-        dx_compose_insert_string(out_da, direct_prefix);
+        dx_compose_insert_string(out_da, node_id);
 
     dx_compose_end_map(out_da);
 
@@ -585,7 +586,7 @@ static void router_rx_handler(void* context, dx_link_t *link, dx_delivery_t *del
                         //
                         int origin = -1;
                         if (ingress_iter) {
-                            dx_field_iterator_reset_view(ingress_iter, ITER_VIEW_ADDRESS_HASH);
+                            dx_field_iterator_reset_view(ingress_iter, ITER_VIEW_NODE_HASH);
                             dx_address_t *origin_addr;
                             dx_hash_retrieve(router->addr_hash, ingress_iter, (void*) &origin_addr);
                             if (origin_addr && DEQ_SIZE(origin_addr->rnodes) == 1) {
@@ -1105,6 +1106,11 @@ dx_router_t *dx_router(dx_dispatch_t *dx, dx_router_mode_t mode, const char *are
     strcat(direct_prefix, id);
     strcat(direct_prefix, "/");
 
+    node_id = (char*) malloc(dplen);
+    strcpy(node_id, area);
+    strcat(node_id, "/");
+    strcat(node_id, id);
+
     dx_router_t *router = NEW(dx_router_t);
 
     router_node.type_context = router;
@@ -1186,7 +1192,7 @@ void dx_router_free(dx_router_t *router)
 
 const char *dx_router_id(const dx_dispatch_t *dx)
 {
-    return direct_prefix;
+    return node_id;
 }
 
 
