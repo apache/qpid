@@ -57,7 +57,7 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
     int         thread_count    = 0;
     const char *container_name  = 0;
     const char *router_mode_str = 0;
-    const char *router_area     = 0;
+    const char *router_area     = "0";
     const char *router_id       = 0;
 
     dx_router_mode_t  router_mode = DX_ROUTER_MODE_STANDALONE;
@@ -83,7 +83,7 @@ dx_dispatch_t *dx_dispatch(const char *config_path)
         count = dx_config_item_count(dx->config, CONF_ROUTER);
         if (count == 1) {
             router_mode_str = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "mode");
-            router_area     = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "area");
+            //router_area     = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "0");
             router_id       = dx_config_item_value_string(dx->config, CONF_ROUTER, 0, "router-id");
         }
     }
