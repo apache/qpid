@@ -107,6 +107,7 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
     void cancel();
     void acknowledged(const qpid::broker::DeliveryRecord&);
     qpid::broker::OwnershipToken* getSession();
+    static boost::shared_ptr<Queue> getExclusiveSubscriptionQueue(Outgoing*);
 
   private:
 
