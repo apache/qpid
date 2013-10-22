@@ -382,8 +382,7 @@ class ACLTests(TestBase010):
         aclf.close()
 
         result = self.reload_acl()
-        expected = "ding is not a valid value for 'policytype', possible values are one of" \
-                   " { 'ring' 'ring_strict' 'flow_to_disk' 'reject' }";
+        expected = "ding is not a valid value for 'policytype', possible values are one of"
         if (result.find(expected) == -1):
             self.fail(result)
 
@@ -802,6 +801,7 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID delete queue name=q4\n')
         aclf.write('acl allow bob@QPID create queue name=q5 maxqueuesize=1000 maxqueuecount=100\n')
         aclf.write('acl allow bob@QPID create queue name=q6 queuemaxsizelowerlimit=50 queuemaxsizeupperlimit=100 queuemaxcountlowerlimit=50 queuemaxcountupperlimit=100\n')
+        aclf.write('acl allow bob@QPID create queue name=q7 policytype=self-destruct\n')
         aclf.write('acl allow anonymous all all\n')
         aclf.write('acl deny all all')
         aclf.close()
@@ -913,6 +913,17 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow queue create request for q2 with exclusive=true policytype=ring");
+
+        try:
+            session.queue_declare(queue="q7", arguments={"qpid.policy_type": "ring"})
+            self.fail("ACL should not allow queue create request for q7 with policytype=ring");
+        except qpid.session.SessionException, e:
+            session = self.get_session('bob','bob')
+
+        try:
+            session.queue_declare(queue="q7", arguments={"qpid.policy_type": "self-destruct"})
+        except qpid.session.SessionException, e:
+            self.fail("ACL should allow queue create request for q7 with policytype=self-destruct");
 
         try:
             session.queue_declare(queue="q3")

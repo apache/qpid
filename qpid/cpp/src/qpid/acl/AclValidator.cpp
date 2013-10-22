@@ -110,7 +110,7 @@ namespace acl {
                                     boost::shared_ptr<PropertyType>(
                                         new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
 
-        std::string policyTypes[] = {"ring", "ring_strict", "flow_to_disk", "reject"};
+        std::string policyTypes[] = {"ring", "self-destruct", "reject"};
         std::vector<std::string> v(policyTypes, policyTypes + sizeof(policyTypes) / sizeof(std::string));
         validators.insert(Validator(acl::SPECPROP_POLICYTYPE,
                           boost::shared_ptr<PropertyType>(
