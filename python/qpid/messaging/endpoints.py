@@ -750,6 +750,7 @@ class Session(Endpoint):
     """
     Close the session.
     """
+    self.error = None
     self.sync(timeout=timeout)
 
     for link in self.receivers + self.senders:
@@ -920,8 +921,9 @@ class Sender(Endpoint):
       self._wakeup()
 
     try:
-      if not self.session._ewait(lambda: self.closed, timeout=timeout):
-        raise Timeout("sender close timed out")
+      if not self.session.closed:
+        if not self.session._ewait(lambda: self.closed, timeout=timeout):
+          raise Timeout("sender close timed out")
     finally:
       try:
         self.session.senders.remove(self)
@@ -1067,8 +1069,9 @@ class Receiver(Endpoint, object):
       self._wakeup()
 
     try:
-      if not self.session._ewait(lambda: self.closed, timeout=timeout):
-        raise Timeout("receiver close timed out")
+      if not self.session.closed:
+        if not self.session._ewait(lambda: self.closed, timeout=timeout):
+          raise Timeout("receiver close timed out")
     finally:
       try:
         self.session.receivers.remove(self)
