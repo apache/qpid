@@ -300,6 +300,12 @@ size_t OutgoingFromQueue::Record::getIndex(pn_delivery_tag_t t)
     return (size_t) buffer.getLong();
 }
 
+boost::shared_ptr<Queue> OutgoingFromQueue::getExclusiveSubscriptionQueue(Outgoing* o)
+{
+    OutgoingFromQueue* s = dynamic_cast<OutgoingFromQueue*>(o);
+    if (s && s->exclusive) return s->queue;
+    else return boost::shared_ptr<Queue>();
+}
 
 
 }}} // namespace qpid::broker::amqp

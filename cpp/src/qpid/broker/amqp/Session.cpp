@@ -475,6 +475,8 @@ void Session::detach(pn_link_t* link)
         OutgoingLinks::iterator i = outgoing.find(link);
         if (i != outgoing.end()) {
             i->second->detached();
+            boost::shared_ptr<Queue> q = OutgoingFromQueue::getExclusiveSubscriptionQueue(i->second.get());
+            if (q) connection.getBroker().deleteQueue(q->getName(), connection.getUserId(), connection.getMgmtId());
             outgoing.erase(i);
             QPID_LOG(debug, "Outgoing link detached");
         }
