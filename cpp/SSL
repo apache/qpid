@@ -83,10 +83,9 @@ Windows
 
 SSL support for Qpid-C++ on Windows is implemented using the Microsoft
 Secure Channel (Schannel) package.  Currently, only registry based
-certificates scoped to the local machine are supported, however
-Schannel also supports file based and user scoped certificates, so
-additional support could be added as required.  Client certificate
-authentication is not supported at this time.
+certificates scoped to the local machine are supported on the broker.
+The client may specify client certificates in a user scoped store or in
+a pkcs#12 file.
 
 For testing purposes, a self signed certificate can be created as
 follows (requiring Administrator privilege on more recent versions of
@@ -109,7 +108,7 @@ that will be using qpid, you must import the self signed certificate
 as a trusted root.  This can be done from the MMC certificate snapin
 or directly using certmgr.exe.  From the main window:
 
-  select "Third-Party Root Certification Authorities"
+  select "Trusted Root Certification Authorities"
   select "Action" -> "Import..."
   then direct the Certificate Import Wizard to the "myhost.cer" file
 
@@ -124,3 +123,28 @@ clients if they support the DER format.  Otherwise the certificate can
 be converted to PEM format using OpenSSL
 
   openssl x509 -in myhost.cer -inform DER -out myhost.pem -outform PEM
+
+Client certificates operate much the same as for Linux, except for
+identifying the certificate storage.  Process environment variables
+are used but the certificate name may be set or overridden by its Qpid
+Messaging connection option.  For Windows registry stores, you specify
+the store:
+
+  QPID_SSL_CERT_STORE=teststore
+
+If you omit the certificate store name, it defaults to the "Personal" or
+"MY" store.  For a certificate stored in a pkcs#12 format file, you must
+supply the filename and a file containing the password for the
+certificate's private key:
+
+  QPID_SSL_CERT_FILENAME=wg444.pfx
+  QPID_SSL_CERT_PASSWORD_FILE=pw_wg444.txt
+
+The certificate is specified by its "friendly name", i.e.
+
+  QPID_SSL_CERT_NAME=guest123
+
+as an environment variable, or in the case of a Qpid Messaging
+connection option:
+
+  {transport:ssl,sasl-mechanism:EXTERNAL,ssl-cert-name:guest789}

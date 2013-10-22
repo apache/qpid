@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -117,14 +117,15 @@ std::auto_ptr<SaslServer> SaslFactory::createServer( const std::string& realm, b
 namespace {
     const std::string ANONYMOUS = "ANONYMOUS";
     const std::string PLAIN = "PLAIN";
+    const std::string EXTERNAL = "EXTERNAL";
 }
 
 WindowsSasl::WindowsSasl( const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf )
-  : settings(username, password, serviceName, hostName, minSsf, maxSsf) 
+  : settings(username, password, serviceName, hostName, minSsf, maxSsf)
 {
 }
 
-WindowsSasl::~WindowsSasl() 
+WindowsSasl::~WindowsSasl()
 {
 }
 
@@ -135,21 +136,28 @@ bool WindowsSasl::start(const std::string& mechanisms, std::string& response,
 
     typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
     boost::char_separator<char> sep(" ");
+    bool haveExt = false;
     bool havePlain = false;
     bool haveAnon = false;
     tokenizer mechs(mechanisms, sep);
     for (tokenizer::iterator mech = mechs.begin();
          mech != mechs.end();
          ++mech) {
-        if (*mech == ANONYMOUS)
+        if (*mech == EXTERNAL)
+            haveExt = true;
+        else if (*mech == ANONYMOUS)
             haveAnon = true;
         else if (*mech == PLAIN)
             havePlain = true;
     }
-    if (!haveAnon && !havePlain)
+    if (!haveAnon && !havePlain && !haveExt)
         throw InternalErrorException(QPID_MSG("Sasl error: no common mechanism"));
 
-    if (havePlain) {
+    if (haveExt) {
+        mechanism = EXTERNAL;
+        response = ((char)0) + settings.username.c_str();
+    }
+    else if (havePlain) {
         mechanism = PLAIN;
         response = ((char)0) + settings.username + ((char)0) + settings.password;
     }
