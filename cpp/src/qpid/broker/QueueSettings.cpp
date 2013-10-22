@@ -314,4 +314,10 @@ QueueSettings::Aliases::Aliases()
     insert(value_type("x-qpid-maximum-message-size", "qpid.alert_size"));
 }
 
+std::string QueueSettings::getLimitPolicy() const
+{
+    if (dropMessagesAtLimit) return POLICY_TYPE_RING;
+    else if (selfDestructAtLimit) return POLICY_TYPE_SELF_DESTRUCT;
+    else return POLICY_TYPE_REJECT;
+}
 }} // namespace qpid::broker
