@@ -56,7 +56,7 @@ bool Header::isFirstAcquirer() const
 
 uint32_t Header::getDeliveryCount() const
 {
-    return message.getDeliveryCount();
+    return message.isRedelivered() ? message.getDeliveryCount() : 0;
 }
 
 Header::Header(const qpid::broker::Message& m) : message(m) {}
