@@ -43,6 +43,7 @@ import org.apache.qpid.amqp_1_0.jms.Session;
 import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
+import org.apache.qpid.amqp_1_0.jms.MessageConsumerException;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
@@ -130,9 +131,13 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
                     if(exceptionListener != null)
                     {
                         final Error receiverError = _receiver.getError();
-                        exceptionListener.onException(new JMSException(receiverError.getDescription(),
-                                receiverError.getCondition().getValue().toString()));
 
+                        MessageConsumerException mce = new MessageConsumerException(
+                                receiverError.getDescription(),
+                                receiverError.getCondition().getValue().toString(),
+                                _destination.getAddress());
+
+                        exceptionListener.onException(mce);
                     }
                 }
                 catch (JMSException e)

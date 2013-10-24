@@ -42,6 +42,7 @@ import org.apache.qpid.amqp_1_0.client.Connection;
 import org.apache.qpid.amqp_1_0.client.ConnectionClosedException;
 import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
 import org.apache.qpid.amqp_1_0.client.ConnectionException;
+import org.apache.qpid.amqp_1_0.client.ChannelsExhaustedException;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.client.Sender;
@@ -54,6 +55,8 @@ import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
 import org.apache.qpid.amqp_1_0.jms.TopicSession;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
+import org.apache.qpid.amqp_1_0.jms.ErrorCodes;
+import org.apache.qpid.amqp_1_0.jms.SessionException;
 import org.apache.qpid.amqp_1_0.transport.SessionEventListener;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.Target;
@@ -90,7 +93,15 @@ public class SessionImpl implements Session, QueueSession, TopicSession
         }
         catch (ConnectionException e)
         {
-            final JMSException jmsException = new JMSException(e.getMessage());
+            JMSException jmsException;
+            if (e instanceof ChannelsExhaustedException)
+            {
+                jmsException = new JMSException(e.getMessage(), ErrorCodes.CHANNELS_EXHAUSTED);
+            }
+            else
+            {
+                jmsException = new JMSException(e.getMessage());
+            }
             jmsException.setLinkedException(e);
             throw jmsException;
         }
@@ -116,12 +127,15 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                         {
                             if(error != null)
                             {
-                                exceptionListener.onException(new JMSException(error.getDescription(),
-                                        error.getCondition().getValue().toString()));
+                                SessionException se = new SessionException(
+                                        error.getDescription(),
+                                        error.getCondition().getValue().toString());
+
+                                exceptionListener.onException(se);
                             }
                             else
                             {
-                                exceptionListener.onException(new JMSException("Session remotely closed"));
+                                exceptionListener.onException(new SessionException("Session remotely closed"));
                             }
                         }
                     }

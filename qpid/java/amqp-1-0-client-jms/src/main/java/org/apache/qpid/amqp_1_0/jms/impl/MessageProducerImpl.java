@@ -22,6 +22,7 @@ import org.apache.qpid.amqp_1_0.client.*;
 import org.apache.qpid.amqp_1_0.client.Session;
 import org.apache.qpid.amqp_1_0.jms.MessageProducer;
 import org.apache.qpid.amqp_1_0.jms.MessageRejectedException;
+import org.apache.qpid.amqp_1_0.jms.MessageProducerException;
 import org.apache.qpid.amqp_1_0.jms.QueueSender;
 import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
@@ -112,9 +113,13 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
                                 if(exceptionListener != null)
                                 {
                                     final org.apache.qpid.amqp_1_0.type.transport.Error receiverError = _sender.getError();
-                                    exceptionListener.onException(new JMSException(receiverError.getDescription(),
-                                            receiverError.getCondition().getValue().toString()));
 
+                                    MessageProducerException mpe = new MessageProducerException(
+                                            receiverError.getDescription(),
+                                            receiverError.getCondition().getValue().toString(),
+                                            _destination.getAddress());
+
+                                    exceptionListener.onException(mpe);
                                 }
                             }
                             catch (JMSException e)
