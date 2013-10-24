@@ -196,13 +196,13 @@ const std::string& MessageImpl::getBytes() const
         encoded->getBody(bytes, content);
         contentDecoded = true;
     }
-    if (bytes.empty() && !content.isVoid()) return content.getString();
+    if (bytes.empty() && content.getType() == VAR_STRING) return content.getString();
     else return bytes;
 }
 std::string& MessageImpl::getBytes()
 {
     updated();//have to assume body may be edited, invalidating our message
-    if (bytes.empty() && !content.isVoid()) return content.getString();
+    if (bytes.empty() && content.getType() == VAR_STRING) return content.getString();
     else return bytes;
 }
 
