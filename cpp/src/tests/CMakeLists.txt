@@ -17,9 +17,6 @@
 # under the License.
 #
 
-# Enable dashboard reporting.
-include (CTest)
-
 # Make sure that everything get built before the tests
 # Need to create a var with all the necessary top level targets
 
@@ -30,38 +27,6 @@ endif (QPID_LINK_BOOST_DYNAMIC)
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-include (FindPythonInterp)
-
-# Create the environment scripts for tests
-set (abs_srcdir ${CMAKE_CURRENT_SOURCE_DIR})
-set (abs_builddir ${CMAKE_CURRENT_BINARY_DIR})
-set (abs_top_srcdir ${CMAKE_SOURCE_DIR})
-set (abs_top_builddir ${CMAKE_BINARY_DIR})
-set (builddir_lib_suffix "")
-
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.ps1.in
-    ${CMAKE_CURRENT_BINARY_DIR}/test_env.ps1)
-else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.sh.in
-    ${CMAKE_CURRENT_BINARY_DIR}/test_env.sh)
-endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
-
-# Copy qpidd-p0 script to build directory so tests can find it.
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/qpidd-p0 ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-
-# If valgrind is selected in the configuration step, set up the path to it
-# for CTest.
-if (ENABLE_VALGRIND)
-  set (MEMORYCHECK_COMMAND ${VALGRIND})
-  set (MEMORYCHECK_COMMAND_OPTIONS "--gen-suppressions=all
---leak-check=full
---demangle=yes
---suppressions=${CMAKE_CURRENT_SOURCE_DIR}/.valgrind.supp
---num-callers=25
---log-file=ctest_valgrind.vglog")
-endif (ENABLE_VALGRIND)
-
 # Using the Boost DLLs triggers warning 4275 on Visual Studio
 # (non dll-interface class used as base for dll-interface class).
 # This is ok, so suppress the warning.
@@ -71,10 +36,6 @@ endif (ENABLE_VALGRIND)
 if (MSVC)
   add_definitions( /wd4275 /wd4503 /D_CRT_SECURE_NO_WARNINGS)
 endif (MSVC)
-
-# Like this to work with cmake 2.4 on Unix
-set (qpid_test_boost_libs 
-     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 
 # Macro to make it easier to remember where the tests are built
 macro(remember_location testname)
@@ -92,6 +53,87 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set(platform_test_additions windows/DisableWin32ErrorWindows.cpp)
   endif (NOT QPID_WINDOWS_DEFAULT_TEST_OUTPUTS)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+# Some generally useful utilities that just happen to be built in the test area
+add_executable (qpid-perftest qpid-perftest.cpp ${platform_test_additions})
+target_link_libraries (qpid-perftest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-perftest)
+
+add_executable (qpid-latency-test qpid-latency-test.cpp ${platform_test_additions})
+target_link_libraries (qpid-latency-test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-latency-test)
+
+add_executable (qpid-client-test qpid-client-test.cpp ${platform_test_additions})
+target_link_libraries (qpid-client-test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-client-test)
+
+add_executable (qpid-ping qpid-ping.cpp ${platform_test_additions})
+target_link_libraries (qpid-ping qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-ping)
+
+add_executable (qpid-receive qpid-receive.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (qpid-receive qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-receive)
+
+add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (qpid-send qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-send)
+
+add_executable (qpid-topic-listener qpid-topic-listener.cpp ${platform_test_additions})
+target_link_libraries (qpid-topic-listener qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-topic-listener)
+
+add_executable (qpid-topic-publisher qpid-topic-publisher.cpp ${platform_test_additions})
+target_link_libraries (qpid-topic-publisher qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-topic-publisher)
+
+add_executable (receiver receiver.cpp ${platform_test_additions})
+target_link_libraries (receiver qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(receiver)
+
+# This is bizarre - using both messaging and client libraries
+add_executable (sender sender.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (sender qpidmessaging qpidtypes qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(sender)
+
+add_executable (qpid-txtest qpid-txtest.cpp ${platform_test_additions})
+target_link_libraries (qpid-txtest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+#qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
+remember_location(qpid-txtest)
+
+install (TARGETS
+         qpid-perftest qpid-latency-test qpid-client-test
+         qpid-ping
+         qpid-receive qpid-send qpid-topic-listener qpid-topic-publisher receiver sender
+         qpid-txtest
+         RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
+install (PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/qpidt
+         DESTINATION ${QPID_INSTALL_TESTDIR})
+
+# Only build test code if testing is turned on
+if (BUILD_TESTING)
+
+# Create the environment scripts for tests
+set (abs_srcdir ${CMAKE_CURRENT_SOURCE_DIR})
+set (abs_builddir ${CMAKE_CURRENT_BINARY_DIR})
+set (abs_top_srcdir ${CMAKE_SOURCE_DIR})
+set (abs_top_builddir ${CMAKE_BINARY_DIR})
+set (builddir_lib_suffix "")
+
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.ps1.in
+    ${CMAKE_CURRENT_BINARY_DIR}/test_env.ps1 @ONLY)
+else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/test_env.sh @ONLY)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+# Copy qpidd-p0 script to build directory so tests can find it.
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/qpidd-p0 ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
+# Like this to work with cmake 2.4 on Unix
+set (qpid_test_boost_libs 
+     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 
 #
 # Unit test program
@@ -190,40 +232,10 @@ endif (BUILD_SASL)
 #
 # Other test programs
 #
-add_executable (qpid-perftest qpid-perftest.cpp ${platform_test_additions})
-target_link_libraries (qpid-perftest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
-remember_location(qpid-perftest)
-
-add_executable (qpid-txtest qpid-txtest.cpp ${platform_test_additions})
-target_link_libraries (qpid-txtest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
-remember_location(qpid-txtest)
-
-add_executable (qpid-latency-test qpid-latency-test.cpp ${platform_test_additions})
-target_link_libraries (qpid-latency-test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#qpid_latencytest_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
-remember_location(qpid-latency-test)
-
 add_executable (echotest echotest.cpp ${platform_test_additions})
 target_link_libraries (echotest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
 remember_location(echotest)
-
-add_executable (qpid-client-test qpid-client-test.cpp ${platform_test_additions})
-target_link_libraries (qpid-client-test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
-remember_location(qpid-client-test)
-
-add_executable (qpid-topic-listener qpid-topic-listener.cpp ${platform_test_additions})
-target_link_libraries (qpid-topic-listener qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
-remember_location(qpid-topic-listener)
-
-add_executable (qpid-topic-publisher qpid-topic-publisher.cpp ${platform_test_additions})
-target_link_libraries (qpid-topic-publisher qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
-remember_location(qpid-topic-publisher)
 
 add_executable (publish publish.cpp ${platform_test_additions})
 target_link_libraries (publish qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
@@ -262,27 +274,6 @@ target_link_libraries (txjob qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBR
 #txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txjob)
 
-add_executable (receiver receiver.cpp ${platform_test_additions})
-target_link_libraries (receiver qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-remember_location(receiver)
-
-# This is bizarre - using both messaging and client libraries
-add_executable (sender sender.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (sender qpidmessaging qpidtypes qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-remember_location(sender)
-
-add_executable (qpid-receive qpid-receive.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid-receive qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-remember_location(qpid-receive)
-
-add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid-send qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-remember_location(qpid-send)
-
-add_executable (qpid-ping qpid-ping.cpp ${platform_test_additions})
-target_link_libraries (qpid-ping qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-remember_location(qpid-ping)
-
 add_executable (datagen datagen.cpp ${platform_test_additions})
 target_link_libraries (datagen qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(datagen)
@@ -295,16 +286,6 @@ if (BUILD_SASL)
     add_executable (sasl_version sasl_version.cpp ${platform_test_additions})
     remember_location(sasl_version)
 endif (BUILD_SASL)
-
-# qpid-perftest and qpid-latency-test are generally useful so install them
-install (TARGETS
-         qpid-perftest qpid-latency-test qpid-client-test
-         qpid-ping
-         qpid-receive qpid-send qpid-topic-listener qpid-topic-publisher receiver sender
-         qpid-txtest
-         RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
-install (PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/qpidt
-         DESTINATION ${QPID_INSTALL_TESTDIR})
 
 # This should ideally be done as part of the test run, but I don't know a way
 # to get these arguments and the working directory set like Makefile.am does,
@@ -351,10 +332,10 @@ if (PYTHON_EXECUTABLE)
 endif (PYTHON_EXECUTABLE)
 add_test (stop_broker ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/stop_broker${test_script_suffix})
 if (PYTHON_EXECUTABLE)
-  add_test (ha_tests ${test_wrap} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ha_tests.py)
-  add_test (qpidd_qmfv2_tests ${test_wrap} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qpidd_qmfv2_tests.py)
+  add_test (ha_tests ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/ha_tests.py)
+  add_test (qpidd_qmfv2_tests ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/qpidd_qmfv2_tests.py)
   if (BUILD_AMQP)
-    add_test (interlink_tests ${test_wrap} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/interlink_tests.py)
+    add_test (interlink_tests ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/interlink_tests.py)
   endif (BUILD_AMQP)
   add_test (swig_python_tests ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/swig_python_tests${test_script_suffix})
 endif (PYTHON_EXECUTABLE)
@@ -380,5 +361,6 @@ add_library(test_store MODULE test_store.cpp)
 target_link_libraries (test_store qpidbroker qpidcommon)
 set_target_properties (test_store PROPERTIES PREFIX "" COMPILE_DEFINITIONS _IN_QPID_BROKER)
 
-
 add_library (dlclose_noop MODULE dlclose_noop.c)
+
+endif (BUILD_TESTING)
