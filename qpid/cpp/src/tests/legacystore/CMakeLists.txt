@@ -17,12 +17,9 @@
 # under the License.
 #
 
-if(BUILD_LEGACYSTORE)
+if(BUILD_LEGACYSTORE AND BUILD_TESTING)
 
 message(STATUS "Building legacystore tests")
-
-# Enable dashboard reporting.
-include (CTest)
 
 # Make sure that everything get built before the tests
 # Need to create a var with all the necessary top level targets
@@ -34,40 +31,9 @@ endif (QPID_LINK_BOOST_DYNAMIC)
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-include (FindPythonInterp)
-
-# # Inherit environment from parent script
-# set (abs_srcdir ${CMAKE_CURRENT_SOURCE_DIR})
-# set (abs_builddir ${CMAKE_CURRENT_BINARY_DIR})
-# set (abs_top_srcdir ${CMAKE_SOURCE_DIR})
-# set (abs_top_builddir ${CMAKE_BINARY_DIR})
-# set (builddir_lib_suffix "")
-
-# If valgrind is selected in the configuration step, set up the path to it
-# for CTest.
-if (ENABLE_VALGRIND)
-  set (MEMORYCHECK_COMMAND ${VALGRIND})
-  set (MEMORYCHECK_COMMAND_OPTIONS "--gen-suppressions=all
---leak-check=full
---demangle=yes
---suppressions=${CMAKE_CURRENT_SOURCE_DIR}/.valgrind.supp
---num-callers=25
---log-file=ctest_valgrind.vglog")
-endif (ENABLE_VALGRIND)
-
 # Like this to work with cmake 2.4 on Unix
 set (qpid_test_boost_libs
      ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-
-#
-# Unit test program
-#
-# Unit tests are built as a single program to reduce valgrind overhead
-# when running the tests. If you want to build a subset of the tests run
-# ccmake and set unit_tests_to_build to the set you want to build.
-# HACK ALERT - Unit tests are built individually to resolve a conflict
-# with running multiple brokers that connect to 0.0.0.0:5672 and that
-# womp on each other's store directory.
 
 #
 # define_legacystore_test
@@ -185,4 +151,4 @@ add_test(NAME journal_jtt_ut WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/
 
 add_test (legacystore_python_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_python_tests${test_script_suffix})
 
-endif (BUILD_LEGACYSTORE)
+endif (BUILD_LEGACYSTORE AND BUILD_TESTING)

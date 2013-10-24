@@ -44,7 +44,13 @@ include(CheckLibraryExists)
 include(CheckSymbolExists)
 include(FindBoost)
 include(FindDoxygen)
+include(FindRuby)
 include(FindPkgConfig)
+include(FindPythonInterp)
+
+find_program(VALGRIND_EXECUTABLE valgrind DOC "Location of the valgrind program")
+mark_as_advanced(VALGRIND_EXECUTABLE)
+find_package_handle_standard_args(VALGRIND DEFAULT_MSG VALGRIND_EXECUTABLE)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
 
@@ -157,9 +163,9 @@ ENDMACRO (add_msvc_version)
 
 # Add a test to check the exported library API against expected API symbols
 MACRO (add_api_test libname)
-  if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
     add_test(api_check_${libname} ${CMAKE_CURRENT_SOURCE_DIR}/check-abi "${ENV_CXX}" ${CMAKE_CURRENT_BINARY_DIR}/lib${libname}.so ${CMAKE_CURRENT_SOURCE_DIR}/lib${libname}-api-symbols.txt)
-  endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
 ENDMACRO (add_api_test libname)
 
 
@@ -195,8 +201,6 @@ inherit_value ("winver_LEGAL_COPYRIGHT"      "")
 set(AMQP_SPEC_DIR ${qpid-cpp_SOURCE_DIR}/../specs)
 set(AMQP_SPEC ${AMQP_SPEC_DIR}/amqp.0-10-qpid-errata.stripped.xml)
 if (EXISTS ${AMQP_SPEC})
-  include(FindRuby)
-  include(FindPythonInterp)
   if (NOT RUBY_EXECUTABLE)
     message(FATAL_ERROR "Can't locate ruby, needed to generate source files.")
   endif (NOT RUBY_EXECUTABLE)
@@ -256,29 +260,16 @@ else (EXISTS ${AMQP_SPEC})
   include (managementgen.cmake)
 endif (EXISTS ${AMQP_SPEC})
 
-find_program(HELP2MAN help2man DOC "Location of the help2man program")
-option(GEN_MANPAGES "Use help2man to generate man pages" ON)
-if (GEN_MANPAGES AND NOT HELP2MAN)
-  message(STATUS "Can't locate the help2man command; man pages will not be generated")
-  set (GEN_MANPAGES OFF)
-endif (GEN_MANPAGES AND NOT HELP2MAN)
-
 # FindDoxygen module tries to locate doxygen and Graphviz dot
-set (docs_default ON)
-if (NOT DOXYGEN_EXECUTABLE)
-  set (docs_default OFF)
-endif (NOT DOXYGEN_EXECUTABLE)
-option(GEN_DOXYGEN "Use doxygen to generate user documentation" ${docs_default})
-if (GEN_DOXYGEN AND NOT DOXYGEN_EXECUTABLE)
-  message(STATUS "Can't locate the doxygen command; user documentation will not be generated")
-  set (GEN_DOXYGEN OFF)
-endif (GEN_DOXYGEN AND NOT DOXYGEN_EXECUTABLE)
+if (DOXYGEN_EXECUTABLE)
+  option(GEN_DOXYGEN "Use doxygen to generate user documentation" ON)
+else (DOXYGEN_EXECUTABLE)
+  message(STATUS "Can't locate the doxygen command; user documentation cannot be generated")
+endif (DOXYGEN_EXECUTABLE)
 
-find_program(VALGRIND valgrind DOC "Location of the valgrind program")
-option(ENABLE_VALGRIND "Use valgrind to detect run-time problems" ON)
-if (ENABLE_VALGRIND AND NOT VALGRIND)
-  message(STATUS "Can't locate the valgrind command; no run-time error detection")
-endif (ENABLE_VALGRIND AND NOT VALGRIND)
+if (VALGRIND_FOUND)
+  option(ENABLE_VALGRIND "Use valgrind to detect run-time problems" ON)
+endif (VALGRIND_FOUND)
 
 # Do not keep on linking against transitive library dependencies
 set (CMAKE_LINK_INTERFACE_LIBRARIES "")
