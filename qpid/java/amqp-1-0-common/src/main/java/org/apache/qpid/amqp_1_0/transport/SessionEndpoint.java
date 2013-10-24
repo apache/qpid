@@ -187,9 +187,16 @@ public class SessionEndpoint
     private void detachLinks()
     {
         Collection<UnsignedInteger> handles = new ArrayList<UnsignedInteger>(_remoteLinkEndpoints.keySet());
+        Error error = new Error();
+        error.setCondition(LinkError.DETACH_FORCED);
+        error.setDescription("Force detach the link because the session is remotely ended.");
         for(UnsignedInteger handle : handles)
         {
-            detach(handle, null);
+            Detach detach = new Detach();
+            detach.setClosed(false);
+            detach.setHandle(handle);
+            detach.setError(error);
+            detach(handle, detach);
         }
     }
 

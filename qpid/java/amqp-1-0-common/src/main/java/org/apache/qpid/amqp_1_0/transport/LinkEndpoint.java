@@ -395,14 +395,17 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
                 default:
                     return;
             }
+            
+            if (getSession().getState() != SessionState.END_RECVD)
+            {
+                Detach detach = new Detach();
+                detach.setHandle(getLocalHandle());
+                if(close)
+                    detach.setClosed(close);
+                detach.setError(error);
 
-            Detach detach = new Detach();
-            detach.setHandle(getLocalHandle());
-            if(close)
-                detach.setClosed(close);
-            detach.setError(error);
-
-            getSession().sendDetach(detach);
+                getSession().sendDetach(detach);
+            }
 
             getLock().notifyAll();
         }

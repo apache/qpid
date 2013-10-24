@@ -921,7 +921,9 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                             consumers.remove();
                             try
                             {
-                                _connection.getExceptionListener().onException(e);
+                                ExceptionListener expListener = _connection.getExceptionListener();
+                                if (expListener != null)
+                                    expListener.onException(e);
                                 consumer.close();
                             }
                             catch (JMSException e1)
