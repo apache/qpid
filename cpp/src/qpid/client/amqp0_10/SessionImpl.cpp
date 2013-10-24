@@ -276,12 +276,18 @@ struct IncomingMessageHandler : IncomingMessages::Handler
 {
     typedef boost::function1<bool, IncomingMessages::MessageTransfer&> Callback;
     Callback callback;
+    ReceiverImpl* receiver;
 
-    IncomingMessageHandler(Callback c) : callback(c) {}
+    IncomingMessageHandler(Callback c) : callback(c), receiver(0) {}
 
     bool accept(IncomingMessages::MessageTransfer& transfer)
     {
         return callback(transfer);
+    }
+
+    bool isClosed()
+    {
+        return receiver && receiver->isClosed();
     }
 };
 
@@ -332,6 +338,7 @@ bool SessionImpl::getIncoming(IncomingMessages::Handler& handler, qpid::messagin
 bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     IncomingMessageHandler handler(boost::bind(&SessionImpl::accept, this, &receiver, &message, _1));
+    handler.receiver = &receiver;
     return getIncoming(handler, timeout);
 }
 
@@ -495,10 +502,13 @@ void SessionImpl::releaseImpl(qpid::messaging::Message& m)
 
 void SessionImpl::receiverCancelled(const std::string& name)
 {
-    ScopedLock l(lock);
-    receivers.erase(name);
-    session.sync();
-    incoming.releasePending(name);
+    {
+        ScopedLock l(lock);
+        receivers.erase(name);
+        session.sync();
+        incoming.releasePending(name);
+    }
+    incoming.wakeup();
 }
 
 void SessionImpl::releasePending(const std::string& name)
