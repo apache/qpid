@@ -95,12 +95,14 @@ class RouterEngine:
         """
         """
         try:
-            if addr.find('Mtemp.') == 0:
+            if addr.find('Mtemp.') == 0:  ## This is a temporary measure until dynamic is added to Messenger
                 return
             if addr.find('M') == 0:
                 self.mobile_address_engine.add_local_address(addr[1:])
         except Exception, e:
             self.log(LOG_ERROR, "Exception in new-address processing: exception=%r" % e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback)
 
 
     def addressRemoved(self, addr):
@@ -113,6 +115,8 @@ class RouterEngine:
                 self.mobile_address_engine.del_local_address(addr[1:])
         except Exception, e:
             self.log(LOG_ERROR, "Exception in del-address processing: exception=%r" % e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback)
 
 
     def handleTimerTick(self):
@@ -128,6 +132,8 @@ class RouterEngine:
             self.node_tracker.tick(now)
         except Exception, e:
             self.log(LOG_ERROR, "Exception in timer processing: exception=%r" % e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback)
 
 
     def handleControlMessage(self, opcode, body, link_id):
@@ -182,6 +188,8 @@ class RouterEngine:
         except Exception, e:
             self.log(LOG_ERROR, "Exception in raw message processing: properties=%r body=%r exception=%r" %
                      (message_properties, body, e))
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback)
 
 
     def getRouterData(self, kind):
