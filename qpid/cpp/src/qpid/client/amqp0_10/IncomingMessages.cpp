@@ -148,10 +148,23 @@ bool IncomingMessages::get(Handler& handler, qpid::sys::Duration timeout)
             ScopedRelease release(inUse, lock);
             sys::Mutex::ScopedUnlock l(lock);
             //wait for suitable new message to arrive
-            return process(&handler, timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline));
+            if (process(&handler, timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline))) {
+                return true;
+            }
         }
+        if (handler.isClosed()) throw qpid::messaging::ReceiverError("Receiver has been closed");
     } while (AbsTime::now() < deadline);
     return false;
+}
+namespace {
+struct Wakeup : public qpid::types::Exception {};
+}
+
+void IncomingMessages::wakeup()
+{
+    sys::Mutex::ScopedLock l(lock);
+    incoming->close(qpid::sys::ExceptionHolder(new Wakeup()));
+    lock.notifyAll();
 }
 
 bool IncomingMessages::getNextDestination(std::string& destination, qpid::sys::Duration timeout)
@@ -222,6 +235,16 @@ void IncomingMessages::releasePending(const std::string& destination)
     session.messageRelease(match.ids);
 }
 
+bool IncomingMessages::pop(FrameSet::shared_ptr& content, qpid::sys::Duration timeout)
+{
+    try {
+        return incoming->pop(content, timeout);
+    } catch (const Wakeup&) {
+        incoming->open();
+        return false;
+    }
+}
+
 /**
  * Get a frameset that is accepted by the specified handler from
  * session queue, waiting for up to the specified duration and
@@ -234,7 +257,7 @@ bool IncomingMessages::process(Handler* handler, qpid::sys::Duration duration)
     AbsTime deadline(AbsTime::now(), duration);
     FrameSet::shared_ptr content;
     try {
-        for (Duration timeout = duration; incoming->pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
+        for (Duration timeout = duration; pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
             if (content->isA<MessageTransferBody>()) {
                 MessageTransfer transfer(content, *this);
                 if (handler && handler->accept(transfer)) {
@@ -261,7 +284,7 @@ bool IncomingMessages::wait(qpid::sys::Duration duration)
 {
     AbsTime deadline(AbsTime::now(), duration);
     FrameSet::shared_ptr content;
-    for (Duration timeout = duration; incoming->pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
+    for (Duration timeout = duration; pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
         if (content->isA<MessageTransferBody>()) {
             QPID_LOG(debug, "Pushed " << *content->getMethod() << " to received queue");
             sys::Mutex::ScopedLock l(lock);

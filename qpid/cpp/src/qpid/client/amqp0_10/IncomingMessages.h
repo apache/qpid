@@ -66,11 +66,13 @@ class IncomingMessages
     {
         virtual ~Handler() {}
         virtual bool accept(MessageTransfer& transfer) = 0;
+        virtual bool isClosed() { return false; }
     };
 
     IncomingMessages();
     void setSession(qpid::client::AsyncSession session);
     bool get(Handler& handler, qpid::sys::Duration timeout);
+    void wakeup();
     bool getNextDestination(std::string& destination, qpid::sys::Duration timeout);
     void accept();
     void accept(qpid::framing::SequenceNumber id, bool cumulative);
@@ -94,6 +96,8 @@ class IncomingMessages
 
     bool process(Handler*, qpid::sys::Duration);
     bool wait(qpid::sys::Duration);
+    bool pop(FrameSetPtr&, qpid::sys::Duration);
+
     void retrieve(FrameSetPtr, qpid::messaging::Message*);
 
 };
