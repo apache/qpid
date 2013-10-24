@@ -597,12 +597,12 @@ void RecoveryManager::readJournalData(char* target,
             getNextFile(false);
         }
         bool readFitsInFile = inFileStream_.tellg() + readSize <= fileSize_kib_ * 1024;
-        std::streamoff readSize = readFitsInFile ? readSize : (fileSize_kib_ * 1024) - inFileStream_.tellg();
-        inFileStream_.read(target + bytesRead, readSize);
-        if (inFileStream_.gcount() != readSize) {
+        std::streamoff actualReadSize = readFitsInFile ? readSize : (fileSize_kib_ * 1024) - inFileStream_.tellg();
+        inFileStream_.read(target + bytesRead, actualReadSize);
+        if (inFileStream_.gcount() != actualReadSize) {
             throw jexception(); // TODO - proper exception
         }
-        bytesRead += readSize;
+        bytesRead += actualReadSize;
     }
 }
 

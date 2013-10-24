@@ -248,10 +248,11 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     }
 
     // Check file header
-    const bool jrnlMagicError = ((::file_hdr_t*)buff)->_rhdr._magic != QLS_FILE_MAGIC;
-    const bool jrnlVersionError = ((::file_hdr_t*)buff)->_rhdr._version != QLS_JRNL_VERSION;
-    const bool jrnlPartitionError = ((::file_hdr_t*)buff)->_efp_partition != partitionPtr_->getPartitionNumber();
-    const bool jrnlFileSizeError = ((::file_hdr_t*)buff)->_file_size_kib != efpDataSize_kib_;
+    ::file_hdr_t* header(reinterpret_cast< ::file_hdr_t* >(buff));
+    const bool jrnlMagicError = header->_rhdr._magic != QLS_FILE_MAGIC;
+    const bool jrnlVersionError = header->_rhdr._version != QLS_JRNL_VERSION;
+    const bool jrnlPartitionError = header->_efp_partition != partitionPtr_->getPartitionNumber();
+    const bool jrnlFileSizeError = header->_file_size_kib != efpDataSize_kib_;
     if (jrnlMagicError || jrnlVersionError || jrnlPartitionError || jrnlFileSizeError)
     {
         oss << "ERROR: File " << emptyFileName << ": Invalid file header - mismatched header fields: " <<
@@ -265,8 +266,8 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     }
 
     // Check file header is reset
-    if (!::is_file_hdr_reset((::file_hdr_t*)buff)) {
-        ::file_hdr_reset((::file_hdr_t*)buff);
+    if (!::is_file_hdr_reset(header)) {
+        ::file_hdr_reset(header);
         ::memset(buff + sizeof(::file_hdr_t), 0, MAX_FILE_HDR_LEN - sizeof(::file_hdr_t)); // set rest of buffer to 0
         fs.seekp(0, std::fstream::beg);
         fs.write(buff, buffsize);
