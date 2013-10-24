@@ -51,13 +51,13 @@ public class Session
     private TransactionController _sessionLocalTC;
     private Connection _connection;
 
-    public Session(final Connection connection, String name) throws SessionCreationException
+    public Session(final Connection connection, String name) throws ChannelsExhaustedException
     {
         _connection = connection;
         _endpoint = connection.getEndpoint().createSession(name);
         if(_endpoint == null)
         {
-            throw new SessionCreationException("Cannot create session as all channels are in use");
+            throw new ChannelsExhaustedException("Cannot create session as all channels are in use");
         }
         _sectionEncoder = new SectionEncoderImpl(connection.getEndpoint().getDescribedTypeRegistry());
         _sectionDecoder = new SectionDecoderImpl(connection.getEndpoint().getDescribedTypeRegistry());
@@ -388,15 +388,5 @@ public class Session
     public static interface SourceConfigurator
     {
         public void configureSource(final Source source);
-    }
-
-    private class SessionCreationException extends ConnectionException
-    {
-
-        private SessionCreationException(final String message)
-        {
-            super(message);
-        }
-
     }
 }
