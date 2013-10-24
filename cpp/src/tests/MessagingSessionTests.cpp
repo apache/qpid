@@ -1400,7 +1400,7 @@ QPID_AUTO_TEST_CASE(testCloseAndConcurrentFetch)
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Fetcher fetcher(receiver);
     qpid::sys::Thread runner(fetcher);
-    ::usleep(500);
+    qpid::sys::usleep(500);
     receiver.close();
     runner.join();
     BOOST_CHECK(!fetcher.timedOut);
@@ -1418,7 +1418,7 @@ QPID_AUTO_TEST_CASE(testCloseAndMultipleConcurrentFetches)
     qpid::sys::Thread runner(fetcher);
     qpid::sys::Thread runner2(fetcher2);
     qpid::sys::Thread runner3(fetcher3);
-    ::usleep(500);
+    qpid::sys::usleep(500);
     receiver.close();
     Message message("Test");
     fix.session.createSender("amq.fanout").send(message);
