@@ -1,5 +1,6 @@
 Version 0.26:
 	* QPID-4834: Ruby client examples incorrectly handles '--connection-options' option
+	* QPID-5250: Wrapped all C++ exceptions as Ruby exceptions.
 
 Version 0.24:
 	* No language-specific changes.
