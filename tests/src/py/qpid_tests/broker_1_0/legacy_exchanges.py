@@ -37,6 +37,7 @@ class LegacyExchangeTests (VersionTest):
             msg = rcv.fetch(0)
             assert msg.content == expected.content
             self.ssn.acknowledge(msg)
+        rcv.close()
 
     def test_direct(self):
         msgs = [Message(content=c, subject=s) for s, c in [('a', 'one'), ('b', 'two'),('a', 'three'),('b', 'four')]]
