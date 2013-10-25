@@ -706,30 +706,29 @@ namespace {
     }
 } // end namespace
 
-uint32_t Queue::remove(const uint32_t maxCount, MessagePredicate p, MessageFunctor f, SubscriptionType type, bool triggerAutoDelete)
+uint32_t Queue::remove(const uint32_t maxCount, MessagePredicate p, MessageFunctor f,
+                       SubscriptionType type, bool triggerAutoDelete, uint32_t maxTests)
 {
     ScopedAutoDelete autodelete(*this);
     std::deque<Message> removed;
     {
         QueueCursor c(type);
-        uint32_t count(0);
+        uint32_t count(0), tests(0);
         Mutex::ScopedLock locker(messageLock);
         Message* m = messages->next(c);
         while (m){
+            if (maxTests && tests++ >= maxTests) break;
             if (!p || p(*m)) {
-                if (!maxCount || count++ < maxCount) {
-                    if (m->getState() == AVAILABLE) {
-                        //don't actually acquire, just act as if we did
-                        observeAcquire(*m, locker);
-                    }
-                    observeDequeue(*m, locker, triggerAutoDelete ? &autodelete : 0);
-                    removed.push_back(*m);//takes a copy of the message
-                    if (!messages->deleted(c)) {
-                        QPID_LOG(warning, "Failed to correctly remove message from " << name << "; state is not consistent!");
-                        assert(false);
-                    }
-                } else {
-                    break;
+                if (maxCount && count++ >= maxCount) break;
+                if (m->getState() == AVAILABLE) {
+                    //don't actually acquire, just act as if we did
+                    observeAcquire(*m, locker);
+                }
+                observeDequeue(*m, locker, triggerAutoDelete ? &autodelete : 0);
+                removed.push_back(*m);//takes a copy of the message
+                if (!messages->deleted(c)) {
+                    QPID_LOG(warning, "Failed to correctly remove message from " << name << "; state is not consistent!");
+                    assert(false);
                 }
             }
             m = messages->next(c);
