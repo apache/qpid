@@ -255,7 +255,22 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void abandoned(const Message& message);
     bool checkNotDeleted(const Consumer::shared_ptr&);
     void notifyDeleted();
-    uint32_t remove(uint32_t maxCount, MessagePredicate, MessageFunctor, SubscriptionType, bool triggerAutoDelete);
+
+    /** Remove messages from the queue:
+     *@param maxCount Maximum number of messages to remove, 0 means unlimited.
+     *@param p Only remove messages for which p(msg) is true.
+     *@param f Call f on each message that is removed.
+     *@param st Use a cursor of this SubscriptionType to iterate messages to remove.
+     *@param triggerAutoDelete If true removing messages may trigger aut-delete.
+     *@param maxTests Max number of messages to test for removal, 0 means unlimited.
+     *@return Number of messages removed.
+     */
+    uint32_t remove(uint32_t maxCount,
+                    MessagePredicate p, MessageFunctor f,
+                    SubscriptionType st,
+                    bool triggerAutoDelete,
+                    uint32_t maxTests=0);
+
     virtual bool checkDepth(const QueueDepth& increment, const Message&);
     void tryAutoDelete();
   public:

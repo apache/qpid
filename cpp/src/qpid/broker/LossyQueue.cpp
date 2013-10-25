@@ -51,8 +51,19 @@ bool LossyQueue::checkDepth(const QueueDepth& increment, const Message& message)
     while (settings.maxDepth && (settings.maxDepth - current < increment)) {
         QPID_LOG(debug, "purging " << name << ": current depth is [" << current << "], max depth is [" << settings.maxDepth << "], new message has size " << increment.getSize());
         qpid::sys::Mutex::ScopedUnlock u(messageLock);
-        //TODO: arguably we should try and purge expired messages first but that is potentially expensive
-        if (remove(1, settings.priorities ? boost::bind(&isLowerPriorityThan, message.getPriority(), _1) : MessagePredicate(), boost::bind(&reroute, alternateExchange, _1), PURGE, false)) {
+        //TODO: arguably we should try and purge expired messages first but that
+        //is potentially expensive
+
+        // Note: in the case of a priority queue we are only comparing the new mesage
+        // with single lowest-priority message, hence the final parameter maxTests
+        // is 1 in this case, so we only test one message for removal.
+        if (remove(1,
+                   settings.priorities ?
+                   boost::bind(&isLowerPriorityThan, message.getPriority(), _1) :
+                   MessagePredicate(), boost::bind(&reroute, alternateExchange, _1),
+                   PURGE, false,
+                   settings.priorities ? 1 : 0))
+        {
             if (mgmtObject) {
                 mgmtObject->inc_discardsRing(1);
                 if (brokerMgmtObject)
