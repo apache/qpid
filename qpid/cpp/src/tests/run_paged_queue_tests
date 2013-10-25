@@ -21,12 +21,19 @@
 
 #setup path to find qpid-config and sender/receiver test progs
 source ./test_env.sh
+trap stop_broker INT TERM QUIT
 
 export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
 
-#set port to connect to via env var
-test -s qpidd.port && QPID_PORT=`cat qpidd.port`
-export QPID_PORT
+start_broker() {
+    QPID_PORT=$($QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-data-dir $MODULES --auth no) || fail "Could not start broker"
+}
 
+stop_broker() {
+    $QPIDD_EXEC -q --port $QPID_PORT
+}
+
+start_broker
 qpid-cpp-benchmark --broker "localhost:$QPID_PORT" --create-option "node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_size':0,'qpid.max_count':0,'qpid.flow_stop_size':0,'qpid.flow_resume_size':0,'qpid.flow_stop_count':0,'qpid.flow_resume_count':0}}}"
 qpid-cpp-benchmark --broker "localhost:$QPID_PORT" --create-option "node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_size':0,'qpid.max_count':0,'qpid.flow_stop_size':0,'qpid.flow_resume_size':0,'qpid.flow_stop_count':0,'qpid.flow_resume_count':0}}}" --fill-drain
+stop_broker
