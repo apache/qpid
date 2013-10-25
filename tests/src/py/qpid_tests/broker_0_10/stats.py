@@ -336,7 +336,7 @@ class BrokerStatsTests(Base):
         ## Shut down and restart the connection to clear the error condition.
         ##
         try:
-            self.conn.close()
+            self.conn.close(timeout=.1)
         except:
             pass
         self.conn = self.setup_connection()
