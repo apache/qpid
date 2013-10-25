@@ -238,7 +238,7 @@ Ensure that pkg-config is set up correctly. This is especially important
 if you have built the dependencies from source, as they may not be installed
 in the default system location. For example:
 
- # export PKG_CONFIG_PATH=~/qpid-tools/lib/pkgconfig:/usr/local/pkgconfig
+ # export PKG_CONFIG_PATH=~/qpid-tools/lib/pkgconfig:/usr/local/lib/pkgconfig
  # export PKG_CONFIG=~/qpid-tools/bin/pkg-config
 
 Ensure that the boost libraries are made available on the gcc library path.
