@@ -347,4 +347,9 @@ public class ServerConnectionDelegate extends ServerDelegate
     {
         return _clientProperties == null ? null : (String) _clientProperties.get(ConnectionStartProperties.VERSION_0_10);
     }
+
+    public String getClientProduct()
+    {
+        return _clientProperties == null ? null : (String) _clientProperties.get(ConnectionStartProperties.PRODUCT);
+    }
 }

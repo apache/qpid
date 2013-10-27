@@ -60,12 +60,12 @@ public class ConnectionMessages
 
     /**
      * Log a Connection message of the Format:
-     * <pre>CON-1001 : Open[ : Client ID : {0}][ : Protocol Version : {1}][ : Client Version : {2}]</pre>
+     * <pre>CON-1001 : Open[ : Client ID : {0}][ : Protocol Version : {1}][ : Client Version : {2}][ : Client Product : {3}]</pre>
      * Optional values are contained in [square brackets] and are numbered
      * sequentially in the method call.
      *
      */
-    public static LogMessage OPEN(String param1, String param2, String param3, boolean opt1, boolean opt2, boolean opt3)
+    public static LogMessage OPEN(String param1, String param2, String param3, String param4, boolean opt1, boolean opt2, boolean opt3, boolean opt4)
     {
         String rawMessage = _messages.getString("OPEN");
         StringBuffer msg = new StringBuffer();
@@ -108,11 +108,21 @@ public class ConnectionMessages
 
             // Use 'end + 1' to remove the ']' from the output
             msg.append(parts[3].substring(end + 1));
+
+            // Add Option : : Client Product : {3}.
+            end = parts[4].indexOf(']');
+            if (opt4)
+            {
+                msg.append(parts[4].substring(0, end));
+            }
+
+            // Use 'end + 1' to remove the ']' from the output
+            msg.append(parts[4].substring(end + 1));
         }
 
         rawMessage = msg.toString();
 
-        final Object[] messageArguments = {param1, param2, param3};
+        final Object[] messageArguments = {param1, param2, param3, param4};
         // Create a new MessageFormat to ensure thread safety.
         // Sharing a MessageFormat and using applyPattern is not thread safe
         MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);

@@ -224,6 +224,12 @@ public class Connection_1_0 implements ConnectionEventListener
         }
 
         @Override
+        public String getClientProduct()
+        {
+            return "";  //TODO
+        }
+
+        @Override
         public String getPrincipalAsString()
         {
             return String.valueOf(_conn.getUser());

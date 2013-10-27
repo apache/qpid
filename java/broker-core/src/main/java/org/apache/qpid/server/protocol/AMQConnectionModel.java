@@ -79,6 +79,8 @@ public interface AMQConnectionModel extends StatisticsGatherer
 
     String getClientVersion();
 
+    String getClientProduct();
+
     String getPrincipalAsString();
 
     long getSessionCountLimit();
