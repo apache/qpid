@@ -114,6 +114,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private AMQShortString _contextKey;
 
     private String _clientVersion = null;
+    private String _clientProduct = null;
 
     private VirtualHost _virtualHost;
 
@@ -212,7 +213,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
         _logSubject = new ConnectionLogSubject(this);
 
-        _actor.message(ConnectionMessages.OPEN(null, null, null, false, false, false));
+        _actor.message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
 
         _closeWhenNoRoute = (Boolean)_broker.getAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE);
 
@@ -476,7 +477,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         try
         {
             // Log incomming protocol negotiation request
-            _actor.message(ConnectionMessages.OPEN(null, pi.getProtocolMajor() + "-" + pi.getProtocolMinor(), null, false, true, false));
+            _actor.message(ConnectionMessages.OPEN(null, pi.getProtocolMajor() + "-" + pi.getProtocolMinor(), null, null, false, true, false, false));
 
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
@@ -1109,6 +1110,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             }
 
             _clientVersion = _clientProperties.getString(ConnectionStartProperties.VERSION_0_8);
+            _clientProduct = _clientProperties.getString(ConnectionStartProperties.PRODUCT);
 
             String clientId = _clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8);
             if (clientId != null)
@@ -1116,7 +1118,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 setContextKey(new AMQShortString(clientId));
             }
 
-            _actor.message(ConnectionMessages.OPEN(clientId, _protocolVersion.toString(), _clientVersion, true, true, true));
+            _actor.message(ConnectionMessages.OPEN(clientId, _protocolVersion.toString(), _clientVersion, _clientProduct, true, true, true, true));
         }
     }
 
@@ -1348,6 +1350,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public String getClientVersion()
     {
         return _clientVersion;
+    }
+
+    @Override
+    public String getClientProduct()
+    {
+        return _clientProduct;
     }
 
     public String getPrincipalAsString()

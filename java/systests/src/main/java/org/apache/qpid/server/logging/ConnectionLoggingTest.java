@@ -90,18 +90,19 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         validateMessageID("CON-1001",log);
 
         // validate the last three CON-1001 messages.
-        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9 : Client Version : 1.2.3_4
-        validateConnectionOpen(results, 0, true, true, clientid, true, QpidProperties.getReleaseVersion());
+        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9 : Client Version : 1.2.3_4 : Client Product : product
+        validateConnectionOpen(results, 0, true, true, clientid, true, QpidProperties.getReleaseVersion(), true, QpidProperties.getProductName());
 
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
-        validateConnectionOpen(results, 1, true, false, null, false, null);
+        validateConnectionOpen(results, 1, true, false, null, false, null, false, null);
 
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
-        validateConnectionOpen(results, 2, false, false, null, false, null);
+        validateConnectionOpen(results, 2, false, false, null, false, null, false, null);
     }
     
     private void validateConnectionOpen(List<String> results, int positionFromEnd,
-                 boolean protocolVersionPresent, boolean clientIdOptionPresent, String clientIdValue, boolean clientVersionPresent, String clientVersionValue)
+                 boolean protocolVersionPresent, boolean clientIdOptionPresent, String clientIdValue,
+                 boolean clientVersionPresent, String clientVersionValue, boolean clientProductPresent, String clientProductValue)
     {
         String log = getLogMessageFromEnd(results, positionFromEnd);
         
@@ -119,11 +120,18 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         //fixme there is no way currently to find out the negotiated protocol version
         // The delegate is the versioned class ((AMQConnection)connection)._delegate
 
-        assertEquals("unexpected Client ID option state", clientVersionPresent, fromMessage(log).contains("Client Version :"));
+        assertEquals("unexpected Client Version option state", clientVersionPresent, fromMessage(log).contains("Client Version :"));
 
         if(clientVersionPresent && clientVersionValue != null)
         {
             assertTrue("Client version value is not present: " + clientVersionValue, fromMessage(log).contains(clientVersionValue));
+        }
+
+        assertEquals("unexpected Client Product option state", clientVersionPresent, fromMessage(log).contains("Client Product :"));
+
+        if(clientProductPresent && clientProductValue != null)
+        {
+            assertTrue("Client product value is not present: " + clientProductValue, fromMessage(log).contains(clientProductValue));
         }
     }
 

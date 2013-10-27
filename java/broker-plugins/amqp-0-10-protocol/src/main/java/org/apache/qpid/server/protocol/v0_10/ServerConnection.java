@@ -106,7 +106,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
             {
                 _onOpenTask.run();
             }
-            _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), true, true, true));
+            _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), getClientProduct(), true, true, true, true));
 
             getVirtualHost().getConnectionRegistry().registerConnection(this);
         }
@@ -499,15 +499,22 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         return _lastIoTime.longValue();
     }
 
-
+    @Override
     public String getClientId()
     {
         return getConnectionDelegate().getClientId();
     }
 
+    @Override
     public String getClientVersion()
     {
         return getConnectionDelegate().getClientVersion();
+    }
+
+    @Override
+    public String getClientProduct()
+    {
+        return getConnectionDelegate().getClientProduct();
     }
 
     public String getPrincipalAsString()

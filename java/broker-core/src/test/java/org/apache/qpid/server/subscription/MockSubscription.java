@@ -530,6 +530,12 @@ public class MockSubscription implements Subscription
         }
 
         @Override
+        public String getClientProduct()
+        {
+            return null;
+        }
+
+        @Override
         public String getPrincipalAsString()
         {
             return null;
