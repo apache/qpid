@@ -230,7 +230,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             _children.clear();
         }
         getBroker().removeChangeListener(this);
-        _objectRegistry.close();
+        closeObjectRegistry();
     }
 
     @Override
@@ -355,6 +355,21 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             if(!getName().equals(newName))
             {
                 throw new IllegalConfigurationException("Changing the name of jmx management plugin is not allowed");
+            }
+        }
+    }
+
+    private void closeObjectRegistry()
+    {
+        if (_objectRegistry != null)
+        {
+            try
+            {
+                _objectRegistry.close();
+            }
+            finally
+            {
+                _objectRegistry = null;
             }
         }
     }
