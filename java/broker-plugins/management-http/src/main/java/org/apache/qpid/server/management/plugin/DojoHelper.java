@@ -57,7 +57,21 @@ public class DojoHelper
             }
             else
             {
-                props.load(propertyStream);
+                try
+                {
+                    props.load(propertyStream);
+                }
+                finally
+                {
+                    try
+                    {
+                        propertyStream.close();
+                    }
+                    catch (IOException e)
+                    {
+                        _logger.warn("Exception closing InputStream for " + VERSION_FILE + " resource:", e);
+                    }
+                }
 
                 if (_logger.isDebugEnabled())
                 {
@@ -70,10 +84,10 @@ public class DojoHelper
                     _logger.debug("End of property dump");
                 }
 
-                _version = readPropertyValue(props, DOJO_VERSION_PROPERTY, _version);
-                _dojoPath = readPropertyValue(props, DOJO_PATH_PROPERTY, _dojoPath);
-                _dijitPath = readPropertyValue(props, DIJIT_PATH_PROPERTY, _dijitPath);
-                _dojoxPath = readPropertyValue(props, DOJOX_PATH_PROPERTY, _dojoxPath);
+                _version = props.getProperty(DOJO_VERSION_PROPERTY, _version);
+                _dojoPath = props.getProperty(DOJO_PATH_PROPERTY, _dojoPath);
+                _dijitPath = props.getProperty(DIJIT_PATH_PROPERTY, _dijitPath);
+                _dojoxPath = props.getProperty(DOJOX_PATH_PROPERTY, _dojoxPath);
             }
         }
         catch (IOException e)
@@ -81,17 +95,6 @@ public class DojoHelper
             // Log a warning about this and leave the values initialized to unknown.
             _logger.error("Exception loading " + VERSION_FILE + " resource:", e);
         }
-    }
-
-    private static String readPropertyValue(Properties props, String propertyName, String defaultValue)
-    {
-        String value = props.getProperty(propertyName);
-        if (value == null)
-        {
-            return defaultValue;
-        }
-
-        return value;
     }
 
     public static String getDojoVersion()

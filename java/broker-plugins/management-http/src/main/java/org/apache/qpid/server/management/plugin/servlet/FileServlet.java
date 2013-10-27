@@ -36,9 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 public class FileServlet extends HttpServlet
 {
     private static final String RESOURCES_PREFIX = "/resources";
-
-    public static final FileServlet INSTANCE = new FileServlet();
-    
     private static final Map<String, String> CONTENT_TYPES;
     
     static
@@ -56,12 +53,11 @@ public class FileServlet extends HttpServlet
     }
 
     private final String _resourcePathPrefix;
-    private boolean _usePathInfo;
+    private final boolean _usePathInfo;
 
     public FileServlet()
     {
-        _resourcePathPrefix = RESOURCES_PREFIX;
-        _usePathInfo = false;
+        this(RESOURCES_PREFIX, false);
     }
 
     public FileServlet(String resourcePathPrefix, boolean usePathInfo)
