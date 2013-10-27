@@ -43,12 +43,137 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         createSaslServerTestImpl(_manager);
     }
 
-    public void testCreateSaslServerUsingFullDN() throws Exception
+    public void testAuthenticatePrincipalNull_CausesAuthError() throws Exception
+    {
+        SaslServer saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", null);
+        AuthenticationResult result = _manager.authenticate(saslServer, new byte[0]);
+
+        assertNotNull(result);
+        assertEquals("Expected authentication to be unsuccessful",
+                AuthenticationResult.AuthenticationStatus.ERROR,
+                result.getStatus());
+        assertNull(saslServer.getAuthorizationID());
+    }
+
+    public void testAuthenticatePrincipalNoCn_CausesAuthError() throws Exception
+    {
+        X500Principal principal = new X500Principal("DC=example, DC=com, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
+        SaslServer saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
+        AuthenticationResult result = _manager.authenticate(saslServer, new byte[0]);
+
+        assertNotNull(result);
+        assertEquals("Expected authentication to be unsuccessful",
+                AuthenticationResult.AuthenticationStatus.ERROR,
+                result.getStatus());
+        assertNull(saslServer.getAuthorizationID());
+    }
+
+    public void testAuthenticatePrincipalEmptyCn_CausesAuthError() throws Exception
+    {
+        X500Principal principal = new X500Principal("CN=, DC=example, DC=com, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
+        SaslServer saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
+        AuthenticationResult result = _manager.authenticate(saslServer, new byte[0]);
+
+        assertNotNull(result);
+        assertEquals("Expected authentication to be unsuccessful",
+                AuthenticationResult.AuthenticationStatus.ERROR,
+                result.getStatus());
+        assertNull(saslServer.getAuthorizationID());
+    }
+
+    public void testAuthenticatePrincipalCnOnly() throws Exception
+    {
+        X500Principal principal = new X500Principal("CN=person");
+        UsernamePrincipal expectedPrincipal = new UsernamePrincipal("person");
+        SaslServer saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
+
+        AuthenticationResult result = _manager.authenticate(saslServer, new byte[0]);
+        assertNotNull(result);
+        assertEquals("Expected authentication to be successful",
+                     AuthenticationResult.AuthenticationStatus.SUCCESS,
+                     result.getStatus());
+        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
+        assertEquals("person", saslServer.getAuthorizationID());
+    }
+
+    public void testAuthenticatePrinicpalCnAndDc() throws Exception
+    {
+        X500Principal principal = new X500Principal("CN=person, DC=example, DC=com");
+        UsernamePrincipal expectedPrincipal = new UsernamePrincipal("person@example.com");
+        SaslServer saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
+
+        AuthenticationResult result = _manager.authenticate(saslServer, new byte[0]);
+        assertNotNull(result);
+        assertEquals("Expected authentication to be successful",
+                AuthenticationResult.AuthenticationStatus.SUCCESS,
+                result.getStatus());
+        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
+        assertEquals("person@example.com", saslServer.getAuthorizationID());
+    }
+
+    public void testAuthenticatePrinicpalCnDc_OtherComponentsIgnored() throws Exception
+    {
+        X500Principal principal = new X500Principal("CN=person, DC=example, DC=com, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
+        UsernamePrincipal expectedPrincipal = new UsernamePrincipal("person@example.com");
+        SaslServer saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
+
+        AuthenticationResult result = _manager.authenticate(saslServer, new byte[0]);
+        assertNotNull(result);
+        assertEquals("Expected authentication to be successful",
+                AuthenticationResult.AuthenticationStatus.SUCCESS,
+                result.getStatus());
+        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
+        assertEquals("person@example.com", saslServer.getAuthorizationID());
+    }
+
+    public void testAuthenticatePrincipalCn_OtherComponentsIgnored() throws Exception
+    {
+        X500Principal principal = new X500Principal("CN=person, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
+        UsernamePrincipal expectedPrincipal = new UsernamePrincipal("person");
+        SaslServer saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
+
+        AuthenticationResult result = _manager.authenticate(saslServer, new byte[0]);
+        assertNotNull(result);
+        assertEquals("Expected authentication to be successful",
+                AuthenticationResult.AuthenticationStatus.SUCCESS,
+                result.getStatus());
+        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
+        assertEquals("person", saslServer.getAuthorizationID());
+    }
+
+    public void testFullDNMode_CreateSaslServer() throws Exception
     {
         createSaslServerTestImpl(_managerUsingFullDN);
     }
 
-    public void createSaslServerTestImpl(AuthenticationManager manager) throws Exception
+    public void testFullDNMode_Authenticate() throws Exception
+    {
+        X500Principal principal = new X500Principal("CN=person, DC=example, DC=com");
+        SaslServer saslServer = _managerUsingFullDN.createSaslServer("EXTERNAL", "example.example.com", principal);
+
+        AuthenticationResult result = _managerUsingFullDN.authenticate(saslServer, new byte[0]);
+        assertNotNull(result);
+        assertEquals("Expected authentication to be successful",
+                     AuthenticationResult.AuthenticationStatus.SUCCESS,
+                     result.getStatus());
+
+        assertOnlyContainsWrapped(principal, result.getPrincipals());
+        assertEquals("CN=person,DC=example,DC=com", saslServer.getAuthorizationID());
+    }
+
+    public void testFullDNMode_AuthenticatePrincipalNull_CausesAuthError() throws Exception
+    {
+        SaslServer saslServer = _managerUsingFullDN.createSaslServer("EXTERNAL", "example.example.com", null);
+        AuthenticationResult result = _managerUsingFullDN.authenticate(saslServer, new byte[0]);
+
+        assertNotNull(result);
+        assertEquals("Expected authentication to be unsuccessful",
+                     AuthenticationResult.AuthenticationStatus.ERROR,
+                     result.getStatus());
+        assertNull(saslServer.getAuthorizationID());
+    }
+
+    private void createSaslServerTestImpl(AuthenticationManager manager) throws Exception
     {
         SaslServer server = manager.createSaslServer("EXTERNAL", "example.example.com", null);
 
@@ -63,121 +188,6 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         {
             // pass
         }
-    }
-
-    /**
-     * Test behaviour of the authentication when the useFullDN attribute is set true
-     * and the username is taken directly as the externally supplied Principal
-     */
-    public void testAuthenticateWithFullDN() throws Exception
-    {
-        X500Principal principal = new X500Principal("CN=person, DC=example, DC=com");
-        SaslServer saslServer = _managerUsingFullDN.createSaslServer("EXTERNAL", "example.example.com", principal);
-
-        AuthenticationResult result = _managerUsingFullDN.authenticate(saslServer, new byte[0]);
-        assertNotNull(result);
-        assertEquals("Expected authentication to be successful",
-                     AuthenticationResult.AuthenticationStatus.SUCCESS,
-                     result.getStatus());
-
-        assertOnlyContainsWrapped(principal, result.getPrincipals());
-
-        saslServer = _managerUsingFullDN.createSaslServer("EXTERNAL", "example.example.com", null);
-        result = _managerUsingFullDN.authenticate(saslServer, new byte[0]);
-
-        assertNotNull(result);
-        assertEquals("Expected authentication to be unsuccessful",
-                     AuthenticationResult.AuthenticationStatus.ERROR,
-                     result.getStatus());
-    }
-
-    /**
-     * Test behaviour of the authentication when parsing the username from
-     * the Principals DN as <CN>@<DC1>.<DC2>.<DC3>....<DCN>
-     */
-    public void testAuthenticateWithUsernameBasedOnCNAndDC() throws Exception
-    {
-        X500Principal principal;
-        SaslServer saslServer;
-        AuthenticationResult result;
-        UsernamePrincipal expectedPrincipal;
-
-        // DN contains only CN
-        principal = new X500Principal("CN=person");
-        expectedPrincipal = new UsernamePrincipal("person");
-        saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
-
-        result = _manager.authenticate(saslServer, new byte[0]);
-        assertNotNull(result);
-        assertEquals("Expected authentication to be successful",
-                     AuthenticationResult.AuthenticationStatus.SUCCESS,
-                     result.getStatus());
-        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
-
-        // Null principal
-        saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", null);
-        result = _manager.authenticate(saslServer, new byte[0]);
-
-        assertNotNull(result);
-        assertEquals("Expected authentication to be unsuccessful",
-                AuthenticationResult.AuthenticationStatus.ERROR,
-                result.getStatus());
-
-        // DN doesn't contain CN
-        principal = new X500Principal("DC=example, DC=com, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
-        saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
-        result = _manager.authenticate(saslServer, new byte[0]);
-
-        assertNotNull(result);
-        assertEquals("Expected authentication to be unsuccessful",
-                AuthenticationResult.AuthenticationStatus.ERROR,
-                result.getStatus());
-
-        // DN contains empty CN
-        principal = new X500Principal("CN=, DC=example, DC=com, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
-        saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
-        result = _manager.authenticate(saslServer, new byte[0]);
-
-        assertNotNull(result);
-        assertEquals("Expected authentication to be unsuccessful",
-                AuthenticationResult.AuthenticationStatus.ERROR,
-                result.getStatus());
-
-        // DN contains CN and DC
-        principal = new X500Principal("CN=person, DC=example, DC=com");
-        expectedPrincipal = new UsernamePrincipal("person@example.com");
-        saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
-
-        result = _manager.authenticate(saslServer, new byte[0]);
-        assertNotNull(result);
-        assertEquals("Expected authentication to be successful",
-                AuthenticationResult.AuthenticationStatus.SUCCESS,
-                result.getStatus());
-        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
-
-        // DN contains CN and DC and other components
-        principal = new X500Principal("CN=person, DC=example, DC=com, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
-        expectedPrincipal = new UsernamePrincipal("person@example.com");
-        saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
-
-        result = _manager.authenticate(saslServer, new byte[0]);
-        assertNotNull(result);
-        assertEquals("Expected authentication to be successful",
-                AuthenticationResult.AuthenticationStatus.SUCCESS,
-                result.getStatus());
-        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
-
-        // DN contains CN and DC and other components
-        principal = new X500Principal("CN=person, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
-        expectedPrincipal = new UsernamePrincipal("person");
-        saslServer = _manager.createSaslServer("EXTERNAL", "example.example.com", principal);
-
-        result = _manager.authenticate(saslServer, new byte[0]);
-        assertNotNull(result);
-        assertEquals("Expected authentication to be successful",
-                AuthenticationResult.AuthenticationStatus.SUCCESS,
-                result.getStatus());
-        assertOnlyContainsWrapped(expectedPrincipal, result.getPrincipals());
     }
 
 }
