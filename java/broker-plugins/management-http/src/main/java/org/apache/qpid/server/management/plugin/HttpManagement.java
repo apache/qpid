@@ -317,16 +317,16 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDijitPath(), true)), "/dojo/dijit/*");
         root.addServlet(new ServletHolder(new FileServlet(DojoHelper.getDojoxPath(), true)), "/dojo/dojox/*");
 
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.js");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.css");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.html");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.png");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.gif");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpg");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.jpeg");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.json");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.txt");
-        root.addServlet(new ServletHolder(FileServlet.INSTANCE), "*.xsl");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.js");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.css");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.html");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.png");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.gif");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.jpg");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.jpeg");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.json");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.txt");
+        root.addServlet(new ServletHolder(new FileServlet()), "*.xsl");
         root.addServlet(new ServletHolder(new HelperServlet()), "/rest/helper");
         root.addServlet(new ServletHolder(new LogFileListingServlet()), "/rest/logfilenames");
         root.addServlet(new ServletHolder(new LogFileServlet()), "/rest/logfile");
