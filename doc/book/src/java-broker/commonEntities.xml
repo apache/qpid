@@ -31,7 +31,7 @@
 <!ENTITY unixExtractedBrokerDirName "qpid-broker-&qpidCurrentRelease;">
 
 <!-- Oracle javadoc -->
-<!ENTITY oracleJdkDocUrl "http://oracle.com/javase/6/docs/api/">
+<!ENTITY oracleJdkDocUrl "http://docs.oracle.com/javase/6/docs/api/">
 <!ENTITY oracleJeeDocUrl "http://docs.oracle.com/javaee/6/api/">
 <!ENTITY oracleKeytool "http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html">
 

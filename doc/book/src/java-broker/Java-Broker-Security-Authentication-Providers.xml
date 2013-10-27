@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -61,53 +64,52 @@
   <title>Simple LDAP Authentication Provider</title>
 
   <para>
-    SimpleLDAPAuthenticationProvider authenticate the connections by searching for a user unique distinguished name
-    in the pre-configured LDAP search directory and performing LDAP bind using the found DN and password after that.
-    On creation of SimpleLDAPAuthenticationProvider the following mandatory fields are required to specify:
+    SimpleLDAPAuthenticationProvider authenticates connections against a Directory (LDAP).
+  </para>
+  <para>
+    To create a SimpleLDAPAuthenticationProvider the following mandatory fields are required:
     <itemizedlist>
-            <listitem><para><emphasis>LDAP server URL</emphasis> is an URL of LDAP server, for example, ldaps://example.com:636</para></listitem>
-            <listitem><para><emphasis>Search context</emphasis> is a LDAP directory name to search for users entries, for example, "dc=users,dc=example,dc=com"</para></listitem>
-            <listitem><para><emphasis>Search filter</emphasis> is a DN template to find an LDAP user entry by provided user name, for example, (uid={0})</para></listitem>
+      <listitem><para><emphasis>LDAP server URL</emphasis> is the URL of the server, for example, <literal>ldaps://example.com:636</literal></para></listitem>
+      <listitem><para><emphasis>Search context</emphasis> is the distinguished name of the search base object. It defines the location from which
+        the search for users begins, for example, <literal>dc=users,dc=example,dc=com</literal></para></listitem>
+      <listitem><para><emphasis>Search filter</emphasis> is a DN template to find an LDAP user entry by provided user name, for example, <literal>(uid={0})</literal></para></listitem>
     </itemizedlist>
     Additionally, the following optional fields can be specified:
     <itemizedlist>
-            <listitem><para><emphasis>LDAP context factory</emphasis> is fully qualified class name for the JNDI LDAP context factory.</para></listitem>
-            <listitem><para><emphasis>LDAP authentication URL</emphasis>is an URL of LDAP server for performing "ldap bind"
-            if a different LDAP URL is required for performing an authentication.</para></listitem>
-            <listitem><para><emphasis>Truststore name</emphasis> is a name of <link linkend="SSL-Truststore-ClientCertificate">configured truststore</link>.
-            Use this if connecting to a Directory over SSL (i.e. ldaps://) which is protected by a certificate signed by a private CA (or
-            utilising a self-signed certificate).</para></listitem>
+      <listitem><para><emphasis>LDAP context factory</emphasis> is a fully qualified class name for the JNDI LDAP context factory.
+        This class must implement the <ulink url="&oracleJdkDocUrl;javax/naming/spi/InitialContextFactory.html">InitialContextFactory</ulink>
+        interface and produce instances of <ulink url="&oracleJdkDocUrl;javax/naming/directory/DirContext.html">DirContext</ulink>.
+        If not specified a default value of <literal>com.sun.jndi.ldap.LdapCtxFactory</literal> is used.</para></listitem>
+      <listitem><para><emphasis>LDAP authentication URL</emphasis> is the URL of LDAP server for performing "ldap bind". If not
+        specified, the <emphasis>LDAP server URL</emphasis> will be used for both searches and authentications.</para></listitem>
+      <listitem><para><emphasis>Truststore name</emphasis> is a name of <link linkend="SSL-Truststore-ClientCertificate">configured truststore</link>.
+        Use this if connecting to a Directory over SSL (i.e. ldaps://) which is protected by a certificate signed by a private CA (or
+        utilising a self-signed certificate).</para></listitem>
     </itemizedlist>
   </para>
 
+  <important>
+    In order to protect the security of the user's password, when using LDAP authentication, you must:
+    <itemizedlist>
+      <listitem><para>Use SSL on the broker's AMQP, JMX, and HTTP ports to protect the password during
+        transmission to the Broker.</para></listitem>
+      <listitem><para>Authenticate to the Directory using SSL (i.e. ldaps://) to protect the password
+        during transmission from the Broker to the Directory.</para></listitem>
+    </itemizedlist>
+  </important>
+
   <para>
-    <emphasis>NOTE: When using LDAP authentication, you must also use SSL on the brokers AMQP messaging and
-    JMX/HTTP management ports in order to protect passwords during transmission to the broker.</emphasis>
+    The LDAP Authentication Provider works in the following manner.  It first connects to the Directory anonymously
+    and searches for the ldap entity which is identified by the username. The search begins at the distinguished name
+    identified by <literal>Search Context</literal> and uses the username as a filter.  The search scope is sub-tree
+    meaning the search will include the base object and the subtree extending beneath it.
   </para>
 
   <para>
-    The Authentication Provider first connects to the ldap server anonymously and searches for the
-    ldap entity which is identified by the username provided over SASL. Essentially the
-    authentication manager calls DirContext.search(Name name, String filterExpr, Object[] filterArgs, SearchControls cons)
-    with the values of <emphasis>Search context</emphasis> and <emphasis>Search filter</emphasis> as the first two arguments,
-    and the username as the only element in the array which is the third argument.
-  </para>
-
-  <para>
-    If the search returns a name from the LDAP server, the Authentication Provider then attempts to
-    login to the LDAP server with the given name and the password.
-  </para>
-
-  <para>
-    If the URL to open for authentication is different to that for the search, then the
-    authentication url can be overridden using &lt;LDAP authentication URL&gt; in addition to providing a
-    &lt;LDAP server URL&gt;. Note that the URL used for authentication should use ldaps:// since
-    passwords will be being sent over it.
-  </para>
-
-  <para>
-    By default com.sun.jndi.ldap.LdapCtxFactory is used to create the context, however this can be
-    overridden by specifying &lt;LDAP context factory&gt; in the configuration.
+    If the search returns a match, the Authentication Provider then attempts to bind to the LDAP server with the given
+    name and the password.  Note that
+    <ulink url="&oracleJdkDocUrl;javax/naming/Context.html#SECURITY_AUTHENTICATION">simple security authentication</ulink>
+    is used so the Directory receives the password in the clear.
   </para>
   </section>
 
