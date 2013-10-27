@@ -1110,14 +1110,13 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
             _clientVersion = _clientProperties.getString(ConnectionStartProperties.VERSION_0_8);
 
-            if (_clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8) != null)
+            String clientId = _clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8);
+            if (clientId != null)
             {
-                String clientID = _clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8);
-                setContextKey(new AMQShortString(clientID));
-
-                // Log the Opening of the connection for this client
-                _actor.message(ConnectionMessages.OPEN(clientID, _protocolVersion.toString(), _clientVersion, true, true, true));
+                setContextKey(new AMQShortString(clientId));
             }
+
+            _actor.message(ConnectionMessages.OPEN(clientId, _protocolVersion.toString(), _clientVersion, true, true, true));
         }
     }
 
