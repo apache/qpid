@@ -36,7 +36,7 @@ public class ExternalSaslServer implements SaslServer
 
     private boolean _complete = false;
     private final Principal _externalPrincipal;
-    private boolean _useFullDN = false;
+    private final boolean _useFullDN;
 
     public ExternalSaslServer(Principal externalPrincipal, boolean useFullDN)
     {
@@ -62,7 +62,7 @@ public class ExternalSaslServer implements SaslServer
 
     public String getAuthorizationID()
     {
-        return getAuthenticatedPrincipal().getName();
+        return getAuthenticatedPrincipal() == null ? null : getAuthenticatedPrincipal().getName();
     }
 
     public byte[] unwrap(byte[] incoming, int offset, int len) throws SaslException
