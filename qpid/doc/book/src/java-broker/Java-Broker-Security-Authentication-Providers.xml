@@ -74,6 +74,9 @@
             <listitem><para><emphasis>LDAP context factory</emphasis> is fully qualified class name for the JNDI LDAP context factory.</para></listitem>
             <listitem><para><emphasis>LDAP authentication URL</emphasis>is an URL of LDAP server for performing "ldap bind"
             if a different LDAP URL is required for performing an authentication.</para></listitem>
+            <listitem><para><emphasis>Truststore name</emphasis> is a name of <link linkend="SSL-Truststore-ClientCertificate">configured truststore</link>.
+            Use this if connecting to a Directory over SSL (i.e. ldaps://) which is protected by a certificate signed by a private CA (or
+            utilising a self-signed certificate).</para></listitem>
     </itemizedlist>
   </para>
 
