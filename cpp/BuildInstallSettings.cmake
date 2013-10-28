@@ -101,6 +101,8 @@ if (WIN32)
     "Directory to install programming header files")
   set (QPID_INSTALL_LIBDIR bin CACHE STRING
     "Directory to install library files")
+  set (QPID_INSTALL_MANDIR docs CACHE STRING
+    "Directory to install manual files")
   set (QPID_INSTALL_SBINDIR bin CACHE STRING
     "Directory to install system admin executables")
   set (QPID_INSTALL_TESTDIR bin CACHE STRING
@@ -116,9 +118,6 @@ if (WIN32)
   function(set_absolute_install_path var input)
     set (${var} ${input} PARENT_SCOPE)
   endfunction(set_absolute_install_path)
-
-  set (INCLUDE_INSTALL_DIR ${QPID_INSTALL_INCLUDEDIR})
-  set (LIB_INSTALL_DIR ${QPID_INSTALL_INCLUDEDIR})
 endif (WIN32)
 
 if (UNIX)
@@ -155,6 +154,7 @@ if (UNIX)
   set (SYSCONF_INSTALL_DIR etc CACHE PATH "System read only configuration directory")
   set (SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
   set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION_FULL} CACHE PATH "Shared read only data directory")
+  mark_as_advanced(INCLUDE_INSTALL_DIR LIB_INSTALL_DIR SYSCONF_INSTALL_DIR SHARE_INSTALL_DIR DOC_INSTALL_DIR)
   
   set (QPID_COMPONENT_BROKER runtime)
   set (QPID_COMPONENT_CLIENT runtime)
@@ -179,8 +179,7 @@ if (UNIX)
   set (QPID_INSTALL_DOCDIR ${DOC_INSTALL_DIR}) # Directory to install documentation
   set (QPID_INSTALL_INCLUDEDIR ${INCLUDE_INSTALL_DIR})
   set (QPID_INSTALL_LIBDIR ${LIB_INSTALL_DIR})
-  set (QPID_LOCALSTATE_DIR var) # Directory to store local state data
-  set (QPID_MAN_DIR share/man) # Directory to install manual files
+  set (QPID_INSTALL_MANDIR share/man) # Directory to install manual files
 
   set_absolute_install_path (QPIDC_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/client) # Directory to load client plug-in modules from
   set_absolute_install_path (QPIDD_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/daemon) # Directory to load broker plug-in modules from

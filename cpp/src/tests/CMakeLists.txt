@@ -131,9 +131,15 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 # Copy qpidd-p0 script to build directory so tests can find it.
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/qpidd-p0 ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
-# Like this to work with cmake 2.4 on Unix
-set (qpid_test_boost_libs 
-     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (ENV{OUTDIR} ${EXECUTABLE_OUTPUT_PATH})
+  set (test_script_suffix ".ps1")
+  set (shell "powershell")
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix})
+
+if (BUILD_TESTING_UNITTESTS)
 
 #
 # Unit test program
@@ -141,6 +147,10 @@ set (qpid_test_boost_libs
 # Unit tests are built as a single program to reduce valgrind overhead
 # when running the tests. If you want to build a subset of the tests run
 # ccmake and set unit_tests_to_build to the set you want to build.
+
+# Like this to work with cmake 2.4 on Unix
+set (qpid_test_boost_libs
+     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 
 set(all_unit_tests
     AccumulatedAckTest
@@ -216,6 +226,10 @@ target_link_libraries (unit_test
                        qpidmessaging qpidtypes qpidbroker qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 set_target_properties (unit_test PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(unit_test)
+
+add_test (unit_test ${test_wrap} ${unit_test_LOCATION})
+
+endif (BUILD_TESTING_UNITTESTS)
 
 add_library (shlibtest MODULE shlibtest.cpp)
 
@@ -296,15 +310,6 @@ if (PYTHON_EXECUTABLE)
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../python)
 endif (PYTHON_EXECUTABLE)
 
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (ENV{OUTDIR} ${EXECUTABLE_OUTPUT_PATH})
-  set (test_script_suffix ".ps1")
-  set (shell "powershell")
-endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
-
-set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix})
-
-add_test (unit_test ${test_wrap} ${unit_test_LOCATION})
 if (BUILD_SASL)
     add_test (sasl_fed ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed${test_script_suffix})
     add_test (sasl_fed_ex_dynamic ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_dynamic${test_script_suffix})

@@ -42,15 +42,24 @@ include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
-include(FindBoost)
-include(FindDoxygen)
-include(FindRuby)
-include(FindPkgConfig)
-include(FindPythonInterp)
+
+find_package(PkgConfig)
+find_package(Ruby)
+find_package(PythonInterp REQUIRED)
+
+find_package(Doxygen)
 
 find_program(VALGRIND_EXECUTABLE valgrind DOC "Location of the valgrind program")
 mark_as_advanced(VALGRIND_EXECUTABLE)
 find_package_handle_standard_args(VALGRIND DEFAULT_MSG VALGRIND_EXECUTABLE)
+
+find_program(SASLPASSWD2_EXECUTABLE saslpasswd2 DOC "Location of the saslpasswd2 program")
+mark_as_advanced(SASLPASSWD2_EXECUTABLE)
+
+# See if Cyrus SASL is desired and available
+CHECK_LIBRARY_EXISTS (sasl2 sasl_checkpass "" FOUND_SASL_LIB)
+CHECK_INCLUDE_FILES (sasl/sasl.h FOUND_SASL_H)
+find_package_handle_standard_args(SASL DEFAULT_MSG FOUND_SASL_LIB FOUND_SASL_H)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
 
@@ -261,11 +270,11 @@ else (EXISTS ${AMQP_SPEC})
 endif (EXISTS ${AMQP_SPEC})
 
 # FindDoxygen module tries to locate doxygen and Graphviz dot
-if (DOXYGEN_EXECUTABLE)
-  option(GEN_DOXYGEN "Use doxygen to generate user documentation" ON)
-else (DOXYGEN_EXECUTABLE)
+if (DOXYGEN_FOUND)
+  option(BUILD_DOCS "Build user documentation" ON)
+else (DOXYGEN_FOUND)
   message(STATUS "Can't locate the doxygen command; user documentation cannot be generated")
-endif (DOXYGEN_EXECUTABLE)
+endif (DOXYGEN_FOUND)
 
 if (VALGRIND_FOUND)
   option(ENABLE_VALGRIND "Use valgrind to detect run-time problems" ON)
@@ -363,9 +372,9 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # Boost.system is sometimes needed; it's handled separately, below.
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components program_options date_time thread unit_test_framework regex)
+  set (Boost_components program_options date_time thread chrono)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components program_options unit_test_framework)
+  set (Boost_components program_options)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # Visual Studio 2010 requires boost 1.45 or better.
@@ -379,35 +388,28 @@ if (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
         "1.51" "1.51.0" "1.52" "1.52.0" "1.53" "1.53.0")
 endif (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
 
-find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
-if(NOT Boost_FOUND)
-  message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
-endif(NOT Boost_FOUND)
+# Discover Boost version
+find_package(Boost 1.33 QUIET REQUIRED)
 
 # Boost.system was introduced at Boost 1.35; it's needed secondarily by other
 # Boost libs Qpid needs, so be sure it's there.
 if (Boost_VERSION GREATER 103499)
-  find_package(Boost COMPONENTS system)
-
-  # Allow for cmake pre 2.6 and boost post 1.35
-  if (NOT Boost_SYSTEM_LIBRARY)
-    set(Boost_SYSTEM_LIBRARY boost_system)
-  endif (NOT Boost_SYSTEM_LIBRARY)
+  list(APPEND Boost_components system)
 endif (Boost_VERSION GREATER 103499)
 
-# Versions of cmake pre 2.6 don't set the Boost_*_LIBRARY variables correctly
-# these values are correct for Linux
-if (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
-  set(Boost_PROGRAM_OPTIONS_LIBRARY boost_program_options)
-endif (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
+find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
+if(NOT Boost_FOUND)
+  message(FATAL_ERROR "Required Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
+endif(NOT Boost_FOUND)
 
-if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
-  set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
-endif (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
-
-if (NOT Boost_REGEX_LIBRARY)
-  set(Boost_REGEX_LIBRARY boost_regex)
-endif (NOT Boost_REGEX_LIBRARY)
+if (BUILD_TESTING)
+  set (BUILD_TESTING_UNITTESTS ON)
+  find_package(Boost 1.33 QUIET COMPONENTS unit_test_framework)
+  if(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
+    message(STATUS "Could not find unit testing library - will not build unit tests")
+    set (BUILD_TESTING_UNITTESTS OFF)
+  endif(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
+endif (BUILD_TESTING)
 
 # The Windows install also wants the Boost DLLs, libs and headers that the
 # release is built with. The DLLs enable everything to run, and the headers
@@ -423,6 +425,8 @@ endif (NOT Boost_REGEX_LIBRARY)
 # Boost libs based on compile-time touching of the headers. Since we don't
 # really need to add them to the link lines, set the names to blanks.
 option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
+mark_as_advanced(QPID_LINK_BOOST_DYNAMIC)
+
 if (MSVC)
    install (PROGRAMS
             ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
@@ -572,39 +576,27 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (HAVE_EPOLL)
   set(poller_default epoll)
   endif (HAVE_EPOLL)
-  set(POLLER ${poller_default} CACHE STRING "Poller implementation (poll/epoll)")
+  set(QPID_POLLER ${poller_default} CACHE STRING "Poller implementation (poll/epoll)")
+  mark_as_advanced(QPID_POLLER)
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-# See if Cyrus SASL is desired and available
-CHECK_LIBRARY_EXISTS (sasl2 sasl_checkpass "" HAVE_SASL)
-CHECK_INCLUDE_FILES (sasl/sasl.h HAVE_SASL_H)
-
-set (sasl_default ${sasl_force})
-if (HAVE_SASL AND HAVE_SASL_H)
-  set (sasl_default ON)
-endif (HAVE_SASL AND HAVE_SASL_H)
-
-option(BUILD_SASL "Build with Cyrus SASL support" ${sasl_default})
-
+option(BUILD_SASL "Build with Cyrus SASL support" ${SASL_FOUND})
 if (BUILD_SASL)
-  if (NOT HAVE_SASL)
-    message(FATAL_ERROR "Cyrus SASL support requested but libsasl2 not found")
-  endif (NOT HAVE_SASL)
-  if (NOT HAVE_SASL_H)
-    message(FATAL_ERROR "Cyrus SASL support requested but sasl.h not found")
-  endif (NOT HAVE_SASL_H)
+  if (NOT SASL_FOUND)
+    message(FATAL_ERROR "Cyrus SASL support requested but libsasl2 libraryor headers not found")
+  endif (NOT SASL_FOUND)
 
-  find_program(SASLPASSWD2 saslpasswd2 DOC "Location of the saslpasswd2 program")
-  set(BROKER_SASL_NAME "qpidd" CACHE STRING "SASL app name for the qpid broker")
   set(qpidcommon_sasl_source
       qpid/sys/cyrus/CyrusSecurityLayer.h
       qpid/sys/cyrus/CyrusSecurityLayer.cpp
      )
   set(sasl_LIB sasl2)
+  set(HAVE_SASL 1)
 else (BUILD_SASL)
-  set(HAVE_SASL OFF)
-  set(BROKER_SASL_NAME "qpidd" CACHE STRING "SASL app name for the qpid broker")
+  set(HAVE_SASL 0)
 endif (BUILD_SASL)
+set(QPID_BROKER_SASL_NAME "qpidd" CACHE STRING "SASL app name for the qpid broker")
+mark_as_advanced(QPID_BROKER_SASL_NAME)
 
 # Optional SSL/TLS support. Requires Netscape Portable Runtime on Linux.
 
@@ -887,15 +879,15 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   # POSIX (Non-Windows) platforms have a lot of overlap in sources; the only
   # major difference is the poller module.
-  if (POLLER STREQUAL poll)
+  if (QPID_POLLER STREQUAL poll)
     set (qpid_poller_module
       qpid/sys/posix/PosixPoller.cpp
     )
-  elseif (POLLER STREQUAL epoll)
+  elseif (QPID_POLLER STREQUAL epoll)
     set (qpid_poller_module
       qpid/sys/epoll/EpollPoller.cpp
     )
-  endif (POLLER STREQUAL poll)
+  endif (QPID_POLLER STREQUAL poll)
 
   # Set default System Info module
   set (qpid_system_module
@@ -1402,11 +1394,6 @@ if (CPACK_GENERATOR STREQUAL "NSIS")
          "qpidd" "Start Qpid Broker")
 endif (CPACK_GENERATOR STREQUAL "NSIS")
 
-if (UNIX)
-  install (CODE "FILE(MAKE_DIRECTORY \$ENV{DESTDIR}/${QPID_LOCALSTATE_DIR}/lib/qpidd)")
-  install (CODE "FILE(MAKE_DIRECTORY \$ENV{DESTDIR}/${QPID_LOCALSTATE_DIR}/spool/qpidd)")
-endif (UNIX)
-
 if (NOT WIN32)
     set (qmf2_platform_headers
         ../include/qmf/posix/EventNotifier.h
@@ -1518,8 +1505,8 @@ add_subdirectory(tests/legacystore)
 # Compatible variable names used in the pkg config files also for autoconf
 set (prefix ${CMAKE_INSTALL_PREFIX})
 set (exec_prefix ${CMAKE_INSTALL_PREFIX})
-set_absolute_install_path (libdir ${LIB_INSTALL_DIR})
-set_absolute_install_path (includedir ${INCLUDE_INSTALL_DIR})
+set_absolute_install_path (libdir ${QPID_INSTALL_LIBDIR})
+set_absolute_install_path (includedir ${QPID_INSTALL_INCLUDEDIR})
 set (VERSION ${QPID_VERSION})
 
 #add_custom_target(pkgconfig ALL echo DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc)
@@ -1527,5 +1514,5 @@ set (VERSION ${QPID_VERSION})
 configure_file(qpid.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc @ONLY)
 configure_file(qmf2.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc @ONLY)
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
-         DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
+         DESTINATION ${QPID_INSTALL_LIBDIR}/pkgconfig
          COMPONENT ${QPID_COMPONENT_COMMON})
