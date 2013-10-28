@@ -18,8 +18,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+source ./test_env.sh
 
-SASL_PW=/usr/sbin/saslpasswd2
 test -x $SASL_PW || { echo Skipping SASL test, saslpasswd2 not found; exit 0; }
 
 mkdir -p sasl_config
