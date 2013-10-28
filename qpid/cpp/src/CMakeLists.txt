@@ -1092,7 +1092,9 @@ set_target_properties (qpidcommon PROPERTIES
                        SOVERSION ${qpidcommon_version_major})
 
 install (TARGETS qpidcommon
-         DESTINATION ${QPID_INSTALL_LIBDIR}
+         RUNTIME DESTINATION ${QPID_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
 install_pdb (qpidcommon ${QPID_COMPONENT_COMMON})
 
@@ -1116,8 +1118,10 @@ set_target_properties (qpidtypes PROPERTIES
                        SOVERSION ${qpidtypes_version_major})
 
 install(TARGETS qpidtypes
-  DESTINATION ${QPID_INSTALL_LIBDIR}
-  COMPONENT ${QPID_COMPONENT_COMMON})
+        RUNTIME DESTINATION ${QPID_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
+        COMPONENT ${QPID_COMPONENT_COMMON})
 install_pdb (qpidtypes ${QPID_COMPONENT_COMMON})
 
 add_api_test(qpidtypes)
@@ -1173,7 +1177,9 @@ set_target_properties (qpidclient PROPERTIES
                        SOVERSION ${qpidclient_version_major})
 
 install (TARGETS qpidclient
-         DESTINATION ${QPID_INSTALL_LIBDIR}
+         RUNTIME DESTINATION ${QPID_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
 install (DIRECTORY ../include/qpid
          DESTINATION ${QPID_INSTALL_INCLUDEDIR}
@@ -1237,7 +1243,9 @@ set_target_properties (qpidmessaging PROPERTIES
                        VERSION ${qpidmessaging_version}
                        SOVERSION ${qpidmessaging_version_major})
 install (TARGETS qpidmessaging
-         DESTINATION ${QPID_INSTALL_LIBDIR}
+         RUNTIME DESTINATION ${QPID_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
 install_pdb (qpidmessaging ${QPID_COMPONENT_CLIENT})
 
@@ -1252,7 +1260,9 @@ if (MSVC)
         add_library (qpidxarm SHARED ${qpidxarm_SOURCES})
         target_link_libraries (qpidxarm qpidclient qpidcommon)
         install (TARGETS qpidxarm
-                 DESTINATION ${QPID_INSTALL_LIBDIR}
+                 RUNTIME DESTINATION ${QPID_INSTALL_BINDIR}
+                 LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+                 ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
                  COMPONENT ${QPID_COMPONENT_CLIENT})
         install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${qpidxarm_SOURCES})
@@ -1372,7 +1382,9 @@ if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)
 install (TARGETS qpidbroker
-         DESTINATION ${QPID_INSTALL_LIBDIR}
+         RUNTIME DESTINATION ${QPID_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
 install_pdb (qpidbroker ${QPID_COMPONENT_BROKER})
 
@@ -1386,8 +1398,10 @@ add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
 target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
 set_target_properties (qpidd PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
-install (TARGETS qpidd RUNTIME
-         DESTINATION ${QPID_INSTALL_SBINDIR}
+install (TARGETS qpidd
+         RUNTIME DESTINATION ${QPID_INSTALL_SBINDIR}
+         LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
 if (CPACK_GENERATOR STREQUAL "NSIS")
     set (CPACK_NSIS_MENU_LINKS
@@ -1477,7 +1491,9 @@ endif (NOT WIN32)
                            VERSION ${qmf2_version}
                            SOVERSION ${qmf2_version_major})
     install (TARGETS qmf2 OPTIONAL
-            DESTINATION ${QPID_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${QPID_INSTALL_BINDIR}
+            LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${QPID_INSTALL_LIBDIR}
             COMPONENT ${QPID_COMPONENT_QMF})
     install (FILES ${qmf2_HEADERS}
             DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf
