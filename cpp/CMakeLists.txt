@@ -50,6 +50,7 @@ endif (MSVC)
 set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 if (WIN32)
   # Include installing the MSVCRT library
+  set (CMAKE_INSTALL_DEBUG_LIBRARIES ON)
   include(InstallRequiredSystemLibraries)
   set (CPACK_GENERATOR "NSIS")
   set (CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/packaging/NSIS\\\\qpid-icon.ico")
