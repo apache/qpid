@@ -428,21 +428,6 @@ option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static
 mark_as_advanced(QPID_LINK_BOOST_DYNAMIC)
 
 if (MSVC)
-   install (PROGRAMS
-            ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
-            ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG} ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
-            ${Boost_REGEX_LIBRARY_DEBUG} ${Boost_REGEX_LIBRARY_RELEASE}
-            ${Boost_THREAD_LIBRARY_DEBUG} ${Boost_THREAD_LIBRARY_RELEASE}
-            DESTINATION ${QPID_INSTALL_LIBDIR}/boost
-            COMPONENT ${QPID_COMPONENT_COMMON})
-
-   if (NOT Boost_VERSION LESS 103500)
-      install (PROGRAMS
-               ${Boost_SYSTEM_LIBRARY_DEBUG} ${Boost_SYSTEM_LIBRARY_RELEASE}
-               DESTINATION ${QPID_INSTALL_LIBDIR}/boost
-               COMPONENT ${QPID_COMPONENT_COMMON})
-   endif (NOT Boost_VERSION LESS 103500)
-
    if (QPID_LINK_BOOST_DYNAMIC)
       add_definitions( /D BOOST_ALL_DYN_LINK)
       string (REPLACE .lib .dll
@@ -454,9 +439,9 @@ if (MSVC)
       string (REPLACE .lib .dll
               _boost_program_options_release ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE})
       string (REPLACE .lib .dll
-              _boost_regex_debug ${Boost_REGEX_LIBRARY_DEBUG})
+              _boost_chrono_debug ${Boost_CHRONO_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
-              _boost_regex_release ${Boost_REGEX_LIBRARY_RELEASE})
+              _boost_chrono_release ${Boost_CHRONO_LIBRARY_RELEASE})
       string (REPLACE .lib .dll
               _boost_thread_debug ${Boost_THREAD_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
@@ -473,55 +458,19 @@ if (MSVC)
       install (PROGRAMS
                ${_boost_date_time_debug} ${_boost_date_time_release}
                ${_boost_program_options_debug} ${_boost_program_options_release}
-               ${_boost_regex_debug} ${_boost_regex_release}
-               ${_boost_system_debug} ${_boost_system_release}
                ${_boost_thread_debug} ${_boost_thread_release}
-               DESTINATION ${QPID_INSTALL_LIBDIR}/boost
+               ${_boost_chrono_debug} ${_boost_chrono_release}
+               ${_boost_system_debug} ${_boost_system_release}
+               DESTINATION ${QPID_INSTALL_BINDIR}
                COMPONENT ${QPID_COMPONENT_COMMON})
    endif (QPID_LINK_BOOST_DYNAMIC)
-
-   # Need the boost headers regardless of which way the libs go. Try to
-   # weed out what we don't need, else it's giant and unnecessary.
-   install (DIRECTORY ${Boost_INCLUDE_DIR}/boost
-            DESTINATION ${QPID_INSTALL_INCLUDEDIR}
-            COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
-            PATTERN "accumulators/*" EXCLUDE
-            PATTERN "algorithm/*" EXCLUDE
-            PATTERN "archive/*" EXCLUDE
-            PATTERN "asio*" EXCLUDE
-            PATTERN "bimap*" EXCLUDE
-            PATTERN "circular_buffer*" EXCLUDE
-            PATTERN "concept*" EXCLUDE
-            PATTERN "dynamic_bitset*" EXCLUDE
-            PATTERN "flyweight*" EXCLUDE
-            PATTERN "fusion/*" EXCLUDE
-            PATTERN "gil/*" EXCLUDE
-            PATTERN "graph/*" EXCLUDE
-            PATTERN "interprocess/*" EXCLUDE
-            PATTERN "lambda/*" EXCLUDE
-            PATTERN "logic/*" EXCLUDE
-            PATTERN "math*" EXCLUDE
-            PATTERN "mpi*" EXCLUDE
-            PATTERN "multi_*" EXCLUDE
-            PATTERN "numeric/*" EXCLUDE
-            PATTERN "pending/*" EXCLUDE
-            PATTERN "pool/*" EXCLUDE
-            PATTERN "property_map/*" EXCLUDE
-            PATTERN "proto/*" EXCLUDE
-            PATTERN "random*" EXCLUDE
-            PATTERN "signals*" EXCLUDE
-            PATTERN "spirit*" EXCLUDE
-            PATTERN "statechart/*" EXCLUDE
-            PATTERN "units/*" EXCLUDE
-            PATTERN "unordered*" EXCLUDE
-            PATTERN "wave*" EXCLUDE
-            PATTERN "xpressive/*" EXCLUDE)
 
    set(Boost_DATE_TIME_LIBRARY "")
    set(Boost_THREAD_LIBRARY "")
    set(Boost_PROGRAM_OPTIONS_LIBRARY "")
    set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
-   set(Boost_REGEX_LIBRARY "")
+   set(Boost_SYSTEM_LIBRARY "")
+   set(Boost_CHRONO_LIBRARY "")
    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/windows/resources )
 endif (MSVC)
 
