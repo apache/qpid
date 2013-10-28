@@ -99,7 +99,7 @@ if (WIN32)
     "Directory to install documentation")
   set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
     "Directory to install programming header files")
-  set (QPID_INSTALL_LIBDIR bin CACHE STRING
+  set (QPID_INSTALL_LIBDIR lib CACHE STRING
     "Directory to install library files")
   set (QPID_INSTALL_MANDIR docs CACHE STRING
     "Directory to install manual files")
