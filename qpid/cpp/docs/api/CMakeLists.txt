@@ -17,7 +17,7 @@
 # under the License.
 #
 
-if (GEN_DOXYGEN)
+if (BUILD_DOCS)
     # The user.doxygen.in file was originally written for a
     # configure-generated situation so makes use of configure names that
     # need to be set from the CMake equivalents.
@@ -42,4 +42,4 @@ if (GEN_DOXYGEN)
              "${QPID_INSTALL_HTMLDIR}/index.html" "Qpid C++ API Documentation"
              "https://issues.apache.org/jira/browse/QPID" "Report Qpid Problem")
     endif (CPACK_GENERATOR STREQUAL "NSIS")
-endif (GEN_DOXYGEN)
+endif (BUILD_DOCS)

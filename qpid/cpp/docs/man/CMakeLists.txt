@@ -18,5 +18,5 @@
 #
 
 INSTALL (FILES qpidd.1
-         DESTINATION ${QPID_MAN_DIR}/man1)
+         DESTINATION ${QPID_INSTALL_MANDIR}/man1)
 

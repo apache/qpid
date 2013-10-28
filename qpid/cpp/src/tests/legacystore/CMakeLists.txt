@@ -21,15 +21,14 @@ if(BUILD_LEGACYSTORE AND BUILD_TESTING)
 
 message(STATUS "Building legacystore tests")
 
-# Make sure that everything get built before the tests
-# Need to create a var with all the necessary top level targets
-
-# If we're linking Boost for DLLs, turn that on for the unit test too.
+# If we're linking Boost for DLLs, turn that on for the tests too.
 if (QPID_LINK_BOOST_DYNAMIC)
     add_definitions(-DBOOST_TEST_DYN_LINK)
 endif (QPID_LINK_BOOST_DYNAMIC)
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+
+if (BUILD_TESTING_UNITTESTS)
 
 # Like this to work with cmake 2.4 on Unix
 set (qpid_test_boost_libs
@@ -99,25 +98,6 @@ define_journal_test (_ut_lpmgr LONG)
 define_journal_test (_st_basic LONG)
 define_journal_test (_st_read LONG)
 
-add_executable(jtt
-    jrnl/jtt/args.cpp
-    jrnl/jtt/data_src.cpp
-    jrnl/jtt/jrnl_init_params.cpp
-    jrnl/jtt/jrnl_instance.cpp
-    jrnl/jtt/main.cpp
-    jrnl/jtt/read_arg.cpp
-    jrnl/jtt/test_case.cpp
-    jrnl/jtt/test_case_result.cpp
-    jrnl/jtt/test_case_result_agregation.cpp
-    jrnl/jtt/test_case_set.cpp
-    jrnl/jtt/test_mgr.cpp)
-
-target_link_libraries (jtt
-                       ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                       ${clock_gettime_LIB} legacystore_shared)
-
-add_test(journal_jtt ${CMAKE_CURRENT_BINARY_DIR}/jtt -c ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt/jtt.csv)
-
 add_executable (jtt__ut
     jrnl/jtt/_ut_data_src.cpp
     jrnl/jtt/_ut_jrnl_init_params.cpp
@@ -145,9 +125,30 @@ target_link_libraries (jtt__ut
 
 add_test(NAME journal_jtt_ut WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt COMMAND ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
 
+endif (BUILD_TESTING_UNITTESTS)
+
 #
 # Other test programs
 #
+
+add_executable(jtt
+    jrnl/jtt/args.cpp
+    jrnl/jtt/data_src.cpp
+    jrnl/jtt/jrnl_init_params.cpp
+    jrnl/jtt/jrnl_instance.cpp
+    jrnl/jtt/main.cpp
+    jrnl/jtt/read_arg.cpp
+    jrnl/jtt/test_case.cpp
+    jrnl/jtt/test_case_result.cpp
+    jrnl/jtt/test_case_result_agregation.cpp
+    jrnl/jtt/test_case_set.cpp
+    jrnl/jtt/test_mgr.cpp)
+
+target_link_libraries (jtt
+                       ${Boost_PROGRAM_OPTIONS_LIBRARY}
+                       ${clock_gettime_LIB} legacystore_shared)
+
+add_test(journal_jtt ${CMAKE_CURRENT_BINARY_DIR}/jtt -c ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt/jtt.csv)
 
 add_test (legacystore_python_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_python_tests${test_script_suffix})
 

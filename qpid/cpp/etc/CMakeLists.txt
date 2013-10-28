@@ -51,6 +51,6 @@ if (BUILD_SASL)
   install(FILES sasl2/qpidd.conf
           DESTINATION ${QPID_INSTALL_SASLDIR}
           COMPONENT ${QPID_COMPONENT_BROKER}
-          RENAME ${BROKER_SASL_NAME}.conf)
+          RENAME ${QPID_BROKER_SASL_NAME}.conf)
 endif (BUILD_SASL)
 
