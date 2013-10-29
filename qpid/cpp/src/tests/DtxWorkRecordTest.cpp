@@ -41,10 +41,10 @@ QPID_AUTO_TEST_CASE(testOnePhaseCommit){
     MockTxOp::shared_ptr opB(new MockTxOp());
     opB->expectPrepare().expectCommit();
 
-    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferA(new DtxBuffer());
     bufferA->enlist(static_pointer_cast<TxOp>(opA));
     bufferA->markEnded();
-    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
 
@@ -71,13 +71,13 @@ QPID_AUTO_TEST_CASE(testFailOnOnePhaseCommit){
     MockTxOp::shared_ptr opC(new MockTxOp());
     opC->expectRollback();
 
-    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferA(new DtxBuffer());
     bufferA->enlist(static_pointer_cast<TxOp>(opA));
     bufferA->markEnded();
-    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
-    DtxBuffer::shared_ptr bufferC(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferC(new DtxBuffer());
     bufferC->enlist(static_pointer_cast<TxOp>(opC));
     bufferC->markEnded();
 
@@ -105,10 +105,10 @@ QPID_AUTO_TEST_CASE(testTwoPhaseCommit){
     MockTxOp::shared_ptr opB(new MockTxOp());
     opB->expectPrepare().expectCommit();
 
-    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferA(new DtxBuffer());
     bufferA->enlist(static_pointer_cast<TxOp>(opA));
     bufferA->markEnded();
-    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
 
@@ -136,13 +136,13 @@ QPID_AUTO_TEST_CASE(testFailOnTwoPhaseCommit){
     MockTxOp::shared_ptr opC(new MockTxOp());
     opC->expectRollback();
 
-    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferA(new DtxBuffer());
     bufferA->enlist(static_pointer_cast<TxOp>(opA));
     bufferA->markEnded();
-    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
-    DtxBuffer::shared_ptr bufferC(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferC(new DtxBuffer());
     bufferC->enlist(static_pointer_cast<TxOp>(opC));
     bufferC->markEnded();
 
@@ -168,10 +168,10 @@ QPID_AUTO_TEST_CASE(testRollback){
     MockTxOp::shared_ptr opB(new MockTxOp());
     opB->expectPrepare().expectRollback();
 
-    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferA(new DtxBuffer());
     bufferA->enlist(static_pointer_cast<TxOp>(opA));
     bufferA->markEnded();
-    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
 

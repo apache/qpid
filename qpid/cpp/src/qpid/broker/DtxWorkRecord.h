@@ -46,7 +46,7 @@ struct DtxTimeout;
  */
 class DtxWorkRecord
 {
-    typedef std::vector<DtxBuffer::shared_ptr> Work;
+    typedef std::vector<boost::intrusive_ptr<DtxBuffer> >Work;
 
     const std::string xid;
     TransactionalStore* const store;
@@ -69,8 +69,8 @@ public:
     QPID_BROKER_EXTERN bool prepare();
     QPID_BROKER_EXTERN bool commit(bool onePhase);
     QPID_BROKER_EXTERN void rollback();
-    QPID_BROKER_EXTERN void add(DtxBuffer::shared_ptr ops);
-    void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
+    QPID_BROKER_EXTERN void add(boost::intrusive_ptr<DtxBuffer> ops);
+    void recover(std::auto_ptr<TPCTransactionContext> txn, boost::intrusive_ptr<DtxBuffer> ops);
     void timedout();
     void setTimeout(boost::intrusive_ptr<DtxTimeout> t);
     boost::intrusive_ptr<DtxTimeout> getTimeout();

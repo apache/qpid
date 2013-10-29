@@ -40,12 +40,14 @@
 #include "qpid/sys/Timer.h"
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace ha {
 
 using sys::Mutex;
 using boost::shared_ptr;
+using boost::intrusive_ptr;
 using namespace std;
 using namespace framing;
 
@@ -69,8 +71,8 @@ class PrimaryBrokerObserver : public broker::BrokerObserver
     void queueDestroy(const Primary::QueuePtr& q) { primary.queueDestroy(q); }
     void exchangeCreate(const Primary::ExchangePtr& q) { primary.exchangeCreate(q); }
     void exchangeDestroy(const Primary::ExchangePtr& q) { primary.exchangeDestroy(q); }
-    void startTx(const shared_ptr<broker::TxBuffer>& tx) { primary.startTx(tx); }
-    void startDtx(const shared_ptr<broker::DtxBuffer>& dtx) { primary.startDtx(dtx); }
+    void startTx(const intrusive_ptr<broker::TxBuffer>& tx) { primary.startTx(tx); }
+    void startDtx(const intrusive_ptr<broker::DtxBuffer>& dtx) { primary.startDtx(dtx); }
 
  private:
     Primary& primary;
@@ -406,11 +408,11 @@ shared_ptr<PrimaryTxObserver> Primary::makeTxObserver() {
     return observer;
 }
 
-void Primary::startTx(const boost::shared_ptr<broker::TxBuffer>& tx) {
+void Primary::startTx(const boost::intrusive_ptr<broker::TxBuffer>& tx) {
     tx->setObserver(makeTxObserver());
 }
 
-void Primary::startDtx(const boost::shared_ptr<broker::DtxBuffer>& dtx) {
+void Primary::startDtx(const boost::intrusive_ptr<broker::DtxBuffer>& dtx) {
     dtx->setObserver(makeTxObserver());
 }
 

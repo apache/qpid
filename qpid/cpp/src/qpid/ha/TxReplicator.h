@@ -89,7 +89,7 @@ class TxReplicator : public QueueReplicator {
 
     std::string logPrefix;
     TxEnqueueEvent enq;         // Enqueue data for next deliver.
-    boost::shared_ptr<broker::TxBuffer> txBuffer;
+    boost::intrusive_ptr<broker::TxBuffer> txBuffer;
     broker::MessageStore* store;
     std::auto_ptr<broker::TransactionContext> context;
     framing::ChannelId channel; // Channel to send prepare-complete.

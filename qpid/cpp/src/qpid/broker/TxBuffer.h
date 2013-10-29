@@ -1,3 +1,6 @@
+#ifndef QPID_BROKER_TXBUFFER_H
+#define QPID_BROKER_TXBUFFER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,15 +21,19 @@
  * under the License.
  *
  */
-#ifndef _TxBuffer_
-#define _TxBuffer_
 
-#include <algorithm>
-#include <functional>
-#include <vector>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/broker/TxOp.h"
+#include "qpid/broker/AsyncCompletion.h"
+#include <algorithm>
+#include <functional>
+#include <vector>
+
+
+namespace qpid {
+namespace broker {
+class TransactionObserver;
 
 /**
  * Represents a single transaction. As such, an instance of this class
@@ -56,21 +63,17 @@
  * prepare. There is a little more flexibility with (2) but any
  * changes made during prepare should be subject to the control of the
  * TransactionalStore in use.
+ *
+ * TxBuffer inherits AsyncCompletion because transactions can be completed
+ * asynchronously if the broker is part of a HA cluster.
  */
-namespace qpid {
-
-namespace broker {
-class TransactionObserver;
-
-class TxBuffer {
+class TxBuffer : public AsyncCompletion {
  private:
     typedef std::vector<TxOp::shared_ptr>::iterator op_iterator;
     std::vector<TxOp::shared_ptr> ops;
     boost::shared_ptr<TransactionObserver> observer;
 
  public:
-    typedef boost::shared_ptr<TxBuffer> shared_ptr;
-
     QPID_BROKER_EXTERN TxBuffer();
 
     /**
@@ -128,4 +131,5 @@ class TxBuffer {
 
 }} // namespace qpid::broker
 
-#endif
+
+#endif  /*!QPID_BROKER_TXBUFFER_H*/
