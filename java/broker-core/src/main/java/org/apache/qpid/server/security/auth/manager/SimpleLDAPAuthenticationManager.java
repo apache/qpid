@@ -77,7 +77,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     /**
      * Dynamically created SSL Socket Factory implementation used in the case where user has specified a trust store.
      */
-    private Class<? extends SocketFactory> _sslSocketFactoryOverride;
+    private Class<? extends SocketFactory> _sslSocketFactoryOverrideClass;
 
 
     SimpleLDAPAuthenticationManager(String authManagerName, String providerSearchUrl, String providerAuthUrl, String searchContext, String searchFilter, String ldapContextFactory, TrustStore trustStore)
@@ -94,7 +94,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     @Override
     public void initialise()
     {
-        _sslSocketFactoryOverride = createSslSocketFactoryOverride();
+        _sslSocketFactoryOverrideClass = createSslSocketFactoryOverrideClass();
 
         validateInitialDirContext();
     }
@@ -129,7 +129,10 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
             if (server.isComplete())
             {
                 String authorizationID = server.getAuthorizationID();
-                _logger.debug("Authenticated as " + authorizationID);
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Authenticated as " + authorizationID);
+                }
 
                 return new AuthenticationResult(new UsernamePrincipal(authorizationID));
             }
@@ -174,7 +177,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
             return new AuthenticationResult(AuthenticationStatus.CONTINUE);
         }
 
-        Hashtable<String, Object> env = createInitialDirContentEnvironment(_providerAuthURL);
+        Hashtable<String, Object> env = createInitialDirContextEnvironment(_providerAuthURL);
 
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, name);
@@ -212,7 +215,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     {
     }
 
-    private Hashtable<String, Object> createInitialDirContentEnvironment(String providerUrl)
+    private Hashtable<String, Object> createInitialDirContextEnvironment(String providerUrl)
     {
         Hashtable<String,Object> env = new Hashtable<String,Object>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, _ldapContextFactory);
@@ -224,16 +227,16 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     {
         ClassLoader existingContextClassloader = null;
 
-        boolean isLdaps = ((String)env.get(Context.PROVIDER_URL)).startsWith("ldaps:");
+        boolean isLdaps = String.valueOf(env.get(Context.PROVIDER_URL)).trim().toLowerCase().startsWith("ldaps:");
 
         boolean revertContentClassLoader = false;
         try
         {
-            if (isLdaps && _sslSocketFactoryOverride != null)
+            if (isLdaps && _sslSocketFactoryOverrideClass != null)
             {
                 existingContextClassloader = Thread.currentThread().getContextClassLoader();
-                env.put(JAVA_NAMING_LDAP_FACTORY_SOCKET, _sslSocketFactoryOverride.getName());
-                Thread.currentThread().setContextClassLoader(_sslSocketFactoryOverride.getClassLoader());
+                env.put(JAVA_NAMING_LDAP_FACTORY_SOCKET, _sslSocketFactoryOverrideClass.getName());
+                Thread.currentThread().setContextClassLoader(_sslSocketFactoryOverrideClass.getClassLoader());
                 revertContentClassLoader = true;
             }
             return new InitialDirContext(env);
@@ -253,7 +256,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
      *
      * @return generated socket factory class
      */
-    private Class<? extends SocketFactory> createSslSocketFactoryOverride()
+    private Class<? extends SocketFactory> createSslSocketFactoryOverrideClass()
     {
         if (_trustStore != null)
         {
@@ -267,10 +270,13 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
             catch (Exception e)
             {
                 _logger.error("Exception creating SSLContext", e);
-                throw new RuntimeException(e);
+                throw new RuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
             }
             Class<? extends AbstractLDAPSSLSocketFactory> clazz = LDAPSSLSocketFactoryGenerator.createSubClass(clazzName, sslContext.getSocketFactory());
-            _logger.debug("Connection to Directory will use custom SSL socket factory : " +  clazz);
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Connection to Directory will use custom SSL socket factory : " +  clazz);
+            }
             return clazz;
         }
 
@@ -279,7 +285,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
     private void validateInitialDirContext()
     {
-        Hashtable<String,Object> env = createInitialDirContentEnvironment(_providerSearchURL);
+        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerSearchURL);
         env.put(Context.SECURITY_AUTHENTICATION, "none");
 
         InitialDirContext ctx = null;
@@ -350,7 +356,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
     private String getNameFromId(String id) throws NamingException
     {
-        Hashtable<String,Object> env = createInitialDirContentEnvironment(_providerSearchURL);
+        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerSearchURL);
 
         env.put(Context.SECURITY_AUTHENTICATION, "none");
         InitialDirContext ctx = createInitialDirContext(env);
@@ -383,7 +389,11 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     {
         try
         {
-            ctx.close();
+            if (ctx != null)
+            {
+                ctx.close();
+                ctx = null;
+            }
         }
         catch (Exception e)
         {

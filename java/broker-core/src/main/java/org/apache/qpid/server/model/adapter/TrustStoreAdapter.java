@@ -38,12 +38,15 @@ import javax.net.ssl.TrustManagerFactory;
 
 import javax.net.ssl.X509TrustManager;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManagerFactory;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.apache.qpid.transport.network.security.ssl.QpidPeersOnlyTrustManager;
@@ -111,9 +114,20 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustS
                 }
             }
 
+            Collection<AuthenticationProvider> authenticationProviders = new ArrayList<AuthenticationProvider>(_broker.getAuthenticationProviders());
+            for (AuthenticationProvider authProvider : authenticationProviders)
+            {
+                Object attributeType = authProvider.getAttribute(AuthenticationProvider.TYPE);
+                Object attributeValue = authProvider.getAttribute(SimpleLDAPAuthenticationManagerFactory.ATTRIBUTE_TRUST_STORE);
+                if (SimpleLDAPAuthenticationManagerFactory.PROVIDER_TYPE.equals(attributeType)
+                    && storeName.equals(attributeValue))
+                {
+                    throw new IntegrityViolationException("Trust store '" + storeName + "' can't be deleted as it is in use by an authentication manager: " + authProvider.getName());
+                }
+            }
+
             return true;
         }
-
         return false;
     }
 
