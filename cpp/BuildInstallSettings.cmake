@@ -20,19 +20,6 @@
 # Settings related to the Qpid build and install CMake/CTest/CPack procedure.
 # These are used by both the C++ and WCF components.
 
-# Parse the version from QPID_VERSION.txt.
-# Use the top level qpid/ file if we're in an SVN checkout, source dir otherwise.
-if(EXISTS "${PROJECT_SOURCE_DIR}/../QPID_VERSION.txt")
-  file(READ "${PROJECT_SOURCE_DIR}/../QPID_VERSION.txt" QPID_VERSION)
-elseif (EXISTS "${PROJECT_SOURCE_DIR}/QPID_VERSION.txt")
-  file(READ "${PROJECT_SOURCE_DIR}/QPID_VERSION.txt" QPID_VERSION)
-else()
-  message(FATAL_ERROR "Cannot find QPID_VERSION.txt")
-endif(EXISTS "${PROJECT_SOURCE_DIR}/../QPID_VERSION.txt")
-string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\1" QPID_VERSION_MAJOR "${QPID_VERSION}")
-string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\2" QPID_VERSION_MINOR "${QPID_VERSION}")
-set (QPID_VERSION_FULL "${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR}")
-
 # When doing installs, there are a number of components that the item can
 # be associated with. Since there may be different sets of components desired
 # for the various platforms, the component names are defined here. When
@@ -155,7 +142,7 @@ if (UNIX)
   set (SHARE_INSTALL_DIR share CACHE PATH "Shared read only data directory")
   set (DOC_INSTALL_DIR ${SHARE_INSTALL_DIR}/doc/${CMAKE_PROJECT_NAME}-${QPID_VERSION_FULL} CACHE PATH "Shared read only data directory")
   mark_as_advanced(INCLUDE_INSTALL_DIR LIB_INSTALL_DIR SYSCONF_INSTALL_DIR SHARE_INSTALL_DIR DOC_INSTALL_DIR)
-  
+
   set (QPID_COMPONENT_BROKER runtime)
   set (QPID_COMPONENT_CLIENT runtime)
   set (QPID_COMPONENT_COMMON runtime)
