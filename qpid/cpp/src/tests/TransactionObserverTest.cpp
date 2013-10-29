@@ -79,8 +79,10 @@ struct MockBrokerObserver : public BrokerObserver {
     MockBrokerObserver(bool prep_=true) : prep(prep_) {}
 
     void startTx(const intrusive_ptr<TxBuffer>& buffer) {
-        tx.reset(new MockTransactionObserver(prep));
-        buffer->setObserver(tx);
+        if (!tx) { // Don't overwrite first tx with automatically started second tx.
+            tx.reset(new MockTransactionObserver(prep));
+            buffer->setObserver(tx);
+        }
     }
 };
 
@@ -94,7 +96,7 @@ Session simpleTxTransaction(MessagingFixture& fix) {
     return txSession;
 }
 
-QPID_AUTO_TEST_CASE(tesTxtCommit) {
+QPID_AUTO_TEST_CASE(testTxCommit) {
     MessagingFixture fix;
     shared_ptr<MockBrokerObserver> brokerObserver(new MockBrokerObserver);
     fix.broker->getBrokerObservers().add(brokerObserver);
@@ -114,6 +116,7 @@ QPID_AUTO_TEST_CASE(testTxFail) {
     fix.broker->getBrokerObservers().add(brokerObserver);
     Session txSession = simpleTxTransaction(fix);
     try {
+        ScopedSuppressLogging sl; // Suppress messages for expected error.
         txSession.commit();
         BOOST_FAIL("Expected exception");
     } catch(...) {}

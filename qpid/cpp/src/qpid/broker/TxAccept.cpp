@@ -33,14 +33,20 @@ using qpid::framing::SequenceNumber;
 
 TxAccept::TxAccept(const SequenceSet& _acked, DeliveryRecords& _unacked) :
     acked(_acked), unacked(_unacked)
-{
-    for(SequenceSet::RangeIterator i = acked.rangesBegin(); i != acked.rangesEnd(); ++i)
-        ranges.push_back(DeliveryRecord::findRange(unacked, i->first(), i->last()));
-}
+{}
 
 void TxAccept::each(boost::function<void(DeliveryRecord&)> f) {
-    for(AckRanges::iterator i = ranges.begin(); i != ranges.end(); ++i)
-        for_each(i->start, i->end, f);
+    DeliveryRecords::iterator dr = unacked.begin();
+    SequenceSet::iterator seq = acked.begin();
+    while(dr != unacked.end() && seq != acked.end()) {
+        if (dr->getId() == *seq) {
+            f(*dr);
+            ++dr;
+            ++seq;
+        }
+        else if (dr->getId() < *seq) ++dr;
+        else if (dr->getId() > *seq) ++seq;
+    }
 }
 
 bool TxAccept::prepare(TransactionContext* ctxt) throw()
@@ -63,12 +69,11 @@ void TxAccept::commit() throw()
         each(bind(&DeliveryRecord::committed, _1));
         each(bind(&DeliveryRecord::setEnded, _1));
         //now remove if isRedundant():
-        if (!ranges.empty()) {
-            DeliveryRecords::iterator begin = ranges.front().start;
-            DeliveryRecords::iterator end = ranges.back().end;
+        if (!acked.empty()) {
+            AckRange r = DeliveryRecord::findRange(unacked, acked.front(), acked.back());
             DeliveryRecords::iterator removed =
-                remove_if(begin, end, mem_fun_ref(&DeliveryRecord::isRedundant));
-            unacked.erase(removed, end);
+                remove_if(r.start, r.end, mem_fun_ref(&DeliveryRecord::isRedundant));
+            unacked.erase(removed, r.end);
         }
     } catch (const std::exception& e) {
         QPID_LOG(error, "Failed to commit: " << e.what());
