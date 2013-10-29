@@ -83,9 +83,9 @@ if (SWIG_FOUND)
     option(BUILD_BINDING_RUBY "Build Ruby bindings" ON)
   endif (RUBY_FOUND)
 
-  if (PERL_FOUND)
+  if (PERLLIBS_FOUND)
     option(BUILD_BINDING_PERL "Build Perl bindings" ON)
-  endif (PERL_FOUND)
+  endif (PERLLIBS_FOUND)
 
   if (BUILD_BINDING_PYTHON)
       message(STATUS "Building Python bindings")
