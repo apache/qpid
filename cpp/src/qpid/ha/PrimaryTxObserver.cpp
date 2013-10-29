@@ -42,6 +42,7 @@ namespace ha {
 using namespace std;
 using namespace qpid::broker;
 using namespace qpid::framing;
+using types::Uuid;
 
 // Exchange to receive prepare OK events.
 class PrimaryTxObserver::Exchange : public broker::Exchange {
@@ -78,12 +79,15 @@ class PrimaryTxObserver::Exchange : public broker::Exchange {
 
 const string PrimaryTxObserver::Exchange::TYPE_NAME(string(QPID_HA_PREFIX)+"primary-tx-observer");
 
-PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
-    haBroker(hb), broker(hb.getBroker()),
+PrimaryTxObserver::PrimaryTxObserver(
+    Primary& p, HaBroker& hb, const boost::intrusive_ptr<broker::TxBuffer>& tx
+) :
+    primary(p), haBroker(hb), broker(hb.getBroker()),
     replicationTest(hb.getSettings().replicateDefault.get()),
+    txBuffer(tx),
     id(true),
     exchangeName(TRANSACTION_REPLICATOR_PREFIX+id.str()),
-    failed(false), ended(false), complete(false)
+    complete(false)
 {
     logPrefix = "Primary transaction "+shortStr(id)+": ";
 
@@ -106,8 +110,9 @@ PrimaryTxObserver::PrimaryTxObserver(HaBroker& hb) :
     txQueue->deliver(TxMembersEvent(members).message());
 }
 
-PrimaryTxObserver::~PrimaryTxObserver() {}
-
+PrimaryTxObserver::~PrimaryTxObserver() {
+    QPID_LOG(debug, logPrefix << "Ended");
+}
 
 void PrimaryTxObserver::initialize() {
     boost::shared_ptr<Exchange> ex(new Exchange(shared_from_this()));
@@ -141,37 +146,51 @@ void PrimaryTxObserver::dequeue(
     }
 }
 
-void PrimaryTxObserver::deduplicate(sys::Mutex::ScopedLock&) {
-    boost::shared_ptr<Primary> primary(boost::dynamic_pointer_cast<Primary>(haBroker.getRole()));
-    assert(primary);
-    // Tell replicating subscriptions to skip IDs in the transaction.
-    for (UuidSet::iterator b = members.begin(); b != members.end(); ++b)
-        for (QueueIdsMap::iterator q = enqueues.begin(); q != enqueues.end(); ++q)
-            primary->skip(*b, q->first, q->second);
-}
+namespace {
+struct Skip {
+    Uuid backup;
+    boost::shared_ptr<broker::Queue> queue;
+    ReplicationIdSet ids;
+
+    Skip(const Uuid& backup_,
+         const boost::shared_ptr<broker::Queue>& queue_,
+         const ReplicationIdSet& ids_) :
+        backup(backup_), queue(queue_), ids(ids_) {}
+
+    void skip(Primary& p) const { p.skip(backup, queue, ids); }
+};
+} // namespace
 
 bool PrimaryTxObserver::prepare() {
-    sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(debug, logPrefix << "Prepare");
-    deduplicate(l);
+    QPID_LOG(debug, logPrefix << "Prepare " << members);
+    vector<Skip> skips;
+    {
+        sys::Mutex::ScopedLock l(lock);
+        for (size_t i = 0; i < members.size(); ++i) txBuffer->startCompleter();
+
+        // Tell replicating subscriptions to skip IDs in the transaction.
+        for (UuidSet::iterator b = members.begin(); b != members.end(); ++b)
+            for (QueueIdsMap::iterator q = enqueues.begin(); q != enqueues.end(); ++q)
+                skips.push_back(Skip(*b, q->first, q->second));
+    }
+    // Outside lock
+    for_each(skips.begin(), skips.end(),
+             boost::bind(&Skip::skip, _1, boost::ref(primary)));
     txQueue->deliver(TxPrepareEvent().message());
-    // TODO aconway 2013-09-04: Blocks the current thread till backups respond.
-    // Need a non-blocking approach (e.g. async completion or borrowing a thread)
-    while (!unprepared.empty() && !failed) lock.wait();
-    return !failed;
+    return true;
 }
 
 void PrimaryTxObserver::commit() {
-    sys::Mutex::ScopedLock l(lock);
     QPID_LOG(debug, logPrefix << "Commit");
+    sys::Mutex::ScopedLock l(lock);
     txQueue->deliver(TxCommitEvent().message());
     complete = true;
     end(l);
 }
 
 void PrimaryTxObserver::rollback() {
-    sys::Mutex::ScopedLock l(lock);
     QPID_LOG(debug, logPrefix << "Rollback");
+    sys::Mutex::ScopedLock l(lock);
     txQueue->deliver(TxRollbackEvent().message());
     complete = true;
     end(l);
@@ -180,8 +199,8 @@ void PrimaryTxObserver::rollback() {
 void PrimaryTxObserver::end(sys::Mutex::ScopedLock&) {
     // Don't destroy the tx-queue until the transaction is complete and there
     // are no connected subscriptions.
-    if (!ended && complete && unfinished.empty()) {
-        ended = true;
+    if (txBuffer && complete && unfinished.empty()) {
+        txBuffer.reset();       // Break pointer cycle.
         try {
             haBroker.getBroker().deleteQueue(txQueue->getName(), haBroker.getUserId(), string());
         } catch (const std::exception& e) {
@@ -198,29 +217,33 @@ void PrimaryTxObserver::end(sys::Mutex::ScopedLock&) {
 void PrimaryTxObserver::txPrepareOkEvent(const string& data) {
     sys::Mutex::ScopedLock l(lock);
     types::Uuid backup = decodeStr<TxPrepareOkEvent>(data).broker;
-    QPID_LOG(debug, logPrefix << "Backup prepared ok: " << backup);
-    unprepared.erase(backup);
-    lock.notify();
+    if (unprepared.erase(backup)) {
+        QPID_LOG(debug, logPrefix << "Backup prepared ok: " << backup);
+        txBuffer->finishCompleter();
+    }
 }
 
 void PrimaryTxObserver::txPrepareFailEvent(const string& data) {
     sys::Mutex::ScopedLock l(lock);
     types::Uuid backup = decodeStr<TxPrepareFailEvent>(data).broker;
-    QPID_LOG(error, logPrefix << "Backup prepare failed: " << backup);
-    unprepared.erase(backup);
-    failed = true;
-    lock.notify();
+    if (unprepared.erase(backup)) {
+        QPID_LOG(error, logPrefix << "Prepare failed on backup: " << backup);
+        txBuffer->setError(
+            QPID_MSG(logPrefix << "Prepare failed on backup: " << backup));
+        txBuffer->finishCompleter();
+    }
 }
 
 void PrimaryTxObserver::cancel(const ReplicatingSubscription& rs) {
     sys::Mutex::ScopedLock l(lock);
     types::Uuid backup = rs.getBrokerInfo().getSystemId();
-    if (unprepared.find(backup) != unprepared.end()) {
-        complete = failed = true;    // Canceled before prepared.
-        unprepared.erase(backup); // Consider it prepared-fail
+    if (unprepared.erase(backup) ){
+        complete = true;          // Cancelled before prepared.
+        txBuffer->setError(
+            QPID_MSG(logPrefix << "Backup disconnected: " << rs.getBrokerInfo()));
+        txBuffer->finishCompleter();
     }
     unfinished.erase(backup);
-    lock.notify();
     end(l);
 }
 

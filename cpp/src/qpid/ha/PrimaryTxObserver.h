@@ -24,12 +24,14 @@
 
 #include "types.h"
 #include "ReplicationTest.h"
+#include "qpid/broker/SessionState.h"
 #include "qpid/broker/TransactionObserver.h"
 #include "qpid/log/Statement.h"
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/unordered_map.h"
 #include "qpid/sys/Monitor.h"
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 
@@ -37,11 +39,13 @@ namespace broker {
 class Broker;
 class Message;
 class Consumer;
+class AsyncCompletion;
 }
 
 namespace ha {
 class HaBroker;
 class ReplicatingSubscription;
+class Primary;
 
 /**
  * Observe events in the lifecycle of a transaction.
@@ -62,7 +66,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
                           public boost::enable_shared_from_this<PrimaryTxObserver>
 {
   public:
-    PrimaryTxObserver(HaBroker&);
+    PrimaryTxObserver(Primary&, HaBroker&, const boost::intrusive_ptr<broker::TxBuffer>&);
     ~PrimaryTxObserver();
 
     /** Call immediately after constructor, uses shared_from_this. */
@@ -87,7 +91,6 @@ class PrimaryTxObserver : public broker::TransactionObserver,
       QueuePtr, ReplicationIdSet, Hasher<QueuePtr> > QueueIdsMap;
 
     void membership(const BrokerInfo::Map&);
-    void deduplicate(sys::Mutex::ScopedLock&);
     void end(sys::Mutex::ScopedLock&);
     void txPrepareOkEvent(const std::string& data);
     void txPrepareFailEvent(const std::string& data);
@@ -95,16 +98,19 @@ class PrimaryTxObserver : public broker::TransactionObserver,
 
     sys::Monitor lock;
     std::string logPrefix;
+    Primary& primary;
     HaBroker& haBroker;
     broker::Broker& broker;
     ReplicationTest replicationTest;
+    // NOTE: There is an intrusive_ptr cycle between PrimaryTxObserver
+    // and TxBuffer. The cycle is broken in PrimaryTxObserver::end()
+    boost::intrusive_ptr<broker::TxBuffer> txBuffer;
 
     types::Uuid id;
     std::string exchangeName;
     QueuePtr txQueue;
     QueueIdsMap enqueues;
-    bool failed, ended, complete;
-
+    bool complete;
     UuidSet members;            // All members of transaction.
     UuidSet unprepared;         // Members that have not yet responded to prepare.
     UuidSet unfinished;         // Members that have not yet disconnected.

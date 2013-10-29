@@ -1224,6 +1224,8 @@ set (qpidbroker_SOURCES
      ${ssl_SOURCES}
      qpid/amqp_0_10/Connection.h
      qpid/amqp_0_10/Connection.cpp
+     qpid/broker/AsyncCommandCallback.h
+     qpid/broker/AsyncCommandCallback.cpp
      qpid/broker/Broker.cpp
      qpid/broker/Credit.cpp
      qpid/broker/Exchange.cpp

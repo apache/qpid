@@ -37,14 +37,12 @@ namespace broker {
  * a transactional channel.
  */
 class TxAccept : public TxOp {
-    typedef std::vector<AckRange> AckRanges;
     typedef boost::shared_ptr<TransactionObserver> ObserverPtr;
 
     void each(boost::function<void(DeliveryRecord&)>);
 
     framing::SequenceSet acked;
     DeliveryRecords& unacked;
-    AckRanges ranges;
 
   public:
     /**

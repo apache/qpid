@@ -26,6 +26,7 @@
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/broker/TxOp.h"
 #include "qpid/broker/AsyncCompletion.h"
+#include "qpid/sys/Mutex.h"
 #include <algorithm>
 #include <functional>
 #include <vector>
@@ -68,10 +69,13 @@ class TransactionObserver;
  * asynchronously if the broker is part of a HA cluster.
  */
 class TxBuffer : public AsyncCompletion {
- private:
+  private:
     typedef std::vector<TxOp::shared_ptr>::iterator op_iterator;
     std::vector<TxOp::shared_ptr> ops;
     boost::shared_ptr<TransactionObserver> observer;
+    std::auto_ptr<TransactionContext> txContext;
+    std::string error;
+    sys::Mutex errorLock;
 
  public:
     QPID_BROKER_EXTERN TxBuffer();
@@ -114,11 +118,14 @@ class TxBuffer : public AsyncCompletion {
     QPID_BROKER_EXTERN void rollback();
 
     /**
-     * Helper method for managing the process of server local
-     * commit
+     * Start a local commit - may complete asynchronously.
      */
-    QPID_BROKER_EXTERN bool commitLocal(TransactionalStore* const store);
+    QPID_BROKER_EXTERN void startCommit(TransactionalStore* const store);
 
+    /** End a commit, called via async completion.
+     *@return encoded result, not used here.
+     */
+    QPID_BROKER_EXTERN std::string endCommit(TransactionalStore* const store);
 
     QPID_BROKER_EXTERN void setObserver(boost::shared_ptr<TransactionObserver> o) {
         observer = o;
@@ -127,6 +134,12 @@ class TxBuffer : public AsyncCompletion {
     QPID_BROKER_EXTERN boost::shared_ptr<TransactionObserver> getObserver() const {
         return observer;
     }
+
+    /** Set an error to be raised from endCommit when the commit completes.
+     * Called from completer threads if we are doing async completion.
+     * This is the only TxBuffer function called outside the IO thread.
+     */
+    void setError(const std::string& message);
 };
 
 }} // namespace qpid::broker
