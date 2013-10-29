@@ -708,7 +708,7 @@ class Session(Endpoint):
       self._ecwait(lambda: not [m for m in messages if m in self.acked])
 
   @synchronized
-  def commit(self):
+  def commit(self, timeout=None):
     """
     Commit outstanding transactional work. This consists of all
     message sends and receives since the prior commit or rollback.
@@ -717,7 +717,7 @@ class Session(Endpoint):
       raise NontransactionalSession()
     self.committing = True
     self._wakeup()
-    self._ecwait(lambda: not self.committing)
+    self._ecwait(lambda: not self.committing, timeout=timeout)
     if self.aborted:
       raise TransactionAborted()
     assert self.committed
