@@ -139,7 +139,7 @@ class TxBuffer : public AsyncCompletion {
      * Called from completer threads if we are doing async completion.
      * This is the only TxBuffer function called outside the IO thread.
      */
-    void setError(const std::string& message);
+    QPID_BROKER_EXTERN void setError(const std::string& message);
 };
 
 }} // namespace qpid::broker
