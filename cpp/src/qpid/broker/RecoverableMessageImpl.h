@@ -41,8 +41,8 @@ public:
     bool loadContent(uint64_t available);
     void decodeContent(framing::Buffer& buffer);
     void recover(boost::shared_ptr<Queue> queue);
-    void enqueue(boost::shared_ptr<DtxBuffer> buffer, boost::shared_ptr<Queue> queue);
-    void dequeue(boost::shared_ptr<DtxBuffer> buffer, boost::shared_ptr<Queue> queue);
+    void enqueue(boost::intrusive_ptr<DtxBuffer> buffer, boost::shared_ptr<Queue> queue);
+    void dequeue(boost::intrusive_ptr<DtxBuffer> buffer, boost::shared_ptr<Queue> queue);
     Message getMessage();
 };
 }} // namespace qpid::broker

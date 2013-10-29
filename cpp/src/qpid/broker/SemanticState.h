@@ -84,7 +84,7 @@ class SemanticState : private boost::noncopyable {
 
   public:
     typedef SemanticStateConsumerImpl ConsumerImpl;
-    typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
+    typedef std::map<std::string, boost::intrusive_ptr<DtxBuffer> > DtxBufferMap;
 
   private:
     typedef std::map<std::string, boost::shared_ptr<ConsumerImpl> > ConsumerImplMap;
@@ -95,8 +95,8 @@ class SemanticState : private boost::noncopyable {
     ConsumerImplMap consumers;
     NameGenerator tagGenerator;
     DeliveryRecords unacked;
-    TxBuffer::shared_ptr txBuffer;
-    DtxBuffer::shared_ptr dtxBuffer;
+    boost::intrusive_ptr<TxBuffer> txBuffer;
+    boost::intrusive_ptr<DtxBuffer> dtxBuffer;
     bool dtxSelected;
     DtxBufferMap suspendedXids;
     framing::SequenceSet accumulatedAck;
@@ -179,10 +179,10 @@ class SemanticState : private boost::noncopyable {
 
     DeliveryRecords& getUnacked() { return unacked; }
     framing::SequenceSet getAccumulatedAck() const { return accumulatedAck; }
-    TxBuffer::shared_ptr getTxBuffer() const { return txBuffer; }
-    DtxBuffer::shared_ptr getDtxBuffer() const { return dtxBuffer; }
-    void setTxBuffer(const TxBuffer::shared_ptr& txb) { txBuffer = txb; }
-    void setDtxBuffer(const DtxBuffer::shared_ptr& dtxb) { dtxBuffer = dtxb; txBuffer = dtxb; }
+    boost::intrusive_ptr<TxBuffer> getTxBuffer() const { return txBuffer; }
+    boost::intrusive_ptr<DtxBuffer> getDtxBuffer() const { return dtxBuffer; }
+    void setTxBuffer(const boost::intrusive_ptr<TxBuffer>& txb) { txBuffer = txb; }
+    void setDtxBuffer(const boost::intrusive_ptr<DtxBuffer>& dtxb) { dtxBuffer = dtxb; txBuffer = dtxb; }
     void setAccumulatedAck(const framing::SequenceSet& s) { accumulatedAck = s; }
     void record(const DeliveryRecord& delivery);
     DtxBufferMap& getSuspendedXids() { return suspendedXids; }

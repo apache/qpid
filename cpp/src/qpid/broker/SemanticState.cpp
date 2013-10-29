@@ -166,7 +166,7 @@ bool SemanticState::cancel(const string& tag)
 
 void SemanticState::startTx()
 {
-    txBuffer = TxBuffer::shared_ptr(new TxBuffer());
+    txBuffer = boost::intrusive_ptr<TxBuffer>(new TxBuffer());
     session.getBroker().getBrokerObservers().startTx(txBuffer);
     session.startTx(); //just to update statistics
 }

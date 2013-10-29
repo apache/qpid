@@ -60,8 +60,8 @@ class BrokerObserver
                         const boost::shared_ptr<Queue>& ,
                         const std::string& /*key*/,
                         const framing::FieldTable& /*args*/) {}
-    virtual void startTx(const boost::shared_ptr<TxBuffer>&) {}
-    virtual void startDtx(const boost::shared_ptr<DtxBuffer>&) {}
+    virtual void startTx(const boost::intrusive_ptr<TxBuffer>&) {}
+    virtual void startDtx(const boost::intrusive_ptr<DtxBuffer>&) {}
 };
 }} // namespace qpid::broker
 

@@ -66,17 +66,17 @@ DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(&t) {}
 
 DtxManager::~DtxManager() {}
 
-void DtxManager::start(const std::string& xid, DtxBuffer::shared_ptr ops)
+void DtxManager::start(const std::string& xid, boost::intrusive_ptr<DtxBuffer> ops)
 {
     createWork(xid)->add(ops);
 }
 
-void DtxManager::join(const std::string& xid, DtxBuffer::shared_ptr ops)
+void DtxManager::join(const std::string& xid, boost::intrusive_ptr<DtxBuffer> ops)
 {
     getWork(xid)->add(ops);
 }
 
-void DtxManager::recover(const std::string& xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops)
+void DtxManager::recover(const std::string& xid, std::auto_ptr<TPCTransactionContext> txn, boost::intrusive_ptr<DtxBuffer> ops)
 {
     createWork(xid)->recover(txn, ops);
 }

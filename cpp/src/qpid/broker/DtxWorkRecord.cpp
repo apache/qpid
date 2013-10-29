@@ -122,7 +122,7 @@ void DtxWorkRecord::rollback()
     abort();
 }
 
-void DtxWorkRecord::add(DtxBuffer::shared_ptr ops)
+void DtxWorkRecord::add(boost::intrusive_ptr<DtxBuffer> ops)
 {
     Mutex::ScopedLock locker(lock);
     if (expired) {
@@ -162,7 +162,7 @@ void DtxWorkRecord::abort()
     std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::rollback));
 }
 
-void DtxWorkRecord::recover(std::auto_ptr<TPCTransactionContext> _txn, DtxBuffer::shared_ptr ops)
+void DtxWorkRecord::recover(std::auto_ptr<TPCTransactionContext> _txn, boost::intrusive_ptr<DtxBuffer> ops)
 {
     add(ops);
     txn = _txn;
