@@ -21,6 +21,7 @@
 
 #include "qpid/broker/SessionState.h"
 
+#include "qpid/broker/AsyncCommandCallback.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/DeliverableMessage.h"
@@ -110,6 +111,7 @@ void SemanticState::closed() {
             cancel(i->second);
         }
         closeComplete = true;
+        if (txBuffer) txBuffer->rollback();
     }
 }
 
@@ -166,32 +168,47 @@ bool SemanticState::cancel(const string& tag)
 
 void SemanticState::startTx()
 {
+    accumulatedAck.clear();
     txBuffer = boost::intrusive_ptr<TxBuffer>(new TxBuffer());
     session.getBroker().getBrokerObservers().startTx(txBuffer);
     session.startTx(); //just to update statistics
 }
 
+namespace {
+struct StartTxOnExit {
+    SemanticState& session;
+    StartTxOnExit(SemanticState& ss) : session(ss) {}
+    ~StartTxOnExit() { session.startTx(); }
+};
+} // namespace
+
 void SemanticState::commit(MessageStore* const store)
 {
     if (!txBuffer) throw
-        CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
-    session.commitTx(); //just to update statistics
+        CommandInvalidException(
+            QPID_MSG("Session has not been selected for use with transactions"));
+    // Start a new TX regardless of outcome of this one.
+    StartTxOnExit e(*this);
+    session.getCurrentCommand().setCompleteSync(false); // Async completion
+    txBuffer->begin();          // Begin async completion.
+    session.commitTx();         //just to update statistics
     TxOp::shared_ptr txAck(static_cast<TxOp*>(new TxAccept(accumulatedAck, unacked)));
     txBuffer->enlist(txAck);
-    if (txBuffer->commitLocal(store)) {
-        accumulatedAck.clear();
-    } else {
-        throw InternalErrorException(QPID_MSG("Commit failed"));
-    }
+    // In a HA cluster, tx.commit may complete asynchronously.
+    txBuffer->startCommit(store);
+    AsyncCommandCallback callback(
+        session,
+        boost::bind(&TxBuffer::endCommit, txBuffer, store));
+    txBuffer->end(callback);
 }
 
 void SemanticState::rollback()
 {
     if (!txBuffer)
         throw CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
-    session.rollbackTx(); //just to update statistics
+    session.rollbackTx();       // Just to update statistics
     txBuffer->rollback();
-    accumulatedAck.clear();
+    startTx();                  // Start a new TX automatically.
 }
 
 void SemanticState::selectDtx()

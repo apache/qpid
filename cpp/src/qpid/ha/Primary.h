@@ -63,6 +63,10 @@ class PrimaryTxObserver;
  * - sets queue guards on new queues for each backup.
  *
  * THREAD SAFE: called concurrently in arbitrary connection threads.
+ *
+ * Locking rules: BrokerObserver create/destroy functions are called with
+ * the QueueRegistry lock held. Functions holding Primary::lock *must not*
+ * directly or indirectly call on the queue registry.
  */
 class Primary : public Role
 {
@@ -126,7 +130,8 @@ class Primary : public Role
     void checkReady(RemoteBackupPtr);
     void setCatchupQueues(const RemoteBackupPtr&, bool createGuards);
     void deduplicate();
-    boost::shared_ptr<PrimaryTxObserver> makeTxObserver();
+    boost::shared_ptr<PrimaryTxObserver> makeTxObserver(
+        const boost::intrusive_ptr<broker::TxBuffer>&);
 
     mutable sys::Mutex lock;
     HaBroker& haBroker;

@@ -20,6 +20,7 @@
  */
 #include "qpid/broker/TxBuffer.h"
 #include "unit_test.h"
+#include "test_tools.h"
 #include <iostream>
 #include <vector>
 #include "TxMocks.h"
@@ -50,7 +51,8 @@ QPID_AUTO_TEST_CASE(testCommitLocal)
     buffer.enlist(static_pointer_cast<TxOp>(opB));//opB enlisted twice
     buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-    BOOST_CHECK(buffer.commitLocal(&store));
+    buffer.startCommit(&store);
+    buffer.endCommit(&store);
     store.check();
     BOOST_CHECK(store.isCommitted());
     opA->check();
@@ -75,7 +77,12 @@ QPID_AUTO_TEST_CASE(testFailOnCommitLocal)
     buffer.enlist(static_pointer_cast<TxOp>(opB));
     buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-    BOOST_CHECK(!buffer.commitLocal(&store));
+    try {
+        ScopedSuppressLogging sl; // Suppress messages for expected error.
+        buffer.startCommit(&store);
+        buffer.endCommit(&store);
+        BOOST_FAIL("Expected exception");
+    } catch (...) {}
     BOOST_CHECK(store.isAborted());
     store.check();
     opA->check();

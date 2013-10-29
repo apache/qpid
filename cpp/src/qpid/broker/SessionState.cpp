@@ -191,26 +191,21 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
     return status;
 }
 
-void SessionState::handleCommand(framing::AMQMethodBody* method, const SequenceNumber& id) {
-    currentCommandComplete = true;      // assumed, can be overridden by invoker method (this sucks).
-    Invoker::Result invocation = invoke(adapter, *method);
-    if (currentCommandComplete) receiverCompleted(id);
-
-    if (!invocation.wasHandled()) {
+void SessionState::handleCommand(framing::AMQMethodBody* method) {
+    Invoker::Result result = invoke(adapter, *method);
+    if (!result.wasHandled())
         throw NotImplementedException(QPID_MSG("Not implemented: " << *method));
-    } else if (invocation.hasResult()) {
-        getProxy().getExecution().result(id, invocation.getResult());
-    }
-
-    if (method->isSync() && currentCommandComplete) {
-        sendAcceptAndCompletion();
-    }
+    if (currentCommand.isCompleteSync())
+        completeCommand(
+            currentCommand.getId(), false/*needAccept*/, currentCommand.isSyncRequired(),
+            result.getResult());
 }
 
-void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
+
+void SessionState::handleContent(AMQFrame& frame)
 {
     if (frame.getBof() && frame.getBos()) //start of frameset
-        msgBuilder.start(id);
+        msgBuilder.start(currentCommand.getId());
     intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> msg(msgBuilder.getMessage());
     msgBuilder.handle(frame);
     if (frame.getEof() && frame.getEos()) {//end of frameset
@@ -244,23 +239,27 @@ void SessionState::sendAcceptAndCompletion()
     sendCompletion();
 }
 
-/** Invoked when the given inbound message is finished being processed
- * by all interested parties (eg. it is done being enqueued to all queues,
- * its credit has been accounted for, etc).  At this point, msg is considered
- * by this receiver as 'completed' (as defined by AMQP 0_10)
+/** Invoked when the given command is finished being processed by all interested
+ * parties (eg. it is done being enqueued to all queues, its credit has been
+ * accounted for, etc).  At this point the command is considered by this
+ * receiver as 'completed' (as defined by AMQP 0_10)
  */
-void SessionState::completeRcvMsg(SequenceNumber id,
-                                  bool requiresAccept,
-                                  bool requiresSync)
+void SessionState::completeCommand(SequenceNumber id,
+                                   bool requiresAccept,
+                                   bool requiresSync,
+                                   const std::string& result=std::string())
 {
     bool callSendCompletion = false;
     receiverCompleted(id);
     if (requiresAccept)
-        // will cause msg's seq to appear in the next message.accept we send.
+        // will cause cmd's seq to appear in the next message.accept we send.
         accepted.add(id);
 
+    if (!result.empty())
+        getProxy().getExecution().result(id, result);
+
     // Are there any outstanding Execution.Sync commands pending the
-    // completion of this msg?  If so, complete them.
+    // completion of this cmd?  If so, complete them.
     while (!pendingExecutionSyncs.empty() &&
            receiverGetIncomplete().front() >= pendingExecutionSyncs.front()) {
         const SequenceNumber id = pendingExecutionSyncs.front();
@@ -277,14 +276,15 @@ void SessionState::completeRcvMsg(SequenceNumber id,
 }
 
 void SessionState::handleIn(AMQFrame& frame) {
-    SequenceNumber commandId = receiverGetCurrent();
     //TODO: make command handling more uniform, regardless of whether
     //commands carry content.
     AMQMethodBody* m = frame.getMethod();
+    currentCommand = CurrentCommand(receiverGetCurrent(), m && m->isSync());
+
     if (m == 0 || m->isContentBearing()) {
-        handleContent(frame, commandId);
+        handleContent(frame);
     } else if (frame.getBof() && frame.getEof()) {
-        handleCommand(frame.getMethod(), commandId);
+        handleCommand(frame.getMethod());
     } else {
         throw InternalErrorException("Cannot handle multi-frame command segments yet");
     }
@@ -345,9 +345,9 @@ void SessionState::setTimeout(uint32_t) { }
 // (called via the invoker() in handleCommand() above)
 void SessionState::addPendingExecutionSync()
 {
-    SequenceNumber syncCommandId = receiverGetCurrent();
+    SequenceNumber syncCommandId = currentCommand.getId();
     if (receiverGetIncomplete().front() < syncCommandId) {
-        currentCommandComplete = false;
+        currentCommand.setCompleteSync(false);
         pendingExecutionSyncs.push(syncCommandId);
         asyncCommandCompleter->flushPendingMessages();
         QPID_LOG(debug, getId() << ": delaying completion of execution.sync " << syncCommandId);
@@ -389,25 +389,16 @@ void SessionState::IncompleteIngressMsgXfer::completed(bool sync)
          */
         session = 0;
         QPID_LOG(debug, ": async completion callback scheduled for msg seq=" << id);
-        completerContext->scheduleMsgCompletion(id, requiresAccept, requiresSync);
+        completerContext->scheduleCommandCompletion(id, requiresAccept, requiresSync);
     } else {
         // this path runs directly from the ac->end() call in handleContent() above,
         // so *session is definately valid.
         if (session->isAttached()) {
             QPID_LOG(debug, ": receive completed for msg seq=" << id);
-            session->completeRcvMsg(id, requiresAccept, requiresSync);
+            session->completeCommand(id, requiresAccept, requiresSync);
         }
     }
-    completerContext = boost::intrusive_ptr<AsyncCommandCompleter>();
-}
-
-
-/** Scheduled from an asynchronous command's completed callback to run on
- * the IO thread.
- */
-void SessionState::AsyncCommandCompleter::schedule(boost::intrusive_ptr<AsyncCommandCompleter> ctxt)
-{
-    ctxt->completeCommands();
+    completerContext.reset();
 }
 
 
@@ -450,22 +441,27 @@ void SessionState::AsyncCommandCompleter::flushPendingMessages()
 /** mark an ingress Message.Transfer command as completed.
  * This method must be thread safe - it may run on any thread.
  */
-void SessionState::AsyncCommandCompleter::scheduleMsgCompletion(SequenceNumber cmd,
-                                                                bool requiresAccept,
-                                                                bool requiresSync)
+void SessionState::AsyncCommandCompleter::scheduleCommandCompletion(
+    SequenceNumber cmd,
+    bool requiresAccept,
+    bool requiresSync)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);
 
     if (session && isAttached) {
-        MessageInfo msg(cmd, requiresAccept, requiresSync);
-        completedMsgs.push_back(msg);
-        if (completedMsgs.size() == 1) {
-            session->getConnection().requestIOProcessing(boost::bind(&schedule,
-                                                                     session->asyncCommandCompleter));
+        CommandInfo info(cmd, requiresAccept, requiresSync);
+        completedCmds.push_back(info);
+        if (completedCmds.size() == 1) {
+            session->getConnection().requestIOProcessing(
+                boost::bind(&AsyncCommandCompleter::completeCommands,
+                            session->asyncCommandCompleter));
         }
     }
 }
 
+void SessionState::AsyncCommandCompleter::schedule(boost::function<void()> f) {
+    if (session && isAttached) session->getConnection().requestIOProcessing(f);
+}
 
 /** Cause the session to complete all completed commands.
  * Executes on the IO thread.
@@ -476,12 +472,13 @@ void SessionState::AsyncCommandCompleter::completeCommands()
 
     // when session is destroyed, it clears the session pointer via cancel().
     if (session && session->isAttached()) {
-        for (std::vector<MessageInfo>::iterator msg = completedMsgs.begin();
-             msg != completedMsgs.end(); ++msg) {
-            session->completeRcvMsg(msg->cmd, msg->requiresAccept, msg->requiresSync);
+        for (std::vector<CommandInfo>::iterator cmd = completedCmds.begin();
+             cmd != completedCmds.end(); ++cmd) {
+            session->completeCommand(
+                cmd->cmd, cmd->requiresAccept, cmd->requiresSync);
         }
     }
-    completedMsgs.clear();
+    completedCmds.clear();
 }
 
 

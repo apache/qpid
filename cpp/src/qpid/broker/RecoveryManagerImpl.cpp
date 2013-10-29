@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -52,7 +52,7 @@ class RecoverableQueueImpl : public RecoverableQueue
 public:
     RecoverableQueueImpl(const boost::shared_ptr<Queue>& _queue) : queue(_queue) {}
     ~RecoverableQueueImpl() {};
-    void setPersistenceId(uint64_t id);    
+    void setPersistenceId(uint64_t id);
 	uint64_t getPersistenceId() const;
     const std::string& getName() const;
     void setExternalQueueStore(ExternalQueueStore* inst);
@@ -126,7 +126,7 @@ RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buff
     return m;
 }
 
-RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid, 
+RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid,
                                                                            std::auto_ptr<TPCTransactionContext> txn)
 {
     boost::intrusive_ptr<DtxBuffer> buffer(new DtxBuffer());
@@ -212,7 +212,7 @@ const std::string& RecoverableQueueImpl::getName() const
 {
     return queue->getName();
 }
-    
+
 void RecoverableQueueImpl::setExternalQueueStore(ExternalQueueStore* inst)
 {
     queue->setExternalQueueStore(inst);

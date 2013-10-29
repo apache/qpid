@@ -232,15 +232,16 @@ void Primary::skip(
     if (i != replicas.end()) i->second->addSkip(ids);
 }
 
+// Called from ReplicatingSubscription::cancel
 void Primary::removeReplica(const ReplicatingSubscription& rs) {
-    sys::Mutex::ScopedLock l(lock);
-    replicas.erase(make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue()));
-
-    TxMap::const_iterator i = txMap.find(rs.getQueue()->getName());
-    if (i != txMap.end()) {
-        boost::shared_ptr<PrimaryTxObserver> tx = i->second.lock();
-        if (tx) tx->cancel(rs);
+    boost::shared_ptr<PrimaryTxObserver> tx;
+    {
+        sys::Mutex::ScopedLock l(lock);
+        replicas.erase(make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue()));
+        TxMap::const_iterator i = txMap.find(rs.getQueue()->getName());
+        if (i != txMap.end()) tx = i->second.lock();
     }
+    if (tx) tx->cancel(rs);     // Outside of lock.
 }
 
 // NOTE: Called with queue registry lock held.
@@ -401,19 +402,22 @@ void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards)
     backup->startCatchup();
 }
 
-shared_ptr<PrimaryTxObserver> Primary::makeTxObserver() {
-    shared_ptr<PrimaryTxObserver> observer(new PrimaryTxObserver(haBroker));
+shared_ptr<PrimaryTxObserver> Primary::makeTxObserver(
+    const boost::intrusive_ptr<broker::TxBuffer>& txBuffer)
+{
+    shared_ptr<PrimaryTxObserver> observer(
+        new PrimaryTxObserver(*this, haBroker, txBuffer));
     observer->initialize();
     txMap[observer->getTxQueue()->getName()] = observer;
     return observer;
 }
 
-void Primary::startTx(const boost::intrusive_ptr<broker::TxBuffer>& tx) {
-    tx->setObserver(makeTxObserver());
+void Primary::startTx(const boost::intrusive_ptr<broker::TxBuffer>& txBuffer) {
+    txBuffer->setObserver(makeTxObserver(txBuffer));
 }
 
-void Primary::startDtx(const boost::intrusive_ptr<broker::DtxBuffer>& dtx) {
-    dtx->setObserver(makeTxObserver());
+void Primary::startDtx(const boost::intrusive_ptr<broker::DtxBuffer>& ) {
+    QPID_LOG(notice, "DTX transactions in a HA cluster are not yet atomic");
 }
 
 }} // namespace qpid::ha
