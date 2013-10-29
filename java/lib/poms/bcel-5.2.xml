@@ -19,4 +19,11 @@
   <groupId>org.apache.bcel</groupId>
   <artifactId>bcel</artifactId>
   <version>5.2</version>
+  <exclusions>
+    <exclusion>
+      <!--  Qpid doesn't require BCEL InstructionFinder, so does not need jakarta-regexp. -->
+      <groupId>jakarta-regexp</groupId>
+      <artifactId>jakarta-regexp</artifactId>
+    </exclusion>
+  </exclusions>
 </dep>
