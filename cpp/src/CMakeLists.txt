@@ -371,10 +371,13 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # Boost.system is sometimes needed; it's handled separately, below.
+# There may be different minimum versions of boost for Windows and Unix
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (Boost_components program_options date_time thread chrono)
+  set (Boost_components program_options date_time thread)
+  set (Boost_minversion 1.44)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (Boost_components program_options)
+  set (Boost_minversion 1.33)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # Visual Studio 2010 requires boost 1.45 or better.
@@ -389,7 +392,7 @@ if (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
 endif (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
 
 # Discover Boost version
-find_package(Boost 1.33 QUIET REQUIRED)
+find_package(Boost ${Boost_minversion} QUIET REQUIRED)
 
 # Boost.system was introduced at Boost 1.35; it's needed secondarily by other
 # Boost libs Qpid needs, so be sure it's there.
@@ -397,14 +400,20 @@ if (Boost_VERSION GREATER 103499)
   list(APPEND Boost_components system)
 endif (Boost_VERSION GREATER 103499)
 
-find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
+# Boost.chrono was introduced at Boost 1.47; it's needed secondarily by other
+# Boost libs Qpid needs on Windows, so be sure it's there on Windows.
+if (Boost_VERSION GREATER 104699 AND CMAKE_SYSTEM_NAME STREQUAL Windows)
+  list(APPEND Boost_components chrono)
+endif (Boost_VERSION GREATER 104699 AND CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+find_package(Boost ${Boost_minversion} REQUIRED COMPONENTS ${Boost_components})
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Required Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
 
 if (BUILD_TESTING)
   set (BUILD_TESTING_UNITTESTS ON)
-  find_package(Boost 1.33 QUIET COMPONENTS unit_test_framework)
+  find_package(Boost ${Boost_minversion} QUIET COMPONENTS unit_test_framework)
   if(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
     message(STATUS "Could not find unit testing library - will not build unit tests")
     set (BUILD_TESTING_UNITTESTS OFF)
@@ -439,22 +448,21 @@ if (MSVC)
       string (REPLACE .lib .dll
               _boost_program_options_release ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE})
       string (REPLACE .lib .dll
-              _boost_chrono_debug ${Boost_CHRONO_LIBRARY_DEBUG})
-      string (REPLACE .lib .dll
-              _boost_chrono_release ${Boost_CHRONO_LIBRARY_RELEASE})
-      string (REPLACE .lib .dll
               _boost_thread_debug ${Boost_THREAD_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
               _boost_thread_release ${Boost_THREAD_LIBRARY_RELEASE})
-      # Boost 1.35 added the system library, which gets indirectly linked in
-      # via other Boost libs. So, if building with Boost 1.35 or later, also
-      # include system in the Windows install package.
       if (NOT Boost_VERSION LESS 103500)
-         string (REPLACE boost_thread boost_system
-                 _boost_system_debug ${_boost_thread_debug})
-         string (REPLACE boost_thread boost_system
-                 _boost_system_release ${_boost_thread_release})
+        string (REPLACE .lib .dll
+                _boost_system_debug ${Boost_SYSTEM_LIBRARY_DEBUG})
+        string (REPLACE .lib .dll
+                _boost_system_release ${Boost_SYSTEM_LIBRARY_RELEASE})
       endif (NOT Boost_VERSION LESS 103500)
+      if (NOT Boost_VERSION LESS 104700)
+        string (REPLACE .lib .dll
+                _boost_chrono_debug ${Boost_CHRONO_LIBRARY_DEBUG})
+        string (REPLACE .lib .dll
+                _boost_chrono_release ${Boost_CHRONO_LIBRARY_RELEASE})
+      endif (NOT Boost_VERSION LESS 104700)
       install (PROGRAMS
                ${_boost_date_time_debug} ${_boost_date_time_release}
                ${_boost_program_options_debug} ${_boost_program_options_release}
