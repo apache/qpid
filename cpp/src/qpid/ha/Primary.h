@@ -93,8 +93,8 @@ class Primary : public Role
     void queueDestroy(const QueuePtr&);
     void exchangeCreate(const ExchangePtr&);
     void exchangeDestroy(const ExchangePtr&);
-    void startTx(const boost::shared_ptr<broker::TxBuffer>&);
-    void startDtx(const boost::shared_ptr<broker::DtxBuffer>&);
+    void startTx(const boost::intrusive_ptr<broker::TxBuffer>&);
+    void startDtx(const boost::intrusive_ptr<broker::DtxBuffer>&);
 
     // Called via ConnectionObserver
     void opened(broker::Connection& connection);

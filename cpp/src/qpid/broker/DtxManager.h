@@ -51,9 +51,9 @@ class DtxManager{
 public:
     DtxManager(sys::Timer&);
     ~DtxManager();
-    void start(const std::string& xid, DtxBuffer::shared_ptr work);
-    void join(const std::string& xid, DtxBuffer::shared_ptr work);
-    void recover(const std::string& xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr work);
+    void start(const std::string& xid, boost::intrusive_ptr<DtxBuffer> work);
+    void join(const std::string& xid, boost::intrusive_ptr<DtxBuffer> work);
+    void recover(const std::string& xid, std::auto_ptr<TPCTransactionContext> txn, boost::intrusive_ptr<DtxBuffer> work);
     bool prepare(const std::string& xid);
     bool commit(const std::string& xid, bool onePhase);
     void rollback(const std::string& xid);

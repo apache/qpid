@@ -78,7 +78,7 @@ struct MockBrokerObserver : public BrokerObserver {
 
     MockBrokerObserver(bool prep_=true) : prep(prep_) {}
 
-    void startTx(const shared_ptr<TxBuffer>& buffer) {
+    void startTx(const intrusive_ptr<TxBuffer>& buffer) {
         tx.reset(new MockTransactionObserver(prep));
         buffer->setObserver(tx);
     }

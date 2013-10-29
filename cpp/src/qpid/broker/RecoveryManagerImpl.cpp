@@ -60,8 +60,8 @@ public:
     const QueueSettings& getSettings() const;
     void addArgument(const std::string& key, const types::Variant& value);
     void recover(RecoverableMessage::shared_ptr msg);
-    void enqueue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
-    void dequeue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
+    void enqueue(boost::intrusive_ptr<DtxBuffer> buffer, RecoverableMessage::shared_ptr msg);
+    void dequeue(boost::intrusive_ptr<DtxBuffer> buffer, RecoverableMessage::shared_ptr msg);
 
 };
 
@@ -88,9 +88,9 @@ public:
 
 class RecoverableTransactionImpl : public RecoverableTransaction
 {
-    DtxBuffer::shared_ptr buffer;
+    boost::intrusive_ptr<DtxBuffer> buffer;
 public:
-    RecoverableTransactionImpl(DtxBuffer::shared_ptr _buffer) : buffer(_buffer) {}
+    RecoverableTransactionImpl(boost::intrusive_ptr<DtxBuffer> _buffer) : buffer(_buffer) {}
     void enqueue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message);
     void dequeue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message);
 };
@@ -129,7 +129,7 @@ RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buff
 RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid, 
                                                                            std::auto_ptr<TPCTransactionContext> txn)
 {
-    DtxBuffer::shared_ptr buffer(new DtxBuffer());
+    boost::intrusive_ptr<DtxBuffer> buffer(new DtxBuffer());
     dtxMgr.recover(xid, txn, buffer);
     return RecoverableTransaction::shared_ptr(new RecoverableTransactionImpl(buffer));
 }
@@ -255,22 +255,22 @@ void RecoverableExchangeImpl::bind(const string& queueName,
     queue->bound(exchange->getName(), key, args);
 }
 
-void RecoverableMessageImpl::dequeue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue)
+void RecoverableMessageImpl::dequeue(boost::intrusive_ptr<DtxBuffer> buffer, Queue::shared_ptr queue)
 {
     buffer->enlist(TxOp::shared_ptr(new RecoveredDequeue(queue, msg)));
 }
 
-void RecoverableMessageImpl::enqueue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue)
+void RecoverableMessageImpl::enqueue(boost::intrusive_ptr<DtxBuffer> buffer, Queue::shared_ptr queue)
 {
     buffer->enlist(TxOp::shared_ptr(new RecoveredEnqueue(queue, msg)));
 }
 
-void RecoverableQueueImpl::dequeue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr message)
+void RecoverableQueueImpl::dequeue(boost::intrusive_ptr<DtxBuffer> buffer, RecoverableMessage::shared_ptr message)
 {
     dynamic_pointer_cast<RecoverableMessageImpl>(message)->dequeue(buffer, queue);
 }
 
-void RecoverableQueueImpl::enqueue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr message)
+void RecoverableQueueImpl::enqueue(boost::intrusive_ptr<DtxBuffer> buffer, RecoverableMessage::shared_ptr message)
 {
     dynamic_pointer_cast<RecoverableMessageImpl>(message)->enqueue(buffer, queue);
 }
