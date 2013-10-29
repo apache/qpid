@@ -1304,8 +1304,6 @@ def open_read(name):
 
 class TransactionTests(HaBrokerTest):
 
-    load_store=["--load-module", BrokerTest.test_store_lib]
-
     def tx_simple_setup(self, broker):
         """Start a transaction, remove messages from queue a, add messages to queue b"""
         c = broker.connect()
@@ -1437,6 +1435,9 @@ class TransactionTests(HaBrokerTest):
         tx.sync()
         self.assert_simple_rollback_outcome(cluster[0], tx_queues)
 
+    def assert_commit_raises(self, tx):
+        def commit_sync(): tx.commit(timeout=1); tx.sync(timeout=1)
+        self.assertRaises(ServerError, commit_sync)
 
     def test_tx_backup_fail(self):
         cluster = HaCluster(
@@ -1445,7 +1446,7 @@ class TransactionTests(HaBrokerTest):
         tx = c.session(transactional=True)
         s = tx.sender("q;{create:always,node:{durable:true}}")
         for m in ["foo","bang","bar"]: s.send(Message(m, durable=True))
-        self.assertRaises(ServerError, tx.commit)
+        self.assert_commit_raises(tx)
         for b in cluster: b.assert_browse_backup("q", [])
         self.assertEqual(open_read(cluster[0].store_log), "<begin tx 1>\n<abort tx=1>\n")
         self.assertEqual(open_read(cluster[1].store_log), "<begin tx 1>\n<enqueue q foo tx=1>\n<enqueue q bang tx=1>\n<abort tx=1>\n")
@@ -1463,7 +1464,7 @@ class TransactionTests(HaBrokerTest):
         self.assertEqual([1,1,1], [len(b.agent().tx_queues()) for b in cluster])
         cluster[1].kill(final=False)
         s.send("b")
-        self.assertRaises(ServerError, tx.commit)
+        self.assert_commit_raises(tx)
         self.assertEqual([[],[]], [b.agent().tx_queues() for b in [cluster[0],cluster[2]]])
 
         # Joining
@@ -1474,6 +1475,24 @@ class TransactionTests(HaBrokerTest):
         tx.commit()
         # The new member is not in the tx but  receives the results normal replication.
         for b in cluster: b.assert_browse_backup("q", ["foo"], msg=b)
+
+    def test_tx_block_threads(self):
+        """Verify that TXs blocked in commit don't deadlock."""
+        cluster = HaCluster(self, 2, args=["--worker-threads=2"], test_store=True)
+        n = 10                  # Number of concurrent transactions
+        sessions = [cluster[0].connect().session(transactional=True) for i in xrange(n)]
+        # Have the store delay the response for 10s
+        for s in sessions:
+            sn = s.sender("qq;{create:always,node:{durable:true}}")
+            sn.send(Message("foo", durable=True))
+        self.assertEqual(n, len(cluster[1].agent().tx_queues()))
+        threads = [ Thread(target=s.commit) for s in sessions]
+        for t in threads: t.start()
+        cluster[0].ready(timeout=1) # Check for deadlock
+        for b in cluster: b.assert_browse_backup('qq', ['foo']*n)
+        for t in threads: t.join()
+        for s in sessions: s.connection.close()
+
 
 if __name__ == "__main__":
     outdir = "ha_tests.tmp"

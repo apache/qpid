@@ -128,6 +128,7 @@ class HaBroker(Broker):
         ha_port = ha_port or HaPort(test)
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
+                 "--log-enable=info+",
                  "--log-enable=debug+:ha::",
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
