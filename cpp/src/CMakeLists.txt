@@ -81,68 +81,67 @@ ENDMACRO (add_api_test libname)
 # rubygen subdir is excluded from stable distributions
 # If the main AMQP spec is present, then check if ruby and python are
 # present, and if any sources have changed, forcing a re-gen of source code.
+find_file(QPID_AMQP_SPEC NAMES amqp.0-10-qpid-errata.stripped.xml PATHS ${qpid-cpp_SOURCE_DIR}/specs ${qpid-cpp_SOURCE_DIR}/../specs NO_DEFAULT_PATH)
+mark_as_advanced(QPID_AMQP_SPEC)
+if (NOT QPID_AMQP_SPEC)
+  message(FATAL_ERROR "Can't find amqp 0-10 spec for framing code generation")
+endif (NOT QPID_AMQP_SPEC)
+if (NOT RUBY_EXECUTABLE)
+  message(FATAL_ERROR "Can't locate ruby, needed to generate amqp 0-10 framing code.")
+endif (NOT RUBY_EXECUTABLE)
 
-set(AMQP_SPEC_DIR ${qpid-cpp_SOURCE_DIR}/../specs)
-set(AMQP_SPEC ${AMQP_SPEC_DIR}/amqp.0-10-qpid-errata.stripped.xml)
-if (EXISTS ${AMQP_SPEC})
-  if (NOT RUBY_EXECUTABLE)
-    message(FATAL_ERROR "Can't locate ruby, needed to generate source files.")
-  endif (NOT RUBY_EXECUTABLE)
-  if (NOT PYTHON_EXECUTABLE)
-    message(FATAL_ERROR "Can't locate python, needed to generate source files.")
-  endif (NOT PYTHON_EXECUTABLE)
+set(specs ${QPID_AMQP_SPEC})
+set(regen_amqp OFF)
+set(rgen_dir ${qpid-cpp_SOURCE_DIR}/rubygen)
+file(GLOB_RECURSE rgen_progs ${rgen_dir}/*.rb)
+# If any of the specs, or any of the sources used to generate code, change
+# then regenerate the sources.
+foreach (spec_file ${specs} ${rgen_progs})
+  if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
+    set(regen_amqp ON)
+  endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
+endforeach (spec_file ${specs})
+if (regen_amqp)
+  message(STATUS "Regenerating AMQP protocol sources")
+  execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/../include  ${specs} all rubygen.cmake
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+else (regen_amqp)
+  message(STATUS "No need to generate AMQP protocol sources")
+endif (regen_amqp)
 
-  set(specs ${AMQP_SPEC})
-  set(regen_amqp OFF)
-  set(rgen_dir ${qpid-cpp_SOURCE_DIR}/rubygen)
-  file(GLOB_RECURSE rgen_progs ${rgen_dir}/*.rb)
-  # If any of the specs, or any of the sources used to generate code, change
-  # then regenerate the sources.
-  foreach (spec_file ${specs} ${rgen_progs})
-    if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
-      set(regen_amqp ON)
-    endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
-  endforeach (spec_file ${specs})
-  if (regen_amqp)
-    message(STATUS "Regenerating AMQP protocol sources")
-execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/../include  ${specs} all rubygen.cmake
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  else (regen_amqp)
-    message(STATUS "No need to generate AMQP protocol sources")
-  endif (regen_amqp)
+find_file(QPID_BROKER_MANAGEMENT_SPEC NAMES management-schema.xml PATHS ${CMAKE_CURRENT_SOURCE_DIR}/qpid/broker ${qpid-cpp_SOURCE_DIR}/../specs NO_DEFAULT_PATH)
+mark_as_advanced(QPID_BROKER_MANAGEMENT_SPEC)
+if (NOT QPID_BROKER_MANAGEMENT_SPEC)
+  message(FATAL_ERROR "Can't find broker management spec for code generation")
+endif (NOT QPID_BROKER_MANAGEMENT_SPEC)
+if (NOT PYTHON_EXECUTABLE)
+  message(FATAL_ERROR "Can't locate python, needed to generate broker management code.")
+endif (NOT PYTHON_EXECUTABLE)
+set(mgmt_specs ${QPID_BROKER_MANAGEMENT_SPEC}
+               ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
+               ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
+               ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
+               ${CMAKE_CURRENT_SOURCE_DIR}/qpid/linearstore/management-schema.xml
+)
+set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
+set(regen_mgmt OFF)
+foreach (spec_file ${mgmt_specs})
+  if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
+    message(STATUS "${spec_file} is newer")
+    set(regen_mgmt ON)
+  endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
+endforeach (spec_file ${mgmt_specs})
+if (regen_mgmt)
+  message(STATUS "Regenerating Qpid Management Framework sources")
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -l -q -o ${CMAKE_CURRENT_BINARY_DIR}/qmf ${mgmt_specs}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+else (regen_mgmt)
+  message(STATUS "No need to generate Qpid Management Framework sources")
+endif (regen_mgmt)
 
-  set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
-                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
-                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/ha/management-schema.xml
-                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore/management-schema.xml
-                 ${CMAKE_CURRENT_SOURCE_DIR}/qpid/linearstore/management-schema.xml
-  )
-  set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
-  set(regen_mgmt OFF)
-  foreach (spec_file ${mgmt_specs})
-    if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
-      message(STATUS "${spec_file} is newer")
-      set(regen_mgmt ON)
-    endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
-  endforeach (spec_file ${mgmt_specs})
-  if (regen_mgmt)
-    message(STATUS "Regenerating Qpid Management Framework sources")
-execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -l -q -o ${CMAKE_CURRENT_BINARY_DIR}/qmf ${mgmt_specs}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  else (regen_mgmt)
-    message(STATUS "No need to generate Qpid Management Framework sources")
-  endif (regen_mgmt)
-
-  # Pull in the names of the generated files, i.e. ${rgen_framing_srcs}
-  include (${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
-  include (${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
-
-else (EXISTS ${AMQP_SPEC})
-  message(STATUS "No AMQP spec... presume generated sources are included")
-  set(QPID_GENERATED_HEADERS_IN_SOURCE ON)
-  include (rubygen.cmake)
-  include (managementgen.cmake)
-endif (EXISTS ${AMQP_SPEC})
+# Pull in the names of the generated files, i.e. ${rgen_framing_srcs}
+include (${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
+include (${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
 
 # FindDoxygen module tries to locate doxygen and Graphviz dot
 if (DOXYGEN_FOUND)

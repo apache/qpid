@@ -23,15 +23,28 @@ if(COMMAND cmake_policy)
   cmake_policy(VERSION 2.6)
 endif(COMMAND cmake_policy)
 
-include(BuildInstallSettings.cmake)
-
 if (${CMAKE_VERSION} VERSION_LESS "2.8.0")
     set (OPTIONAL_ARG "")
 else()
     set (OPTIONAL_ARG OPTIONAL)
 endif()
 
-set (qpidc_version ${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR})
+# Parse the version from QPID_VERSION.txt.
+# Use the top level qpid/ file if we're in an SVN checkout, source dir otherwise.
+find_file(QPID_VERSION_FILE NAMES QPID_VERSION.txt PATHS ${PROJECT_SOURCE_DIR}/.. ${PROJECT_SOURCE_DIR} NO_DEFAULT_PATH)
+mark_as_advanced(QPID_VERSION_FILE)
+if(NOT QPID_VERSION_FILE)
+  message(FATAL_ERROR "Cannot find QPID_VERSION.txt")
+endif(NOT QPID_VERSION_FILE)
+
+file(READ ${QPID_VERSION_FILE} QPID_VERSION)
+string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\1" QPID_VERSION_MAJOR "${QPID_VERSION}")
+string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\2" QPID_VERSION_MINOR "${QPID_VERSION}")
+set (QPID_VERSION_FULL "${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR}")
+
+set (qpidc_version ${QPID_VERSION_FULL})
+
+include(BuildInstallSettings.cmake)
 
 enable_testing()
 include (CTest)
