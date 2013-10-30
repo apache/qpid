@@ -221,7 +221,7 @@ void SemanticState::startDtx(const std::string& xid, DtxManager& mgr, bool join)
     if (!dtxSelected) {
         throw CommandInvalidException(QPID_MSG("Session has not been selected for use with dtx"));
     }
-    dtxBuffer.reset(new DtxBuffer(xid));
+    dtxBuffer = new DtxBuffer(xid);
     txBuffer = dtxBuffer;
     session.getBroker().getBrokerObservers().startDtx(dtxBuffer);
     if (join) {
@@ -242,7 +242,7 @@ void SemanticState::endDtx(const std::string& xid, bool fail)
 
     }
 
-    txBuffer.reset();//ops on this session no longer transactional
+    txBuffer = 0;//ops on this session no longer transactional
 
     checkDtxTimeout();
     if (fail) {
@@ -250,7 +250,7 @@ void SemanticState::endDtx(const std::string& xid, bool fail)
     } else {
         dtxBuffer->markEnded();
     }
-    dtxBuffer.reset();
+    dtxBuffer = 0;
 }
 
 void SemanticState::suspendDtx(const std::string& xid)
@@ -259,12 +259,12 @@ void SemanticState::suspendDtx(const std::string& xid)
         throw CommandInvalidException(
             QPID_MSG("xid specified on start was " << dtxBuffer->getXid() << ", but " << xid << " specified on suspend"));
     }
-    txBuffer.reset();//ops on this session no longer transactional
+    txBuffer = 0;//ops on this session no longer transactional
 
     checkDtxTimeout();
     dtxBuffer->setSuspended(true);
     suspendedXids[xid] = dtxBuffer;
-    dtxBuffer.reset();
+    dtxBuffer = 0;
 }
 
 void SemanticState::resumeDtx(const std::string& xid)
@@ -297,7 +297,7 @@ void SemanticState::resumeDtx(const std::string& xid)
 void SemanticState::checkDtxTimeout()
 {
     if (dtxBuffer->isExpired()) {
-        dtxBuffer.reset();
+        dtxBuffer = 0;
         throw DtxTimeoutException();
     }
 }

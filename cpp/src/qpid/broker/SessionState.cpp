@@ -398,7 +398,7 @@ void SessionState::IncompleteIngressMsgXfer::completed(bool sync)
             session->completeCommand(id, requiresAccept, requiresSync);
         }
     }
-    completerContext.reset();
+    completerContext = 0;
 }
 
 

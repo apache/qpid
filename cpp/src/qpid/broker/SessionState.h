@@ -259,10 +259,6 @@ class SessionState : public qpid::SessionState,
               completerContext(ss.getAsyncCommandCompleter())
         {}
 
-        AsyncCommandContext(const AsyncCommandContext& x) :
-            id(x.id), requiresSync(x.requiresSync), completerContext(x.completerContext)
-        {}
-
         virtual ~AsyncCommandContext() {}
 
      protected:
