@@ -194,13 +194,13 @@ void EmptyFilePool::resetEmptyFileHeader(const std::string& fqFileName) {
         char buff[buffsize];
         fs.read((char*)buff, buffsize);
         std::streampos bytesRead = fs.tellg();
-        if (bytesRead == buffsize) {
+        if (std::streamoff(bytesRead) == buffsize) {
             ::file_hdr_reset((::file_hdr_t*)buff);
             ::memset(buff + sizeof(::file_hdr_t), 0, MAX_FILE_HDR_LEN - sizeof(::file_hdr_t)); // set rest of buffer to 0
             fs.seekp(0, std::fstream::beg);
             fs.write(buff, buffsize);
             std::streampos bytesWritten = fs.tellp();
-            if (bytesWritten != buffsize) {
+            if (std::streamoff(bytesWritten) != buffsize) {
 //std::cerr << "ERROR: Unable to write file header of file \"" << fqFileName_ << "\": tried to write " << buffsize << " bytes; wrote " << bytesWritten << " bytes." << std::endl;
             }
         } else {
@@ -240,7 +240,7 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     char buff[buffsize];
     fs.read((char*)buff, buffsize);
     std::streampos bytesRead = fs.tellg();
-    if (bytesRead != buffsize) {
+    if (std::streamoff(bytesRead) != buffsize) {
         oss << "ERROR: Unable to read file header of file \"" << emptyFileName << "\": tried to read " << buffsize << " bytes; read " << bytesRead << " bytes";
         journalLogRef_.log(JournalLog::LOG_ERROR, oss.str());
         fs.close();
@@ -272,7 +272,7 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
         fs.seekp(0, std::fstream::beg);
         fs.write(buff, buffsize);
         std::streampos bytesWritten = fs.tellp();
-        if (bytesWritten != buffsize) {
+        if (std::streamoff(bytesWritten) != buffsize) {
             oss << "ERROR: Unable to write file header of file \"" << emptyFileName << "\": tried to write " << buffsize << " bytes; wrote " << bytesWritten << " bytes";
             journalLogRef_.log(JournalLog::LOG_ERROR, oss.str());
             fs.close();
