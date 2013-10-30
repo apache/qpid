@@ -62,6 +62,5 @@ public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, Proto
 
 
     public void setSender(Sender<ByteBuffer> sender);
-    public void init();
 
 }

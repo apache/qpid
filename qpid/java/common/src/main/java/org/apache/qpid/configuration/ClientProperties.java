@@ -63,20 +63,47 @@ public class ClientProperties
     public static final String SYNC_PUBLISH_PROP_NAME = "sync_publish";
 
     /**
-     * This value will be used in the following settings
-     * To calculate the SO_TIMEOUT option of the socket (2*idle_timeout)
-     * If this values is between the max and min values specified for heartbeat
-     * by the broker in TuneOK it will be used as the heartbeat interval.
-     * If not a warning will be printed and the max value specified for
-     * heartbeat in TuneOK will be used
-     *
-     * The default idle timeout is set to 120 secs
+     * Frequency of heartbeat messages (in milliseconds)
+     * @see #QPID_HEARTBEAT_INTERVAL
      */
+    @Deprecated
     public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
-    public static final long DEFAULT_IDLE_TIMEOUT = 120000;
 
-    public static final String HEARTBEAT = "qpid.heartbeat";
-    public static final int HEARTBEAT_DEFAULT = 120;
+    /**
+     * Frequency of heartbeat messages (in seconds)
+     * @see #QPID_HEARTBEAT_INTERVAL
+     */
+    @Deprecated
+    public static final String AMQJ_HEARTBEAT_DELAY = "amqj.heartbeat.delay";
+
+    /**
+     * Frequency of heartbeat messages (in seconds)
+     */
+    public static final String QPID_HEARTBEAT_INTERVAL = "qpid.heartbeat";
+
+    /**
+     * Default heartbeat interval (used by 0-10 protocol).
+     */
+    public static final int QPID_HEARTBEAT_INTERVAL_010_DEFAULT = 120;
+
+    /**
+     * @see #QPID_HEARTBEAT_TIMEOUT_FACTOR
+     */
+    @Deprecated
+    public static final String AMQJ_HEARTBEAT_TIMEOUT_FACTOR = "amqj.heartbeat.timeoutFactor";
+
+    /**
+     * The factor applied to {@link #QPID_HEARTBEAT_INTERVAL} that determines the maximum
+     * length of time that may elapse before the peer is deemed to have failed.
+     *
+     * @see #QPID_HEARTBEAT_TIMEOUT_FACTOR_DEFAULT
+     */
+    public static final String QPID_HEARTBEAT_TIMEOUT_FACTOR = "qpid.heartbeat_timeout_factor";
+
+    /**
+     * Default heartbeat timeout factor.
+     */
+    public static final float QPID_HEARTBEAT_TIMEOUT_FACTOR_DEFAULT = 2.0f;
 
     /**
      * This value will be used to determine the default destination syntax type.
@@ -214,6 +241,8 @@ public class ClientProperties
      * it to the raw TTL (when true). May be necessary for interop with other vendors.
      */
     public static final String SET_EXPIRATION_AS_TTL = "qpid.set_expiration_as_ttl";
+
+
 
     private ClientProperties()
     {

@@ -3176,7 +3176,8 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		  integer
 	        </entry>
 	        <entry>
-		  frequency of heartbeat messages (in seconds)
+		  Frequency of heartbeat messages (in seconds). A value of 0 disables heartbeating. <para>For compatibility
+                  with old client configuration, option <varname>idle_timeout</varname> (in milliseconds) is also supported.</para>
 	        </entry>
 	      </row>
 	      <row>
@@ -3599,10 +3600,9 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 	      <row>
 		<entry>qpid.heartbeat</entry>
 		<entry>int</entry>
-		<entry>120 (secs)</entry>
-		<entry>The heartbeat interval in seconds. Two consective misssed heartbeats will result in the connection timing out.<para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para></entry>
+		<entry><para>When using the 0-10 protocol, the default is 120 (secs)</para><para>When using protocols 0-8...0-91, the default is the broker-supplied value.</para></entry>
+		<entry>Frequency of heartbeat messages (in seconds). A value of 0 disables heartbeating. <para>Two consective misssed heartbeats will result in the connection timing out.</para><para>This can also be set per connection using the <link linkend="section-jms-connection-url">Connection URL</link> options.</para><para>For compatibility with old client configuration, the synonym <varname>amqj.heartbeat.delay</varname> is supported.</para></entry>
 	      </row>
-
 	      <row>
 		<entry>ignore_setclientID</entry>
 		<entry>boolean</entry>

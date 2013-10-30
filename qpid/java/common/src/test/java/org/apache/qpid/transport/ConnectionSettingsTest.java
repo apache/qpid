@@ -128,9 +128,46 @@ public class ConnectionSettingsTest extends QpidTestCase
     }
 
     @SuppressWarnings("deprecation")
-    public void testtestReceiveBufferSizeOverriddenLegacyOverridden()
+    public void testReceiveBufferSizeOverriddenLegacyOverridden()
     {
         systemPropertyOverrideForSocketBufferSize(ClientProperties.LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME, 1024, true);
+    }
+
+    public void testHeartbeatingDefaults()
+    {
+        assertNull(_conConnectionSettings.getHeartbeatInterval08());
+        assertEquals(ClientProperties.QPID_HEARTBEAT_INTERVAL_010_DEFAULT,_conConnectionSettings.getHeartbeatInterval010());
+        assertEquals(2.0, _conConnectionSettings.getHeartbeatTimeoutFactor(), 0.1);
+    }
+
+    public void testHeartbeatingOverridden()
+    {
+        resetSystemProperty(ClientProperties.QPID_HEARTBEAT_INTERVAL, "60");
+        resetSystemProperty(ClientProperties.QPID_HEARTBEAT_TIMEOUT_FACTOR, "2.5");
+
+        assertEquals(Integer.valueOf(60), _conConnectionSettings.getHeartbeatInterval08());
+        assertEquals(60, _conConnectionSettings.getHeartbeatInterval010());
+        assertEquals(2.5, _conConnectionSettings.getHeartbeatTimeoutFactor(), 0.1);
+    }
+
+    @SuppressWarnings("deprecation")
+	public void testHeartbeatingOverriddenUsingAmqjLegacyOption()
+    {
+        resetSystemProperty(ClientProperties.AMQJ_HEARTBEAT_DELAY, "30");
+        resetSystemProperty(ClientProperties.AMQJ_HEARTBEAT_TIMEOUT_FACTOR, "1.5");
+
+        assertEquals(Integer.valueOf(30), _conConnectionSettings.getHeartbeatInterval08());
+        assertEquals(30, _conConnectionSettings.getHeartbeatInterval010());
+        assertEquals(1.5, _conConnectionSettings.getHeartbeatTimeoutFactor(), 0.1);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void testHeartbeatingOverriddenUsingOlderLegacyOption()
+    {
+        resetSystemProperty(ClientProperties.IDLE_TIMEOUT_PROP_NAME, "30000");
+
+        assertEquals(Integer.valueOf(30), _conConnectionSettings.getHeartbeatInterval08());
+        assertEquals(30, _conConnectionSettings.getHeartbeatInterval010());
     }
 
     private void systemPropertyOverrideForTcpDelay(String propertyName, boolean value)

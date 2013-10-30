@@ -145,6 +145,25 @@ public class QpidPropertyTest extends QpidTestCase
         assertEquals(expectedValue, propertyValue);
     }
 
+    public void testFloatValueReadFromSystemProperty() throws Exception
+    {
+        float expectedValue = 1.5f;
+        setTestSystemProperty(_systemPropertyName, Float.valueOf(expectedValue).toString());
+        assertSystemPropertiesSet(_systemPropertyName);
+
+        float propertyValue = QpidProperty.floatProperty(1.5f, _systemPropertyName).get();
+        assertEquals(expectedValue, propertyValue, 0.1);
+    }
+
+    public void testFloatValueIsDefaultWhenOneSystemPropertyIsNotSet() throws Exception
+    {
+        float expectedValue = 1.5f;
+        assertSystemPropertiesNotSet(_systemPropertyName);
+
+        float propertyValue = QpidProperty.floatProperty(expectedValue, _systemPropertyName).get();
+        assertEquals(expectedValue, propertyValue, 0.1);
+    }
+
     private void assertSystemPropertiesSet(String... systemPropertyNames)
     {
         for (String systemPropertyName : systemPropertyNames)

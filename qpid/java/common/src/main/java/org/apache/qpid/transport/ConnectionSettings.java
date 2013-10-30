@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.configuration.ClientProperties.AMQJ_HEARTBEAT_DELAY;
+import static org.apache.qpid.configuration.ClientProperties.AMQJ_HEARTBEAT_TIMEOUT_FACTOR;
+import static org.apache.qpid.configuration.ClientProperties.IDLE_TIMEOUT_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_HEARTBEAT_INTERVAL;
+import static org.apache.qpid.configuration.ClientProperties.QPID_HEARTBEAT_INTERVAL_010_DEFAULT;
+import static org.apache.qpid.configuration.ClientProperties.QPID_HEARTBEAT_TIMEOUT_FACTOR;
+import static org.apache.qpid.configuration.ClientProperties.QPID_HEARTBEAT_TIMEOUT_FACTOR_DEFAULT;
 import static org.apache.qpid.configuration.ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME;
 import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_KEY_MANAGER_FACTORY_ALGORITHM_PROP_NAME;
 import static org.apache.qpid.configuration.ClientProperties.QPID_SSL_KEY_STORE_CERT_TYPE_PROP_NAME;
@@ -50,6 +57,7 @@ public class ConnectionSettings
 {
     public static final String WILDCARD_ADDRESS = "*";
 
+
     private String protocol = "tcp";
     private String host = "localhost";
     private String vhost;
@@ -59,7 +67,9 @@ public class ConnectionSettings
     private boolean tcpNodelay = QpidProperty.booleanProperty(Boolean.TRUE, QPID_TCP_NODELAY_PROP_NAME, AMQJ_TCP_NODELAY_PROP_NAME).get();
     private int maxChannelCount = 32767;
     private int maxFrameSize = 65535;
-    private int heartbeatInterval;
+    private Integer hearbeatIntervalLegacyMs = QpidProperty.intProperty(null, IDLE_TIMEOUT_PROP_NAME).get();
+    private Integer heartbeatInterval = QpidProperty.intProperty(null, QPID_HEARTBEAT_INTERVAL, AMQJ_HEARTBEAT_DELAY).get();
+    private float heartbeatTimeoutFactor = QpidProperty.floatProperty(QPID_HEARTBEAT_TIMEOUT_FACTOR_DEFAULT, QPID_HEARTBEAT_TIMEOUT_FACTOR, AMQJ_HEARTBEAT_TIMEOUT_FACTOR).get();
     private int connectTimeout = 30000;
     private int readBufferSize = QpidProperty.intProperty(65535, RECEIVE_BUFFER_SIZE_PROP_NAME, LEGACY_RECEIVE_BUFFER_SIZE_PROP_NAME).get();
     private int writeBufferSize = QpidProperty.intProperty(65535, SEND_BUFFER_SIZE_PROP_NAME, LEGACY_SEND_BUFFER_SIZE_PROP_NAME).get();;
@@ -95,14 +105,55 @@ public class ConnectionSettings
         this.tcpNodelay = tcpNodelay;
     }
 
-    public int getHeartbeatInterval()
+    /**
+     * Gets the heartbeat interval (seconds) for 0-8/9/9-1 protocols.
+     * 0 means heartbeating is disabled.
+     * null means use the broker-supplied value.
+     */
+    public Integer getHeartbeatInterval08()
     {
-        return heartbeatInterval;
+        if (heartbeatInterval != null)
+        {
+            return heartbeatInterval;
+        }
+        else if (hearbeatIntervalLegacyMs != null)
+        {
+            return hearbeatIntervalLegacyMs / 1000;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the heartbeat interval (seconds) for the 0-10 protocol.
+     * 0 means heartbeating is disabled.
+     */
+    public int getHeartbeatInterval010()
+    {
+        if (heartbeatInterval != null)
+        {
+            return heartbeatInterval;
+        }
+        else if (hearbeatIntervalLegacyMs != null)
+        {
+            return hearbeatIntervalLegacyMs / 1000;
+        }
+        else
+        {
+            return QPID_HEARTBEAT_INTERVAL_010_DEFAULT;
+        }
     }
 
     public void setHeartbeatInterval(int heartbeatInterval)
     {
         this.heartbeatInterval = heartbeatInterval;
+    }
+
+    public float getHeartbeatTimeoutFactor()
+    {
+        return this.heartbeatTimeoutFactor;
     }
 
     public String getProtocol()
@@ -374,4 +425,5 @@ public class ConnectionSettings
     {
         this.writeBufferSize = writeBufferSize;
     }
+
 }

@@ -781,11 +781,11 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 
       </variablelist>
       <para>
-	In a Connection URL, heartbeat is set using the <command>idle_timeout</command> property, which is an integer corresponding to the heartbeat period in seconds. For instance, the following line from a JNDI properties file sets the heartbeat time out to 3 seconds:
+	In a Connection URL, heartbeat is set using the <command>heartbeat</command> property, which is an integer corresponding to the heartbeat period in seconds. For instance, the following line from a JNDI properties file sets the heartbeat time out to 3 seconds:
       </para>
 
       <screen>
-	connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;,idle_timeout=3
+	connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;&amp;heartbeat=&#39;3&#39;
       </screen>
     </section>
   </section>

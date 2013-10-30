@@ -902,13 +902,13 @@ public class AMQProtocolHandler implements ProtocolEngine
         return _sender;
     }
 
-    /** @param delay delay in seconds (not ms) */
-    void initHeartbeats(int delay)
+    void initHeartbeats(int delay, float timeoutFactor)
     {
         if (delay > 0)
         {
             _network.setMaxWriteIdle(delay);
-            _network.setMaxReadIdle(HeartbeatConfig.CONFIG.getTimeout(delay));
+            int readerIdle = (int)(delay * timeoutFactor);
+            _network.setMaxReadIdle(readerIdle);
         }
     }
 

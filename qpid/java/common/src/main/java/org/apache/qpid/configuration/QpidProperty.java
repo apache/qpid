@@ -102,6 +102,11 @@ public abstract class QpidProperty<T>
         return new QpidStringProperty(accessor,defaultValue, names);
     }
 
+    public static QpidProperty<Float> floatProperty(Float defaultValue, String... names)
+    {
+        return new QpidFloatProperty(defaultValue, names);
+    }
+
     protected Accessor getAccessor()
     {
         return accessor;
@@ -180,6 +185,25 @@ public abstract class QpidProperty<T>
         protected String getByName(String name)
         {
             return getAccessor().getString(name);
+        }
+    }
+
+    static class QpidFloatProperty extends QpidProperty<Float>
+    {
+        QpidFloatProperty(Float defValue, String... names)
+        {
+            super(defValue, names);
+        }
+
+        QpidFloatProperty(Accessor accessor,Float defValue, String... names)
+        {
+            super(accessor,defValue, names);
+        }
+
+        @Override
+        protected Float getByName(String name)
+        {
+            return getAccessor().getFloat(name);
         }
     }
 
