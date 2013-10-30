@@ -204,6 +204,8 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     node.queue = connection.getBroker().getQueues().find(name);
     node.topic = connection.getTopics().get(name);
     bool createOnDemand = is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus));
+    bool isQueueRequested = is_capability_requested(QUEUE, pn_terminus_capabilities(terminus));
+    bool isTopicRequested = is_capability_requested(TOPIC, pn_terminus_capabilities(terminus));
     //Strictly speaking, properties should only be specified when the
     //terminus is dynamic. However we will not enforce that here. If
     //properties are set on the attach request, we will set them on
@@ -212,22 +214,31 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     node.properties.read(pn_terminus_properties(terminus));
 
     if (node.topic) node.exchange = node.topic->getExchange();
-    if (node.exchange && !node.queue && createOnDemand) {
+    if (node.exchange && createOnDemand && isTopicRequested) {
         if (!node.properties.getExchangeType().empty() && node.properties.getExchangeType() != node.exchange->getType()) {
             //emulate 0-10 exchange-declare behaviour
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "Exchange of different type already exists");
         }
     }
-    if (!node.queue && !node.exchange) {
-        if (pn_terminus_is_dynamic(terminus)  || createOnDemand) {
+    bool isCreateRequested = pn_terminus_is_dynamic(terminus)  || createOnDemand;
+    bool isCreateQueueRequested = isCreateRequested && isQueueRequested;
+    bool isCreateTopicRequested = isCreateRequested && isTopicRequested;
+    if ((!node.queue && !node.exchange) || (!node.queue && isCreateQueueRequested) || (!node.exchange && isCreateTopicRequested)) {
+        if (isCreateRequested) {
             //is it a queue or an exchange?
-            if (node.properties.isQueue()) {
-                node.queue = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
-            } else {
+            if (isTopicRequested) {
+                if (node.queue) {
+                    QPID_LOG_CAT(warning, model, "Node name will be ambiguous, creation of exchange named " << name << " requested when queue of the same name already exists");
+                }
                 qpid::framing::FieldTable args;
                 qpid::amqp_0_10::translate(node.properties.getProperties(), args);
                 node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
                                                       args, connection.getUserId(), connection.getId()).first;
+            } else {
+                if (node.exchange) {
+                    QPID_LOG_CAT(warning, model, "Node name will be ambiguous, creation of queue named " << name << " requested when exchange of the same name already exists");
+                }
+                node.queue = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
             }
         } else {
             size_t i = name.find('@');
@@ -248,11 +259,29 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
             }
         }
     } else if (node.queue && node.topic) {
-        QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or topic, assuming topic");
-        node.queue.reset();
+        if (isTopicRequested) {
+            QPID_LOG_CAT(info, protocol, "Ambiguous node name; " << name << " could be queue or topic, topic requested");
+            node.queue.reset();
+        } else if (isQueueRequested) {
+            QPID_LOG_CAT(info, protocol, "Ambiguous node name; " << name << " could be queue or topic, queue requested");
+            node.exchange.reset();
+            node.topic.reset();
+        } else {
+            QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or topic, assuming topic");
+            node.queue.reset();
+        }
     } else if (node.queue && node.exchange) {
-        QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
-        node.exchange.reset();
+        if (isTopicRequested) {
+            QPID_LOG_CAT(info, protocol, "Ambiguous node name; " << name << " could be queue or topic, topic requested");
+            node.queue.reset();
+        } else if (isQueueRequested) {
+            QPID_LOG_CAT(info, protocol, "Ambiguous node name; " << name << " could be queue or topic, queue requested");
+            node.exchange.reset();
+            node.topic.reset();
+        } else {
+            QPID_LOG_CAT(warning, protocol, "Ambiguous node name; " << name << " could be queue or exchange, assuming queue");
+            node.exchange.reset();
+        }
     }
 
     if (node.properties.isExclusive() && node.queue && node.queue->setExclusiveOwner(this)) {
