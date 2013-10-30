@@ -1287,11 +1287,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
     }
 
-    public void init()
-    {
-        // Do nothing
-    }
-
     public void setSender(Sender<ByteBuffer> sender)
     {
         // Do nothing

@@ -34,8 +34,9 @@ public interface BrokerDetails
     public static final String OPTIONS_RETRY = "retries";
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
     public static final String OPTIONS_CONNECT_DELAY = "connectdelay";
-    public static final String OPTIONS_IDLE_TIMEOUT = "idle_timeout"; // deprecated
     public static final String OPTIONS_HEARTBEAT = "heartbeat";
+    @Deprecated
+    public static final String OPTIONS_IDLE_TIMEOUT = "idle_timeout";
     public static final String OPTIONS_SASL_MECHS = "sasl_mechs";
     public static final String OPTIONS_SASL_ENCRYPTION = "sasl_encryption";
     public static final String OPTIONS_SSL = "ssl";

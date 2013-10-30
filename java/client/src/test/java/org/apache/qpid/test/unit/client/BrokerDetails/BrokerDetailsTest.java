@@ -164,4 +164,30 @@ public class BrokerDetailsTest extends TestCase
 
         assertFalse("value should be false", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_SSL)));
     }
+
+    public void testHeartbeatDefaultsToNull() throws Exception
+    {
+        String brokerURL = "tcp://localhost:5672";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+        assertNull("unexpected default value for " + BrokerDetails.OPTIONS_HEARTBEAT, broker.getProperty(BrokerDetails.OPTIONS_HEARTBEAT));
+    }
+
+    public void testOverriddingHeartbeat() throws Exception
+    {
+        String brokerURL = "tcp://localhost:5672?heartbeat='60'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+        assertEquals(60, Integer.parseInt(broker.getProperty(BrokerDetails.OPTIONS_HEARTBEAT)));
+
+        assertEquals(Integer.valueOf(60), broker.buildConnectionSettings().getHeartbeatInterval08());
+    }
+
+    @SuppressWarnings("deprecation")
+	public void testLegacyHeartbeat() throws Exception
+    {
+        String brokerURL = "tcp://localhost:5672?idle_timeout='60000'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+        assertEquals(60000, Integer.parseInt(broker.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT)));
+
+        assertEquals(Integer.valueOf(60), broker.buildConnectionSettings().getHeartbeatInterval08());
+    }
 }

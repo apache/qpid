@@ -26,9 +26,20 @@ public class ConnectionTuneParameters
 
     private int _channelMax;
 
-    private int _heartbeat;
+    /** Heart-beating interval in seconds, null if not set, use 0 to disable */
+    private Integer _heartbeat;
 
-    private long _txnLimit;
+    private float _heartbeatTimeoutFactor;
+
+    public float getHeartbeatTimeoutFactor()
+    {
+        return _heartbeatTimeoutFactor;
+    }
+
+    public void setHeartbeatTimeoutFactor(float heartbeatTimeoutFactor)
+    {
+        _heartbeatTimeoutFactor = heartbeatTimeoutFactor;
+    }
 
     public long getFrameMax()
     {
@@ -50,23 +61,13 @@ public class ConnectionTuneParameters
         _channelMax = channelMax;
     }    
 
-    public int getHeartbeat()
+    public Integer getHeartbeat()
     {
         return _heartbeat;
     }
 
-    public void setHeartbeat(int hearbeat)
+    public void setHeartbeat(Integer hearbeat)
     {
         _heartbeat = hearbeat;
-    }
-
-    public long getTxnLimit()
-    {
-        return _txnLimit;
-    }
-
-    public void setTxnLimit(long txnLimit)
-    {
-        _txnLimit = txnLimit;
     }
 }

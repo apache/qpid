@@ -124,10 +124,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()),
                                                       _conn.getProtocolHandler());
+
         _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
 
         StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
-        _conn.getProtocolHandler().getProtocolSession().init();
+        _conn.getProtocolHandler().getProtocolSession().init(settings);
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 
