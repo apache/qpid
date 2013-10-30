@@ -200,7 +200,7 @@ void PrimaryTxObserver::end(sys::Mutex::ScopedLock&) {
     // Don't destroy the tx-queue until the transaction is complete and there
     // are no connected subscriptions.
     if (txBuffer && complete && unfinished.empty()) {
-        txBuffer.reset();       // Break pointer cycle.
+        txBuffer = 0;       // Break pointer cycle.
         try {
             haBroker.getBroker().deleteQueue(txQueue->getName(), haBroker.getUserId(), string());
         } catch (const std::exception& e) {
