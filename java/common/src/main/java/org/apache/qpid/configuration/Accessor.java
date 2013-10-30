@@ -20,13 +20,7 @@
  */
 package org.apache.qpid.configuration;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 public interface Accessor
 {
@@ -34,6 +28,7 @@ public interface Accessor
     public Integer getInt(String name);
     public Long getLong(String name);
     public String getString(String name);
+    public Float getFloat(String name);
     
     static class SystemPropertyAccessor implements Accessor
     {
@@ -55,6 +50,11 @@ public interface Accessor
         public String getString(String name)
         {
             return System.getProperty(name);
+        }
+
+        public Float getFloat(String name)
+        {
+            return System.getProperty(name) == null ? null : Float.parseFloat(System.getProperty(name));
         }
     }
     
@@ -147,132 +147,24 @@ public interface Accessor
                 return null;
             }
         }
-    }  
-    
-    static class PropertyFileAccessor extends MapAccessor
-    {
-        public PropertyFileAccessor(String fileName) throws FileNotFoundException, IOException
-        {
-            super(null);
-            Properties props = new Properties();
-            FileInputStream inStream = new FileInputStream(fileName);
-            try
-            {
-                props.load(inStream);
-            }
-            finally
-            {
-                inStream.close();
-            }
-            setSource(props);
-        }
-
-
-    }
-    
-    static class CombinedAccessor implements Accessor
-    {
-        private List<Accessor> accessors;
         
-        public CombinedAccessor(Accessor...accessors)
+        public Float getFloat(String name)
         {
-            this.accessors = Arrays.asList(accessors);
-        }
-        
-        public Boolean getBoolean(String name)
-        {
-            for (Accessor accessor: accessors)
+            if (source != null && source.containsKey(name))
             {
-                if (accessor.getBoolean(name) != null)
+                if (source.get(name) instanceof Float)
                 {
-                    return accessor.getBoolean(name);
+                    return (Float)source.get(name);
+                }
+                else
+                {
+                    return Float.parseFloat((String)source.get(name));
                 }
             }
-            return null;
-        }
-        
-        public Integer getInt(String name)
-        {
-            for (Accessor accessor: accessors)
+            else
             {
-                if (accessor.getBoolean(name) != null)
-                {
-                    return accessor.getInt(name);
-                }
+                return null;
             }
-            return null;
-        }
-        
-        public Long getLong(String name)
-        {
-            for (Accessor accessor: accessors)
-            {
-                if (accessor.getBoolean(name) != null)
-                {
-                    return accessor.getLong(name);
-                }
-            }
-            return null;
-        }
-        
-        public String getString(String name)
-        {
-            for (Accessor accessor: accessors)
-            {
-                if (accessor.getBoolean(name) != null)
-                {
-                    return accessor.getString(name);
-                }
-            }
-            return null;
-        }
-    }
-    
-    static class ValidationAccessor implements Accessor
-    {   
-        private List<Validator> validators;
-        private Accessor delegate;
-        
-        public ValidationAccessor(Accessor delegate,Validator...validators)
-        {
-            this.validators = Arrays.asList(validators);
-            this.delegate = delegate;
-        }
-
-        public Boolean getBoolean(String name)
-        {
-            // there is nothing to validate in a boolean
-            return delegate.getBoolean(name);
-        }
-        
-        public Integer getInt(String name)
-        {
-            Integer v = delegate.getInt(name);
-            for (Validator validator: validators)
-            {
-                validator.validate(v);
-            }
-            return v;
-        }
-        
-        public Long getLong(String name)
-        {
-            Long v = delegate.getLong(name);
-            for (Validator validator: validators)
-            {
-                validator.validate(v);
-            }
-            return v;
-        }
-        
-        public String getString(String name)
-        {
-            String v = delegate.getString(name);
-            for (Validator validator: validators)
-            {
-                validator.validate(v);
-            }
-            return v;
         }
     }
 }

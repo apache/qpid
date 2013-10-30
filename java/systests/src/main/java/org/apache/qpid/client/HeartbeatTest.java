@@ -18,49 +18,86 @@
  */
 package org.apache.qpid.client;
 
+import static org.apache.qpid.configuration.ClientProperties.AMQJ_HEARTBEAT_DELAY;
+import static org.apache.qpid.configuration.ClientProperties.IDLE_TIMEOUT_PROP_NAME;
+import static org.apache.qpid.configuration.ClientProperties.QPID_HEARTBEAT_INTERVAL;
+
 import javax.jms.Destination;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class HeartbeatTest extends QpidBrokerTestCase
 {
-    public void testHeartbeats() throws Exception
+    private static final String CONNECTION_URL_WITH_HEARTBEAT = "amqp://guest:guest@clientid/?brokerlist='localhost:%d?heartbeat='%d''";
+    private TestListener _listener = new TestListener();
+
+    @Override
+    public void setUp() throws Exception
     {
-        setTestSystemProperty("amqj.heartbeat.delay", "1");
-        AMQConnection conn = (AMQConnection) getConnection();
-        TestListener listener = new TestListener();
-        conn.setHeartbeatListener(listener);
+        if (getName().equals("testHeartbeatsEnabledBrokerSide"))
+        {
+            getBrokerConfiguration().setBrokerAttribute(Broker.CONNECTION_HEART_BEAT_DELAY, "1");
+        }
+        super.setUp();
+    }
+
+    public void testHeartbeatsEnabledUsingUrl() throws Exception
+    {
+        final String url = String.format(CONNECTION_URL_WITH_HEARTBEAT, DEFAULT_PORT, 1);
+        AMQConnection conn = (AMQConnection) getConnection(new AMQConnectionURL(url));
+        conn.setHeartbeatListener(_listener);
         conn.start();
 
         Thread.sleep(2500);
 
-        assertTrue("Too few heartbeats received: "+listener._heartbeatsReceived+" (expected at least 2)", listener._heartbeatsReceived>=2);
-        assertTrue("Too few heartbeats sent "+listener._heartbeatsSent+" (expected at least 2)", listener._heartbeatsSent>=2);
+        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
+        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
 
         conn.close();
     }
 
-    public void testNoHeartbeats() throws Exception
+    public void testHeartbeatsEnabledUsingSystemProperty() throws Exception
     {
-         setTestSystemProperty("amqj.heartbeat.delay", "0");
+        setTestSystemProperty(QPID_HEARTBEAT_INTERVAL, "1");
+        AMQConnection conn = (AMQConnection) getConnection();
+        conn.setHeartbeatListener(_listener);
+        conn.start();
+
+        Thread.sleep(2500);
+
+        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
+        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+
+        conn.close();
+    }
+
+    public void testHeartbeatsDisabledUsingSystemProperty() throws Exception
+    {
+         setTestSystemProperty(QPID_HEARTBEAT_INTERVAL, "0");
          AMQConnection conn = (AMQConnection) getConnection();
-         TestListener listener = new TestListener();
-         conn.setHeartbeatListener(listener);
+         conn.setHeartbeatListener(_listener);
          conn.start();
 
          Thread.sleep(2500);
 
-         assertEquals("Heartbeats unexpectedly received", 0, listener._heartbeatsReceived);
-         assertEquals("Heartbeats unexpectedly sent ", 0, listener._heartbeatsSent);
+         assertEquals("Heartbeats unexpectedly received", 0, _listener._heartbeatsReceived);
+         assertEquals("Heartbeats unexpectedly sent ", 0, _listener._heartbeatsSent);
 
          conn.close();
     }
 
-    public void testReadOnlyConnectionHeartbeats() throws Exception
+    /**
+     * This test carefully arranges message flow so that bytes flow only from producer to broker
+     * on the producer side and broker to consumer on the consumer side, deliberately leaving the
+     * reverse path quiet so heartbeats will flow.
+     */
+    public void testUnidirectionalHeartbeating() throws Exception
     {
-        setTestSystemProperty("amqj.heartbeat.delay","1");
+        setTestSystemProperty(QPID_HEARTBEAT_INTERVAL,"1");
         AMQConnection receiveConn = (AMQConnection) getConnection();
         AMQConnection sendConn = (AMQConnection) getConnection();
         Destination destination = getTestQueue();
@@ -83,9 +120,8 @@ public class HeartbeatTest extends QpidBrokerTestCase
             producer.send(senderSession.createTextMessage("Msg " + i));
             Thread.sleep(500);
             assertNotNull("Expected to received message", consumer.receive(500));
+            // Consumer does not ack the message in  order to generate no bytes from consumer back to Broker
         }
-
-
 
         assertTrue("Too few heartbeats sent "+receiveListener._heartbeatsSent+" (expected at least 2)", receiveListener._heartbeatsSent>=2);
         assertEquals("Unexpected sent at the sender: ",0,sendListener._heartbeatsSent);
@@ -95,6 +131,54 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
         receiveConn.close();
         sendConn.close();
+    }
+
+    public void testHeartbeatsEnabledBrokerSide() throws Exception
+    {
+
+        AMQConnection conn = (AMQConnection) getConnection();
+        conn.setHeartbeatListener(_listener);
+        conn.start();
+
+        Thread.sleep(2500);
+
+        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
+        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+
+        conn.close();
+    }
+
+
+    @SuppressWarnings("deprecation")
+    public void testHeartbeatsEnabledUsingAmqjLegacySystemProperty() throws Exception
+    {
+        setTestSystemProperty(AMQJ_HEARTBEAT_DELAY, "1");
+        AMQConnection conn = (AMQConnection) getConnection();
+        conn.setHeartbeatListener(_listener);
+        conn.start();
+
+        Thread.sleep(2500);
+
+        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
+        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+
+        conn.close();
+    }
+
+    @SuppressWarnings("deprecation")
+    public void testHeartbeatsEnabledUsingOlderLegacySystemProperty() throws Exception
+    {
+        setTestSystemProperty(IDLE_TIMEOUT_PROP_NAME, "1000");
+        AMQConnection conn = (AMQConnection) getConnection();
+        conn.setHeartbeatListener(_listener);
+        conn.start();
+
+        Thread.sleep(2500);
+
+        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
+        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+
+        conn.close();
     }
 
     private class TestListener implements HeartbeatListener

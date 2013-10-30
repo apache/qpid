@@ -29,7 +29,7 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.transport.ClientConnectionDelegate;
 import org.apache.qpid.common.ServerPropertyNames;
-import org.apache.qpid.configuration.ClientProperties;
+
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
@@ -448,8 +448,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             // Ignore
         }
 
-        conSettings.setHeartbeatInterval(getHeartbeatInterval(brokerDetail));
-
         //Check connection-level ssl override setting
         String connectionSslOption = _conn.getConnectionURL().getOption(ConnectionURL.OPTIONS_SSL);
         if(connectionSslOption != null)
@@ -470,37 +468,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
         return conSettings;
     }
-
-    // The idle_timeout prop is in milisecs while
-    // the new heartbeat prop is in secs
-    private int getHeartbeatInterval(BrokerDetails brokerDetail)
-    {
-        int heartbeat = 0;
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT) != null)
-        {
-            _logger.warn("Broker property idle_timeout=<mili_secs> is deprecated, please use heartbeat=<secs>");
-            heartbeat = Integer.parseInt(brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT))/1000;
-        }
-        else if (brokerDetail.getProperty(BrokerDetails.OPTIONS_HEARTBEAT) != null)
-        {
-            heartbeat = Integer.parseInt(brokerDetail.getProperty(BrokerDetails.OPTIONS_HEARTBEAT));
-        }
-        else if (Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME) != null)
-        {
-            heartbeat = Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME)/1000;
-            _logger.warn("JVM arg -Didle_timeout=<mili_secs> is deprecated, please use -Dqpid.heartbeat=<secs>");
-        }
-        else if(Integer.getInteger(ClientProperties.HEARTBEAT) != null)
-        {
-            heartbeat = Integer.getInteger(ClientProperties.HEARTBEAT,ClientProperties.HEARTBEAT_DEFAULT);
-        }
-        else
-        {
-            heartbeat = Integer.getInteger("amqj.heartbeat.delay", ClientProperties.HEARTBEAT_DEFAULT);
-        }
-        return heartbeat;
-    }
-
     protected org.apache.qpid.transport.Connection getQpidConnection()
     {
         return _qpidConnection;

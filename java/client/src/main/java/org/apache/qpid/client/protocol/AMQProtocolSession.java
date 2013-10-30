@@ -43,6 +43,7 @@ import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 
@@ -63,17 +64,9 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     protected static final Logger _logger = LoggerFactory.getLogger(AMQProtocolSession.class);
 
-    public static final String PROTOCOL_INITIATION_RECEIVED = "ProtocolInitiatiionReceived";
-
     //Usable channels are numbered 1 to <ChannelMax>
     public static final int MAX_CHANNEL_MAX = 0xFFFF;
     public static final int MIN_USABLE_CHANNEL_NUM = 1;
-
-    protected static final String CONNECTION_TUNE_PARAMETERS = "ConnectionTuneParameters";
-
-    protected static final String AMQ_CONNECTION = "AMQConnection";
-
-    protected static final String SASL_CLIENT = "SASLClient";
 
     private final AMQProtocolHandler _protocolHandler;
 
@@ -120,11 +113,36 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _connection = connection;
     }
 
-    public void init()
+    public void init(ConnectionSettings settings)
     {
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
+        initialiseTuneParameters(settings);
+
         _protocolHandler.writeFrame(new ProtocolInitiation(_connection.getProtocolVersion()));
+    }
+
+    public ConnectionTuneParameters getConnectionTuneParameters()
+    {
+        return _connectionTuneParameters;
+    }
+
+    private void initialiseTuneParameters(ConnectionSettings settings)
+    {
+        _connectionTuneParameters = new ConnectionTuneParameters();
+        _connectionTuneParameters.setHeartbeat(settings.getHeartbeatInterval08());
+        _connectionTuneParameters.setHeartbeatTimeoutFactor(settings.getHeartbeatTimeoutFactor());
+    }
+
+    public void tuneConnection(ConnectionTuneParameters params)
+    {
+        _connectionTuneParameters = params;
+        AMQConnection con = getAMQConnection();
+
+        con.setMaximumChannelCount(params.getChannelMax());
+        con.setMaximumFrameSize(params.getFrameMax());
+
+        _protocolHandler.initHeartbeats(params.getHeartbeat(), params.getHeartbeatTimeoutFactor());
     }
 
     public String getClientID()
@@ -170,24 +188,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _saslClient = client;
     }
 
-    public ConnectionTuneParameters getConnectionTuneParameters()
-    {
-        return _connectionTuneParameters;
-    }
-
-    public void setConnectionTuneParameters(ConnectionTuneParameters params)
-    {
-        _connectionTuneParameters = params;
-        AMQConnection con = getAMQConnection();
-
-        con.setMaximumChannelCount(params.getChannelMax());
-        con.setMaximumFrameSize(params.getFrameMax());
-        _protocolHandler.initHeartbeats((int) params.getHeartbeat());
-    }
-
     /**
-     * Callback invoked from the BasicDeliverMethodHandler when a message has been received. This is invoked on the MINA
-     * dispatcher thread.
+     * Callback invoked from the BasicDeliverMethodHandler when a message has been received.
      *
      * @param message
      *
@@ -409,7 +411,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         if (_logger.isDebugEnabled())
         {
-        	_logger.debug("Setting ProtocolVersion to :" + pv);
+            _logger.debug("Setting ProtocolVersion to :" + pv);
         }
         _protocolVersion = pv;
         _methodRegistry = MethodRegistry.getMethodRegistry(pv);

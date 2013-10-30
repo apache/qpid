@@ -133,15 +133,17 @@ public class ClientDelegate extends ConnectionDelegate
     @Override
     public void connectionTune(Connection conn, ConnectionTune tune)
     {
-        int hb_interval = calculateHeartbeatInterval(_connectionSettings.getHeartbeatInterval(),
-                                                     tune.getHeartbeatMin(),
-                                                     tune.getHeartbeatMax()
-                                                     );
+        int heartbeatInterval = _connectionSettings.getHeartbeatInterval010();
+        float heartbeatTimeoutFactor = _connectionSettings.getHeartbeatTimeoutFactor();
+        int actualHeartbeatInterval = calculateHeartbeatInterval(heartbeatInterval,
+                                                           tune.getHeartbeatMin(),
+                                                           tune.getHeartbeatMax());
         conn.connectionTuneOk(tune.getChannelMax(),
                               tune.getMaxFrameSize(),
-                              hb_interval);
-        // The idle timeout is twice the heartbeat amount (in milisecs)
-        conn.setIdleTimeout(hb_interval*1000*2);
+                              actualHeartbeatInterval);
+
+        int idleTimeout = (int)(actualHeartbeatInterval * 1000 * heartbeatTimeoutFactor);
+        conn.setIdleTimeout(idleTimeout);
 
         int channelMax = tune.getChannelMax();
         //0 means no implied limit, except available server resources
@@ -184,7 +186,7 @@ public class ClientDelegate extends ConnectionDelegate
         int i = heartbeat;
         if (i == 0)
         {
-            log.info("Idle timeout is 0 sec. Heartbeats are disabled.");
+            log.info("Heartbeat interval is 0 sec. Heartbeats are disabled.");
             return 0; // heartbeats are disabled.
         }
         else if (i >= min && i <= max)
@@ -193,7 +195,7 @@ public class ClientDelegate extends ConnectionDelegate
         }
         else
         {
-            log.info("The broker does not support the configured connection idle timeout of %s sec," +
+            log.info("The broker does not support the configured connection heartbeat interval of %s sec," +
                      " using the brokers max supported value of %s sec instead.", i,max);
             return max;
         }

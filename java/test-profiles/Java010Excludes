@@ -68,7 +68,8 @@ org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#testFlowContro
 org.apache.qpid.client.AsynchMessageListenerTest#testImmediatePrefetchWithMessageListener
 
 // QPID-2796 : Java 0-10 client only sends heartbeats in response to heartbeats from the server, not timeout based
-org.apache.qpid.client.HeartbeatTest#testReadOnlyConnectionHeartbeats
+org.apache.qpid.client.HeartbeatTest#testUnidirectionalHeartbeating
+org.apache.qpid.client.HeartbeatTest#testHeartbeatsEnabledBrokerSide
 
 // Java 0-10 client does not support re-binding the queue to the same exchange
 org.apache.qpid.server.queue.QueueBindTest#testQueueCanBeReboundOnTopicExchange

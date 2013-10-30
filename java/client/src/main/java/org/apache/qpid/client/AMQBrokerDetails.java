@@ -290,6 +290,19 @@ public class AMQBrokerDetails implements BrokerDetails
     	}
     }    
 
+    private int getIntegerProperty(String key)
+    {
+        String stringValue = getProperty(key);
+        try
+        {
+            return Integer.parseInt(stringValue);
+        }
+        catch (NumberFormatException e)
+        {
+            throw new IllegalArgumentException("Cannot parse key " + key + " with value '" + stringValue + "' as integer.", e);
+        }
+    }
+
     public String toString()
     {
         StringBuffer sb = new StringBuffer();
@@ -464,6 +477,16 @@ public class AMQBrokerDetails implements BrokerDetails
 
         conSettings.setConnectTimeout(lookupConnectTimeout());
 
+        if (getProperty(BrokerDetails.OPTIONS_HEARTBEAT) != null)
+        {
+            conSettings.setHeartbeatInterval(getIntegerProperty(BrokerDetails.OPTIONS_HEARTBEAT));
+        }
+        else if (getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT) != null)
+        {
+            conSettings.setHeartbeatInterval(getIntegerProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT) / 1000);
+        }
+
         return conSettings;
     }
+
 }
