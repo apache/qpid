@@ -1323,7 +1323,7 @@ bool Queue::setExclusiveOwner(const OwnershipToken* const o)
         autoDeleteTask->cancel();
     }
     Mutex::ScopedLock locker(messageLock);
-    if (owner) {
+    if (owner  || users.hasConsumers()) {
         return false;
     } else {
         owner = o;
