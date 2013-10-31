@@ -1570,7 +1570,8 @@ class ACLTests(TestBase010):
             session = self.get_session('bob','bob')
 
         try:
-            session.message_subscribe(queue='q3', destination='myq1')
+            session.message_subscribe(queue='q3', destination='myq3')
+            session.message_cancel(destination='myq3')
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow subscription for q3");
