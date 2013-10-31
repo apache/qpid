@@ -92,6 +92,7 @@ class QueueTests(TestBase010):
 
         #declare an exclusive queue:
         s1.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
+        s1.exchange_bind(exchange="amq.fanout", queue="exclusive-queue")
         try:
             #other connection should not be allowed to declare this:
             s2.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
@@ -112,6 +113,22 @@ class QueueTests(TestBase010):
             #other connection should not be allowed to declare this:
             s4.queue_delete(queue="exclusive-queue")
             self.fail("Expected queue_delete on an exclusive queue to raise a channel exception")
+        except SessionException, e:
+            self.assertEquals(405, e.args[0].error_code)
+
+        s5 = self.conn.session("binder")
+        try:
+            #other connection should not be allowed to declare this:
+            s5.exchange_bind(exchange="amq.direct", queue="exclusive-queue", binding_key="abc")
+            self.fail("Expected exchange_bind on an exclusive queue to raise an exception")
+        except SessionException, e:
+            self.assertEquals(405, e.args[0].error_code)
+
+        s6 = self.conn.session("unbinder")
+        try:
+            #other connection should not be allowed to declare this:
+            s6.exchange_unbind(exchange="amq.fanout", queue="exclusive-queue")
+            self.fail("Expected exchange_unbind on an exclusive queue to raise an exception")
         except SessionException, e:
             self.assertEquals(405, e.args[0].error_code)
 
