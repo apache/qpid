@@ -386,7 +386,6 @@ class DtxTests(TestBase010):
         """
         guard = self.keepQueuesAlive(["tx-queue"])
         session = self.conn.session("alternate", 1)
-        session.queue_declare(queue="tx-queue", exclusive=True, auto_delete=True)
 
         #publish a message under a transaction
         session.dtx_select()

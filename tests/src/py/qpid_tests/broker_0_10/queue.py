@@ -99,7 +99,7 @@ class QueueTests(TestBase010):
             self.fail("Expected second exclusive queue_declare to raise a channel exception")
         except SessionException, e:
             self.assertEquals(405, e.args[0].error_code)
-            
+
         s3 = self.conn.session("subscriber")
         try:
             #other connection should not be allowed to declare this:
@@ -129,6 +129,25 @@ class QueueTests(TestBase010):
             #other connection should not be allowed to declare this:
             s6.exchange_unbind(exchange="amq.fanout", queue="exclusive-queue")
             self.fail("Expected exchange_unbind on an exclusive queue to raise an exception")
+        except SessionException, e:
+            self.assertEquals(405, e.args[0].error_code)
+
+    def test_declare_exclusive_alreadyinuse(self):
+        """
+        Test that exclusivity is real if granted
+        """
+        # TestBase.setUp has already opened session(1)
+        s1 = self.session
+        # Here we open a second separate connection:
+        s2 = self.conn.session("other")
+
+        #declare an exclusive queue:
+        s1.queue_declare(queue="a-queue", auto_delete=True)
+        s1.message_subscribe(queue="a-queue")
+        try:
+            #other connection should not be allowed to declare this:
+            s2.queue_declare(queue="a-queue", exclusive=True, auto_delete=True)
+            self.fail("Expected request for exclusivity to fail")
         except SessionException, e:
             self.assertEquals(405, e.args[0].error_code)
 
