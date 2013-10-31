@@ -795,7 +795,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
         framing::FieldTable arguments;
         qpid::amqp_0_10::translate(extensions, arguments);
 
-        bind(binding.queue, binding.exchange, binding.key, arguments, userId, connectionId);
+        bind(binding.queue, binding.exchange, binding.key, arguments, 0, userId, connectionId);
 
     } else if (type == TYPE_LINK) {
 
@@ -935,7 +935,7 @@ void Broker::deleteObject(const std::string& type, const std::string& name,
         deleteExchange(name, userId, connectionId);
     } else if (type == TYPE_BINDING) {
         BindingIdentifier binding(name);
-        unbind(binding.queue, binding.exchange, binding.key, userId, connectionId);
+        unbind(binding.queue, binding.exchange, binding.key, 0, userId, connectionId);
     } else if (type == TYPE_LINK) {
         boost::shared_ptr<Link> link = links.getLink(name);
         if (link) {
@@ -1432,6 +1432,7 @@ void Broker::bind(const std::string& queueName,
                   const std::string& exchangeName,
                   const std::string& key,
                   const qpid::framing::FieldTable& arguments,
+                  const OwnershipToken* owner,
                   const std::string& userId,
                   const std::string& connectionId)
 {
@@ -1453,6 +1454,9 @@ void Broker::bind(const std::string& queueName,
         throw framing::NotFoundException(QPID_MSG("Bind failed. No such queue: " << queueName));
     } else if (!exchange) {
         throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
+    } else if (queue->hasExclusiveOwner() && !queue->isExclusiveOwner(owner)) {
+        throw framing::ResourceLockedException(QPID_MSG("Cannot bind queue "
+                                               << queue->getName() << "; it is exclusive to another session"));
     } else {
         if (queue->bind(exchange, key, arguments)) {
             getBrokerObservers().bind(exchange, queue, key, arguments);
@@ -1473,6 +1477,7 @@ void Broker::bind(const std::string& queueName,
 void Broker::unbind(const std::string& queueName,
                     const std::string& exchangeName,
                     const std::string& key,
+                    const OwnershipToken* owner,
                     const std::string& userId,
                     const std::string& connectionId)
 {
@@ -1492,6 +1497,9 @@ void Broker::unbind(const std::string& queueName,
         throw framing::NotFoundException(QPID_MSG("Unbind failed. No such queue: " << queueName));
     } else if (!exchange) {
         throw framing::NotFoundException(QPID_MSG("Unbind failed. No such exchange: " << exchangeName));
+    } else if (queue->hasExclusiveOwner() && !queue->isExclusiveOwner(owner)) {
+        throw framing::ResourceLockedException(QPID_MSG("Cannot unbind queue "
+                                               << queue->getName() << "; it is exclusive to another session"));
     } else {
         if (exchange->unbind(queue, key, 0)) {
             if (exchange->isDurable() && queue->isDurable()) {

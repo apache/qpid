@@ -342,6 +342,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         const std::string& exchange,
         const std::string& key,
         const qpid::framing::FieldTable& arguments,
+        const OwnershipToken* owner,
         const std::string& userId,
         const std::string& connectionId);
 
@@ -349,6 +350,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         const std::string& queue,
         const std::string& exchange,
         const std::string& key,
+        const OwnershipToken* owner,
         const std::string& userId,
         const std::string& connectionId);
 

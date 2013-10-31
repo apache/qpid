@@ -155,7 +155,7 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
                                                const string& exchangeName, const string& routingKey,
                                                const FieldTable& arguments)
 {
-    getBroker().bind(queueName, exchangeName, routingKey, arguments,
+    getBroker().bind(queueName, exchangeName, routingKey, arguments, &session,
                      getConnection().getUserId(), getConnection().getMgmtId());
     state.addBinding(queueName, exchangeName, routingKey, arguments);
 }
@@ -165,7 +165,7 @@ void SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
                                                  const string& routingKey)
 {
     state.removeBinding(queueName, exchangeName, routingKey);
-    getBroker().unbind(queueName, exchangeName, routingKey,
+    getBroker().unbind(queueName, exchangeName, routingKey, &session,
                        getConnection().getUserId(), getConnection().getMgmtId());
 }
 

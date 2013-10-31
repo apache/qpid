@@ -883,10 +883,10 @@ void SemanticState::unbindSessionBindings()
                 fedArguments.setString(qpidFedOp, fedOpUnbind);
                 fedArguments.setString(qpidFedOrigin, fedOrigin);
                 session.getBroker().bind(i->get<0>(), i->get<1>(), i->get<2>(), fedArguments,
-                                           userID, connectionId);
+                                         &session, userID, connectionId);
             } else {
                 session.getBroker().unbind(i->get<0>(), i->get<1>(), i->get<2>(),
-                                           userID, connectionId);
+                                           &session, userID, connectionId);
             }
         }
         catch (...) {
