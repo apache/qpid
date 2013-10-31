@@ -284,10 +284,13 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
         }
     }
 
-    if (node.properties.isExclusive() && node.queue && node.queue->setExclusiveOwner(this)) {
-        exclusiveQueues.insert(node.queue);
+    if (node.properties.isExclusive() && node.queue) {
+        if (node.queue->setExclusiveOwner(this)) {
+            exclusiveQueues.insert(node.queue);
+        } else {
+            throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, std::string("Cannot grant exclusive access to ") + node.queue->getName());
+        }
     }
-
     return node;
 }
 
@@ -417,6 +420,9 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
     if (node.queue) {
         authorise.outgoing(node.queue);
         SubscriptionType type = pn_terminus_get_distribution_mode(source) == PN_DIST_MODE_COPY ? BROWSER : CONSUMER;
+        if (type == CONSUMER && node.queue->hasExclusiveOwner() && !node.queue->isExclusiveOwner(this)) {
+            throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, std::string("Cannot consume from exclusive queue ") + node.queue->getName());
+        }
         boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, type, false, node.properties.trackControllingLink()));
         q->init();
         filter.apply(q);
