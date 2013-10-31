@@ -123,8 +123,6 @@ target_link_libraries (jtt__ut
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        ${clock_gettime_LIB} legacystore_shared)
 
-add_test(NAME journal_jtt_ut WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt COMMAND ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
-
 endif (BUILD_TESTING_UNITTESTS)
 
 #
