@@ -142,7 +142,9 @@ bool DataBuilder::nest(const qpid::types::Variant& n)
 {
     switch (nested.top()->getType()) {
       case qpid::types::VAR_MAP:
-        QPID_LOG(error, QPID_MSG("Expecting map key; got " << n));
+        if (nested.size() > 1 || nested.top()->asMap().size() > 0) {
+            QPID_LOG(error, QPID_MSG("Expecting map key; got " << n << " " << *(nested.top())));
+        }
         break;
       case qpid::types::VAR_LIST:
         nested.top()->asList().push_back(n);
