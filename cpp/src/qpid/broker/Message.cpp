@@ -121,14 +121,9 @@ void Message::clearTrace()
     annotationsChanged();
 }
 
-void Message::setTimestamp()
-{
-    timestamp = ::time(0);   // AMQP-0.10: posix time_t - secs since Epoch
-}
-
 uint64_t Message::getTimestamp() const
 {
-    return timestamp;
+    return encoding ? encoding->getTimestamp() : 0;
 }
 
 uint64_t Message::getTtl() const

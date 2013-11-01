@@ -130,6 +130,19 @@ std::string MessageTransfer::getExchangeName() const
     return getFrames().as<framing::MessageTransferBody>()->getDestination();
 }
 
+void MessageTransfer::setTimestamp()
+{
+    DeliveryProperties* props = getFrames().getHeaders()->get<DeliveryProperties>(true);
+    time_t now = ::time(0);
+    props->setTimestamp(now);
+}
+
+uint64_t MessageTransfer::getTimestamp() const
+{
+    const DeliveryProperties* props = getProperties<DeliveryProperties>();
+    return props ? props->getTimestamp() : 0;
+}
+
 bool MessageTransfer::requiresAccept() const
 {
     const framing::MessageTransferBody* b = getFrames().as<framing::MessageTransferBody>();
@@ -174,11 +187,11 @@ void MessageTransfer::sendContent(framing::FrameHandler& out, uint16_t maxFrameS
 class SendHeader
 {
   public:
-    SendHeader(FrameHandler& h, bool r, uint64_t t, uint64_t ts, const qpid::types::Variant::Map& a) : handler(h), redelivered(r), ttl(t), timestamp(ts), annotations(a) {}
+    SendHeader(FrameHandler& h, bool r, uint64_t t, const qpid::types::Variant::Map& a) : handler(h), redelivered(r), ttl(t), annotations(a) {}
     void operator()(const AMQFrame& f)
     {
         AMQFrame copy = f;
-        if (redelivered || ttl || timestamp || annotations.size()) {
+        if (redelivered || ttl || annotations.size()) {
             copy.cloneBody();
             if (annotations.size()) {
                 MessageProperties* props =
@@ -188,12 +201,11 @@ class SendHeader
                     props->getApplicationHeaders().set(i->first, qpid::amqp_0_10::translate(i->second));
                 }
             }
-            if (redelivered || ttl || timestamp) {
+            if (redelivered || ttl) {
                 DeliveryProperties* dp =
                     copy.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true);
                 if (ttl) dp->setTtl(ttl);
                 if (redelivered) dp->setRedelivered(redelivered);
-                if (timestamp) dp->setTimestamp(timestamp);
             }
         }
         handler.handle(copy);
@@ -202,15 +214,14 @@ class SendHeader
     FrameHandler& handler;
     bool redelivered;
     uint64_t ttl;
-    uint64_t timestamp;
     const qpid::types::Variant::Map& annotations;
 };
 
 void MessageTransfer::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/,
-                                 bool redelivered, uint64_t ttl, uint64_t timestamp,
+                                 bool redelivered, uint64_t ttl,
                                  const qpid::types::Variant::Map& annotations) const
 {
-    SendHeader f(out, redelivered, ttl, timestamp, annotations);
+    SendHeader f(out, redelivered, ttl, annotations);
     frames.map_if(f, TypeFilter<HEADER_BODY>());
 }
 bool MessageTransfer::isImmediateDeliveryRequired(const qpid::broker::Message& /*message*/)

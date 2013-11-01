@@ -98,7 +98,7 @@ struct MessageUtils
 
     static void deliver(Message& msg, FrameHandler& h, uint16_t framesize)
     {
-        qpid::broker::amqp_0_10::MessageTransfer::get(msg).sendHeader(h, framesize, false, 0, 0, qpid::types::Variant::Map());
+        qpid::broker::amqp_0_10::MessageTransfer::get(msg).sendHeader(h, framesize, false, 0, qpid::types::Variant::Map());
         qpid::broker::amqp_0_10::MessageTransfer::get(msg).sendContent(h, framesize);
     }
 

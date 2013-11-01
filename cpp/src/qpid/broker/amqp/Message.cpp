@@ -60,6 +60,13 @@ std::string Message::getUserId() const
     return v;
 }
 
+uint64_t Message::getTimestamp() const
+{
+    //AMQP 1.0 message doesn't have the equivalent of the 0-10 timestamp field
+    //TODO: define an annotation for that
+    return 0;
+}
+
 bool Message::isPersistent() const
 {
     return durable && durable.get();
