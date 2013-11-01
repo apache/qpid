@@ -149,11 +149,6 @@ bool ConnectionContext::fetch(boost::shared_ptr<SessionContext> ssn, boost::shar
         }
     }
     if (get(ssn, lnk, message, timeout)) {
-        qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-        if (lnk->capacity) {
-            pn_link_flow(lnk->receiver, 1);//TODO: is this the right approach?
-            wakeupDriver();
-        }
         return true;
     } else {
         {
@@ -212,6 +207,10 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
             impl.setEncoded(encoded);
             impl.setInternalId(ssn->record(current));
             pn_link_advance(lnk->receiver);
+            if (lnk->capacity) {
+                pn_link_flow(lnk->receiver, 1);
+                wakeupDriver();//TODO: wakeup less frequently
+            }
             return true;
         } else if (until > qpid::sys::now()) {
             waitUntil(ssn, lnk, until);
