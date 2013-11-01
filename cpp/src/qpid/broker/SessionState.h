@@ -101,7 +101,7 @@ class SessionState : public qpid::SessionState,
     void sendCompletion();
 
     DeliveryId deliver(const qpid::broker::amqp_0_10::MessageTransfer& message,
-                       const std::string& destination, bool isRedelivered, uint64_t ttl, uint64_t timestamp,
+                       const std::string& destination, bool isRedelivered, uint64_t ttl,
                        qpid::framing::message::AcceptMode, qpid::framing::message::AcquireMode,
                        const qpid::types::Variant::Map& annotations, bool sync);
 

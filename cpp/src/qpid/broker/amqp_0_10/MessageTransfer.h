@@ -55,6 +55,8 @@ class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::bro
     std::string getExchangeName() const;
     void processProperties(qpid::amqp::MapHandler&) const;
     std::string getUserId() const;
+    void setTimestamp();
+    uint64_t getTimestamp() const;
 
     bool requiresAccept() const;
     const qpid::framing::SequenceNumber& getCommandId() const;
@@ -92,7 +94,7 @@ class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::bro
 
     void clearApplicationHeadersFlag();
     void sendContent(framing::FrameHandler& out, uint16_t maxFrameSize) const;
-    void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize, bool redelivered, uint64_t ttl, uint64_t timestamp, const qpid::types::Variant::Map& annotations) const;
+    void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize, bool redelivered, uint64_t ttl, const qpid::types::Variant::Map& annotations) const;
 
     void decodeHeader(framing::Buffer& buffer);
     void decodeContent(framing::Buffer& buffer);

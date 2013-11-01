@@ -51,6 +51,7 @@ class Message : public qpid::broker::Message::Encoding, private qpid::amqp::Mess
     std::string getContent() const;
     void processProperties(qpid::amqp::MapHandler&) const;
     std::string getUserId() const;
+    uint64_t getTimestamp() const;
     qpid::amqp::MessageId getMessageId() const;
     qpid::amqp::MessageId getCorrelationId() const;
 

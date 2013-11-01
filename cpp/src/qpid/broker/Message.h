@@ -77,6 +77,7 @@ public:
         virtual std::string getContent() const = 0;
         virtual void processProperties(qpid::amqp::MapHandler&) const = 0;
         virtual std::string getUserId() const = 0;
+        virtual uint64_t getTimestamp() const = 0;
     };
 
     QPID_BROKER_EXTERN Message(boost::intrusive_ptr<Encoding>, boost::intrusive_ptr<PersistableMessage>);
@@ -106,8 +107,6 @@ public:
     uint64_t getTtl() const;
     QPID_BROKER_EXTERN bool getTtl(uint64_t&) const;
 
-    /** set the timestamp delivery property to the current time-of-day */
-    QPID_BROKER_EXTERN void setTimestamp();
     QPID_BROKER_EXTERN uint64_t getTimestamp() const;
 
     QPID_BROKER_EXTERN void addAnnotation(const std::string& key, const qpid::types::Variant& value);
