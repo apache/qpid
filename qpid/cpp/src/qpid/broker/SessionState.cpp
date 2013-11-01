@@ -218,7 +218,7 @@ void SessionState::handleContent(AMQFrame& frame)
         }
         DeliverableMessage deliverable(Message(msg, msg), semanticState.getTxBuffer());
         if (broker.isTimestamping())
-            deliverable.getMessage().setTimestamp();
+            msg->setTimestamp();
         deliverable.getMessage().setPublisher(getConnection());
 
 
@@ -296,7 +296,7 @@ void SessionState::handleOut(AMQFrame& frame) {
 }
 
 DeliveryId SessionState::deliver(const qpid::broker::amqp_0_10::MessageTransfer& message,
-                                 const std::string& destination, bool isRedelivered, uint64_t ttl, uint64_t timestamp,
+                                 const std::string& destination, bool isRedelivered, uint64_t ttl,
                                  qpid::framing::message::AcceptMode acceptMode, qpid::framing::message::AcquireMode acquireMode,
                                  const qpid::types::Variant::Map& annotations, bool sync)
 {
@@ -307,7 +307,7 @@ DeliveryId SessionState::deliver(const qpid::broker::amqp_0_10::MessageTransfer&
     framing::AMQFrame method((framing::MessageTransferBody(framing::ProtocolVersion(), destination, acceptMode, acquireMode)));
     method.setEof(false);
     getProxy().getHandler().handle(method);
-    message.sendHeader(getProxy().getHandler(), maxFrameSize, isRedelivered, ttl, timestamp, annotations);
+    message.sendHeader(getProxy().getHandler(), maxFrameSize, isRedelivered, ttl, annotations);
     message.sendContent(getProxy().getHandler(), maxFrameSize);
 
     assert(senderGetCommandPoint() == SessionPoint(commandId+1, 0)); // Delivery has moved sendPoint.
