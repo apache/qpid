@@ -23,6 +23,7 @@
 #include "qpid/broker/QueueCursor.h"
 #include "qpid/broker/Message.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/reply_exceptions.h"
 #include <string.h>
 
 namespace qpid {
@@ -103,7 +104,7 @@ bool PagedQueue::deleted(const QueueCursor& cursor)
 void PagedQueue::publish(const Message& added)
 {
     if (encodedSize(added) > pageSize) {
-        throw qpid::Exception(QPID_MSG("Message is larger than page size for queue backed by " << path));
+        throw qpid::framing::PreconditionFailedException(QPID_MSG("Message is larger than page size for queue backed by " << path));
     }
     Used::reverse_iterator i = used.rbegin();
     if (i != used.rend()) {
