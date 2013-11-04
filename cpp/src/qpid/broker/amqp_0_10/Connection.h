@@ -220,6 +220,8 @@ class Connection : public sys::ConnectionInputHandler, public qpid::broker::Conn
     uint64_t objectId;
     types::Variant::Map clientProperties;
 
+    void raiseConnectEvent();
+
 friend class OutboundFrameTracker;
 
     void sent(const framing::AMQFrame& f);

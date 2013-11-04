@@ -317,6 +317,17 @@ void Connection::setUserId(const string& uid)
     isDefaultRealm = (
         at!= std::string::npos &&
         getBroker().getOptions().realm == userId.substr(at+1,userId.size()));
+   raiseConnectEvent();
+}
+
+void Connection::raiseConnectEvent() {
+    if (mgmtObject != 0) {
+        mgmtObject->set_authIdentity(userId);
+        agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId, mgmtObject->get_remoteProperties()));
+    }
+
+    QPID_LOG_CAT(debug, model, "Create connection. user:" << userId
+        << " rhost:" << mgmtId );
 }
 
 void Connection::setUserProxyAuth(bool b)
