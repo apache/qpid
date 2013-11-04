@@ -107,8 +107,6 @@ install (TARGETS
          qpid-receive qpid-send qpid-topic-listener qpid-topic-publisher receiver sender
          qpid-txtest
          RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
-install (PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/qpidt
-         DESTINATION ${QPID_INSTALL_TESTDIR})
 
 # Only build test code if testing is turned on
 if (BUILD_TESTING)
