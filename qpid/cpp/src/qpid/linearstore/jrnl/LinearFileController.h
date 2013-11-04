@@ -62,18 +62,14 @@ public:
                     uint64_t initialFileNumberVal);
     void finalize();
 
-    void addJournalFile(const std::string& fileName,
-                        const uint64_t fileNumber,
-                        const uint32_t fileSize_kib,
+    void addJournalFile(JournalFile* journalFilePtr,
                         const uint32_t completedDblkCount);
 
-    efpDataSize_kib_t dataSize_kib() const;
     efpDataSize_sblks_t dataSize_sblks() const;
-    efpFileSize_kib_t fileSize_kib() const;
     efpFileSize_sblks_t fileSize_sblks() const;
     uint64_t getNextRecordId();
     void pullEmptyFileFromEfp();
-    void purgeFilesToEfp();
+    void purgeEmptyFilesToEfp();
 
     // Functions for manipulating counts of non-current JournalFile instances in journalFileList_
     uint32_t getEnqueuedRecordCount(const efpFileCount_t fileSeqNumber);
@@ -83,7 +79,7 @@ public:
                                         const uint32_t a);
     uint16_t decrOutstandingAioOperationCount(const efpFileCount_t fileSeqNumber);
 
-    // Pass-through functions for JournalFile class
+    // Pass-through functions for current JournalFile class
     void asyncFileHeaderWrite(io_context_t ioContextPtr,
                               const uint16_t userFlags,
                               const uint64_t recordId,
@@ -94,42 +90,25 @@ public:
                         uint32_t dataSize_dblks);
 
     uint64_t getCurrentFileSeqNum() const;
-
-    uint32_t getEnqueuedRecordCount() const;
-    uint32_t incrEnqueuedRecordCount();
-    uint32_t addEnqueuedRecordCount(const uint32_t a);
-    uint32_t decrEnqueuedRecordCount();
-    uint32_t subtrEnqueuedRecordCount(const uint32_t s);
-
-    uint32_t getWriteSubmittedDblkCount() const;
-    uint32_t addWriteSubmittedDblkCount(const uint32_t a);
-
-    uint32_t getWriteCompletedDblkCount() const;
-    uint32_t addWriteCompletedDblkCount(const uint32_t a);
-
-    uint16_t getOutstandingAioOperationCount() const;
-    uint16_t incrOutstandingAioOperationCount();
-    uint16_t decrOutstandingAioOperationCount();
-
-    bool isEmpty() const;                      // True if no writes of any kind have occurred
-    bool isDataEmpty() const;                  // True if only file header written, data is still empty
-    u_int32_t dblksRemaining() const;          // Dblks remaining until full
-    bool isFull() const;                       // True if all possible dblks have been submitted (but may not yet have returned from AIO)
-    bool isFullAndComplete() const;            // True if all submitted dblks have returned from AIO
-    u_int32_t getOutstandingAioDblks() const;  // Dblks still to be written
-    bool needNextFile() const;                 // True when next file is needed
+    bool isEmpty() const;
 
     // Debug aid
     const std::string status(const uint8_t indentDepth) const;
 
 protected:
+    void addJournalFile(const std::string& fileName,
+                        const uint64_t fileNumber,
+                        const uint32_t fileSize_kib,
+                        const uint32_t completedDblkCount);
     void assertCurrentJournalFileValid(const char* const functionName) const;
     bool checkCurrentJournalFileValid() const;
     JournalFile* find(const efpFileCount_t fileSeqNumber);
     uint64_t getNextFileSeqNum();
+    void purgeEmptyFilesToEfpNoLock();
 };
 
-typedef void (LinearFileController::*lfcAddJournalFileFn)(const std::string&, const uint64_t, const uint32_t, const uint32_t);
+typedef void (LinearFileController::*lfcAddJournalFileFn)(JournalFile* journalFilePtr,
+                                                          const uint32_t completedDblkCount);
 
 }} // namespace qpid::qls_jrnl
 

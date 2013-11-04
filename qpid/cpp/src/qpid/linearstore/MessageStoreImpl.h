@@ -331,7 +331,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     void flush(const qpid::broker::PersistableQueue& queue);
 
-    uint32_t outstandingQueueAIO(const qpid::broker::PersistableQueue& queue);
+    inline uint32_t outstandingQueueAIO(const qpid::broker::PersistableQueue& /*queue*/) { return 0; }; // TODO: Deprecate this call
 
     void collectPreparedXids(std::set<std::string>& xids);
 

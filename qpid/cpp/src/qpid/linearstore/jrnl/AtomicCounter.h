@@ -23,6 +23,7 @@
 #define QPID_LINEARSTORE_ATOMICCOUNTER_H_
 
 #include "qpid/linearstore/jrnl/slock.h"
+#include <string>
 
 namespace qpid {
 namespace qls_jrnl {
@@ -31,17 +32,23 @@ template <class T>
 class AtomicCounter
 {
 private:
+    std::string id_;
     T count_;
     mutable smutex countMutex;
 
 public:
-    AtomicCounter(const T& initValue = T(0)) : count_(initValue) {}
+    AtomicCounter(const std::string& id, const T& initValue) : id_(id), count_(initValue) {}
 
     virtual ~AtomicCounter() {}
 
     T get() const {
         slock l(countMutex);
         return count_;
+    }
+
+    void set(const T v) {
+        slock l(countMutex);
+        count_ = v;
     }
 
     T increment() {
@@ -57,7 +64,7 @@ public:
 
     T addLimit(const T& a, const T& limit, const uint32_t jerr) {
         slock l(countMutex);
-        if (count_ + a > limit) throw jexception(jerr, "AtomicCounter", "addLimit");
+        if (count_ + a > limit) throw jexception(jerr, id_, "AtomicCounter", "addLimit");
         count_ += a;
         return count_;
     }
@@ -70,7 +77,7 @@ public:
     T decrementLimit(const T& limit = T(0), const uint32_t jerr = jerrno::JERR__UNDERFLOW) {
         slock l(countMutex);
         if (count_ < limit + 1) {
-            throw jexception(jerr, "AtomicCounter", "decrementLimit");
+            throw jexception(jerr, id_, "AtomicCounter", "decrementLimit");
         }
         return --count_;
     }
@@ -83,7 +90,7 @@ public:
 
     T subtractLimit(const T& s, const T& limit = T(0), const uint32_t jerr = jerrno::JERR__UNDERFLOW) {
         slock l(countMutex);
-        if (count_ < limit + s) throw jexception(jerr, "AtomicCounter", "subtractLimit");
+        if (count_ < limit + s) throw jexception(jerr, id_, "AtomicCounter", "subtractLimit");
         count_ -= s;
         return count_;
     }

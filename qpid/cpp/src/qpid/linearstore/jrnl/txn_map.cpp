@@ -39,14 +39,19 @@ int16_t txn_map::TMAP_OK = 0;
 int16_t txn_map::TMAP_NOT_SYNCED = 0;
 int16_t txn_map::TMAP_SYNCED = 1;
 
-txn_data_struct::txn_data_struct(const uint64_t rid, const uint64_t drid, const uint16_t pfid,
-		const bool enq_flag, const bool commit_flag):
-        _rid(rid),
-        _drid(drid),
-        _pfid(pfid),
-        _enq_flag(enq_flag),
-        _commit_flag(commit_flag),
-        _aio_compl(false)
+txn_data_t::txn_data_t(const uint64_t rid,
+                       const uint64_t drid,
+                       const uint16_t pfid,
+                       const uint64_t foffs,
+                       const bool enq_flag,
+                       const bool commit_flag):
+        rid_(rid),
+        drid_(drid),
+        pfid_(pfid),
+        foffs_(foffs),
+        enq_flag_(enq_flag),
+        commit_flag_(commit_flag),
+        aio_compl_(false)
 {}
 
 txn_map::txn_map():
@@ -56,24 +61,8 @@ txn_map::txn_map():
 
 txn_map::~txn_map() {}
 
-/*
-void
-txn_map::set_num_jfiles(const uint16_t num_jfiles)
-{
-    _pfid_txn_cnt.resize(num_jfiles, 0);
-}
-*/
-
-/*
-uint32_t
-txn_map::get_txn_pfid_cnt(const uint16_t pfid) const
-{
-    return _pfid_txn_cnt.at(pfid);
-}
-*/
-
 bool
-txn_map::insert_txn_data(const std::string& xid, const txn_data& td)
+txn_map::insert_txn_data(const std::string& xid, const txn_data_t& td)
 {
     bool ok = true;
     slock s(_mutex);
@@ -88,7 +77,6 @@ txn_map::insert_txn_data(const std::string& xid, const txn_data& td)
     }
     else
         itr->second.push_back(td);
-//    _pfid_txn_cnt.at(td._pfid)++;
     return ok;
 }
 
@@ -117,8 +105,6 @@ txn_map::get_remove_tdata_list(const std::string& xid)
         return _empty_data_list;
     txn_data_list list = itr->second;
     _map.erase(itr);
-//    for (tdl_itr i=list.begin(); i!=list.end(); i++)
-//        _pfid_txn_cnt.at(i->_pfid)--;
     return list;
 }
 
@@ -151,7 +137,7 @@ txn_map::cnt(const bool enq_flag)
     {
         for (tdl_itr j = i->second.begin(); j < i->second.end(); j++)
         {
-            if (j->_enq_flag == enq_flag)
+            if (j->enq_flag_ == enq_flag)
                 c++;
         }
     }
@@ -168,7 +154,7 @@ txn_map::is_txn_synced(const std::string& xid)
     bool is_synced = true;
     for (tdl_itr litr = itr->second.begin(); litr < itr->second.end(); litr++)
     {
-        if (!litr->_aio_compl)
+        if (!litr->aio_compl_)
         {
             is_synced = false;
             break;
@@ -186,9 +172,9 @@ txn_map::set_aio_compl(const std::string& xid, const uint64_t rid)
         return TMAP_XID_NOT_FOUND;
     for (tdl_itr litr = itr->second.begin(); litr < itr->second.end(); litr++)
     {
-        if (litr->_rid == rid)
+        if (litr->rid_ == rid)
         {
-            litr->_aio_compl = true;
+            litr->aio_compl_ = true;
             return TMAP_OK; // rid found
         }
     }
@@ -206,7 +192,7 @@ txn_map::data_exists(const std::string& xid, const uint64_t rid)
         tdl_itr itr = tdl.begin();
         while (itr != tdl.end() && !found)
         {
-            found = itr->_rid == rid;
+            found = itr->rid_ == rid;
             itr++;
         }
     }
@@ -224,10 +210,10 @@ txn_map::is_enq(const uint64_t rid)
             txn_data_list list = i->second;
             for (tdl_itr j = list.begin(); j < list.end() && !found; j++)
             {
-                if (j->_enq_flag)
-                    found = j->_rid == rid;
+                if (j->enq_flag_)
+                    found = j->rid_ == rid;
                 else
-                    found = j->_drid == rid;
+                    found = j->drid_ == rid;
             }
         }
     }

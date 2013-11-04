@@ -28,7 +28,7 @@ void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t vers
     dest->_fhdr_size_sblks = fhdr_size_sblks;
     dest->_efp_partition = efp_partition;
     dest->_reserved = 0;
-    dest->_file_size_kib = file_size;
+    dest->_data_size_kib = file_size;
     dest->_fro = 0;
     dest->_ts_nsec = 0;
     dest->_ts_sec = 0;
@@ -58,7 +58,7 @@ void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src) {
     rec_hdr_copy(&dest->_rhdr, &src->_rhdr);
     dest->_fhdr_size_sblks = src->_fhdr_size_sblks; // Should this be copied?
     dest->_efp_partition = src->_efp_partition;     // Should this be copied?
-    dest->_file_size_kib = src->_file_size_kib;
+    dest->_data_size_kib = src->_data_size_kib;
     dest->_fro = src->_fro;
     dest->_ts_sec = src->_ts_sec;
     dest->_ts_nsec = src->_ts_nsec;

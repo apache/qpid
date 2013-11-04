@@ -35,6 +35,8 @@
 #include <uuid/uuid.h>
 #include <vector>
 
+//#include <iostream> // DEBUG
+
 namespace qpid {
 namespace qls_jrnl {
 
@@ -42,7 +44,7 @@ EmptyFilePool::EmptyFilePool(const std::string& efpDirectory,
                              const EmptyFilePoolPartition* partitionPtr,
                              JournalLog& journalLogRef) :
                 efpDirectory_(efpDirectory),
-                efpDataSize_kib_(fileSizeKbFromDirName(efpDirectory, partitionPtr->getPartitionNumber())),
+                efpDataSize_kib_(dataSizeFromDirName_kib(efpDirectory, partitionPtr->getPartitionNumber())),
                 partitionPtr_(partitionPtr),
                 journalLogRef_(journalLogRef)
 {}
@@ -134,6 +136,39 @@ void EmptyFilePool::returnEmptyFile(const std::string& fqSrcFile) {
     pushEmptyFile(emptyFileName);
 }
 
+//static
+std::string EmptyFilePool::dirNameFromDataSize(const efpDataSize_kib_t efpDataSize_kib) {
+    std::ostringstream oss;
+    oss << efpDataSize_kib << "k";
+    return oss.str();
+}
+
+
+// static
+efpDataSize_kib_t EmptyFilePool::dataSizeFromDirName_kib(const std::string& dirName,
+                                                        const efpPartitionNumber_t partitionNumber) {
+    // Check for dirName format 'NNNk', where NNN is a number, convert NNN into an integer. NNN cannot be 0.
+    std::string n(dirName.substr(dirName.rfind('/')+1));
+    bool valid = true;
+    for (uint16_t charNum = 0; charNum < n.length(); ++charNum) {
+        if (charNum < n.length()-1) {
+            if (!::isdigit((int)n[charNum])) {
+                valid = false;
+                break;
+            }
+        } else {
+            valid = n[charNum] == 'k';
+        }
+    }
+    efpDataSize_kib_t s = ::atol(n.c_str());
+    if (!valid || s == 0 || s % QLS_SBLK_SIZE_KIB != 0) {
+        std::ostringstream oss;
+        oss << "Partition: " << partitionNumber << "; EFP directory: \'" << n << "\'";
+        throw jexception(jerrno::JERR_EFP_BADEFPDIRNAME, oss.str(), "EmptyFilePool", "fileSizeKbFromDirName");
+    }
+    return s;
+}
+
 // --- protected functions ---
 
 void EmptyFilePool::createEmptyFile() {
@@ -148,7 +183,7 @@ void EmptyFilePool::createEmptyFile() {
             ofs.put('\0');
         ofs.close();
         pushEmptyFile(efpfn);
-//std::cout << "WARNING: EFP " << efpDirectory << " is empty - created new journal file " << efpfn.substr(efpfn.rfind('/') + 1) << " on the fly" << std::endl;
+//std::cout << "WARNING: EFP " << efpDirectory << " is empty - created new journal file " << efpfn.substr(efpfn.rfind('/') + 1) << " on the fly" << std::endl; // DEBUG
     } else {
 //std::cerr << "ERROR: Unable to open file \"" << efpfn << "\"" << std::endl; // DEBUG
     }
@@ -196,7 +231,8 @@ void EmptyFilePool::resetEmptyFileHeader(const std::string& fqFileName) {
         std::streampos bytesRead = fs.tellg();
         if (std::streamoff(bytesRead) == buffsize) {
             ::file_hdr_reset((::file_hdr_t*)buff);
-            ::memset(buff + sizeof(::file_hdr_t), 0, MAX_FILE_HDR_LEN - sizeof(::file_hdr_t)); // set rest of buffer to 0
+            // set rest of buffer to 0
+            ::memset(buff + sizeof(::file_hdr_t), 0, MAX_FILE_HDR_LEN - sizeof(::file_hdr_t));
             fs.seekp(0, std::fstream::beg);
             fs.write(buff, buffsize);
             std::streampos bytesWritten = fs.tellp();
@@ -224,7 +260,8 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     // Size matches pool
     efpDataSize_kib_t expectedSize = (QLS_SBLK_SIZE_KIB + efpDataSize_kib_) * 1024;
     if ((efpDataSize_kib_t)s.st_size != expectedSize) {
-        oss << "ERROR: File " << emptyFileName << ": Incorrect size: Expected=" << expectedSize << "; actual=" << s.st_size;
+        oss << "ERROR: File " << emptyFileName << ": Incorrect size: Expected=" << expectedSize
+            << "; actual=" << s.st_size;
         journalLogRef_.log(JournalLog::LOG_ERROR, oss.str());
         return false;
     }
@@ -241,18 +278,19 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     fs.read((char*)buff, buffsize);
     std::streampos bytesRead = fs.tellg();
     if (std::streamoff(bytesRead) != buffsize) {
-        oss << "ERROR: Unable to read file header of file \"" << emptyFileName << "\": tried to read " << buffsize << " bytes; read " << bytesRead << " bytes";
+        oss << "ERROR: Unable to read file header of file \"" << emptyFileName << "\": tried to read "
+            << buffsize << " bytes; read " << bytesRead << " bytes";
         journalLogRef_.log(JournalLog::LOG_ERROR, oss.str());
         fs.close();
         return false;
     }
 
     // Check file header
-    ::file_hdr_t* header(reinterpret_cast< ::file_hdr_t* >(buff));
-    const bool jrnlMagicError = header->_rhdr._magic != QLS_FILE_MAGIC;
-    const bool jrnlVersionError = header->_rhdr._version != QLS_JRNL_VERSION;
-    const bool jrnlPartitionError = header->_efp_partition != partitionPtr_->getPartitionNumber();
-    const bool jrnlFileSizeError = header->_file_size_kib != efpDataSize_kib_;
+    ::file_hdr_t* fhp = (::file_hdr_t*)buff;
+    const bool jrnlMagicError = fhp->_rhdr._magic != QLS_FILE_MAGIC;
+    const bool jrnlVersionError = fhp->_rhdr._version != QLS_JRNL_VERSION;
+    const bool jrnlPartitionError = fhp->_efp_partition != partitionPtr_->getPartitionNumber();
+    const bool jrnlFileSizeError = fhp->_data_size_kib != efpDataSize_kib_;
     if (jrnlMagicError || jrnlVersionError || jrnlPartitionError || jrnlFileSizeError)
     {
         oss << "ERROR: File " << emptyFileName << ": Invalid file header - mismatched header fields: " <<
@@ -266,14 +304,15 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     }
 
     // Check file header is reset
-    if (!::is_file_hdr_reset(header)) {
-        ::file_hdr_reset(header);
+    if (!::is_file_hdr_reset(fhp)) {
+        ::file_hdr_reset(fhp);
         ::memset(buff + sizeof(::file_hdr_t), 0, MAX_FILE_HDR_LEN - sizeof(::file_hdr_t)); // set rest of buffer to 0
         fs.seekp(0, std::fstream::beg);
         fs.write(buff, buffsize);
         std::streampos bytesWritten = fs.tellp();
         if (std::streamoff(bytesWritten) != buffsize) {
-            oss << "ERROR: Unable to write file header of file \"" << emptyFileName << "\": tried to write " << buffsize << " bytes; wrote " << bytesWritten << " bytes";
+            oss << "ERROR: Unable to write file header of file \"" << emptyFileName << "\": tried to write "
+                << buffsize << " bytes; wrote " << bytesWritten << " bytes";
             journalLogRef_.log(JournalLog::LOG_ERROR, oss.str());
             fs.close();
             return false;
@@ -285,31 +324,6 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     // Close file
     fs.close();
     return true;
-}
-
-// static
-efpDataSize_kib_t EmptyFilePool::fileSizeKbFromDirName(const std::string& dirName,
-                                                       const efpPartitionNumber_t partitionNumber) {
-    // Check for dirName format 'NNNk', where NNN is a number, convert NNN into an integer. NNN cannot be 0.
-    std::string n(dirName.substr(dirName.rfind('/')+1));
-    bool valid = true;
-    for (uint16_t charNum = 0; charNum < n.length(); ++charNum) {
-        if (charNum < n.length()-1) {
-            if (!::isdigit((int)n[charNum])) {
-                valid = false;
-                break;
-            }
-        } else {
-            valid = n[charNum] == 'k';
-        }
-    }
-    efpDataSize_kib_t s = ::atol(n.c_str());
-    if (!valid || s == 0 || s % QLS_SBLK_SIZE_KIB != 0) {
-        std::ostringstream oss;
-        oss << "Partition: " << partitionNumber << "; EFP directory: \'" << n << "\'";
-        throw jexception(jerrno::JERR_EFP_BADEFPDIRNAME, oss.str(), "EmptyFilePool", "fileSizeKbFromDirName");
-    }
-    return s;
 }
 
 // static

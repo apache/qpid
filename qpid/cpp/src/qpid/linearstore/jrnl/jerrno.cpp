@@ -53,7 +53,6 @@ const uint32_t jerrno::JERR_JCNTL_NOTRECOVERED   = 0x0204;
 const uint32_t jerrno::JERR_JCNTL_ENQSTATE       = 0x0207;
 const uint32_t jerrno::JERR_JCNTL_INVALIDENQHDR  = 0x0208;
 
-
 // class jdir
 const uint32_t jerrno::JERR_JDIR_NOTDIR          = 0x0300;
 const uint32_t jerrno::JERR_JDIR_MKDIR           = 0x0301;
@@ -89,16 +88,11 @@ const uint32_t jerrno::JERR_WMGR_DEQRIDNOTENQ    = 0x0805;
 const uint32_t jerrno::JERR_WMGR_BADFH           = 0x0806;
 
 // class RecoveryManager
-const uint32_t jerrno::JERR_RCVM_OPENRD          = 0x0900;
-const uint32_t jerrno::JERR_RCVM_READ            = 0x0901;
-const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0902;
-
-//// class rmgr
-//const uint32_t jerrno::JERR_RMGR_UNKNOWNMAGIC    = 0x0900;
-//const uint32_t jerrno::JERR_RMGR_RIDMISMATCH     = 0x0901;
-////const uint32_t jerrno::JERR_RMGR_FIDMISMATCH   = 0x0902;
-//const uint32_t jerrno::JERR_RMGR_ENQSTATE        = 0x0903;
-//const uint32_t jerrno::JERR_RMGR_BADRECTYPE      = 0x0904;
+const uint32_t jerrno::JERR_RCVM_OPENRD          = 0x0900;         ///< Unable to open file for read
+const uint32_t jerrno::JERR_RCVM_STREAMBAD       = 0x0901;      ///< Read/write stream error
+const uint32_t jerrno::JERR_RCVM_READ            = 0x0902;           ///< Read error: no or insufficient data to read
+const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0903;          ///< Write error
+const uint32_t jerrno::JERR_RCVM_NULLXID         = 0x0904;        ///< Null XID when XID length non-null in header
 
 // class data_tok
 const uint32_t jerrno::JERR_DTOK_ILLEGALSTATE    = 0x0a00;
@@ -184,15 +178,11 @@ jerrno::__init()
     _err_map[JERR_WMGR_BADFH] = "JERR_WMGR_BADFH: Bad file handle.";
 
     // class RecoveryManager
-    _err_map[JERR_RCVM_OPENRD] = "JERR_JCNTL_OPENRD: Unable to open file for write";
-    _err_map[JERR_RCVM_READ] = "JERR_JCNTL_READ: Read error: no or insufficient data to read";
+    _err_map[JERR_RCVM_OPENRD] = "JERR_RCVM_OPENRD: Unable to open file for read";
+    _err_map[JERR_RCVM_STREAMBAD] = "JERR_RCVM_STREAMBAD: Read/write stream error";
+    _err_map[JERR_RCVM_READ] = "JERR_RCVM_READ: Read error: no or insufficient data to read";
     _err_map[JERR_RCVM_WRITE] = "JERR_RCVM_WRITE: Write error";
-//    // class rmgr
-//    _err_map[JERR_RMGR_UNKNOWNMAGIC] = "JERR_RMGR_UNKNOWNMAGIC: Found record with unknown magic.";
-//    _err_map[JERR_RMGR_RIDMISMATCH] = "JERR_RMGR_RIDMISMATCH: RID mismatch between current record and dtok RID";
-//    //_err_map[JERR_RMGR_FIDMISMATCH] = "JERR_RMGR_FIDMISMATCH: FID mismatch between emap and rrfc";
-//    _err_map[JERR_RMGR_ENQSTATE] = "JERR_RMGR_ENQSTATE: Attempted read when data token wstate was not ENQ";
-//    _err_map[JERR_RMGR_BADRECTYPE] = "JERR_RMGR_BADRECTYPE: Attempted operation on inappropriate record type";
+    _err_map[JERR_RCVM_NULLXID] = "JERR_RCVM_NULLXID: Null XID when XID length non-null in header";
 
     // class data_tok
     _err_map[JERR_DTOK_ILLEGALSTATE] = "JERR_MTOK_ILLEGALSTATE: Attempted to change to illegal state.";
