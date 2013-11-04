@@ -279,7 +279,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Address.cpp" />
-    <ClCompile Include="..\AssemblyInfo.cpp" />
+    <ClCompile Include="$(QPID_BUILD_ROOT)\src\windows\generated_src\AssemblyInfo.cpp" />
     <ClCompile Include="..\Connection.cpp" />
     <ClCompile Include="..\FailoverUpdates.cpp" />
     <ClCompile Include="..\Message.cpp" />
