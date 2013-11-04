@@ -30,6 +30,7 @@ sys.path.append(os.path.join(home, "python"))
 
 from qpid.messaging import Connection
 from qpidtoollibs import BrokerAgent
+from qpidtoollibs import Display, Header
 
 usage = """
 Usage:  qpid-config [OPTIONS]
@@ -43,7 +44,10 @@ Usage:  qpid-config [OPTIONS]
                   <for type xml>     [-f -|filename]
                   <for type header>  [all|any] k1=v1 [, k2=v2...]
         qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]
-        qpid-config [OPTIONS] reload-acl"""
+        qpid-config [OPTIONS] reload-acl
+        qpid-config [OPTIONS] add <type> <name> [--argument <property-name>=<property-value>]
+        qpid-config [OPTIONS] del <type> <name>
+        qpid-config [OPTIONS] list <type> [--show-property <property-name>]"""
 
 description = """
 Examples:
@@ -76,6 +80,7 @@ Replication levels:
 """
 
 REPLICATE_LEVELS= ["none", "configuration", "all"]
+DEFAULT_PROPERTIES = {"exchange":["name", "type", "durable"], "queue":["name", "durable", "autoDelete"]}
 
 class Config:
     def __init__(self):
@@ -107,6 +112,17 @@ class Config:
         self._extra_arguments   = []
         self._start_replica    = None
         self._returnCode        = 0
+        self._list_properties   = []
+
+    def getOptions(self):
+        options = {}
+        for a in self._extra_arguments:
+            r = a.split("=", 1)
+            if len(r) == 2: value = r[1]
+            else: value = None
+            options[r[0]] = value
+        return options
+
 
 config = Config()
 conn_options = {}
@@ -229,6 +245,11 @@ def OptionsAndArguments(argv):
     group6.add_option("-f", "--file", action="store", type="string", metavar="<file.xq>", help="For XML Exchange bindings - specifies the name of a file containing an XQuery.")
     parser.add_option_group(group6)
 
+    group_7 = OptionGroup(parser, "Formatting options for 'list' action")
+    group_7.add_option("--show-property", dest="list_properties", action="append", default=[],
+                      metavar="<property-name>", help="Specify a property of an object to be included in output")
+    parser.add_option_group(group_7)
+
     opts, encArgs = parser.parse_args(args=argv)
 
     try:
@@ -304,6 +325,8 @@ def OptionsAndArguments(argv):
         config._extra_arguments = opts.extra_arguments
     if opts.start_replica:
         config._start_replica = opts.start_replica
+    if opts.list_properties:
+        config._list_properties = opts.list_properties
 
     if opts.sasl_mechanism:
         conn_options['sasl_mechanisms'] = opts.sasl_mechanism
@@ -701,6 +724,13 @@ def YN(bool):
         return 'Y'
     return 'N'
 
+def _clean_ref(o):
+    if isinstance(o, dict) and "_object_name" in o:
+        fqn = o["_object_name"]
+        parts = fqn.split(":",2)
+        return parts[len(parts)-1]
+    else:
+        return o
 
 def main(argv=None):
     args = OptionsAndArguments(argv)
@@ -730,6 +760,8 @@ def main(argv=None):
                     bm.AddExchange(args[2:])
                 elif modifier == "queue":
                     bm.AddQueue(args[2:])
+                elif len(args) > 2:
+                    bm.broker.create(modifier, args[2], config.getOptions())
                 else:
                     Usage()
             elif cmd == "del":
@@ -737,6 +769,8 @@ def main(argv=None):
                     bm.DelExchange(args[2:])
                 elif modifier == "queue":
                     bm.DelQueue(args[2:])
+                elif len(args) > 2:
+                    bm.broker.delete(modifier, args[2], {})
                 else:
                     Usage()
             elif cmd == "bind":
@@ -745,6 +779,36 @@ def main(argv=None):
                 bm.Unbind(args[1:])
             elif cmd == "reload-acl":
                 bm.ReloadAcl()
+            elif cmd == "list" and len(args) > 1:
+                # fetch objects
+                objects = bm.broker.list(modifier)
+
+                # collect available attributes
+                attributes = []
+                for o in objects:
+                    for k in o.keys():
+                        if k == "name" and k not in attributes:
+                            attributes.insert(0, k)
+                        elif k not in attributes:
+                            attributes.append(k)
+
+                # determine which attributes to display
+                desired = []
+                if len(config._list_properties):
+                    for p in config._list_properties:
+                        if p not in attributes: print "Warning: No such property '%s' for type '%s'" % (p, modifier)
+                        else: desired.append(p)
+                elif modifier in DEFAULT_PROPERTIES:
+                    desired = DEFAULT_PROPERTIES[modifier]
+                else:
+                    desired = attributes[:6]
+
+                # display
+                display = Display(prefix="  ")
+                headers = [Header(a) for a in desired]
+                rows = [tuple([_clean_ref(o[a]) for a in desired]) for o in objects]
+                display.formattedTable("Objects of type '%s'" % modifier, headers, rows)
+
             else:
                 Usage()
     except KeyboardInterrupt:

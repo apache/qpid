@@ -312,6 +312,10 @@ class BrokerAgent(object):
             'options': options}
     return self._method('delete', args)
 
+  def list(self, _type):
+    """List objects of the specified type"""
+    return [i["_values"] for i in self._doClassQuery(_type.lower())]
+
   def query(self, _type, oid):
     """Query the current state of an object"""
     return self._getBrokerObject(self, _type, oid)
