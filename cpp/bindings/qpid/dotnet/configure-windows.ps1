@@ -509,9 +509,9 @@ if ($defined64) {
 if ($make32) {
     cd "$build32"
     Write-Host "Running 32-bit CMake in $build32 ..."
-	$global:cmakeCommandLine32 = "CMake -G ""$global:cmakeGenerator"" ""-DGEN_DOXYGEN=No"" ""-DCMAKE_INSTALL_PREFIX=install_x86"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost32"" $cppDir"
+	$global:cmakeCommandLine32 = "CMake -G ""$global:cmakeGenerator"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=install_x86"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost32"" $cppDir"
 	Write-Host "$global:cmakeCommadLine32"
-    CMake -G "$global:cmakeGenerator" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x86" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost32" $cppDir
+    CMake -G "$global:cmakeGenerator" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=install_x86" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost32" $cppDir
 } else {
     Write-Host "Skipped 32-bit CMake."
 }
@@ -522,9 +522,9 @@ if ($make32) {
 if ($make64) {
     cd "$build64"
     Write-Host "Running 64-bit CMake in $build64"
-	$global:cmakeCommandLine64 = "CMake -G ""$global:cmakeGenerator Win64"" ""-DGEN_DOXYGEN=No"" ""-DCMAKE_INSTALL_PREFIX=install_x64"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost64"" $cppDir"
+	$global:cmakeCommandLine64 = "CMake -G ""$global:cmakeGenerator Win64"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=install_x64"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost64"" $cppDir"
 	Write-Host "$global:cmakeCommadLine64"
-    CMake -G "$global:cmakeGenerator Win64" "-DGEN_DOXYGEN=No" "-DCMAKE_INSTALL_PREFIX=install_x64" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost64" $cppDir
+    CMake -G "$global:cmakeGenerator Win64" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=install_x64" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost64" $cppDir
 } else {
     Write-Host "Skipped 64-bit CMake."
 }
