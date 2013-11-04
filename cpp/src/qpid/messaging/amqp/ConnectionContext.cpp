@@ -249,7 +249,7 @@ void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::sha
     }
     wakeupDriver();
     while (pn_link_state(lnk->sender) & PN_REMOTE_ACTIVE) {
-        wait();
+        wait(ssn);
     }
     ssn->removeSender(lnk->getName());
 }
@@ -262,7 +262,7 @@ void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::sha
     }
     wakeupDriver();
     while (pn_link_state(lnk->receiver) & PN_REMOTE_ACTIVE) {
-        wait();
+        wait(ssn);
     }
     ssn->removeReceiver(lnk->getName());
 }
@@ -419,6 +419,7 @@ void ConnectionContext::check()
 
 void ConnectionContext::wait()
 {
+    check();
     lock.wait();
     check();
 }
