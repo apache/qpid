@@ -412,8 +412,15 @@ void ConnectionContext::check()
         }
     }
     if ((pn_connection_state(connection) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
+        pn_condition_t* error = pn_connection_remote_condition(connection);
+        std::stringstream text;
+        if (pn_condition_is_set(error)) {
+            text << "Connection closed by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
+        } else {
+            text << "Connection closed by peer";
+        }
         pn_connection_close(connection);
-        throw qpid::messaging::ConnectionError("Connection closed by peer");
+        throw qpid::messaging::ConnectionError(text.str());
     }
 }
 
