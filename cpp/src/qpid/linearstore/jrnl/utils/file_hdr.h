@@ -79,7 +79,7 @@ typedef struct file_hdr_t {
     uint16_t  _fhdr_size_sblks; /**< File header size in sblks (defined by JRNL_SBLK_SIZE) */
     uint16_t  _efp_partition;   /**< EFP Partition number from which this file was obtained */
     uint32_t  _reserved;
-    uint64_t  _file_size_kib;   /**< Size of this file in KiB, excluding header sblk */
+    uint64_t  _data_size_kib;   /**< Size of the data part of this file in KiB. (ie file size excluding file header sblk) */
     uint64_t  _fro;			    /**< First Record Offset (FRO) */
     uint64_t  _ts_sec;		    /**< Time stamp (seconds part) */
     uint64_t  _ts_nsec;		    /**< Time stamp (nanoseconds part) */

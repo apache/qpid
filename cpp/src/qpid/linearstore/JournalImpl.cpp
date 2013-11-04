@@ -63,14 +63,8 @@ JournalImpl::JournalImpl(qpid::sys::Timer& timer_,
                          timer(timer_),
                          _journalLogRef(journalLogRef),
                          getEventsTimerSetFlag(false),
-//                         lastReadRid(0),
                          writeActivityFlag(false),
                          flushTriggeredFlag(true),
-//                         _xidp(0),
-//                         _datap(0),
-//                         _dlen(0),
-//                         _dtok(),
-//                         _external(false),
                          deleteCallback(onDelete)
 {
     getEventsFireEventsPtr = new GetEventsFireEvent(this, getEventsTimeout);
@@ -97,7 +91,6 @@ JournalImpl::~JournalImpl()
 	}
     getEventsFireEventsPtr->cancel();
     inactivityFireEventPtr->cancel();
-//    free_read_buffers();
 
     if (_mgmtObject.get() != 0) {
         _mgmtObject->resourceDestroy();
@@ -149,7 +142,7 @@ JournalImpl::initialize(qpid::qls_jrnl::EmptyFilePool* efpp_,
 //    oss << " wcache_pgsize_sblks=" << wcache_pgsize_sblks;
 //    oss << " wcache_num_pages=" << wcache_num_pages;
 //    QLS_LOG2(debug, _jid, oss.str());
-    jcntl::initialize(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/ efpp_, wcache_num_pages, wcache_pgsize_sblks, cbp);
+    jcntl::initialize(efpp_, wcache_num_pages, wcache_pgsize_sblks, cbp);
 //    QLS_LOG2(debug, _jid, "Initialization complete");
     // TODO: replace for linearstore: _lpmgr
 /*
@@ -183,7 +176,6 @@ JournalImpl::recover(/*const uint16_t num_jfiles,
                      uint64_t queue_id)
 {
     std::ostringstream oss1;
-//    oss1 << "Recover; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
     oss1 << "Recover;";
     oss1 << " queue_id = 0x" << std::hex << queue_id << std::dec;
     oss1 << " wcache_pgsize_sblks=" << wcache_pgsize_sblks;
@@ -210,11 +202,9 @@ JournalImpl::recover(/*const uint16_t num_jfiles,
             prep_xid_list.push_back(i->xid);
         }
 
-        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/efpm.get(), wcache_num_pages, wcache_pgsize_sblks,
-                cbp, &prep_xid_list, highest_rid);
+        jcntl::recover(efpm.get(), wcache_num_pages, wcache_pgsize_sblks, cbp, &prep_xid_list, highest_rid);
     } else {
-        jcntl::recover(/*num_jfiles, auto_expand, ae_max_jfiles, jfsize_sblks,*/efpm.get(), wcache_num_pages, wcache_pgsize_sblks,
-                cbp, 0, highest_rid);
+        jcntl::recover(efpm.get(), wcache_num_pages, wcache_pgsize_sblks, cbp, 0, highest_rid);
     }
 
     // Populate PreparedTransaction lists from _tmap
@@ -223,10 +213,10 @@ JournalImpl::recover(/*const uint16_t num_jfiles,
         for (PreparedTransaction::list::iterator i = prep_tx_list_ptr->begin(); i != prep_tx_list_ptr->end(); i++) {
             txn_data_list tdl = _tmap.get_tdata_list(i->xid); // tdl will be empty if xid not found
             for (tdl_itr tdl_itr = tdl.begin(); tdl_itr < tdl.end(); tdl_itr++) {
-                if (tdl_itr->_enq_flag) { // enqueue op
-                    i->enqueues->add(queue_id, tdl_itr->_rid);
+                if (tdl_itr->enq_flag_) { // enqueue op
+                    i->enqueues->add(queue_id, tdl_itr->rid_);
                 } else { // dequeue op
-                    i->dequeues->add(queue_id, tdl_itr->_drid);
+                    i->dequeues->add(queue_id, tdl_itr->drid_);
                 }
             }
         }
@@ -260,102 +250,6 @@ JournalImpl::recover_complete()
 */
 }
 
-//#define MAX_AIO_SLEEPS 1000000 // tot: ~10 sec
-//#define AIO_SLEEP_TIME_US   10 // 0.01 ms
-// Return true if content is recovered from store; false if content is external and must be recovered from an external store.
-// Throw exception for all errors.
-/*
-bool
-JournalImpl::loadMsgContent(uint64_t rid, std::string& data, size_t length, size_t offset)
-{
-    qpid::sys::Mutex::ScopedLock sl(_read_lock);
-    if (_dtok.rid() != rid)
-    {
-        // Free any previous msg
-        free_read_buffers();
-
-        // Last read encountered out-of-order rids, check if this rid is in that list
-        bool oooFlag = false;
-        for (std::vector<uint64_t>::const_iterator i=oooRidList.begin(); i!=oooRidList.end() && !oooFlag; i++) {
-            if (*i == rid) {
-                oooFlag = true;
-            }
-        }
-
-        // TODO: This is a brutal approach - very inefficient and slow. Rather introduce a system of remembering
-        // jumpover points and allow the read to jump back to the first known jumpover point - but this needs
-        // a mechanism in rrfc to accomplish it. Also helpful is a struct containing a journal address - a
-        // combination of lid/offset.
-        // NOTE: The second part of the if stmt (rid < lastReadRid) is required to handle browsing.
-        if (oooFlag || rid < lastReadRid) {
-            _rmgr.invalidate();
-            oooRidList.clear();
-        }
-        _dlen = 0;
-        _dtok.reset();
-        _dtok.set_wstate(DataTokenImpl::ENQ);
-        _dtok.set_rid(0);
-        _external = false;
-        size_t xlen = 0;
-        bool transient = false;
-        bool done = false;
-        bool rid_found = false;
-        while (!done) {
-            iores res = read_data_record(&_datap, _dlen, &_xidp, xlen, transient, _external, &_dtok);
-            switch (res) {
-                case qpid::qls_jrnl::RHM_IORES_SUCCESS:
-                    if (_dtok.rid() != rid) {
-                        // Check if this is an out-of-order rid that may impact next read
-                        if (_dtok.rid() > rid)
-                            oooRidList.push_back(_dtok.rid());
-                        free_read_buffers();
-                        // Reset data token for next read
-                        _dlen = 0;
-                        _dtok.reset();
-                        _dtok.set_wstate(DataTokenImpl::ENQ);
-                        _dtok.set_rid(0);
-                    } else {
-                        rid_found = _dtok.rid() == rid;
-                        lastReadRid = rid;
-                        done = true;
-                    }
-                    break;
-                case qpid::qls_jrnl::RHM_IORES_PAGE_AIOWAIT:
-                    if (get_wr_events(&_aio_cmpl_timeout) == qpid::qls_jrnl::jerrno::AIO_TIMEOUT) {
-                        std::stringstream ss;
-                        ss << "read_data_record() returned " << qpid::qls_jrnl::iores_str(res);
-                        ss << "; timed out waiting for page to be processed.";
-                        throw jexception(qpid::qls_jrnl::jerrno::JERR__TIMEOUT, ss.str().c_str(), "JournalImpl",
-                            "loadMsgContent");
-                    }
-                    break;
-                default:
-                    std::stringstream ss;
-                    ss << "read_data_record() returned " << qpid::qls_jrnl::iores_str(res);
-                    throw jexception(qpid::qls_jrnl::jerrno::JERR__UNEXPRESPONSE, ss.str().c_str(), "JournalImpl",
-                        "loadMsgContent");
-            }
-        }
-        if (!rid_found) {
-            std::stringstream ss;
-            ss << "read_data_record() was unable to find rid 0x" << std::hex << rid << std::dec;
-            ss << " (" << rid << "); last rid found was 0x" << std::hex << _dtok.rid() << std::dec;
-            ss << " (" << _dtok.rid() << ")";
-            throw jexception(qpid::qls_jrnl::jerrno::JERR__RECNFOUND, ss.str().c_str(), "JournalImpl", "loadMsgContent");
-        }
-    }
-
-    if (_external) return false;
-
-    uint32_t hdr_offs = qpid::framing::Buffer(static_cast<char*>(_datap), sizeof(uint32_t)).getLong() + sizeof(uint32_t);
-    if (hdr_offs + offset + length > _dlen) {
-        data.append((const char*)_datap + hdr_offs + offset, _dlen - hdr_offs - offset);
-    } else {
-        data.append((const char*)_datap + hdr_offs + offset, length);
-    }
-    return true;
-}
-*/
 
 void
 JournalImpl::enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
@@ -498,29 +392,6 @@ JournalImpl::flush(const bool block_till_aio_cmpl)
     return res;
 }
 
-/*
-void
-JournalImpl::log(qpid::qls_jrnl::log_level ll, const std::string& log_stmt) const
-{
-    log(ll, log_stmt.c_str());
-}
-
-void
-JournalImpl::log(qpid::qls_jrnl::log_level ll, const char* const log_stmt) const
-{
-    switch (ll)
-    {
-        case LOG_TRACE:  QPID_LOG(trace, "QLS Journal \"" << _jid << "\": " << log_stmt); break;
-        case LOG_DEBUG:  QPID_LOG(debug, "QLS Journal \"" << _jid << "\": " << log_stmt); break;
-        case LOG_INFO:  QPID_LOG(info, "QLS Journal \"" << _jid << "\": " << log_stmt); break;
-        case LOG_NOTICE:  QPID_LOG(notice, "QLS Journal \"" << _jid << "\": " << log_stmt); break;
-        case LOG_WARN:  QPID_LOG(warning, "QLS Journal \"" << _jid << "\": " << log_stmt); break;
-        case LOG_ERROR: QPID_LOG(error, "QLS Journal \"" << _jid << "\": " << log_stmt); break;
-        case LOG_CRITICAL: QPID_LOG(critical, "QLS Journal \"" << _jid << "\": " << log_stmt); break;
-    }
-}
-*/
-
 void
 JournalImpl::getEventsFire()
 {
@@ -581,21 +452,6 @@ void
 JournalImpl::rd_aio_cb(std::vector<uint16_t>& /*pil*/)
 {}
 
-/*
-void
-JournalImpl::free_read_buffers()
-{
-    if (_xidp) {
-        ::free(_xidp);
-        _xidp = 0;
-        _datap = 0;
-    } else if (_datap) {
-        ::free(_datap);
-        _datap = 0;
-    }
-}
-*/
-
 void
 JournalImpl::createStore() {
 
@@ -609,17 +465,6 @@ JournalImpl::handleIoResult(const iores r)
     {
         case qpid::qls_jrnl::RHM_IORES_SUCCESS:
             return;
-/*
-        case qpid::qls_jrnl::RHM_IORES_FULL:
-            {
-                std::ostringstream oss;
-                oss << "Journal full on queue \"" << _jid << "\".";
-                QLS_LOG2(critical, _jid, "Journal full.");
-                if (_agent != 0)
-                    _agent->raiseEvent(qmf::org::apache::qpid::linearstore::EventFull(_jid, "Journal full"), qpid::management::ManagementAgent::SEV_ERROR);
-                THROW_STORE_FULL_EXCEPTION(oss.str());
-            }
-*/
         default:
             {
                 std::ostringstream oss;

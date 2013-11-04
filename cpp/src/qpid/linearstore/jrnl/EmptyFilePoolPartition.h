@@ -68,6 +68,9 @@ public:
     std::string getPartitionDirectory() const;
     efpPartitionNumber_t getPartitionNumber() const;
 
+    static std::string getPartionDirectoryName(const efpPartitionNumber_t partitionNumber);
+    static efpPartitionNumber_t getPartitionNumber(const std::string& name);
+
 protected:
     void validatePartitionDir();
 };

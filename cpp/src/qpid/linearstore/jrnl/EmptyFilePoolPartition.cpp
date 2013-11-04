@@ -22,10 +22,13 @@
 #include "qpid/linearstore/jrnl/EmptyFilePoolPartition.h"
 
 #include <dirent.h>
+#include <iomanip>
 #include "qpid/linearstore/jrnl/jdir.h"
 #include "qpid/linearstore/jrnl/jerrno.h"
 #include "qpid/linearstore/jrnl/jexception.h"
 #include "qpid/linearstore/jrnl/slock.h"
+
+//#include <iostream> // DEBUG
 
 namespace qpid {
 namespace qls_jrnl {
@@ -53,7 +56,7 @@ EmptyFilePoolPartition::~EmptyFilePoolPartition() {
 
 void
 EmptyFilePoolPartition::findEmptyFilePools() {
-    //std::cout << "Reading " << partitionDir << std::endl; // DEBUG
+//std::cout << "Reading " << partitionDir << std::endl; // DEBUG
     std::vector<std::string> dirList;
     jdir::read_dir(partitionDir_, dirList, true, false, false, false);
     bool foundEfpDir = false;
@@ -65,7 +68,7 @@ EmptyFilePoolPartition::findEmptyFilePools() {
     }
     if (foundEfpDir) {
         std::string efpDir(partitionDir_ + "/" + s_efpTopLevelDir_);
-        //std::cout << "Reading " << efpDir << std::endl; // DEBUG
+//std::cout << "Reading " << efpDir << std::endl; // DEBUG
         dirList.clear();
         jdir::read_dir(efpDir, dirList, true, false, false, true);
         for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
@@ -115,6 +118,26 @@ std::string EmptyFilePoolPartition::getPartitionDirectory() const {
 
 efpPartitionNumber_t EmptyFilePoolPartition::getPartitionNumber() const {
     return partitionNum_;
+}
+
+// static
+std::string EmptyFilePoolPartition::getPartionDirectoryName(const efpPartitionNumber_t partitionNumber) {
+    std::ostringstream oss;
+    oss << "p" << std::setfill('0') << std::setw(3) << partitionNumber;
+    return oss.str();
+}
+
+//static
+efpPartitionNumber_t EmptyFilePoolPartition::getPartitionNumber(const std::string& name) {
+    if (name.length() == 4 && name[0] == 'p' && ::isdigit(name[1]) && ::isdigit(name[2]) && ::isdigit(name[3])) {
+        long pn = ::strtol(name.c_str() + 1, 0, 0);
+        if (pn == 0 && errno) {
+            return 0;
+        } else {
+            return (efpPartitionNumber_t)pn;
+        }
+    }
+    return 0;
 }
 
 // --- protected functions ---

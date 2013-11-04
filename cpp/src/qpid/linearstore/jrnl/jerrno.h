@@ -50,40 +50,40 @@ namespace qls_jrnl
 
     public:
         // generic errors
-        static const uint32_t JERR__MALLOC;            ///< Buffer memory allocation failed
-        static const uint32_t JERR__UNDERFLOW;         ///< Underflow error
-        static const uint32_t JERR__NINIT;             ///< Operation on uninitialized class
-        static const uint32_t JERR__AIO;               ///< AIO failure
-        static const uint32_t JERR__FILEIO;            ///< File read or write failure
-        static const uint32_t JERR__RTCLOCK;           ///< Reading real-time clock failed
-        static const uint32_t JERR__PTHREAD;           ///< pthread failure
-        static const uint32_t JERR__TIMEOUT;           ///< Timeout waiting for an event
-        static const uint32_t JERR__UNEXPRESPONSE;     ///< Unexpected response to call or event
-        static const uint32_t JERR__RECNFOUND;         ///< Record not found
-        static const uint32_t JERR__NOTIMPL;           ///< Not implemented
-        static const uint32_t JERR__NULL;              ///< Operation on null pointer
+        static const uint32_t JERR__MALLOC;             ///< Buffer memory allocation failed
+        static const uint32_t JERR__UNDERFLOW;          ///< Underflow error
+        static const uint32_t JERR__NINIT;              ///< Operation on uninitialized class
+        static const uint32_t JERR__AIO;                ///< AIO failure
+        static const uint32_t JERR__FILEIO;             ///< File read or write failure
+        static const uint32_t JERR__RTCLOCK;            ///< Reading real-time clock failed
+        static const uint32_t JERR__PTHREAD;            ///< pthread failure
+        static const uint32_t JERR__TIMEOUT;            ///< Timeout waiting for an event
+        static const uint32_t JERR__UNEXPRESPONSE;      ///< Unexpected response to call or event
+        static const uint32_t JERR__RECNFOUND;          ///< Record not found
+        static const uint32_t JERR__NOTIMPL;            ///< Not implemented
+        static const uint32_t JERR__NULL;               ///< Operation on null pointer
 
         // class jcntl
-        static const uint32_t JERR_JCNTL_STOPPED;      ///< Operation on stopped journal
-        static const uint32_t JERR_JCNTL_READONLY;     ///< Write operation on read-only journal
-        static const uint32_t JERR_JCNTL_AIOCMPLWAIT;  ///< Timeout waiting for AIOs to complete
-        static const uint32_t JERR_JCNTL_UNKNOWNMAGIC; ///< Found record with unknown magic
-        static const uint32_t JERR_JCNTL_NOTRECOVERED; ///< Req' recover() to be called first
-        static const uint32_t JERR_JCNTL_ENQSTATE;     ///< Read error: Record not in ENQ state
-        static const uint32_t JERR_JCNTL_INVALIDENQHDR;///< Invalid ENQ header
+        static const uint32_t JERR_JCNTL_STOPPED;       ///< Operation on stopped journal
+        static const uint32_t JERR_JCNTL_READONLY;      ///< Write operation on read-only journal
+        static const uint32_t JERR_JCNTL_AIOCMPLWAIT;   ///< Timeout waiting for AIOs to complete
+        static const uint32_t JERR_JCNTL_UNKNOWNMAGIC;  ///< Found record with unknown magic
+        static const uint32_t JERR_JCNTL_NOTRECOVERED;  ///< Req' recover() to be called first
+        static const uint32_t JERR_JCNTL_ENQSTATE;      ///< Read error: Record not in ENQ state
+        static const uint32_t JERR_JCNTL_INVALIDENQHDR; ///< Invalid ENQ header
 
         // class jdir
-        static const uint32_t JERR_JDIR_NOTDIR;        ///< Exists but is not a directory
-        static const uint32_t JERR_JDIR_MKDIR;         ///< Directory creation failed
-        static const uint32_t JERR_JDIR_OPENDIR;       ///< Directory open failed
-        static const uint32_t JERR_JDIR_READDIR;       ///< Directory read failed
-        static const uint32_t JERR_JDIR_CLOSEDIR;      ///< Directory close failed
-        static const uint32_t JERR_JDIR_RMDIR;         ///< Directory delete failed
-        static const uint32_t JERR_JDIR_NOSUCHFILE;    ///< File does not exist
-        static const uint32_t JERR_JDIR_FMOVE;         ///< File move failed
-        static const uint32_t JERR_JDIR_STAT;          ///< File stat failed
-        static const uint32_t JERR_JDIR_UNLINK;        ///< File delete failed
-        static const uint32_t JERR_JDIR_BADFTYPE;      ///< Bad or unknown file type (stat mode)
+        static const uint32_t JERR_JDIR_NOTDIR;         ///< Exists but is not a directory
+        static const uint32_t JERR_JDIR_MKDIR;          ///< Directory creation failed
+        static const uint32_t JERR_JDIR_OPENDIR;        ///< Directory open failed
+        static const uint32_t JERR_JDIR_READDIR;        ///< Directory read failed
+        static const uint32_t JERR_JDIR_CLOSEDIR;       ///< Directory close failed
+        static const uint32_t JERR_JDIR_RMDIR;          ///< Directory delete failed
+        static const uint32_t JERR_JDIR_NOSUCHFILE;     ///< File does not exist
+        static const uint32_t JERR_JDIR_FMOVE;          ///< File move failed
+        static const uint32_t JERR_JDIR_STAT;           ///< File stat failed
+        static const uint32_t JERR_JDIR_UNLINK;         ///< File delete failed
+        static const uint32_t JERR_JDIR_BADFTYPE;       ///< Bad or unknown file type (stat mode)
 
         // class JournalFile
         static const uint32_t JERR_JNLF_OPEN;           ///< Unable to open file for write
@@ -92,47 +92,42 @@ namespace qls_jrnl
         static const uint32_t JERR_JNLF_CMPLOFFSOVFL;   ///< Increased cmpl offs past subm offs
 
         // class LinearFileController
-        static const uint32_t JERR_LFCR_SEQNUMNOTFOUND;///< File sequence number not found
+        static const uint32_t JERR_LFCR_SEQNUMNOTFOUND; ///< File sequence number not found
 
         // class jrec, enq_rec, deq_rec, txn_rec
-        static const uint32_t JERR_JREC_BADRECHDR;     ///< Invalid data record header
-        static const uint32_t JERR_JREC_BADRECTAIL;    ///< Invalid data record tail
+        static const uint32_t JERR_JREC_BADRECHDR;      ///< Invalid data record header
+        static const uint32_t JERR_JREC_BADRECTAIL;     ///< Invalid data record tail
 
         // class wmgr
-        static const uint32_t JERR_WMGR_BADPGSTATE;    ///< Page buffer in illegal state.
-        static const uint32_t JERR_WMGR_BADDTOKSTATE;  ///< Data token in illegal state.
-        static const uint32_t JERR_WMGR_ENQDISCONT;    ///< Enq. new dtok when previous part compl.
-        static const uint32_t JERR_WMGR_DEQDISCONT;    ///< Deq. new dtok when previous part compl.
-        static const uint32_t JERR_WMGR_DEQRIDNOTENQ;  ///< Deq. rid not enqueued
-        static const uint32_t JERR_WMGR_BADFH;         ///< Bad file handle
+        static const uint32_t JERR_WMGR_BADPGSTATE;     ///< Page buffer in illegal state.
+        static const uint32_t JERR_WMGR_BADDTOKSTATE;   ///< Data token in illegal state.
+        static const uint32_t JERR_WMGR_ENQDISCONT;     ///< Enq. new dtok when previous part compl.
+        static const uint32_t JERR_WMGR_DEQDISCONT;     ///< Deq. new dtok when previous part compl.
+        static const uint32_t JERR_WMGR_DEQRIDNOTENQ;   ///< Deq. rid not enqueued
+        static const uint32_t JERR_WMGR_BADFH;          ///< Bad file handle
 
         // class RecoveryManager
-        static const uint32_t JERR_RCVM_OPENRD;       ///< Unable to open file for read
-        static const uint32_t JERR_RCVM_READ;         ///< Read error: no or insufficient data to read
+        static const uint32_t JERR_RCVM_OPENRD;         ///< Unable to open file for read
+        static const uint32_t JERR_RCVM_STREAMBAD;      ///< Read/write stream error
+        static const uint32_t JERR_RCVM_READ;           ///< Read error: no or insufficient data to read
         static const uint32_t JERR_RCVM_WRITE;          ///< Write error
-
-//        // class rmgr
-//        static const uint32_t JERR_RMGR_UNKNOWNMAGIC;  ///< Found record with unknown magic
-//        static const uint32_t JERR_RMGR_RIDMISMATCH;   ///< RID mismatch between rec and dtok
-//        //static const uint32_t JERR_RMGR_FIDMISMATCH;   ///< FID mismatch between emap and rrfc
-//        static const uint32_t JERR_RMGR_ENQSTATE;      ///< Attempted read when wstate not ENQ
-//        static const uint32_t JERR_RMGR_BADRECTYPE;    ///< Attempted op on incorrect rec type
+        static const uint32_t JERR_RCVM_NULLXID;        ///< Null XID when XID length non-null in header
 
         // class data_tok
-        static const uint32_t JERR_DTOK_ILLEGALSTATE;  ///< Attempted to change to illegal state
-//         static const uint32_t JERR_DTOK_RIDNOTSET;     ///< Record ID not set
+        static const uint32_t JERR_DTOK_ILLEGALSTATE;   ///< Attempted to change to illegal state
+//         static const uint32_t JERR_DTOK_RIDNOTSET;   ///< Record ID not set
 
         // class enq_map, txn_map
-        static const uint32_t JERR_MAP_DUPLICATE;      ///< Attempted to insert using duplicate key
-        static const uint32_t JERR_MAP_NOTFOUND;       ///< Key not found in map
-        static const uint32_t JERR_MAP_LOCKED;         ///< rid locked by pending txn
+        static const uint32_t JERR_MAP_DUPLICATE;       ///< Attempted to insert using duplicate key
+        static const uint32_t JERR_MAP_NOTFOUND;        ///< Key not found in map
+        static const uint32_t JERR_MAP_LOCKED;          ///< rid locked by pending txn
 
         // EFP errors
         static const uint32_t JERR_EFP_BADPARTITIONNAME;  ///< Partition name invalid or of value 0
-        static const uint32_t JERR_EFP_BADEFPDIRNAME;     ///< Empty File Pool directory name invalid
-        static const uint32_t JERR_EFP_BADPARTITIONDIR;   ///< Invalid partition directory
-        static const uint32_t JERR_EFP_NOEFP;             ///< No EFP found for given partition and file size
-        static const uint32_t JERR_EFP_EMPTY;             ///< EFP empty
+        static const uint32_t JERR_EFP_BADEFPDIRNAME;   ///< Empty File Pool directory name invalid
+        static const uint32_t JERR_EFP_BADPARTITIONDIR; ///< Invalid partition directory
+        static const uint32_t JERR_EFP_NOEFP;           ///< No EFP found for given partition and file size
+        static const uint32_t JERR_EFP_EMPTY;           ///< EFP empty
 
         // Negative returns for some functions
         static const int32_t AIO_TIMEOUT;               ///< Timeout waiting for AIO return

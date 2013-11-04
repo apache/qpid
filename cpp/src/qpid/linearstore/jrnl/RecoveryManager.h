@@ -49,11 +49,9 @@ protected:
     // Types
     typedef std::vector<std::string> directoryList_t;
     typedef directoryList_t::const_iterator directoryListConstItr_t;
-    typedef std::map<uint64_t, std::string> fileNumberNameMap_t;
-    typedef fileNumberNameMap_t::iterator fileNumberNameMapItr_t;
-    typedef fileNumberNameMap_t::const_iterator fileNumberNameMapConstItr_t;
-    typedef std::deque<uint32_t> enqueueCountList_t;
-    typedef enqueueCountList_t::const_iterator enqueueCountListConstItr_t;
+    typedef std::map<uint64_t, JournalFile*> fileNumberMap_t;
+    typedef fileNumberMap_t::iterator fileNumberMapItr_t;
+    typedef fileNumberMap_t::const_iterator fileNumberMapConstItr_t;
     typedef std::vector<uint64_t> recordIdList_t;
     typedef recordIdList_t::const_iterator recordIdListConstItr_t;
 
@@ -65,8 +63,7 @@ protected:
     JournalLog& journalLogRef_;
 
     // Initial journal analysis data
-    fileNumberNameMap_t fileNumberNameMap_;     ///< File number - name map
-    enqueueCountList_t enqueueCountList_;       ///< Number enqueued records found for each file
+    fileNumberMap_t fileNumberMap_;             ///< File number - JournalFilePtr map
     bool journalEmptyFlag_;                     ///< Journal data files empty
     std::streamoff firstRecordOffset_;          ///< First record offset in ffid
     std::streamoff endOffset_;                  ///< End offset (first byte past last record)
@@ -75,8 +72,8 @@ protected:
     bool lastFileFullFlag_;                     ///< Last file is full
 
     // State for recovery of individual enqueued records
-    uint32_t fileSize_kib_;
-    fileNumberNameMapConstItr_t currentJournalFileConstItr_;
+    uint32_t efpFileSize_kib_;
+    fileNumberMapConstItr_t currentJournalFileConstItr_;
     std::string currentFileName_;
     std::ifstream inFileStream_;
     recordIdList_t recordIdList_;

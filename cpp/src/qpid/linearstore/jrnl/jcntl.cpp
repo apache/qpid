@@ -103,35 +103,10 @@ jcntl::initialize(EmptyFilePool* efpp,
     _tmap.clear();
 
     _linearFileController.finalize();
-
-//    _lpmgr.finalize();
-
-    // Set new file geometry parameters
-//    assert(num_jfiles >= JRNL_MIN_NUM_FILES);
-//    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
-//    _emap.set_num_jfiles(num_jfiles);
-//    _tmap.set_num_jfiles(num_jfiles);
-
-//    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
-//    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
-//    _jfsize_sblks = jfsize_sblks;
-
-    // Clear any existing journal files
-    _jdir.clear_dir();
-//    _lpmgr.initialize(num_jfiles, ae, ae_max_jfiles, this, &new_fcntl); // Creates new journal files
-
+    _jdir.clear_dir(); // Clear any existing journal files
     _linearFileController.initialize(_jdir.dirname(), efpp, 0ULL);
     _linearFileController.pullEmptyFileFromEfp();
-//    std::cout << _linearFileController.status(2);
-//    _wrfc.initialize(_jfsize_sblks);
-//    _rrfc.initialize();
-//    _rrfc.set_findex(0);
-//    _rmgr.initialize(cbp);
     _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, QLS_WMGR_MAXDTOKPP, QLS_WMGR_MAXWAITUS);
-
-    // Write info file (<basename>.jinf) to disk
-//    write_infofile();
-
     _init_flag = true;
 }
 
@@ -152,36 +127,14 @@ jcntl::recover(EmptyFilePoolManager* efpmp,
 
     _linearFileController.finalize();
 
-//    _lpmgr.finalize();
-
-//    assert(num_jfiles >= JRNL_MIN_NUM_FILES);
-//    assert(num_jfiles <= JRNL_MAX_NUM_FILES);
-//    assert(jfsize_sblks >= JRNL_MIN_FILE_SIZE);
-//    assert(jfsize_sblks <= JRNL_MAX_FILE_SIZE);
-//    _jfsize_sblks = jfsize_sblks;
-
     // Verify journal dir and journal files
     _jdir.verify_dir();
-//    _rcvdat.reset(num_jfiles/*, ae, ae_max_jfiles*/);
-
-//    rcvr_janalyze(prep_txn_list_ptr, efpm);
-    efpIdentity_t efpIdentity;
     _recoveryManager.analyzeJournals(prep_txn_list_ptr, efpmp, &_emptyFilePoolPtr);
 
     highest_rid = _recoveryManager.getHighestRecordId();
-//    if (_rcvdat._jfull)
-//        throw jexception(jerrno::JERR_JCNTL_RECOVERJFULL, "jcntl", "recover");
     _jrnl_log.log(/*LOG_DEBUG*/JournalLog::LOG_INFO, _jid, _recoveryManager.toString(_jid, true));
-
-//    _lpmgr.recover(_rcvdat, this, &new_fcntl);
-
     _linearFileController.initialize(_jdir.dirname(), _emptyFilePoolPtr, _recoveryManager.getHighestFileNumber());
-//    _linearFileController.setFileNumberCounter(_recoveryManager.getHighestFileNumber());
     _recoveryManager.setLinearFileControllerJournals(&qpid::qls_jrnl::LinearFileController::addJournalFile, &_linearFileController);
-//    _wrfc.initialize(_jfsize_sblks, &_rcvdat);
-//    _rrfc.initialize();
-//    _rrfc.set_findex(_rcvdat.ffid());
-//    _rmgr.initialize(cbp);
     _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, QLS_WMGR_MAXDTOKPP, QLS_WMGR_MAXWAITUS,
             (_recoveryManager.isLastFileFull() ? 0 : _recoveryManager.getEndOffset()));
 
@@ -194,12 +147,6 @@ jcntl::recover_complete()
 {
     if (!_readonly_flag)
         throw jexception(jerrno::JERR_JCNTL_NOTRECOVERED, "jcntl", "recover_complete");
-//    for (uint16_t i=0; i<_lpmgr.num_jfiles(); i++)
-//        _lpmgr.get_fcntlp(i)->reset(&_rcvdat);
-//    _wrfc.initialize(_jfsize_sblks, &_rcvdat);
-//    _rrfc.initialize();
-//    _rrfc.set_findex(_rcvdat.ffid());
-//    _rmgr.recover_complete();
     _readonly_flag = false;
 }
 
@@ -207,7 +154,7 @@ void
 jcntl::delete_jrnl_files()
 {
     stop(true); // wait for AIO to complete
-    _linearFileController.purgeFilesToEfp();
+    _linearFileController.purgeEmptyFilesToEfp();
     _jdir.delete_dir();
 }
 
@@ -288,73 +235,10 @@ jcntl::read_data_record(void** const datapp,
                         bool ignore_pending_txns)
 {
     check_rstatus("read_data");
-    if (_recoveryManager.readNextRemainingRecord(datapp, dsize, xidpp, xidsize, transient, external, dtokp, ignore_pending_txns))
+    if (_recoveryManager.readNextRemainingRecord(datapp, dsize, xidpp, xidsize, transient, external, dtokp, ignore_pending_txns)) {
         return RHM_IORES_SUCCESS;
+    }
     return RHM_IORES_EMPTY;
-/*
-    if (!dtokp->is_readable()) {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "dtok_id=0x" << std::setw(8) << dtokp->id();
-        oss << "; dtok_rid=0x" << std::setw(16) << dtokp->rid();
-        oss << "; dtok_wstate=" << dtokp->wstate_str();
-        throw jexception(jerrno::JERR_JCNTL_ENQSTATE, oss.str(), "jcntl", "read_data_record");
-    }
-    std::vector<uint64_t> ridl;
-    _emap.rid_list(ridl);
-    enq_map::emap_data_struct_t eds;
-    for (std::vector<uint64_t>::const_iterator i=ridl.begin(); i!=ridl.end(); ++i) {
-        short res = _emap.get_data(*i, eds);
-        if (res == enq_map::EMAP_OK) {
-            std::ifstream ifs(_recoveryManager._fm[eds._pfid].c_str(), std::ifstream::in | std::ifstream::binary);
-            if (!ifs.good()) {
-                std::ostringstream oss;
-                oss << "rid=" << (*i) << " pfid=" << eds._pfid << " file=" << _recoveryManager._fm[eds._pfid] << " file_posn=" << eds._file_posn;
-                throw jexception(jerrno::JERR_RCVM_OPENRD, oss.str(), "jcntl", "read_data_record");
-            }
-            ifs.seekg(eds._file_posn, std::ifstream::beg);
-            ::enq_hdr_t eh;
-            ifs.read((char*)&eh, sizeof(::enq_hdr_t));
-            if (!::validate_enq_hdr(&eh, QLS_ENQ_MAGIC, QLS_JRNL_VERSION, *i)) {
-                std::ostringstream oss;
-                oss << "rid=" << (*i) << " pfid=" << eds._pfid << " file=" << _recoveryManager._fm[eds._pfid] << " file_posn=" << eds._file_posn;
-                throw jexception(jerrno::JERR_JCNTL_INVALIDENQHDR, oss.str(), "jcntl", "read_data_record");
-            }
-            dsize = eh._dsize;
-            xidsize = eh._xidsize;
-            transient = ::is_enq_transient(&eh);
-            external = ::is_enq_external(&eh);
-            if (xidsize) {
-                *xidpp = ::malloc(xidsize);
-                ifs.read((char*)(*xidpp), xidsize);
-            } else {
-                *xidpp = 0;
-            }
-            if (dsize) {
-                *datapp = ::malloc(dsize);
-                ifs.read((char*)(*datapp), dsize);
-            } else {
-                *datapp = 0;
-            }
-        }
-    }
-*/
-/*
-    check_rstatus("read_data");
-    iores res = _rmgr.read(datapp, dsize, xidpp, xidsize, transient, external, dtokp, ignore_pending_txns);
-    if (res == RHM_IORES_RCINVALID)
-    {
-        get_wr_events(0); // check for outstanding write events
-        iores sres = _rmgr.synchronize(); // flushes all outstanding read events
-        if (sres != RHM_IORES_SUCCESS)
-            return sres;
-        // TODO: Does linear store need this?
-//        _rmgr.wait_for_validity(&_aio_cmpl_timeout, true); // throw if timeout occurs
-        res = _rmgr.read(datapp, dsize, xidpp, xidsize, transient, external, dtokp, ignore_pending_txns);
-    }
-    return res;
-*/
-    return RHM_IORES_SUCCESS;
 }
 
 iores

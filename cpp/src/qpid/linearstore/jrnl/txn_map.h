@@ -45,19 +45,23 @@ namespace qls_jrnl
     * \brief Struct encapsulating transaction data necessary for processing a transaction
     *     in the journal once it is closed with either a commit or abort.
     */
-    struct txn_data_struct
+    typedef struct txn_data_t
     {
-        uint64_t _rid;      ///< Record id for this operation
-        uint64_t _drid;     ///< Dequeue record id for this operation
-        uint16_t _pfid;     ///< Physical file id, to be used when transferring to emap on commit
-        bool _enq_flag;     ///< If true, enq op, otherwise deq op
-        bool _commit_flag;  ///< (2PC transactions) Records 2PC complete c/a mode
-        bool _aio_compl;    ///< Initially false, set to true when record AIO returns
-        txn_data_struct(const uint64_t rid, const uint64_t drid, const uint16_t pfid,
-                const bool enq_flag, const bool commit_flag = false);
-    };
-    typedef txn_data_struct txn_data;
-    typedef std::vector<txn_data> txn_data_list;
+        uint64_t rid_;      ///< Record id for this operation
+        uint64_t drid_;     ///< Dequeue record id for this operation
+        uint16_t pfid_;     ///< Physical file id, to be used when transferring to emap on commit
+        uint64_t foffs_;    ///< Offset in file for this record
+        bool enq_flag_;     ///< If true, enq op, otherwise deq op
+        bool commit_flag_;  ///< (2PC transactions) Records 2PC complete c/a mode
+        bool aio_compl_;    ///< Initially false, set to true when record AIO returns
+        txn_data_t(const uint64_t rid,
+                   const uint64_t drid,
+                   const uint16_t pfid,
+                   const uint64_t foffs,
+                   const bool enq_flag,
+                   const bool commit_flag = false);
+    } txn_data_t;
+    typedef std::vector<txn_data_t> txn_data_list;
     typedef txn_data_list::iterator tdl_itr;
 
     /**
@@ -112,16 +116,13 @@ namespace qls_jrnl
 
         xmap _map;
         smutex _mutex;
-//        std::vector<uint32_t> _pfid_txn_cnt;
         const txn_data_list _empty_data_list;
 
     public:
         txn_map();
         virtual ~txn_map();
 
-//        void set_num_jfiles(const uint16_t num_jfiles);
-//        uint32_t get_txn_pfid_cnt(const uint16_t pfid) const;
-        bool insert_txn_data(const std::string& xid, const txn_data& td);
+        bool insert_txn_data(const std::string& xid, const txn_data_t& td);
         const txn_data_list get_tdata_list(const std::string& xid);
         const txn_data_list get_remove_tdata_list(const std::string& xid);
         bool in_map(const std::string& xid);

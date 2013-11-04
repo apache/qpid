@@ -1,0 +1,36 @@
+LinearStore issues:
+
+Store:
+------
+
+1. Overwrite identity: When recovering a previously used file, if the write boundary coincides with old record start,
+   no way of discriminating old from new at boundary (used to use OWI).
+
+2. Recycling files while in use not working, however, files are recovered to EFP during recovery. Must solve #1 first.
+
+3. Checksum not implemented in record tail, not checked during read.
+
+4. Rework qpid management parameters and controls.
+
+Tests
+-----
+
+* No existing tests for linearstore:
+** Basic broker-level tests for txn and non-txn recovery
+** Store-level tests which check write boundary conditions
+** Unit tests
+** Basic performance tests
+
+Tools
+-----
+
+* Store analysis and status
+* Recovery/reading of message content
+
+Code tidy-up
+------------
+
+* Remove old comments
+* Use c++ cast templates instead of (xxx)y
+* Member names: xxx_
+* Add docs to classes

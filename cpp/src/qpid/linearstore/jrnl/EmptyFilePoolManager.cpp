@@ -24,15 +24,22 @@
 #include <dirent.h>
 #include "qpid/linearstore/jrnl/EmptyFilePoolPartition.h"
 #include "qpid/linearstore/jrnl/jdir.h"
+#include "qpid/linearstore/jrnl/JournalLog.h"
 #include "qpid/linearstore/jrnl/slock.h"
 #include <vector>
+
+//#include <iostream> // DEBUG
 
 namespace qpid {
 namespace qls_jrnl {
 
 EmptyFilePoolManager::EmptyFilePoolManager(const std::string& qlsStorePath,
+                                           const efpPartitionNumber_t defaultPartitionNumber,
+                                           const efpDataSize_kib_t defaultEfpDataSize_kib,
                                            JournalLog& journalLogRef) :
                 qlsStorePath_(qlsStorePath),
+                defaultPartitionNumber_(defaultPartitionNumber),
+                defaultEfpDataSize_kib_(defaultEfpDataSize_kib),
                 journalLogRef_(journalLogRef)
 {}
 
@@ -45,53 +52,70 @@ EmptyFilePoolManager::~EmptyFilePoolManager() {
 }
 
 void EmptyFilePoolManager::findEfpPartitions() {
-    //std::cout << "*** Reading " << qlsStorePath << std::endl; // DEBUG
+//std::cout << "*** Reading " << qlsStorePath_ << std::endl; // DEBUG
+    bool foundPartition = false;
     std::vector<std::string> dirList;
-    jdir::read_dir(qlsStorePath_, dirList, true, false, true, false);
-    for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
-        if ((*i)[0] == 'p' && i->length() == 4) { // Filter: look only at names pNNN
-            efpPartitionNumber_t pn = ::atoi(i->c_str() + 1);
-            std::string fullDirPath(qlsStorePath_ + "/" + (*i));
-            EmptyFilePoolPartition* efppp = 0;
-            try {
-                efppp = new EmptyFilePoolPartition(pn, fullDirPath, journalLogRef_);
-                {
-                    slock l(partitionMapMutex_);
-                    partitionMap_[pn] = efppp;
+    while (!foundPartition) {
+        jdir::read_dir(qlsStorePath_, dirList, true, false, true, false);
+        for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
+            efpPartitionNumber_t pn = EmptyFilePoolPartition::getPartitionNumber(*i);
+            if (pn > 0) { // valid partition name found
+                std::string fullDirPath(qlsStorePath_ + "/" + (*i));
+                EmptyFilePoolPartition* efppp = 0;
+                try {
+                    efppp = new EmptyFilePoolPartition(pn, fullDirPath, journalLogRef_);
+                    {
+                        slock l(partitionMapMutex_);
+                        partitionMap_[pn] = efppp;
+                    }
+                } catch (const std::exception& e) {
+                    if (efppp != 0) {
+                        delete efppp;
+                        efppp = 0;
+                    }
+//std::cerr << "Unable to initialize partition " << pn << " (\'" << fullDirPath << "\'): " << e.what() << std::endl; // DEBUG
                 }
-            } catch (const std::exception& e) {
-                if (efppp != 0) {
-                    delete efppp;
-                    efppp = 0;
-                }
-                //std::cerr << "Unable to initialize partition " << pn << " (\'" << fullDirPath << "\'): " << e.what() << std::endl;
+                if (efppp != 0)
+                    efppp->findEmptyFilePools();
+                foundPartition = true;
             }
-            if (efppp != 0)
-                efppp->findEmptyFilePools();
+        }
+
+        // If no partition was found, create an empty default partition with a warning.
+        if (!foundPartition) {
+            journalLogRef_.log(JournalLog::LOG_WARN, "No EFP partition found, creating an empty partition.");
+            std::ostringstream oss;
+            oss << qlsStorePath_ << "/" << EmptyFilePoolPartition::getPartionDirectoryName(defaultPartitionNumber_)
+                << "/" << EmptyFilePoolPartition::s_efpTopLevelDir_ << "/" << EmptyFilePool::dirNameFromDataSize(defaultEfpDataSize_kib_);
+            jdir::create_dir(oss.str());
         }
     }
-    // TODO: Log results
-/*
-    QLS_LOG(info, "EFP Manager initialization complete");
+
+    journalLogRef_.log(JournalLog::LOG_NOTICE, "EFP Manager initialization complete");
     std::vector<qpid::qls_jrnl::EmptyFilePoolPartition*> partitionList;
     std::vector<qpid::qls_jrnl::EmptyFilePool*> filePoolList;
     getEfpPartitions(partitionList);
     if (partitionList.size() == 0) {
-        QLS_LOG(error, "NO EFP PARTITIONS FOUND! No queue creation is possible.")
+        journalLogRef_.log(JournalLog::LOG_WARN, "NO EFP PARTITIONS FOUND! No queue creation is possible.");
     } else {
-        QLS_LOG(info, "> EFP Partitions found: " << partitionList.size());
+        std::stringstream oss;
+        oss << "> EFP Partitions found: " << partitionList.size();
+        journalLogRef_.log(JournalLog::LOG_INFO, oss.str());
         for (std::vector<qpid::qls_jrnl::EmptyFilePoolPartition*>::const_iterator i=partitionList.begin(); i!= partitionList.end(); ++i) {
             filePoolList.clear();
             (*i)->getEmptyFilePools(filePoolList);
-            QLS_LOG(info, "  * Partition " << (*i)->partitionNumber() << " containing " << filePoolList.size() << " pool" <<
-                          (filePoolList.size()>1 ? "s" : "") << " at \'" << (*i)->partitionDirectory() << "\'");
+            std::stringstream oss;
+            oss << "  * Partition " << (*i)->getPartitionNumber() << " containing " << filePoolList.size()
+                << " pool" << (filePoolList.size()>1 ? "s" : "") << " at \'" << (*i)->getPartitionDirectory() << "\'";
+            journalLogRef_.log(JournalLog::LOG_INFO, oss.str());
             for (std::vector<qpid::qls_jrnl::EmptyFilePool*>::const_iterator j=filePoolList.begin(); j!=filePoolList.end(); ++j) {
-                QLS_LOG(info, "    - EFP \'" << (*j)->dataSize_kib() << "k\' containing " << (*j)->numEmptyFiles() <<
-                              " files of size " << (*j)->dataSize_kib() << " KiB totaling " << (*j)->cumFileSize_kib() << " KiB");
+                std::ostringstream oss;
+                oss << "    - EFP \'" << (*j)->dataSize_kib() << "k\' containing " << (*j)->numEmptyFiles() <<
+                              " files of size " << (*j)->dataSize_kib() << " KiB totaling " << (*j)->cumFileSize_kib() << " KiB";
+            journalLogRef_.log(JournalLog::LOG_INFO, oss.str());
             }
         }
     }
-*/
 }
 
 void EmptyFilePoolManager::getEfpFileSizes(std::vector<efpDataSize_kib_t>& efpFileSizeList,
@@ -155,7 +179,7 @@ void EmptyFilePoolManager::getEfpPartitions(std::vector<EmptyFilePoolPartition*>
 }
 
 EmptyFilePool* EmptyFilePoolManager::getEmptyFilePool(const efpIdentity_t efpIdentity) {
-    return getEmptyFilePool(efpIdentity.first, efpIdentity.second);
+    return getEmptyFilePool(efpIdentity.pn_, efpIdentity.ds_);
 }
 
 EmptyFilePool* EmptyFilePoolManager::getEmptyFilePool(const efpPartitionNumber_t partitionNumber,

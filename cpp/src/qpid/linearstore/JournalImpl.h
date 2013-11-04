@@ -140,11 +140,6 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
 
     void recover_complete();
 
-    // Temporary fn to read and save last msg read from journal so it can be assigned
-    // in chunks. To be replaced when coding to do this direct from the journal is ready.
-    // Returns true if the record is extern, false if local.
-//    bool loadMsgContent(uint64_t rid, std::string& data, size_t length, size_t offset = 0);
-
     // Overrides for write inactivity timer
     void enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
                              const size_t this_data_len, qpid::qls_jrnl::data_tok* dtokp,
@@ -191,7 +186,6 @@ class JournalImpl : public qpid::broker::ExternalQueueStore, public qpid::qls_jr
     void resetDeleteCallback() { deleteCallback = DeleteCallback(); }
 
   protected:
-//    void free_read_buffers();
     void createStore();
 
     inline void setGetEventTimer()
@@ -227,15 +221,12 @@ class TplJournalImpl : public JournalImpl
 
     virtual ~TplJournalImpl() {}
 
-/*
     // Special version of read_data_record that ignores transactions - needed when reading the TPL
     inline qpid::qls_jrnl::iores read_data_record(void** const datapp, std::size_t& dsize,
                                                 void** const xidpp, std::size_t& xidsize, bool& transient, bool& external,
                                                 qpid::qls_jrnl::data_tok* const dtokp) {
         return JournalImpl::read_data_record(datapp, dsize, xidpp, xidsize, transient, external, dtokp, true);
     }
-    inline void read_reset() { _rmgr.invalidate(); }
-*/
 }; // class TplJournalImpl
 
 } // namespace msgstore

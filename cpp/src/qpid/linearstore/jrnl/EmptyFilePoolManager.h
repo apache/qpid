@@ -36,13 +36,17 @@ protected:
     typedef partitionMap_t::iterator partitionMapItr_t;
     typedef partitionMap_t::const_iterator partitionMapConstItr_t;
 
-    std::string qlsStorePath_;
+    const std::string qlsStorePath_;
+    const efpPartitionNumber_t defaultPartitionNumber_;
+    const efpDataSize_kib_t defaultEfpDataSize_kib_;
     JournalLog& journalLogRef_;
     partitionMap_t partitionMap_;
     smutex partitionMapMutex_;
 
 public:
     EmptyFilePoolManager(const std::string& qlsStorePath_,
+                         const efpPartitionNumber_t defaultPartitionNumber,
+                         const efpDataSize_kib_t defaultEfpDataSize_kib,
                          JournalLog& journalLogRef_);
     virtual ~EmptyFilePoolManager();
 

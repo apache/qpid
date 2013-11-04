@@ -28,8 +28,26 @@
 #include "qpid/linearstore/jrnl/utils/file_hdr.h"
 #include <unistd.h>
 
+//#include <iostream> // DEBUG
+
 namespace qpid {
 namespace qls_jrnl {
+
+JournalFile::JournalFile(const std::string& fqFileName,
+                         const ::file_hdr_t& fileHeader) :
+            fqFileName_(fqFileName),
+            fileSeqNum_(fileHeader._file_number),
+            fileHandle_(-1),
+            fileCloseFlag_(false),
+            fileHeaderBasePtr_ (0),
+            fileHeaderPtr_(0),
+            aioControlBlockPtr_(0),
+            fileSize_dblks_(((fileHeader._data_size_kib * 1024) + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_BYTES)) / QLS_DBLK_SIZE_BYTES),
+            enqueuedRecordCount_("JournalFile::enqueuedRecordCount", 0),
+            submittedDblkCount_("JournalFile::submittedDblkCount", 0),
+            completedDblkCount_("JournalFile::completedDblkCount", 0),
+            outstandingAioOpsCount_("JournalFile::outstandingAioOpsCount", 0)
+{}
 
 JournalFile::JournalFile(const std::string& fqFileName,
                          const uint64_t fileSeqNum,
@@ -42,10 +60,10 @@ JournalFile::JournalFile(const std::string& fqFileName,
             fileHeaderPtr_(0),
             aioControlBlockPtr_(0),
             fileSize_dblks_(((efpDataSize_kib * 1024) + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_BYTES)) / QLS_DBLK_SIZE_BYTES),
-            enqueuedRecordCount_(0),
-            submittedDblkCount_(0),
-            completedDblkCount_(0),
-            outstandingAioOpsCount_(0)
+            enqueuedRecordCount_("JournalFile::enqueuedRecordCount", 0),
+            submittedDblkCount_("JournalFile::submittedDblkCount", 0),
+            completedDblkCount_("JournalFile::completedDblkCount", 0),
+            outstandingAioOpsCount_("JournalFile::outstandingAioOpsCount", 0)
 {}
 
 JournalFile::~JournalFile() {
@@ -82,24 +100,12 @@ JournalFile::finalize() {
     }
 }
 
-const std::string JournalFile::getDirectory() const {
-    return fqFileName_.substr(0, fqFileName_.rfind('/'));
-}
-
-const std::string JournalFile::getFileName() const {
-    return fqFileName_.substr(fqFileName_.rfind('/')+1);
-}
-
 const std::string JournalFile::getFqFileName() const {
     return fqFileName_;
 }
 
 uint64_t JournalFile::getFileSeqNum() const {
     return fileSeqNum_;
-}
-
-bool JournalFile::isOpen() const {
-    return fileHandle_ >= 0;
 }
 
 int JournalFile::open() {
@@ -182,28 +188,8 @@ uint32_t JournalFile::incrEnqueuedRecordCount() {
     return enqueuedRecordCount_.increment();
 }
 
-uint32_t JournalFile::addEnqueuedRecordCount(const uint32_t a) {
-    return enqueuedRecordCount_.add(a);
-}
-
 uint32_t JournalFile::decrEnqueuedRecordCount() {
     return enqueuedRecordCount_.decrementLimit();
-}
-
-uint32_t JournalFile::subtrEnqueuedRecordCount(const uint32_t s) {
-    return enqueuedRecordCount_.subtractLimit(s);
-}
-
-uint32_t JournalFile::getSubmittedDblkCount() const {
-    return submittedDblkCount_.get();
-}
-
-uint32_t JournalFile::addSubmittedDblkCount(const uint32_t a) {
-    return submittedDblkCount_.addLimit(a, fileSize_dblks_, jerrno::JERR_JNLF_FILEOFFSOVFL);
-}
-
-uint32_t JournalFile::getCompletedDblkCount() const {
-    return completedDblkCount_.get();
 }
 
 uint32_t JournalFile::addCompletedDblkCount(const uint32_t a) {
@@ -212,10 +198,6 @@ uint32_t JournalFile::addCompletedDblkCount(const uint32_t a) {
 
 uint16_t JournalFile::getOutstandingAioOperationCount() const {
     return outstandingAioOpsCount_.get();
-}
-
-uint16_t JournalFile::incrOutstandingAioOperationCount() {
-    return outstandingAioOpsCount_.increment();
 }
 
 uint16_t JournalFile::decrOutstandingAioOperationCount() {
@@ -232,33 +214,10 @@ bool JournalFile::isEmpty() const {
     return submittedDblkCount_ == 0;
 }
 
-bool JournalFile::isDataEmpty() const {
-    return submittedDblkCount_ <= QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_DBLKS;
-}
-
-u_int32_t JournalFile::dblksRemaining() const {
-    return fileSize_dblks_ - submittedDblkCount_;
-}
-
-bool JournalFile::isFull() const {
-    return submittedDblkCount_ == fileSize_dblks_;
-}
-
-bool JournalFile::isFullAndComplete() const {
-    return completedDblkCount_ == fileSize_dblks_;
-}
-
-u_int32_t JournalFile::getOutstandingAioDblks() const {
-    return submittedDblkCount_ - completedDblkCount_;
-}
-
-bool JournalFile::getNextFile() const {
-    return isFull();
-}
-
 bool JournalFile::isNoEnqueuedRecordsRemaining() const {
-    return !isDataEmpty() &&          // Must be written to, not empty
-           enqueuedRecordCount_ == 0;  // No remaining enqueued records
+    return /*!enqueueStarted_ &&*/          // Not part-way through encoding an enqueue
+           isFullAndComplete() &&       // Full with all AIO returned
+           enqueuedRecordCount_ == 0;   // No remaining enqueued records
 }
 
 // debug aid
@@ -283,5 +242,60 @@ const std::string JournalFile::status_str(const uint8_t indentDepth) const {
     oss << indent << "  getNextFile()=" << (getNextFile() ? "T" : "F") << std::endl;
     return oss.str();
 }
+
+// --- protected functions ---
+
+const std::string JournalFile::getDirectory() const {
+    return fqFileName_.substr(0, fqFileName_.rfind('/'));
+}
+
+const std::string JournalFile::getFileName() const {
+    return fqFileName_.substr(fqFileName_.rfind('/')+1);
+}
+
+bool JournalFile::isOpen() const {
+    return fileHandle_ >= 0;
+}
+
+uint32_t JournalFile::getSubmittedDblkCount() const {
+    return submittedDblkCount_.get();
+}
+
+uint32_t JournalFile::addSubmittedDblkCount(const uint32_t a) {
+    return submittedDblkCount_.addLimit(a, fileSize_dblks_, jerrno::JERR_JNLF_FILEOFFSOVFL);
+}
+
+uint32_t JournalFile::getCompletedDblkCount() const {
+    return completedDblkCount_.get();
+}
+
+uint16_t JournalFile::incrOutstandingAioOperationCount() {
+    return outstandingAioOpsCount_.increment();
+}
+
+u_int32_t JournalFile::dblksRemaining() const {
+    return fileSize_dblks_ - submittedDblkCount_;
+}
+
+bool JournalFile::getNextFile() const {
+    return isFull();
+}
+
+u_int32_t JournalFile::getOutstandingAioDblks() const {
+    return submittedDblkCount_ - completedDblkCount_;
+}
+
+bool JournalFile::isDataEmpty() const {
+    return submittedDblkCount_ <= QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_DBLKS;
+}
+
+bool JournalFile::isFull() const {
+    return submittedDblkCount_ == fileSize_dblks_;
+}
+
+bool JournalFile::isFullAndComplete() const {
+    return completedDblkCount_ == fileSize_dblks_;
+}
+
 
 }} // namespace qpid::qls_jrnl
