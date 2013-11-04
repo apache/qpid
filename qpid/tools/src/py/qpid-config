@@ -806,7 +806,7 @@ def main(argv=None):
                 # display
                 display = Display(prefix="  ")
                 headers = [Header(a) for a in desired]
-                rows = [tuple([_clean_ref(o[a]) for a in desired]) for o in objects]
+                rows = [tuple([_clean_ref(o.get(a, "n/a")) for a in desired]) for o in objects]
                 display.formattedTable("Objects of type '%s'" % modifier, headers, rows)
 
             else:
