@@ -652,7 +652,11 @@ void IncomingToQueue::handle(qpid::broker::Message& message)
         msg << " Queue " << queue->getName() << " has been deleted";
         throw Exception(qpid::amqp::error_conditions::RESOURCE_DELETED, msg.str());
     }
-    queue->deliver(message);
+    try {
+        queue->deliver(message);
+    } catch (const qpid::SessionException& e) {
+        throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, e.what());
+    }
 }
 
 void IncomingToExchange::handle(qpid::broker::Message& message)
