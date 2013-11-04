@@ -33,7 +33,7 @@
 #include <sstream>
 #include <stdint.h>
 
-#include <iostream> // DEBUG
+//#include <iostream> // DEBUG
 
 namespace qpid
 {
@@ -99,7 +99,7 @@ wmgr::initialize(aio_callback* const cbp,
     if (eo)
     {
         const uint32_t wr_pg_size_dblks = _cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS;
-        uint32_t data_dblks = (eo / QLS_DBLK_SIZE_BYTES) - 4; // 4 dblks for file hdr
+        uint32_t data_dblks = (eo / QLS_DBLK_SIZE_BYTES) - (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_DBLKS); // exclude file header
         _pg_cntr = data_dblks / wr_pg_size_dblks;
         _pg_offset_dblks = data_dblks - (_pg_cntr * wr_pg_size_dblks);
     }
@@ -115,6 +115,7 @@ wmgr::enqueue(const void* const data_buff,
               const bool transient,
               const bool external)
 {
+//std::cout << _lfc.status(10) << std::endl;
     if (xid_len)
         assert(xid_ptr != 0);
 
@@ -160,7 +161,7 @@ wmgr::enqueue(const void* const data_buff,
             dtokp->clear_xid();
         _enq_busy = true;
     }
-//std::cout << "---+++ wmgr::enqueue() ENQ rid=0x" << std::hex << rid << " " << std::dec << std::flush; // DEBUG
+//std::cout << "---+++ wmgr::enqueue() ENQ rid=0x" << std::hex << rid << " po=0x" << _pg_offset_dblks << " cs=0x" << (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) << " " << std::dec << std::flush; // DEBUG
     bool done = false;
     while (!done)
     {
@@ -193,12 +194,12 @@ wmgr::enqueue(const void* const data_buff,
             // message. AIO callbacks will then only process this token when entire message is
             // enqueued.
             _lfc.incrEnqueuedRecordCount(dtokp->fid());
-//std::cout << "[0x" << std::hex << _lfc.getEnqueuedRecordCount() << std::dec << std::flush; // DEBUG
+//std::cout << "[0x" << std::hex << _lfc.getEnqueuedRecordCount(dtokp->fid()) << std::dec << std::flush; // DEBUG
 
             if (xid_len) // If part of transaction, add to transaction map
             {
                 std::string xid((const char*)xid_ptr, xid_len);
-                _tmap.insert_txn_data(xid, txn_data(rid, 0, dtokp->fid(), true));
+                _tmap.insert_txn_data(xid, txn_data_t(rid, 0, dtokp->fid(), 0, true));
             }
             else
             {
@@ -213,7 +214,7 @@ wmgr::enqueue(const void* const data_buff,
 
             done = true;
         } else {
-//std::cout << "$" << std::endl << std::flush; // DEBUG
+//std::cout << "$" << std::flush; // DEBUG
             dtokp->set_wstate(data_tok::ENQ_PART);
         }
 
@@ -313,7 +314,7 @@ wmgr::dequeue(data_tok* dtokp,
                 // If the enqueue is part of a pending txn, it will not yet be in emap
                 _emap.lock(dequeue_rid); // ignore rid not found error
                 std::string xid((const char*)xid_ptr, xid_len);
-                _tmap.insert_txn_data(xid, txn_data(rid, dequeue_rid, dtokp->fid(), false));
+                _tmap.insert_txn_data(xid, txn_data_t(rid, dequeue_rid, dtokp->fid(), 0, false));
             }
             else
             {
@@ -427,10 +428,10 @@ wmgr::abort(data_tok* dtokp,
             txn_data_list tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
             for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++)
             {
-				if (!itr->_enq_flag)
-				    _emap.unlock(itr->_drid); // ignore rid not found error
-                if (itr->_enq_flag)
-                    _lfc.decrEnqueuedRecordCount(itr->_pfid);
+				if (!itr->enq_flag_)
+				    _emap.unlock(itr->drid_); // ignore rid not found error
+                if (itr->enq_flag_)
+                    _lfc.decrEnqueuedRecordCount(itr->pfid_);
             }
             std::pair<std::set<std::string>::iterator, bool> res = _txn_pending_set.insert(xid);
             if (!res.second)
@@ -441,9 +442,9 @@ wmgr::abort(data_tok* dtokp,
             }
 
             done = true;
-        }
-        else
+        } else {
             dtokp->set_wstate(data_tok::ABORT_PART);
+        }
 
         file_header_check(rid, cont, _txn_rec.rec_size_dblks() - data_offs_dblks);
         flush_check(res, cont, done, rid);
@@ -525,20 +526,20 @@ wmgr::commit(data_tok* dtokp,
             txn_data_list tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
             for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++)
             {
-                if (itr->_enq_flag) // txn enqueue
+                if (itr->enq_flag_) // txn enqueue
                 {
-                    if (_emap.insert_pfid(itr->_rid, itr->_pfid, 0) < enq_map::EMAP_OK) // fail
+                    if (_emap.insert_pfid(itr->rid_, itr->pfid_, 0) < enq_map::EMAP_OK) // fail
                     {
                         // The only error code emap::insert_pfid() returns is enq_map::EMAP_DUP_RID.
                         std::ostringstream oss;
-                        oss << std::hex << "rid=0x" << itr->_rid << " _pfid=0x" << itr->_pfid;
+                        oss << std::hex << "rid=0x" << itr->rid_ << " _pfid=0x" << itr->pfid_;
                         throw jexception(jerrno::JERR_MAP_DUPLICATE, oss.str(), "wmgr", "commit");
                     }
                 }
                 else // txn dequeue
                 {
                     uint64_t fid;
-                    short eres = _emap.get_remove_pfid(itr->_drid, fid, true);
+                    short eres = _emap.get_remove_pfid(itr->drid_, fid, true);
                     if (eres < enq_map::EMAP_OK) // fail
                     {
                         if (eres == enq_map::EMAP_RID_NOT_FOUND)
@@ -566,9 +567,9 @@ wmgr::commit(data_tok* dtokp,
             }
 
             done = true;
-        }
-        else
+        } else {
             dtokp->set_wstate(data_tok::COMMIT_PART);
+        }
 
         file_header_check(rid, cont, _txn_rec.rec_size_dblks() - data_offs_dblks);
         flush_check(res, cont, done, rid);
@@ -585,6 +586,7 @@ wmgr::file_header_check(const uint64_t rid,
 {
     if (_lfc.isEmpty()) // File never written (i.e. no header or data)
     {
+//std::cout << "e" << std::flush;
         std::size_t fro = 0;
         if (cont) {
             bool file_fit = rec_dblks_rem <= _lfc.dataSize_sblks() * QLS_SBLK_SIZE_DBLKS; // Will fit within this journal file
@@ -608,6 +610,7 @@ wmgr::flush_check(iores& res,
     // Is page is full, flush
     if (_pg_offset_dblks >= _cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS)
     {
+//std::cout << "^" << _pg_offset_dblks << ">=" << (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) << std::flush;
         res = write_flush();
         assert(res == RHM_IORES_SUCCESS);
 
@@ -621,6 +624,7 @@ wmgr::flush_check(iores& res,
         uint32_t fileSize_pgs = _lfc.fileSize_sblks() / _cache_pgsize_sblks;
         if (_pg_cntr >= fileSize_pgs)
         {
+//std::cout << _pg_cntr << ">=" << fileSize_pgs << std::flush;
             get_next_file();
             if (!done) {
                 cont = true;
@@ -649,7 +653,7 @@ wmgr::write_flush()
     if (_cached_offset_dblks)
     {
         if (_page_cb_arr[_pg_index]._state == AIO_PENDING) {
-//std::cout << "#"; // DEBUG
+//std::cout << "#" << std::flush; // DEBUG
             res = RHM_IORES_PAGE_AIOWAIT;
         } else {
             if (_page_cb_arr[_pg_index]._state != IN_USE)
@@ -688,7 +692,7 @@ void
 wmgr::get_next_file()
 {
     _pg_cntr = 0;
-//std::cout << "&&&&& wmgr::get_next_file(): " << status_str() << std::endl; // DEBUG
+//std::cout << "&&&&& wmgr::get_next_file(): " << status_str() << std::flush << std::endl; // DEBUG
     _lfc.pullEmptyFileFromEfp();
 }
 
@@ -972,6 +976,7 @@ wmgr::dblk_roundup()
     uint32_t wdblks = jrec::size_blks(_cached_offset_dblks, QLS_SBLK_SIZE_DBLKS) * QLS_SBLK_SIZE_DBLKS;
     while (_cached_offset_dblks < wdblks)
     {
+//std::cout << "^0x" << std::hex << _cached_offset_dblks << "<0x" << wdblks << std::dec << std::flush;
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * QLS_DBLK_SIZE_BYTES);
         std::memcpy(wptr, (const void*)&xmagic, sizeof(xmagic));
 #ifdef QLS_CLEAN

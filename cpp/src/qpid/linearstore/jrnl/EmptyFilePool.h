@@ -76,6 +76,10 @@ public:
     std::string takeEmptyFile(const std::string& destDirectory);
     void returnEmptyFile(const std::string& srcFile);
 
+    static std::string dirNameFromDataSize(const efpDataSize_kib_t efpDataSize_kib);
+    static efpDataSize_kib_t dataSizeFromDirName_kib(const std::string& dirName,
+                                                     const efpPartitionNumber_t partitionNumber);
+
 protected:
     void createEmptyFile();
     std::string getEfpFileName();
@@ -84,8 +88,6 @@ protected:
     void resetEmptyFileHeader(const std::string& fqFileName);
     bool validateEmptyFile(const std::string& emptyFileName) const;
 
-    static efpDataSize_kib_t fileSizeKbFromDirName(const std::string& dirName,
-                                                   const efpPartitionNumber_t partitionNumber);
     static int moveEmptyFile(const std::string& fromFqPath,
                              const std::string& toFqPath);
 };

@@ -26,7 +26,7 @@
 #include "qpid/log/Statement.h"
 
 #define QLS_LOG(level, msg) QPID_LOG(level, "Linear Store: " << msg)
-#define QLS_LOG2(level, queue, msg) QPID_LOG(level, "Linear Store: Journal \'" << queue << "\":" << msg)
+#define QLS_LOG2(level, queue, msg) QPID_LOG(level, "Linear Store: Journal \"" << queue << "\":" << msg)
 
 namespace qpid {
 namespace linearstore {

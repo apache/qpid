@@ -52,6 +52,8 @@ protected:
 
 public:
     JournalFile(const std::string& fqFileName,
+                const ::file_hdr_t& fileHeader);
+    JournalFile(const std::string& fqFileName,
                 const uint64_t fileSeqNum,
                 const efpDataSize_kib_t efpDataSize_kib);
     virtual ~JournalFile();
@@ -59,12 +61,9 @@ public:
     void initialize(const uint32_t completedDblkCount);
     void finalize();
 
-    const std::string getDirectory() const;
-    const std::string getFileName() const;
     const std::string getFqFileName() const;
     uint64_t getFileSeqNum() const;
 
-    bool isOpen() const;
     int open();
     void close();
     void asyncFileHeaderWrite(io_context_t ioContextPtr,
@@ -81,32 +80,38 @@ public:
 
     uint32_t getEnqueuedRecordCount() const;
     uint32_t incrEnqueuedRecordCount();
-    uint32_t addEnqueuedRecordCount(const uint32_t a);
     uint32_t decrEnqueuedRecordCount();
-    uint32_t subtrEnqueuedRecordCount(const uint32_t s);
+
+    uint32_t addCompletedDblkCount(const uint32_t a);
+
+    uint16_t getOutstandingAioOperationCount() const;
+    uint16_t decrOutstandingAioOperationCount();
+
+    // Status helper functions
+    bool isEmpty() const;                      ///< True if no writes of any kind have occurred
+    bool isNoEnqueuedRecordsRemaining() const; ///< True when all enqueued records (or parts) have been dequeued
+
+    // debug aid
+    const std::string status_str(const uint8_t indentDepth) const;
+
+protected:
+    const std::string getDirectory() const;
+    const std::string getFileName() const;
+    bool isOpen() const;
 
     uint32_t getSubmittedDblkCount() const;
     uint32_t addSubmittedDblkCount(const uint32_t a);
 
     uint32_t getCompletedDblkCount() const;
-    uint32_t addCompletedDblkCount(const uint32_t a);
 
-    uint16_t getOutstandingAioOperationCount() const;
     uint16_t incrOutstandingAioOperationCount();
-    uint16_t decrOutstandingAioOperationCount();
 
-    // Status helper functions
-    bool isEmpty() const;                      ///< True if no writes of any kind have occurred
-    bool isDataEmpty() const;                  ///< True if only file header written, data is still empty
     u_int32_t dblksRemaining() const;          ///< Dblks remaining until full
+    bool getNextFile() const;                  ///< True when next file is needed
+    u_int32_t getOutstandingAioDblks() const;  ///< Dblks still to be written
+    bool isDataEmpty() const;                  ///< True if only file header written, data is still empty
     bool isFull() const;                       ///< True if all possible dblks have been submitted (but may not yet have returned from AIO)
     bool isFullAndComplete() const;            ///< True if all submitted dblks have returned from AIO
-    u_int32_t getOutstandingAioDblks() const;  ///< Dblks still to be written
-    bool getNextFile() const;                  ///< True when next file is needed
-    bool isNoEnqueuedRecordsRemaining() const; ///< True when all enqueued records (or parts) have been dequeued
-
-    // debug aid
-    const std::string status_str(const uint8_t indentDepth) const;
 };
 
 }} // namespace qpid::qls_jrnl

@@ -29,6 +29,8 @@
 #include "qpid/linearstore/jrnl/slock.h"
 #include "qpid/linearstore/jrnl/utils/file_hdr.h"
 
+//#include <iostream> // DEBUG
+
 namespace qpid {
 namespace qls_jrnl {
 
@@ -36,8 +38,8 @@ LinearFileController::LinearFileController(jcntl& jcntlRef) :
             jcntlRef_(jcntlRef),
             emptyFilePoolPtr_(0),
             currentJournalFilePtr_(0),
-            fileSeqCounter_(0),
-            recordIdCounter_(0)
+            fileSeqCounter_("LinearFileController::fileSeqCounter", 0),
+            recordIdCounter_("LinearFileController::recordIdCounter", 0)
 {}
 
 LinearFileController::~LinearFileController() {}
@@ -47,7 +49,7 @@ void LinearFileController::initialize(const std::string& journalDirectory,
                                       uint64_t initialFileNumberVal) {
     journalDirectory_.assign(journalDirectory);
     emptyFilePoolPtr_ = emptyFilePoolPtr;
-    fileSeqCounter_ = initialFileNumberVal;
+    fileSeqCounter_.set(initialFileNumberVal);
 }
 
 void LinearFileController::finalize() {
@@ -57,14 +59,13 @@ void LinearFileController::finalize() {
     }
 }
 
-void LinearFileController::addJournalFile(const std::string& fileName,
-                                          const uint64_t fileNumber,
-                                          const uint32_t fileSize_kib,
+void LinearFileController::addJournalFile(JournalFile* journalFilePtr,
                                           const uint32_t completedDblkCount) {
-    if (currentJournalFilePtr_)
+    if (currentJournalFilePtr_) {
         currentJournalFilePtr_->close();
-    currentJournalFilePtr_ = new JournalFile(fileName, fileNumber, fileSize_kib);
-    currentJournalFilePtr_->initialize(completedDblkCount);
+    }
+    journalFilePtr->initialize(completedDblkCount);
+    currentJournalFilePtr_ = journalFilePtr;
     {
         slock l(journalFileListMutex_);
         journalFileList_.push_back(currentJournalFilePtr_);
@@ -72,16 +73,8 @@ void LinearFileController::addJournalFile(const std::string& fileName,
     currentJournalFilePtr_->open();
 }
 
-efpDataSize_kib_t LinearFileController::dataSize_kib() const {
-    return emptyFilePoolPtr_->dataSize_kib();
-}
-
 efpDataSize_sblks_t LinearFileController::dataSize_sblks() const {
     return emptyFilePoolPtr_->dataSize_sblks();
-}
-
-efpFileSize_kib_t LinearFileController::fileSize_kib() const {
-    return emptyFilePoolPtr_->fileSize_kib();
 }
 
 efpFileSize_sblks_t LinearFileController::fileSize_sblks() const {
@@ -100,28 +93,24 @@ void LinearFileController::pullEmptyFileFromEfp() {
     addJournalFile(ef, getNextFileSeqNum(), emptyFilePoolPtr_->dataSize_kib(), 0);
 }
 
-void LinearFileController::purgeFilesToEfp() {
+void LinearFileController::purgeEmptyFilesToEfp() {
     slock l(journalFileListMutex_);
-    while (journalFileList_.front()->isNoEnqueuedRecordsRemaining()) {
-        emptyFilePoolPtr_->returnEmptyFile(journalFileList_.front()->getFqFileName());
-        delete journalFileList_.front();
-        journalFileList_.pop_front();
-    }
+    purgeEmptyFilesToEfpNoLock();
 }
 
 uint32_t LinearFileController::getEnqueuedRecordCount(const efpFileCount_t fileSeqNumber) {
-    slock l(journalFileListMutex_);
     return find(fileSeqNumber)->getEnqueuedRecordCount();
 }
 
 uint32_t LinearFileController::incrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber) {
-    assertCurrentJournalFileValid("incrEnqueuedRecordCount");
     return find(fileSeqNumber)->incrEnqueuedRecordCount();
 }
 
 uint32_t LinearFileController::decrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber) {
     slock l(journalFileListMutex_);
-    return find(fileSeqNumber)->decrEnqueuedRecordCount();
+    uint32_t r = find(fileSeqNumber)->decrEnqueuedRecordCount();
+//    purgeEmptyFilesToEfpNoLock();
+    return r;
 }
 
 uint32_t LinearFileController::addWriteCompletedDblkCount(const efpFileCount_t fileSeqNumber, const uint32_t a) {
@@ -160,99 +149,9 @@ uint64_t LinearFileController::getCurrentFileSeqNum() const {
     return currentJournalFilePtr_->getFileSeqNum();
 }
 
-uint32_t LinearFileController::getEnqueuedRecordCount() const {
-    assertCurrentJournalFileValid("getEnqueuedRecordCount");
-    return currentJournalFilePtr_->getEnqueuedRecordCount();
-}
-
-uint32_t LinearFileController::incrEnqueuedRecordCount() {
-    assertCurrentJournalFileValid("incrEnqueuedRecordCount");
-    return currentJournalFilePtr_->incrEnqueuedRecordCount();
-}
-
-uint32_t LinearFileController::addEnqueuedRecordCount(const uint32_t a) {
-    assertCurrentJournalFileValid("addEnqueuedRecordCount");
-    return currentJournalFilePtr_->addEnqueuedRecordCount(a);
-}
-
-uint32_t LinearFileController::decrEnqueuedRecordCount() {
-    assertCurrentJournalFileValid("decrEnqueuedRecordCount");
-    return currentJournalFilePtr_->decrEnqueuedRecordCount();
-}
-
-uint32_t LinearFileController::subtrEnqueuedRecordCount(const uint32_t s) {
-    assertCurrentJournalFileValid("subtrEnqueuedRecordCount");
-    return currentJournalFilePtr_->subtrEnqueuedRecordCount(s);
-}
-
-uint32_t LinearFileController::getWriteSubmittedDblkCount() const {
-    assertCurrentJournalFileValid("getWriteSubmittedDblkCount");
-    return currentJournalFilePtr_->getSubmittedDblkCount();
-}
-
-uint32_t LinearFileController::addWriteSubmittedDblkCount(const uint32_t a) {
-    assertCurrentJournalFileValid("addWriteSubmittedDblkCount");
-    return currentJournalFilePtr_->addSubmittedDblkCount(a);
-}
-
-uint32_t LinearFileController::getWriteCompletedDblkCount() const {
-    assertCurrentJournalFileValid("getWriteCompletedDblkCount");
-    return currentJournalFilePtr_->getCompletedDblkCount();
-}
-
-uint32_t LinearFileController::addWriteCompletedDblkCount(const uint32_t a) {
-    assertCurrentJournalFileValid("addWriteCompletedDblkCount");
-    return currentJournalFilePtr_->addCompletedDblkCount(a);
-}
-
-uint16_t LinearFileController::getOutstandingAioOperationCount() const {
-    assertCurrentJournalFileValid("getOutstandingAioOperationCount");
-    return currentJournalFilePtr_->getOutstandingAioOperationCount();
-}
-
-uint16_t LinearFileController::incrOutstandingAioOperationCount() {
-    assertCurrentJournalFileValid("incrOutstandingAioOperationCount");
-    return currentJournalFilePtr_->incrOutstandingAioOperationCount();
-}
-
-uint16_t LinearFileController::decrOutstandingAioOperationCount() {
-    assertCurrentJournalFileValid("decrOutstandingAioOperationCount");
-    return currentJournalFilePtr_->decrOutstandingAioOperationCount();
-}
-
 bool LinearFileController::isEmpty() const {
     assertCurrentJournalFileValid("isEmpty");
     return currentJournalFilePtr_->isEmpty();
-}
-
-bool LinearFileController::isDataEmpty() const {
-    assertCurrentJournalFileValid("isDataEmpty");
-    return currentJournalFilePtr_->isDataEmpty();
-}
-
-u_int32_t LinearFileController::dblksRemaining() const {
-    assertCurrentJournalFileValid("dblksRemaining");
-    return currentJournalFilePtr_->dblksRemaining();
-}
-
-bool LinearFileController::isFull() const {
-    assertCurrentJournalFileValid("isFull");
-    return currentJournalFilePtr_->isFull();
-}
-
-bool LinearFileController::isFullAndComplete() const {
-    assertCurrentJournalFileValid("isFullAndComplete");
-    return currentJournalFilePtr_->isFullAndComplete();
-}
-
-u_int32_t LinearFileController::getOutstandingAioDblks() const {
-    assertCurrentJournalFileValid("getOutstandingAioDblks");
-    return currentJournalFilePtr_->getOutstandingAioDblks();
-}
-
-bool LinearFileController::needNextFile() const {
-    assertCurrentJournalFileValid("getNextFile");
-    return currentJournalFilePtr_->getNextFile();
 }
 
 const std::string LinearFileController::status(const uint8_t indentDepth) const {
@@ -273,14 +172,22 @@ const std::string LinearFileController::status(const uint8_t indentDepth) const 
 
 // --- protected functions ---
 
-bool LinearFileController::checkCurrentJournalFileValid() const {
-    return currentJournalFilePtr_ != 0;
+void LinearFileController::addJournalFile(const std::string& fileName,
+                                          const uint64_t fileNumber,
+                                          const uint32_t fileSize_kib,
+                                          const uint32_t completedDblkCount) {
+    JournalFile* jfp = new JournalFile(fileName, fileNumber, fileSize_kib);
+    addJournalFile(jfp, completedDblkCount);
 }
 
 void LinearFileController::assertCurrentJournalFileValid(const char* const functionName) const {
     if (!checkCurrentJournalFileValid()) {
         throw jexception(jerrno::JERR__NULL, "LinearFileController", functionName);
     }
+}
+
+bool LinearFileController::checkCurrentJournalFileValid() const {
+    return currentJournalFilePtr_ != 0;
 }
 
 // NOTE: NOT THREAD SAFE - journalFileList is accessed by multiple threads - use under external lock
@@ -299,6 +206,17 @@ JournalFile* LinearFileController::find(const efpFileCount_t fileSeqNumber) {
 
 uint64_t LinearFileController::getNextFileSeqNum() {
     return fileSeqCounter_.increment();
+}
+
+void LinearFileController::purgeEmptyFilesToEfpNoLock() {
+//std::cout << " >P n=" << journalFileList_.size() << " e=" << (journalFileList_.front()->isNoEnqueuedRecordsRemaining()?"T":"F") << std::flush; // DEBUG
+    while (journalFileList_.front()->isNoEnqueuedRecordsRemaining() &&
+           journalFileList_.size() > 1) { // Can't purge last file, even if it has no enqueued records
+//std::cout << " *f=" << journalFileList_.front()->getFqFileName() << std::flush; // DEBUG
+        emptyFilePoolPtr_->returnEmptyFile(journalFileList_.front()->getFqFileName());
+        delete journalFileList_.front();
+        journalFileList_.pop_front();
+    }
 }
 
 }} // namespace qpid::qls_jrnl

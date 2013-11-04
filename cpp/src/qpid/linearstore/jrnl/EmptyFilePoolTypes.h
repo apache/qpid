@@ -22,19 +22,27 @@
 #ifndef QPID_QLS_JRNL_EMPTYFILEPOOLTYPES_H_
 #define QPID_QLS_JRNL_EMPTYFILEPOOLTYPES_H_
 
+#include <iostream>
 #include <stdint.h>
 #include <utility> // std::pair
 
 namespace qpid {
 namespace qls_jrnl {
 
-    typedef uint64_t efpDataSize_kib_t;     ///< Size of data part of file (excluding file header) in kib
-    typedef uint64_t efpFileSize_kib_t;     ///< Size of file (header + data) in kib
-    typedef uint32_t efpDataSize_sblks_t;   ///< Size of data part of file (excluding file header) in sblks
-    typedef uint32_t efpFileSize_sblks_t;   ///< Size of file (header + data) in sblks
-    typedef uint32_t efpFileCount_t;        ///< Number of files in a partition or pool
-    typedef uint16_t efpPartitionNumber_t;  ///< Number assigned to a partition
-    typedef std::pair<efpPartitionNumber_t, efpDataSize_kib_t> efpIdentity_t; ///< Unique identity of a pool, consisting of the partition number and data size
+typedef uint64_t efpDataSize_kib_t;     ///< Size of data part of file (excluding file header) in kib
+typedef uint64_t efpFileSize_kib_t;     ///< Size of file (header + data) in kib
+typedef uint32_t efpDataSize_sblks_t;   ///< Size of data part of file (excluding file header) in sblks
+typedef uint32_t efpFileSize_sblks_t;   ///< Size of file (header + data) in sblks
+typedef uint32_t efpFileCount_t;        ///< Number of files in a partition or pool
+typedef uint16_t efpPartitionNumber_t;  ///< Number assigned to a partition
+
+typedef struct efpIdentity_t {
+    efpPartitionNumber_t pn_;
+    efpDataSize_kib_t ds_;
+    efpIdentity_t() : pn_(0), ds_(0) {}
+    efpIdentity_t(efpPartitionNumber_t pn, efpDataSize_kib_t ds) : pn_(pn), ds_(ds) {}
+    friend std::ostream& operator<<(std::ostream& os, efpIdentity_t& id) { os << "[" << id.pn_ << "," << id.ds_ << "]"; return os; }
+} efpIdentity_t;
 
 }} // namespace qpid::qls_jrnl
 
