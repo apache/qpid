@@ -230,6 +230,8 @@ if (MSVC)
     # Set the windows version for the .NET Binding cpp project
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/org.apache.qpid.messaging.template.rc
                    ${CMAKE_CURRENT_BINARY_DIR}/windows/resources/org.apache.qpid.messaging.rc)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/AssemblyInfo-template.cpp
+                   ${CMAKE_CURRENT_BINARY_DIR}/windows/generated_src/AssemblyInfo.cpp)
     # Set the windows version for the .NET Binding sessionreceiver project
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/sessionreceiver/properties/sessionreceiver-AssemblyInfo-template.cs
                    ${CMAKE_CURRENT_BINARY_DIR}/windows/generated_src/sessionreceiver-AssemblyInfo.cs)

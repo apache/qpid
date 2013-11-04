@@ -47,8 +47,9 @@ using namespace System::Security::Permissions;
 //
 // You can specify all the value or you can default the Revision and Build Numbers
 // by using the '*' as shown below:
-
-[assembly:AssemblyVersionAttribute("1.0.*")];
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("${winver_PRODUCT_VERSION_N1}.${winver_PRODUCT_VERSION_N2}.${winver_PRODUCT_VERSION_N3}.${winver_PRODUCT_VERSION_N4}")]
+[assembly: AssemblyFileVersion("${winver_FILE_VERSION_N1}.${winver_FILE_VERSION_N2}.${winver_FILE_VERSION_N3}.${winver_FILE_VERSION_N4}")]
 
 [assembly:ComVisible(false)];
 
