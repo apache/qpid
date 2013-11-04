@@ -31,7 +31,20 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 namespace qpid {
 namespace broker {
 namespace amqp {
-
+namespace {
+const std::string CLIENT_PROCESS_NAME("qpid.client_process");
+const std::string CLIENT_PID("qpid.client_pid");
+const std::string CLIENT_PPID("qpid.client_ppid");
+template <typename T> T getProperty(const std::string& key, const qpid::types::Variant::Map& props, T defaultValue)
+{
+    qpid::types::Variant::Map::const_iterator i = props.find(key);
+    if (i != props.end()) {
+        return i->second;
+    } else {
+        return defaultValue;
+    }
+}
+}
 ManagedConnection::ManagedConnection(Broker& broker, const std::string i) : id(i), agent(0)
 {
     //management integration:
@@ -89,6 +102,18 @@ void ManagedConnection::setPeerProperties(std::map<std::string, types::Variant>&
     peerProperties = p;
     if (connection) {
         connection->set_remoteProperties(peerProperties);
+
+        std::string procName = getProperty(CLIENT_PROCESS_NAME, peerProperties, std::string());
+        uint32_t pid = getProperty(CLIENT_PID, peerProperties, 0);
+        uint32_t ppid = getProperty(CLIENT_PPID, peerProperties, 0);
+
+        if (!procName.empty())
+            connection->set_remoteProcessName(procName);
+        if (pid != 0)
+            connection->set_remotePid(pid);
+        if (ppid != 0)
+            connection->set_remoteParentPid(ppid);
+
     }
 }
 
