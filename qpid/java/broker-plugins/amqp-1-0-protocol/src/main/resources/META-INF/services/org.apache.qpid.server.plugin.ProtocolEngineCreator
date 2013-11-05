@@ -16,5 +16,4 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-org.apache.qpid.server.protocol.v1_0.ProtocolEngineCreator_1_0_0
 org.apache.qpid.server.protocol.v1_0.ProtocolEngineCreator_1_0_0_SASL
