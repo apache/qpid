@@ -478,6 +478,11 @@
                   <regex>${supported-test-profiles-regex}</regex>
                   <regexMessage>You have set an unsupported test profile! Allowed values match: ${supported-test-profiles-regex}</regexMessage>
                 </requireProperty>
+                <requireProperty>
+                  <property>enable</property>
+                  <message>##### NOTE: The maven build is a work in progress. To enable, set -Denable=true #####</message>
+                  <regex>true</regex>
+                </requireProperty>
               </rules>
               <fail>true</fail>
             </configuration>
