@@ -212,9 +212,10 @@ function BuildAPlatform
     # Move target must be a directory
     $move=(
         ('bin/*.lib',            'lib'),
-        ('bin/boost/*-gd-*.dll', 'bin/Debug'),
-        ('bin/boost/*.dll',      'bin/Release'),
+        ('bin/*-gd-*.dll',       'bin/Debug'),
+        ('bin/boost*.dll',       'bin/Release'),
         ('bin/Microsoft*',       'bin/Release'),
+        ('bin/msvc*d.dll',       'bin/Debug') ,
         ('bin/msvc*.dll',        'bin/Release') ,
         ('bin/*d.dll',           'bin/Debug'),
         ('bin/*.dll',            'bin/Release'),
@@ -240,17 +241,16 @@ function BuildAPlatform
         'bin/qpidxarm*.*',
         'bin/*PDB/qmfengine*.*',
         'bin/*PDB/qpidxarm*.*',
-        'bin/boost_regex*.*',
-        'bin/boost',
         'bin/*.exe',
         'bin/qmf-gen',
-        'bin/qpidt',
+		'bin/Debug/msvc*',
         'conf',
         'examples/*.sln',
         'examples/*.vcproj',
         'examples/messaging/*.vcproj',
         'include',
-        'plugins')
+        'plugins',
+		'lib/pkgconfig')
 
     # Move some files around in the install tree
     foreach ($pattern in $move) {
@@ -326,10 +326,10 @@ function BuildAPlatform
     "cmake -G ""$cmakeGenerator"" ."                            | Out-File -filepath $dst -encoding ASCII -append
     
     # Zip the /bin PDB files
-    &'7z' a -mx9 ".\$install_dir\bin\Debug\symbols-debug.zip"     ".\$install_dir\bin\DebugPDB\*.pdb"
-    &'7z' a -mx9 ".\$install_dir\bin\Release\symbols-release.zip" ".\$install_dir\bin\ReleasePDB\*.pdb"
-    Remove-Item -recurse ".\$install_dir\bin\DebugPDB"
-    Remove-Item -recurse ".\$install_dir\bin\ReleasePDB"
+    &'7z' a -mx9 ".\$install_dir\bin\Debug\symbols-debug.zip"     ".\$install_dir\lib\DebugPDB\*.pdb"
+    &'7z' a -mx9 ".\$install_dir\bin\Release\symbols-release.zip" ".\$install_dir\lib\ReleasePDB\*.pdb"
+    Remove-Item -recurse ".\$install_dir\lib\DebugPDB"
+    Remove-Item -recurse ".\$install_dir\lib\ReleasePDB"
 
     # Copy the dotnet bindings
     Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.dll"          -destination "$install_dir/bin/Debug/"
