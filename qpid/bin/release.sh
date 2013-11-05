@@ -231,13 +231,9 @@ if [ "WCF" == "$WCF" ] ; then
 fi
 
 if [ "CPP" == "$CPP" ] ; then
-  pushd qpid-${VER}/cpp
-  ./bootstrap
-  ./configure
-  make dist -j2
-  popd
-
-  cp qpid-${VER}/cpp/*.tar.gz artifacts/qpid-cpp-${VER}.tar.gz
+  cp -a qpid-${VER}/cpp qpid-cpp-${VER}
+  tar -cvzf artifacts/qpid-cpp-${VER}.tar.gz qpid-cpp-${VER}
+  rm -rf qpid-cpp-${VER}
 fi
 
 if [ "JAVA" == "$JAVA" ] ; then
