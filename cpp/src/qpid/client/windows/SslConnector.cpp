@@ -116,8 +116,9 @@ SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
                            framing::ProtocolVersion ver,
                            const ConnectionSettings& settings,
                            ConnectionImpl* cimpl)
-    : TCPConnector(p, ver, settings, cimpl), shim(0), poller(p)
+    : TCPConnector(p, ver, settings, cimpl), shim(0), poller(p), certStore(0), cert(0)
 {
+    SecInvalidateHandle(&credHandle);
     memset(&cred, 0, sizeof(cred));
     cred.dwVersion = SCHANNEL_CRED_VERSION;
 
@@ -149,10 +150,12 @@ SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
 
 SslConnector::~SslConnector()
 {
+    if (SecIsValidHandle(&credHandle))
+        ::FreeCredentialsHandle(&credHandle);
     if (cert)
         ::CertFreeCertificateContext(cert);
-    ::CertCloseStore(certStore, CERT_CLOSE_STORE_FORCE_FLAG);
-    ::FreeCredentialsHandle(&credHandle);
+    if (certStore)
+        ::CertCloseStore(certStore, CERT_CLOSE_STORE_FORCE_FLAG);
 }
 
 void SslConnector::connect(const std::string& host, const std::string& port) {
