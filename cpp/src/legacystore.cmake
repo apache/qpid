@@ -30,39 +30,39 @@ else (DEFINED legacystore_force)
         #
         include (finddb.cmake)
         if (DB_FOUND)
-	        #
-	        # find libaio
-	        #
-	        CHECK_LIBRARY_EXISTS (aio io_queue_init "" HAVE_AIO)
-	        CHECK_INCLUDE_FILES (libaio.h HAVE_AIO_H)
-	        if (HAVE_AIO AND HAVE_AIO_H)
-	            #
-		        # find libuuid
-		        #
-  	            CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
-		        CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
-		        if (HAVE_UUID AND HAVE_UUID_H)
-		            #
-		            # allow legacystore to be built
-		            #
+            #
+            # find libaio
+            #
+            CHECK_LIBRARY_EXISTS (aio io_queue_init "" HAVE_AIO)
+            CHECK_INCLUDE_FILES (libaio.h HAVE_AIO_H)
+            if (HAVE_AIO AND HAVE_AIO_H)
+                #
+                # find libuuid
+                #
+                CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
+                CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
+                if (HAVE_UUID AND HAVE_UUID_H)
+                    #
+                    # allow legacystore to be built
+                    #
                     message(STATUS "BerkeleyDB for C++, libaio and uuid found, Legacystore support enabled")
-		            set (legacystore_default ON)
-		        else (HAVE_UUID AND HAVE_UUID_H)
+                    set (legacystore_default ON)
+                else (HAVE_UUID AND HAVE_UUID_H)
                     if (NOT HAVE_UUID)
                         message(STATUS "Legacystore requires uuid which is absent.")
                     endif (NOT HAVE_UUID)
                     if (NOT HAVE_UUID_H)
                         message(STATUS "Legacystore requires uuid.h which is absent.")
                     endif (NOT HAVE_UUID_H)
-		        endif (HAVE_UUID AND HAVE_UUID_H)
-	        else (HAVE_AIO AND HAVE_AIO_H)
+                endif (HAVE_UUID AND HAVE_UUID_H)
+            else (HAVE_AIO AND HAVE_AIO_H)
                 if (NOT HAVE_AIO)
                     message(STATUS "Legacystore requires libaio which is absent.")
                 endif (NOT HAVE_AIO)
                 if (NOT HAVE_AIO_H)
                     message(STATUS "Legacystore requires libaio.h which is absent.")
                 endif (NOT HAVE_AIO_H)
-	        endif (HAVE_AIO AND HAVE_AIO_H)
+            endif (HAVE_AIO AND HAVE_AIO_H)
         else (DB_FOUND)
             message(STATUS "Legacystore requires BerkeleyDB for C++ which is absent.")
         endif (DB_FOUND)
@@ -70,7 +70,7 @@ else (DEFINED legacystore_force)
 endif (DEFINED legacystore_force)
 
 option(BUILD_LEGACYSTORE "Build legacystore persistent store" ${legacystore_default})
-                    
+
 if (BUILD_LEGACYSTORE)
     if (NOT UNIX)
         message(FATAL_ERROR "Legacystore produced only on Unix platforms")
@@ -135,12 +135,7 @@ if (BUILD_LEGACYSTORE)
         qpid/legacystore/TxnCtxt.cpp
     )
 
-    # legacyStore include directories
-    get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-    set (legacy_include_DIRECTORIES
-        ${dirs}
-        ${CMAKE_CURRENT_SOURCE_DIR}/qpid/legacystore
-    )
+    set (legacystore_defines _IN_QPID_BROKER RHM_CLEAN)
 
     if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h)
       message(STATUS "Including BDB from ${DB_CXX_INCLUDE_DIR}/db_cxx.h")
@@ -157,9 +152,8 @@ if (BUILD_LEGACYSTORE)
 
     set_target_properties (legacystore PROPERTIES
         PREFIX ""
-        COMPILE_DEFINITIONS _IN_QPID_BROKER
+        COMPILE_DEFINITIONS "${legacystore_defines}"
         OUTPUT_NAME legacystore
-        INCLUDE_DIRECTORIES "${legacy_include_DIRECTORIES}"
     )
 
     target_link_libraries (legacystore
@@ -178,8 +172,7 @@ if (BUILD_LEGACYSTORE)
     )
 
     set_target_properties (legacystore_shared PROPERTIES
-        COMPILE_DEFINITIONS _IN_QPID_BROKER
-        INCLUDE_DIRECTORIES "${legacy_include_DIRECTORIES}"
+        COMPILE_DEFINITIONS "${legacystore_defines}"
     )
 
     target_link_libraries (legacystore_shared
