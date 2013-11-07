@@ -52,7 +52,7 @@ target_link_libraries (legacystore_${theSourceFile}
 set_target_properties (legacystore_${theSourceFile} PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(legacystore_${theSourceFile})
 
-add_test (legacystore_${theSourceFile} ${test_wrap} -- ${legacystore_${theSourceFile}_LOCATION})
+add_test (legacystore_${theSourceFile} ${test_wrap} --boost-test -- ${legacystore_${theSourceFile}_LOCATION})
 ENDMACRO (define_legacystore_test)
 
 define_legacystore_test (SimpleTest)
@@ -78,7 +78,7 @@ if ("${ARGV1}" STREQUAL "LONG")
   set_target_properties(${testname} PROPERTIES COMPILE_DEFINITIONS LONG_TEST)
 endif ()
 remember_location(${testname})
-add_test (${testname} ${test_wrap} -- ${${testname}_LOCATION})
+add_test (${testname} ${test_wrap} --boost-test -- ${${testname}_LOCATION})
 unset (testname)
 ENDMACRO (define_journal_test)
 
@@ -125,7 +125,7 @@ target_link_libraries (jtt__ut
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        ${clock_gettime_LIB} legacystore_shared)
 
-add_test(journal_jtt_ut ${test_wrap} --working-dir=${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt -- ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
+add_test(journal_jtt_ut ${test_wrap} --boost-test --working-dir=${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt -- ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
 
 endif (BUILD_TESTING_UNITTESTS)
 
