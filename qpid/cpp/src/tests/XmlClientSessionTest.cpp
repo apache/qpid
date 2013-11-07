@@ -42,6 +42,8 @@
 namespace qpid {
 namespace tests {
 
+QPID_AUTO_TEST_SUITE(XmlClientSessionTest)
+
 struct XmlFixture {
     XmlFixture() {
         qpid::sys::Shlib shlib(getLibPath("XML_LIB"));
@@ -49,10 +51,7 @@ struct XmlFixture {
     ~XmlFixture() {}
 };
 
-BOOST_FIXTURE_TEST_SUITE(XmlClientSessionTest, XmlFixture)
-
 using namespace qpid::client;
-
 using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
@@ -109,7 +108,7 @@ struct ClientSessionFixture : public SessionFixture
 
 // ########### START HERE ####################################
 
-QPID_AUTO_TEST_CASE(testXmlBinding) {
+QPID_FIXTURE_TEST_CASE(testXmlBinding, XmlFixture) {
     ClientSessionFixture f;
 
     SubscriptionManager subscriptions(f.session);
@@ -140,7 +139,7 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
 /**
  * Ensure that multiple queues can be bound using the same routing key
  */
-QPID_AUTO_TEST_CASE(testXMLBindMultipleQueues) {
+QPID_FIXTURE_TEST_CASE(testXMLBindMultipleQueues, XmlFixture) {
     ClientSessionFixture f;
 
 
@@ -171,7 +170,7 @@ QPID_AUTO_TEST_CASE(testXMLBindMultipleQueues) {
 //### Test: Bad XML does not kill the server - and does not even
 // raise an exception, the content is not required to be XML.
 
-QPID_AUTO_TEST_CASE(testXMLSendBadXML) {
+QPID_FIXTURE_TEST_CASE(testXMLSendBadXML, XmlFixture) {
     ClientSessionFixture f;
 
     f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
@@ -197,7 +196,7 @@ lour", arg::arguments=red);
 
 //### Test: Bad XQuery does not kill the server, but does raise an exception
 
-QPID_AUTO_TEST_CASE(testXMLBadXQuery) {
+QPID_FIXTURE_TEST_CASE(testXMLBadXQuery, XmlFixture) {
     ClientSessionFixture f;
 
     f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
@@ -221,7 +220,7 @@ olour", arg::arguments=blue);
 
 //### Test: double, string, and integer field values can all be bound to queries
 
-QPID_AUTO_TEST_CASE(testXmlBindingUntyped) {
+QPID_FIXTURE_TEST_CASE(testXmlBindingUntyped, XmlFixture) {
     ClientSessionFixture f;
 
     SubscriptionManager subscriptions(f.session);
@@ -257,7 +256,7 @@ QPID_AUTO_TEST_CASE(testXmlBindingUntyped) {
 
 //### Test: double, string, and integer field values can all be bound to queries
 
-QPID_AUTO_TEST_CASE(testXmlBindingTyped) {
+QPID_FIXTURE_TEST_CASE(testXmlBindingTyped, XmlFixture) {
     ClientSessionFixture f;
 
     SubscriptionManager subscriptions(f.session);

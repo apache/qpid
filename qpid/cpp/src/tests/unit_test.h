@@ -63,6 +63,10 @@
 # define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_TEST_CASE(name)
 #endif
 
+#ifndef QPID_FIXTURE_TEST_CASE
+# define QPID_FIXTURE_TEST_CASE(name, f)  BOOST_FIXTURE_TEST_CASE(name, f)
+#endif
+
 #ifndef QPID_AUTO_TEST_SUITE_END
 # define QPID_AUTO_TEST_SUITE_END() BOOST_AUTO_TEST_SUITE_END()
 #endif
