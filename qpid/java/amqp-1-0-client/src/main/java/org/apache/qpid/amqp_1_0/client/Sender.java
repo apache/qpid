@@ -142,31 +142,11 @@ public class Sender implements DeliveryStateHandler
     {
 
         _session = session;
+        _windowSize = window;
         session.getConnection().checkNotClosed();
         configureSource(source);
         configureTarget(target);
-        _endpoint = session.getEndpoint().createSendingLinkEndpoint(linkName,
-                                                                    source, target, unsettled);
-
-
-        switch(mode)
-        {
-            case ALO:
-                _endpoint.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
-                _endpoint.setReceivingSettlementMode(ReceiverSettleMode.FIRST);
-                break;
-            case AMO:
-                _endpoint.setSendingSettlementMode(SenderSettleMode.SETTLED);
-                break;
-            case EO:
-                _endpoint.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
-                _endpoint.setReceivingSettlementMode(ReceiverSettleMode.SECOND);
-                break;
-
-        }
-        _endpoint.setDeliveryStateHandler(this);
-        _endpoint.attach();
-        _windowSize = window;
+        _endpoint = session.createSendingLinkEndpoint(linkName, target, source, mode, unsettled, this);
 
         synchronized(_endpoint.getLock())
         {
@@ -181,10 +161,14 @@ public class Sender implements DeliveryStateHandler
                     throw new SenderCreationException(e);
                 }
             }
+            if (session.getEndpoint().isEnded())
+            {
+                throw new SenderCreationException("Session is closed while creating link, target: " + target.getAddress());
+            }
             if(_endpoint.getTarget()== null)
             {
                 throw new SenderCreationException("Peer did not create remote endpoint for link, target: " + target.getAddress());
-            };
+            }
         }
 
         _endpoint.setLinkEventListener(new SendingLinkListener.DefaultLinkEventListener()

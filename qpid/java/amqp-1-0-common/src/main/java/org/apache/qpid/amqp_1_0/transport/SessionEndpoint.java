@@ -507,7 +507,15 @@ public class SessionEndpoint
 
     public SendingLinkEndpoint createSendingLinkEndpoint(final String name, final Source source, final org.apache.qpid.amqp_1_0.type.Target target, Map<Binary, Outcome> unsettled)
     {
-        SendingLinkEndpoint endpoint = new SendingLinkEndpoint(this, name, unsettled);
+        return createSendingLinkEndpoint(name, source, target, unsettled, null);
+    }
+
+    public SendingLinkEndpoint createSendingLinkEndpoint(final String name, final Source source,
+                                                         final org.apache.qpid.amqp_1_0.type.Target target,
+                                                         Map<Binary, Outcome> unsettled,
+                                                         DeliveryStateHandler deliveryStateHandler)
+    {
+        SendingLinkEndpoint endpoint = new SendingLinkEndpoint(this, name, unsettled, deliveryStateHandler);
         endpoint.setSource(source);
         endpoint.setTarget(target);
         UnsignedInteger handle = findNextAvailableHandle();
