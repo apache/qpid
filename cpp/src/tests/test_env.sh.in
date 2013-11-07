@@ -36,6 +36,7 @@ if [ "$enable_valgrind" = "ON" ] ; then
     export VALGRIND=@VALGRIND_EXECUTABLE@
 fi
 export SASL_PW=@SASLPASSWD2_EXECUTABLE@
+export PYTHON=@PYTHON_EXECUTABLE@
 
 # Python paths and directories
 export PYTHON_DIR=$builddir/python

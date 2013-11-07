@@ -31,19 +31,30 @@
 # examination.
 #
 
-srcdir=`dirname $0`
-source ./test_env.sh
+working_dir='.'
+
+OPTS=$(getopt -n "Qpid Test Wrapper" -o d:b:s:p -l working-dir:,build-dir:,source-dir:,python,start-broker,broker-options: -- "$@") || exit 1
+eval set -- $OPTS
+
+while true; do
+case "$1" in
+    -d|--working-dir) working_dir=$2;    shift 2      ;;
+    -b|--build-dir)   build_dir=$2;      shift 2      ;;
+    -s|--source-dir)  source_dir=$2;     shift 2      ;;
+    -p|--python)      run_python=yes;    shift        ;;
+    --start-broker)   start_broker=yes;  shift        ;;
+    --broker-options) qpidd_extra_options=$2; shift 2 ;;
+    --)                                  shift; break ;;
+esac
+done
+
+program=$1
+shift
+
+logfilebase=$(pwd -P)/$(basename $program)
+source $build_dir/src/tests/test_env.sh || (echo "Error: Couldn't read test_env.sh (build settings)" ; exit 1)
 source $srcdir/vg_check
 
-# Export variables from makefile.
-export srcdir
-
-# Set QPID_PORT if qpidd.port exists.
-test -s qpidd.port && QPID_PORT=`cat qpidd.port`
-export QPID_PORT
-
-VG_LOG="`basename $1`.vglog"
-rm -f $VG_LOG*
 
 # Use VALGRIND_OPTS="--gen-suppressions=all" to generated suppressions
 VALGRIND_OPTS="$VALGRIND_OPTS
@@ -51,23 +62,63 @@ VALGRIND_OPTS="$VALGRIND_OPTS
 --demangle=yes
 --suppressions=$srcdir/.valgrind.supp
 --num-callers=25
---log-file=$VG_LOG --
 "
+
+# Set up environment for running a Qpid test
+if [ -n "$start_broker" ] ; then
+  qpidd_options="--auth=no --no-module-dir --daemon --port=0 --interface 127.0.0.1 --log-to-file $logfilebase-qpidd.log $qpidd_extra_options"
+  if [ -n "$VALGRIND" ] ; then
+    QPID_PORT=$($VALGRIND $VALGRIND_OPTS --log-file=$logfilebase-qpidd.vglog -- $QPIDD_EXEC $qpidd_options)
+  else
+    QPID_PORT=$($QPID_EXEC $qpidd_options)
+  fi
+elif [ -r qpidd.port ]; then
+  QPID_PORT=$(cat qpidd.port)
+fi
+export QPID_PORT
+QPID_LOG_TO_FILE="$logfilebase.log"
+export QPID_LOG_TO_FILE
+
+# Export variables from makefile.
+export srcdir
+
+VG_LOG="$logfilebase.vglog"
+rm -f $VG_LOG*
+
 ERROR=0
-if [ ! -x $1 ] ; then
-    echo "Cannot execute $1"
+if [ -n "$run_python" -a -n "$PYTHON" ] ; then
+    (cd $working_dir; $PYTHON $program "$@") || ERROR=1
+elif [ ! -x $program ] ; then
+    echo "Cannot execute $program"
     ERROR=1
-elif file $1 | grep -q text; then
-    # This is a shell script, just execute it.
-    exec "$@"
-elif [ -n "$VALGRIND" ] ; then
+elif (file $program | grep -q ELF) && [ -n "$VALGRIND" ] ; then
     # This is a real executable, valgrind it.
     # Hide output unless there's an error.
-    $VALGRIND $VALGRIND_OPTS "$@" 2>&1 || ERROR=1
+    (cd $working_dir; $VALGRIND $VALGRIND_OPTS --log-file=$VG_LOG -- $program "$@" 2>&1) || ERROR=1
     vg_check $VG_LOG* || ERROR=1
 else
-    "$@" 2>&1 || ERROR=1
+    (cd $working_dir; $program "$@") || ERROR=1
 fi
 
+# Check log
+if [ -r $QPID_LOG_TO_FILE ]; then
+egrep 'warning\|error\|critical' $QPID_LOG_TO_FILE && {
+    echo "WARNING: Suspicious broker log entries in $QPID_LOG_TO_FILE, above."
+}
+fi
+
+if [ -n "$start_broker" ] ; then
+  $QPIDD_EXEC --no-module-dir --quit || ERROR=1
+
+  # Check qpidd.log.
+  egrep 'warning\|error\|critical' $logfilebase-qpidd.log && {
+    echo "WARNING: Suspicious broker log entries in qpidd.log, above."
+  }
+
+  # Check valgrind log.
+  if test -n "$VALGRIND"; then
+    vg_check $logfilebase-qpidd.vglog || ERROR=1
+  fi
+fi
 exit $ERROR
 
