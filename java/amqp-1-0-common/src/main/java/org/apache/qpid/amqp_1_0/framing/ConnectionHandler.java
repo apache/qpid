@@ -417,7 +417,10 @@ public class ConnectionHandler
                     Binary bin = new Binary(buf.array(),buf.arrayOffset()+buf.position(), buf.limit()-buf.position());
                     RAW_LOGGER.fine("SEND["+ _conn.getRemoteAddress() +"] : " + bin.toString());
                 }
-                _outputStream.write(buf.array(),buf.arrayOffset()+buf.position(), buf.limit()-buf.position());
+                synchronized (_outputStream)
+                {
+                    _outputStream.write(buf.array(),buf.arrayOffset()+buf.position(), buf.limit()-buf.position());
+                }
                 buf.position(buf.limit());
             }
             catch (IOException e)

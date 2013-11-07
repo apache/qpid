@@ -264,7 +264,10 @@ public class Connection implements SocketExceptionHandler
                         {
                             try
                             {
-                                s.close();
+                                synchronized (outputStream)
+                                {
+                                    s.close();
+                                }
                             }
                             catch (IOException e)
                             {
