@@ -42,21 +42,26 @@
 namespace qpid {
 namespace tests {
 
-QPID_AUTO_TEST_SUITE(XmlClientSessionTest)
+struct XmlFixture {
+    XmlFixture() {
+        qpid::sys::Shlib shlib(getLibPath("XML_LIB"));
+    }
+    ~XmlFixture() {}
+};
+
+BOOST_FIXTURE_TEST_SUITE(XmlClientSessionTest, XmlFixture)
 
 using namespace qpid::client;
 
 using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
-using qpid::sys::Shlib;
+
 using qpid::sys::Monitor;
 using std::string;
 using std::cout;
 using std::endl;
 
-
-Shlib shlib(getLibPath("XML_LIB"));
 
 class SubscribedLocalQueue : public LocalQueue {
   private:
