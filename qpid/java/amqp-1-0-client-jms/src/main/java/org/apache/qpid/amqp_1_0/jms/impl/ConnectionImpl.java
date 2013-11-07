@@ -341,27 +341,40 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public void close() throws JMSException
     {
-        synchronized(_lock)
+        Object outerLock;
+        if(_conn != null)
         {
-            if(_state != State.CLOSED)
-            {
-                stop();
-                List<SessionImpl> sessions = new ArrayList<SessionImpl>(_sessions);
-                for(SessionImpl session : sessions)
-                {
-                    session.close();
-                }
-                for(CloseTask task : _closeTasks)
-                {
-                    task.onClose();
-                }
-                if(_conn != null && _state != State.UNCONNECTED ) {
-                    _conn.close();
-                }
-                _state = State.CLOSED;
-            }
+            outerLock = _conn.getEndpoint().getLock();
+        }
+        else
+        {
+            outerLock = _lock;
+        }
 
-            _lock.notifyAll();
+        synchronized (outerLock)
+        {
+            synchronized(_lock)
+            {
+                if(_state != State.CLOSED)
+                {
+                    stop();
+                    List<SessionImpl> sessions = new ArrayList<SessionImpl>(_sessions);
+                    for(SessionImpl session : sessions)
+                    {
+                        session.close();
+                    }
+                    for(CloseTask task : _closeTasks)
+                    {
+                        task.onClose();
+                    }
+                    if(_conn != null && _state != State.UNCONNECTED ) {
+                        _conn.close();
+                    }
+                    _state = State.CLOSED;
+                }
+
+                _lock.notifyAll();
+            }
         }
     }
 
