@@ -24,6 +24,7 @@ import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoderImpl;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
+import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionState;
@@ -64,7 +65,7 @@ public class Session
     }
 
 
-    public synchronized Sender createSender(final String targetName)
+    public Sender createSender(final String targetName)
             throws Sender.SenderCreationException, ConnectionClosedException
     {
 
@@ -74,7 +75,7 @@ public class Session
     }
 
 
-    public synchronized Sender createSender(final String targetName, final SourceConfigurator configurator)
+    public Sender createSender(final String targetName, final SourceConfigurator configurator)
             throws Sender.SenderCreationException, ConnectionClosedException
     {
 
@@ -90,7 +91,7 @@ public class Session
 
     }
 
-    public synchronized Sender createSender(final String targetName, int window)
+    public Sender createSender(final String targetName, int window)
             throws Sender.SenderCreationException, ConnectionClosedException
     {
          final String sourceName = UUID.randomUUID().toString();
@@ -113,6 +114,36 @@ public class Session
 
     }
 
+    public synchronized SendingLinkEndpoint createSendingLinkEndpoint(final String linkName,
+                                                                      final Target target,
+                                                                      final Source source,
+                                                                      AcknowledgeMode mode,
+                                                                      Map<Binary, Outcome> unsettled,
+                                                                      final DeliveryStateHandler deliveryStateHandler)
+    {
+        SendingLinkEndpoint link = this.getEndpoint().createSendingLinkEndpoint(linkName, source, target,
+                                                                                unsettled, deliveryStateHandler);
+
+        switch(mode)
+        {
+            case ALO:
+            	link.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
+            	link.setReceivingSettlementMode(ReceiverSettleMode.FIRST);
+                break;
+            case AMO:
+            	link.setSendingSettlementMode(SenderSettleMode.SETTLED);
+                break;
+            case EO:
+            	link.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
+            	link.setReceivingSettlementMode(ReceiverSettleMode.SECOND);
+                break;
+
+        }
+        
+        link.attach();
+        
+    	return link;
+    }
 
     public Receiver createReceiver(final String sourceAddr) throws ConnectionErrorException
     {

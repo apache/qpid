@@ -49,6 +49,14 @@ public class SendingLinkEndpoint extends LinkEndpoint<SendingLinkListener>
         init();
     }
 
+
+    public SendingLinkEndpoint(final SessionEndpoint sessionEndpoint, String name, Map<Binary, Outcome> unsettled,
+                               DeliveryStateHandler deliveryStateHandler)
+    {
+        super(sessionEndpoint, name, unsettled, deliveryStateHandler);
+        init();
+    }
+
     public SendingLinkEndpoint(final SessionEndpoint sessionEndpoint, final Attach attach)
     {
         super(sessionEndpoint, attach);

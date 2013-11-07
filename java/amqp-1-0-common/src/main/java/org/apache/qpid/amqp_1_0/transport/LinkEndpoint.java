@@ -72,12 +72,17 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
 
     LinkEndpoint(final SessionEndpoint sessionEndpoint, String name, Map<Binary, Outcome> unsettled)
     {
+        this(sessionEndpoint, name, unsettled, null);
+    }
+
+    LinkEndpoint(final SessionEndpoint sessionEndpoint, String name, Map<Binary, Outcome> unsettled, DeliveryStateHandler deliveryStateHandler)
+    {
         _name = name;
         _session = sessionEndpoint;
         _linkCredit = UnsignedInteger.valueOf(0);
         _drain = Boolean.FALSE;
         _localUnsettled = unsettled;
-
+        _deliveryStateHandler = deliveryStateHandler;
     }
 
     LinkEndpoint(final SessionEndpoint sessionEndpoint,final Attach attach)
