@@ -449,7 +449,7 @@ bool RecoveryManager::getNextRecordHeader()
             }
         }
         file_pos = inFileStream_.tellg();
-        if (file_pos == -1) {
+        if (file_pos == std::streampos(-1)) {
             std::ostringstream oss;
             oss << "tellg() failure: fail=" << (inFileStream_.fail()?"T":"F") << " bad=" << (inFileStream_.bad()?"T":"F");
             throw jexception(jerrno::JERR_RCVM_STREAMBAD, oss.str(), "RecoveryManager", "getNextRecordHeader");
@@ -616,7 +616,7 @@ void RecoveryManager::readJournalData(char* target,
     std::streamoff bytesRead = 0;
     while (bytesRead < readSize) {
         std::streampos file_pos = inFileStream_.tellg();
-        if (file_pos == -1) {
+        if (file_pos == std::streampos(-1)) {
             std::ostringstream oss;
             oss << "tellg() failure: fail=" << (inFileStream_.fail()?"T":"F") << " bad=" << (inFileStream_.bad()?"T":"F");
             throw jexception(jerrno::JERR_RCVM_STREAMBAD, oss.str(), "RecoveryManager", "readJournalData");
@@ -626,7 +626,7 @@ void RecoveryManager::readJournalData(char* target,
         if (thisReadSize < readSize) {
             getNextFile(false);
             file_pos = inFileStream_.tellg();
-            if (file_pos == -1) {
+            if (file_pos == std::streampos(-1)) {
                 std::ostringstream oss;
                 oss << "tellg() failure: fail=" << (inFileStream_.fail()?"T":"F") << " bad=" << (inFileStream_.bad()?"T":"F");
                 throw jexception(jerrno::JERR_RCVM_STREAMBAD, oss.str(), "RecoveryManager", "readJournalData");
