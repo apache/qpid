@@ -23,15 +23,9 @@
 # TODO: this should be expanded to cover a wider set of types and go
 # in both directions
 
-srcdir=`dirname $0`
-source ./test_env.sh
-
-test -f qpidd.port && QPID_PORT=`cat qpidd.port`
-
 if test -d ${PYTHON_DIR} ;  then
     ./header_test -p $QPID_PORT
     $srcdir/header_test.py "localhost" $QPID_PORT
 else 
     echo "Skipping header test as python libs not found"
 fi
-

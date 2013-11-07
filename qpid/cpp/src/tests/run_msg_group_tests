@@ -20,16 +20,7 @@
 #
 #script to run a sequence of message group queue tests via make
 
-#setup path to find qpid-config and msg_group_test progs
-source ./test_env.sh
 test -d $PYTHON_DIR || { echo "Skipping message group tests, no python dir."; exit 0; }
-
-export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
-
-#set port to connect to via env var
-test -s qpidd.port && QPID_PORT=`cat qpidd.port`
-
-#trap cleanup INT TERM QUIT
 
 QUEUE_NAME="group-queue"
 GROUP_KEY="My-Group-Id"
