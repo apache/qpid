@@ -33,15 +33,17 @@
 
 working_dir='.'
 
-OPTS=$(getopt -n "Qpid Test Wrapper" -o d:b:s:p -l working-dir:,build-dir:,source-dir:,python,start-broker,broker-options: -- "$@") || exit 1
+OPTS=$(getopt -n "Qpid Test Wrapper" -o '' -l working-dir:,build-dir:,source-dir:,python,boost-test,xml,start-broker,broker-options: -- "$@") || exit 1
 eval set -- $OPTS
 
 while true; do
 case "$1" in
-    -d|--working-dir) working_dir=$2;    shift 2      ;;
-    -b|--build-dir)   build_dir=$2;      shift 2      ;;
-    -s|--source-dir)  source_dir=$2;     shift 2      ;;
-    -p|--python)      run_python=yes;    shift        ;;
+    --working-dir)    working_dir=$2;    shift 2      ;;
+    --build-dir)      build_dir=$2;      shift 2      ;;
+    --source-dir)     source_dir=$2;     shift 2      ;;
+    --python)         run_python=yes;    shift        ;;
+    --boost-test)     boost_test=yes;    shift        ;;
+    --xml)            xml_output=yes;    shift        ;;
     --start-broker)   start_broker=yes;  shift        ;;
     --broker-options) qpidd_extra_options=$2; shift 2 ;;
     --)                                  shift; break ;;
@@ -55,6 +57,10 @@ logfilebase=$(pwd -P)/$(basename $program)
 source $build_dir/src/tests/test_env.sh || (echo "Error: Couldn't read test_env.sh (build settings)" ; exit 1)
 source $srcdir/vg_check
 
+# Allow environment to dictate if we output xml test results
+if [ -n "$QPID_XML_TEST_OUTPUT" ] ; then
+  xml_output=yes
+fi
 
 # Use VALGRIND_OPTS="--gen-suppressions=all" to generated suppressions
 VALGRIND_OPTS="$VALGRIND_OPTS
@@ -66,11 +72,15 @@ VALGRIND_OPTS="$VALGRIND_OPTS
 
 # Set up environment for running a Qpid test
 if [ -n "$start_broker" ] ; then
-  qpidd_options="--auth=no --no-module-dir --daemon --port=0 --interface 127.0.0.1 --log-to-file $logfilebase-qpidd.log $qpidd_extra_options"
+  qpidd_command="$QPIDD_EXEC --auth=no --no-module-dir --daemon --port=0 --interface 127.0.0.1 --log-to-file $logfilebase-qpidd.log $qpidd_extra_options"
   if [ -n "$VALGRIND" ] ; then
-    QPID_PORT=$($VALGRIND $VALGRIND_OPTS --log-file=$logfilebase-qpidd.vglog -- $QPIDD_EXEC $qpidd_options)
+    if [ -n "$xml_output" ] ; then
+      QPID_PORT=$($VALGRIND $VALGRIND_OPTS --xml=yes --xml-file=$logfilebase-qpidd-vg.xml -- $qpidd_command)
+    else
+      QPID_PORT=$($VALGRIND $VALGRIND_OPTS --log-file=$logfilebase-qpidd.vglog -- $qpidd_command)
+    fi
   else
-    QPID_PORT=$($QPID_EXEC $qpidd_options)
+    QPID_PORT=$($qpidd_command)
   fi
 elif [ -r qpidd.port ]; then
   QPID_PORT=$(cat qpidd.port)
@@ -82,8 +92,15 @@ export QPID_LOG_TO_FILE
 # Export variables from makefile.
 export srcdir
 
-VG_LOG="$logfilebase.vglog"
-rm -f $VG_LOG*
+if [ -n "$VALGRIND" ] ; then
+  if [ -n "$xml_output" ] ; then
+    valgrind_command="$VALGRIND $VALGRIND_OPTS --xml=yes --xml-file=$logfilebase-vg.xml --"
+  else
+    VG_LOG="$logfilebase.vglog"
+    rm -f $VG_LOG*
+    valgrind_command="$VALGRIND $VALGRIND_OPTS --log-file=$VG_LOG --"
+  fi
+fi
 
 ERROR=0
 if [ -n "$run_python" -a -n "$PYTHON" ] ; then
@@ -91,11 +108,26 @@ if [ -n "$run_python" -a -n "$PYTHON" ] ; then
 elif [ ! -x $program ] ; then
     echo "Cannot execute $program"
     ERROR=1
-elif (file $program | grep -q ELF) && [ -n "$VALGRIND" ] ; then
-    # This is a real executable, valgrind it.
+elif file $program | grep -q ELF; then
+  if [ -n "$boost_test" ] ; then
+    # Set boost unit test environment
+    if [ -n "$xml_output" ] ; then
+      export BOOST_TEST_SHOW_PROGRESS=no
+      export BOOST_TEST_OUTPUT_FORMAT=XML
+      export BOOST_TEST_LOG_LEVEL=test_suite
+      export BOOST_TEST_REPORT_LEVEL=no
+      (cd $working_dir; $valgrind_command  $program "$@") > $logfilebase-unittest.xml || ERROR=1
+    else
+      (cd $working_dir; $valgrind_command  $program "$@") || ERROR=1
+    fi
+  else
+    # This is a real executable, valgrind it if required
     # Hide output unless there's an error.
-    (cd $working_dir; $VALGRIND $VALGRIND_OPTS --log-file=$VG_LOG -- $program "$@" 2>&1) || ERROR=1
+    (cd $working_dir; $valgrind_command  $program "$@" 2>&1) || ERROR=1
+  fi
+  if [ -n "$VG_LOG" ] ; then
     vg_check $VG_LOG* || ERROR=1
+  fi
 else
     (cd $working_dir; $program "$@") || ERROR=1
 fi
@@ -103,7 +135,7 @@ fi
 # Check log
 if [ -r $QPID_LOG_TO_FILE ]; then
 egrep 'warning\|error\|critical' $QPID_LOG_TO_FILE && {
-    echo "WARNING: Suspicious broker log entries in $QPID_LOG_TO_FILE, above."
+    echo "WARNING: Suspicious log entries in $QPID_LOG_TO_FILE, above."
 }
 fi
 
@@ -116,9 +148,8 @@ if [ -n "$start_broker" ] ; then
   }
 
   # Check valgrind log.
-  if test -n "$VALGRIND"; then
+  if [ -n "$VALGRIND" -a -z "$xml_output" ] ; then
     vg_check $logfilebase-qpidd.vglog || ERROR=1
   fi
 fi
 exit $ERROR
-

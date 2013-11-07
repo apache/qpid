@@ -226,7 +226,7 @@ target_link_libraries (unit_test
 set_target_properties (unit_test PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(unit_test)
 
-add_test (unit_test ${test_wrap} -- ${unit_test_LOCATION})
+add_test (unit_test ${test_wrap} --boost-test -- ${unit_test_LOCATION})
 
 endif (BUILD_TESTING_UNITTESTS)
 
