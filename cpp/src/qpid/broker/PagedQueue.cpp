@@ -64,8 +64,8 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
 
 }
 
-PagedQueue::PagedQueue(const std::string& name, const std::string& directory, uint m, uint factor, ProtocolRegistry& p)
-    : pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0), loaded(0), version(0)
+PagedQueue::PagedQueue(const std::string& name_, const std::string& directory, uint m, uint factor, ProtocolRegistry& p)
+    : name(name_), pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0), loaded(0), version(0)
 {
     path = file.open(name, directory);
     QPID_LOG(debug, "PagedQueue[" << path << "]");
@@ -104,7 +104,8 @@ bool PagedQueue::deleted(const QueueCursor& cursor)
 void PagedQueue::publish(const Message& added)
 {
     if (encodedSize(added) > pageSize) {
-        throw qpid::framing::PreconditionFailedException(QPID_MSG("Message is larger than page size for queue backed by " << path));
+        QPID_LOG(error, "Message is larger than page size for queue " << name << ", backed by " << path);
+        throw qpid::framing::PreconditionFailedException(QPID_MSG("Message is larger than page size for queue " << name));
     }
     Used::reverse_iterator i = used.rbegin();
     if (i != used.rend()) {
@@ -113,7 +114,8 @@ void PagedQueue::publish(const Message& added)
     }
     //used is empty or last page is full, need to add a new page
     if (!newPage(added.getSequence()).add(added)) {
-        throw qpid::Exception(QPID_MSG("Could not add message to paged queue backed by " << path));
+        QPID_LOG(error, "Could not add message to paged queue " << name << ", backed by " << path);
+        throw qpid::Exception(QPID_MSG("Could not add message to paged queue " << name));
     }
 }
 
