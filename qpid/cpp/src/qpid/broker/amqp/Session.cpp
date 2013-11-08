@@ -199,13 +199,25 @@ Session::Session(pn_session_t* s, Connection& c, qpid::sys::OutputControl& o)
 
 Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* terminus, bool incoming)
 {
-    ResolvedNode node;
-    node.exchange = connection.getBroker().getExchanges().find(name);
-    node.queue = connection.getBroker().getQueues().find(name);
-    node.topic = connection.getTopics().get(name);
-    bool createOnDemand = is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus));
     bool isQueueRequested = is_capability_requested(QUEUE, pn_terminus_capabilities(terminus));
     bool isTopicRequested = is_capability_requested(TOPIC, pn_terminus_capabilities(terminus));
+    if (isTopicRequested && isQueueRequested) {
+        //requesting both renders each request meaningless
+        isQueueRequested = false;
+        isTopicRequested = false;
+    }
+    //check whether user is even allowed access to queues/topics before resolving
+    authorise.access(name, isQueueRequested, isTopicRequested);
+    ResolvedNode node;
+    if (isTopicRequested || !isQueueRequested) {
+        node.topic = connection.getTopics().get(name);
+        if (node.topic) node.exchange = node.topic->getExchange();
+        else node.exchange = connection.getBroker().getExchanges().find(name);
+    }
+    if (isQueueRequested || !isTopicRequested) {
+        node.queue = connection.getBroker().getQueues().find(name);
+    }
+    bool createOnDemand = is_capability_requested(CREATE_ON_DEMAND, pn_terminus_capabilities(terminus));
     //Strictly speaking, properties should only be specified when the
     //terminus is dynamic. However we will not enforce that here. If
     //properties are set on the attach request, we will set them on
@@ -213,7 +225,6 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     //qpid messaging API to be implemented over 1.0.
     node.properties.read(pn_terminus_properties(terminus));
 
-    if (node.topic) node.exchange = node.topic->getExchange();
     if (node.exchange && createOnDemand && isTopicRequested) {
         if (!node.properties.getExchangeType().empty() && node.properties.getExchangeType() != node.exchange->getType()) {
             //emulate 0-10 exchange-declare behaviour
