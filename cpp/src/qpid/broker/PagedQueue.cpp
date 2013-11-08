@@ -127,6 +127,7 @@ Message* PagedQueue::next(QueueCursor& cursor)
         if (i == used.end() && !used.empty() && used.begin()->first > position) i = used.begin();
     }
     while (i != used.end()) {
+        if (!i->second.isLoaded()) load(i->second);
         Message* m = i->second.next(version, cursor);
         QPID_LOG(debug, "PagedQueue::next(" << cursor.valid << ":" << cursor.position << "): " << m);
         if (m) return m;

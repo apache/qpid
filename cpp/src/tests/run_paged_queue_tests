@@ -33,7 +33,18 @@ stop_broker() {
     $QPIDD_EXEC -q --port $QPID_PORT
 }
 
+test_single_page() {
+    msgcount=1000
+    qpid-send --messages $msgcount --content-size 1024 --broker "localhost:$QPID_PORT" --address "onepage; {create: always, node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_pages_loaded':1}}}}"
+    received=$(qpid-receive --address onepage --broker "localhost:$QPID_PORT" --messages $msgcount | wc -l)
+    if [[ $received -ne $msgcount ]]; then
+        echo "single page test failed: received $received messages, expected $msgcount"
+        exit 1
+    fi
+}
+
 start_broker
+test_single_page
 qpid-cpp-benchmark --broker "localhost:$QPID_PORT" --create-option "node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_size':0,'qpid.max_count':0,'qpid.flow_stop_size':0,'qpid.flow_resume_size':0,'qpid.flow_stop_count':0,'qpid.flow_resume_count':0}}}"
 qpid-cpp-benchmark --broker "localhost:$QPID_PORT" --create-option "node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_size':0,'qpid.max_count':0,'qpid.flow_stop_size':0,'qpid.flow_resume_size':0,'qpid.flow_stop_count':0,'qpid.flow_resume_count':0}}}" --fill-drain
 stop_broker
