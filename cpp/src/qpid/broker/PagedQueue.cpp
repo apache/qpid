@@ -30,20 +30,22 @@ namespace qpid {
 namespace broker {
 namespace {
 using qpid::sys::MemoryMappedFile;
+const uint32_t OVERHEAD(4/*content-size*/ + 4/*sequence-number*/ + 8/*persistence-id*/);
 
 size_t encodedSize(const Message& msg)
 {
-    return msg.getPersistentContext()->encodedSize() + 4/*content-size*/ + 4/*sequence-number*/;
+    return msg.getPersistentContext()->encodedSize() + OVERHEAD;
 }
 
 size_t encode(const Message& msg, char* data, size_t size)
 {
     uint32_t encoded = msg.getPersistentContext()->encodedSize();
-    uint32_t required = encoded + 4/*content-size*/ + 4/*sequence-number*/;
+    uint32_t required = encoded + OVERHEAD;
     if (required > size) return 0;
     qpid::framing::Buffer buffer(data, required);
     buffer.putLong(encoded);
     buffer.putLong(msg.getSequence());
+    buffer.putLongLong(msg.getPersistentContext()->getPersistenceId());
     msg.getPersistentContext()->encode(buffer);
     assert(buffer.getPosition() == required);
     return required;
@@ -54,11 +56,13 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
     qpid::framing::Buffer metadata(const_cast<char*>(data), size);
     uint32_t encoded = metadata.getLong();
     uint32_t sequence = metadata.getLong();
+    uint64_t persistenceId = metadata.getLongLong();
     assert(metadata.available() >= encoded);
     qpid::framing::Buffer buffer(const_cast<char*>(data) + metadata.getPosition(), encoded);
     msg = protocols.decode(buffer);
     assert(buffer.getPosition() == encoded);
     msg.setSequence(qpid::framing::SequenceNumber(sequence));
+    msg.getPersistentContext()->setPersistenceId(persistenceId);
     return encoded + metadata.getPosition();
 }
 
