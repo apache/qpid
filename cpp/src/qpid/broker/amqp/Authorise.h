@@ -48,6 +48,13 @@ class Authorise
     void outgoing(boost::shared_ptr<Queue>);
     void route(boost::shared_ptr<Exchange>, const Message&);
     void interlink();
+    /**
+     * Used to determine whether the user has access permission for a
+     * given node name. If a specific type of node was requested, only
+     * acces to that type is checked. Otherwise access to either queue
+     * or exchange is required.
+     */
+    void access(const std::string& name, bool queueRequested, bool exchangeRequested);
   private:
     const std::string user;
     AclModule* const acl;

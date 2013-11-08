@@ -128,4 +128,22 @@ void Authorise::interlink()
     }
 }
 
+void Authorise::access(const std::string& node, bool queueRequested, bool exchangeRequested)
+{
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        bool checkExchange = true;
+        bool checkQueue = true;
+        if (exchangeRequested) checkQueue = false;
+        else if (queueRequested) checkExchange = false;
+
+        bool allowExchange = !checkExchange || acl->authorise(user, acl::ACT_ACCESS, acl::OBJ_EXCHANGE, node, &params);
+        bool allowQueue = !checkQueue || acl->authorise(user, acl::ACT_ACCESS, acl::OBJ_QUEUE, node, &params);
+
+        if (!allowQueue || !allowExchange) {
+            throw Exception(qpid::amqp::error_conditions::UNAUTHORIZED_ACCESS, QPID_MSG("ACL denied access request to " << node << " from " << user));
+        }
+    }
+}
+
 }}} // namespace qpid::broker::amqp
