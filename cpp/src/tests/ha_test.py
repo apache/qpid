@@ -54,8 +54,9 @@ class QmfAgent(object):
     def repsub_queue(self, sub):
         """If QMF subscription sub is a replicating subscription return
         the name of the replicated queue, else return None"""
-        session_name = self.getSession(sub.sessionRef).name
-        m = re.search("qpid.ha-q:(.*)\.", session_name)
+        session = self.getSession(sub.sessionRef)
+        if not session: return None
+        m = re.search("qpid.ha-q:(.*)\.", session.name)
         return m and m.group(1)
 
     def repsub_queues(self):
