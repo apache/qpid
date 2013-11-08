@@ -246,6 +246,12 @@ void Connection::process()
                 pn_condition_set_name(error, e.symbol());
                 pn_condition_set_description(error, e.what());
                 pn_link_close(l);
+            } catch (const qpid::framing::UnauthorizedAccessException& e) {
+                QPID_LOG_CAT(error, protocol, "Error on attach: " << e.what());
+                pn_condition_t* error = pn_link_condition(l);
+                pn_condition_set_name(error, qpid::amqp::error_conditions::UNAUTHORIZED_ACCESS.c_str());
+                pn_condition_set_description(error, e.what());
+                pn_link_close(l);
             } catch (const std::exception& e) {
                 QPID_LOG_CAT(error, protocol, "Error on attach: " << e.what());
                 pn_condition_t* error = pn_link_condition(l);
