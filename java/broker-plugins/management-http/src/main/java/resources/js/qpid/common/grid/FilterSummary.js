@@ -167,7 +167,7 @@ return declare("qpid.common.grid.FilterSummary", [_WidgetBase], {
 
     _onMouseLeave: function(e){
         this._clearStatusTipTimeout();
-    },
+    }
   });
 
 });
