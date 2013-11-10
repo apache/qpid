@@ -106,7 +106,7 @@ define(["dojo/_base/xhr",
                      filterable: false,
                      formatter: function(val) {
                        return currentTimeZone;
-                     },
+                     }
                    },
                    { name: "Level", field: "level", width: "50px", datatype: "string", autoComplete: true, hidden: true},
                    { name: "Logger", field: "logger", width: "150px", datatype: "string", autoComplete: false, hidden: true},
