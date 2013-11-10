@@ -21,6 +21,8 @@
 define(["dojo/dom",
         "dijit/registry",
         "dijit/layout/ContentPane",
+        "dijit/form/CheckBox",
+        "qpid/management/UserPreferences",
         "dojox/html/entities",
         "qpid/management/Broker",
         "qpid/management/VirtualHost",
@@ -39,7 +41,7 @@ define(["dojo/dom",
         "qpid/management/PreferencesProvider",
         "dojo/ready",
         "dojo/domReady!"],
-       function (dom, registry, ContentPane, entities, Broker, VirtualHost, Exchange, Queue, Connection, AuthProvider,
+       function (dom, registry, ContentPane, CheckBox, UserPreferences, entities, Broker, VirtualHost, Exchange, Queue, Connection, AuthProvider,
                  GroupProvider, Group, KeyStore, TrustStore, AccessControlProvider, Port, Plugin, LogViewer, PreferencesProvider, ready) {
            var controller = {};
 
@@ -59,7 +61,7 @@ define(["dojo/dom",
 
            controller.viewedObjects = {};
 
-           controller.show = function(objType, name, parent) {
+           controller.show = function(objType, name, parent, objectId) {
 
                function generateName(obj)
                {
@@ -76,16 +78,23 @@ define(["dojo/dom",
                         }
                         return name + parent.type +":" + parent.name + "/"
                     }
+                    return "";
                }
 
                var that = this;
                var objId = generateName(parent) + objType+":"+name;
-               if( this.viewedObjects[ objId ] ) {
-                   this.tabContainer.selectChild(this.viewedObjects[ objId ].contentPane);
+
+               var obj = this.viewedObjects[ objId ];
+               if(obj) {
+                   this.tabContainer.selectChild(obj.contentPane);
                } else {
                    var Constructor = constructors[ objType ];
                    if(Constructor) {
-                       var obj = new Constructor(name, parent, this);
+                       obj = new Constructor(name, parent, this);
+                       obj.tabData = {
+                           objectId: objectId,
+                           objectType: objType
+                       };
                        this.viewedObjects[ objId ] = obj;
 
                        var contentPane = new ContentPane({ region: "center" ,
@@ -98,6 +107,25 @@ define(["dojo/dom",
                                                            }
                        });
                        this.tabContainer.addChild( contentPane );
+                       if (objType != "broker")
+                       {
+                         var preferencesCheckBox = new dijit.form.CheckBox({
+                           checked: UserPreferences.isTabStored(obj.tabData),
+                           title: "If checked the tab is saved in user preferences and restored on console start-up"
+                         });
+                         var tabs = this.tabContainer.tablist.getChildren();
+                         preferencesCheckBox.placeAt(tabs[tabs.length-1].titleNode, "first");
+                         preferencesCheckBox.on("change", function(value){
+                           if (value)
+                           {
+                             UserPreferences.appendTab(obj.tabData);
+                           }
+                           else
+                           {
+                             UserPreferences.removeTab(obj.tabData);
+                           }
+                         });
+                       }
                        obj.open(contentPane);
                        contentPane.startup();
                        if(obj.startup) {
@@ -109,10 +137,6 @@ define(["dojo/dom",
                }
 
            };
-
-           ready(function() {
-               controller.show("broker","");
-           });
 
 
            return controller;

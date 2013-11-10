@@ -354,7 +354,7 @@ define(["dojo/_base/xhr",
 
                             var logViewerButton = query(".logViewer", contentPane.containerNode)[0];
                             registry.byNode(logViewerButton).on("click", function(evt){
-                              that.controller.show("logViewer", null, null);
+                              that.controller.show("logViewer", "");
                             });
 
 
@@ -553,7 +553,7 @@ define(["dojo/_base/xhr",
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
                                                             var name = obj.dataStore.getValue(theItem,"name");
-                                                            that.controller.show("virtualhost", name, brokerObj);
+                                                            that.controller.show("virtualhost", name, brokerObj, theItem.id);
                                                         });
                                                 }, gridProperties, EnhancedGrid);
 
@@ -572,7 +572,7 @@ define(["dojo/_base/xhr",
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
                                                             var name = obj.dataStore.getValue(theItem,"name");
-                                                            that.controller.show("port", name, brokerObj);
+                                                            that.controller.show("port", name, brokerObj, theItem.id);
                                                         });
                                                 }, gridProperties, EnhancedGrid);
 
@@ -598,7 +598,7 @@ define(["dojo/_base/xhr",
                                                              var idx = evt.rowIndex,
                                                                  theItem = this.getItem(idx);
                                                              var name = obj.dataStore.getValue(theItem,"name");
-                                                             that.controller.show("authenticationprovider", name, brokerObj);
+                                                             that.controller.show("authenticationprovider", name, brokerObj, theItem.id);
                                                          });
                                                  }, gridProperties, EnhancedGrid);
 
@@ -615,7 +615,7 @@ define(["dojo/_base/xhr",
                                                            var idx = evt.rowIndex,
                                                                theItem = this.getItem(idx);
                                                            var name = obj.dataStore.getValue(theItem,"name");
-                                                           that.controller.show("keystore", name, brokerObj);
+                                                           that.controller.show("keystore", name, brokerObj, theItem.id);
                                                        });
                                                }, gridProperties, EnhancedGrid);
 
@@ -636,7 +636,7 @@ define(["dojo/_base/xhr",
                                                            var idx = evt.rowIndex,
                                                                theItem = this.getItem(idx);
                                                            var name = obj.dataStore.getValue(theItem,"name");
-                                                           that.controller.show("truststore", name, brokerObj);
+                                                           that.controller.show("truststore", name, brokerObj, theItem.id);
                                                        });
                                                }, gridProperties, EnhancedGrid);
                              that.groupProvidersGrid =
@@ -650,7 +650,7 @@ define(["dojo/_base/xhr",
                                                            var idx = evt.rowIndex,
                                                                theItem = this.getItem(idx);
                                                            var name = obj.dataStore.getValue(theItem,"name");
-                                                           that.controller.show("groupprovider", name, brokerObj);
+                                                           that.controller.show("groupprovider", name, brokerObj, theItem.id);
                                                        });
                                                }, gridProperties, EnhancedGrid);
                              var aclData = that.brokerData.accesscontrolproviders ? that.brokerData.accesscontrolproviders :[];
@@ -665,7 +665,7 @@ define(["dojo/_base/xhr",
                                                            var idx = evt.rowIndex,
                                                                theItem = this.getItem(idx);
                                                            var name = obj.dataStore.getValue(theItem,"name");
-                                                           that.controller.show("accesscontrolprovider", name, brokerObj);
+                                                           that.controller.show("accesscontrolprovider", name, brokerObj, theItem.id);
                                                        });
                                                }, gridProperties, EnhancedGrid);
                              that.displayACLWarnMessage(aclData);

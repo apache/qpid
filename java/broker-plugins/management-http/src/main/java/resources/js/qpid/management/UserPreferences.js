@@ -31,6 +31,7 @@ define(["dojo/_base/xhr",
 
     /* set time zone to 'UTC' by default*/
     timeZone: "UTC",
+    tabs: [],
 
     loadPreferences : function(callbackSuccessFunction, callbackErrorFunction)
     {
@@ -60,12 +61,12 @@ define(["dojo/_base/xhr",
       });
     },
 
-    setPreferences : function(preferences, callbackSuccessFunction, callbackErrorFunction)
+    setPreferences : function(preferences, callbackSuccessFunction, callbackErrorFunction, noSync)
     {
       var that = this;
       xhr.post({
         url: "rest/preferences",
-        sync: true,
+        sync: !noSync,
         handleAs: "json",
         headers: { "Content-Type": "application/json"},
         postData: json.stringify(preferences),
@@ -237,8 +238,68 @@ define(["dojo/_base/xhr",
         result += " (" + this.getTimeZoneDescription(tzi) + ")";
       }
       return result;
-    }
+    },
 
+    defaultErrorHandler: function(error)
+    {
+      if (error.status == 404)
+      {
+        alert("Cannot perform preferences operation: authentication provider is not configured");
+      }
+      else
+      {
+        alert("Cannot perform preferences operation:" + error);
+      }
+    },
+
+    appendTab: function(tab)
+    {
+      if (!this.tabs)
+      {
+        this.tabs = [];
+      }
+      if (!this.isTabStored(tab))
+      {
+        this.tabs.push(tab);
+        this.setPreferences({tabs: this.tabs}, null, this.defaultErrorHandler, true);
+      }
+    },
+
+    removeTab: function(tab)
+    {
+      if (this.tabs)
+      {
+        var index = this._getTabIndex(tab);
+        if (index != -1)
+        {
+          this.tabs.splice(index, 1);
+          this.setPreferences({tabs: this.tabs}, null, this.defaultErrorHandler, true);
+        }
+      }
+    },
+
+    isTabStored: function(tab)
+    {
+      return this._getTabIndex(tab) != -1;
+    },
+
+    _getTabIndex: function(tab)
+    {
+      var index = -1;
+      if (this.tabs)
+      {
+        for(var i = 0 ; i < this.tabs.length ; i++)
+        {
+          var t = this.tabs[i];
+          if ( t.objectId == tab.objectId && t.objectType == tab.objectType )
+          {
+            index = i;
+            break;
+          }
+        }
+      }
+      return index;
+    }
   };
 
   UserPreferences.loadPreferences(null,

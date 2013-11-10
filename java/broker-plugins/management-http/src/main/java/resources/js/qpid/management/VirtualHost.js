@@ -184,7 +184,7 @@ define(["dojo/_base/xhr",
                                                                              var idx = evt.rowIndex,
                                                                                  theItem = this.getItem(idx);
                                                                              var queueName = obj.dataStore.getValue(theItem,"name");
-                                                                             controller.show("queue", queueName, vhost);
+                                                                             controller.show("queue", queueName, vhost, theItem.id);
                                                                          });
                                                         } , gridProperties, EnhancedGrid);
 
@@ -201,7 +201,7 @@ define(["dojo/_base/xhr",
                                                                                 var idx = evt.rowIndex,
                                                                                 theItem = this.getItem(idx);
                                                                                 var exchangeName = obj.dataStore.getValue(theItem,"name");
-                                                                                controller.show("exchange", exchangeName, vhost);
+                                                                                controller.show("exchange", exchangeName, vhost, theItem.id);
                                                                             });
                                                            } , gridProperties, EnhancedGrid);
 
@@ -229,7 +229,7 @@ define(["dojo/_base/xhr",
                                                                                   var idx = evt.rowIndex,
                                                                                       theItem = this.getItem(idx);
                                                                                   var connectionName = obj.dataStore.getValue(theItem,"name");
-                                                                                  controller.show("connection", connectionName, vhost);
+                                                                                  controller.show("connection", connectionName, vhost, theItem.id);
                                                                               });
                                                              } );
 
