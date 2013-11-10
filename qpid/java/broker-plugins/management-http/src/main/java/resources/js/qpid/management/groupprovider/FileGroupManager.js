@@ -117,7 +117,7 @@ define(["dojo/_base/xhr",
                                                   var idx = evt.rowIndex,
                                                       theItem = this.getItem(idx);
                                                   var name = obj.dataStore.getValue(theItem,"name");
-                                                  that.controller.show("group", name, groupProviderObj);
+                                                  that.controller.show("group", name, groupProviderObj, theItem.id);
                                               });
                                       }, gridProperties, EnhancedGrid);
 

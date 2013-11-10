@@ -164,7 +164,7 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
               }
               that._toggleSetButtons();
             },
-            function(error){alert("Error:" + error);}
+            UserPreferences.defaultErrorHandler
         );
       }
     },
