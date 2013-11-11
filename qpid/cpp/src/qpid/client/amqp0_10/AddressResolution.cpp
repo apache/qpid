@@ -227,8 +227,8 @@ class QueueSource : public Queue, public MessageSource
     void subscribe(qpid::client::AsyncSession& session, const std::string& destination);
     void cancel(qpid::client::AsyncSession& session, const std::string& destination);
   private:
-    const AcceptMode acceptMode;
     const AcquireMode acquireMode;
+    const AcceptMode acceptMode;
     bool exclusive;
     FieldTable options;
 };
@@ -472,13 +472,13 @@ bool isBrowse(const Address& address)
 
 QueueSource::QueueSource(const Address& address) :
     Queue(address),
-    acceptMode(AddressResolution::is_unreliable(address) ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT),
     acquireMode(isBrowse(address) ? ACQUIRE_MODE_NOT_ACQUIRED : ACQUIRE_MODE_PRE_ACQUIRED),
+    //since this client does not provide any means by which an
+    //unacquired message can be acquired, there is no value in an
+    //explicit accept
+    acceptMode(acquireMode == ACQUIRE_MODE_NOT_ACQUIRED || AddressResolution::is_unreliable(address) ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT),
     exclusive(false)
 {
-    //extract subscription arguments from address options (nb: setting
-    //of accept-mode/acquire-mode/destination controlled though other
-    //options)
     exclusive = Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE;
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(options);
     std::string selector = Opt(address)/LINK/SELECTOR;
