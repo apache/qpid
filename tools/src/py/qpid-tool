@@ -144,7 +144,7 @@ class Mcli(Cmd):
     try:
       self.dataObject.do_call(data)
     except Exception, e:
-      print "Exception in do_call: %r", e
+      print "Exception in do_call: %r" % e
 
   def do_EOF(self, data):
     print "quit"
