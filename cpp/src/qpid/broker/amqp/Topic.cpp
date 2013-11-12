@@ -111,6 +111,7 @@ boost::shared_ptr<Topic> TopicRegistry::createTopic(Broker& broker, const std::s
 {
     boost::shared_ptr<Topic> topic(new Topic(broker, name, properties));
     add(topic);
+    topic->getExchange()->setDeletionListener(name, boost::bind(&TopicRegistry::remove, this, name));
     return topic;
 }
 
@@ -174,6 +175,7 @@ boost::shared_ptr<Topic> TopicRegistry::remove(const std::string& name)
     if (i != topics.end()) {
         result = i->second;
         topics.erase(i);
+        result->getExchange()->unsetDeletionListener(name);
     }
     return result;
 }

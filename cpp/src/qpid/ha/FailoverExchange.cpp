@@ -108,6 +108,11 @@ bool FailoverExchange::isBound(Queue::shared_ptr queue, const string* const,
     return queues.find(queue) != queues.end();
 }
 
+bool FailoverExchange::hasBindings() {
+    Lock l(lock);
+    return !queues.empty();
+}
+
 void FailoverExchange::route(Deliverable&) {
     QPID_LOG(warning, "Message received by exchange " << typeName << " ignoring");
 }

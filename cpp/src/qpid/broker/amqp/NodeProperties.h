@@ -62,6 +62,7 @@ class NodeProperties : public qpid::amqp::MapReader
     QueueSettings getQueueSettings();
     bool isDurable() const;
     bool isExclusive() const;
+    bool isAutodelete() const;
     std::string getExchangeType() const;
     std::string getAlternateExchange() const;
     bool trackControllingLink() const;

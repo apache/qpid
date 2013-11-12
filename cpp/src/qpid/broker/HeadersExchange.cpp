@@ -164,9 +164,9 @@ HeadersExchange::HeadersExchange(const string& _name, Manageable* _parent, Broke
         mgmtExchange->set_type (typeName);
 }
 
-HeadersExchange::HeadersExchange(const std::string& _name, bool _durable,
+HeadersExchange::HeadersExchange(const std::string& _name, bool _durable, bool autodelete,
                                  const FieldTable& _args, Manageable* _parent, Broker* b) :
-    Exchange(_name, _durable, _args, _parent, b)
+    Exchange(_name, _durable, autodelete, _args, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
@@ -288,6 +288,7 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
     if (propagate) {
         propagateFedOp(bindingKey, string(), fedOpUnbind, string());
     }
+    if (bindings.empty()) checkAutodelete();
     return true;
 }
 
@@ -404,3 +405,8 @@ bool HeadersExchange::FedUnbindModifier::operator()(BoundKey & bk)
     return true;
 }
 
+bool HeadersExchange::hasBindings()
+{
+    Bindings::ConstPtr ptr = bindings.snapshot();
+    return ptr && !ptr->empty();
+}

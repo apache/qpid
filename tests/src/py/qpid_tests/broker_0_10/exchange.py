@@ -122,49 +122,67 @@ class StandardExchangeVerifier:
 
     Used as base class for classes that test standard exchanges."""
 
-    def verifyDirectExchange(self, ex):
+    def verifyDirectExchange(self, ex, unbind=False):
         """Verify that ex behaves like a direct exchange."""
         self.queue_declare(queue="q")
         self.session.exchange_bind(queue="q", exchange=ex, binding_key="k")
-        self.assertPublishConsume(exchange=ex, queue="q", routing_key="k")
         try:
-            self.assertPublishConsume(exchange=ex, queue="q", routing_key="kk")
-            self.fail("Expected Empty exception")
-        except Queue.Empty: None # Expected
+            self.assertPublishConsume(exchange=ex, queue="q", routing_key="k")
+            try:
+                self.assertPublishConsume(exchange=ex, queue="q", routing_key="kk")
+                self.fail("Expected Empty exception")
+            except Queue.Empty: None # Expected
+        finally:
+            if unbind:
+                self.session.exchange_unbind(queue="q", exchange=ex, binding_key="k")
 
-    def verifyFanOutExchange(self, ex):
+    def verifyFanOutExchange(self, ex, unbind=False):
         """Verify that ex behaves like a fanout exchange."""
         self.queue_declare(queue="q") 
         self.session.exchange_bind(queue="q", exchange=ex)
         self.queue_declare(queue="p") 
         self.session.exchange_bind(queue="p", exchange=ex)
-        for qname in ["q", "p"]: self.assertPublishGet(self.consume(qname), ex)
+        try:
+            for qname in ["q", "p"]: self.assertPublishGet(self.consume(qname), ex)
+        finally:
+            if unbind:
+                self.session.exchange_unbind(queue="q", exchange=ex, binding_key="")
+                self.session.exchange_unbind(queue="p", exchange=ex, binding_key="")
 
-    def verifyTopicExchange(self, ex):
+
+    def verifyTopicExchange(self, ex, unbind=False):
         """Verify that ex behaves like a topic exchange"""
         self.queue_declare(queue="a")
         self.session.exchange_bind(queue="a", exchange=ex, binding_key="a.#.b.*")
-        q = self.consume("a")
-        self.assertPublishGet(q, ex, "a.b.x")
-        self.assertPublishGet(q, ex, "a.x.b.x")
-        self.assertPublishGet(q, ex, "a.x.x.b.x")
-        # Shouldn't match
-        self.session.message_transfer(destination=ex, message=self.createMessage("a.b"))        
-        self.session.message_transfer(destination=ex, message=self.createMessage("a.b.x.y"))        
-        self.session.message_transfer(destination=ex, message=self.createMessage("x.a.b.x"))        
-        self.session.message_transfer(destination=ex, message=self.createMessage("a.b"))
-        self.assert_(q.empty())
+        try:
+            q = self.consume("a")
+            self.assertPublishGet(q, ex, "a.b.x")
+            self.assertPublishGet(q, ex, "a.x.b.x")
+            self.assertPublishGet(q, ex, "a.x.x.b.x")
+            # Shouldn't match
+            self.session.message_transfer(destination=ex, message=self.createMessage("a.b"))        
+            self.session.message_transfer(destination=ex, message=self.createMessage("a.b.x.y"))        
+            self.session.message_transfer(destination=ex, message=self.createMessage("x.a.b.x"))        
+            self.session.message_transfer(destination=ex, message=self.createMessage("a.b"))
+            self.assert_(q.empty())
+        finally:
+            if unbind:
+                self.session.exchange_unbind(queue="a", exchange=ex, binding_key="a.#.b.*")
 
-    def verifyHeadersExchange(self, ex):
+    def verifyHeadersExchange(self, ex, unbind=False):
         """Verify that ex is a headers exchange"""
         self.queue_declare(queue="q")
         self.session.exchange_bind(queue="q", exchange=ex, arguments={ "x-match":"all", "name":"fred" , "age":3} )
-        q = self.consume("q")
-        headers = {"name":"fred", "age":3}
-        self.assertPublishGet(q, exchange=ex, properties=headers)
-        self.session.message_transfer(destination=ex) # No headers, won't deliver
-        self.assertEmpty(q);                 
-        
+        try:
+            q = self.consume("q")
+            headers = {"name":"fred", "age":3}
+            self.assertPublishGet(q, exchange=ex, properties=headers)
+            self.session.message_transfer(destination=ex) # No headers, won't deliver
+            self.assertEmpty(q);
+        finally:
+            if unbind:
+                self.session.exchange_unbind(queue="q", exchange=ex, binding_key="")
+
 
 class RecommendedTypesRuleTests(TestHelper, StandardExchangeVerifier):
     """
@@ -485,8 +503,39 @@ class MiscellaneousErrorsTests(TestHelper):
 class ExchangeTests(TestHelper):
     def testHeadersBindNoMatchArg(self):
         self.session.queue_declare(queue="q", exclusive=True, auto_delete=True)
-        try: 
+        try:
             self.session.exchange_bind(queue="q", exchange="amq.match", arguments={"name":"fred" , "age":3} )
             self.fail("Expected failure for missing x-match arg.")
-        except SessionException, e:    
+        except SessionException, e:
             self.assertEquals(541, e.args[0].error_code)
+
+class AutodeleteTests(TestHelper, StandardExchangeVerifier):
+    def checkNotExists(self, e):
+        try:
+            s = self.conn.session("verifier")
+            s.exchange_declare(exchange=e, passive=True)
+            s.exchange_delete(exchange=e)
+            self.fail("Expected failure for passive declare of %s" % e)
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
+
+
+    def testAutodeleteFanout(self):
+        self.session.exchange_declare(exchange="e", type="fanout", auto_delete=True)
+        self.verifyFanOutExchange("e", unbind=True)
+        self.checkNotExists("e");
+
+    def testAutodeleteDirect(self):
+        self.session.exchange_declare(exchange="e", type="direct", auto_delete=True)
+        self.verifyDirectExchange("e", unbind=True)
+        self.checkNotExists("e");
+
+    def testAutodeleteTopic(self):
+        self.session.exchange_declare(exchange="e", type="topic", auto_delete=True)
+        self.verifyTopicExchange("e", unbind=True)
+        self.checkNotExists("e");
+
+    def testAutodeleteHeaders(self):
+        self.session.exchange_declare(exchange="e", type="headers", auto_delete=True)
+        self.verifyHeadersExchange("e", unbind=True)
+        self.checkNotExists("e");
