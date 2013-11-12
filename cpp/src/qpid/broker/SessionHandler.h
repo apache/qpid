@@ -46,12 +46,23 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
     class ErrorListener {
       public:
         virtual ~ErrorListener() {}
+
+        /** Called when there is an outgoing connection-exception */
         virtual void connectionException(
             framing::connection::CloseCode code, const std::string& msg) = 0;
+        /** Called when there is an outgoing channel-exception */
         virtual void channelException(
             framing::session::DetachCode, const std::string& msg) = 0;
+        /** Called when there is an outgoing execution-exception */
         virtual void executionException(
             framing::execution::ErrorCode, const std::string& msg) = 0;
+
+        /** Called when there is an incoming execution-exception.
+         * Useful for inter-broker bridges.
+         */
+        virtual void incomingExecutionException(
+            framing::execution::ErrorCode, const std::string& msg) = 0;
+
         /** Called when it is safe to delete the ErrorListener. */
         virtual void detach() = 0;
     };
@@ -77,15 +88,18 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
 
     void setErrorListener(boost::shared_ptr<ErrorListener> e) { errorListener = e; }
 
+    // Called by SessionAdapter
+    void incomingExecutionException(framing::execution::ErrorCode, const std::string& msg);
+
   protected:
-    virtual void setState(const std::string& sessionName, bool force);
-    virtual qpid::SessionState* getState();
-    virtual framing::FrameHandler* getInHandler();
-    virtual void connectionException(framing::connection::CloseCode code, const std::string& msg);
-    virtual void channelException(framing::session::DetachCode, const std::string& msg);
-    virtual void executionException(framing::execution::ErrorCode, const std::string& msg);
-    virtual void detaching();
-    virtual void readyToSend();
+    void setState(const std::string& sessionName, bool force);
+    qpid::SessionState* getState();
+    framing::FrameHandler* getInHandler();
+    void connectionException(framing::connection::CloseCode code, const std::string& msg);
+    void channelException(framing::session::DetachCode, const std::string& msg);
+    void executionException(framing::execution::ErrorCode, const std::string& msg);
+    void detaching();
+    void readyToSend();
 
   private:
     struct SetChannelProxy : public framing::AMQP_ClientProxy { // Proxy that sets the channel.

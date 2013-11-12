@@ -206,9 +206,9 @@ void SemanticState::rollback()
 {
     if (!txBuffer)
         throw CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
+    StartTxOnExit e(*this);
     session.rollbackTx();       // Just to update statistics
     txBuffer->rollback();
-    startTx();                  // Start a new TX automatically.
 }
 
 void SemanticState::selectDtx()

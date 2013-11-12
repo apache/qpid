@@ -90,13 +90,21 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     typedef qpid::sys::unordered_map<
       QueuePtr, ReplicationIdSet, Hasher<QueuePtr> > QueueIdsMap;
 
-    void membership(const BrokerInfo::Map&);
+    enum State {
+        SENDING,                ///< Sending TX messages and acks
+        PREPARING,              ///< Prepare sent, waiting for response
+        ENDED                   ///< Commit or rollback sent, local transaction ended.
+    };
+
+    void checkState(State expect, const std::string& msg);
     void end(sys::Mutex::ScopedLock&);
     void txPrepareOkEvent(const std::string& data);
     void txPrepareFailEvent(const std::string& data);
-
+    bool completed(const types::Uuid& id, sys::Mutex::ScopedLock&);
+    bool error(const types::Uuid& id, const char* msg, sys::Mutex::ScopedLock& l);
 
     sys::Monitor lock;
+    State state;
     std::string logPrefix;
     Primary& primary;
     HaBroker& haBroker;
@@ -110,10 +118,8 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     std::string exchangeName;
     QueuePtr txQueue;
     QueueIdsMap enqueues;
-    bool complete;
-    UuidSet members;            // All members of transaction.
-    UuidSet unprepared;         // Members that have not yet responded to prepare.
-    UuidSet unfinished;         // Members that have not yet disconnected.
+    UuidSet backups;            // All backups of transaction.
+    UuidSet incomplete;         // Incomplete backups (not yet responded to prepare)
 };
 
 }} // namespace qpid::ha

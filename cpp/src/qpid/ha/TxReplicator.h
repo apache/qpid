@@ -84,7 +84,7 @@ class TxReplicator : public QueueReplicator {
     void prepare(const std::string& data, sys::Mutex::ScopedLock&);
     void commit(const std::string& data, sys::Mutex::ScopedLock&);
     void rollback(const std::string& data, sys::Mutex::ScopedLock&);
-    void members(const std::string& data, sys::Mutex::ScopedLock&);
+    void backups(const std::string& data, sys::Mutex::ScopedLock&);
     void end(sys::Mutex::ScopedLock&);
 
     std::string logPrefix;
@@ -93,7 +93,7 @@ class TxReplicator : public QueueReplicator {
     broker::MessageStore* store;
     std::auto_ptr<broker::TransactionContext> context;
     framing::ChannelId channel; // Channel to send prepare-complete.
-    bool complete, ignore;
+    bool empty, ended;
 
     // Class to process dequeues and create DeliveryRecords to populate a
     // TxAccept.
