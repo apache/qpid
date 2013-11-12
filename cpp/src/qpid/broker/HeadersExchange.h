@@ -45,12 +45,12 @@ class HeadersExchange : public virtual Exchange {
 
     struct MatchArgs
     {
-        const Queue::shared_ptr queue;        
+        const Queue::shared_ptr queue;
         const qpid::framing::FieldTable* args;
         MatchArgs(Queue::shared_ptr q, const qpid::framing::FieldTable* a);
         bool operator()(const BoundKey & bk);
     };
-    
+
     struct MatchKey
     {
         const Queue::shared_ptr queue;
@@ -77,6 +77,7 @@ class HeadersExchange : public virtual Exchange {
   protected:
     void getNonFedArgs(const framing::FieldTable* args,
                        framing::FieldTable& nonFedArgs);
+    bool hasBindings();
 
   public:
     QPID_BROKER_EXTERN static const std::string typeName;
@@ -84,12 +85,12 @@ class HeadersExchange : public virtual Exchange {
     QPID_BROKER_EXTERN HeadersExchange(const std::string& name,
                                        management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN HeadersExchange(const std::string& _name,
-                                       bool _durable, 
+                                       bool _durable, bool autodelete,
                                        const qpid::framing::FieldTable& _args,
                                        management::Manageable* parent = 0, Broker* broker = 0);
-    
-    virtual std::string getType() const { return typeName; }            
-        
+
+    virtual std::string getType() const { return typeName; }
+
     QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
                                          const std::string& routingKey,
                                          const qpid::framing::FieldTable* args);

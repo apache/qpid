@@ -43,16 +43,16 @@ class DirectExchange : public virtual Exchange {
 
 public:
     QPID_BROKER_EXTERN static const std::string typeName;
-        
+
     QPID_BROKER_EXTERN DirectExchange(const std::string& name,
                                       management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN DirectExchange(const std::string& _name,
-                                      bool _durable, 
+                                      bool _durable, bool autodelete,
                                       const qpid::framing::FieldTable& _args,
                                       management::Manageable* parent = 0, Broker* broker = 0);
 
-    virtual std::string getType() const { return typeName; }            
-        
+    virtual std::string getType() const { return typeName; }
+
     QPID_BROKER_EXTERN virtual bool bind(boost::shared_ptr<Queue> queue,
                                          const std::string& routingKey,
                                          const qpid::framing::FieldTable* args);
@@ -65,6 +65,8 @@ public:
     QPID_BROKER_EXTERN virtual ~DirectExchange();
 
     virtual bool supportsDynamicBinding() { return true; }
+  protected:
+    bool hasBindings();
 };
 
 }}

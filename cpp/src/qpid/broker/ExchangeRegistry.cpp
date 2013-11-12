@@ -42,11 +42,11 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type){
 
-    return declare(name, type, false, FieldTable());
+    return declare(name, type, false, false, FieldTable());
 }
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(
-    const string& name, const string& type, bool durable, const FieldTable& args,
+    const string& name, const string& type, bool durable, bool autodelete, const FieldTable& args,
     Exchange::shared_ptr alternate, const string& connectionId, const string& userId)
 {
     Exchange::shared_ptr exchange;
@@ -56,13 +56,13 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(
         ExchangeMap::iterator i =  exchanges.find(name);
         if (i == exchanges.end()) {
             if (type == TopicExchange::typeName){
-                exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent, broker));
+                exchange = Exchange::shared_ptr(new TopicExchange(name, durable, autodelete, args, parent, broker));
             }else if(type == DirectExchange::typeName){
-                exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent, broker));
+                exchange = Exchange::shared_ptr(new DirectExchange(name, durable, autodelete, args, parent, broker));
             }else if(type == FanOutExchange::typeName){
-                exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args, parent, broker));
+                exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, autodelete, args, parent, broker));
             }else if (type == HeadersExchange::typeName) {
-                exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent, broker));
+                exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, autodelete, args, parent, broker));
             }else if (type == ManagementDirectExchange::typeName) {
                 exchange = Exchange::shared_ptr(new ManagementDirectExchange(name, durable, args, parent, broker));
             }else if (type == ManagementTopicExchange::typeName) {
@@ -74,7 +74,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(
                 if (i == factory.end()) {
                     throw UnknownExchangeTypeException();
                 } else {
-                    exchange = i->second(name, durable, args, parent, broker);
+                    exchange = i->second(name, durable, autodelete, args, parent, broker);
                 }
             }
             exchanges[name] = exchange;

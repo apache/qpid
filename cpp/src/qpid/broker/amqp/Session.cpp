@@ -185,7 +185,14 @@ class IncomingToExchange : public DecodingIncoming
 {
   public:
     IncomingToExchange(Broker& b, Session& p, boost::shared_ptr<qpid::broker::Exchange> e, pn_link_t* l, const std::string& source)
-        : DecodingIncoming(l, b, p, source, e->getName(), pn_link_name(l)), exchange(e), authorise(p.getAuthorise()) {}
+        : DecodingIncoming(l, b, p, source, e->getName(), pn_link_name(l)), exchange(e), authorise(p.getAuthorise())
+    {
+        exchange->incOtherUsers();
+    }
+    ~IncomingToExchange()
+    {
+        exchange->decOtherUsers();
+    }
     void handle(qpid::broker::Message& m);
   private:
     boost::shared_ptr<qpid::broker::Exchange> exchange;
@@ -243,8 +250,9 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 }
                 qpid::framing::FieldTable args;
                 qpid::amqp_0_10::translate(node.properties.getProperties(), args);
-                node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.getAlternateExchange(),
-                                                      args, connection.getUserId(), connection.getId()).first;
+                node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.isAutodelete(),
+                                                                      node.properties.getAlternateExchange(),
+                                                                      args, connection.getUserId(), connection.getId()).first;
             } else {
                 if (node.exchange) {
                     QPID_LOG_CAT(warning, model, "Node name will be ambiguous, creation of queue named " << name << " requested when exchange of the same name already exists");

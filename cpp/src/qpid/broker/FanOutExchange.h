@@ -38,16 +38,16 @@ class FanOutExchange : public virtual Exchange {
     FedBinding fedBinding;
   public:
     static const std::string typeName;
-        
+
     QPID_BROKER_EXTERN FanOutExchange(const std::string& name,
                                       management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN FanOutExchange(const std::string& _name,
-                                      bool _durable, 
+                                      bool _durable, bool autodelete,
                                       const qpid::framing::FieldTable& _args,
                                       management::Manageable* parent = 0, Broker* broker = 0);
 
-    virtual std::string getType() const { return typeName; }            
-        
+    virtual std::string getType() const { return typeName; }
+
     QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
                                          const std::string& routingKey,
                                          const qpid::framing::FieldTable* args);
@@ -62,6 +62,8 @@ class FanOutExchange : public virtual Exchange {
 
     QPID_BROKER_EXTERN virtual ~FanOutExchange();
     virtual bool supportsDynamicBinding() { return true; }
+  protected:
+    bool hasBindings();
 };
 
 }

@@ -166,7 +166,7 @@ void Exchange::routeIVE(){
 
 
 Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
-    name(_name), durable(false), alternateUsers(0), persistenceId(0), sequence(false),
+    name(_name), durable(false), autodelete(false), alternateUsers(0), otherUsers(0), persistenceId(0), sequence(false),
     sequenceNo(0), ive(false), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
@@ -176,7 +176,7 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
         {
             mgmtExchange = _qmf::Exchange::shared_ptr(new _qmf::Exchange (agent, this, parent, _name));
             mgmtExchange->set_durable(durable);
-            mgmtExchange->set_autoDelete(false);
+            mgmtExchange->set_autoDelete(autodelete);
             agent->addObject(mgmtExchange, 0, durable);
             if (broker)
                 brokerMgmtObject = boost::dynamic_pointer_cast<qmf::org::apache::qpid::broker::Broker>(broker->GetManagementObject());
@@ -184,9 +184,9 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
     }
 }
 
-Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
+Exchange::Exchange(const string& _name, bool _durable, bool _autodelete, const qpid::framing::FieldTable& _args,
                    Manageable* parent, Broker* b)
-    : name(_name), durable(_durable), alternateUsers(0), persistenceId(0),
+    : name(_name), durable(_durable), autodelete(_autodelete), alternateUsers(0), otherUsers(0), persistenceId(0),
       args(_args), sequence(false), sequenceNo(0), ive(false), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
@@ -196,7 +196,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
         {
             mgmtExchange = _qmf::Exchange::shared_ptr(new _qmf::Exchange (agent, this, parent, _name));
             mgmtExchange->set_durable(durable);
-            mgmtExchange->set_autoDelete(false);
+            mgmtExchange->set_autoDelete(autodelete);
             mgmtExchange->set_arguments(ManagementAgent::toMap(args));
             agent->addObject(mgmtExchange, 0, durable);
             if (broker)
@@ -255,7 +255,7 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
         buffer.getShortString(altName);
 
     try {
-        Exchange::shared_ptr exch = exchanges.declare(name, type, durable, args).first;
+        Exchange::shared_ptr exch = exchanges.declare(name, type, durable, false, args).first;
         exch->sequenceNo = args.getAsInt64(qpidSequenceCounter);
         exch->alternateName.assign(altName);
         return exch;
@@ -413,6 +413,77 @@ bool Exchange::routeWithAlternate(Deliverable& msg)
 void Exchange::setArgs(const framing::FieldTable& newArgs) {
     args = newArgs;
     if (mgmtExchange) mgmtExchange->set_arguments(ManagementAgent::toMap(args));
+}
+
+void Exchange::checkAutodelete()
+{
+    if (autodelete && !inUse() && broker) {
+        broker->getExchanges().destroy(name);
+    }
+}
+void Exchange::incAlternateUsers()
+{
+    Mutex::ScopedLock l(usersLock);
+    alternateUsers++;
+}
+
+void Exchange::decAlternateUsers()
+{
+    Mutex::ScopedLock l(usersLock);
+    alternateUsers--;
+}
+
+bool Exchange::inUseAsAlternate()
+{
+    Mutex::ScopedLock l(usersLock);
+    return alternateUsers > 0;
+}
+
+void Exchange::incOtherUsers()
+{
+    Mutex::ScopedLock l(usersLock);
+    otherUsers++;
+}
+void Exchange::decOtherUsers()
+{
+    Mutex::ScopedLock l(usersLock);
+    assert(otherUsers);
+    if (otherUsers) otherUsers--;
+    if (!inUse() && !hasBindings()) checkAutodelete();
+}
+bool Exchange::inUse() const
+{
+    Mutex::ScopedLock l(usersLock);
+    return alternateUsers > 0 || otherUsers > 0;
+}
+void Exchange::setDeletionListener(const std::string& key, boost::function0<void> listener)
+{
+    Mutex::ScopedLock l(usersLock);
+    if (listener) deletionListeners[key] = listener;
+}
+void Exchange::unsetDeletionListener(const std::string& key)
+{
+    Mutex::ScopedLock l(usersLock);
+    deletionListeners.erase(key);
+}
+
+void Exchange::destroy()
+{
+    std::map<std::string, boost::function0<void> > copy;
+    {
+        Mutex::ScopedLock l(usersLock);
+        destroyed = true;
+        deletionListeners.swap(copy);
+    }
+    for (std::map<std::string, boost::function0<void> >::iterator i = copy.begin(); i != copy.end(); ++i) {
+        QPID_LOG(notice, "Exchange::destroy() notifying " << i->first);
+        if (i->second) i->second();
+    }
+}
+bool Exchange::isDestroyed() const
+{
+    Mutex::ScopedLock l(usersLock);
+    return destroyed;
 }
 
 }}

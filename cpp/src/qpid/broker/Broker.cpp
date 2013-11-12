@@ -295,7 +295,7 @@ Broker::Broker(const Broker::Options& conf) :
     framing::FieldTable args;
 
     // Default exchnge is not replicated.
-    exchanges.declare(empty, DirectExchange::typeName, false, noReplicateArgs());
+    exchanges.declare(empty, DirectExchange::typeName, false, false, noReplicateArgs());
 
     RecoveredObjects objects;
     if (store.get() != 0) {
@@ -313,7 +313,7 @@ Broker::Broker(const Broker::Options& conf) :
     declareStandardExchange(amq_match, HeadersExchange::typeName);
 
     if(conf.enableMgmt) {
-        exchanges.declare(qpid_management, ManagementTopicExchange::typeName, false, noReplicateArgs());
+        exchanges.declare(qpid_management, ManagementTopicExchange::typeName, false, false, noReplicateArgs());
         Exchange::shared_ptr mExchange = exchanges.get(qpid_management);
         Exchange::shared_ptr dExchange = exchanges.get(amq_direct);
         managementAgent->setExchange(mExchange, dExchange);
@@ -323,9 +323,9 @@ Broker::Broker(const Broker::Options& conf) :
         std::string qmfDirect("qmf.default.direct");
 
         std::pair<Exchange::shared_ptr, bool> topicPair(
-            exchanges.declare(qmfTopic, ManagementTopicExchange::typeName, false, noReplicateArgs()));
+            exchanges.declare(qmfTopic, ManagementTopicExchange::typeName, false, false, noReplicateArgs()));
         std::pair<Exchange::shared_ptr, bool> directPair(
-            exchanges.declare(qmfDirect, ManagementDirectExchange::typeName, false, noReplicateArgs()));
+            exchanges.declare(qmfDirect, ManagementDirectExchange::typeName, false, false, noReplicateArgs()));
 
         boost::dynamic_pointer_cast<ManagementDirectExchange>(directPair.first)->setManagmentAgent(managementAgent.get(), 2);
         boost::dynamic_pointer_cast<ManagementTopicExchange>(topicPair.first)->setManagmentAgent(managementAgent.get(), 2);
@@ -386,7 +386,7 @@ void Broker::declareStandardExchange(const std::string& name, const std::string&
     framing::FieldTable args;
     // Standard exchanges are not replicated.
     std::pair<Exchange::shared_ptr, bool> status =
-        exchanges.declare(name, type, storeEnabled, noReplicateArgs());
+        exchanges.declare(name, type, storeEnabled, false, noReplicateArgs());
     if (status.second && storeEnabled) {
         store->create(*status.first, framing::FieldTable ());
     }
@@ -759,12 +759,14 @@ void Broker::createObject(const std::string& type, const std::string& name,
         }
     } else if (type == TYPE_EXCHANGE || type == TYPE_TOPIC) {
         bool durable(false);
+        bool autodelete(false);
         std::string exchangeType("topic");
         std::string alternateExchange;
         Variant::Map extensions;
         for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
             // extract durable, auto-delete and alternate-exchange properties
             if (i->first == DURABLE) durable = i->second;
+            else if (i->first == AUTO_DELETE) autodelete = i->second;
             else if (i->first == EXCHANGE_TYPE) exchangeType = i->second.asString();
             else if (i->first == ALTERNATE_EXCHANGE) alternateExchange = i->second.asString();
             //treat everything else as extension properties
@@ -775,7 +777,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
 
         try {
             std::pair<boost::shared_ptr<Exchange>, bool> result =
-                createExchange(name, exchangeType, durable, alternateExchange, arguments, userId, connectionId);
+                createExchange(name, exchangeType, durable, autodelete, alternateExchange, arguments, userId, connectionId);
             if (!result.second) {
                 throw ObjectAlreadyExists(name);
             }
@@ -1362,6 +1364,7 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
     const std::string& name,
     const std::string& type,
     bool durable,
+    bool autodelete,
     const std::string& alternateExchange,
     const qpid::framing::FieldTable& arguments,
     const std::string& userId,
@@ -1372,6 +1375,7 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
         params.insert(make_pair(acl::PROP_TYPE, type));
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
         params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
+        params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? _TRUE : _FALSE));
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_EXCHANGE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange create request from " << userId));
     }
@@ -1384,7 +1388,7 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
 
     std::pair<Exchange::shared_ptr, bool> result;
     result = exchanges.declare(
-        name, type, durable, arguments, alternate, connectionId, userId);
+        name, type, durable, autodelete, arguments, alternate, connectionId, userId);
     if (result.second) {
         if (durable) {
             store->create(*result.first, arguments);
@@ -1394,7 +1398,8 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
             << " rhost:" << connectionId
             << " type:" << type
             << " alternateExchange:" << alternateExchange
-            << " durable:" << (durable ? "T" : "F"));
+            << " durable:" << (durable ? "T" : "F")
+            << " autodelete:" << (autodelete ? "T" : "F"));
     }
     return result;
 }

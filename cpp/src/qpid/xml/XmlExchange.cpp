@@ -109,9 +109,9 @@ XmlExchange::XmlExchange(const std::string& _name, Manageable* _parent, Broker* 
         mgmtExchange->set_type (typeName);
 }
 
-XmlExchange::XmlExchange(const std::string& _name, bool _durable,
+XmlExchange::XmlExchange(const std::string& _name, bool _durable, bool autodelete,
                          const FieldTable& _args, Manageable* _parent, Broker* b) :
-    Exchange(_name, _durable, _args, _parent, b)
+    Exchange(_name, _durable, autodelete, _args, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
@@ -201,9 +201,11 @@ bool XmlExchange::unbindLH(Queue::shared_ptr queue, const std::string& bindingKe
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
         }
+        if (bindingsMap[bindingKey].empty()) bindingsMap.erase(bindingKey);
+        if (bindingsMap.empty()) checkAutodelete();
         return true;
     } else {
-        return false;      
+        return false;
     }
 }
 
@@ -443,6 +445,11 @@ bool XmlExchange::MatchQueueAndOrigin::operator()(XmlBinding::shared_ptr b)
 
 
 const std::string XmlExchange::typeName("xml");
- 
+
+bool XmlExchange::hasBindings()
+{
+    RWlock::ScopedRlock l(lock);
+    return !bindingsMap.empty();
+}
 }
 }

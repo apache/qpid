@@ -102,7 +102,7 @@ void bindAndUnbind(const string& exchangeName, const string& queueName,
     {
         MessageStoreImpl store(&br);
         store.init(test_dir, 4, 1, true); // truncate store
-        Exchange::shared_ptr exchange(new DirectExchange(exchangeName, true, args));
+        Exchange::shared_ptr exchange(new DirectExchange(exchangeName, true, false, args));
         Queue::shared_ptr queue(new Queue(queueName, 0, &store, 0));
         store.create(*exchange, qpid::framing::FieldTable());
         store.create(*queue, qpid::framing::FieldTable());
@@ -376,7 +376,7 @@ QPID_AUTO_TEST_CASE(ExchangeCreateAndDestroy)
         MessageStoreImpl store(&br);
         store.init(test_dir, 4, 1, true); // truncate store
         ExchangeRegistry registry;
-        Exchange::shared_ptr exchange = registry.declare(name, type, true, args).first;
+        Exchange::shared_ptr exchange = registry.declare(name, type, true, false, args).first;
         store.create(*exchange, qpid::framing::FieldTable());
         id = exchange->getPersistenceId();
         BOOST_REQUIRE(id);
@@ -446,7 +446,7 @@ QPID_AUTO_TEST_CASE(ExchangeImplicitUnbind)
     {
         MessageStoreImpl store(&br);
         store.init(test_dir, 4, 1, true); // truncate store
-        Exchange::shared_ptr exchange(new DirectExchange(exchangeName, true, args));
+        Exchange::shared_ptr exchange(new DirectExchange(exchangeName, true, false, args));
         Queue::shared_ptr queue1(new Queue(queueName1, 0, &store, 0));
         Queue::shared_ptr queue2(new Queue(queueName2, 0, &store, 0));
         store.create(*exchange, qpid::framing::FieldTable());

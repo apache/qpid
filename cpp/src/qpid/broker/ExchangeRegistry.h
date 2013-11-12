@@ -42,8 +42,8 @@ struct UnknownExchangeTypeException{};
 
 class ExchangeRegistry{
   public:
-    typedef boost::function5<Exchange::shared_ptr, const std::string&, 
-                             bool, const qpid::framing::FieldTable&, qpid::management::Manageable*, qpid::broker::Broker*> FactoryFunction;
+    typedef boost::function6<Exchange::shared_ptr, const std::string&, 
+                             bool, bool, const qpid::framing::FieldTable&, qpid::management::Manageable*, qpid::broker::Broker*> FactoryFunction;
 
     ExchangeRegistry (Broker* b = 0) : parent(0), broker(b) {}
     QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare(
@@ -53,6 +53,7 @@ class ExchangeRegistry{
         const std::string& name,
         const std::string& type,
         bool durable,
+        bool autodelete,
         const qpid::framing::FieldTable& args = framing::FieldTable(),
         Exchange::shared_ptr alternate = Exchange::shared_ptr(),
         const std::string& connectionId = std::string(),

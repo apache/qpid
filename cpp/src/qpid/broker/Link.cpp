@@ -90,7 +90,7 @@ public:
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*) { return false; }
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*) { return false; }
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const) {return false;}
-
+    bool hasBindings() { return false; }
     // Process messages sent from the remote's amq.failover exchange by extracting the failover URLs
     // and saving them should the Link need to reconnect.
     void route(broker::Deliverable& /*msg*/)

@@ -88,7 +88,7 @@ public:
     QPID_BROKER_EXTERN TopicExchange(const std::string& name,
                                      management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN TopicExchange(const std::string& _name,
-                                     bool _durable,
+                                     bool _durable, bool autodelete,
                                      const qpid::framing::FieldTable& _args,
                                      management::Manageable* parent = 0, Broker* broker = 0);
 
@@ -111,6 +111,8 @@ public:
 
     class TopicExchangeTester;
     friend class TopicExchangeTester;
+  protected:
+    bool hasBindings();
 };
 
 
