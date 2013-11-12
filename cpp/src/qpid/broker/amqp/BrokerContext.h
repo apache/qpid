@@ -29,22 +29,25 @@ class Broker;
 namespace amqp {
 class Interconnects;
 class TopicRegistry;
+class NodePolicyRegistry;
 /**
  * Context providing access to broker scoped entities.
  */
 class BrokerContext
 {
   public:
-    BrokerContext(Broker&, Interconnects&, TopicRegistry&, const std::string&);
+    BrokerContext(Broker&, Interconnects&, TopicRegistry&, NodePolicyRegistry&, const std::string&);
     BrokerContext(BrokerContext&);
     Broker& getBroker();
     Interconnects& getInterconnects();
     TopicRegistry& getTopics();
+    NodePolicyRegistry& getNodePolicies();
     std::string getDomain();
   private:
     Broker& broker;
     Interconnects& interconnects;
     TopicRegistry& topics;
+    NodePolicyRegistry& nodePolicies;
     std::string domain;
 };
 }}} // namespace qpid::broker::amqp

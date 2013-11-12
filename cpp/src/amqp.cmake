@@ -104,6 +104,8 @@ if (BUILD_AMQP)
          qpid/broker/amqp/ManagedOutgoingLink.cpp
          qpid/broker/amqp/Message.h
          qpid/broker/amqp/Message.cpp
+         qpid/broker/amqp/NodePolicy.h
+         qpid/broker/amqp/NodePolicy.cpp
          qpid/broker/amqp/NodeProperties.h
          qpid/broker/amqp/NodeProperties.cpp
          qpid/broker/amqp/Outgoing.h
