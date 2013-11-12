@@ -20,7 +20,10 @@
 #
 
 # Run the python tests.
-source ./test_env.sh
+source $QPID_TEST_COMMON
+
+ensure_python_tests
+
 trap stop_broker INT TERM QUIT
 
 if [[ -a $AMQP_LIB ]] ; then
@@ -43,7 +46,6 @@ stop_broker() {
     $QPIDD_EXEC -q --port $QPID_PORT
 }
 
-test -d $PYTHON_DIR || skip "no python dir"
 test -f $PYTHONSWIGMODULE || skip "no swigged python client"
 
 start_broker

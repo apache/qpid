@@ -20,8 +20,8 @@
 #
 
 # Run the python tests.
-source ./test_env.sh
-test -d $PYTHON_DIR || { echo "Skipping python tests, no python dir."; exit 0; }
+source $QPID_TEST_COMMON
+ensure_python_tests
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
 FAILING=${FAILING:-/dev/null}

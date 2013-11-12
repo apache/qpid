@@ -18,7 +18,9 @@
 # under the License.
 #
 
-source ../test_env.sh
+source $QPID_TEST_COMMON
+
+ensure_python_tests
 
 #Add our directory to the python path
 export PYTHONPATH=$srcdir/legacystore:$PYTHONPATH
@@ -27,7 +29,6 @@ MODULENAME=python_tests
 
 echo "Running Python tests in module ${MODULENAME}..."
 
-test -d $PYTHON_DIR || { echo "Skipping python tests, no python dir."; exit 0; }
 QPID_PORT=${QPID_PORT:-5672}
 FAILING=${FAILING:-/dev/null}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}

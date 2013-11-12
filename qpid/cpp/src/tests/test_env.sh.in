@@ -61,6 +61,7 @@ export QPIDD_EXEC=$top_builddir/src/qpidd
 
 # Test executables
 export QPID_TEST_EXEC_DIR=$builddir
+export QPID_TEST_SRC_DIR=$srcdir
 export RECEIVER_EXEC=$QPID_TEST_EXEC_DIR/receiver
 export SENDER_EXEC=$QPID_TEST_EXEC_DIR/sender
 
@@ -90,3 +91,6 @@ fi
 # Options for boost test framework
 test -z "$BOOST_TEST_SHOW_PROGRESS" && export BOOST_TEST_SHOW_PROGRESS=yes
 test -z "$BOOST_TEST_CATCH_SYSTEM_ERRORS" && export BOOST_TEST_CATCH_SYSTEM_ERRORS=no
+
+# Source this for useful common testing functions
+export QPID_TEST_COMMON=$srcdir/test_env_common.sh

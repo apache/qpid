@@ -23,9 +23,9 @@
 # TODO: this should be expanded to cover a wider set of types and go
 # in both directions
 
-if test -d ${PYTHON_DIR} ;  then
-    ./header_test -p $QPID_PORT
-    $srcdir/header_test.py "localhost" $QPID_PORT
-else 
-    echo "Skipping header test as python libs not found"
-fi
+source $QPID_TEST_COMMON
+
+ensure_python_testing
+
+./header_test -p $QPID_PORT
+$srcdir/header_test.py "localhost" $QPID_PORT

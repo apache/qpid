@@ -20,7 +20,6 @@
 #
 
 # Run a simple test over SSL
-source ./test_env.sh
 
 #set -x
 
@@ -33,7 +32,7 @@ TEST_CLIENT_CERT=rumplestiltskin
 CA_PEM_FILE=${TEST_CERT_DIR}/ca_cert.pem
 OTHER_CA_CERT_DB=${TEST_CERT_DIR}/x_ca_cert_db
 OTHER_CA_PEM_FILE=${TEST_CERT_DIR}/other_ca_cert.pem
-PY_PING_BROKER=$top_srcdir/src/tests/ping_broker
+PY_PING_BROKER=${QPID_TEST_SRC_DIR}/ping_broker
 COUNT=10
 
 trap cleanup EXIT
@@ -144,7 +143,7 @@ start_ssl_mux_broker() {
     PORTS=( ${PORTS[@]} $1 )
 }
 
-sasl_config_dir=$builddir/sasl_config
+sasl_config_dir=$QPID_TEST_EXEC_DIR/sasl_config
 
 start_authenticating_broker() {
     start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes --sasl-config=${sasl_config_dir}"
