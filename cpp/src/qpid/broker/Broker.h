@@ -91,6 +91,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
         bool noDataDir;
         std::string dataDir;
+        std::string pagingDir;
         uint16_t port;
         std::vector<std::string> listenInterfaces;
         std::vector<std::string> listenDisabled;
@@ -175,6 +176,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     std::auto_ptr<MessageStore> store;
     AclModule* acl;
     DataDir dataDir;
+    DataDir pagingDir;
     ConnectionObservers connectionObservers;
     BrokerObservers brokerObservers;
 
@@ -239,6 +241,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Options& getOptions() { return config; }
     ProtocolRegistry& getProtocolRegistry() { return protocolRegistry; }
     ObjectFactoryRegistry& getObjectFactoryRegistry() { return objectFactory; }
+    std::string getPagingDirectoryPath();
 
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
     boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
