@@ -20,7 +20,9 @@
 #
 #script to run a sequence of message group queue tests via make
 
-test -d $PYTHON_DIR || { echo "Skipping message group tests, no python dir."; exit 0; }
+source $QPID_TEST_COMMON
+
+ensure_python_tests
 
 QUEUE_NAME="group-queue"
 GROUP_KEY="My-Group-Id"
@@ -28,7 +30,7 @@ GROUP_KEY="My-Group-Id"
 BROKER_URL="${QPID_BROKER:-localhost}:${QPID_PORT:-5672}"
 
 run_test() {
-    $@
+    "$@"
 }
 
 ##set -x

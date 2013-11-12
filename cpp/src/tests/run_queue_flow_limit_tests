@@ -19,6 +19,9 @@
 # under the License.
 #
 
-# Run tests against Queue producer flow control.
+source $QPID_TEST_COMMON
 
+ensure_python_tests
+
+# Run tests against Queue producer flow control.
 $QPID_PYTHON_TEST -m queue_flow_limit_tests $SKIPTESTS -b localhost:$QPID_PORT
