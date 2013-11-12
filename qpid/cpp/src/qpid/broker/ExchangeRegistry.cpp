@@ -146,6 +146,7 @@ Exchange::shared_ptr ExchangeRegistry::get(const string& name) {
 }
 
 bool ExchangeRegistry::registerExchange(const Exchange::shared_ptr& ex) {
+    RWlock::ScopedWlock locker(lock);
     return exchanges.insert(ExchangeMap::value_type(ex->getName(), ex)).second;
 }
 
