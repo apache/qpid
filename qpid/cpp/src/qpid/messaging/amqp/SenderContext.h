@@ -80,6 +80,7 @@ class SenderContext
     void verify();
     void check();
     bool settled();
+    bool closed();
     Address getAddress() const;
   private:
     friend class ConnectionContext;

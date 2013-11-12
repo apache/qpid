@@ -162,7 +162,7 @@ bool SessionContext::settled()
     bool result = true;
     for (SenderMap::iterator i = senders.begin(); i != senders.end(); ++i) {
         try {
-            if (!i->second->settled()) result = false;
+            if (!i->second->closed() && !i->second->settled()) result = false;
         } catch (const std::exception&) {
             senders.erase(i);
             throw;

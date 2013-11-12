@@ -575,6 +575,11 @@ bool SenderContext::settled()
     return processUnsettled(false) == 0;
 }
 
+bool SenderContext::closed()
+{
+    return pn_link_state(sender) & PN_LOCAL_CLOSED;
+}
+
 Address SenderContext::getAddress() const
 {
     return address;
