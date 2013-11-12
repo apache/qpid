@@ -693,6 +693,7 @@ namespace {
                     }
                 }
             }
+            QPID_LOG(error, "Unrecognized message filter: '" << *filter << "'");
             throw qpid::Exception(QPID_MSG("Unrecognized message filter: '" << *filter << "'"));
         }
         return new MessageFilter();
