@@ -58,8 +58,8 @@ qpid::types::Variant::Map filter(const qpid::types::Variant::Map& properties)
 }
 }
 
-Topic::Topic(Broker& broker, const std::string& n, const qpid::types::Variant::Map& properties)
-    : PersistableObject(n, TOPIC, properties), name(n), durable(testProperty(DURABLE, properties)), exchange(broker.getExchanges().get(getProperty(EXCHANGE, properties))),
+Topic::Topic(Broker& broker, const std::string& n, boost::shared_ptr<Exchange> e, const qpid::types::Variant::Map& properties)
+    : PersistableObject(n, TOPIC, properties), name(n), durable(testProperty(DURABLE, properties)), exchange(e),
       alternateExchange(getProperty(ALTERNATE_EXCHANGE, properties))
 {
     if (exchange->getName().empty()) throw qpid::Exception("Exchange must be specified.");
@@ -107,9 +107,9 @@ const std::string& Topic::getAlternateExchange() const
 {
     return alternateExchange;
 }
-boost::shared_ptr<Topic> TopicRegistry::createTopic(Broker& broker, const std::string& name, const qpid::types::Variant::Map& properties)
+boost::shared_ptr<Topic> TopicRegistry::createTopic(Broker& broker, const std::string& name, boost::shared_ptr<Exchange> exchange, const qpid::types::Variant::Map& properties)
 {
-    boost::shared_ptr<Topic> topic(new Topic(broker, name, properties));
+    boost::shared_ptr<Topic> topic(new Topic(broker, name, exchange, properties));
     add(topic);
     topic->getExchange()->setDeletionListener(name, boost::bind(&TopicRegistry::remove, this, name));
     return topic;
@@ -119,7 +119,7 @@ bool TopicRegistry::createObject(Broker& broker, const std::string& type, const 
                                  const std::string& /*userId*/, const std::string& /*connectionId*/)
 {
     if (type == TOPIC) {
-        boost::shared_ptr<Topic> topic = createTopic(broker, name, props);
+        boost::shared_ptr<Topic> topic = createTopic(broker, name, broker.getExchanges().get(getProperty(EXCHANGE, props)), props);
         if (topic->isDurable()) broker.getStore().create(*topic);
         return true;
     } else {
@@ -147,7 +147,7 @@ bool TopicRegistry::recoverObject(Broker& broker, const std::string& type, const
                    uint64_t persistenceId)
 {
     if (type == TOPIC) {
-        boost::shared_ptr<Topic> topic = createTopic(broker, name, properties);
+        boost::shared_ptr<Topic> topic = createTopic(broker, name, broker.getExchanges().get(getProperty(EXCHANGE, properties)), properties);
         topic->setPersistenceId(persistenceId);
         return true;
     } else {

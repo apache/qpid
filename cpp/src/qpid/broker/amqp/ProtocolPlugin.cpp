@@ -29,6 +29,7 @@
 #include "qpid/broker/amqp/Connection.h"
 #include "qpid/broker/amqp/Interconnects.h"
 #include "qpid/broker/amqp/Message.h"
+#include "qpid/broker/amqp/NodePolicy.h"
 #include "qpid/broker/amqp/Sasl.h"
 #include "qpid/broker/amqp/Topic.h"
 #include "qpid/broker/amqp/Translation.h"
@@ -44,22 +45,27 @@ namespace amqp {
 
 struct Options : public qpid::Options {
     std::string domain;
+    std::vector<std::string> queuePatterns;
+    std::vector<std::string> topicPatterns;
 
     Options() : qpid::Options("AMQP 1.0 Options") {
         addOptions()
-            ("domain", optValue(domain, "DOMAIN"), "Domain of this broker");
+            ("domain", optValue(domain, "DOMAIN"), "Domain of this broker")
+            ("queue-patterns", optValue(queuePatterns, "PATTERN"), "Pattern for on-demand queues")
+            ("topic-patterns", optValue(topicPatterns, "PATTERN"), "Pattern for on-demand topics");
     }
 };
 
 class ProtocolImpl : public BrokerContext, public Protocol
 {
   public:
-    ProtocolImpl(Interconnects* interconnects, TopicRegistry* topics, Broker& broker, const std::string& domain)
-        : BrokerContext(broker, *interconnects, *topics, domain)
+    ProtocolImpl(Interconnects* interconnects, TopicRegistry* topics, NodePolicyRegistry* policies, Broker& broker, const std::string& domain)
+        : BrokerContext(broker, *interconnects, *topics, *policies, domain)
     {
         interconnects->setContext(*this);
         broker.getObjectFactoryRegistry().add(interconnects);//registry deletes on shutdown
         broker.getObjectFactoryRegistry().add(topics);//registry deletes on shutdown
+        broker.getObjectFactoryRegistry().add(policies);//registry deletes on shutdown
     }
     qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const qpid::broker::Message&);
@@ -71,18 +77,33 @@ struct ProtocolPlugin : public Plugin
 {
     Options options;
     Options* getOptions() { return &options; }
+    NodePolicyRegistry* policies;
+
+    ProtocolPlugin() : policies(0) {}
 
     void earlyInitialize(Plugin::Target& target)
     {
         //need to register protocol before recovery from store
         broker::Broker* broker = dynamic_cast<qpid::broker::Broker*>(&target);
         if (broker) {
-            ProtocolImpl* impl = new ProtocolImpl(new Interconnects(), new TopicRegistry(), *broker, options.domain);
+            policies = new NodePolicyRegistry();
+            ProtocolImpl* impl = new ProtocolImpl(new Interconnects(), new TopicRegistry(), policies, *broker, options.domain);
             broker->getProtocolRegistry().add("AMQP 1.0", impl);//registry deletes on shutdown
         }
     }
 
-    void initialize(Plugin::Target&) {}
+    void initialize(Plugin::Target& target)
+    {
+        broker::Broker* broker = dynamic_cast<qpid::broker::Broker*>(&target);
+        if (broker) {
+            for (std::vector<std::string>::const_iterator i = options.queuePatterns.begin(); i != options.queuePatterns.end(); ++i) {
+                policies->createQueuePolicy(*broker, *i, qpid::types::Variant::Map());
+            }
+            for (std::vector<std::string>::const_iterator i = options.topicPatterns.begin(); i != options.topicPatterns.end(); ++i) {
+                policies->createTopicPolicy(*broker, *i, qpid::types::Variant::Map());
+            }
+        }
+    }
 };
 
 ProtocolPlugin instance; // Static initialization

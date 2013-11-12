@@ -41,6 +41,7 @@ class PersistableObject : public PersistableConfig
     QPID_BROKER_EXTERN PersistableObject(const std::string& name, const std::string& type, const qpid::types::Variant::Map properties);
     QPID_BROKER_EXTERN virtual ~PersistableObject();
     QPID_BROKER_EXTERN const std::string& getName() const;
+    QPID_BROKER_EXTERN const std::string& getType() const;
     QPID_BROKER_EXTERN void setPersistenceId(uint64_t id) const;
     QPID_BROKER_EXTERN uint64_t getPersistenceId() const;
     QPID_BROKER_EXTERN void encode(framing::Buffer& buffer) const;

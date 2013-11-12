@@ -26,6 +26,7 @@
 #include "Domain.h"
 #include "Exception.h"
 #include "Interconnects.h"
+#include "NodePolicy.h"
 #include "Relay.h"
 #include "Topic.h"
 #include "qpid/amqp/descriptors.h"
@@ -260,19 +261,36 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 node.queue = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
             }
         } else {
-            size_t i = name.find('@');
-            if (i != std::string::npos && (i+1) < name.length()) {
-                std::string domain = name.substr(i+1);
-                std::string local = name.substr(0, i);
-                std::string id = (boost::format("%1%-%2%") % name % qpid::types::Uuid(true).str()).str();
-                //does this domain exist?
-                boost::shared_ptr<Domain> d = connection.getInterconnects().findDomain(domain);
-                if (d) {
-                    node.relay = boost::shared_ptr<Relay>(new Relay(1000));
-                    if (incoming) {
-                        d->connect(false, id, name, local, connection, node.relay);
-                    } else {
-                        d->connect(true, id, local, name, connection, node.relay);
+            boost::shared_ptr<NodePolicy> nodePolicy = connection.getNodePolicies().match(name);
+            if (nodePolicy) {
+                std::pair<boost::shared_ptr<Queue>, boost::shared_ptr<Topic> > result = nodePolicy->create(name, connection);
+                node.queue = result.first;
+                node.topic = result.second;
+                if (node.topic) node.exchange = node.topic->getExchange();
+
+                if (node.queue) {
+                    QPID_LOG(info, "Created queue " << name << " from policy with pattern " << nodePolicy->getPattern());
+                } else if (node.topic) {
+                    QPID_LOG(info, "Created topic " << name << " from policy with pattern " << nodePolicy->getPattern());
+                } else {
+                    QPID_LOG(debug, "Created neither a topic nor a queue for " << name << " from policy with pattern " << nodePolicy->getPattern());
+                }
+
+            } else {
+                size_t i = name.find('@');
+                if (i != std::string::npos && (i+1) < name.length()) {
+                    std::string domain = name.substr(i+1);
+                    std::string local = name.substr(0, i);
+                    std::string id = (boost::format("%1%-%2%") % name % qpid::types::Uuid(true).str()).str();
+                    //does this domain exist?
+                    boost::shared_ptr<Domain> d = connection.getInterconnects().findDomain(domain);
+                    if (d) {
+                        node.relay = boost::shared_ptr<Relay>(new Relay(1000));
+                        if (incoming) {
+                            d->connect(false, id, name, local, connection, node.relay);
+                        } else {
+                            d->connect(true, id, local, name, connection, node.relay);
+                        }
                     }
                 }
             }

@@ -33,6 +33,7 @@ PersistableObject::PersistableObject(const std::string& n, const std::string& t,
 PersistableObject::PersistableObject() : id(0) {}
 PersistableObject::~PersistableObject() {}
 const std::string& PersistableObject::getName() const { return name; }
+const std::string& PersistableObject::getType() const { return type; }
 void PersistableObject::setPersistenceId(uint64_t i) const { id = i; }
 uint64_t PersistableObject::getPersistenceId() const { return id; }
 void PersistableObject::encode(framing::Buffer& buffer) const
