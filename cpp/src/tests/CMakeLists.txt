@@ -303,19 +303,23 @@ endif (BUILD_SASL)
 # This should ideally be done as part of the test run, but I don't know a way
 # to get these arguments and the working directory set like Makefile.am does,
 # and have that run during the test pass.
+#
+# Need to check to see that the python tools are included as part of the source
+# tree first and don't install them or run dependent tests if they are not there
+#
 set (python_bld ${CMAKE_CURRENT_BINARY_DIR}/python)
 execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --prefix=${pythoon_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../python)
 
 if (BUILD_SASL)
-    add_test (sasl_fed ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed${test_script_suffix})
-    add_test (sasl_fed_ex_dynamic ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_dynamic${test_script_suffix})
-    add_test (sasl_fed_ex_link ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_link${test_script_suffix})
-    add_test (sasl_fed_ex_queue ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_queue${test_script_suffix})
-    add_test (sasl_fed_ex_route ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex_route${test_script_suffix})
-    add_test (sasl_no_dir ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/sasl_no_dir${test_script_suffix})
+    add_test (sasl_fed ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed${test_script_suffix})
+    add_test (sasl_fed_ex_dynamic ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex${test_script_suffix} dynamic)
+    add_test (sasl_fed_ex_link ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex${test_script_suffix} link)
+    add_test (sasl_fed_ex_queue ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex${test_script_suffix} queue)
+    add_test (sasl_fed_ex_route ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed_ex${test_script_suffix} route)
+    add_test (sasl_no_dir ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_no_dir${test_script_suffix})
     if (BUILD_SSL)
-        add_test(ssl_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ssl_test${test_script_suffix})
+        add_test(ssl_test ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/ssl_test${test_script_suffix})
     endif (BUILD_SSL)
 endif (BUILD_SASL)
 add_test (qpid-client-test ${test_wrap} --start-broker -- ${qpid-client-test_LOCATION})
@@ -335,7 +339,7 @@ if (BUILD_AMQP)
   add_test (interlink_tests ${python_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/interlink_tests.py)
 endif (BUILD_AMQP)
 add_test (swig_python_tests ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/swig_python_tests${test_script_suffix})
-add_test (ipv6_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ipv6_test${test_script_suffix})
+add_test (ipv6_test ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/ipv6_test${test_script_suffix})
 add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
 add_test (federation_sys_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_sys_tests${test_script_suffix})
 add_test (queue_flow_limit_tests

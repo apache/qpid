@@ -1,6 +1,5 @@
-#! /bin/bash
+#!/bin/bash
 
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -19,9 +18,11 @@
 # under the License.
 #
 
-
-source ./test_env.sh
-
-${srcdir}/sasl_fed_ex link
-
+# Ensure that we have python testing tools available
+function ensure_python_tests {
+  if [ ! -d ${PYTHON_DIR} ] ;  then
+    echo "Python test code not found: skipping python based test"
+    exit 0;
+  fi
+}
 

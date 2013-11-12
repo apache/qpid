@@ -19,8 +19,6 @@
 # under the License.
 #
 
-source ./test_env.sh
-
 # This minimum value corresponds to sasl version 2.1.22
 minimum_sasl_version=131350
 
@@ -40,7 +38,7 @@ if [ ! -f $QPID_CONFIG_EXEC ] || [ ! -f $QPID_ROUTE_EXEC ] ; then
 fi
 
 
-sasl_config_file=$builddir/sasl_config
+sasl_config_file=$QPID_TEST_EXEC_DIR/sasl_config
 
 my_random_number=$RANDOM
 tmp_root=/tmp/sasl_fed_$my_random_number
@@ -128,7 +126,7 @@ n_messages=100
 #--------------------------------------------------
 #echo "  Sending 100 messages to $broker_1_port "
 #--------------------------------------------------
-$builddir/datagen --count $n_messages | $SENDER_EXEC --mechanism DIGEST-MD5 --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
+$QPID_TEST_EXEC_DIR/datagen --count $n_messages | $SENDER_EXEC --mechanism DIGEST-MD5 --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
 
 sleep 5
 

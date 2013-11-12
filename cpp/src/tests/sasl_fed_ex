@@ -25,7 +25,9 @@
 # transport-layer security.
 #===============================================================================
 
-source ./test_env.sh
+source $QPID_TEST_COMMON
+
+ensure_python_tests
 
 script_name=`basename $0`
 
@@ -65,12 +67,6 @@ if [ "$sasl_version" -lt  "$minimum_sasl_version" ]; then
   exit 0
 fi
 
-# In a distribution, the python tools will be absent.
-if [ ! -f $QPID_CONFIG_EXEC ] || [ ! -f $QPID_ROUTE_EXEC ] ; then
-    echo "python tools absent - skipping sasl_fed_ex."
-    exit 0
-fi
-
 CERT_DIR=`pwd`/test_cert_db
 CERT_PW_FILE=`pwd`/cert.password
 TEST_HOSTNAME=127.0.0.1
@@ -103,9 +99,9 @@ if [ ! $? ]; then
   exit 1
 fi
 
-sasl_config_dir=$builddir/sasl_config
+sasl_config_dir=$QPID_TEST_EXEC_DIR/sasl_config
 
-tmp_root=${builddir}/sasl_fed_ex_temp
+tmp_root=$QPID_TEST_EXEC_DIR/sasl_fed_ex_temp
 print "results dir is ${tmp_root}"
 rm -rf ${tmp_root}
 mkdir -p $tmp_root

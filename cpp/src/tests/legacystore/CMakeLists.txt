@@ -152,6 +152,6 @@ target_link_libraries (jtt
 
 add_test(journal_jtt ${CMAKE_CURRENT_BINARY_DIR}/jtt -c ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt/jtt.csv)
 
-add_test (legacystore_python_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_python_tests${test_script_suffix})
+add_test (legacystore_python_tests ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/run_python_tests${test_script_suffix})
 
 endif (BUILD_LEGACYSTORE AND BUILD_TESTING)
