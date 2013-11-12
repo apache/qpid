@@ -437,6 +437,24 @@
     <property name="durable"        type="bool"     access="RC"/>
     <property name="properties"     type="map"      access="RO"/>
   </class>
+  <!--
+  ===============================================================
+  AMQP 1.0 QueuePolicy
+  ===============================================================
+  -->
+  <class name="QueuePolicy">
+    <property name="name"           type="sstr"     access="RC" index="y"/>
+    <property name="properties"     type="map"      access="RO"/>
+  </class>
+  <!--
+  ===============================================================
+  AMQP 1.0 TopicPolicy
+  ===============================================================
+  -->
+  <class name="TopicPolicy">
+    <property name="name"           type="sstr"     access="RC" index="y"/>
+    <property name="properties"     type="map"      access="RO"/>
+  </class>
 
 
   <!--

@@ -56,7 +56,7 @@ public:
     friend bool regex_match(const std::string& s, const regex& re);
 };
 
-bool regex_match(const std::string& s, const regex& re) {
+inline bool regex_match(const std::string& s, const regex& re) {
     return ::regexec(&(re.re), s.c_str(), 0, 0, 0)==0;
 }
 

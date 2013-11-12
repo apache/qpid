@@ -23,10 +23,11 @@
 namespace qpid {
 namespace broker {
 namespace amqp {
-BrokerContext::BrokerContext(Broker& b, Interconnects& i, TopicRegistry& t, const std::string& d) : broker(b), interconnects(i), topics(t), domain(d) {}
-BrokerContext::BrokerContext(BrokerContext& c) : broker(c.broker), interconnects(c.interconnects), topics(c.topics), domain(c.domain) {}
+BrokerContext::BrokerContext(Broker& b, Interconnects& i, TopicRegistry& t, NodePolicyRegistry& np, const std::string& d) : broker(b), interconnects(i), topics(t), nodePolicies(np), domain(d) {}
+BrokerContext::BrokerContext(BrokerContext& c) : broker(c.broker), interconnects(c.interconnects), topics(c.topics), nodePolicies(c.nodePolicies), domain(c.domain) {}
 Broker& BrokerContext::getBroker() { return broker; }
 Interconnects& BrokerContext::getInterconnects() { return interconnects; }
 TopicRegistry& BrokerContext::getTopics() { return topics; }
+NodePolicyRegistry& BrokerContext::getNodePolicies() { return nodePolicies; }
 std::string BrokerContext::getDomain() { return domain; }
 }}} // namespace qpid::broker::amqp

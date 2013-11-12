@@ -62,6 +62,7 @@ const std::string FILTER("qpid.filter");
 const std::string LIFETIME_POLICY("qpid.lifetime-policy");
 const std::string DELETE_IF_UNUSED_KEY("delete-if-unused");
 const std::string DELETE_IF_UNUSED_AND_EMPTY_KEY("delete-if-unused-and-empty");
+const std::string MANUAL("manual");
 
 const std::string LVQ_LEGACY("qpid.last_value_queue");
 const std::string LVQ_LEGACY_KEY("qpid.LVQ_key");
@@ -227,8 +228,12 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
     } else if (key == LIFETIME_POLICY) {
         if (value.asString() == DELETE_IF_UNUSED_KEY) {
             lifetime = DELETE_IF_UNUSED;
+            autodelete = true;
         } else if (value.asString() == DELETE_IF_UNUSED_AND_EMPTY_KEY) {
             lifetime = DELETE_IF_UNUSED_AND_EMPTY;
+            autodelete = true;
+        } else if (value.asString() == MANUAL) {
+            autodelete = false;
         } else {
             QPID_LOG(warning, "Invalid value for " << LIFETIME_POLICY << ": " << value);
         }
