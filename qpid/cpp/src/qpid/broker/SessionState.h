@@ -82,6 +82,8 @@ class SessionState : public qpid::SessionState,
     void attach(SessionHandler& handler);
     void disableOutput();
 
+    SessionHandler* getHandler() { return handler; }
+
     /** @pre isAttached() */
     framing::AMQP_ClientProxy& getProxy();
 

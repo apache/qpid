@@ -381,6 +381,16 @@ class Broker(Popen):
                         "Broker %s not responding: (%s)%s"%(
                             self.name,e,error_line(self.log, 5)))
 
+    def assert_log_clean(self, ignore=None):
+        log = open(self.get_log())
+        try:
+            error = re.compile("] error|] critical")
+            if ignore: ignore = re.compile(ignore)
+            else: ignore = re.compile("\000") # Won't match anything
+            for line in log.readlines():
+                assert not error.search(line) or ignore.search(line), "Errors in log file %s: %s"%(log, line)
+        finally: log.close()
+
 def browse(session, queue, timeout=0, transform=lambda m: m.content):
     """Return a list with the contents of each message on queue."""
     r = session.receiver("%s;{mode:browse}"%(queue))
@@ -549,7 +559,11 @@ class NumberedSender(Thread):
                     self.condition.release()
                 self.write_message(self.sent)
                 self.sent += 1
-        except Exception: self.error = RethrownException(self.sender.pname)
+        except Exception, e:
+            self.error = RethrownException(
+                "%s: (%s)%s"%(self.sender.pname,e,
+                              error_line(self.sender.outfile("err"))))
+
 
     def notify_received(self, count):
         """Called by receiver to enable flow control. count = messages received so far."""
@@ -612,8 +626,10 @@ class NumberedReceiver(Thread):
                     if self.sender:
                         self.sender.notify_received(self.received)
                 m = self.read_message()
-        except Exception:
-            self.error = RethrownException(self.receiver.pname)
+        except Exception, e:
+            self.error = RethrownException(
+                "%s: (%s)%s"%(self.receiver.pname,e,
+                              error_line(self.receiver.outfile("err"))))
 
     def check(self):
         """Raise an exception if there has been an error"""

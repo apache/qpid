@@ -273,6 +273,7 @@ class DetachedCallback : public SessionHandler::ErrorListener {
     void connectionException(framing::connection::CloseCode, const std::string&) {}
     void channelException(framing::session::DetachCode, const std::string&) {}
     void executionException(framing::execution::ErrorCode, const std::string&) {}
+    void incomingExecutionException(framing::execution::ErrorCode, const std::string& ) {}
     void detach() {}
   private:
     const std::string name;

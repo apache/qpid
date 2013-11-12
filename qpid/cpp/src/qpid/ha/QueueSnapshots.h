@@ -32,6 +32,7 @@
 #include "qpid/sys/Mutex.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 namespace qpid {
 namespace ha {
@@ -44,35 +45,28 @@ class QueueSnapshots : public broker::BrokerObserver
 {
   public:
     boost::shared_ptr<QueueSnapshot> get(const boost::shared_ptr<broker::Queue>& q) const {
-        sys::Mutex::ScopedLock l(lock);
-        SnapshotMap::const_iterator i = snapshots.find(q);
-        return i != snapshots.end() ? i->second : boost::shared_ptr<QueueSnapshot>();
+        boost::shared_ptr<QueueSnapshot> qs;
+        q->eachObserver(
+            boost::bind(QueueSnapshots::saveQueueSnapshot, _1, boost::ref(qs)));
+        return qs;
     }
 
     // BrokerObserver overrides.
     void queueCreate(const boost::shared_ptr<broker::Queue>& q) {
-        sys::Mutex::ScopedLock l(lock);
-        boost::shared_ptr<QueueSnapshot> observer(new QueueSnapshot);
-        snapshots[q] = observer;
-        q->addObserver(observer);
+        q->addObserver(boost::make_shared<QueueSnapshot>());
     }
 
     void queueDestroy(const boost::shared_ptr<broker::Queue>& q) {
-        sys::Mutex::ScopedLock l(lock);
-        SnapshotMap::iterator i = snapshots.find(q);
-        if (i != snapshots.end()) {
-            q->removeObserver(i->second);
-            snapshots.erase(i);
-        }
+        q->removeObserver(get(q));
     }
 
   private:
-    typedef qpid::sys::unordered_map<boost::shared_ptr<broker::Queue>,
-                                     boost::shared_ptr<QueueSnapshot>,
-                                     Hasher<boost::shared_ptr<broker::Queue> >
-                                     > SnapshotMap;
-    SnapshotMap snapshots;
-    mutable sys::Mutex lock;
+    static void saveQueueSnapshot(
+        const boost::shared_ptr<broker::QueueObserver>& observer,
+        boost::shared_ptr<QueueSnapshot>& out)
+    {
+        if (!out) out = boost::dynamic_pointer_cast<QueueSnapshot>(observer);
+    }
 };
 
 

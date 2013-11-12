@@ -118,6 +118,9 @@ class QueueReplicator : public broker::Exchange,
     void dequeueEvent(const std::string& data, sys::Mutex::ScopedLock&);
     void idEvent(const std::string& data, sys::Mutex::ScopedLock&);
 
+    void incomingExecutionException(framing::execution::ErrorCode e,
+                                    const std::string& msg);
+
     std::string logPrefix;
     std::string bridgeName;
 
@@ -127,6 +130,8 @@ class QueueReplicator : public broker::Exchange,
     ReplicationIdSet idSet; // Set of replicationIds on the queue.
     ReplicationId nextId;   // ID for next message to arrive.
     ReplicationId maxId;    // Max ID used so far.
+
+  friend class ErrorListener;
 };
 
 
