@@ -76,7 +76,7 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
         } else if (!qpid::sys::MemoryMappedFile::isSupported()) {
             QPID_LOG(warning, "Cannot create paged queue; memory mapped file support not available on this platform");
         } else {
-            queue->messages = std::auto_ptr<Messages>(new PagedQueue(name, broker->getOptions().dataDir,
+            queue->messages = std::auto_ptr<Messages>(new PagedQueue(name, broker->getPagingDirectoryPath(),
                                                                      settings.maxPages ? settings.maxPages : 4,
                                                                      settings.pageFactor ? settings.pageFactor : 1,
                                                                      broker->getProtocolRegistry()));
