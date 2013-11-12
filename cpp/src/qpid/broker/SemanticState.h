@@ -125,6 +125,7 @@ class SemanticState : private boost::noncopyable {
 
     SessionContext& getSession();
     const SessionContext& getSession() const;
+    SessionState& getSessionState() { return session; }
 
     const boost::shared_ptr<ConsumerImpl> find(const std::string& destination) const;
     bool find(const std::string& destination, boost::shared_ptr<ConsumerImpl>&) const;
@@ -200,8 +201,9 @@ class SemanticStateConsumerImpl : public Consumer, public sys::OutputTask,
     protected:
     mutable qpid::sys::Mutex lock;
     SemanticState* const parent;
-    private:
     const boost::shared_ptr<Queue> queue;
+
+    private:
     const bool ackExpected;
     const bool acquire;
     bool blocked;

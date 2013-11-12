@@ -68,6 +68,13 @@ void SessionHandler::executionException(
         errorListener->executionException(code, msg);
 }
 
+void SessionHandler::incomingExecutionException(
+    framing::execution::ErrorCode code, const std::string& msg)
+{
+    if (errorListener)
+        errorListener->incomingExecutionException(code, msg);
+}
+
 amqp_0_10::Connection& SessionHandler::getConnection() { return connection; }
 
 const amqp_0_10::Connection& SessionHandler::getConnection() const { return connection; }

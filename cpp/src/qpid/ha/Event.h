@@ -178,14 +178,14 @@ struct TxPrepareFailEvent : public EventBase<TxPrepareFailEvent> {
     void print(std::ostream& o) const { o << broker; }
 };
 
-struct TxMembersEvent : public EventBase<TxMembersEvent> {
+struct TxBackupsEvent : public EventBase<TxBackupsEvent> {
     static const std::string KEY;
-    UuidSet members;
-    TxMembersEvent(const UuidSet& s=UuidSet()) : members(s) {}
-    void encode(framing::Buffer& b) const { b.put(members); }
-    void decode(framing::Buffer& b) { b.get(members); }
-    size_t encodedSize() const { return members.encodedSize(); }
-    void print(std::ostream& o) const { o << members; }
+    UuidSet backups;
+    TxBackupsEvent(const UuidSet& s=UuidSet()) : backups(s) {}
+    void encode(framing::Buffer& b) const { b.put(backups); }
+    void decode(framing::Buffer& b) { b.get(backups); }
+    size_t encodedSize() const { return backups.encodedSize(); }
+    void print(std::ostream& o) const { o << backups; }
 };
 
 }} // namespace qpid::ha

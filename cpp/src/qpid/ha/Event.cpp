@@ -51,7 +51,7 @@ const string TxCommitEvent::KEY(QPID_HA+"txcom");
 const string TxRollbackEvent::KEY(QPID_HA+"txrb");
 const string TxPrepareOkEvent::KEY(QPID_HA+"txok");
 const string TxPrepareFailEvent::KEY(QPID_HA+"txno");
-const string TxMembersEvent::KEY(QPID_HA+"txmem");
+const string TxBackupsEvent::KEY(QPID_HA+"txmem");
 
 broker::Message makeMessage(
     const string& data, const string& destination, const string& routingKey)

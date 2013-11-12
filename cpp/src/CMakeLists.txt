@@ -623,6 +623,8 @@ if (BUILD_HA)
         qpid/ha/StandAlone.h
         qpid/ha/StatusCheck.cpp
         qpid/ha/StatusCheck.h
+        qpid/ha/TxReplicatingSubscription.cpp
+        qpid/ha/TxReplicatingSubscription.h
         qpid/ha/PrimaryTxObserver.cpp
         qpid/ha/PrimaryTxObserver.h
         qpid/ha/types.cpp

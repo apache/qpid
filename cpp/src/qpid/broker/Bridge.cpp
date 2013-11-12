@@ -442,6 +442,12 @@ void Bridge::executionException(
     if (errorListener) errorListener->executionException(code, msg);
 }
 
+void Bridge::incomingExecutionException(
+    framing::execution::ErrorCode code, const std::string& msg)
+{
+    if (errorListener) errorListener->incomingExecutionException(code, msg);
+}
+
 void Bridge::detach() {
     detached = true;
     if (errorListener) errorListener->detach();

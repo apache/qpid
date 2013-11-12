@@ -536,16 +536,17 @@ void SessionAdapter::ExecutionHandlerImpl::result(const SequenceNumber& /*comman
     //TODO: but currently never used client->server
 }
 
-void SessionAdapter::ExecutionHandlerImpl::exception(uint16_t /*errorCode*/,
+void SessionAdapter::ExecutionHandlerImpl::exception(uint16_t errorCode,
                                                      const SequenceNumber& /*commandId*/,
                                                      uint8_t /*classCode*/,
                                                      uint8_t /*commandCode*/,
                                                      uint8_t /*fieldIndex*/,
-                                                     const std::string& /*description*/,
+                                                     const std::string& description,
                                                      const framing::FieldTable& /*errorInfo*/)
 {
-    //TODO: again, not really used client->server but may be important
-    //for inter-broker links
+    broker::SessionHandler* s = state.getSessionState().getHandler();
+    if (s) s->incomingExecutionException(
+        framing::execution::ErrorCode(errorCode), description);
 }
 
 

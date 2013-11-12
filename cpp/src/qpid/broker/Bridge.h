@@ -111,6 +111,7 @@ class Bridge : public PersistableConfig,
     void connectionException(framing::connection::CloseCode code, const std::string& msg);
     void channelException(framing::session::DetachCode, const std::string& msg);
     void executionException(framing::execution::ErrorCode, const std::string& msg);
+    void incomingExecutionException(framing::execution::ErrorCode, const std::string& msg);
     void detach();
 
     void setErrorListener(boost::shared_ptr<ErrorListener> e) { errorListener = e; }

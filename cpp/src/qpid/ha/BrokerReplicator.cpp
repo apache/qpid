@@ -188,6 +188,12 @@ class BrokerReplicator::ErrorListener : public SessionHandler::ErrorListener {
     void executionException(framing::execution::ErrorCode, const std::string& msg) {
         QPID_LOG(error, logPrefix << "Execution error: " << msg);
     }
+
+    void incomingExecutionException(
+        framing::execution::ErrorCode, const std::string& msg) {
+        QPID_LOG(error, logPrefix << "Incoming execution error: " << msg);
+    }
+
     void detach() {
         QPID_LOG(debug, logPrefix << "Session detached.");
     }
@@ -453,7 +459,7 @@ void BrokerReplicator::route(Deliverable& msg) {
         if (msg.getMessage().getPropertyAsString(QMF_CONTENT) == EVENT) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
-                QPID_LOG(trace, "Broker replicator event: " << map);
+                QPID_LOG(debug, "Broker replicator event: " << map);
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
                 std::string key = (schema[PACKAGE_NAME].asString() +
@@ -465,7 +471,7 @@ void BrokerReplicator::route(Deliverable& msg) {
         } else if (msg.getMessage().getPropertyAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
-                QPID_LOG(trace, "Broker replicator response: " << map);
+                QPID_LOG(debug, "Broker replicator response: " << map);
                 string type = map[SCHEMA_ID].asMap()[CLASS_NAME].asString();
                 Variant::Map& values = map[VALUES].asMap();
                 framing::FieldTable args;
@@ -758,7 +764,7 @@ const string REPLICATE_DEFAULT="replicateDefault";
 // Received the ha-broker configuration object for the primary broker.
 void BrokerReplicator::doResponseHaBroker(Variant::Map& values) {
     try {
-        QPID_LOG(trace, logPrefix << "HA Broker response: " << values);
+        QPID_LOG(debug, logPrefix << "HA Broker response: " << values);
         ReplicateLevel mine = haBroker.getSettings().replicateDefault.get();
         ReplicateLevel primary = replicationTest.getLevel(values[REPLICATE_DEFAULT].asString());
         if (mine != primary)
@@ -882,6 +888,7 @@ string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR;
 
 void BrokerReplicator::disconnectedExchange(boost::shared_ptr<Exchange> ex) {
     boost::shared_ptr<QueueReplicator> qr(boost::dynamic_pointer_cast<QueueReplicator>(ex));
+    // FIXME aconway 2013-11-01: move logic with releaseFromUse to QueueReplicator
     if (qr) {
         qr->disconnect();
         if (TxReplicator::isTxQueue(qr->getQueue()->getName())) {
