@@ -34,6 +34,8 @@
 #include "qmf/org/apache/qpid/broker/Exchange.h"
 #include "qmf/org/apache/qpid/broker/Binding.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
+#include <map>
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace broker {
@@ -64,9 +66,13 @@ public:
 private:
     const std::string name;
     const bool durable;
+    const bool autodelete;
     std::string alternateName;
     boost::shared_ptr<Exchange> alternate;
+    mutable qpid::sys::Mutex usersLock;
     uint32_t alternateUsers;
+    uint32_t otherUsers;
+    std::map<std::string, boost::function0<void> > deletionListeners;
     mutable uint64_t persistenceId;
 
 protected:
@@ -89,7 +95,8 @@ protected:
     typedef boost::shared_ptr<      std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> > > BindingList;
     void doRoute(Deliverable& msg, ConstBindingList b);
     void routeIVE();
-
+    void checkAutodelete();
+    virtual bool hasBindings() = 0;
 
     struct MatchQueue {
         const boost::shared_ptr<Queue> queue;
@@ -167,7 +174,7 @@ public:
 
     QPID_BROKER_EXTERN explicit Exchange(const std::string& name, management::Manageable* parent = 0,
                                          Broker* broker = 0);
-    QPID_BROKER_EXTERN Exchange(const std::string& _name, bool _durable, const qpid::framing::FieldTable& _args,
+    QPID_BROKER_EXTERN Exchange(const std::string& _name, bool _durable, bool autodelete, const qpid::framing::FieldTable& _args,
                                 management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_INLINE_EXTERN virtual ~Exchange();
 
@@ -179,9 +186,13 @@ public:
     QPID_BROKER_EXTERN Exchange::shared_ptr getAlternate() { return alternate; }
     QPID_BROKER_EXTERN void setAlternate(Exchange::shared_ptr _alternate);
 
-    void incAlternateUsers() { alternateUsers++; }
-    void decAlternateUsers() { alternateUsers--; }
-    bool inUseAsAlternate() { return alternateUsers > 0; }
+    QPID_BROKER_EXTERN void incAlternateUsers();
+    QPID_BROKER_EXTERN void decAlternateUsers();
+    QPID_BROKER_EXTERN bool inUseAsAlternate();
+
+    QPID_BROKER_EXTERN void incOtherUsers();
+    QPID_BROKER_EXTERN void decOtherUsers();
+    QPID_BROKER_EXTERN bool inUse() const;
 
     virtual std::string getType() const = 0;
 
@@ -233,8 +244,11 @@ public:
 
     bool routeWithAlternate(Deliverable& message);
 
-    void destroy() { destroyed = true; }
-    bool isDestroyed() const { return destroyed; }
+    QPID_BROKER_EXTERN void destroy();
+    QPID_BROKER_EXTERN bool isDestroyed() const;
+
+    QPID_BROKER_EXTERN void setDeletionListener(const std::string& key, boost::function0<void> listener);
+    QPID_BROKER_EXTERN void unsetDeletionListener(const std::string& key);
 
 protected:
     qpid::sys::Mutex bridgeLock;

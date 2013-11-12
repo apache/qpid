@@ -34,11 +34,12 @@ using namespace std;
 class Broker;
 
 Exchange::shared_ptr create(const std::string& name, bool durable,
-                            const framing::FieldTable& args, 
+                            bool autodelete,
+                            const framing::FieldTable& args,
                             management::Manageable* parent,
                             Broker* broker)
 {
-    Exchange::shared_ptr e(new XmlExchange(name, durable, args, parent, broker));
+    Exchange::shared_ptr e(new XmlExchange(name, durable, autodelete, args, parent, broker));
     return e;
 }
 

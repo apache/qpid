@@ -181,6 +181,10 @@ void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Exchange> node)
             pn_data_put_symbol(data, convert(ALTERNATE_EXCHANGE));
             pn_data_put_string(data, convert(node->getAlternate()->getName()));
         }
+        if (autoDelete) {
+            pn_data_put_symbol(data, convert(AUTO_DELETE));
+            pn_data_put_bool(data, autoDelete);
+        }
 
         for (qpid::types::Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
             if ((i->first == QPID_MSG_SEQUENCE || i->first == QPID_IVE) && node->getArgs().isSet(i->first)) {
@@ -332,6 +336,10 @@ bool NodeProperties::isDurable() const
 bool NodeProperties::isExclusive() const
 {
     return exclusive;
+}
+bool NodeProperties::isAutodelete() const
+{
+    return autoDelete;
 }
 std::string NodeProperties::getExchangeType() const
 {

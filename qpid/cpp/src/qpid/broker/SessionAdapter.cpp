@@ -69,9 +69,8 @@ static const std::string _FALSE("false");
 
 void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const string& type,
                                                   const string& alternateExchange,
-                                                  bool passive, bool durable, bool /*autoDelete*/, const FieldTable& args){
+                                                  bool passive, bool durable, bool autodelete, const FieldTable& args){
 
-    //TODO: implement autoDelete
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = getBroker().getExchanges().get(alternateExchange);
@@ -83,6 +82,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
             params.insert(make_pair(acl::PROP_TYPE, type));
             params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
             params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
+            params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? _TRUE : _FALSE));
             if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_EXCHANGE,exchange,&params) )
                 throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange access request from " << getConnection().getUserId()));
         }
@@ -95,7 +95,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
         }
         try{
             std::pair<Exchange::shared_ptr, bool> response =
-                getBroker().createExchange(exchange, type, durable, alternateExchange, args,
+                getBroker().createExchange(exchange, type, durable, autodelete, alternateExchange, args,
                                            getConnection().getUserId(), getConnection().getMgmtId());
             if (!response.second) {
                 //exchange already there, not created
@@ -106,7 +106,8 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                     << " rhost:" << getConnection().getMgmtId()
                     << " type:" << type
                     << " alternateExchange:" << alternateExchange
-                    << " durable:" << (durable ? "T" : "F"));
+                    << " durable:" << (durable ? "T" : "F")
+                    << " autodelete:" << (autodelete ? "T" : "F"));
             }
         }catch(UnknownExchangeTypeException& /*e*/){
             throw NotFoundException(QPID_MSG("Exchange type not implemented: " << type));

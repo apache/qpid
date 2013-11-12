@@ -329,6 +329,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         const std::string& name,
         const std::string& type,
         bool durable,
+        bool autodelete,
         const std::string& alternateExchange,
         const qpid::framing::FieldTable& args,
         const std::string& userId, const std::string& connectionId);

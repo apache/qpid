@@ -158,12 +158,12 @@ QPID_AUTO_TEST_CASE(testIsBound)
 QPID_AUTO_TEST_CASE(testDeleteGetAndRedeclare)
 {
     ExchangeRegistry exchanges;
-    exchanges.declare("my-exchange", "direct", false, FieldTable());
+    exchanges.declare("my-exchange", "direct", false, false, FieldTable());
     exchanges.destroy("my-exchange");
     try {
         exchanges.get("my-exchange");
     } catch (const NotFoundException&) {}
-    std::pair<Exchange::shared_ptr, bool> response = exchanges.declare("my-exchange", "direct", false, FieldTable());
+    std::pair<Exchange::shared_ptr, bool> response = exchanges.declare("my-exchange", "direct", false, false, FieldTable());
     BOOST_CHECK_EQUAL(string("direct"), response.first->getType());
 }
 
@@ -174,7 +174,7 @@ QPID_AUTO_TEST_CASE(testSequenceOptions)
     char* buff = new char[10000];
     framing::Buffer buffer(buff,10000);
     {
-        DirectExchange direct("direct1", false, args);
+        DirectExchange direct("direct1", false, false, args);
 
         DeliverableMessage msg1(MessageUtils::createMessage("e", "abc"), 0);
         DeliverableMessage msg2(MessageUtils::createMessage("e", "abc"), 0);
@@ -188,9 +188,9 @@ QPID_AUTO_TEST_CASE(testSequenceOptions)
         BOOST_CHECK_EQUAL(2, msg2.getMessage().getAnnotation("qpid.msg_sequence").asInt64());
         BOOST_CHECK_EQUAL(3, msg3.getMessage().getAnnotation("qpid.msg_sequence").asInt64());
 
-        FanOutExchange fanout("fanout1", false, args);
-        HeadersExchange header("headers1", false, args);
-        TopicExchange topic ("topic1", false, args);
+        FanOutExchange fanout("fanout1", false, false, args);
+        HeadersExchange header("headers1", false, false, args);
+        TopicExchange topic ("topic1", false, false, args);
 
         // check other exchanges, that they preroute
         DeliverableMessage msg4(MessageUtils::createMessage("e", "abc"), 0);
@@ -226,10 +226,10 @@ QPID_AUTO_TEST_CASE(testIVEOption)
 {
     FieldTable args;
     args.setInt("qpid.ive",1);
-    DirectExchange direct("direct1", false, args);
-    FanOutExchange fanout("fanout1", false, args);
-    HeadersExchange header("headers1", false, args);
-    TopicExchange topic ("topic1", false, args);
+    DirectExchange direct("direct1", false, false, args);
+    FanOutExchange fanout("fanout1", false, false, args);
+    HeadersExchange header("headers1", false, false, args);
+    TopicExchange topic ("topic1", false, false, args);
 
     qpid::types::Variant::Map properties;
     properties["routing-key"] = "abc";

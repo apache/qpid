@@ -551,8 +551,10 @@ void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
             QPID_LOG(warning, logPrefix << "Declare event, replacing existing exchange: "
                      << name);
         }
+        //Note: unlike qieth queues, autodeleted exchanges have no
+        //messages, so need no special handling for autodelete in ha
         CreateExchangeResult result = createExchange(
-            name, values[EXTYPE].asString(), values[DURABLE].asBool(), args,
+            name, values[EXTYPE].asString(), values[DURABLE].asBool(), values[AUTODEL].asBool(), args,
             values[ALTEX].asString());
         assert(result.second);
     }
@@ -700,7 +702,7 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
         deleteExchange(name);
     }
     CreateExchangeResult result = createExchange(
-        name, values[TYPE].asString(), values[DURABLE].asBool(), args,
+        name, values[TYPE].asString(), values[DURABLE].asBool(), values[AUTODELETE].asBool(), args,
         getAltExchange(values[ALTEXCHANGE]));
 }
 
@@ -849,6 +851,7 @@ BrokerReplicator::CreateExchangeResult BrokerReplicator::createExchange(
     const std::string& name,
     const std::string& type,
     bool durable,
+    bool autodelete,
     const qpid::framing::FieldTable& args,
     const std::string& alternateExchange)
 {
@@ -857,6 +860,7 @@ BrokerReplicator::CreateExchangeResult BrokerReplicator::createExchange(
             name,
             type,
             durable,
+            autodelete,
             string(),  // Set alternate exchange below
             args,
             userId,
@@ -872,6 +876,7 @@ BrokerReplicator::CreateExchangeResult BrokerReplicator::createExchange(
 bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
 bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
 bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
+bool BrokerReplicator::hasBindings() { return false; }
 
 string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
 

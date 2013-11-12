@@ -38,9 +38,9 @@ FanOutExchange::FanOutExchange(const std::string& _name, Manageable* _parent, Br
         mgmtExchange->set_type (typeName);
 }
 
-FanOutExchange::FanOutExchange(const std::string& _name, bool _durable,
+FanOutExchange::FanOutExchange(const std::string& _name, bool _durable, bool autodelete,
                                const FieldTable& _args, Manageable* _parent, Broker* b) :
-    Exchange(_name, _durable, _args, _parent, b)
+    Exchange(_name, _durable, autodelete, _args, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
@@ -101,6 +101,7 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, cons
 
     if (propagate)
         propagateFedOp(string(), string(), fedOpUnbind, string());
+    if (bindings.empty()) checkAutodelete();
     return true;
 }
 
@@ -109,7 +110,7 @@ void FanOutExchange::route(Deliverable& msg)
     PreRoute pr(msg, this);
     doRoute(msg, bindings.snapshot());
 }
-    
+
 bool FanOutExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const)
 {
     BindingsArray::ConstPtr ptr = bindings.snapshot();
@@ -123,3 +124,9 @@ FanOutExchange::~FanOutExchange() {
 }
 
 const std::string FanOutExchange::typeName("fanout");
+
+bool FanOutExchange::hasBindings()
+{
+    BindingsArray::ConstPtr ptr = bindings.snapshot();
+    return ptr && !ptr->empty();
+}

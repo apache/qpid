@@ -45,9 +45,9 @@ DirectExchange::DirectExchange(const string& _name, Manageable* _parent, Broker*
         mgmtExchange->set_type(typeName);
 }
 
-DirectExchange::DirectExchange(const string& _name, bool _durable,
+DirectExchange::DirectExchange(const string& _name, bool _durable, bool autodelete,
                                const FieldTable& _args, Manageable* _parent, Broker* b) :
-    Exchange(_name, _durable, _args, _parent, b)
+    Exchange(_name, _durable, autodelete, _args, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type(typeName);
@@ -131,6 +131,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
 {
     string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     bool propagate = false;
+    bool empty = false;
 
     QPID_LOG(debug, "Unbinding key [" << routingKey << "] from queue " << queue->getName()
              << " on exchange " << getName() << " origin=" << fedOrigin << ")" );
@@ -144,6 +145,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
             }
             if (bk.queues.empty()) {
                 bindings.erase(routingKey);
+                if (bindings.empty()) empty = true;
             }
         } else {
             return false;
@@ -153,6 +155,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
     // If I delete my local binding, propagate this unbind to any upstream brokers
     if (propagate)
         propagateFedOp(routingKey, string(), fedOpUnbind, string());
+    if (empty) checkAutodelete();
     return true;
 }
 
@@ -163,7 +166,8 @@ void DirectExchange::route(Deliverable& msg)
     ConstBindingList b;
     {
         Mutex::ScopedLock l(lock);
-        b = bindings[routingKey].queues.snapshot();
+        Bindings::iterator i = bindings.find(routingKey);
+        if (i != bindings.end()) b = i->second.queues.snapshot();
     }
     doRoute(msg, b);
 }
@@ -202,3 +206,9 @@ DirectExchange::~DirectExchange() {
 }
 
 const std::string DirectExchange::typeName("direct");
+
+bool DirectExchange::hasBindings()
+{
+    Mutex::ScopedLock l(lock);
+    return !bindings.empty();
+}

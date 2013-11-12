@@ -66,6 +66,7 @@ class PrimaryTxObserver::Exchange : public broker::Exchange {
     bool bind(boost::shared_ptr<Queue>, const string&, const FieldTable*) { return false; }
     bool unbind(boost::shared_ptr<Queue>, const string&, const FieldTable*) { return false; }
     bool isBound(boost::shared_ptr<Queue>, const string* const, const FieldTable* const) { return false; }
+    bool hasBindings() { return false; }
     string getType() const { return TYPE_NAME; }
 
   private:

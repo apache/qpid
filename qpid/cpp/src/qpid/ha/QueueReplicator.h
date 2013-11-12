@@ -88,6 +88,7 @@ class QueueReplicator : public broker::Exchange,
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
+    bool hasBindings();
 
   protected:
     typedef boost::function<void(const std::string&, sys::Mutex::ScopedLock&)> DispatchFn;
