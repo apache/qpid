@@ -603,8 +603,10 @@ namespace {
 class SecretsMap {
     typedef std::map<sasl_conn_t*, void*> Map;
     Map map;
+    sys::Mutex lock;
   public:
     void keep(sasl_conn_t* conn, void* secret) {
+        sys::Mutex::ScopedLock l(lock);
         Map::iterator i = map.find(conn);
         if (i != map.end()) free(i->second);
         map[conn] = secret;
