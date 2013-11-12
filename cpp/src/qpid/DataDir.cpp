@@ -30,18 +30,15 @@ DataDir::DataDir (std::string path) :
     enabled (!path.empty ()),
     dirPath (path)
 {
-    if (!enabled)
+    if (enabled)
     {
-        QPID_LOG (info, "No data directory - Disabling persistent configuration");
-        return;
+        sys::FileSysDir dir(dirPath);
+        if (!dir.exists())
+            dir.mkdir();
+        std::string lockFileName(path);
+        lockFileName += "/lock";
+        lockFile = std::auto_ptr<sys::LockFile>(new sys::LockFile(lockFileName, true));
     }
-
-    sys::FileSysDir dir(dirPath);
-    if (!dir.exists())
-        dir.mkdir();
-    std::string lockFileName(path);
-    lockFileName += "/lock";
-    lockFile = std::auto_ptr<sys::LockFile>(new sys::LockFile(lockFileName, true));
 }
 
 DataDir::~DataDir () {}
