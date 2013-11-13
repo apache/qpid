@@ -111,7 +111,7 @@ define(["dojo/dom",
                        {
                          var preferencesCheckBox = new dijit.form.CheckBox({
                            checked: UserPreferences.isTabStored(obj.tabData),
-                           title: "If checked the tab is saved in user preferences and restored on console start-up"
+                           title: "If checked the tab is saved in user preferences and restored on next login"
                          });
                          var tabs = this.tabContainer.tablist.getChildren();
                          preferencesCheckBox.placeAt(tabs[tabs.length-1].titleNode, "first");
