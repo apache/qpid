@@ -19,15 +19,16 @@
  *
  */
 
-#ifndef QPID_QLS_JRNL_EMPTYFILEPOOLTYPES_H_
-#define QPID_QLS_JRNL_EMPTYFILEPOOLTYPES_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLTYPES_H_
+#define QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLTYPES_H_
 
 #include <iostream>
 #include <stdint.h>
 #include <utility> // std::pair
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 typedef uint64_t efpDataSize_kib_t;     ///< Size of data part of file (excluding file header) in kib
 typedef uint64_t efpFileSize_kib_t;     ///< Size of file (header + data) in kib
@@ -41,9 +42,10 @@ typedef struct efpIdentity_t {
     efpDataSize_kib_t ds_;
     efpIdentity_t() : pn_(0), ds_(0) {}
     efpIdentity_t(efpPartitionNumber_t pn, efpDataSize_kib_t ds) : pn_(pn), ds_(ds) {}
+    efpIdentity_t(const efpIdentity_t& ei) : pn_(ei.pn_), ds_(ei.ds_) {}
     friend std::ostream& operator<<(std::ostream& os, efpIdentity_t& id) { os << "[" << id.pn_ << "," << id.ds_ << "]"; return os; }
 } efpIdentity_t;
 
-}} // namespace qpid::qls_jrnl
+}}}
 
-#endif /* QPID_QLS_JRNL_EMPTYFILEPOOLTYPES_H_ */
+#endif /* QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLTYPES_H_ */

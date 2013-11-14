@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_JCFG_H
-#define QPID_LEGACYSTORE_JRNL_JCFG_H
+#ifndef QPID_QLS_JRNL_JCFG_H
+#define QPID_QLS_JRNL_JCFG_H
 
 #define QLS_SBLK_SIZE_BYTES             4096        /**< Disk softblock size in bytes, should match size used on disk media */
 #define QLS_AIO_ALIGN_BOUNDARY_BYTES    QLS_SBLK_SIZE_BYTES /** Memory alignment boundary used for DMA */
@@ -55,4 +55,4 @@
 #define QLS_CLEAN                                   /**< If defined, writes QLS_CLEAN_CHAR to all filled areas on disk */
 #define QLS_CLEAN_CHAR                  0xff        /**< Char used to clear empty space on disk */
 
-#endif /* ifndef QPID_LEGACYSTORE_JRNL_JCFG_H */
+#endif /* ifndef QPID_QLS_JRNL_JCFG_H */

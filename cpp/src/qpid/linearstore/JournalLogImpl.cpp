@@ -24,11 +24,11 @@
 namespace qpid {
 namespace linearstore {
 
-JournalLogImpl::JournalLogImpl(const qpid::qls_jrnl::JournalLog::log_level_t logLevelThreshold) : qpid::qls_jrnl::JournalLog(logLevelThreshold) {}
+JournalLogImpl::JournalLogImpl(const qpid::linearstore::journal::JournalLog::log_level_t logLevelThreshold) : qpid::linearstore::journal::JournalLog(logLevelThreshold) {}
 JournalLogImpl::~JournalLogImpl() {}
 
 void
-JournalLogImpl::log(const qpid::qls_jrnl::JournalLog::log_level_t level,
+JournalLogImpl::log(const qpid::linearstore::journal::JournalLog::log_level_t level,
                     const std::string& log_stmt) const {
     switch (level) {
       case LOG_CRITICAL: QPID_LOG(critical, "Linear Store: " << log_stmt); break;
@@ -42,7 +42,7 @@ JournalLogImpl::log(const qpid::qls_jrnl::JournalLog::log_level_t level,
 }
 
 void
-JournalLogImpl::log(const qpid::qls_jrnl::JournalLog::log_level_t level,
+JournalLogImpl::log(const qpid::linearstore::journal::JournalLog::log_level_t level,
                     const std::string& jid,
                     const std::string& log_stmt) const {
     switch (level) {

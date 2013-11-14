@@ -27,10 +27,9 @@
 #include "qpid/linearstore/jrnl/slock.h"
 #include <sstream>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 // return/error codes
 int16_t txn_map::TMAP_RID_NOT_FOUND = -2;
@@ -231,4 +230,4 @@ txn_map::xid_list(std::vector<std::string>& xv)
     }
 }
 
-}}
+}}}

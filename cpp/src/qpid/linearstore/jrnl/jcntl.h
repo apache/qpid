@@ -19,15 +19,14 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_JRNL_JCNTL_H
-#define QPID_LINEARSTORE_JRNL_JCNTL_H
+#ifndef QPID_LINEARSTORE_JOURNAL_JCNTL_H
+#define QPID_LINEARSTORE_JOURNAL_JCNTL_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
     class jcntl;
-}}
+}}}
 
 #include <cstddef>
 #include <deque>
@@ -38,10 +37,9 @@ namespace qls_jrnl
 #include "qpid/linearstore/jrnl/smutex.h"
 #include "qpid/linearstore/jrnl/wmgr.h"
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
     class EmptyFilePool;
     class EmptyFilePoolManager;
 
@@ -570,6 +568,6 @@ namespace qls_jrnl
         bool handle_aio_wait(const iores res, iores& resout, const data_tok* dtp);
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LINEARSTORE_JRNL_JCNTL_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_JCNTL_H

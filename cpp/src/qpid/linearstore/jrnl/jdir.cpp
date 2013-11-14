@@ -32,10 +32,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 jdir::jdir(const std::string& dirname/*, const std::string& _base_filename*/):
         _dirname(dirname)/*,
@@ -476,4 +475,4 @@ operator<<(std::ostream& os, const jdir* jdirPtr)
     return os;
 }
 
-}}
+}}}

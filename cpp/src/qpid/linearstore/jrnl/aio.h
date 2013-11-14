@@ -19,17 +19,16 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_AIO_H
-#define QPID_LEGACYSTORE_JRNL_AIO_H
+#ifndef QPID_LINEARSTORE_JOURNAL_AIO_H
+#define QPID_LINEARSTORE_JOURNAL_AIO_H
 
 #include <libaio.h>
 #include <cstring>
 #include <string.h>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 typedef iocb aio_cb;
 typedef io_event aio_event;
@@ -135,6 +134,6 @@ public:
     }
 };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_AIO_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_AIO_H

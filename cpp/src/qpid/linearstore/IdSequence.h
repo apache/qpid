@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_IDSEQUENCE_H
-#define QPID_LEGACYSTORE_IDSEQUENCE_H
+#ifndef QPID_LINEARSTORE_IDSEQUENCE_H
+#define QPID_LINEARSTORE_IDSEQUENCE_H
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
@@ -40,4 +40,4 @@ public:
 
 }}
 
-#endif // ifndef QPID_LEGACYSTORE_IDSEQUENCE_H
+#endif // ifndef QPID_LINEARSTORE_IDSEQUENCE_H

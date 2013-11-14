@@ -19,17 +19,16 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_TIME_NS_H
-#define QPID_LEGACYSTORE_JRNL_TIME_NS_H
+#ifndef QPID_LINEARSTORE_JOURNAL_TIME_NS_H
+#define QPID_LINEARSTORE_JOURNAL_TIME_NS_H
 
 #include <cerrno>
 #include <ctime>
 #include <string>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 struct time_ns : public timespec
 {
@@ -88,6 +87,6 @@ struct time_ns : public timespec
        { if(tv_sec == rhs.tv_sec) return tv_nsec <= rhs.tv_nsec; return tv_sec <= rhs.tv_sec; }
 };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_TIME_NS_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_TIME_NS_H

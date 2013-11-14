@@ -25,8 +25,8 @@
 //static const uint16_t ENQ_HDR_EXTERNAL_MASK = 0x20;
 
 void enq_hdr_init(enq_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                  const uint64_t rid, const uint64_t xidsize, const uint64_t dsize) {
-    rec_hdr_init(&dest->_rhdr, magic, version, uflag, rid);
+                  const uint64_t serial, const uint64_t rid, const uint64_t xidsize, const uint64_t dsize) {
+    rec_hdr_init(&dest->_rhdr, magic, version, uflag, serial, rid);
     dest->_xidsize = xidsize;
     dest->_dsize = dsize;
 }

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_IDDBT_H
-#define QPID_LEGACYSTORE_IDDBT_H
+#ifndef QPID_LINEARSTORE_IDDBT_H
+#define QPID_LINEARSTORE_IDDBT_H
 
 #include "db-inc.h"
 
@@ -39,4 +39,4 @@ public:
 
 }}
 
-#endif // ifndef QPID_LEGACYSTORE_IDDBT_H
+#endif // ifndef QPID_LINEARSTORE_IDDBT_H

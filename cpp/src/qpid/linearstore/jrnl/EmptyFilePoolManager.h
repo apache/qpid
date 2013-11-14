@@ -27,7 +27,8 @@
 #include "qpid/linearstore/jrnl/smutex.h"
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 class EmptyFilePoolManager
 {
@@ -66,6 +67,6 @@ public:
     uint16_t getNumEfpPartitions() const;
 };
 
-}} // namespace qpid::qls_jrnl
+}}}
 
 #endif /* QPID_QLS_JRNL_EMPTYFILEPOOLMANAGER_H_ */

@@ -31,7 +31,8 @@
 //#include <iostream> // DEBUG
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 EmptyFilePoolManager::EmptyFilePoolManager(const std::string& qlsStorePath,
                                            const efpPartitionNumber_t defaultPartitionNumber,
@@ -92,8 +93,8 @@ void EmptyFilePoolManager::findEfpPartitions() {
     }
 
     journalLogRef_.log(JournalLog::LOG_NOTICE, "EFP Manager initialization complete");
-    std::vector<qpid::qls_jrnl::EmptyFilePoolPartition*> partitionList;
-    std::vector<qpid::qls_jrnl::EmptyFilePool*> filePoolList;
+    std::vector<qpid::linearstore::journal::EmptyFilePoolPartition*> partitionList;
+    std::vector<qpid::linearstore::journal::EmptyFilePool*> filePoolList;
     getEfpPartitions(partitionList);
     if (partitionList.size() == 0) {
         journalLogRef_.log(JournalLog::LOG_WARN, "NO EFP PARTITIONS FOUND! No queue creation is possible.");
@@ -101,14 +102,14 @@ void EmptyFilePoolManager::findEfpPartitions() {
         std::stringstream oss;
         oss << "> EFP Partitions found: " << partitionList.size();
         journalLogRef_.log(JournalLog::LOG_INFO, oss.str());
-        for (std::vector<qpid::qls_jrnl::EmptyFilePoolPartition*>::const_iterator i=partitionList.begin(); i!= partitionList.end(); ++i) {
+        for (std::vector<qpid::linearstore::journal::EmptyFilePoolPartition*>::const_iterator i=partitionList.begin(); i!= partitionList.end(); ++i) {
             filePoolList.clear();
             (*i)->getEmptyFilePools(filePoolList);
             std::stringstream oss;
             oss << "  * Partition " << (*i)->getPartitionNumber() << " containing " << filePoolList.size()
                 << " pool" << (filePoolList.size()>1 ? "s" : "") << " at \'" << (*i)->getPartitionDirectory() << "\'";
             journalLogRef_.log(JournalLog::LOG_INFO, oss.str());
-            for (std::vector<qpid::qls_jrnl::EmptyFilePool*>::const_iterator j=filePoolList.begin(); j!=filePoolList.end(); ++j) {
+            for (std::vector<qpid::linearstore::journal::EmptyFilePool*>::const_iterator j=filePoolList.begin(); j!=filePoolList.end(); ++j) {
                 std::ostringstream oss;
                 oss << "    - EFP \'" << (*j)->dataSize_kib() << "k\' containing " << (*j)->numEmptyFiles() <<
                               " files of size " << (*j)->dataSize_kib() << " KiB totaling " << (*j)->cumFileSize_kib() << " KiB";
@@ -208,4 +209,4 @@ uint16_t EmptyFilePoolManager::getNumEfpPartitions() const {
     return partitionMap_.size();
 }
 
-}} // namespace qpid::qls_jrnl
+}}}

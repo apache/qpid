@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_DATATOKENIMPL_H
-#define QPID_LEGACYSTORE_DATATOKENIMPL_H
+#ifndef QPID_LINEARSTORE_DATATOKENIMPL_H
+#define QPID_LINEARSTORE_DATATOKENIMPL_H
 
 #include "qpid/linearstore/jrnl/data_tok.h"
 #include "qpid/broker/PersistableMessage.h"
@@ -29,7 +29,7 @@
 namespace qpid{
 namespace linearstore{
 
-class DataTokenImpl : public qpid::qls_jrnl::data_tok, public qpid::RefCounted
+class DataTokenImpl : public qpid::linearstore::journal::data_tok, public qpid::RefCounted
 {
   private:
     boost::intrusive_ptr<qpid::broker::PersistableMessage> sourceMsg;
@@ -44,4 +44,4 @@ class DataTokenImpl : public qpid::qls_jrnl::data_tok, public qpid::RefCounted
 } // namespace msgstore
 } // namespace mrg
 
-#endif // ifndef QPID_LEGACYSTORE_DATATOKENIMPL_H
+#endif // ifndef QPID_LINEARSTORE_DATATOKENIMPL_H

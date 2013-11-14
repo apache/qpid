@@ -22,45 +22,22 @@
 #include "qpid/linearstore/jrnl/enq_rec.h"
 
 #include <cassert>
-#include <cerrno>
-#include <cstdlib>
 #include <cstring>
 #include <iomanip>
-#include "qpid/linearstore/jrnl/jerrno.h"
 #include "qpid/linearstore/jrnl/jexception.h"
-#include <sstream>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
-// Constructor used for read operations, where buf contains preallocated space to receive data.
 enq_rec::enq_rec():
         jrec(), // superclass
-        //_enq_hdr(QLS_ENQ_MAGIC, QLS_JRNL_VERSION, 0, 0, 0, false, false),
         _xidp(0),
         _data(0),
         _buff(0)
-        //_enq_tail(_enq_hdr)
 {
-    ::enq_hdr_init(&_enq_hdr, QLS_ENQ_MAGIC, QLS_JRNL_VERSION, 0, 0, 0, false);
+    ::enq_hdr_init(&_enq_hdr, QLS_ENQ_MAGIC, QLS_JRNL_VERSION, 0, 0, 0, 0, false);
     ::rec_tail_copy(&_enq_tail, &_enq_hdr._rhdr, 0);
-}
-
-// Constructor used for transactional write operations, where dbuf contains data to be written.
-enq_rec::enq_rec(const uint64_t rid, const void* const dbuf, const std::size_t dlen,
-        const void* const xidp, const std::size_t xidlen, const bool transient):
-        jrec(), // superclass
-        //_enq_hdr(QLS_ENQ_MAGIC, QLS_JRNL_VERSION, rid, xidlen, dlen, owi, transient),
-        _xidp(xidp),
-        _data(dbuf),
-        _buff(0)
-        //_enq_tail(_enq_hdr)
-{
-    ::enq_hdr_init(&_enq_hdr, QLS_ENQ_MAGIC, QLS_JRNL_VERSION, 0, rid, xidlen, dlen);
-    ::rec_tail_copy(&_enq_tail, &_enq_hdr._rhdr, 0);
-    ::set_enq_transient(&_enq_hdr, transient);
 }
 
 enq_rec::~enq_rec()
@@ -68,28 +45,11 @@ enq_rec::~enq_rec()
     clean();
 }
 
-// Prepare instance for use in reading data from journal, where buf contains preallocated space
-// to receive data.
 void
-enq_rec::reset()
+enq_rec::reset(const uint64_t serial, const uint64_t rid, const void* const dbuf, const std::size_t dlen,
+        const void* const xidp, const std::size_t xidlen, const bool transient, const bool external)
 {
-    _enq_hdr._rhdr._rid = 0;
-    ::set_enq_transient(&_enq_hdr, false);
-    _enq_hdr._xidsize = 0;
-    _enq_hdr._dsize = 0;
-    _xidp = 0;
-    _data = 0;
-    _buff = 0;
-    _enq_tail._rid = 0;
-}
-
-// Prepare instance for use in writing transactional data to journal, where dbuf contains data to
-// be written.
-void
-enq_rec::reset(const uint64_t rid, const void* const dbuf, const std::size_t dlen,
-        const void* const xidp, const std::size_t xidlen, const bool transient,
-        const bool external)
-{
+    _enq_hdr._rhdr._serial = serial;
     _enq_hdr._rhdr._rid = rid;
     ::set_enq_transient(&_enq_hdr, transient);
     ::set_enq_external(&_enq_hdr, external);
@@ -98,6 +58,7 @@ enq_rec::reset(const uint64_t rid, const void* const dbuf, const std::size_t dle
     _xidp = xidp;
     _data = dbuf;
     _buff = 0;
+    _enq_tail._serial = serial;
     _enq_tail._rid = rid;
 }
 
@@ -246,217 +207,19 @@ enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
     return size_dblks(wr_cnt);
 }
 
-uint32_t
-enq_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
-{
-    assert(rptr != 0);
-    assert(max_size_dblks > 0);
-
-    std::size_t rd_cnt = 0;
-    if (rec_offs_dblks) // Continuation of record on new page
-    {
-        const uint32_t hdr_xid_data_size = sizeof(enq_hdr_t) + _enq_hdr._xidsize +
-                (::is_enq_external(&_enq_hdr) ? 0 : _enq_hdr._dsize);
-        const uint32_t hdr_xid_data_tail_size = hdr_xid_data_size + sizeof(rec_tail_t);
-        const uint32_t hdr_data_dblks = size_dblks(hdr_xid_data_size);
-        const uint32_t hdr_tail_dblks = size_dblks(hdr_xid_data_tail_size);
-        const std::size_t rec_offs = rec_offs_dblks * QLS_DBLK_SIZE_BYTES;
-        const std::size_t offs = rec_offs - sizeof(enq_hdr_t);
-
-        if (hdr_tail_dblks - rec_offs_dblks <= max_size_dblks)
-        {
-            // Remainder of record fits within this page
-            if (offs < _enq_hdr._xidsize)
-            {
-                // some XID still outstanding, copy remainder of XID, data and tail
-                const std::size_t rem = _enq_hdr._xidsize + _enq_hdr._dsize - offs;
-                std::memcpy((char*)_buff + offs, rptr, rem);
-                rd_cnt += rem;
-                std::memcpy((void*)&_enq_tail, ((char*)rptr + rd_cnt), sizeof(_enq_tail));
-                chk_tail();
-                rd_cnt += sizeof(_enq_tail);
-            }
-            else if (offs < _enq_hdr._xidsize + _enq_hdr._dsize && !::is_enq_external(&_enq_hdr))
-            {
-                // some data still outstanding, copy remainder of data and tail
-                const std::size_t data_offs = offs - _enq_hdr._xidsize;
-                const std::size_t data_rem = _enq_hdr._dsize - data_offs;
-                std::memcpy((char*)_buff + offs, rptr, data_rem);
-                rd_cnt += data_rem;
-                std::memcpy((void*)&_enq_tail, ((char*)rptr + rd_cnt), sizeof(_enq_tail));
-                chk_tail();
-                rd_cnt += sizeof(_enq_tail);
-            }
-            else
-            {
-                // Tail or part of tail only outstanding, complete tail
-                const std::size_t tail_offs = rec_offs - sizeof(enq_hdr_t) - _enq_hdr._xidsize -
-                        _enq_hdr._dsize;
-                const std::size_t tail_rem = sizeof(rec_tail_t) - tail_offs;
-                std::memcpy((char*)&_enq_tail + tail_offs, rptr, tail_rem);
-                chk_tail();
-                rd_cnt = tail_rem;
-            }
-        }
-        else if (hdr_data_dblks - rec_offs_dblks <= max_size_dblks)
-        {
-            // Remainder of xid & data fits within this page; tail split
-
-            /*
-             * TODO: This section needs revision. Since it is known that the end of the page falls within the
-             * tail record, it is only necessary to write from the current offset to the end of the page under
-             * all circumstances. The multiple if/else combinations may be eliminated, as well as one memcpy()
-             * operation.
-             *
-             * Also note that Coverity has detected a possible memory overwrite in this block. It occurs if
-             * both the following two if() stmsts (numbered) are false. With rd_cnt = 0, this would result in
-             * the value of tail_rem > sizeof(tail_rec). Practically, this could only happen if the start and
-             * end of a page both fall within the same tail record, in which case the tail would have to be
-             * (much!) larger. However, the logic here does not account for this possibility.
-             *
-             * If the optimization above is undertaken, this code would probably be removed.
-             */
-            if (offs < _enq_hdr._xidsize) // 1
-            {
-                // some XID still outstanding, copy remainder of XID and data
-                const std::size_t rem = _enq_hdr._xidsize + _enq_hdr._dsize - offs;
-                std::memcpy((char*)_buff + offs, rptr, rem);
-                rd_cnt += rem;
-            }
-            else if (offs < _enq_hdr._xidsize + _enq_hdr._dsize && !::is_enq_external(&_enq_hdr)) // 2
-            {
-                // some data still outstanding, copy remainder of data
-                const std::size_t data_offs = offs - _enq_hdr._xidsize;
-                const std::size_t data_rem = _enq_hdr._dsize - data_offs;
-                std::memcpy((char*)_buff + offs, rptr, data_rem);
-                rd_cnt += data_rem;
-            }
-            const std::size_t tail_rem = (max_size_dblks * QLS_DBLK_SIZE_BYTES) - rd_cnt;
-            if (tail_rem)
-            {
-                std::memcpy((void*)&_enq_tail, ((char*)rptr + rd_cnt), tail_rem);
-                rd_cnt += tail_rem;
-            }
-        }
-        else
-        {
-            // Since xid and data are contiguous, both fit within current page - copy whole page
-            const std::size_t data_cp_size = (max_size_dblks * QLS_DBLK_SIZE_BYTES);
-            std::memcpy((char*)_buff + offs, rptr, data_cp_size);
-            rd_cnt += data_cp_size;
-        }
-    }
-    else // Start of record
-    {
-        // Get and check header
-        //_enq_hdr.hdr_copy(h);
-        ::rec_hdr_copy(&_enq_hdr._rhdr, &h);
-        rd_cnt = sizeof(rec_hdr_t);
-        _enq_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
-        rd_cnt += sizeof(std::size_t);
-#if defined(JRNL_32_BIT)
-        rd_cnt += sizeof(uint32_t); // Filler 0
-#endif
-        _enq_hdr._dsize = *(std::size_t*)((char*)rptr + rd_cnt);
-        rd_cnt = sizeof(enq_hdr_t);
-        chk_hdr();
-        if (_enq_hdr._xidsize + (::is_enq_external(&_enq_hdr) ? 0 : _enq_hdr._dsize))
-        {
-            _buff = std::malloc(_enq_hdr._xidsize + (::is_enq_external(&_enq_hdr) ? 0 : _enq_hdr._dsize));
-            MALLOC_CHK(_buff, "_buff", "enq_rec", "decode");
-
-            const uint32_t hdr_xid_size = sizeof(enq_hdr_t) + _enq_hdr._xidsize;
-            const uint32_t hdr_xid_data_size = hdr_xid_size + (::is_enq_external(&_enq_hdr) ? 0 : _enq_hdr._dsize);
-            const uint32_t hdr_xid_data_tail_size = hdr_xid_data_size + sizeof(rec_tail_t);
-            const uint32_t hdr_xid_dblks  = size_dblks(hdr_xid_size);
-            const uint32_t hdr_data_dblks = size_dblks(hdr_xid_data_size);
-            const uint32_t hdr_tail_dblks = size_dblks(hdr_xid_data_tail_size);
-            // Check if record (header + data + tail) fits within this page, we can check the
-            // tail before the expense of copying data to memory
-            if (hdr_tail_dblks <= max_size_dblks)
-            {
-                // Header, xid, data and tail fits within this page
-                if (_enq_hdr._xidsize)
-                {
-                    std::memcpy(_buff, (char*)rptr + rd_cnt, _enq_hdr._xidsize);
-                    rd_cnt += _enq_hdr._xidsize;
-                }
-                if (_enq_hdr._dsize && !::is_enq_external(&_enq_hdr))
-                {
-                    std::memcpy((char*)_buff + _enq_hdr._xidsize, (char*)rptr + rd_cnt,
-                            _enq_hdr._dsize);
-                    rd_cnt += _enq_hdr._dsize;
-                }
-                std::memcpy((void*)&_enq_tail, (char*)rptr + rd_cnt, sizeof(_enq_tail));
-                chk_tail();
-                rd_cnt += sizeof(_enq_tail);
-            }
-            else if (hdr_data_dblks <= max_size_dblks)
-            {
-                // Header, xid and data fit within this page, tail split or separated
-                if (_enq_hdr._xidsize)
-                {
-                    std::memcpy(_buff, (char*)rptr + rd_cnt, _enq_hdr._xidsize);
-                    rd_cnt += _enq_hdr._xidsize;
-                }
-                if (_enq_hdr._dsize && !::is_enq_external(&_enq_hdr))
-                {
-                    std::memcpy((char*)_buff + _enq_hdr._xidsize, (char*)rptr + rd_cnt,
-                            _enq_hdr._dsize);
-                    rd_cnt += _enq_hdr._dsize;
-                }
-                const std::size_t tail_rem = (max_size_dblks * QLS_DBLK_SIZE_BYTES) - rd_cnt;
-                if (tail_rem)
-                {
-                    std::memcpy((void*)&_enq_tail, (char*)rptr + rd_cnt, tail_rem);
-                    rd_cnt += tail_rem;
-                }
-            }
-            else if (hdr_xid_dblks <= max_size_dblks)
-            {
-                // Header and xid fits within this page, data split or separated
-                if (_enq_hdr._xidsize)
-                {
-                    std::memcpy(_buff, (char*)rptr + rd_cnt, _enq_hdr._xidsize);
-                    rd_cnt += _enq_hdr._xidsize;
-                }
-                if (_enq_hdr._dsize && !::is_enq_external(&_enq_hdr))
-                {
-                    const std::size_t data_cp_size = (max_size_dblks * QLS_DBLK_SIZE_BYTES) - rd_cnt;
-                    std::memcpy((char*)_buff + _enq_hdr._xidsize, (char*)rptr + rd_cnt, data_cp_size);
-                    rd_cnt += data_cp_size;
-                }
-            }
-            else
-            {
-                // Header fits within this page, xid split or separated
-                const std::size_t data_cp_size = (max_size_dblks * QLS_DBLK_SIZE_BYTES) - rd_cnt;
-                std::memcpy(_buff, (char*)rptr + rd_cnt, data_cp_size);
-                rd_cnt += data_cp_size;
-            }
-        }
-    }
-    return size_dblks(rd_cnt);
-}
-
 bool
-enq_rec::rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs)
+enq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
 {
+    uint32_t checksum = 0UL; // TODO: Add checksum math
     if (rec_offs == 0)
     {
         // Read header, allocate (if req'd) for xid
         //_enq_hdr.hdr_copy(h);
         ::rec_hdr_copy(&_enq_hdr._rhdr, &h);
-        ifsp->read((char*)&_enq_hdr._xidsize, sizeof(std::size_t));
-#if defined(JRNL_32_BIT)
-        ifsp->ignore(sizeof(uint32_t)); // _filler0
-#endif
-        ifsp->read((char*)&_enq_hdr._dsize, sizeof(std::size_t));
-#if defined(JRNL_32_BIT)
-        ifsp->ignore(sizeof(uint32_t)); // _filler1
-#endif
+        ifsp->read((char*)&_enq_hdr._xidsize, sizeof(_enq_hdr._xidsize));
+        ifsp->read((char*)&_enq_hdr._dsize, sizeof(_enq_hdr._dsize));
         rec_offs = sizeof(_enq_hdr);
-        if (_enq_hdr._xidsize)
+        if (_enq_hdr._xidsize > 0)
         {
             _buff = std::malloc(_enq_hdr._xidsize);
             MALLOC_CHK(_buff, "_buff", "enq_rec", "rcv_decode");
@@ -517,8 +280,19 @@ enq_rec::rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs)
         }
     }
     ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
-    chk_tail(); // Throws if tail invalid or record incomplete
     assert(!ifsp->fail() && !ifsp->bad());
+    int res = ::rec_tail_check(&_enq_tail, &_enq_hdr._rhdr, checksum);
+    if (res != 0) {
+        std::stringstream oss;
+        switch (res) {
+          case 1: oss << std::hex << "Magic: expected 0x" << ~_enq_hdr._rhdr._magic << "; found 0x" << _enq_tail._xmagic; break;
+          case 2: oss << std::hex << "Serial: expected 0x" << _enq_hdr._rhdr._serial << "; found 0x" << _enq_tail._serial; break;
+          case 3: oss << std::hex << "Record Id: expected 0x" << _enq_hdr._rhdr._rid << "; found 0x" << _enq_tail._rid; break;
+          case 4: oss << std::hex << "Checksum: expected 0x" << checksum << "; found 0x" << _enq_tail._checksum; break;
+          default: oss << "Unknown error " << res;
+        }
+        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "enq_rec", "decode"); // TODO: Don't throw exception, log info
+    }
     return true;
 }
 
@@ -578,44 +352,9 @@ enq_rec::rec_size(const std::size_t xidsize, const std::size_t dsize, const bool
 }
 
 void
-enq_rec::set_rid(const uint64_t rid)
-{
-    _enq_hdr._rhdr._rid = rid;
-    _enq_tail._rid = rid;
-}
-
-void
-enq_rec::chk_hdr() const
-{
-    jrec::chk_hdr(_enq_hdr._rhdr);
-    if (_enq_hdr._rhdr._magic != QLS_ENQ_MAGIC)
-    {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "enq magic: rid=0x" << std::setw(16) << _enq_hdr._rhdr._rid;
-        oss << ": expected=0x" << std::setw(8) << QLS_ENQ_MAGIC;
-        oss << " read=0x" << std::setw(2) << (int)_enq_hdr._rhdr._magic;
-        throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "enq_rec", "chk_hdr");
-    }
-}
-
-void
-enq_rec::chk_hdr(uint64_t rid) const
-{
-    chk_hdr();
-    jrec::chk_rid(_enq_hdr._rhdr, rid);
-}
-
-void
-enq_rec::chk_tail() const
-{
-    jrec::chk_tail(_enq_tail, _enq_hdr._rhdr);
-}
-
-void
 enq_rec::clean()
 {
     // clean up allocated memory here
 }
 
-}}
+}}}

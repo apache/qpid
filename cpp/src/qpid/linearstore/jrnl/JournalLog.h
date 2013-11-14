@@ -19,13 +19,14 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_JOURNALLOG_H_
-#define QPID_LINEARSTORE_JOURNALLOG_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_JOURNALLOG_H_
+#define QPID_LINEARSTORE_JOURNAL_JOURNALLOG_H_
 
 #include <string>
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 class JournalLog
 {
@@ -54,6 +55,6 @@ public:
     static const char* log_level_str(const log_level_t logLevel);
 };
 
-}} // namespace qpid::qls_jrnl
+}}}
 
-#endif // QPID_LINEARSTORE_JOURNALLOG_H_
+#endif // QPID_LINEARSTORE_JOURNAL_JOURNALLOG_H_

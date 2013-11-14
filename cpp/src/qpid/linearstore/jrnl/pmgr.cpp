@@ -29,10 +29,9 @@
 #include "qpid/linearstore/jrnl/jerrno.h"
 #include <sstream>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 pmgr::page_cb::page_cb(uint16_t index):
         _index(index),
@@ -199,4 +198,4 @@ pmgr::page_state_str(page_state ps)
     return "<page_state unknown>";
 }
 
-}}
+}}}

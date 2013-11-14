@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_RECOVERYSTATE_H_
-#define QPID_LINEARSTORE_RECOVERYSTATE_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_RECOVERYSTATE_H_
+#define QPID_LINEARSTORE_JOURNAL_RECOVERYSTATE_H_
 
 #include <deque>
 #include <fstream>
@@ -33,7 +33,8 @@ struct file_hdr_t;
 struct rec_hdr_t;
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 class data_tok;
 class enq_map;
@@ -72,6 +73,7 @@ protected:
     bool lastFileFullFlag_;                     ///< Last file is full
 
     // State for recovery of individual enqueued records
+    uint64_t currentSerial_;
     uint32_t efpFileSize_kib_;
     fileNumberMapConstItr_t currentJournalFileConstItr_;
     std::string currentFileName_;
@@ -104,8 +106,8 @@ public:
                                  bool ignore_pending_txns);
     void setLinearFileControllerJournals(lfcAddJournalFileFn fnPtr,
                                          LinearFileController* lfcPtr);
-    std::string toString(const std::string& jid,
-                         bool compact = true);
+    std::string toString(const std::string& jid);
+    std::string toLog(const std::string& jid, const int indent);
 protected:
     void analyzeJournalFileHeaders(efpIdentity_t& efpIdentity);
     void checkFileStreamOk(bool checkEof);
@@ -116,8 +118,11 @@ protected:
                       std::streampos& fileOffset);
     std::string getCurrentFileName() const;
     uint64_t getCurrentFileNumber() const;
+    bool getFile(const uint64_t fileNumber, bool jumpToFirstRecordOffsetFlag);
     bool getNextFile(bool jumpToFirstRecordOffsetFlag);
     bool getNextRecordHeader();
+    bool needNextFile();
+    bool readFileHeader();
     void readJournalData(char* target, const std::streamsize size);
     void removeEmptyFiles(EmptyFilePool* emptyFilePoolPtr);
 
@@ -126,6 +131,6 @@ protected:
                                       std::string& queueName);
 };
 
-}} // namespace qpid::qls_jrnl
+}}}
 
-#endif // QPID_LINEARSTORE_RECOVERYSTATE_H_
+#endif // QPID_LINEARSTORE_JOURNAL_RECOVERYSTATE_H_

@@ -23,8 +23,8 @@
 #include <string.h>
 
 void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t fhdr_size_sblks,
-                    const uint16_t efp_partition, const uint64_t file_size) {
-    rec_hdr_init(&dest->_rhdr, magic, version, 0, 0);
+                     const uint16_t efp_partition, const uint64_t file_size) {
+    rec_hdr_init(&dest->_rhdr, magic, version, 0, 0, 0);
     dest->_fhdr_size_sblks = fhdr_size_sblks;
     dest->_efp_partition = efp_partition;
     dest->_reserved = 0;
@@ -36,10 +36,11 @@ void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t vers
     dest->_queue_name_len = 0;
 }
 
-int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, const uint64_t rid, const uint64_t fro,
-                  const uint64_t file_number, const uint16_t queue_name_len, const char* queue_name) {
+int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, const uint64_t serial, const uint64_t rid,
+                  const uint64_t fro, const uint64_t file_number, const uint16_t queue_name_len, const char* queue_name) {
     file_hdr_t* fhp = (file_hdr_t*)dest;
     fhp->_rhdr._uflag = uflag;
+    fhp->_rhdr._serial = serial;
     fhp->_rhdr._rid = rid;
     fhp->_fro = fro;
     fhp->_file_number = file_number;
@@ -52,6 +53,13 @@ int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, con
     memcpy((char*)dest + sizeof(file_hdr_t), queue_name, queue_name_len);
     memset((char*)dest + sizeof(file_hdr_t) + queue_name_len, 0, dest_len - sizeof(file_hdr_t) - queue_name_len);
     return set_time_now(dest);
+}
+
+int file_hdr_check(file_hdr_t* hdr, const uint32_t magic, const uint16_t version, const uint64_t data_size_kib) {
+    int res = rec_hdr_check_base(&hdr->_rhdr, magic, version);
+    if (res != 0) return 0;
+    if (hdr->_data_size_kib != data_size_kib) return 3;
+    return 0;
 }
 
 void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src) {
@@ -83,6 +91,23 @@ int is_file_hdr_reset(file_hdr_t* target) {
            target->_file_number == 0 &&
            target->_queue_name_len == 0;
 }
+
+/*
+uint64_t random_64() {
+    int randomData = open("/dev/random", O_RDONLY);
+    if (randomData < 0) {
+        return 0ULL;
+    }
+    uint64_t randomNumber;
+    size_t size = sizeof(randomNumber);
+    ssize_t result = read(randomData, (char*)&randomNumber, size);
+    if (result != size) {
+        randomNumber = 0ULL;
+    }
+    close(randomData);
+    return randomNumber;
+}
+*/
 
 int set_time_now(file_hdr_t *fh)
 {

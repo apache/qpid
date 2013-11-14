@@ -1,5 +1,5 @@
-#ifndef QPID_LEGACYSTORE_JRNL_UTILS_REC_TAIL_H
-#define QPID_LEGACYSTORE_JRNL_UTILS_REC_TAIL_H
+#ifndef QPID_LINEARSTORE_JOURNAL_UTILS_REC_TAIL_H
+#define QPID_LINEARSTORE_JOURNAL_UTILS_REC_TAIL_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -41,26 +41,32 @@ extern "C"{
  * The checksum is used to verify the xid and/or data portion of the record
  * on recovery, and excludes the header and tail.
  *
- * Record header info in binary format (16 bytes):
+ * Record header info in binary format (24 bytes):
  * <pre>
  *   0                           7
  * +---+---+---+---+---+---+---+---+
  * |   ~(magic)    |   checksum    |
  * +---+---+---+---+---+---+---+---+
+ * |             serial            |
+ * +---+---+---+---+---+---+---+---+
  * |              rid              |
  * +---+---+---+---+---+---+---+---+
  *
- * rid = Record ID
+ * ~(magic) = 1's compliment of magic of matching record header
+ * rid = Record ID of matching record header
  * </pre>
  */
 typedef struct rec_tail_t {
     uint32_t _xmagic;		/**< Binary inverse (1's complement) of hdr magic number */
-    uint32_t _checksum;		/**< Checksum of xid and data */
-    uint64_t _rid;			/**< ID (rotating 64-bit counter) */
+    uint32_t _checksum;		/**< Checksum of xid and data (excluding header itself) */
+    uint64_t _serial;       /**< Serial number for this journal file */
+    uint64_t _rid;			/**< Record ID (rotating 64-bit counter) */
 } rec_tail_t;
 
-void rec_tail_init(rec_tail_t* dest, const uint32_t xmagic, const uint32_t checksum, const uint64_t rid);
+void rec_tail_init(rec_tail_t* dest, const uint32_t xmagic, const uint32_t checksum, const uint64_t serial,
+                   const uint64_t rid);
 void rec_tail_copy(rec_tail_t* dest, const rec_hdr_t* src, const uint32_t checksum);
+int rec_tail_check(const rec_tail_t* tail, const rec_hdr_t* header, const uint32_t checksum);
 
 #pragma pack()
 
@@ -68,4 +74,4 @@ void rec_tail_copy(rec_tail_t* dest, const rec_hdr_t* src, const uint32_t checks
 }
 #endif
 
-#endif /* ifnedf QPID_LEGACYSTORE_JRNL_UTILS_REC_TAIL_H */
+#endif /* ifnedf QPID_LINEARSTORE_JOURNAL_UTILS_REC_TAIL_H */
