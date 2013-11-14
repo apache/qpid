@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_MESSAGESTOREIMPL_H
-#define QPID_LEGACYSTORE_MESSAGESTOREIMPL_H
+#ifndef QPID_LINEARSTORE_MESSAGESTOREIMPL_H
+#define QPID_LINEARSTORE_MESSAGESTOREIMPL_H
 
 #include <iomanip>
 #include <string>
@@ -133,8 +133,8 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     IdSequence generalIdSequence;
     IdSequence messageIdSequence;
     std::string storeDir;
-    qpid::qls_jrnl::efpPartitionNumber_t defaultEfpPartitionNumber;
-    qpid::qls_jrnl::efpDataSize_kib_t defaultEfpFileSize_kib;
+    qpid::linearstore::journal::efpPartitionNumber_t defaultEfpPartitionNumber;
+    qpid::linearstore::journal::efpDataSize_kib_t defaultEfpFileSize_kib;
     bool      truncateFlag;
     uint32_t wCachePgSizeSblks;
     uint16_t wCacheNumPages;
@@ -145,7 +145,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     const char* envPath;
     qpid::broker::Broker* broker;
     JournalLogImpl jrnlLog;
-    boost::shared_ptr<qpid::qls_jrnl::EmptyFilePoolManager> efpMgr;
+    boost::shared_ptr<qpid::linearstore::journal::EmptyFilePoolManager> efpMgr;
 
     qmf::org::apache::qpid::linearstore::Store::shared_ptr mgmtObject;
     qpid::management::ManagementAgent* agent;
@@ -156,9 +156,9 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
                                            const std::string& paramName/*,
                                            const uint16_t jrnlFsizePgs*/);
     static uint16_t getJrnlWrNumPages(const uint32_t wrPageSizeKiB);
-    static qpid::qls_jrnl::efpPartitionNumber_t chkEfpPartition(const qpid::qls_jrnl::efpPartitionNumber_t partition,
+    static qpid::linearstore::journal::efpPartitionNumber_t chkEfpPartition(const qpid::linearstore::journal::efpPartitionNumber_t partition,
                                                                 const std::string& paramName);
-    static qpid::qls_jrnl::efpDataSize_kib_t chkEfpFileSizeKiB(const qpid::qls_jrnl::efpDataSize_kib_t efpFileSizeKiB,
+    static qpid::linearstore::journal::efpDataSize_kib_t chkEfpFileSizeKiB(const qpid::linearstore::journal::efpDataSize_kib_t efpFileSizeKiB,
                                                               const std::string& paramName);
 
     void init();
@@ -233,8 +233,8 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     // journal functions
     void createJrnlQueue(const qpid::broker::PersistableQueue& queue);
     std::string getJrnlDir(const std::string& queueName);
-    qpid::qls_jrnl::EmptyFilePool* getEmptyFilePool(const qpid::qls_jrnl::efpPartitionNumber_t p, const qpid::qls_jrnl::efpDataSize_kib_t s);
-    qpid::qls_jrnl::EmptyFilePool* getEmptyFilePool(const qpid::framing::FieldTable& args);
+    qpid::linearstore::journal::EmptyFilePool* getEmptyFilePool(const qpid::linearstore::journal::efpPartitionNumber_t p, const qpid::linearstore::journal::efpDataSize_kib_t s);
+    qpid::linearstore::journal::EmptyFilePool* getEmptyFilePool(const qpid::framing::FieldTable& args);
     std::string getStoreTopLevelDir();
     std::string getJrnlBaseDir();
     std::string getBdbBaseDir();
@@ -268,8 +268,8 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     bool init(const qpid::Options* options);
 
     bool init(const std::string& dir,
-              qpid::qls_jrnl::efpPartitionNumber_t efpPartition = defEfpPartition,
-              qpid::qls_jrnl::efpDataSize_kib_t efpFileSizeKib = defEfpFileSizeKib,
+              qpid::linearstore::journal::efpPartitionNumber_t efpPartition = defEfpPartition,
+              qpid::linearstore::journal::efpDataSize_kib_t efpFileSizeKib = defEfpFileSizeKib,
               const bool truncateFlag = false,
               uint32_t wCachePageSize = defWCachePageSizeKib,
               uint32_t tplWCachePageSize = defTplWCachePageSizeKib);
@@ -365,4 +365,4 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 } // namespace msgstore
 } // namespace mrg
 
-#endif // ifndef QPID_LEGACYSTORE_MESSAGESTOREIMPL_H
+#endif // ifndef QPID_LINEARSTORE_MESSAGESTOREIMPL_H

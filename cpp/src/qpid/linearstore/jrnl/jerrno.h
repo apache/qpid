@@ -19,24 +19,22 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_JERRNO_H
-#define QPID_LEGACYSTORE_JRNL_JERRNO_H
+#ifndef QPID_LINEARSTORE_JOURNAL_JERRNO_H
+#define QPID_LINEARSTORE_JOURNAL_JERRNO_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 class jerrno;
-}}
+}}}
 
 #include <map>
 #include <stdint.h>
 #include <string>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
     /**
     * \class jerrno
@@ -144,6 +142,6 @@ namespace qls_jrnl
         static bool __init();
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_JERRNO_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_JERRNO_H

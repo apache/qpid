@@ -19,14 +19,15 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_ATOMICCOUNTER_H_
-#define QPID_LINEARSTORE_ATOMICCOUNTER_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_ATOMICCOUNTER_H_
+#define QPID_LINEARSTORE_JOURNAL_ATOMICCOUNTER_H_
 
 #include "qpid/linearstore/jrnl/slock.h"
 #include <string>
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 template <class T>
 class AtomicCounter
@@ -127,6 +128,6 @@ public:
     }
 };
 
-}} // namespace qpid::qls_jrnl
+}}} // namespace qpid::qls_jrnl
 
-#endif // QPID_LINEARSTORE_ATOMICCOUNTER_H_
+#endif // QPID_LINEARSTORE_JOURNAL_ATOMICCOUNTER_H_

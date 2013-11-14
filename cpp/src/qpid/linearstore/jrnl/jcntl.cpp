@@ -38,10 +38,9 @@
 #include <sstream>
 #include <unistd.h>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 #define AIO_CMPL_TIMEOUT_SEC   5
 #define AIO_CMPL_TIMEOUT_NSEC  0
@@ -132,9 +131,9 @@ jcntl::recover(EmptyFilePoolManager* efpmp,
     _recoveryManager.analyzeJournals(prep_txn_list_ptr, efpmp, &_emptyFilePoolPtr);
 
     highest_rid = _recoveryManager.getHighestRecordId();
-    _jrnl_log.log(/*LOG_DEBUG*/JournalLog::LOG_INFO, _jid, _recoveryManager.toString(_jid, true));
+    _jrnl_log.log(/*LOG_DEBUG*/JournalLog::LOG_INFO, _jid, _recoveryManager.toLog(_jid, 5));
     _linearFileController.initialize(_jdir.dirname(), _emptyFilePoolPtr, _recoveryManager.getHighestFileNumber());
-    _recoveryManager.setLinearFileControllerJournals(&qpid::qls_jrnl::LinearFileController::addJournalFile, &_linearFileController);
+    _recoveryManager.setLinearFileControllerJournals(&qpid::linearstore::journal::LinearFileController::addJournalFile, &_linearFileController);
     _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, QLS_WMGR_MAXDTOKPP, QLS_WMGR_MAXWAITUS,
             (_recoveryManager.isLastFileFull() ? 0 : _recoveryManager.getEndOffset()));
 
@@ -430,4 +429,4 @@ std::cout << "&&&&&& jcntl::handle_aio_wait() " << _wmgr.status_str() << std::en
     return false;
 }
 
-}}
+}}}

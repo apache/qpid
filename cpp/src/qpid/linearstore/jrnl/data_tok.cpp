@@ -27,10 +27,9 @@
 #include "qpid/linearstore/jrnl/slock.h"
 #include <sstream>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 // Static members
 
@@ -39,10 +38,8 @@ smutex data_tok::_mutex;
 
 data_tok::data_tok():
     _wstate(NONE),
-//    _rstate(UNREAD),
     _dsize(0),
     _dblks_written(0),
-//    _dblks_read(0),
     _pg_cnt(0),
     _fid(0),
     _rid(0),
@@ -106,58 +103,12 @@ data_tok::wstate_str(write_state wstate)
     return "<wstate unknown>";
 }
 
-/*
-const char*
-data_tok::rstate_str() const
-{
-    return rstate_str(_rstate);
-}
-*/
-
-/*
-const char*
-data_tok::rstate_str(read_state rstate)
-{
-    switch (rstate)
-    {
-        case NONE:
-            return "NONE";
-        case READ_PART:
-            return "READ_PART";
-        case SKIP_PART:
-            return "SKIP_PART";
-        case READ:
-            return "READ";
-    // Not using default: forces compiler to ensure all cases are covered.
-    }
-    return "<rstate unknown>";
-}
-*/
-
-/*
-void
-data_tok::set_rstate(const read_state rstate)
-{
-    if (_wstate != ENQ && rstate != UNREAD)
-    {
-        std::ostringstream oss;
-        oss << "Attempted to change read state to " << rstate_str(rstate);
-        oss << " while write state is not enqueued (wstate ENQ); wstate=" << wstate_str() << ".";
-        throw jexception(jerrno::JERR_DTOK_ILLEGALSTATE, oss.str(), "data_tok",
-                "set_rstate");
-    }
-    _rstate = rstate;
-}
-*/
-
 void
 data_tok::reset()
 {
     _wstate = NONE;
-//    _rstate = UNREAD;
     _dsize = 0;
     _dblks_written = 0;
-//    _dblks_read = 0;
     _pg_cnt = 0;
     _fid = 0;
     _rid = 0;
@@ -185,4 +136,4 @@ data_tok::status_str() const
     return oss.str();
 }
 
-}}
+}}}

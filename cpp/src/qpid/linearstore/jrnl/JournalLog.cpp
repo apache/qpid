@@ -23,7 +23,8 @@
 #include <iostream>
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 JournalLog::JournalLog(log_level_t logLevelThreshold) : logLevelThreshold_(logLevelThreshold) {}
 
@@ -58,4 +59,4 @@ const char* JournalLog::log_level_str(log_level_t logLevel) {
     return "<log level unknown>";
 }
 
-}} // namespace qpid::qls_jrnl
+}}}

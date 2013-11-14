@@ -31,18 +31,23 @@
 //#include <iostream> // DEBUG
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 JournalFile::JournalFile(const std::string& fqFileName,
-                         const ::file_hdr_t& fileHeader) :
+                         const efpIdentity_t& efpIdentity,
+                         const uint64_t fileSeqNum) :
+            efpIdentity_(efpIdentity),
             fqFileName_(fqFileName),
-            fileSeqNum_(fileHeader._file_number),
+            fileSeqNum_(fileSeqNum),
+            serial_(getRandom64()),
+            firstRecordOffset_(0ULL),
             fileHandle_(-1),
             fileCloseFlag_(false),
             fileHeaderBasePtr_ (0),
             fileHeaderPtr_(0),
             aioControlBlockPtr_(0),
-            fileSize_dblks_(((fileHeader._data_size_kib * 1024) + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_BYTES)) / QLS_DBLK_SIZE_BYTES),
+            fileSize_dblks_(((efpIdentity.ds_ * 1024) + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_BYTES)) / QLS_DBLK_SIZE_BYTES),
             enqueuedRecordCount_("JournalFile::enqueuedRecordCount", 0),
             submittedDblkCount_("JournalFile::submittedDblkCount", 0),
             completedDblkCount_("JournalFile::completedDblkCount", 0),
@@ -50,16 +55,18 @@ JournalFile::JournalFile(const std::string& fqFileName,
 {}
 
 JournalFile::JournalFile(const std::string& fqFileName,
-                         const uint64_t fileSeqNum,
-                         const efpDataSize_kib_t efpDataSize_kib) :
+                         const ::file_hdr_t& fileHeader) :
+            efpIdentity_(fileHeader._efp_partition, fileHeader._data_size_kib),
             fqFileName_(fqFileName),
-            fileSeqNum_(fileSeqNum),
+            fileSeqNum_(fileHeader._file_number),
+            serial_(fileHeader._rhdr._serial),
+            firstRecordOffset_(fileHeader._fro),
             fileHandle_(-1),
             fileCloseFlag_(false),
             fileHeaderBasePtr_ (0),
             fileHeaderPtr_(0),
             aioControlBlockPtr_(0),
-            fileSize_dblks_(((efpDataSize_kib * 1024) + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_BYTES)) / QLS_DBLK_SIZE_BYTES),
+            fileSize_dblks_(((fileHeader._data_size_kib * 1024) + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_BYTES)) / QLS_DBLK_SIZE_BYTES),
             enqueuedRecordCount_("JournalFile::enqueuedRecordCount", 0),
             submittedDblkCount_("JournalFile::submittedDblkCount", 0),
             completedDblkCount_("JournalFile::completedDblkCount", 0),
@@ -108,6 +115,10 @@ uint64_t JournalFile::getFileSeqNum() const {
     return fileSeqNum_;
 }
 
+uint64_t JournalFile::getSerial() const {
+    return serial_;
+}
+
 int JournalFile::open() {
     fileHandle_ = ::open(fqFileName_.c_str(), O_WRONLY | O_DIRECT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); // 0644 -rw-r--r--
     if (fileHandle_ < 0) {
@@ -141,10 +152,12 @@ void JournalFile::asyncFileHeaderWrite(io_context_t ioContextPtr,
                                        const uint64_t recordId,
                                        const uint64_t firstRecordOffset,
                                        const std::string queueName) {
+    firstRecordOffset_ = firstRecordOffset;
     ::file_hdr_create(fileHeaderPtr_, QLS_FILE_MAGIC, QLS_JRNL_VERSION, QLS_JRNL_FHDR_RES_SIZE_SBLKS, efpPartitionNumber, efpDataSize_kib);
     ::file_hdr_init(fileHeaderBasePtr_,
                     QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB * 1024,
                     userFlags,
+                    serial_,
                     recordId,
                     firstRecordOffset,
                     fileSeqNum_,
@@ -208,6 +221,18 @@ uint16_t JournalFile::decrOutstandingAioOperationCount() {
     return r;
 }
 
+efpIdentity_t JournalFile::getEfpIdentity() const {
+    return efpIdentity_;
+}
+
+uint64_t JournalFile::getFirstRecordOffset() const {
+    return firstRecordOffset_;
+}
+
+void JournalFile::setFirstRecordOffset(const uint64_t firstRecordOffset) {
+    firstRecordOffset_ = firstRecordOffset;
+}
+
 // --- Status helper functions ---
 
 bool JournalFile::isEmpty() const {
@@ -251,6 +276,22 @@ const std::string JournalFile::getDirectory() const {
 
 const std::string JournalFile::getFileName() const {
     return fqFileName_.substr(fqFileName_.rfind('/')+1);
+}
+
+//static
+uint64_t JournalFile::getRandom64() {
+    int randomData = ::open("/dev/random", O_RDONLY);
+    if (randomData < 0) {
+        throw jexception(); // TODO: Complete exception details
+    }
+    uint64_t randomNumber;
+    ::size_t size = sizeof(randomNumber);
+    ::ssize_t result = ::read(randomData, (char*)&randomNumber, size);
+    if (result < 0 || result != ssize_t(size)) {
+        throw jexception(); // TODO: Complete exception details
+    }
+    ::close(randomData);
+    return randomNumber;
 }
 
 bool JournalFile::isOpen() const {
@@ -298,4 +339,4 @@ bool JournalFile::isFullAndComplete() const {
 }
 
 
-}} // namespace qpid::qls_jrnl
+}}}

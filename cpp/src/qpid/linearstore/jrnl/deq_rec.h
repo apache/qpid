@@ -19,73 +19,51 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
-#define QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
+#ifndef QPID_LINEARSTORE_JOURNAL_DEQ_REQ_H
+#define QPID_LINEARSTORE_JOURNAL_DEQ_REQ_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
-class deq_rec;
-}}
-
-#include <cstddef>
-#include "qpid/linearstore/jrnl/utils/deq_hdr.h"
 #include "qpid/linearstore/jrnl/jrec.h"
+#include "qpid/linearstore/jrnl/utils/deq_hdr.h"
+#include "qpid/linearstore/jrnl/utils/rec_tail.h"
 
-namespace qpid
+namespace qpid {
+namespace linearstore {
+namespace journal {
+
+/**
+* \class deq_rec
+* \brief Class to handle a single journal dequeue record.
+*/
+class deq_rec : public jrec
 {
-namespace qls_jrnl
-{
+private:
+    ::deq_hdr_t _deq_hdr;   ///< Local instance of dequeue header struct
+    const void* _xidp;      ///< xid pointer for encoding (writing to disk)
+    void* _buff;            ///< Pointer to buffer to receive data read from disk
+    ::rec_tail_t _deq_tail; ///< Local instance of enqueue tail struct, only encoded if XID is present
 
-    /**
-    * \class deq_rec
-    * \brief Class to handle a single journal dequeue record.
-    */
-    class deq_rec : public jrec
-    {
-    private:
-        deq_hdr_t _deq_hdr;           ///< Dequeue header
-        const void* _xidp;          ///< xid pointer for encoding (writing to disk)
-        void* _buff;                ///< Pointer to buffer to receive data read from disk
-        rec_tail_t _deq_tail;         ///< Record tail, only encoded if XID is present
+public:
+    deq_rec();
+    virtual ~deq_rec();
 
-    public:
-        // constructor used for read operations and xid will have memory allocated
-        deq_rec();
-        // constructor used for write operations, where xid already exists
-        deq_rec(const uint64_t rid, const uint64_t drid, const void* const xidp,
-                const std::size_t xidlen, const bool txn_coml_commit);
-        virtual ~deq_rec();
+    void reset(const uint64_t serial, const uint64_t rid, const  uint64_t drid, const void* const xidp,
+               const std::size_t xidlen, const bool txn_coml_commit);
+    uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
+    bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs);
 
-        // Prepare instance for use in reading data from journal
-        void reset();
-        // Prepare instance for use in writing data to journal
-        void reset(const  uint64_t rid, const  uint64_t drid, const void* const xidp,
-                const std::size_t xidlen, const bool txn_coml_commit);
-        uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
-        uint32_t decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks,
-                uint32_t max_size_dblks);
-        // Decode used for recover
-        bool rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs);
+    inline bool is_txn_coml_commit() const { return ::is_txn_coml_commit(&_deq_hdr); }
+    inline uint64_t rid() const { return _deq_hdr._rhdr._rid; }
+    inline uint64_t deq_rid() const { return _deq_hdr._deq_rid; }
+    std::size_t get_xid(void** const xidpp);
+    std::string& str(std::string& str) const;
+    inline std::size_t data_size() const { return 0; } // This record never carries data
+    std::size_t xid_size() const;
+    std::size_t rec_size() const;
 
-        inline bool is_txn_coml_commit() const { return ::is_txn_coml_commit(&_deq_hdr); }
-        inline uint64_t rid() const { return _deq_hdr._rhdr._rid; }
-        inline uint64_t deq_rid() const { return _deq_hdr._deq_rid; }
-        std::size_t get_xid(void** const xidpp);
-        std::string& str(std::string& str) const;
-        inline std::size_t data_size() const { return 0; } // This record never carries data
-        std::size_t xid_size() const;
-        std::size_t rec_size() const;
+private:
+    virtual void clean();
+};
 
-    private:
-        virtual void chk_hdr() const;
-        virtual void chk_hdr(uint64_t rid) const;
-        virtual void chk_tail() const;
-        virtual void clean();
-    }; // class deq_rec
+}}}
 
-} // namespace journal
-} // namespace mrg
-
-#endif // ifndef QPID_LEGACYSTORE_JRNL_DEQ_REQ_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_DEQ_REQ_H

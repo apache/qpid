@@ -22,8 +22,8 @@
 #include "txn_hdr.h"
 
 void txn_hdr_init(txn_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                  const uint64_t rid, const uint64_t xidsize) {
-    rec_hdr_init(&dest->_rhdr, magic, version, uflag, rid);
+                  const uint64_t serial, const uint64_t rid, const uint64_t xidsize) {
+    rec_hdr_init(&dest->_rhdr, magic, version, uflag, serial, rid);
     dest->_xidsize = xidsize;
 }
 

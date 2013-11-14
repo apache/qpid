@@ -19,15 +19,14 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_DATA_TOK_H
-#define QPID_LEGACYSTORE_JRNL_DATA_TOK_H
+#ifndef QPID_LINEARSTORE_JOURNAL_DATA_TOK_H
+#define QPID_LINEARSTORE_JOURNAL_DATA_TOK_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 class data_tok;
-}}
+}}}
 
 #include <cassert>
 #include <cstddef>
@@ -35,10 +34,9 @@ class data_tok;
 #include <pthread.h>
 #include <string>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
     /**
     * \class data_tok
@@ -72,25 +70,13 @@ namespace qls_jrnl
             COMMITTED
         };
 
-/*
-        enum read_state
-        {
-            UNREAD,     ///< Data block not read
-            READ_PART,  ///< Data block is part-read; waiting for page buffer to fill
-            SKIP_PART,  ///< Prev. dequeued dblock is part-skipped; waiting for page buffer to fill
-            READ        ///< Data block is fully read
-        };
-*/
-
     protected:
         static smutex _mutex;
         static uint64_t _cnt;
         uint64_t    _icnt;
         write_state _wstate;        ///< Enqueued / dequeued state of data
-//        read_state  _rstate;        ///< Read state of data
         std::size_t _dsize;         ///< Data size in bytes
         uint32_t    _dblks_written; ///< Data blocks read/written
-//        uint32_t    _dblks_read;    ///< Data blocks read/written
         uint32_t    _pg_cnt;        ///< Page counter - incr for each page containing part of data
         uint64_t    _fid;           ///< FID containing header of enqueue record
         uint64_t    _rid;           ///< RID of data set by enqueue operation
@@ -106,16 +92,11 @@ namespace qls_jrnl
         inline write_state wstate() const { return _wstate; }
         const char* wstate_str() const;
         static const char* wstate_str(write_state wstate);
-//        inline read_state rstate() const { return _rstate; }
-//        const char* rstate_str() const;
-//        static const char* rstate_str(read_state rstate);
         inline bool is_writable() const { return _wstate == NONE || _wstate == ENQ_PART; }
         inline bool is_enqueued() const { return _wstate == ENQ; }
         inline bool is_readable() const { return _wstate == ENQ; }
-//        inline bool is_read() const { return _rstate == READ; }
         inline bool is_dequeueable() const { return _wstate == ENQ || _wstate == DEQ_PART; }
         inline void set_wstate(const write_state wstate) { _wstate = wstate; }
-//        void set_rstate(const read_state rstate);
         inline std::size_t dsize() const { return _dsize; }
         inline void set_dsize(std::size_t dsize) { _dsize = dsize; }
 
@@ -123,10 +104,6 @@ namespace qls_jrnl
         inline void incr_dblocks_written(uint32_t dblks_written)
                 { _dblks_written += dblks_written; }
         inline void set_dblocks_written(uint32_t dblks_written) { _dblks_written = dblks_written; }
-
-//        inline uint32_t dblocks_read() const { return _dblks_read; }
-//        inline void incr_dblocks_read(uint32_t dblks_read) { _dblks_read += dblks_read; }
-//        inline void set_dblocks_read(uint32_t dblks_read) { _dblks_read = dblks_read; }
 
         inline uint32_t pg_cnt() const { return _pg_cnt; }
         inline uint32_t incr_pg_cnt() { return ++_pg_cnt; }
@@ -154,7 +131,6 @@ namespace qls_jrnl
         std::string status_str() const;
     };
 
-} // namespace qls_jrnl
-} // namespace jrnl
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_DATA_TOK_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_DATA_TOK_H

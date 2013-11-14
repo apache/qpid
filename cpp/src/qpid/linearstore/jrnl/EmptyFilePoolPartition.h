@@ -19,15 +19,14 @@
  *
  */
 
-#ifndef QPID_QLS_JRNL_EMPTYFILEPOOLPARTITION_H_
-#define QPID_QLS_JRNL_EMPTYFILEPOOLPARTITION_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLPARTITION_H_
+#define QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLPARTITION_H_
 
 namespace qpid {
-namespace qls_jrnl {
-
+namespace linearstore {
+namespace journal {
     class EmptyFilePoolPartition;
-
-}} // namespace qpid::qls_jrnl
+}}}
 
 #include "qpid/linearstore/jrnl/EmptyFilePool.h"
 #include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
@@ -37,7 +36,8 @@ namespace qls_jrnl {
 #include <vector>
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 class JournalLog;
 
 class EmptyFilePoolPartition
@@ -75,6 +75,6 @@ protected:
     void validatePartitionDir();
 };
 
-}} // namespace qpid::qls_jrnl
+}}}
 
-#endif /* QPID_QLS_JRNL_EMPTYFILEPOOLPARTITION_H_ */
+#endif /* QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLPARTITION_H_ */

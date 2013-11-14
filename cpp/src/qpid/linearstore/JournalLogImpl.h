@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_LOG_H
-#define QPID_LEGACYSTORE_LOG_H
+#ifndef QPID_LINEARSTORE_LOG_H
+#define QPID_LINEARSTORE_LOG_H
 
 #include "qpid/linearstore/jrnl/JournalLog.h"
 #include "qpid/log/Statement.h"
@@ -31,18 +31,18 @@
 namespace qpid {
 namespace linearstore {
 
-class JournalLogImpl : public qpid::qls_jrnl::JournalLog
+class JournalLogImpl : public qpid::linearstore::journal::JournalLog
 {
 public:
-    JournalLogImpl(const qpid::qls_jrnl::JournalLog::log_level_t logLevelThreshold);
+    JournalLogImpl(const qpid::linearstore::journal::JournalLog::log_level_t logLevelThreshold);
     virtual ~JournalLogImpl();
-    virtual void log(const qpid::qls_jrnl::JournalLog::log_level_t logLevel,
+    virtual void log(const qpid::linearstore::journal::JournalLog::log_level_t logLevel,
                      const std::string& logStatement) const;
-    virtual void log(const qpid::qls_jrnl::JournalLog::log_level_t logLevel,
+    virtual void log(const qpid::linearstore::journal::JournalLog::log_level_t logLevel,
                      const std::string& journalId,
                      const std::string& logStatement) const;
 };
 
 }} // namespace qpid::linearstore
 
-#endif // QPID_LEGACYSTORE_LOG_H
+#endif // QPID_LINEARSTORE_LOG_H

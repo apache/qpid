@@ -19,16 +19,15 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_PMGR_H
-#define QPID_LEGACYSTORE_JRNL_PMGR_H
+#ifndef QPID_LINEARSTORE_JOURNAL_PMGR_H
+#define QPID_LINEARSTORE_JOURNAL_PMGR_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
     class pmgr;
     class jcntl;
-}}
+}}}
 
 #include <deque>
 #include "qpid/linearstore/jrnl/aio.h"
@@ -40,11 +39,11 @@ namespace qls_jrnl
 #include "qpid/linearstore/jrnl/txn_map.h"
 #include "qpid/linearstore/jrnl/txn_rec.h"
 
-namespace qpid
-{
-namespace qls_jrnl
-{
-class JournalFile;
+namespace qpid {
+namespace linearstore {
+namespace journal {
+
+    class JournalFile;
 
     /**
     * \brief Abstract class for managing either read or write page cache of arbitrary size and
@@ -122,6 +121,6 @@ class JournalFile;
         virtual void clean();
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_PMGR_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_PMGR_H

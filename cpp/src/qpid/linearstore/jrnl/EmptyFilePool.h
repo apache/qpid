@@ -19,15 +19,14 @@
  *
  */
 
-#ifndef QPID_QLS_JRNL_EMPTYFILEPOOL_H_
-#define QPID_QLS_JRNL_EMPTYFILEPOOL_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOL_H_
+#define QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOL_H_
 
 namespace qpid {
-namespace qls_jrnl {
-
+namespace linearstore {
+namespace journal {
     class EmptyFilePool;
-
-}} // namespace qpid::qls_jrnl
+}}}
 
 #include <deque>
 #include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
@@ -35,7 +34,8 @@ namespace qls_jrnl {
 #include <string>
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 class EmptyFilePoolPartition;
 class jdir;
 class JournalFile;
@@ -92,6 +92,6 @@ protected:
                              const std::string& toFqPath);
 };
 
-}} // namespace qpid::qls_jrnl
+}}}
 
-#endif /* QPID_QLS_JRNL_EMPTYFILEPOOL_H_ */
+#endif /* QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOL_H_ */

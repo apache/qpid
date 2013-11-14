@@ -27,10 +27,9 @@
 
 #define CATLEN(p) MAX_MSG_SIZE - std::strlen(p) - 1
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 jexception::jexception() throw ():
         std::exception(),
@@ -168,4 +167,4 @@ operator<<(std::ostream& os, const jexception* jePtr)
     return os;
 }
 
-}}
+}}}

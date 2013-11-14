@@ -115,7 +115,7 @@ u_int32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const u_int32_t param, const 
         // For zero value, use default
         p = JRNL_WMGR_DEF_PAGE_SIZE * JRNL_DBLK_SIZE * JRNL_SBLK_SIZE / 1024;
         QPID_LOG(warning, "parameter " << paramName << " (" << param << ") must be a power of 2 between 1 and 128; changing this parameter to default value (" << p << ")");
-    } else if ( p > 128 || p & (p-1) ) {
+    } else if ( p > 128 || (p & (p-1)) ) {
         // For any positive value that is not a power of 2, use closest value
         if      (p <   6)   p =   4;
         else if (p <  12)   p =   8;

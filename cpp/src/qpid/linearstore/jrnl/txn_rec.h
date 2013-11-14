@@ -19,70 +19,49 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_TXN_REC_H
-#define QPID_LEGACYSTORE_JRNL_TXN_REC_H
+#ifndef QPID_LINEARSTORE_JOURNAL_TXN_REC_H
+#define QPID_LINEARSTORE_JOURNAL_TXN_REC_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
-class txn_rec;
-}}
-
-#include <cstddef>
 #include "qpid/linearstore/jrnl/jrec.h"
 #include "qpid/linearstore/jrnl/utils/txn_hdr.h"
+#include "qpid/linearstore/jrnl/utils/rec_tail.h"
 
-namespace qpid
+namespace qpid {
+namespace linearstore {
+namespace journal {
+
+/**
+* \class txn_rec
+* \brief Class to handle a single journal commit or abort record.
+*/
+class txn_rec : public jrec
 {
-namespace qls_jrnl
-{
+private:
+    ::txn_hdr_t _txn_hdr;   ///< Local instance of transaction header struct
+    const void* _xidp;      ///< xid pointer for encoding (writing to disk)
+    void* _buff;            ///< Pointer to buffer to receive data read from disk
+    ::rec_tail_t _txn_tail; ///< Local instance of enqueue tail struct
 
-    /**
-    * \class txn_rec
-    * \brief Class to handle a single journal DTX commit or abort record.
-    */
-    class txn_rec : public jrec
-    {
-    private:
-        txn_hdr_t _txn_hdr;     ///< transaction header
-        const void* _xidp;      ///< xid pointer for encoding (writing to disk)
-        void* _buff;            ///< Pointer to buffer to receive data read from disk
-        rec_tail_t _txn_tail;   ///< Record tail
+public:
+    txn_rec();
+    virtual ~txn_rec();
 
-    public:
-        // constructor used for read operations and xid must have memory allocated
-        txn_rec();
-        // constructor used for write operations, where xid already exists
-        txn_rec(const uint32_t magic, const uint64_t rid, const void* const xidp,
-                const std::size_t xidlen/*, const bool owi*/);
-        virtual ~txn_rec();
+    void reset(const bool commitFlag, const uint64_t serial, const uint64_t rid, const void* const xidp,
+               const std::size_t xidlen);
+    uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
+    bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs);
 
-        // Prepare instance for use in reading data from journal
-        void reset(const uint32_t magic);
-        // Prepare instance for use in writing data to journal
-        void reset(const uint32_t magic, const  uint64_t rid, const void* const xidp,
-                const std::size_t xidlen/*, const bool owi*/);
-        uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
-        uint32_t decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks,
-                uint32_t max_size_dblks);
-        // Decode used for recover
-        bool rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs);
+    std::size_t get_xid(void** const xidpp);
+    std::string& str(std::string& str) const;
+    inline std::size_t data_size() const { return 0; } // This record never carries data
+    std::size_t xid_size() const;
+    std::size_t rec_size() const;
+    inline uint64_t rid() const { return _txn_hdr._rhdr._rid; }
 
-        std::size_t get_xid(void** const xidpp);
-        std::string& str(std::string& str) const;
-        inline std::size_t data_size() const { return 0; } // This record never carries data
-        std::size_t xid_size() const;
-        std::size_t rec_size() const;
-        inline uint64_t rid() const { return _txn_hdr._rhdr._rid; }
+private:
+    virtual void clean();
+};
 
-    private:
-        void chk_hdr() const;
-        void chk_hdr(uint64_t rid) const;
-        void chk_tail() const;
-        virtual void clean();
-    }; // class txn_rec
+}}}
 
-}}
-
-#endif // ifndef QPID_LEGACYSTORE_JRNL_TXN_REC_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_TXN_REC_H

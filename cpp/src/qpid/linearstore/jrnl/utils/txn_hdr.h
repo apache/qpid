@@ -1,5 +1,5 @@
-#ifndef QPID_LINEARSTORE_JRNL_UTILS_TXN_HDR_H
-#define QPID_LINEARSTORE_JRNL_UTILS_TXN_HDR_H
+#ifndef QPID_LINEARSTORE_JOURNAL_UTILS_TXN_HDR_H
+#define QPID_LINEARSTORE_JOURNAL_UTILS_TXN_HDR_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -40,12 +40,14 @@ extern "C"{
  * Note that this record had its own rid distinct from the rids of the record(s) making up the
  * transaction it is committing or aborting.
  *
- * Record header info in binary format (24 bytes):
+ * Record header info in binary format (32 bytes):
  * <pre>
  *   0                           7
  * +---+---+---+---+---+---+---+---+  -+
- * |     magic     | v | e | flags |   |
- * +---+---+---+---+---+---+---+---+   | struct rec_hdr_t
+ * |     magic     |  ver  | flags |   |
+ * +---+---+---+---+---+---+---+---+   |
+ * |             serial            |   | struct rec_hdr_t
+ * +---+---+---+---+---+---+---+---+   |
  * |              rid              |   |
  * +---+---+---+---+---+---+---+---+  -+
  * |            xidsize            |
@@ -58,7 +60,7 @@ typedef struct txn_hdr_t {
 } txn_hdr_t;
 
 void txn_hdr_init(txn_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                  const uint64_t rid, const uint64_t xidsize);
+                  const uint64_t serial, const uint64_t rid, const uint64_t xidsize);
 void txn_hdr_copy(txn_hdr_t* dest, const txn_hdr_t* src);
 
 #pragma pack()
@@ -67,4 +69,4 @@ void txn_hdr_copy(txn_hdr_t* dest, const txn_hdr_t* src);
 }
 #endif
 
-#endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_TXN_HDR_H */
+#endif /* ifndef QPID_LINEARSTORE_JOURNAL_UTILS_TXN_HDR_H */

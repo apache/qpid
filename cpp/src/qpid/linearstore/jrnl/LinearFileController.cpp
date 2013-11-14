@@ -32,7 +32,8 @@
 //#include <iostream> // DEBUG
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 LinearFileController::LinearFileController(jcntl& jcntlRef) :
             jcntlRef_(jcntlRef),
@@ -90,7 +91,7 @@ void LinearFileController::pullEmptyFileFromEfp() {
         currentJournalFilePtr_->close();
     std::string ef = emptyFilePoolPtr_->takeEmptyFile(journalDirectory_); // Moves file from EFP only, returns new file name
 //std::cout << "*** LinearFileController::pullEmptyFileFromEfp() qn=" << jcntlRef.id() << " ef=" << ef << std::endl; // DEBUG
-    addJournalFile(ef, getNextFileSeqNum(), emptyFilePoolPtr_->dataSize_kib(), 0);
+    addJournalFile(ef, emptyFilePoolPtr_->getIdentity(), getNextFileSeqNum(), 0);
 }
 
 void LinearFileController::purgeEmptyFilesToEfp() {
@@ -149,6 +150,11 @@ uint64_t LinearFileController::getCurrentFileSeqNum() const {
     return currentJournalFilePtr_->getFileSeqNum();
 }
 
+uint64_t LinearFileController::getCurrentSerial() const {
+    assertCurrentJournalFileValid("getCurrentSerial");
+    return currentJournalFilePtr_->getSerial();
+}
+
 bool LinearFileController::isEmpty() const {
     assertCurrentJournalFileValid("isEmpty");
     return currentJournalFilePtr_->isEmpty();
@@ -173,10 +179,10 @@ const std::string LinearFileController::status(const uint8_t indentDepth) const 
 // --- protected functions ---
 
 void LinearFileController::addJournalFile(const std::string& fileName,
+                                          const efpIdentity_t& efpIdentity,
                                           const uint64_t fileNumber,
-                                          const uint32_t fileSize_kib,
                                           const uint32_t completedDblkCount) {
-    JournalFile* jfp = new JournalFile(fileName, fileNumber, fileSize_kib);
+    JournalFile* jfp = new JournalFile(fileName, efpIdentity, fileNumber);
     addJournalFile(jfp, completedDblkCount);
 }
 
@@ -219,4 +225,4 @@ void LinearFileController::purgeEmptyFilesToEfpNoLock() {
     }
 }
 
-}} // namespace qpid::qls_jrnl
+}}}

@@ -19,86 +19,54 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_ENQ_REC_H
-#define QPID_LEGACYSTORE_JRNL_ENQ_REC_H
+#ifndef QPID_LINEARSTORE_JOURNAL_ENQ_REC_H
+#define QPID_LINEARSTORE_JOURNAL_ENQ_REC_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
-class enq_rec;
-}}
-
-#include <cstddef>
-#include "qpid/linearstore/jrnl/utils/enq_hdr.h"
 #include "qpid/linearstore/jrnl/jrec.h"
+#include "qpid/linearstore/jrnl/utils/enq_hdr.h"
+#include "qpid/linearstore/jrnl/utils/rec_tail.h"
 
-namespace qpid
+namespace qpid {
+namespace linearstore {
+namespace journal {
+
+/**
+* \class enq_rec
+* \brief Class to handle a single journal enqueue record.
+*/
+class enq_rec : public jrec
 {
-namespace qls_jrnl
-{
+private:
+    ::enq_hdr_t _enq_hdr;   ///< Local instance of enqueue header struct
+    const void* _xidp;      ///< xid pointer for encoding (for writing to disk)
+    const void* _data;      ///< Pointer to data to be written to disk
+    void* _buff;            ///< Pointer to buffer to receive data read from disk
+    ::rec_tail_t _enq_tail; ///< Local instance of enqueue tail struct
 
-    /**
-    * \class enq_rec
-    * \brief Class to handle a single journal enqueue record.
-    */
-    class enq_rec : public jrec
-    {
-    private:
-        enq_hdr_t _enq_hdr;
-        const void* _xidp;          ///< xid pointer for encoding (for writing to disk)
-        const void* _data;          ///< Pointer to data to be written to disk
-        void* _buff;                ///< Pointer to buffer to receive data read from disk
-        rec_tail_t _enq_tail;
+public:
+    enq_rec();
+    virtual ~enq_rec();
 
-    public:
-        /**
-        * \brief Constructor used for read operations.
-        */
-        enq_rec();
+    void reset(const uint64_t serial, const uint64_t rid, const void* const dbuf, const std::size_t dlen,
+               const void* const xidp, const std::size_t xidlen, const bool transient, const bool external);
+    uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
+    bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs);
 
-        /**
-        * \brief Constructor used for write operations, where mbuf contains data to be written.
-        */
-        enq_rec(const uint64_t rid, const void* const dbuf, const std::size_t dlen,
-                const void* const xidp, const std::size_t xidlen, const bool transient);
+    std::size_t get_xid(void** const xidpp);
+    std::size_t get_data(void** const datapp);
+    inline bool is_transient() const { return ::is_enq_transient(&_enq_hdr); }
+    inline bool is_external() const { return ::is_enq_external(&_enq_hdr); }
+    std::string& str(std::string& str) const;
+    inline std::size_t data_size() const { return _enq_hdr._dsize; }
+    inline std::size_t xid_size() const { return _enq_hdr._xidsize; }
+    std::size_t rec_size() const;
+    static std::size_t rec_size(const std::size_t xidsize, const std::size_t dsize, const bool external);
+    inline uint64_t rid() const { return _enq_hdr._rhdr._rid; }
 
-        /**
-        * \brief Destructor
-        */
-        virtual ~enq_rec();
+private:
+    virtual void clean();
+};
 
-        // Prepare instance for use in reading data from journal, xid and data will be allocated
-        void reset();
-        // Prepare instance for use in writing data to journal
-        void reset(const uint64_t rid, const void* const dbuf, const std::size_t dlen,
-                const void* const xidp, const std::size_t xidlen, const bool transient,
-                const bool external);
+}}}
 
-        uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
-        uint32_t decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
-        // Decode used for recover
-        bool rcv_decode(rec_hdr_t h, std::ifstream* ifsp, std::size_t& rec_offs);
-
-        std::size_t get_xid(void** const xidpp);
-        std::size_t get_data(void** const datapp);
-        inline bool is_transient() const { return ::is_enq_transient(&_enq_hdr); }
-        inline bool is_external() const { return ::is_enq_external(&_enq_hdr); }
-        std::string& str(std::string& str) const;
-        inline std::size_t data_size() const { return _enq_hdr._dsize; }
-        inline std::size_t xid_size() const { return _enq_hdr._xidsize; }
-        std::size_t rec_size() const;
-        static std::size_t rec_size(const std::size_t xidsize, const std::size_t dsize, const bool external);
-        inline uint64_t rid() const { return _enq_hdr._rhdr._rid; }
-        void set_rid(const uint64_t rid);
-
-    private:
-        void chk_hdr() const;
-        void chk_hdr(uint64_t rid) const;
-        void chk_tail() const;
-        virtual void clean();
-    }; // class enq_rec
-
-}}
-
-#endif // ifndef QPID_LEGACYSTORE_JRNL_ENQ_REC_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_ENQ_REC_H

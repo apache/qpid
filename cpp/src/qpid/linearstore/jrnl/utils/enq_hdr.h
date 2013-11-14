@@ -1,5 +1,5 @@
-#ifndef QPID_LINEARSTORE_JRNL_UTILS_ENQ_HDR_H
-#define QPID_LINEARSTORE_JRNL_UTILS_ENQ_HDR_H
+#ifndef QPID_LINEARSTORE_JOURNAL_UTILS_ENQ_HDR_H
+#define QPID_LINEARSTORE_JOURNAL_UTILS_ENQ_HDR_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -38,12 +38,14 @@ extern "C"{
  *
  * This header precedes all enqueue data in journal files.
  *
- * Record header info in binary format (32 bytes):
+ * Record header info in binary format (40 bytes):
  * <pre>
  *   0                           7
  * +---+---+---+---+---+---+---+---+  -+
  * |     magic     |  ver  | flags |   |
- * +---+---+---+---+---+---+---+---+   | struct rec_hdr_t
+ * +---+---+---+---+---+---+---+---+   |
+ * |             serial            |   | struct rec_hdr_t
+ * +---+---+---+---+---+---+---+---+   |
  * |              rid              |   |
  * +---+---+---+---+---+---+---+---+  -+
  * |            xidsize            |
@@ -64,7 +66,7 @@ static const uint16_t ENQ_HDR_TRANSIENT_MASK = 0x10;
 static const uint16_t ENQ_HDR_EXTERNAL_MASK = 0x20;
 
 void enq_hdr_init(enq_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                  const uint64_t rid, const uint64_t xidsize, const uint64_t dsize);
+                  const uint64_t serial, const uint64_t rid, const uint64_t xidsize, const uint64_t dsize);
 void enq_hdr_copy(enq_hdr_t* dest, const enq_hdr_t* src);
 bool is_enq_transient(const enq_hdr_t *eh);
 void set_enq_transient(enq_hdr_t *eh, const bool transient);
@@ -78,4 +80,4 @@ bool validate_enq_hdr(enq_hdr_t *eh, const uint32_t magic, const uint16_t versio
 }
 #endif
 
-#endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_ENQ_HDR_H */
+#endif /* ifndef QPID_LINEARSTORE_JOURNAL_UTILS_ENQ_HDR_H */

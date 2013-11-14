@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_BUFFERVALUE_H
-#define QPID_LEGACYSTORE_BUFFERVALUE_H
+#ifndef QPID_LINEARSTORE_BUFFERVALUE_H
+#define QPID_LINEARSTORE_BUFFERVALUE_H
 
 #include "db-inc.h"
 #include "qpid/broker/Persistable.h"
@@ -43,4 +43,4 @@ public:
 
 }}
 
-#endif // ifndef QPID_LEGACYSTORE_BUFFERVALUE_H
+#endif // ifndef QPID_LINEARSTORE_BUFFERVALUE_H

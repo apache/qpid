@@ -19,15 +19,14 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
-#define QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
+#ifndef QPID_LINEARSTORE_JOURNAL_JEXCEPTION_H
+#define QPID_LINEARSTORE_JOURNAL_JEXCEPTION_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 class jexception;
-}}
+}}}
 
 #include <cerrno>
 #include <cstdio>
@@ -70,10 +69,10 @@ class jexception;
     ::abort(); \
     }
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
+
     /**
     * \class jexception
     * \brief Generic journal exception class
@@ -121,6 +120,6 @@ namespace qls_jrnl
         friend std::ostream& operator<<(std::ostream& os, const jexception* jePtr);
     }; // class jexception
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_JEXCEPTION_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_JEXCEPTION_H
