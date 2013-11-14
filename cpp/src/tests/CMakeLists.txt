@@ -344,7 +344,7 @@ add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_t
 add_test (federation_sys_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_sys_tests${test_script_suffix})
 add_test (queue_flow_limit_tests
           ${test_wrap}
-          --start-broker "--broker-options=--default-flow-stop-threshold=80 --default-flow-resume-threshold=70 -t --log-to-stderr=no --log-to-stdout=no"
+          --start-broker "--broker-options=--default-flow-stop-threshold=80 --default-flow-resume-threshold=70"
           -- ${CMAKE_CURRENT_SOURCE_DIR}/run_queue_flow_limit_tests${test_script_suffix})
 if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
