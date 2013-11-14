@@ -31,13 +31,46 @@
 # examination.
 #
 
-working_dir='.'
+wrapper="Qpid Test Wrapper"
+function usage {
+  echo "Usage:"
+  echo " --working-dir DIR"
+  echo " --build-dir DIR"
+  echo " --source-dir DIR"
+  echo " --python       - run python script"
+  echo " --boost-test   - run boost unit test"
+  echo " --xml          - XML output from tests"
+  echo " --start-broker - start/stop broker before/after test"
+  echo " --broker-options - use these extra options when starting broker"
+  echo " --help           - print this message"
+  echo " --             - This is required to separate the wrapped command"
+  echo "                  from the test parameters"
+}
 
-OPTS=$(getopt -n "Qpid Test Wrapper" -o '' -l working-dir:,build-dir:,source-dir:,python,boost-test,xml,start-broker,broker-options: -- "$@") || exit 1
-eval set -- $OPTS
+function illegal_option {
+  echo "$wrapper: $1 is not an accepted option"
+  usage >&2
+}
+
+function no_command {
+  echo "$wrapper: No wrapped command specified"
+  usage >&2
+}
+
+function ignored_argument {
+  echo "Ignored argument: $1" >&2
+}
+
+working_dir='.'
 
 while true; do
 case "$1" in
+    --)                                  shift; break ;;
+    # Split up any parameters expressed as --blah=foo
+    # and process them next time round the loop
+    --*=*)            option=${1%%=*}; param=${1#*=}
+                      shift;
+                      set -- "$option" "$param" "$@"  ;;
     --working-dir)    working_dir=$2;    shift 2      ;;
     --build-dir)      build_dir=$2;      shift 2      ;;
     --source-dir)     source_dir=$2;     shift 2      ;;
@@ -46,7 +79,10 @@ case "$1" in
     --xml)            xml_output=yes;    shift        ;;
     --start-broker)   start_broker=yes;  shift        ;;
     --broker-options) qpidd_extra_options=$2; shift 2 ;;
-    --)                                  shift; break ;;
+    --help)           usage;             exit 0;      ;;
+    --*)              illegal_option "$1"; exit 1;    ;;
+    '')               no_command;        exit 1;      ;;
+    *)                ignored_argument "$1"; shift;   ;;
 esac
 done
 
