@@ -19,15 +19,14 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_ENQ_MAP_H
-#define QPID_LEGACYSTORE_JRNL_ENQ_MAP_H
+#ifndef QPID_LINEARSTORE_JOURNAL_ENQ_MAP_H
+#define QPID_LINEARSTORE_JOURNAL_ENQ_MAP_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 class enq_map;
-}}
+}}}
 
 #include "qpid/linearstore/jrnl/jexception.h"
 #include "qpid/linearstore/jrnl/smutex.h"
@@ -35,10 +34,9 @@ class enq_map;
 #include <pthread.h>
 #include <vector>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
     /**
     * \class enq_map
@@ -107,6 +105,6 @@ namespace qls_jrnl
         void pfid_list(std::vector<uint64_t>& fv);
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_ENQ_MAP_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_ENQ_MAP_H

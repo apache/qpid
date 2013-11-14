@@ -19,25 +19,23 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_JRNL_JDIR_H
-#define QPID_LINEARSTORE_JRNL_JDIR_H
+#ifndef QPID_LINEARSTORE_JOURNAL_JDIR_H
+#define QPID_LINEARSTORE_JOURNAL_JDIR_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 class jdir;
-}}
+}}}
 
 //#include "qpid/linearstore/jrnl/jinf.h"
 #include <dirent.h>
 #include <string>
 #include <vector>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
     /**
     * \class jdir
@@ -364,6 +362,6 @@ namespace qls_jrnl
         static void close_dir(DIR* dir, const std::string& dir_name, const std::string& fn_name);
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LINEARSTORE_JRNL_JDIR_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_JDIR_H

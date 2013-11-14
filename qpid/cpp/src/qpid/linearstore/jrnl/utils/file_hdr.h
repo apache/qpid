@@ -1,5 +1,5 @@
-#ifndef QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H
-#define QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H
+#ifndef QPID_LINEARSTORE_JOURNAL_UTILS_FILE_HDR_H
+#define QPID_LINEARSTORE_JOURNAL_UTILS_FILE_HDR_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -41,17 +41,19 @@ extern "C"{
  * block in the file. The record ID and offset are updated on each overwrite of the
  * file.
  *
- * File header info in binary format (66 bytes + size of file name in octets):
+ * File header info in binary format (74 bytes + size of file name in octets):
  * <pre>
  *   0                           7
  * +---+---+---+---+---+---+---+---+  -+
  * |     magic     |  ver  | flags |   |
- * +---+---+---+---+---+---+---+---+   | struct rec_hdr_t
- * |       first rid in file       |   |
+ * +---+---+---+---+---+---+---+---+   |
+ * |             serial            |   | struct rec_hdr_t
+ * +---+---+---+---+---+---+---+---+   |
+ * |              rid              |   |
  * +---+---+---+---+---+---+---+---+  -+
  * |  fs   | partn |   reserved    |
  * +---+---+---+---+---+---+---+---+
- * |           file-size           |
+ * |           data-size           |
  * +---+---+---+---+---+---+---+---+
  * |              fro              |
  * +---+---+---+---+---+---+---+---+
@@ -87,10 +89,11 @@ typedef struct file_hdr_t {
     uint16_t  _queue_name_len;  /**< Length of the queue name in octets, which follows this struct in the header */
 } file_hdr_t;
 
-void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t fhdr_size_sblks,
-                     const uint16_t efp_partition, const uint64_t file_size);
-int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, const uint64_t rid, const uint64_t fro,
-                  const uint64_t file_number, const uint16_t queue_name_len, const char* queue_name);
+void file_hdr_create(file_hdr_t* dest, const uint32_t magic, const uint16_t version,
+                     const uint16_t fhdr_size_sblks, const uint16_t efp_partition, const uint64_t file_size);
+int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, const uint64_t serial, const uint64_t rid,
+                  const uint64_t fro, const uint64_t file_number, const uint16_t queue_name_len, const char* queue_name);
+int file_hdr_check(file_hdr_t* hdr, const uint32_t magic, const uint16_t version, const uint64_t data_size_kib);
 void file_hdr_reset(file_hdr_t* target);
 int is_file_hdr_reset(file_hdr_t* target);
 void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src);
@@ -103,4 +106,4 @@ void set_time(file_hdr_t *fh, struct timespec *ts);
 }
 #endif
 
-#endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_FILE_HDR_H */
+#endif /* ifndef QPID_LINEARSTORE_JOURNAL_UTILS_FILE_HDR_H */

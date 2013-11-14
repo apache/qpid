@@ -31,7 +31,8 @@
 //#include <iostream> // DEBUG
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 // static
 const std::string EmptyFilePoolPartition::s_efpTopLevelDir_("efp"); // Sets the top-level efp dir within a partition
@@ -151,4 +152,4 @@ void EmptyFilePoolPartition::validatePartitionDir() {
     // TODO: other validity checks here
 }
 
-}} // namespace qpid::qls_jrnl
+}}}

@@ -19,27 +19,26 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H
-#define QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H
+#ifndef QPID_LINEARSTORE_JOURNAL_AIO_CALLBACK_H
+#define QPID_LINEARSTORE_JOURNAL_AIO_CALLBACK_H
 
 #include <stdint.h>
 #include <vector>
 
-namespace qpid
+namespace qpid {
+namespace linearstore {
+namespace journal {
+
+class data_tok;
+
+class aio_callback
 {
-namespace qls_jrnl
-{
+public:
+    virtual ~aio_callback() {}
+    virtual void wr_aio_cb(std::vector<data_tok*>& dtokl) = 0;
+    virtual void rd_aio_cb(std::vector<uint16_t>& pil) = 0;
+};
 
-    class data_tok;
+}}}
 
-    class aio_callback
-    {
-    public:
-        virtual ~aio_callback() {}
-        virtual void wr_aio_cb(std::vector<data_tok*>& dtokl) = 0;
-        virtual void rd_aio_cb(std::vector<uint16_t>& pil) = 0;
-    };
-
-}}
-
-#endif // ifndef QPID_LEGACYSTORE_JRNL_AIO_CALLBACK_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_AIO_CALLBACK_H

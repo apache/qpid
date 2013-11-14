@@ -36,7 +36,7 @@
 #include "qmf/org/apache/qpid/linearstore/EventFull.h"
 #include "qmf/org/apache/qpid/linearstore/EventRecovered.h"
 
-using namespace qpid::qls_jrnl;
+using namespace qpid::linearstore::journal;
 using namespace qpid::linearstore;
 using qpid::management::ManagementAgent;
 namespace _qmf = qmf::org::apache::qpid::linearstore;
@@ -128,10 +128,10 @@ JournalImpl::initManagement(qpid::management::ManagementAgent* a)
 
 
 void
-JournalImpl::initialize(qpid::qls_jrnl::EmptyFilePool* efpp_,
+JournalImpl::initialize(qpid::linearstore::journal::EmptyFilePool* efpp_,
                         const uint16_t wcache_num_pages,
                         const uint32_t wcache_pgsize_sblks,
-                        qpid::qls_jrnl::aio_callback* const cbp)
+                        qpid::linearstore::journal::aio_callback* const cbp)
 {
 //    efpp->createJournal(_jdir);
 //    QLS_LOG2(notice, _jid, "Initialized");
@@ -167,10 +167,10 @@ JournalImpl::recover(/*const uint16_t num_jfiles,
                      const bool auto_expand,
                      const uint16_t ae_max_jfiles,
                      const uint32_t jfsize_sblks,*/
-                     boost::shared_ptr<qpid::qls_jrnl::EmptyFilePoolManager> efpm,
+                     boost::shared_ptr<qpid::linearstore::journal::EmptyFilePoolManager> efpm,
                      const uint16_t wcache_num_pages,
                      const uint32_t wcache_pgsize_sblks,
-                     qpid::qls_jrnl::aio_callback* const cbp,
+                     qpid::linearstore::journal::aio_callback* const cbp,
                      boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
                      uint64_t& highest_rid,
                      uint64_t queue_id)
@@ -463,12 +463,12 @@ JournalImpl::handleIoResult(const iores r)
     writeActivityFlag = true;
     switch (r)
     {
-        case qpid::qls_jrnl::RHM_IORES_SUCCESS:
+        case qpid::linearstore::journal::RHM_IORES_SUCCESS:
             return;
         default:
             {
                 std::ostringstream oss;
-                oss << "Unexpected I/O response (" << qpid::qls_jrnl::iores_str(r) << ").";
+                oss << "Unexpected I/O response (" << qpid::linearstore::journal::iores_str(r) << ").";
                 QLS_LOG2(error, _jid, oss.str());
                 THROW_STORE_FULL_EXCEPTION(oss.str());
             }

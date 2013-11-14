@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_BINDINGDBT_H
-#define QPID_LEGACYSTORE_BINDINGDBT_H
+#ifndef QPID_LINEARSTORE_BINDINGDBT_H
+#define QPID_LINEARSTORE_BINDINGDBT_H
 
 #include "db-inc.h"
 #include "qpid/broker/PersistableExchange.h"
@@ -53,4 +53,4 @@ public:
 
 }}
 
-#endif // ifndef QPID_LEGACYSTORE_BINDINGDBT_H
+#endif // ifndef QPID_LINEARSTORE_BINDINGDBT_H

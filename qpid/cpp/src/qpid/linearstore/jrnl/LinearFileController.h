@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_LINEARFILECONTROLLER_H_
-#define QPID_LINEARSTORE_LINEARFILECONTROLLER_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_LINEARFILECONTROLLER_H_
+#define QPID_LINEARSTORE_JOURNAL_LINEARFILECONTROLLER_H_
 
 #include <deque>
 #include "qpid/linearstore/jrnl/AtomicCounter.h"
@@ -31,7 +31,8 @@ typedef struct io_context* io_context_t;
 typedef struct iocb aio_cb;
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 class EmptyFilePool;
 class jcntl;
@@ -90,6 +91,7 @@ public:
                         uint32_t dataSize_dblks);
 
     uint64_t getCurrentFileSeqNum() const;
+    uint64_t getCurrentSerial() const;
     bool isEmpty() const;
 
     // Debug aid
@@ -97,8 +99,8 @@ public:
 
 protected:
     void addJournalFile(const std::string& fileName,
+                        const efpIdentity_t& efpIdentity,
                         const uint64_t fileNumber,
-                        const uint32_t fileSize_kib,
                         const uint32_t completedDblkCount);
     void assertCurrentJournalFileValid(const char* const functionName) const;
     bool checkCurrentJournalFileValid() const;
@@ -110,6 +112,6 @@ protected:
 typedef void (LinearFileController::*lfcAddJournalFileFn)(JournalFile* journalFilePtr,
                                                           const uint32_t completedDblkCount);
 
-}} // namespace qpid::qls_jrnl
+}}}
 
-#endif // QPID_LINEARSTORE_LINEARFILECONTROLLER_H_
+#endif // QPID_LINEARSTORE_JOURNAL_LINEARFILECONTROLLER_H_

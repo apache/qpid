@@ -27,10 +27,9 @@
 #include <sstream>
 
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 // static return/error codes
 int16_t enq_map::EMAP_DUP_RID = -3;
@@ -183,4 +182,4 @@ enq_map::pfid_list(std::vector<uint64_t>& fv)
     }
 }
 
-}}
+}}}

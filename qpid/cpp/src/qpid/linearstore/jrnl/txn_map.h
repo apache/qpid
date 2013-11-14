@@ -19,15 +19,14 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_TXN_MAP_H
-#define QPID_LEGACYSTORE_JRNL_TXN_MAP_H
+#ifndef QPID_LINEARSTORE_JOURNAL_TXN_MAP_H
+#define QPID_LINEARSTORE_JOURNAL_TXN_MAP_H
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
     class txn_map;
-}}
+}}}
 
 #include "qpid/linearstore/jrnl/smutex.h"
 #include <map>
@@ -35,10 +34,9 @@ namespace qls_jrnl
 #include <string>
 #include <vector>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
     /**
     * \struct txn_data_struct
@@ -141,6 +139,6 @@ namespace qls_jrnl
         const txn_data_list get_tdata_list_nolock(const std::string& xid);
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_TXN_MAP_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_TXN_MAP_H

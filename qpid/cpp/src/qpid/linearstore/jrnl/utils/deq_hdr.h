@@ -1,5 +1,5 @@
-#ifndef QPID_LINEARSTORE_JRNL_UTILS_DEQ_HDR_H
-#define QPID_LINEARSTORE_JRNL_UTILS_DEQ_HDR_H
+#ifndef QPID_LINEARSTORE_JOURNAL_UTILS_DEQ_HDR_H
+#define QPID_LINEARSTORE_JOURNAL_UTILS_DEQ_HDR_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -42,12 +42,14 @@ extern "C"{
  * The rid field below is the rid of the dequeue record itself; the deq-rid field is the rid of a
  * previous enqueue record being dequeued by this record.
  *
- * Record header info in binary format (32 bytes):
+ * Record header info in binary format (40 bytes):
  * <pre>
  *   0                           7
  * +---+---+---+---+---+---+---+---+  -+
  * |     magic     |  ver  | flags |   |
- * +---+---+---+---+---+---+---+---+   | struct rec_hdr_t
+ * +---+---+---+---+---+---+---+---+   |
+ * |             serial            |   | struct rec_hdr_t
+ * +---+---+---+---+---+---+---+---+   |
  * |              rid              |   |
  * +---+---+---+---+---+---+---+---+  -+
  * |            deq-rid            |
@@ -67,7 +69,7 @@ typedef struct deq_hdr_t {
 static const uint16_t DEQ_HDR_TXNCMPLCOMMIT_MASK = 0x10;
 
 void deq_hdr_init(deq_hdr_t* dest, const uint32_t magic, const uint16_t version, const uint16_t uflag,
-                  const uint64_t rid, const uint64_t deq_rid, const uint64_t xidsize);
+                  const uint64_t serial, const uint64_t rid, const uint64_t deq_rid, const uint64_t xidsize);
 void deq_hdr_copy(deq_hdr_t* dest, const deq_hdr_t* src);
 bool is_txn_coml_commit(const deq_hdr_t *dh);
 void set_txn_coml_commit(deq_hdr_t *dh, const bool commit);
@@ -78,4 +80,4 @@ void set_txn_coml_commit(deq_hdr_t *dh, const bool commit);
 }
 #endif
 
-#endif /* ifndef QPID_LINEARSTORE_JRNL_UTILS_DEQ_HDR_H */
+#endif /* ifndef QPID_LINEARSTORE_JOURNAL_UTILS_DEQ_HDR_H */

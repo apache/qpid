@@ -38,7 +38,8 @@
 //#include <iostream> // DEBUG
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 EmptyFilePool::EmptyFilePool(const std::string& efpDirectory,
                              const EmptyFilePoolPartition* partitionPtr,
@@ -338,4 +339,4 @@ int EmptyFilePool::moveEmptyFile(const std::string& from,
     return 0;
 }
 
-}} // namespace qpid::qls_jrnl
+}}}

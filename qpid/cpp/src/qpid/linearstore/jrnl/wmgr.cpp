@@ -35,10 +35,9 @@
 
 //#include <iostream> // DEBUG
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 wmgr::wmgr(jcntl* jc,
            enq_map& emap,
@@ -150,7 +149,7 @@ wmgr::enqueue(const void* const data_buff,
     }
 
     uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _lfc.getNextRecordId();
-    _enq_rec.reset(rid, data_buff, tot_data_len, xid_ptr, xid_len, transient, external);
+    _enq_rec.reset(_lfc.getCurrentSerial(), rid, data_buff, tot_data_len, xid_ptr, xid_len, transient, external);
     if (!cont)
     {
         dtokp->set_rid(rid);
@@ -265,7 +264,7 @@ wmgr::dequeue(data_tok* dtokp,
     const bool ext_rid = dtokp->external_rid();
     uint64_t rid = (ext_rid | cont) ? dtokp->rid() : _lfc.getNextRecordId();
     uint64_t dequeue_rid = (ext_rid | cont) ? dtokp->dequeue_rid() : dtokp->rid();
-    _deq_rec.reset(rid, dequeue_rid, xid_ptr, xid_len/*, _wrfc.owi()*/, txn_coml_commit);
+    _deq_rec.reset(_lfc.getCurrentSerial(), rid, dequeue_rid, xid_ptr, xid_len, txn_coml_commit);
     if (!cont)
     {
 	    if (!ext_rid)
@@ -391,7 +390,7 @@ wmgr::abort(data_tok* dtokp,
     }
 
     uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _lfc.getNextRecordId();
-    _txn_rec.reset(QLS_TXA_MAGIC, rid, xid_ptr, xid_len/*, _wrfc.owi()*/);
+    _txn_rec.reset(false, _lfc.getCurrentSerial(), rid, xid_ptr, xid_len);
     if (!cont)
     {
         dtokp->set_rid(rid);
@@ -489,7 +488,7 @@ wmgr::commit(data_tok* dtokp,
     }
 
     uint64_t rid = (dtokp->external_rid() | cont) ? dtokp->rid() : _lfc.getNextRecordId();
-    _txn_rec.reset(QLS_TXC_MAGIC, rid, xid_ptr, xid_len/*, _wrfc.owi()*/);
+    _txn_rec.reset(true, _lfc.getCurrentSerial(), rid, xid_ptr, xid_len);
     if (!cont)
     {
         dtokp->set_rid(rid);
@@ -1033,4 +1032,4 @@ wmgr::status_str() const
 
 const char* wmgr::_op_str[] = {"enqueue", "dequeue", "abort", "commit"};
 
-}}
+}}}

@@ -21,14 +21,25 @@
 
 #include "rec_tail.h"
 
-void rec_tail_init(rec_tail_t* dest, const uint32_t xmagic, const uint32_t checksum, const uint64_t rid) {
+void rec_tail_init(rec_tail_t* dest, const uint32_t xmagic, const uint32_t checksum, const uint64_t serial,
+                   const uint64_t rid) {
     dest->_xmagic = xmagic;
     dest->_checksum = checksum;
+    dest->_serial = serial;
     dest->_rid = rid;
 }
 
 void rec_tail_copy(rec_tail_t* dest, const rec_hdr_t* src, const uint32_t checksum) {
     dest->_xmagic = ~(src->_magic);
     dest->_checksum = checksum;
+    dest->_serial = src->_serial;
     dest->_rid = src->_rid;
+}
+
+int rec_tail_check(const rec_tail_t* tail, const rec_hdr_t* header, const uint32_t checksum) {
+    if (tail->_xmagic != ~header->_magic) return 1;
+    if (tail->_serial != header->_serial) return 2;
+    if (tail->_rid != header->_rid) return 3;
+    if (tail->_checksum != checksum) return 4;
+    return 0;
 }

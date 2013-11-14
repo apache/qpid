@@ -23,10 +23,9 @@
 
 #include <sstream>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 const std::string
 time_ns::str(int precision) const
@@ -39,5 +38,4 @@ time_ns::str(int precision) const
     return oss.str();
 }
 
-
-}}
+}}}

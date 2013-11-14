@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_CVAR_H
-#define QPID_LEGACYSTORE_JRNL_CVAR_H
+#ifndef QPID_LINEARSTORE_JOURNAL_CVAR_H
+#define QPID_LINEARSTORE_JOURNAL_CVAR_H
 
 #include <cstring>
 #include "qpid/linearstore/jrnl/jerrno.h"
@@ -30,10 +30,9 @@
 #include <pthread.h>
 #include <sstream>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
     // Ultra-simple thread condition variable class
     class cvar
@@ -71,6 +70,6 @@ namespace qls_jrnl
         }
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_CVAR_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_CVAR_H

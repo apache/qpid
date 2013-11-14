@@ -19,17 +19,16 @@
  *
  */
 
-#ifndef QPID_LEGACYSTORE_JRNL_SLOCK_H
-#define QPID_LEGACYSTORE_JRNL_SLOCK_H
+#ifndef QPID_LINEARSTORE_JOURNAL_SLOCK_H
+#define QPID_LINEARSTORE_JOURNAL_SLOCK_H
 
 #include "qpid/linearstore/jrnl/jexception.h"
 #include "qpid/linearstore/jrnl/smutex.h"
 #include <pthread.h>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
     // Ultra-simple scoped lock class, auto-releases mutex when it goes out-of-scope
     class slock
@@ -68,6 +67,6 @@ namespace qls_jrnl
         inline bool locked() const { return _locked; }
     };
 
-}}
+}}}
 
-#endif // ifndef QPID_LEGACYSTORE_JRNL_SLOCK_H
+#endif // ifndef QPID_LINEARSTORE_JOURNAL_SLOCK_H

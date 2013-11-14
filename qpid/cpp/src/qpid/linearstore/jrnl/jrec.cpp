@@ -24,84 +24,15 @@
 #include <iomanip>
 #include "qpid/linearstore/jrnl/jerrno.h"
 #include "qpid/linearstore/jrnl/jexception.h"
+#include "qpid/linearstore/jrnl/utils/rec_hdr.h"
+#include "qpid/linearstore/jrnl/utils/rec_tail.h"
 #include <sstream>
 
-namespace qpid
-{
-namespace qls_jrnl
-{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
 jrec::jrec() {}
 jrec::~jrec() {}
 
-void
-jrec::chk_hdr(const rec_hdr_t& hdr)
-{
-    if (hdr._magic == 0)
-    {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "enq magic NULL: rid=0x" << hdr._rid;
-        throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
-    }
-    if (hdr._version != QLS_JRNL_VERSION)
-    {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "version: rid=0x" << hdr._rid;
-        oss << ": expected=0x" << std::setw(2) << (int)QLS_JRNL_VERSION;
-        oss << " read=0x" << std::setw(2) << (int)hdr._version;
-        throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
-    }
-//#if defined (JRNL_LITTLE_ENDIAN)
-//    uint8_t endian_flag = RHM_LENDIAN_FLAG;
-//#else
-//    uint8_t endian_flag = RHM_BENDIAN_FLAG;
-//#endif
-//    if (hdr._eflag != endian_flag)
-//    {
-//        std::ostringstream oss;
-//        oss << std::hex << std::setfill('0');
-//        oss << "endian_flag: rid=" << hdr._rid;
-//        oss << ": expected=0x" << std::setw(2) << (int)endian_flag;
-//        oss << " read=0x" << std::setw(2) << (int)hdr._eflag;
-//        throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
-//    }
-}
-
-void
-jrec::chk_rid(const rec_hdr_t& hdr, const uint64_t rid)
-{
-    if (hdr._rid != rid)
-    {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "rid mismatch: expected=0x" << rid;
-        oss << " read=0x" << hdr._rid;
-        throw jexception(jerrno::JERR_JREC_BADRECHDR, oss.str(), "jrec", "chk_hdr");
-    }
-}
-
-void
-jrec::chk_tail(const rec_tail_t& tail, const rec_hdr_t& hdr)
-{
-    if (tail._xmagic != ~hdr._magic)
-    {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "magic: rid=0x" << hdr._rid;
-        oss << ": expected=0x" << ~hdr._magic;
-        oss << " read=0x" << tail._xmagic;
-        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "jrec", "chk_tail");
-    }
-    if (tail._rid != hdr._rid)
-    {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        oss << "rid: rid=0x" << hdr._rid;
-        oss << ": read=0x" << tail._rid;
-        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "jrec", "chk_tail");
-    }
-}
-
-}}
+}}}

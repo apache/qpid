@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_JOURNALFILE_H_
-#define QPID_LINEARSTORE_JOURNALFILE_H_
+#ifndef QPID_LINEARSTORE_JOURNAL_JOURNALFILE_H_
+#define QPID_LINEARSTORE_JOURNAL_JOURNALFILE_H_
 
 #include "qpid/linearstore/jrnl/aio.h"
 #include "qpid/linearstore/jrnl/AtomicCounter.h"
@@ -31,13 +31,17 @@
 class file_hdr_t;
 
 namespace qpid {
-namespace qls_jrnl {
+namespace linearstore {
+namespace journal {
 
 class JournalFile
 {
 protected:
+    const efpIdentity_t efpIdentity_;
     const std::string fqFileName_;
     const uint64_t fileSeqNum_;
+    const uint64_t serial_;
+    uint64_t firstRecordOffset_;
     int fileHandle_;
     bool fileCloseFlag_;
     void* fileHeaderBasePtr_;
@@ -51,11 +55,13 @@ protected:
     AtomicCounter<uint16_t> outstandingAioOpsCount_;    ///< Outstanding AIO operations on this file
 
 public:
+    // Constructor for creating new file with known fileSeqNum and random serial
+    JournalFile(const std::string& fqFileName,
+                const efpIdentity_t& efpIdentity,
+                const uint64_t fileSeqNum);
+    // Constructor for recovery in which fileSeqNum and serial are recovered from fileHeader param
     JournalFile(const std::string& fqFileName,
                 const ::file_hdr_t& fileHeader);
-    JournalFile(const std::string& fqFileName,
-                const uint64_t fileSeqNum,
-                const efpDataSize_kib_t efpDataSize_kib);
     virtual ~JournalFile();
 
     void initialize(const uint32_t completedDblkCount);
@@ -63,6 +69,7 @@ public:
 
     const std::string getFqFileName() const;
     uint64_t getFileSeqNum() const;
+    uint64_t getSerial() const;
 
     int open();
     void close();
@@ -87,6 +94,10 @@ public:
     uint16_t getOutstandingAioOperationCount() const;
     uint16_t decrOutstandingAioOperationCount();
 
+    efpIdentity_t getEfpIdentity() const;
+    uint64_t getFirstRecordOffset() const;
+    void setFirstRecordOffset(const uint64_t firstRecordOffset);
+
     // Status helper functions
     bool isEmpty() const;                      ///< True if no writes of any kind have occurred
     bool isNoEnqueuedRecordsRemaining() const; ///< True when all enqueued records (or parts) have been dequeued
@@ -97,6 +108,7 @@ public:
 protected:
     const std::string getDirectory() const;
     const std::string getFileName() const;
+    static uint64_t getRandom64();
     bool isOpen() const;
 
     uint32_t getSubmittedDblkCount() const;
@@ -114,6 +126,6 @@ protected:
     bool isFullAndComplete() const;            ///< True if all submitted dblks have returned from AIO
 };
 
-}} // namespace qpid::qls_jrnl
+}}}
 
-#endif // QPID_LINEARSTORE_JOURNALFILE_H_
+#endif // QPID_LINEARSTORE_JOURNAL_JOURNALFILE_H_
