@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 # Ask the compiler the implementation specific type for a standard typedeffed type
 # (int64_t, size_t etc.). Operates by test compiling and using the demangling ABI call.
