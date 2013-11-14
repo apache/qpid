@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 STORE_DIR=/tmp
 LINEARSTOREDIR=~/RedHat/linearstore
