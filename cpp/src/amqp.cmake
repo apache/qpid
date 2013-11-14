@@ -48,7 +48,7 @@ endif()
 
 set (amqp_default ${amqp_force})
 set (minimum_version 0.5)
-set (maximum_version 0.5)
+set (maximum_version 0.6)
 if (PROTON_FOUND)
     if (PROTON_VERSION LESS ${minimum_version})
         message(STATUS "Qpid proton ${PROTON_VERSION} is too old, require ${minimum_version} - ${maximum_version}; amqp 1.0 support not enabled")
