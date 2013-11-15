@@ -51,7 +51,7 @@ class SenderContext
     {
       public:
         Delivery(int32_t id);
-        void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&);
+        void encode(const qpid::messaging::MessageImpl& message, const qpid::messaging::Address&, bool setToField);
         void send(pn_link_t*, bool unreliable);
         bool delivered();
         bool accepted();
@@ -66,7 +66,7 @@ class SenderContext
         bool presettled;
     };
 
-    SenderContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& target);
+    SenderContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& target, bool setToOnSend);
     ~SenderContext();
     void reset(pn_session_t* session);
     void close();
@@ -94,6 +94,7 @@ class SenderContext
     Deliveries deliveries;
     uint32_t capacity;
     bool unreliable;
+    bool setToOnSend;
 
     uint32_t processUnsettled(bool silent);
     void configure(pn_terminus_t*);

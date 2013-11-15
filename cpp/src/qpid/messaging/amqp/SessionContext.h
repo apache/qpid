@@ -51,7 +51,7 @@ class SessionContext
     SessionContext(pn_connection_t*);
     ~SessionContext();
     void reset(pn_connection_t*);
-    boost::shared_ptr<SenderContext> createSender(const qpid::messaging::Address& address);
+    boost::shared_ptr<SenderContext> createSender(const qpid::messaging::Address& address, bool setToOnSend);
     boost::shared_ptr<ReceiverContext> createReceiver(const qpid::messaging::Address& address);
     boost::shared_ptr<SenderContext> getSender(const std::string& name) const;
     boost::shared_ptr<ReceiverContext> getReceiver(const std::string& name) const;

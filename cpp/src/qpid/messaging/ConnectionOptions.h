@@ -46,6 +46,7 @@ struct ConnectionOptions : qpid::client::ConnectionSettings
     bool reconnectOnLimitExceeded;
     std::string identifier;
     bool nestAnnotations;
+    bool setToOnSend;
 
     QPID_MESSAGING_EXTERN ConnectionOptions(const std::map<std::string, qpid::types::Variant>&);
     QPID_MESSAGING_EXTERN void set(const std::string& name, const qpid::types::Variant& value);
