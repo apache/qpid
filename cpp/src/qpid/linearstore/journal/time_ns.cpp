@@ -19,29 +19,23 @@
  *
  */
 
-#ifndef QPID_LINEARSTORE_DATATOKENIMPL_H
-#define QPID_LINEARSTORE_DATATOKENIMPL_H
+#include "qpid/linearstore/journal/time_ns.h"
 
-#include "qpid/linearstore/journal/data_tok.h"
-#include "qpid/broker/PersistableMessage.h"
-#include <boost/intrusive_ptr.hpp>
+#include <sstream>
 
-namespace qpid{
-namespace linearstore{
+namespace qpid {
+namespace linearstore {
+namespace journal {
 
-class DataTokenImpl : public qpid::linearstore::journal::data_tok, public qpid::RefCounted
+const std::string
+time_ns::str(int precision) const
 {
-  private:
-    boost::intrusive_ptr<qpid::broker::PersistableMessage> sourceMsg;
-  public:
-    DataTokenImpl();
-    virtual ~DataTokenImpl();
+    const double t = tv_sec + (tv_nsec/1e9);
+    std::ostringstream oss;
+    oss.setf(std::ios::fixed, std::ios::floatfield);
+    oss.precision(precision);
+    oss << t;
+    return oss.str();
+}
 
-    inline boost::intrusive_ptr<qpid::broker::PersistableMessage>& getSourceMessage() { return sourceMsg; }
-    inline void setSourceMessage(const boost::intrusive_ptr<qpid::broker::PersistableMessage>& msg) { sourceMsg = msg; }
-};
-
-} // namespace msgstore
-} // namespace mrg
-
-#endif // ifndef QPID_LINEARSTORE_DATATOKENIMPL_H
+}}}
