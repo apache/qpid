@@ -82,7 +82,7 @@ void SessionHandle::sync(bool /*block*/)
 
 qpid::messaging::Sender SessionHandle::createSender(const qpid::messaging::Address& address)
 {
-    boost::shared_ptr<SenderContext> sender = session->createSender(address);
+    boost::shared_ptr<SenderContext> sender = session->createSender(address, connection->setToOnSend);
     try {
         connection->attach(session, sender);
         return qpid::messaging::Sender(new SenderHandle(connection, session, sender));

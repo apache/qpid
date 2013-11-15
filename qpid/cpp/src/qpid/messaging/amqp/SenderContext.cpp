@@ -40,11 +40,12 @@ namespace qpid {
 namespace messaging {
 namespace amqp {
 //TODO: proper conversion to wide string for address
-SenderContext::SenderContext(pn_session_t* session, const std::string& n, const qpid::messaging::Address& a)
+SenderContext::SenderContext(pn_session_t* session, const std::string& n, const qpid::messaging::Address& a, bool setToOnSend_)
   : name(n),
     address(a),
     helper(address),
-    sender(pn_sender(session, n.c_str())), capacity(50), unreliable(helper.isUnreliable()) {}
+    sender(pn_sender(session, n.c_str())), capacity(50), unreliable(helper.isUnreliable()),
+    setToOnSend(setToOnSend_) {}
 
 SenderContext::~SenderContext()
 {
@@ -88,14 +89,14 @@ bool SenderContext::send(const qpid::messaging::Message& message, SenderContext:
     if (processUnsettled(false) < capacity && pn_link_credit(sender)) {
         if (unreliable) {
             Delivery delivery(nextId++);
-            delivery.encode(MessageImplAccess::get(message), address);
+            delivery.encode(MessageImplAccess::get(message), address, setToOnSend);
             delivery.send(sender, unreliable);
             *out = 0;
             return true;
         } else {
             deliveries.push_back(Delivery(nextId++));
             Delivery& delivery = deliveries.back();
-            delivery.encode(MessageImplAccess::get(message), address);
+            delivery.encode(MessageImplAccess::get(message), address, setToOnSend);
             delivery.send(sender, unreliable);
             *out = &delivery;
             return true;
@@ -195,7 +196,7 @@ const std::string X_AMQP_DELIVERY_ANNOTATIONS("x-amqp-delivery-annotations");
 class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
 {
   public:
-    PropertiesAdapter(const qpid::messaging::MessageImpl& impl, const std::string& s) : msg(impl), headers(msg.getHeaders()), subject(s) {}
+    PropertiesAdapter(const qpid::messaging::MessageImpl& impl, const std::string& s, const std::string& t) : msg(impl), headers(msg.getHeaders()), subject(s), to(t) {}
     bool hasMessageId() const
     {
         return getMessageId().size();
@@ -217,12 +218,14 @@ class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
 
     bool hasTo() const
     {
-        return hasHeader(X_AMQP_TO);
+        return hasHeader(X_AMQP_TO) || !to.empty();
     }
 
     std::string getTo() const
     {
-        return headers.find(X_AMQP_TO)->second;
+        qpid::types::Variant::Map::const_iterator i = headers.find(X_AMQP_TO);
+        if (i == headers.end()) return to;
+        else return i->second;
     }
 
     bool hasSubject() const
@@ -333,6 +336,7 @@ class PropertiesAdapter : public qpid::amqp::MessageEncoder::Properties
     const qpid::messaging::MessageImpl& msg;
     const qpid::types::Variant::Map& headers;
     const std::string subject;
+    const std::string to;
 
     bool hasHeader(const std::string& key) const
     {
@@ -435,7 +439,7 @@ void SenderContext::Delivery::reset()
     token = 0;
 }
 
-void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, const qpid::messaging::Address& address)
+void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, const qpid::messaging::Address& address, bool setToField)
 {
     try {
         boost::shared_ptr<const EncodedMessage> original = msg.getEncoded();
@@ -458,7 +462,7 @@ void SenderContext::Delivery::encode(const qpid::messaging::MessageImpl& msg, co
             }
         } else {
             HeaderAdapter header(msg);
-            PropertiesAdapter properties(msg, address.getSubject());
+            PropertiesAdapter properties(msg, address.getSubject(), setToField ? address.getName() : EMPTY);
             ApplicationPropertiesAdapter applicationProperties(msg.getHeaders());
             //compute size:
             size_t contentSize = qpid::amqp::MessageEncoder::getEncodedSize(header)
