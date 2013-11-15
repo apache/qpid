@@ -274,6 +274,8 @@ define(["dojo/_base/xhr",
                storeNodes(["name",
                            "state",
                            "durable",
+                           "exclusive",
+                           "owner",
                            "lifetimePolicy",
                            "type",
                            "typeQualifier",
@@ -343,6 +345,8 @@ define(["dojo/_base/xhr",
                this.name.innerHTML = entities.encode(String(this.queueData[ "name" ]));
                this.state.innerHTML = entities.encode(String(this.queueData[ "state" ]));
                this.durable.innerHTML = entities.encode(String(this.queueData[ "durable" ]));
+               this.exclusive.innerHTML = entities.encode(String(this.queueData[ "exclusive" ]));
+               this.owner.innerHTML = this.queueData[ "owner" ] ? entities.encode(String(this.queueData[ "owner" ])) : "" ;
                this.lifetimePolicy.innerHTML = entities.encode(String(this.queueData[ "lifetimePolicy" ]));
                this.alternateExchange.innerHTML = this.queueData[ "alternateExchange" ] ? entities.encode(String(this.queueData[ "alternateExchange" ])) : "" ;
 
