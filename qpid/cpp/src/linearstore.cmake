@@ -93,27 +93,26 @@ if (BUILD_LINEARSTORE)
 
     # Journal source files
     set (linear_jrnl_SOURCES
-        qpid/linearstore/jrnl/data_tok.cpp
-        qpid/linearstore/jrnl/deq_rec.cpp
-        qpid/linearstore/jrnl/EmptyFilePool.cpp
-        qpid/linearstore/jrnl/EmptyFilePoolManager.cpp
-        qpid/linearstore/jrnl/EmptyFilePoolPartition.cpp
-        qpid/linearstore/jrnl/enq_map.cpp
-        qpid/linearstore/jrnl/enq_rec.cpp
-        qpid/linearstore/jrnl/jcntl.cpp
-        qpid/linearstore/jrnl/jdir.cpp
-        qpid/linearstore/jrnl/jerrno.cpp
-        qpid/linearstore/jrnl/jexception.cpp
-		qpid/linearstore/jrnl/JournalFile.cpp
-		qpid/linearstore/jrnl/JournalLog.cpp
-        qpid/linearstore/jrnl/jrec.cpp
-        qpid/linearstore/jrnl/LinearFileController.cpp
-        qpid/linearstore/jrnl/pmgr.cpp
-        qpid/linearstore/jrnl/RecoveryManager.cpp
-        qpid/linearstore/jrnl/time_ns.cpp
-        qpid/linearstore/jrnl/txn_map.cpp
-        qpid/linearstore/jrnl/txn_rec.cpp
-        qpid/linearstore/jrnl/wmgr.cpp
+        qpid/linearstore/journal/data_tok.cpp
+        qpid/linearstore/journal/deq_rec.cpp
+        qpid/linearstore/journal/EmptyFilePool.cpp
+        qpid/linearstore/journal/EmptyFilePoolManager.cpp
+        qpid/linearstore/journal/EmptyFilePoolPartition.cpp
+        qpid/linearstore/journal/enq_map.cpp
+        qpid/linearstore/journal/enq_rec.cpp
+        qpid/linearstore/journal/jcntl.cpp
+        qpid/linearstore/journal/jdir.cpp
+        qpid/linearstore/journal/jerrno.cpp
+        qpid/linearstore/journal/jexception.cpp
+		qpid/linearstore/journal/JournalFile.cpp
+		qpid/linearstore/journal/JournalLog.cpp
+        qpid/linearstore/journal/LinearFileController.cpp
+        qpid/linearstore/journal/pmgr.cpp
+        qpid/linearstore/journal/RecoveryManager.cpp
+        qpid/linearstore/journal/time_ns.cpp
+        qpid/linearstore/journal/txn_map.cpp
+        qpid/linearstore/journal/txn_rec.cpp
+        qpid/linearstore/journal/wmgr.cpp
     )
 
     # linearstore source files
@@ -132,12 +131,12 @@ if (BUILD_LINEARSTORE)
     )
 
     set (util_SOURCES
-        qpid/linearstore/jrnl/utils/deq_hdr.c
-        qpid/linearstore/jrnl/utils/enq_hdr.c
-        qpid/linearstore/jrnl/utils/file_hdr.c
-        qpid/linearstore/jrnl/utils/rec_hdr.c
-        qpid/linearstore/jrnl/utils/rec_tail.c
-        qpid/linearstore/jrnl/utils/txn_hdr.c
+        qpid/linearstore/journal/utils/deq_hdr.c
+        qpid/linearstore/journal/utils/enq_hdr.c
+        qpid/linearstore/journal/utils/file_hdr.c
+        qpid/linearstore/journal/utils/rec_hdr.c
+        qpid/linearstore/journal/utils/rec_tail.c
+        qpid/linearstore/journal/utils/txn_hdr.c
     )
 
     # linearstore include directories

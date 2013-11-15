@@ -22,9 +22,9 @@
 #include "qpid/linearstore/JournalImpl.h"
 
 #include "qpid/linearstore/JournalLogImpl.h"
-#include "qpid/linearstore/jrnl/jerrno.h"
-#include "qpid/linearstore/jrnl/jexception.h"
-#include "qpid/linearstore/jrnl/EmptyFilePool.h"
+#include "qpid/linearstore/journal/jerrno.h"
+#include "qpid/linearstore/journal/jexception.h"
+#include "qpid/linearstore/journal/EmptyFilePool.h"
 #include "qpid/linearstore/StoreException.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"

@@ -23,9 +23,9 @@
 #define QPID_LINEARSTORE_JOURNALIMPL_H
 
 #include <set>
-#include "qpid/linearstore/jrnl/enums.h"
-#include "qpid/linearstore/jrnl/EmptyFilePoolTypes.h"
-#include "qpid/linearstore/jrnl/jcntl.h"
+#include "qpid/linearstore/journal/enums.h"
+#include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
+#include "qpid/linearstore/journal/jcntl.h"
 #include "qpid/linearstore/DataTokenImpl.h"
 #include "qpid/linearstore/PreparedTransaction.h"
 #include "qpid/broker/PersistableQueue.h"
