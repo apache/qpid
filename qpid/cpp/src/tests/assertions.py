@@ -54,7 +54,7 @@ class AssertionTests (VersionTest):
         except AssertionFailed: None
         except MessagingError: None
 
-    def test_queue_durability(self):
+    def test_queue_not_durable(self):
         name = str(uuid4())
         self.ssn.sender("%s; {create:always}" % name)
         self.ssn.sender("%s; {assert:always, node:{durable:False}}" % name)
@@ -63,6 +63,11 @@ class AssertionTests (VersionTest):
             assert False, "Expected assertion to fail on durability"
         except AssertionFailed: None
         except MessagingError: None
+
+    def test_queue_is_durable(self):
+        name = str(uuid4())
+        self.ssn.sender("%s; {create:always, node:{durable:True}}" % name)
+        self.ssn.sender("%s; {assert:always, node:{durable:True}}" % name)
 
     def test_queue_options(self):
         name = str(uuid4())
