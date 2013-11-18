@@ -22,19 +22,9 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_WMGR_H
 #define QPID_LINEARSTORE_JOURNAL_WMGR_H
 
-namespace qpid {
-namespace linearstore {
-namespace journal {
-class wmgr;
-}}}
-
-#include <cstring>
-#include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/journal/enums.h"
 #include "qpid/linearstore/journal/pmgr.h"
 #include <set>
-
-class file_hdr_t;
 
 namespace qpid {
 namespace linearstore {

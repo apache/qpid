@@ -29,10 +29,7 @@ class data_tok;
 }}}
 
 #include <cassert>
-#include <cstddef>
 #include "qpid/linearstore/journal/smutex.h"
-#include <pthread.h>
-#include <string>
 
 namespace qpid {
 namespace linearstore {

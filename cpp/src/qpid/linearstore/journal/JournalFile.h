@@ -25,8 +25,6 @@
 #include "qpid/linearstore/journal/aio.h"
 #include "qpid/linearstore/journal/AtomicCounter.h"
 #include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
-#include <stdint.h>
-#include <string>
 
 class file_hdr_t;
 

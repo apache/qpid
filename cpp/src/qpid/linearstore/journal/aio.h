@@ -24,7 +24,6 @@
 
 #include <libaio.h>
 #include <cstring>
-#include <string.h>
 
 namespace qpid {
 namespace linearstore {

@@ -22,8 +22,6 @@
 #include "qpid/linearstore/journal/jexception.h"
 
 #include <iomanip>
-#include <sstream>
-#include "qpid/linearstore/journal/jerrno.h"
 
 #define CATLEN(p) MAX_MSG_SIZE - std::strlen(p) - 1
 

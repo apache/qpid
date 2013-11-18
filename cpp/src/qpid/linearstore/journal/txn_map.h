@@ -22,16 +22,8 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_TXN_MAP_H
 #define QPID_LINEARSTORE_JOURNAL_TXN_MAP_H
 
-namespace qpid {
-namespace linearstore {
-namespace journal {
-    class txn_map;
-}}}
-
 #include "qpid/linearstore/journal/smutex.h"
 #include <map>
-#include <pthread.h>
-#include <string>
 #include <vector>
 
 namespace qpid {

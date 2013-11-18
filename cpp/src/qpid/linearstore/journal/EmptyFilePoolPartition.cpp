@@ -21,11 +21,9 @@
 
 #include "qpid/linearstore/journal/EmptyFilePoolPartition.h"
 
-#include <dirent.h>
 #include <iomanip>
+#include "qpid/linearstore/journal/EmptyFilePool.h"
 #include "qpid/linearstore/journal/jdir.h"
-#include "qpid/linearstore/journal/jerrno.h"
-#include "qpid/linearstore/journal/jexception.h"
 #include "qpid/linearstore/journal/slock.h"
 
 //#include <iostream> // DEBUG

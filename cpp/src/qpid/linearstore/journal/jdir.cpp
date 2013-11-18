@@ -21,14 +21,10 @@
 
 #include "qpid/linearstore/journal/jdir.h"
 
-#include <cstdlib>
 #include <cstring>
 #include <cerrno>
 #include <iomanip>
-#include "qpid/linearstore/journal/jcfg.h"
-#include "qpid/linearstore/journal/jerrno.h"
 #include "qpid/linearstore/journal/jexception.h"
-#include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>
 

@@ -22,7 +22,6 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_SLOCK_H
 #define QPID_LINEARSTORE_JOURNAL_SLOCK_H
 
-#include "qpid/linearstore/journal/jexception.h"
 #include "qpid/linearstore/journal/smutex.h"
 #include <pthread.h>
 
@@ -30,42 +29,42 @@ namespace qpid {
 namespace linearstore {
 namespace journal {
 
-    // Ultra-simple scoped lock class, auto-releases mutex when it goes out-of-scope
-    class slock
+// Ultra-simple scoped lock class, auto-releases mutex when it goes out-of-scope
+class slock
+{
+protected:
+    const smutex& _sm;
+public:
+    inline slock(const smutex& sm) : _sm(sm)
     {
-    protected:
-        const smutex& _sm;
-    public:
-        inline slock(const smutex& sm) : _sm(sm)
-        {
-            PTHREAD_CHK(::pthread_mutex_lock(_sm.get()), "::pthread_mutex_lock", "slock", "slock");
-        }
-        inline ~slock()
-        {
-            PTHREAD_CHK(::pthread_mutex_unlock(_sm.get()), "::pthread_mutex_unlock", "slock", "~slock");
-        }
-    };
+        PTHREAD_CHK(::pthread_mutex_lock(_sm.get()), "::pthread_mutex_lock", "slock", "slock");
+    }
+    inline ~slock()
+    {
+        PTHREAD_CHK(::pthread_mutex_unlock(_sm.get()), "::pthread_mutex_unlock", "slock", "~slock");
+    }
+};
 
-    // Ultra-simple scoped try-lock class, auto-releases mutex when it goes out-of-scope
-    class stlock
+// Ultra-simple scoped try-lock class, auto-releases mutex when it goes out-of-scope
+class stlock
+{
+protected:
+    const smutex& _sm;
+    bool _locked;
+public:
+    inline stlock(const smutex& sm) : _sm(sm), _locked(false)
     {
-    protected:
-        const smutex& _sm;
-        bool _locked;
-    public:
-        inline stlock(const smutex& sm) : _sm(sm), _locked(false)
-        {
-            int ret = ::pthread_mutex_trylock(_sm.get());
-            _locked = (ret == 0); // check if lock obtained
-            if (!_locked && ret != EBUSY) PTHREAD_CHK(ret, "::pthread_mutex_trylock", "stlock", "stlock");
-        }
-        inline ~stlock()
-        {
-            if (_locked)
-                PTHREAD_CHK(::pthread_mutex_unlock(_sm.get()), "::pthread_mutex_unlock", "stlock", "~stlock");
-        }
-        inline bool locked() const { return _locked; }
-    };
+        int ret = ::pthread_mutex_trylock(_sm.get());
+        _locked = (ret == 0); // check if lock obtained
+        if (!_locked && ret != EBUSY) PTHREAD_CHK(ret, "::pthread_mutex_trylock", "stlock", "stlock");
+    }
+    inline ~stlock()
+    {
+        if (_locked)
+            PTHREAD_CHK(::pthread_mutex_unlock(_sm.get()), "::pthread_mutex_unlock", "stlock", "~stlock");
+    }
+    inline bool locked() const { return _locked; }
+};
 
 }}}
 
