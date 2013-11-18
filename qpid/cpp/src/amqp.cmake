@@ -171,11 +171,11 @@ if (BUILD_AMQP)
         set(proton_dlld "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}d.dll")
 
         install (PROGRAMS  ${proton_dll}
-                DESTINATION ${QPID_INSTALL_LIBDIR}
+                DESTINATION ${QPID_INSTALL_BINDIR}
                 COMPONENT   ${QPID_COMPONENT_COMMON}
                 CONFIGURATIONS Release|MinSizeRel|RelWithDebInfo)
         install (PROGRAMS  ${proton_dlld}
-                DESTINATION ${QPID_INSTALL_LIBDIR}
+                DESTINATION ${QPID_INSTALL_BINDIR}
                 COMPONENT   ${QPID_COMPONENT_COMMON}
                 CONFIGURATIONS Debug)
     endif (WIN32)
