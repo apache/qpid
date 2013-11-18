@@ -543,6 +543,8 @@
 
     <statistic name="clientCredit" type="count32" unit="message" desc="Client message credit"/>
 
+    <statistic name="framesOutstanding" type="count32" desc="Deprecated"/>
+
     <method name="solicitAck"/>
     <method name="detach"/>
     <method name="resetLifespan"/>
