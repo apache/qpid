@@ -22,14 +22,11 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_JREC_H
 #define QPID_LINEARSTORE_JOURNAL_JREC_H
 
-#include <cstddef>
 #include <fstream>
 #include "qpid/linearstore/journal/jcfg.h"
 #include <stdint.h>
-#include <string>
 
 struct rec_hdr_t;
-struct rec_tail_t;
 
 namespace qpid {
 namespace linearstore {

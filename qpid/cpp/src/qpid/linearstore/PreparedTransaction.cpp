@@ -20,10 +20,9 @@
  */
 
 #include "qpid/linearstore/PreparedTransaction.h"
-#include <algorithm>
 
-using namespace qpid::linearstore;
-using std::string;
+namespace qpid {
+namespace linearstore {
 
 void LockedMappings::add(queue_id queue, message_id message)
 {
@@ -79,3 +78,4 @@ PreparedTransaction::PreparedTransaction(const std::string& _xid,
 
     : xid(_xid), enqueues(_enqueues), dequeues(_dequeues) {}
 
+}}

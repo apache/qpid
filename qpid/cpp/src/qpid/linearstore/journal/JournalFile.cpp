@@ -23,7 +23,6 @@
 
 #include <fcntl.h>
 #include "qpid/linearstore/journal/jcfg.h"
-#include "qpid/linearstore/journal/jexception.h"
 #include "qpid/linearstore/journal/pmgr.h"
 #include "qpid/linearstore/journal/utils/file_hdr.h"
 #include <unistd.h>

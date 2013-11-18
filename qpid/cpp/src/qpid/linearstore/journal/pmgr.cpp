@@ -21,14 +21,6 @@
 
 #include "qpid/linearstore/journal/pmgr.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include "qpid/linearstore/journal/jcfg.h"
-#include "qpid/linearstore/journal/jcntl.h"
-#include "qpid/linearstore/journal/jerrno.h"
-#include <sstream>
-
 namespace qpid {
 namespace linearstore {
 namespace journal {

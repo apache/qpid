@@ -24,7 +24,6 @@
 
 #include <iostream>
 #include <stdint.h>
-#include <utility> // std::pair
 
 namespace qpid {
 namespace linearstore {

@@ -21,11 +21,7 @@
 
 #include "qpid/linearstore/journal/enq_map.h"
 
-#include <iomanip>
-#include "qpid/linearstore/journal/jerrno.h"
 #include "qpid/linearstore/journal/slock.h"
-#include <sstream>
-
 
 namespace qpid {
 namespace linearstore {

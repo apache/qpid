@@ -22,13 +22,6 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_JDIR_H
 #define QPID_LINEARSTORE_JOURNAL_JDIR_H
 
-namespace qpid {
-namespace linearstore {
-namespace journal {
-class jdir;
-}}}
-
-//#include "qpid/linearstore/jrnl/jinf.h"
 #include <dirent.h>
 #include <string>
 #include <vector>

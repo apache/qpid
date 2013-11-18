@@ -20,6 +20,7 @@
  */
 
 #include "qpid/linearstore/journal/JournalLog.h"
+
 #include <iostream>
 
 namespace qpid {

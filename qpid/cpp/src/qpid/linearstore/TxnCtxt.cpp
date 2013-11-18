@@ -21,9 +21,8 @@
 
 #include "qpid/linearstore/TxnCtxt.h"
 
-#include <sstream>
-
-#include "qpid/linearstore/journal/jexception.h"
+#include "qpid/linearstore/DataTokenImpl.h"
+#include "qpid/linearstore/JournalImpl.h"
 #include "qpid/linearstore/StoreException.h"
 
 namespace qpid{

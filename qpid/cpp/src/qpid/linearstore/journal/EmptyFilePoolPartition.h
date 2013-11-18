@@ -22,22 +22,17 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLPARTITION_H_
 #define QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLPARTITION_H_
 
-namespace qpid {
-namespace linearstore {
-namespace journal {
-    class EmptyFilePoolPartition;
-}}}
-
-#include "qpid/linearstore/journal/EmptyFilePool.h"
+#include <map>
 #include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/journal/smutex.h"
 #include <string>
-#include <map>
 #include <vector>
 
 namespace qpid {
 namespace linearstore {
 namespace journal {
+
+class EmptyFilePool;
 class JournalLog;
 
 class EmptyFilePoolPartition

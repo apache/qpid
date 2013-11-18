@@ -21,13 +21,9 @@
 
 #include "qpid/linearstore/journal/LinearFileController.h"
 
-#include <fstream>
 #include "qpid/linearstore/journal/EmptyFilePool.h"
-#include "qpid/linearstore/journal/jcfg.h"
 #include "qpid/linearstore/journal/jcntl.h"
 #include "qpid/linearstore/journal/JournalFile.h"
-#include "qpid/linearstore/journal/slock.h"
-#include "qpid/linearstore/journal/utils/file_hdr.h"
 
 //#include <iostream> // DEBUG
 

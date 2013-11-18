@@ -21,27 +21,28 @@
 
 #include "qpid/linearstore/MessageStoreImpl.h"
 
-#include "db-inc.h"
-#include "qpid/broker/QueueSettings.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/linearstore/BindingDbt.h"
 #include "qpid/linearstore/BufferValue.h"
+#include "qpid/linearstore/Cursor.h"
+#include "qpid/linearstore/DataTokenImpl.h"
 #include "qpid/linearstore/IdDbt.h"
+#include "qpid/linearstore/JournalImpl.h"
 #include "qpid/linearstore/journal/EmptyFilePoolManager.h"
-#include "qpid/linearstore/journal/txn_map.h"
-#include "qpid/framing/FieldValue.h"
-#include "qmf/org/apache/qpid/linearstore/Package.h"
 #include "qpid/linearstore/StoreException.h"
-#include <dirent.h>
+#include "qpid/linearstore/TxnCtxt.h"
+#include "qpid/log/Statement.h"
 
+#include "qmf/org/apache/qpid/linearstore/Package.h"
 
 #define MAX_AIO_SLEEPS 100000 // tot: ~1 sec
 #define AIO_SLEEP_TIME_US  10 // 0.01 ms
 
-namespace _qmf = qmf::org::apache::qpid::linearstore;
+//namespace _qmf = qmf::org::apache::qpid::linearstore;
 
 namespace qpid{
 namespace linearstore{
-
 
 const std::string MessageStoreImpl::storeTopLevelDir("qls"); // Sets the top-level store dir name
 
@@ -147,9 +148,9 @@ void MessageStoreImpl::initManagement ()
     if (broker != 0) {
         agent = broker->getManagementAgent();
         if (agent != 0) {
-            _qmf::Package packageInitializer(agent);
-            mgmtObject = _qmf::Store::shared_ptr (
-                new _qmf::Store(agent, this, broker));
+            qmf::org::apache::qpid::linearstore::Package packageInitializer(agent);
+            mgmtObject = qmf::org::apache::qpid::linearstore::Store::shared_ptr (
+                new qmf::org::apache::qpid::linearstore::Store(agent, this, broker));
 
             mgmtObject->set_location(storeDir);
             mgmtObject->set_tplIsInitialized(false);

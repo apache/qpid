@@ -23,12 +23,9 @@
 #define QPID_LINEARSTORE_JOURNAL_LINEARFILECONTROLLER_H_
 
 #include <deque>
+#include "qpid/linearstore/journal/aio.h"
 #include "qpid/linearstore/journal/AtomicCounter.h"
 #include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
-
-// libaio forward declares
-typedef struct io_context* io_context_t;
-typedef struct iocb aio_cb;
 
 namespace qpid {
 namespace linearstore {

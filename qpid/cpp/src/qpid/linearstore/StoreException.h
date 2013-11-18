@@ -22,8 +22,8 @@
 #ifndef QPID_LINEARSTORE_STOREEXCEPTION_H
 #define QPID_LINEARSTORE_STOREEXCEPTION_H
 
-#include "qpid/linearstore/IdDbt.h"
 #include <boost/format.hpp>
+#include "db-inc.h"
 
 namespace qpid{
 namespace linearstore{

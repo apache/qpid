@@ -21,6 +21,8 @@
 
 #include "qpid/linearstore/JournalLogImpl.h"
 
+#include "qpid/log/Statement.h"
+
 namespace qpid {
 namespace linearstore {
 
