@@ -23,22 +23,14 @@
 #define QPID_LINEARSTORE_MESSAGESTOREIMPL_H
 
 #include <iomanip>
-#include <string>
-
-#include "db-inc.h"
-#include "qpid/linearstore/Cursor.h"
-#include "qpid/linearstore/IdDbt.h"
+#include "qpid/broker/MessageStore.h"
 #include "qpid/linearstore/IdSequence.h"
-#include "qpid/linearstore/JournalImpl.h"
 #include "qpid/linearstore/JournalLogImpl.h"
 #include "qpid/linearstore/journal/jcfg.h"
 #include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/PreparedTransaction.h"
-#include "qpid/broker/Broker.h"
-#include "qpid/broker/MessageStore.h"
-#include "qpid/management/Manageable.h"
+
 #include "qmf/org/apache/qpid/linearstore/Store.h"
-#include "qpid/linearstore/TxnCtxt.h"
 
 // Assume DB_VERSION_MAJOR == 4
 #if (DB_VERSION_MINOR == 2)
@@ -46,15 +38,28 @@
 #define DB_BUFFER_SMALL ENOMEM
 #endif
 
-namespace qpid { namespace sys {
-class Timer;
-}}
+class Db;
+class DbEnv;
+class Dbt;
+class DbTxn;
 
-namespace qpid{
-namespace qls_jrnl {
-class EmptyFilePoolManager;
+namespace qpid {
+namespace broker {
+    class Broker;
+}
+namespace sys {
+    class Timer;
 }
 namespace linearstore{
+namespace journal {
+    class EmptyFilePool;
+    class EmptyFilePoolManager;
+}
+
+class IdDbt;
+class JournalImpl;
+class TplJournalImpl;
+class TxnCtxt;
 
 /**
  * An implementation of the MessageStore interface based on Berkeley DB

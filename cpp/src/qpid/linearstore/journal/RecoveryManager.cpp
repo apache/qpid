@@ -26,6 +26,7 @@
 #include <iomanip>
 #include "qpid/linearstore/journal/data_tok.h"
 #include "qpid/linearstore/journal/deq_rec.h"
+#include "qpid/linearstore/journal/EmptyFilePool.h"
 #include "qpid/linearstore/journal/EmptyFilePoolManager.h"
 #include "qpid/linearstore/journal/enq_map.h"
 #include "qpid/linearstore/journal/enq_rec.h"

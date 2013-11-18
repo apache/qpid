@@ -21,22 +21,8 @@
 
 #include "qpid/linearstore/journal/jcntl.h"
 
-#include <algorithm>
-#include <cassert>
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <qpid/linearstore/journal/EmptyFilePool.h>
-#include <qpid/linearstore/journal/EmptyFilePoolManager.h>
-#include "qpid/linearstore/journal/jerrno.h"
+#include "qpid/linearstore/journal/data_tok.h"
 #include "qpid/linearstore/journal/JournalLog.h"
-#include "qpid/linearstore/journal/utils/enq_hdr.h"
-#include <limits>
-#include <sstream>
-#include <unistd.h>
 
 namespace qpid {
 namespace linearstore {

@@ -26,32 +26,32 @@ namespace qpid {
 namespace linearstore {
 namespace journal {
 
-    // TODO: Change this to flags, as multiple of these conditions may exist simultaneously
-    /**
-    * \brief Enumeration of possible return states from journal read and write operations.
-    */
-    enum _iores
-    {
-        RHM_IORES_SUCCESS = 0,  ///< Success: IO operation completed noramlly.
-        RHM_IORES_PAGE_AIOWAIT, ///< IO operation suspended - next page is waiting for AIO.
-        RHM_IORES_FILE_AIOWAIT, ///< IO operation suspended - next file is waiting for AIO.
-        RHM_IORES_EMPTY,        ///< During read operations, nothing further is available to read.
-        RHM_IORES_TXPENDING     ///< Operation blocked by pending transaction.
-    };
-    typedef _iores iores;
+// TODO: Change this to flags, as multiple of these conditions may exist simultaneously
+/**
+* \brief Enumeration of possible return states from journal read and write operations.
+*/
+enum _iores
+{
+    RHM_IORES_SUCCESS = 0,  ///< Success: IO operation completed noramlly.
+    RHM_IORES_PAGE_AIOWAIT, ///< IO operation suspended - next page is waiting for AIO.
+    RHM_IORES_FILE_AIOWAIT, ///< IO operation suspended - next file is waiting for AIO.
+    RHM_IORES_EMPTY,        ///< During read operations, nothing further is available to read.
+    RHM_IORES_TXPENDING     ///< Operation blocked by pending transaction.
+};
+typedef _iores iores;
 
-    static inline const char* iores_str(iores res)
+static inline const char* iores_str(iores res)
+{
+    switch (res)
     {
-        switch (res)
-        {
-            case RHM_IORES_SUCCESS: return "RHM_IORES_SUCCESS";
-            case RHM_IORES_PAGE_AIOWAIT: return "RHM_IORES_PAGE_AIOWAIT";
-            case RHM_IORES_FILE_AIOWAIT: return "RHM_IORES_FILE_AIOWAIT";
-            case RHM_IORES_EMPTY: return "RHM_IORES_EMPTY";
-            case RHM_IORES_TXPENDING: return "RHM_IORES_TXPENDING";
-        }
-        return "<iores unknown>";
+        case RHM_IORES_SUCCESS: return "RHM_IORES_SUCCESS";
+        case RHM_IORES_PAGE_AIOWAIT: return "RHM_IORES_PAGE_AIOWAIT";
+        case RHM_IORES_FILE_AIOWAIT: return "RHM_IORES_FILE_AIOWAIT";
+        case RHM_IORES_EMPTY: return "RHM_IORES_EMPTY";
+        case RHM_IORES_TXPENDING: return "RHM_IORES_TXPENDING";
     }
+    return "<iores unknown>";
+}
 
 }}}
 

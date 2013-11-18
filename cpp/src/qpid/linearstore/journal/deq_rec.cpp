@@ -23,7 +23,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <iomanip>
 #include "qpid/linearstore/journal/jexception.h"
 
 namespace qpid {

@@ -22,16 +22,12 @@
 #include "qpid/linearstore/journal/wmgr.h"
 
 #include <cassert>
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include "qpid/linearstore/journal/utils/file_hdr.h"
-#include "qpid/linearstore/journal/jcfg.h"
+#include "qpid/linearstore/journal/aio_callback.h"
+#include "qpid/linearstore/journal/data_tok.h"
 #include "qpid/linearstore/journal/jcntl.h"
-#include "qpid/linearstore/journal/jerrno.h"
 #include "qpid/linearstore/journal/JournalFile.h"
-#include <sstream>
-#include <stdint.h>
+#include "qpid/linearstore/journal/LinearFileController.h"
+#include "qpid/linearstore/journal/utils/file_hdr.h"
 
 //#include <iostream> // DEBUG
 

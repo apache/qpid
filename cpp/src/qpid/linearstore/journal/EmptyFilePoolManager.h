@@ -23,12 +23,17 @@
 #define QPID_QLS_JRNL_EMPTYFILEPOOLMANAGER_H_
 
 #include <map>
-#include "qpid/linearstore/journal/EmptyFilePoolPartition.h"
+#include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/journal/smutex.h"
+#include <vector>
 
 namespace qpid {
 namespace linearstore {
 namespace journal {
+
+class EmptyFilePool;
+class EmptyFilePoolPartition;
+class JournalLog;
 
 class EmptyFilePoolManager
 {

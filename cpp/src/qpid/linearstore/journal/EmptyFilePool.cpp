@@ -21,12 +21,10 @@
 
 #include "EmptyFilePool.h"
 
-#include <cctype>
 #include <fstream>
 #include "qpid/linearstore/journal/EmptyFilePoolPartition.h"
 #include "qpid/linearstore/journal/jcfg.h"
 #include "qpid/linearstore/journal/jdir.h"
-#include "qpid/linearstore/journal/JournalFile.h"
 #include "qpid/linearstore/journal/JournalLog.h"
 #include "qpid/linearstore/journal/slock.h"
 #include "qpid/linearstore/journal/utils/file_hdr.h"

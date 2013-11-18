@@ -22,23 +22,21 @@
 #ifndef QPID_LINEARSTORE_TXNCTXT_H
 #define QPID_LINEARSTORE_TXNCTXT_H
 
-#include "db-inc.h"
-#include <memory>
-#include <set>
-#include <string>
-
-#include "qpid/linearstore/DataTokenImpl.h"
-#include "qpid/linearstore/IdSequence.h"
-#include "qpid/linearstore/JournalImpl.h"
-#include "qpid/broker/PersistableQueue.h"
+#include <boost/intrusive_ptr.hpp>
 #include "qpid/broker/TransactionalStore.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/linearstore/IdSequence.h"
 #include "qpid/sys/uuid.h"
 
-#include <boost/intrusive_ptr.hpp>
+class DbEnv;
+class DbTxn;
 
-namespace qpid{
+namespace qpid {
+namespace broker {
+    class ExternalQueueStore;
+}
 namespace linearstore{
+    class DataTokenImpl;
+    class JournalImpl;
 
 class TxnCtxt : public qpid::broker::TransactionContext
 {

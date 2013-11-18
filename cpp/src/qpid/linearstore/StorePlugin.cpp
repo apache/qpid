@@ -25,6 +25,7 @@
 #include "qpid/DataDir.h"
 #include "qpid/linearstore/JournalLogImpl.h"
 #include "qpid/linearstore/MessageStoreImpl.h"
+#include "qpid/log/Statement.h"
 
 using qpid::linearstore::MessageStoreImpl;
 

@@ -21,12 +21,11 @@
 
 #include "EmptyFilePoolManager.h"
 
-#include <dirent.h>
+#include "qpid/linearstore/journal/EmptyFilePool.h"
 #include "qpid/linearstore/journal/EmptyFilePoolPartition.h"
 #include "qpid/linearstore/journal/jdir.h"
 #include "qpid/linearstore/journal/JournalLog.h"
 #include "qpid/linearstore/journal/slock.h"
-#include <vector>
 
 //#include <iostream> // DEBUG
 

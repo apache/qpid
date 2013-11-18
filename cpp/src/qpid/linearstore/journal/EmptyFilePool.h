@@ -31,7 +31,6 @@ namespace journal {
 #include <deque>
 #include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/journal/smutex.h"
-#include <string>
 
 namespace qpid {
 namespace linearstore {

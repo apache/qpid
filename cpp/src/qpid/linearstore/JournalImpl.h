@@ -22,33 +22,27 @@
 #ifndef QPID_LINEARSTORE_JOURNALIMPL_H
 #define QPID_LINEARSTORE_JOURNALIMPL_H
 
-#include <set>
-#include "qpid/linearstore/journal/enums.h"
-#include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
-#include "qpid/linearstore/journal/jcntl.h"
-#include "qpid/linearstore/DataTokenImpl.h"
-#include "qpid/linearstore/PreparedTransaction.h"
-#include "qpid/broker/PersistableQueue.h"
-#include "qpid/sys/Timer.h"
-#include "qpid/sys/Time.h"
 #include <boost/ptr_container/ptr_list.hpp>
-#include <boost/intrusive_ptr.hpp>
-#include "qpid/management/Manageable.h"
+#include "qpid/broker/PersistableQueue.h"
+#include "qpid/linearstore/journal/aio_callback.h"
+#include "qpid/linearstore/journal/jcntl.h"
+#include "qpid/linearstore/PreparedTransaction.h"
+#include "qpid/sys/Timer.h"
+
 #include "qmf/org/apache/qpid/linearstore/Journal.h"
 
 namespace qpid{
 
 namespace sys {
-class Timer;
+//class Timer;
 }
 
 namespace linearstore{
-
+namespace journal {
+//    class EmptyFilePool;
+}
 class JournalImpl;
 class JournalLogImpl;
-namespace journal {
-    class EmptyFilePool;
-}
 
 class InactivityFireEvent : public qpid::sys::TimerTask
 {
