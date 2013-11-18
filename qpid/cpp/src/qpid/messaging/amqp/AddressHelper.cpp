@@ -873,7 +873,7 @@ void putLifetimePolicy(pn_data_t* data, const std::string& value)
 }
 void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
 {
-    if (properties.size() || type.size()) {
+    if (properties.size() || type.size() || durableNode) {
         pn_data_t* data = pn_terminus_properties(terminus);
         pn_data_put_map(data);
         pn_data_enter(data);
