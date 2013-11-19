@@ -48,6 +48,7 @@ QueueFactory::QueueFactory() : broker(0), store(0), parent(0) {}
 boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const QueueSettings& settings)
 {
     settings.validate();
+    boost::shared_ptr<QueueFlowLimit> flow_ptr(QueueFlowLimit::createLimit(name, settings));
 
     //1. determine Queue type (i.e. whether we are subclassing Queue)
     // -> if 'ring' policy is in use then subclass
@@ -100,7 +101,9 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
         ThresholdAlerts::observe(*queue, *(broker->getManagementAgent()), settings, broker->getOptions().queueThresholdEventRatio);
     }
     //5. flow control config
-    QueueFlowLimit::observe(*queue, settings);
+    if (flow_ptr) {
+	flow_ptr->observe(*queue);
+    }
 
     return queue;
 }
