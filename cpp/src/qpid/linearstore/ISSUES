@@ -6,29 +6,26 @@ Store:
 1. (SOLVED) Overwrite identity: When recovering a previously used file, if the write boundary coincides with old record
    start, no way of discriminating old from new at boundary (used to use OWI).
 
-2. Recycling files while in use not working, however, files are recovered to EFP during recovery. Must solve #1 first.
+2. QPID-5357: Recycling files while in use not working, however, files are recovered to EFP during recovery. Must solve
+   #1 first.
 
-3. Checksum not implemented in record tail, not checked during read.
+3. QPID-5358: Checksum not implemented in record tail, not checked during read.
 
-4. Rework qpid management parameters and controls.
+4. QPID-5359: Rework qpid management parameters and controls (QMF).
 
-5. Consistent logging: rework logging to provide uniform and consistent logging from store (both logging level and
-   places where logging occurs).
+5. QPID-5360: Consistent logging: rework logging to provide uniform and consistent logging from store (both logging
+   level and places where logging occurs).
 
-Tests
------
+6. QPID-5361: No tests
+   * No existing tests for linearstore:
+   ** Basic broker-level tests for txn and non-txn recovery
+   ** Store-level tests which check write boundary conditions
+   ** Unit tests
+   ** Basic performance tests
 
-* No existing tests for linearstore:
-** Basic broker-level tests for txn and non-txn recovery
-** Store-level tests which check write boundary conditions
-** Unit tests
-** Basic performance tests
-
-Tools
------
-
-* Store analysis and status
-* Recovery/reading of message content
+7: QPID-5362: No tools
+   * Store analysis and status
+   * Recovery/reading of message content
 
 Code tidy-up
 ------------
@@ -36,4 +33,5 @@ Code tidy-up
 * Remove old comments
 * Use c++ cast templates instead of (xxx)y
 * Member names: xxx_
-* Add docs to classes
+* Rename classes, functions and variables to camel-case
+* Add Doxygen docs to classes
