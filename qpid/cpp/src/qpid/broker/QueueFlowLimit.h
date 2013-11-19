@@ -33,6 +33,8 @@
 #include "qpid/sys/Mutex.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
 
+#include <boost/enable_shared_from_this.hpp>
+
 namespace _qmfBroker = qmf::org::apache::qpid::broker;
 
 namespace qpid {
@@ -50,7 +52,7 @@ struct QueueSettings;
  * passing _either_ level may turn flow control ON, but _both_ must be
  * below level before flow control will be turned OFF.
  */
- class QueueFlowLimit : public QueueObserver
+ class QueueFlowLimit : public QueueObserver, public boost::enable_shared_from_this<QueueFlowLimit>
 {
     static uint64_t defaultMaxSize;
     static uint defaultFlowStopRatio;
@@ -99,7 +101,8 @@ struct QueueSettings;
     void decode(framing::Buffer& buffer);
     uint32_t encodedSize() const;
 
-    static QPID_BROKER_EXTERN void observe(Queue& queue, const QueueSettings& settings);
+    QPID_BROKER_EXTERN void observe(Queue& queue);
+    static QPID_BROKER_EXTERN boost::shared_ptr<QueueFlowLimit> createLimit(const std::string& queueName, const QueueSettings& settings);
     static QPID_BROKER_EXTERN void setDefaults(uint64_t defaultMaxSize, uint defaultFlowStopRatio, uint defaultFlowResumeRatio);
 
     friend QPID_BROKER_EXTERN std::ostream& operator<<(std::ostream&, const QueueFlowLimit&);
@@ -113,10 +116,9 @@ struct QueueSettings;
 
     const Broker *broker;
 
-    QPID_BROKER_EXTERN QueueFlowLimit(Queue *queue,
-                   uint32_t flowStopCount, uint32_t flowResumeCount,
-                   uint64_t flowStopSize,  uint64_t flowResumeSize);
-    static QPID_BROKER_EXTERN QueueFlowLimit *createLimit(Queue *queue, const QueueSettings& settings);
+    QPID_BROKER_EXTERN QueueFlowLimit(const std::string& _queueName,
+                   uint32_t _flowStopCount, uint32_t _flowResumeCount,
+                   uint64_t _flowStopSize,  uint64_t _flowResumeSize);
 };
 
 }}
