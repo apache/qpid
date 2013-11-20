@@ -48,7 +48,7 @@ struct StaticInit
 } init;
 }
 
-TcpTransport::TcpTransport(TransportContext& c, boost::shared_ptr<Poller> p) : socket(createSocket()), context(c), connector(0), aio(0), poller(p) {}
+TcpTransport::TcpTransport(TransportContext& c, boost::shared_ptr<Poller> p) : socket(createSocket()), context(c), connector(0), aio(0), poller(p), closed(false) {}
 
 void TcpTransport::connect(const std::string& host, const std::string& port)
 {
@@ -66,6 +66,7 @@ void TcpTransport::connect(const std::string& host, const std::string& port)
 void TcpTransport::failed(const std::string& msg)
 {
     QPID_LOG(debug, "Failed to connect: " << msg);
+    closed = true;
     connector = 0;
     socket->close();
     context.closed();
@@ -118,9 +119,12 @@ void TcpTransport::write(AsynchIO&)
 
 void TcpTransport::close()
 {
-    QPID_LOG(debug, id << " TcpTransport closing...");
-    if (aio)
-        aio->queueWriteClose();
+    qpid::sys::Mutex::ScopedLock l(lock);
+    if (!closed) {
+        QPID_LOG(debug, id << " TcpTransport closing...");
+        if (aio)
+            aio->queueWriteClose();
+    }
 }
 
 void TcpTransport::eof(AsynchIO&)
@@ -136,31 +140,44 @@ void TcpTransport::disconnected(AsynchIO&)
 
 void TcpTransport::socketClosed(AsynchIO&, const Socket&)
 {
-    if (aio)
-        aio->queueForDeletion();
-    context.closed();
-    QPID_LOG(debug, id << " Socket closed");
+    bool notify(false);
+    {
+        qpid::sys::Mutex::ScopedLock l(lock);
+        if (!closed) {
+            closed = true;
+            if (aio)
+                aio->queueForDeletion();
+            QPID_LOG(debug, id << " Socket closed");
+            notify = true;
+        } //else has already been closed
+    }
+    if (notify) context.closed();
 }
 
 void TcpTransport::abort()
 {
-    if (aio) {
-        // Established connection
-        aio->requestCallback(boost::bind(&TcpTransport::eof, this, _1));
-    } else if (connector) {
-        // We're still connecting
-        connector->stop();
-        failed("Connection timedout");
+    qpid::sys::Mutex::ScopedLock l(lock);
+    if (!closed) {
+        if (aio) {
+            // Established connection
+            aio->requestCallback(boost::bind(&TcpTransport::eof, this, _1));
+        } else if (connector) {
+            // We're still connecting
+            connector->stop();
+            failed("Connection timedout");
+        }
     }
 }
 
 void TcpTransport::activateOutput()
 {
-    if (aio) aio->notifyPendingWrite();
+    qpid::sys::Mutex::ScopedLock l(lock);
+    if (!closed && aio) aio->notifyPendingWrite();
 }
 
 const qpid::sys::SecuritySettings* TcpTransport::getSecuritySettings()
 {
     return 0;
 }
+
 }}} // namespace qpid::messaging::amqp

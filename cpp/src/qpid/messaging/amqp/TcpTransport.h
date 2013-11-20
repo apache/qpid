@@ -59,6 +59,8 @@ class TcpTransport : public Transport
     qpid::sys::AsynchIO* aio;
     boost::shared_ptr<qpid::sys::Poller> poller;
     std::string id;
+    bool closed;
+    qpid::sys::Mutex lock;
 
     void connected(const qpid::sys::Socket&);
     void failed(const std::string& msg);
