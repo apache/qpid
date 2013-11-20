@@ -27,6 +27,7 @@
 #include "AlternateExchangeSetter.h"
 #include "qpid/Address.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/ConnectionObserver.h"
 #include "qpid/types/Variant.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/sys/unordered_map.h"
@@ -68,7 +69,8 @@ class QueueReplicator;
  *
  */
 class BrokerReplicator : public broker::Exchange,
-                         public boost::enable_shared_from_this<BrokerReplicator>
+                         public boost::enable_shared_from_this<BrokerReplicator>,
+                         public broker::ConnectionObserver
 {
   public:
     typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
@@ -76,7 +78,8 @@ class BrokerReplicator : public broker::Exchange,
     BrokerReplicator(HaBroker&, const boost::shared_ptr<broker::Link>&);
     ~BrokerReplicator();
 
-    void initialize();
+    void initialize();          // Must be called  immediately after constructor.
+    void shutdown();
 
     // Exchange methods
     std::string getType() const;
@@ -85,7 +88,12 @@ class BrokerReplicator : public broker::Exchange,
     void route(broker::Deliverable&);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
     bool hasBindings();
-    void shutdown();
+
+    // ConnectionObserver methods
+    void connection(broker::Connection&) {}
+    void opened(broker::Connection&) {}
+    void closed(broker::Connection& c) { if (link && &c == connect) disconnected(); }
+    void forced(broker::Connection& c, const std::string& /*message*/) { closed(c); }
 
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
 
@@ -100,7 +108,6 @@ class BrokerReplicator : public broker::Exchange,
 
     class UpdateTracker;
     class ErrorListener;
-    class ConnectionObserver;
 
     void connected(broker::Bridge&, broker::SessionHandler&);
     void existingQueue(const boost::shared_ptr<broker::Queue>&);
@@ -157,11 +164,10 @@ class BrokerReplicator : public broker::Exchange,
     bool initialized;
     AlternateExchangeSetter alternates;
     qpid::Address primary;
-    broker::Connection* connection;
+    broker::Connection* connect;
     EventDispatchMap dispatch;
     std::auto_ptr<UpdateTracker> queueTracker;
     std::auto_ptr<UpdateTracker> exchangeTracker;
-    boost::shared_ptr<ConnectionObserver> connectionObserver;
 };
 }} // namespace qpid::broker
 

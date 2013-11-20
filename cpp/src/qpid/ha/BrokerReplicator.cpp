@@ -24,7 +24,6 @@
 #include "TxReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/amqp_0_10/Connection.h"
-#include "qpid/broker/ConnectionObserver.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/broker/Link.h"
@@ -203,22 +202,6 @@ class BrokerReplicator::ErrorListener : public SessionHandler::ErrorListener {
     BrokerReplicator& brokerReplicator;
 };
 
-class BrokerReplicator::ConnectionObserver : public broker::ConnectionObserver
-{
-  public:
-    ConnectionObserver(BrokerReplicator& br) : brokerReplicator(br) {}
-    virtual void connection(Connection&) {}
-    virtual void opened(Connection&) {}
-
-    virtual void closed(Connection& c) {
-        if (brokerReplicator.link && &c == brokerReplicator.connection)
-            brokerReplicator.disconnected();
-    }
-    virtual void forced(Connection& c, const std::string& /*message*/) { closed(c); }
-  private:
-    BrokerReplicator& brokerReplicator;
-};
-
 /** Keep track of queues or exchanges during the update process to solve 2
  * problems.
  *
@@ -300,10 +283,8 @@ BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& 
       link(l),
       initialized(false),
       alternates(hb.getBroker().getExchanges()),
-      connection(0),
-      connectionObserver(new ConnectionObserver(*this))
+      connect(0)
 {
-    broker.getConnectionObservers().add(connectionObserver);
     framing::FieldTable args = getArgs();
     args.setString(QPID_REPLICATE, printable(NONE).str());
     setArgs(args);
@@ -343,9 +324,10 @@ void BrokerReplicator::initialize() {
     assert(result.second);
     result.first->setErrorListener(
         boost::shared_ptr<ErrorListener>(new ErrorListener(logPrefix, *this)));
+    broker.getConnectionObservers().add(shared_from_this());
 }
 
-BrokerReplicator::~BrokerReplicator() { shutdown(); }
+BrokerReplicator::~BrokerReplicator() {}
 
 namespace {
 void collectQueueReplicators(
@@ -363,10 +345,7 @@ void BrokerReplicator::shutdown() {
     // it only calls thread safe functions objects belonging to the Broker.
 
     // Unregister with broker objects:
-    if (connectionObserver) {
-        broker.getConnectionObservers().remove(connectionObserver);
-        connectionObserver.reset();
-    }
+    broker.getConnectionObservers().remove(shared_from_this());
     broker.getExchanges().destroy(getName());
 }
 
@@ -376,8 +355,8 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
     // exchanges etc. We know link->getConnection() is non-zero because we are
     // being called in the connections thread context.
     //
-    connection = link->getConnection();
-    assert(connection);
+    connect = link->getConnection();
+    assert(connect);
     userId = link->getConnection()->getUserId();
     remoteHost = link->getConnection()->getMgmtId();
 
@@ -922,7 +901,7 @@ namespace {
 // Called by ConnectionObserver::disconnected, disconnected from the network side.
 void BrokerReplicator::disconnected() {
     QPID_LOG(info, logPrefix << "Disconnected from primary " << primary);
-    connection = 0;
+    connect = 0;
 
     // Make copy of exchanges so we can work outside the registry lock.
     ExchangeVector exs;
