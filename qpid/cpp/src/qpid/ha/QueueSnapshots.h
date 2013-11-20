@@ -32,7 +32,6 @@
 #include "qpid/sys/Mutex.h"
 
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 
 namespace qpid {
 namespace ha {
@@ -53,7 +52,7 @@ class QueueSnapshots : public broker::BrokerObserver
 
     // BrokerObserver overrides.
     void queueCreate(const boost::shared_ptr<broker::Queue>& q) {
-        q->addObserver(boost::make_shared<QueueSnapshot>());
+        q->addObserver(boost::shared_ptr<QueueSnapshot>(new QueueSnapshot));
     }
 
     void queueDestroy(const boost::shared_ptr<broker::Queue>& q) {
