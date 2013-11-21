@@ -175,43 +175,48 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 connect();
                 started = true;
             }
-
-            try
-            {
-                SessionImpl session = new SessionImpl(this, acknowledgeMode);
-                session.setQueueSession(_isQueueConnection);
-                session.setTopicSession(_isTopicConnection);
-                _sessions.add(session);
-
-                if(_state == State.STARTED)
-                {
-                    session.start();
-                }
-
-                return session;
-            }
-            catch(JMSException e)
-            {
-                Error remoteError;
-                if(started
-                   && e.getLinkedException() instanceof ConnectionErrorException
-                   && (remoteError = ((ConnectionErrorException)e.getLinkedException()).getRemoteError()).getCondition() == ConnectionError.REDIRECT)
-                {
-                    String networkHost = (String) remoteError.getInfo().get(Symbol.valueOf("network-host"));
-                    int port = (Integer) remoteError.getInfo().get(Symbol.valueOf("port"));
-                    String hostName = (String) remoteError.getInfo().get(Symbol.valueOf("hostname"));
-                    reconnect(networkHost,port,hostName);
-                    return createSession(acknowledgeMode);
-
-                }
-                else
-                {
-                    throw e;
-                }
-            }
         }
 
+        try
+        {
+            SessionImpl session = new SessionImpl(this, acknowledgeMode);
+            session.setQueueSession(_isQueueConnection);
+            session.setTopicSession(_isTopicConnection);
+            
+            boolean connectionStarted = false;
+            synchronized(_lock)
+            {
+                checkClosed();
+                _sessions.add(session);
+                connectionStarted = _state == State.STARTED;
+            }
+            
+            if(connectionStarted)
+            {
+                session.start();
+            }
+            
+            return session;
+        }
+        catch(JMSException e)
+        {
+            Error remoteError;
+            if(started
+               && e.getLinkedException() instanceof ConnectionErrorException
+               && (remoteError = ((ConnectionErrorException)e.getLinkedException()).getRemoteError()).getCondition() == ConnectionError.REDIRECT)
+            {
+                String networkHost = (String) remoteError.getInfo().get(Symbol.valueOf("network-host"));
+                int port = (Integer) remoteError.getInfo().get(Symbol.valueOf("port"));
+                String hostName = (String) remoteError.getInfo().get(Symbol.valueOf("hostname"));
+                reconnect(networkHost,port,hostName);
+                return createSession(acknowledgeMode);
 
+            }
+            else
+            {
+                throw e;
+            }
+        }
     }
 
     void removeSession(SessionImpl session)
@@ -272,6 +277,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public void start() throws JMSException
     {
+        List<SessionImpl> stoppedSessions = null;
         synchronized(_lock)
         {
             checkClosed();
@@ -281,30 +287,30 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 // TODO
 
                 _state = State.STARTED;
-
-                for(SessionImpl session : _sessions)
-                {
-                    session.start();
-                }
-
+                stoppedSessions = new ArrayList<SessionImpl>(_sessions);
             }
 
             _lock.notifyAll();
         }
 
+        if (stoppedSessions != null)
+        {
+            for(SessionImpl session : stoppedSessions)
+            {
+                session.start();
+            }
+        }
     }
 
     public void stop() throws JMSException
     {
+        List<SessionImpl> startedSessions = null;
         synchronized(_lock)
         {
             switch(_state)
             {
                 case STARTED:
-                    for(SessionImpl session : _sessions)
-                    {
-                        session.stop();
-                    }
+                    startedSessions = new ArrayList<SessionImpl>(_sessions);
                 case UNCONNECTED:
                     _state = State.STOPPED;
                     break;
@@ -313,6 +319,14 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             }
 
             _lock.notifyAll();
+        }
+        
+        if (startedSessions != null)
+        {
+            for(SessionImpl session : startedSessions)
+            {
+                session.stop();
+            }
         }
     }
 
@@ -341,39 +355,34 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public void close() throws JMSException
     {
-        Object outerLock;
-        if(_conn != null)
+        List<SessionImpl> sessions = null;
+        List<CloseTask> closeTasks = null;
+        boolean closeConnection = false;
+        synchronized(_lock)
         {
-            outerLock = _conn.getEndpoint().getLock();
-        }
-        else
-        {
-            outerLock = _lock;
-        }
-
-        synchronized (outerLock)
-        {
-            synchronized(_lock)
+            if(_state != State.CLOSED)
             {
-                if(_state != State.CLOSED)
-                {
-                    stop();
-                    List<SessionImpl> sessions = new ArrayList<SessionImpl>(_sessions);
-                    for(SessionImpl session : sessions)
-                    {
-                        session.close();
-                    }
-                    for(CloseTask task : _closeTasks)
-                    {
-                        task.onClose();
-                    }
-                    if(_conn != null && _state != State.UNCONNECTED ) {
-                        _conn.close();
-                    }
-                    _state = State.CLOSED;
-                }
-
-                _lock.notifyAll();
+                _state = State.CLOSED;
+                sessions = new ArrayList<SessionImpl>(_sessions);
+                closeTasks = new ArrayList<CloseTask>(_closeTasks);
+                closeConnection = _conn != null && _state != State.UNCONNECTED;
+            }
+            
+            _lock.notifyAll();
+        }
+        
+        if (sessions != null)
+        {
+            for(SessionImpl session : sessions)
+            {
+                session.close();
+            }
+            for(CloseTask task : closeTasks)
+            {
+                task.onClose();
+            }
+            if(closeConnection) {
+                _conn.close();
             }
         }
     }
