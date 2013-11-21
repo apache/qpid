@@ -121,7 +121,10 @@ public class RestServlet extends AbstractServlet
         {
             if(pathInfoElements.length > _hierarchy.length)
             {
-                throw new IllegalArgumentException("Too many entries in path. Expected " + _hierarchy.length + "; path: " + names);
+                throw new IllegalArgumentException("Too many entries in path for REST servlet "
+                        + getServletName() + ". Expected hierarchy length: " + _hierarchy.length
+                        + "; Request hierarchy length: " + pathInfoElements.length
+                        + "; Path Elements: " + Arrays.toString(pathInfoElements));
             }
             names.addAll(Arrays.asList(pathInfoElements));
         }

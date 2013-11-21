@@ -340,7 +340,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
 
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
-        root.addServlet(new ServletHolder(new RestServlet(hierarchy)), "/rest/" + name + "/*");
+        root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/rest/" + name + "/*");
     }
 
     private void logOperationalListenMessages(Server server)
