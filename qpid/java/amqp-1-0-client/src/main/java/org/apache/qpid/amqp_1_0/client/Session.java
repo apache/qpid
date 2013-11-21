@@ -114,35 +114,38 @@ public class Session
 
     }
 
-    public synchronized SendingLinkEndpoint createSendingLinkEndpoint(final String linkName,
-                                                                      final Target target,
-                                                                      final Source source,
-                                                                      AcknowledgeMode mode,
-                                                                      Map<Binary, Outcome> unsettled,
-                                                                      final DeliveryStateHandler deliveryStateHandler)
+    public SendingLinkEndpoint createSendingLinkEndpoint(final String linkName,
+                                                         final Target target,
+                                                         final Source source,
+                                                         AcknowledgeMode mode,
+                                                         Map<Binary, Outcome> unsettled,
+                                                         final DeliveryStateHandler deliveryStateHandler)
     {
-        SendingLinkEndpoint link = this.getEndpoint().createSendingLinkEndpoint(linkName, source, target,
-                                                                                unsettled, deliveryStateHandler);
-
-        switch(mode)
-        {
-            case ALO:
-            	link.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
-            	link.setReceivingSettlementMode(ReceiverSettleMode.FIRST);
-                break;
-            case AMO:
-            	link.setSendingSettlementMode(SenderSettleMode.SETTLED);
-                break;
-            case EO:
-            	link.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
-            	link.setReceivingSettlementMode(ReceiverSettleMode.SECOND);
-                break;
-
-        }
-        
-        link.attach();
-        
-    	return link;
+    	SessionEndpoint endpoint = this.getEndpoint();
+    	synchronized(endpoint.getLock())
+    	{
+            SendingLinkEndpoint link = endpoint.createSendingLinkEndpoint(linkName, source, target,
+                                                                          unsettled, deliveryStateHandler);
+            
+            switch(mode)
+            {
+                case ALO:
+                	link.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
+                	link.setReceivingSettlementMode(ReceiverSettleMode.FIRST);
+                    break;
+                case AMO:
+                	link.setSendingSettlementMode(SenderSettleMode.SETTLED);
+                    break;
+                case EO:
+                	link.setSendingSettlementMode(SenderSettleMode.UNSETTLED);
+                	link.setReceivingSettlementMode(ReceiverSettleMode.SECOND);
+                    break;
+                    
+            }
+            
+            link.attach();
+        	return link;
+    	}
     }
 
     public Receiver createReceiver(final String sourceAddr) throws ConnectionErrorException
