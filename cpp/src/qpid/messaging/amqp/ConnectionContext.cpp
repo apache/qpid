@@ -914,6 +914,8 @@ bool ConnectionContext::tryConnect(const Url& url)
             QPID_LOG(debug, id << " Opened");
 
             return restartSessions();
+        } else {
+            QPID_LOG(notice, "Failed to connect to " << *i);
         }
     }
     return false;
