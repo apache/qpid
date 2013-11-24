@@ -785,7 +785,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
         else if (SUPPORTED_PREFERENCES_PROVIDERS_TYPES.equals(name))
         {
-            return PreferencesProviderFactory.TYPES.get();
+            return PreferencesProviderFactory.FACTORIES.getDescriptiveTypes();
         }
         else if (MODEL_VERSION.equals(name))
         {

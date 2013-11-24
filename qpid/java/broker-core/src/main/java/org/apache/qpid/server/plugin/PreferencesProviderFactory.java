@@ -18,10 +18,6 @@
  */
 package org.apache.qpid.server.plugin;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,46 +26,8 @@ import org.apache.qpid.server.model.PreferencesProvider;
 
 public interface PreferencesProviderFactory extends Pluggable
 {
+    PluggableFactoryLoader<PreferencesProviderFactory> FACTORIES = new PluggableFactoryLoader<PreferencesProviderFactory>(PreferencesProviderFactory.class);
+
     PreferencesProvider createInstance(UUID id, Map<String, Object> attributes, AuthenticationProvider authenticationProvider);
 
-    static final class TYPES
-    {
-        private TYPES()
-        {
-        }
-
-        public static Collection<String> get()
-        {
-            QpidServiceLoader<PreferencesProviderFactory> qpidServiceLoader = new QpidServiceLoader<PreferencesProviderFactory>();
-            Iterable<PreferencesProviderFactory> factories = qpidServiceLoader.atLeastOneInstanceOf(PreferencesProviderFactory.class);
-            List<String> names = new ArrayList<String>();
-            for(PreferencesProviderFactory factory : factories)
-            {
-                names.add(factory.getType());
-            }
-            return Collections.unmodifiableCollection(names);
-        }
-    }
-
-
-    static final class FACTORIES
-    {
-        private FACTORIES()
-        {
-        }
-
-        public static PreferencesProviderFactory get(String type)
-        {
-            QpidServiceLoader<PreferencesProviderFactory> qpidServiceLoader = new QpidServiceLoader<PreferencesProviderFactory>();
-            Iterable<PreferencesProviderFactory> factories = qpidServiceLoader.atLeastOneInstanceOf(PreferencesProviderFactory.class);
-            for(PreferencesProviderFactory factory : factories)
-            {
-                if(factory.getType().equals(type))
-                {
-                    return factory;
-                }
-            }
-            return null;
-        }
-    }
 }
