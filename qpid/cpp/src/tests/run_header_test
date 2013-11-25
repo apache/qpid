@@ -25,7 +25,7 @@
 
 source $QPID_TEST_COMMON
 
-ensure_python_testing
+ensure_python_tests
 
 ./header_test -p $QPID_PORT
 $srcdir/header_test.py "localhost" $QPID_PORT
