@@ -19,6 +19,8 @@
 
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Duration.h>
+
+#define QMF_USE_DEPRECATED_API
 #include <qmf/AgentSession.h>
 #include <qmf/AgentEvent.h>
 #include <qmf/Schema.h>

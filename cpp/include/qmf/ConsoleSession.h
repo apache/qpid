@@ -21,6 +21,11 @@
  *
  */
 
+#if !defined(QMF_USE_DEPRECATED_API) && !defined(qmf2_EXPORTS) && !defined(SWIG)
+#  error "The API defined in this file has been DEPRECATED and will be removed in the future."
+#  error "Define 'QMF_USE_DEPRECATED_API' to enable continued use of the API."
+#endif
+
 #include <qmf/ImportExport.h>
 #include "qmf/Handle.h"
 #include "qmf/Agent.h"

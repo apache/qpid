@@ -19,6 +19,7 @@
 
 %{
 
+#define QMF_USE_DEPRECATED_API
 #include <qmf/exceptions.h>
 #include <qmf/AgentEvent.h>
 #include <qmf/Agent.h>
