@@ -47,6 +47,7 @@ protected:
     JournalFile* currentJournalFilePtr_;
     AtomicCounter<uint64_t> fileSeqCounter_;
     AtomicCounter<uint64_t> recordIdCounter_;
+    AtomicCounter<uint64_t> decrCounter_;
 
     JournalFileList_t journalFileList_;
     smutex journalFileListMutex_;

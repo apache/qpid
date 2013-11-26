@@ -147,10 +147,10 @@ if (BUILD_LINEARSTORE)
     )
 
     if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h)
-      message(STATUS "Including BDB from ${DB_INCLUDE_DIR}/db_cxx.h")
+      message(STATUS "Including BDB from ${DB_CXX_INCLUDE_DIR}/db_cxx.h")
         file(WRITE 
              ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h
-             "#include <${DB_INCLUDE_DIR}/db_cxx.h>\n")
+             "#include <${DB_CXX_INCLUDE_DIR}/db_cxx.h>\n")
     endif()
 
     add_library (linearstoreutils SHARED
