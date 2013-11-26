@@ -36,7 +36,8 @@ LinearFileController::LinearFileController(jcntl& jcntlRef) :
             emptyFilePoolPtr_(0),
             currentJournalFilePtr_(0),
             fileSeqCounter_("LinearFileController::fileSeqCounter", 0),
-            recordIdCounter_("LinearFileController::recordIdCounter", 0)
+            recordIdCounter_("LinearFileController::recordIdCounter", 0),
+            decrCounter_("LinearFileController::decrCounter", 0)
 {}
 
 LinearFileController::~LinearFileController() {}
@@ -106,7 +107,15 @@ uint32_t LinearFileController::incrEnqueuedRecordCount(const efpFileCount_t file
 uint32_t LinearFileController::decrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber) {
     slock l(journalFileListMutex_);
     uint32_t r = find(fileSeqNumber)->decrEnqueuedRecordCount();
-//    purgeEmptyFilesToEfpNoLock();
+
+    // TODO: Re-evaluate after testing and profiling
+    // This is the first go at implementing auto-purge, which checks for all trailing empty files and recycles
+    // them back to the EFP. This version checks every 100 decrements using decrCounter_ (an action which releases
+    // records). We need to check this rather simple scheme works for outlying scenarios (large and tiny data
+    // records) without impacting performance or performing badly (leaving excessive empty files in the journals).
+    if (decrCounter_.increment() % 100ULL == 0ULL) {
+        purgeEmptyFilesToEfpNoLock();
+    }
     return r;
 }
 
