@@ -17,6 +17,10 @@
 # under the License.
 #
 
+import warnings
+warnings.warn("The qmf2 module is deprecated.  It will be removed in the future.",
+              Warning, stacklevel=2)
+
 import cqmf2
 import qpid_messaging
 from threading import Thread
