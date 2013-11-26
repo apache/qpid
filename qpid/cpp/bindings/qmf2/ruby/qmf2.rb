@@ -17,6 +17,8 @@
 # under the License.
 #
 
+warn 'The qmf2 module is deprecated.  It will be removed in the future.'
+
 require 'cqmf2'
 require 'cqpid'
 require 'thread'
