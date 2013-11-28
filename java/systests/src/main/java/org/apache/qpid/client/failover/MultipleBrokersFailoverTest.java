@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.client.failover;
 
+import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +50,8 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";
     private static final int FAILOVER_RETRIES = 1;
     private static final int FAILOVER_CONNECTDELAY = 1000;
+    private static final int FAILOVER_FACTOR = 4;
+
     private int[] _brokerPorts;
     private AMQConnectionURL _connectionURL;
     private Connection _connection;
@@ -149,7 +152,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
                 if (_brokerPorts[i] > 0)
                 {
                     stopBrokerSafely(_brokerPorts[i]);
-                    FileUtils.deleteDirectory(System.getProperty("QPID_WORK") + "/" + getFailingPort());
+                    FileUtils.deleteDirectory(System.getProperty("QPID_WORK") + File.separator + getFailingPort());
                 }
             }
 
@@ -166,7 +169,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
 
         killBroker(_brokerPorts[1]);
 
-        awaitForFailoverCompletion(FAILOVER_CONNECTDELAY * _brokerPorts.length * 2);
+        awaitForFailoverCompletion(FAILOVER_CONNECTDELAY * _brokerPorts.length * FAILOVER_FACTOR);
         assertEquals("Failover is not started as expected", 0, _failoverStarted.getCount());
 
         assertSendReceive(2);
@@ -182,7 +185,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
 
         stopBroker(_brokerPorts[1]);
 
-        awaitForFailoverCompletion(FAILOVER_CONNECTDELAY * _brokerPorts.length * 2);
+        awaitForFailoverCompletion(FAILOVER_CONNECTDELAY * _brokerPorts.length * FAILOVER_FACTOR);
         assertEquals("Failover is not started as expected", 0, _failoverStarted.getCount());
 
         assertSendReceive(1);
