@@ -22,18 +22,23 @@ import static org.apache.qpid.configuration.ClientProperties.AMQJ_HEARTBEAT_DELA
 import static org.apache.qpid.configuration.ClientProperties.IDLE_TIMEOUT_PROP_NAME;
 import static org.apache.qpid.configuration.ClientProperties.QPID_HEARTBEAT_INTERVAL;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.jms.Destination;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class HeartbeatTest extends QpidBrokerTestCase
 {
+    private static final Logger LOGGER = Logger.getLogger(HeartbeatTest.class);
+
     private static final String CONNECTION_URL_WITH_HEARTBEAT = "amqp://guest:guest@clientid/?brokerlist='localhost:%d?heartbeat='%d''";
-    private TestListener _listener = new TestListener();
+    private TestListener _listener = new TestListener("listener");
 
     @Override
     public void setUp() throws Exception
@@ -54,8 +59,8 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
         Thread.sleep(2500);
 
-        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
-        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+        assertTrue("Too few heartbeats received: "+_listener.getHeartbeatsReceived() +" (expected at least 2)", _listener.getHeartbeatsReceived() >=2);
+        assertTrue("Too few heartbeats sent "+_listener.getHeartbeatsSent() +" (expected at least 2)", _listener.getHeartbeatsSent() >=2);
 
         conn.close();
     }
@@ -69,8 +74,8 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
         Thread.sleep(2500);
 
-        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
-        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+        assertTrue("Too few heartbeats received: "+_listener.getHeartbeatsReceived() +" (expected at least 2)", _listener.getHeartbeatsReceived() >=2);
+        assertTrue("Too few heartbeats sent "+_listener.getHeartbeatsSent() +" (expected at least 2)", _listener.getHeartbeatsSent() >=2);
 
         conn.close();
     }
@@ -84,8 +89,8 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
          Thread.sleep(2500);
 
-         assertEquals("Heartbeats unexpectedly received", 0, _listener._heartbeatsReceived);
-         assertEquals("Heartbeats unexpectedly sent ", 0, _listener._heartbeatsSent);
+         assertEquals("Heartbeats unexpectedly received", 0, _listener.getHeartbeatsReceived());
+         assertEquals("Heartbeats unexpectedly sent ", 0, _listener.getHeartbeatsSent());
 
          conn.close();
     }
@@ -101,8 +106,8 @@ public class HeartbeatTest extends QpidBrokerTestCase
         AMQConnection receiveConn = (AMQConnection) getConnection();
         AMQConnection sendConn = (AMQConnection) getConnection();
         Destination destination = getTestQueue();
-        TestListener receiveListener = new TestListener();
-        TestListener sendListener = new TestListener();
+        TestListener receiveListener = new TestListener("receiverListener");
+        TestListener sendListener = new TestListener("senderListener");
 
 
         Session receiveSession = receiveConn.createSession(false, Session.CLIENT_ACKNOWLEDGE);
@@ -123,11 +128,11 @@ public class HeartbeatTest extends QpidBrokerTestCase
             // Consumer does not ack the message in  order to generate no bytes from consumer back to Broker
         }
 
-        assertTrue("Too few heartbeats sent "+receiveListener._heartbeatsSent+" (expected at least 2)", receiveListener._heartbeatsSent>=2);
-        assertEquals("Unexpected sent at the sender: ",0,sendListener._heartbeatsSent);
+        assertTrue("Too few heartbeats sent "+ receiveListener.getHeartbeatsSent() +" (expected at least 2)", receiveListener.getHeartbeatsSent()>=2);
+        assertEquals("Unexpected number of heartbeats sent by the sender: ",0,sendListener.getHeartbeatsSent());
 
-        assertTrue("Too few heartbeats received at the sender "+sendListener._heartbeatsReceived+" (expected at least 2)", sendListener._heartbeatsReceived>=2);
-        assertEquals("Unexpected received at the receiver: ",0,receiveListener._heartbeatsReceived);
+        assertTrue("Too few heartbeats received at the sender "+ sendListener.getHeartbeatsReceived() +" (expected at least 2)", sendListener.getHeartbeatsReceived()>=2);
+        assertEquals("Unexpected number of heartbeats received by the receiver: ",0,receiveListener.getHeartbeatsReceived());
 
         receiveConn.close();
         sendConn.close();
@@ -142,8 +147,8 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
         Thread.sleep(2500);
 
-        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
-        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+        assertTrue("Too few heartbeats received: "+_listener.getHeartbeatsReceived() +" (expected at least 2)", _listener.getHeartbeatsReceived()>=2);
+        assertTrue("Too few heartbeats sent "+ _listener.getHeartbeatsSent() +" (expected at least 2)", _listener.getHeartbeatsSent() >=2);
 
         conn.close();
     }
@@ -159,8 +164,8 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
         Thread.sleep(2500);
 
-        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
-        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+        assertTrue("Too few heartbeats received: "+_listener.getHeartbeatsReceived()+" (expected at least 2)", _listener.getHeartbeatsReceived()>=2);
+        assertTrue("Too few heartbeats sent "+_listener.getHeartbeatsSent() +" (expected at least 2)", _listener.getHeartbeatsSent()>=2);
 
         conn.close();
     }
@@ -175,26 +180,45 @@ public class HeartbeatTest extends QpidBrokerTestCase
 
         Thread.sleep(2500);
 
-        assertTrue("Too few heartbeats received: "+_listener._heartbeatsReceived+" (expected at least 2)", _listener._heartbeatsReceived>=2);
-        assertTrue("Too few heartbeats sent "+_listener._heartbeatsSent+" (expected at least 2)", _listener._heartbeatsSent>=2);
+        assertTrue("Too few heartbeats received: "+_listener.getHeartbeatsReceived() +" (expected at least 2)", _listener.getHeartbeatsReceived()>=2);
+        assertTrue("Too few heartbeats sent "+_listener.getHeartbeatsSent() +" (expected at least 2)", _listener.getHeartbeatsSent()>=2);
 
         conn.close();
     }
 
     private class TestListener implements HeartbeatListener
     {
-        int _heartbeatsReceived;
-        int _heartbeatsSent;
+        private final String _name;
+        private final AtomicInteger _heartbeatsReceived = new AtomicInteger(0);
+        private final AtomicInteger _heartbeatsSent = new AtomicInteger(0);
+
+        public TestListener(String name)
+        {
+            _name = name;
+        }
+
         @Override
         public void heartbeatReceived()
         {
-            _heartbeatsReceived++;
+            LOGGER.debug(_name + " heartbeat received");
+            _heartbeatsReceived.incrementAndGet();
+        }
+
+        public int getHeartbeatsReceived()
+        {
+            return _heartbeatsReceived.get();
         }
 
         @Override
         public void heartbeatSent()
         {
-            _heartbeatsSent++;
+            LOGGER.debug(_name + " heartbeat sent");
+            _heartbeatsSent.incrementAndGet();
+        }
+
+        public int getHeartbeatsSent()
+        {
+            return _heartbeatsSent.get();
         }
     }
 }
