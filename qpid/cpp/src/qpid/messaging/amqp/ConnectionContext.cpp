@@ -140,6 +140,11 @@ void ConnectionContext::close()
 
 bool ConnectionContext::fetch(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk, qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
+    /**
+     * For fetch() on a receiver with zero capacity, need to reissue the
+     * credit on reconnect, so track the fetches in progress.
+     */
+    qpid::sys::AtomicCount::ScopedIncrement track(lnk->fetching);
     {
         qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
         checkClosed(ssn, lnk);
@@ -535,7 +540,11 @@ void ConnectionContext::restartSession(boost::shared_ptr<SessionContext> s)
     }
     for (SessionContext::ReceiverMap::iterator i = s->receivers.begin(); i != s->receivers.end(); ++i) {
         QPID_LOG(debug, id << " reattaching receiver " << i->first);
-        attach(s, i->second->receiver, i->second->capacity);
+        if (i->second->capacity) {
+            attach(s, i->second->receiver, i->second->capacity);
+        } else {
+            attach(s, i->second->receiver, (uint32_t) i->second->fetching);
+        }
         i->second->verify();
         QPID_LOG(debug, id << " receiver " << i->first << " reattached");
     }
