@@ -310,7 +310,7 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     public void writerIdle()
     {
-        _logger.debug("Protocol Session [" + this + "] idle: reader");
+        _logger.debug("Protocol Session [" + this + "] idle: writer");
         writeFrame(HeartbeatBody.FRAME);
         _heartbeatListener.heartbeatSent();
     }
