@@ -67,6 +67,8 @@ class Sasl : public qpid::sys::Codec, qpid::amqp::SaslClient
     void challenge(); //null != empty string
     void outcome(uint8_t result, const std::string&);
     void outcome(uint8_t result);
+  protected:
+    bool stopReading();
 };
 }}} // namespace qpid::messaging::amqp
 

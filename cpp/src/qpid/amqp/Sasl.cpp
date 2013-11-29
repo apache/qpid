@@ -59,7 +59,7 @@ void Sasl::endFrame(void* frame)
 std::size_t Sasl::read(const char* data, size_t available)
 {
     size_t consumed = 0;
-    while (available - consumed > 4/*framesize*/) {
+    while (!stopReading() && available - consumed > 4/*framesize*/) {
         Decoder decoder(data+consumed, available-consumed);
         //read frame-header
         uint32_t frameSize = decoder.readUInt();
@@ -131,6 +131,11 @@ std::size_t Sasl::writeProtocolHeader(char* buffer, std::size_t size)
         QPID_LOG_CAT(warning, protocol, id << " insufficient buffer for protocol header: " << size)
         return 0;
     }
+}
+
+bool Sasl::stopReading()
+{
+    return false;
 }
 
 }} // namespace qpid::amqp

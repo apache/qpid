@@ -48,6 +48,7 @@ class Sasl : protected Reader
 
     void* startFrame();
     void endFrame(void*);
+    virtual bool stopReading();
 };
 }} // namespace qpid::amqp
 
