@@ -131,9 +131,14 @@ void Sasl::outcome(uint8_t result)
 
     securityLayer = sasl->getSecurityLayer(context.maxFrameSize);
     if (securityLayer.get()) {
-        securityLayer->init(&context);
+        context.initSecurityLayer(*securityLayer);
     }
     context.activateOutput();
+}
+
+bool Sasl::stopReading()
+{
+    return state != NONE;
 }
 
 qpid::sys::Codec* Sasl::getSecurityLayer()
