@@ -45,6 +45,7 @@ namespace framing {
 class ProtocolVersion;
 }
 namespace sys {
+class SecurityLayer;
 struct SecuritySettings;
 }
 namespace messaging {
@@ -112,9 +113,20 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void reconnect();
     std::string getUrl() const;
     const qpid::sys::SecuritySettings* getTransportSecuritySettings();
+    void initSecurityLayer(qpid::sys::SecurityLayer&);
 
   private:
     typedef std::map<std::string, boost::shared_ptr<SessionContext> > SessionMap;
+    class CodecAdapter : public qpid::sys::Codec
+    {
+      public:
+        CodecAdapter(ConnectionContext&);
+        std::size_t decode(const char* buffer, std::size_t size);
+        std::size_t encode(char* buffer, std::size_t size);
+        bool canEncode();
+      private:
+        ConnectionContext& context;
+    };
 
     boost::shared_ptr<DriverImpl> driver;
     boost::shared_ptr<Transport> transport;
@@ -134,6 +146,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
         CONNECTED
     } state;
     std::auto_ptr<Sasl> sasl;
+    CodecAdapter codecAdapter;
 
     void check();
     void wait();
