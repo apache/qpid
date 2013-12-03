@@ -30,7 +30,7 @@ Store:
 Current bugs and performance issues:
 ------------------------------------
 1. RH Bugzilla 1035843 - Slow performance for producers
-2. RH Bugzilla 1036071 - Crash when deleting queue
+2. (FIXED) QPID-5387 (BZ 1036071) - Crash when deleting queue
 3. RH Bugzilla 1035802 - Broker won't recover with durable queue
 4. RH Bugzilla 1036026 - Unable to create durable queue - framing error
 
