@@ -485,6 +485,10 @@ bool Exchange::isDestroyed() const
     Mutex::ScopedLock l(usersLock);
     return destroyed;
 }
+bool Exchange::isAutoDelete() const
+{
+    return autodelete;
+}
 
 }}
 

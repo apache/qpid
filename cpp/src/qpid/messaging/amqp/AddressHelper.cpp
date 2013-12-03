@@ -660,6 +660,7 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
         //set. However this can be avoided by not specifying any node
         //properties when asserting)
         if (!type.empty() || durableNode || !properties.empty()) {
+            bool isAutoDeleted = false;
             qpid::types::Variant::Map requested = properties;
             if (!type.empty()) requested[SUPPORTED_DIST_MODES] = type == TOPIC ? COPY : MOVE;
             if (durableNode) requested[DURABLE] = true;
@@ -673,13 +674,23 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
                     pn_data_next(data);
                     qpid::types::Variant::Map::const_iterator j = requested.find(key);
                     qpid::types::Variant v;
-                    if (j != requested.end() &&
-                        ((key == LIFETIME_POLICY && checkLifetimePolicy(j->second.asString(), data)) ||
-                         (read(data, v) && v.asString() == j->second.asString()))) {
+                    if (key == LIFETIME_POLICY) {
+                        isAutoDeleted = true;
+                        if (j != requested.end() && checkLifetimePolicy(j->second.asString(), data)) {
+                            requested.erase(j->first);
+                        }
+                    } else if (key == AUTO_DELETE) {
+                        read(data, v);
+                        isAutoDeleted = v.asBool();
+                    } else if (j != requested.end() && (read(data, v) && v.asString() == j->second.asString())) {
                         requested.erase(j->first);
                     }
                 }
                 pn_data_exit(data);
+                qpid::types::Variant::Map::iterator i = requested.find(AUTO_DELETE);
+                if (i != requested.end() && i->second.asBool() == isAutoDeleted) {
+                    requested.erase(i);
+                }
                 if (!requested.empty()) {
                     std::stringstream missing;
                     missing << "Requested node properties not met: " << requested;

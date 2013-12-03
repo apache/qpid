@@ -110,6 +110,12 @@ void NodeProperties::read(pn_data_t* data)
 {
     DataReader reader(*this);
     reader.read(data);
+
+}
+
+bool NodeProperties::wasSpecified(const std::string& key)
+{
+    return specified.find(key) != specified.end();
 }
 
 void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Queue> node)
@@ -120,7 +126,7 @@ void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Queue> node)
         pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
         pn_data_put_string(data, convert(MOVE));//TODO: should really add COPY as well, since queues can be browsed
         pn_bytes_t symbol;
-        if (autoDelete && node->isAutoDelete() && getLifetimeDescriptorSymbol(node->getSettings().lifetime, symbol)) {
+        if (wasSpecified(AUTO_DELETE) && node->isAutoDelete() && getLifetimeDescriptorSymbol(node->getSettings().lifetime, symbol)) {
             pn_data_put_symbol(data, convert(LIFETIME_POLICY));
             pn_data_put_described(data);
             pn_data_enter(data);
@@ -128,11 +134,11 @@ void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Queue> node)
             pn_data_put_list(data);
             pn_data_exit(data);
         }
-        if (durable && node->isDurable()) {
+        if (wasSpecified(DURABLE) && node->isDurable()) {
             pn_data_put_symbol(data, convert(DURABLE));
             pn_data_put_bool(data, true);
         }
-        if (exclusive && node->hasExclusiveOwner()) {
+        if (wasSpecified(EXCLUSIVE) && node->hasExclusiveOwner()) {
             pn_data_put_symbol(data, convert(EXCLUSIVE));
             pn_data_put_bool(data, true);
         }
@@ -170,7 +176,7 @@ void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Exchange> node)
         pn_data_enter(data);
         pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
         pn_data_put_string(data, convert(COPY));
-        if (durable && node->isDurable()) {
+        if (wasSpecified(DURABLE) && node->isDurable()) {
             pn_data_put_symbol(data, convert(DURABLE));
             pn_data_put_bool(data, true);
         }
@@ -182,9 +188,9 @@ void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Exchange> node)
             pn_data_put_symbol(data, convert(ALTERNATE_EXCHANGE));
             pn_data_put_string(data, convert(node->getAlternate()->getName()));
         }
-        if (autoDelete) {
+        if (wasSpecified(AUTO_DELETE)) {
             pn_data_put_symbol(data, convert(AUTO_DELETE));
-            pn_data_put_bool(data, autoDelete);
+            pn_data_put_bool(data, node->isAutoDelete());
         }
 
         for (qpid::types::Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
@@ -203,6 +209,7 @@ void NodeProperties::process(const std::string& key, const qpid::types::Variant&
 {
     received = true;
     QPID_LOG(debug, "Processing node property " << key << " = " << value);
+    specified.insert(key);
     if (key == SUPPORTED_DIST_MODES) {
         if (value == MOVE) queue = true;
         else if (value == COPY) queue = false;
