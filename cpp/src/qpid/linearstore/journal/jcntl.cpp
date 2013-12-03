@@ -306,7 +306,6 @@ jcntl::stop(const bool block_till_aio_cmpl)
     _stop_flag = true;
     if (!_readonly_flag)
         flush(block_till_aio_cmpl);
-    _linearFileController.finalize();
 }
 
 LinearFileController&
