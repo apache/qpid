@@ -93,6 +93,7 @@ if (BUILD_LINEARSTORE)
 
     # Journal source files
     set (linear_jrnl_SOURCES
+        qpid/linearstore/journal/Checksum.cpp
         qpid/linearstore/journal/data_tok.cpp
         qpid/linearstore/journal/deq_rec.cpp
         qpid/linearstore/journal/EmptyFilePool.cpp

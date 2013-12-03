@@ -48,7 +48,7 @@ public:
 
     void reset(const uint64_t serial, const uint64_t rid, const  uint64_t drid, const void* const xidp,
                const std::size_t xidlen, const bool txn_coml_commit);
-    uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks);
+    uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum);
     bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs);
 
     inline bool is_txn_coml_commit() const { return ::is_txn_coml_commit(&_deq_hdr); }

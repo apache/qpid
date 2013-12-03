@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cstring>
+#include "qpid/linearstore/journal/Checksum.h"
 #include "qpid/linearstore/journal/jexception.h"
 
 namespace qpid {
@@ -62,7 +63,7 @@ enq_rec::reset(const uint64_t serial, const uint64_t rid, const void* const dbuf
 }
 
 uint32_t
-enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
+enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum)
 {
     assert(wptr != 0);
     assert(max_size_dblks > 0);
@@ -102,8 +103,10 @@ enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
                 }
                 rec_offs -= _enq_hdr._dsize - wsize2;
             }
+            checksum.addData((unsigned char*)wptr, wr_cnt);
             if (rem)
             {
+                _enq_tail._checksum = checksum.getChecksum();
                 wsize = sizeof(_enq_tail) > rec_offs ? sizeof(_enq_tail) - rec_offs : 0;
                 wsize2 = wsize;
                 if (wsize)
@@ -122,21 +125,25 @@ enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
         else // No further split required
         {
             rec_offs -= sizeof(_enq_hdr);
-            std::size_t wsize = _enq_hdr._xidsize > rec_offs ? _enq_hdr._xidsize - rec_offs : 0;
-            if (wsize)
+            std::size_t xid_wsize = _enq_hdr._xidsize > rec_offs ? _enq_hdr._xidsize - rec_offs : 0;
+            if (xid_wsize)
             {
-                std::memcpy(wptr, (const char*)_xidp + rec_offs, wsize);
-                wr_cnt += wsize;
+                std::memcpy(wptr, (const char*)_xidp + rec_offs, xid_wsize);
+                wr_cnt += xid_wsize;
             }
-            rec_offs -= _enq_hdr._xidsize - wsize;
-            wsize = _enq_hdr._dsize > rec_offs ? _enq_hdr._dsize - rec_offs : 0;
-            if (wsize && !::is_enq_external(&_enq_hdr))
+            rec_offs -= _enq_hdr._xidsize - xid_wsize;
+            std::size_t data_wsize = _enq_hdr._dsize > rec_offs ? _enq_hdr._dsize - rec_offs : 0;
+            if (data_wsize && !::is_enq_external(&_enq_hdr))
             {
-                std::memcpy((char*)wptr + wr_cnt, (const char*)_data + rec_offs, wsize);
-                wr_cnt += wsize;
+                std::memcpy((char*)wptr + wr_cnt, (const char*)_data + rec_offs, data_wsize);
+                wr_cnt += data_wsize;
             }
-            rec_offs -= _enq_hdr._dsize - wsize;
-            wsize = sizeof(_enq_tail) > rec_offs ? sizeof(_enq_tail) - rec_offs : 0;
+            rec_offs -= _enq_hdr._dsize - data_wsize;
+            if (xid_wsize || data_wsize) {
+                checksum.addData((unsigned char*)wptr, wr_cnt);
+            }
+            _enq_tail._checksum = checksum.getChecksum();
+            std::size_t wsize = sizeof(_enq_tail) > rec_offs ? sizeof(_enq_tail) - rec_offs : 0;
             if (wsize)
             {
                 std::memcpy((char*)wptr + wr_cnt, (char*)&_enq_tail + rec_offs, wsize);
@@ -174,8 +181,10 @@ enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
                 wr_cnt += wsize;
                 rem -= wsize;
             }
+            checksum.addData((unsigned char*)wptr, wr_cnt);
             if (rem)
             {
+                _enq_tail._checksum = checksum.getChecksum();
                 wsize = rem >= sizeof(_enq_tail) ? sizeof(_enq_tail) : rem;
                 std::memcpy((char*)wptr + wr_cnt, (void*)&_enq_tail, wsize);
                 wr_cnt += wsize;
@@ -195,6 +204,8 @@ enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
                 std::memcpy((char*)wptr + wr_cnt, _data, _enq_hdr._dsize);
                 wr_cnt += _enq_hdr._dsize;
             }
+            checksum.addData((unsigned char*)wptr, wr_cnt);
+            _enq_tail._checksum = checksum.getChecksum();
             std::memcpy((char*)wptr + wr_cnt, (void*)&_enq_tail, sizeof(_enq_tail));
             wr_cnt += sizeof(_enq_tail);
 #ifdef QLS_CLEAN
@@ -209,15 +220,13 @@ enq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
 bool
 enq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
 {
-    uint32_t checksum = 0UL; // TODO: Add checksum math
     if (rec_offs == 0)
     {
         // Read header, allocate (if req'd) for xid
-        //_enq_hdr.hdr_copy(h);
         ::rec_hdr_copy(&_enq_hdr._rhdr, &h);
         ifsp->read((char*)&_enq_hdr._xidsize, sizeof(_enq_hdr._xidsize));
         ifsp->read((char*)&_enq_hdr._dsize, sizeof(_enq_hdr._dsize));
-        rec_offs = sizeof(_enq_hdr);
+        rec_offs = sizeof(::enq_hdr_t);
         if (_enq_hdr._xidsize > 0)
         {
             _buff = std::malloc(_enq_hdr._xidsize);
@@ -280,18 +289,6 @@ enq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
     }
     ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
     assert(!ifsp->fail() && !ifsp->bad());
-    int res = ::rec_tail_check(&_enq_tail, &_enq_hdr._rhdr, checksum);
-    if (res != 0) {
-        std::stringstream oss;
-        switch (res) {
-          case 1: oss << std::hex << "Magic: expected 0x" << ~_enq_hdr._rhdr._magic << "; found 0x" << _enq_tail._xmagic; break;
-          case 2: oss << std::hex << "Serial: expected 0x" << _enq_hdr._rhdr._serial << "; found 0x" << _enq_tail._serial; break;
-          case 3: oss << std::hex << "Record Id: expected 0x" << _enq_hdr._rhdr._rid << "; found 0x" << _enq_tail._rid; break;
-          case 4: oss << std::hex << "Checksum: expected 0x" << checksum << "; found 0x" << _enq_tail._checksum; break;
-          default: oss << "Unknown error " << res;
-        }
-        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "enq_rec", "decode"); // TODO: Don't throw exception, log info
-    }
     return true;
 }
 
