@@ -32,6 +32,8 @@ namespace qpid {
 namespace linearstore {
 namespace journal {
 
+class Checksum;
+
 /**
 * \class jrec
 * \brief Abstract class for all file jrecords, both data and log. This class establishes
@@ -95,7 +97,7 @@ public:
     * \param max_size_dblks Maximum number of data-blocks to write to pointer wptr.
     * \returns Number of data-blocks encoded.
     */
-    virtual uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks) = 0;
+    virtual uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum) = 0;
     virtual bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs) = 0;
 
     virtual std::string& str(std::string& str) const = 0;

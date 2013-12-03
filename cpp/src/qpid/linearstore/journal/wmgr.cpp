@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include "qpid/linearstore/journal/aio_callback.h"
+#include "qpid/linearstore/journal/Checksum.h"
 #include "qpid/linearstore/journal/data_tok.h"
 #include "qpid/linearstore/journal/jcntl.h"
 #include "qpid/linearstore/journal/JournalFile.h"
@@ -158,6 +159,7 @@ wmgr::enqueue(const void* const data_buff,
     }
 //std::cout << "---+++ wmgr::enqueue() ENQ rid=0x" << std::hex << rid << " po=0x" << _pg_offset_dblks << " cs=0x" << (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) << " " << std::dec << std::flush; // DEBUG
     bool done = false;
+    Checksum checksum;
     while (!done)
     {
 //std::cout << "*" << std::flush; // DEBUG
@@ -165,7 +167,7 @@ wmgr::enqueue(const void* const data_buff,
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * QLS_DBLK_SIZE_BYTES);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _enq_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks, checksum);
 
         // Remember fid which contains the record header in case record is split over several files
         if (data_offs_dblks == 0) {
@@ -278,6 +280,7 @@ wmgr::dequeue(data_tok* dtokp,
     }
 //std::cout << "---+++ wmgr::dequeue() DEQ rid=0x" << std::hex << rid << " drid=0x" << dequeue_rid << " " << std::dec << std::flush; // DEBUG
     bool done = false;
+    Checksum checksum;
     while (!done)
     {
 //std::cout << "*" << std::flush; // DEBUG
@@ -285,7 +288,7 @@ wmgr::dequeue(data_tok* dtokp,
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * QLS_DBLK_SIZE_BYTES);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _deq_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks, checksum);
 
         // Remember fid which contains the record header in case record is split over several files
         if (data_offs_dblks == 0) {
@@ -396,13 +399,14 @@ wmgr::abort(data_tok* dtokp,
         _abort_busy = true;
     }
     bool done = false;
+    Checksum checksum;
     while (!done)
     {
         assert(_pg_offset_dblks < _cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * QLS_DBLK_SIZE_BYTES);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks, checksum);
 
         // Remember fid which contains the record header in case record is split over several files
         if (data_offs_dblks == 0)
@@ -494,13 +498,14 @@ wmgr::commit(data_tok* dtokp,
         _commit_busy = true;
     }
     bool done = false;
+    Checksum checksum;
     while (!done)
     {
         assert(_pg_offset_dblks < _cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS);
         void* wptr = (void*)((char*)_page_ptr_arr[_pg_index] + _pg_offset_dblks * QLS_DBLK_SIZE_BYTES);
         uint32_t data_offs_dblks = dtokp->dblocks_written();
         uint32_t ret = _txn_rec.encode(wptr, data_offs_dblks,
-                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks);
+                (_cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS) - _pg_offset_dblks, checksum);
 
         // Remember fid which contains the record header in case record is split over several files
         if (data_offs_dblks == 0)

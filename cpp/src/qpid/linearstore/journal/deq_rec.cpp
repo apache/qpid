@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cstring>
+#include "qpid/linearstore/journal/Checksum.h"
 #include "qpid/linearstore/journal/jexception.h"
 
 namespace qpid {
@@ -55,10 +56,11 @@ deq_rec::reset(const uint64_t serial, const uint64_t rid, const  uint64_t drid, 
     _buff = 0;
     _deq_tail._serial = serial;
     _deq_tail._rid = rid;
+    _deq_tail._checksum = 0UL;
 }
 
 uint32_t
-deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
+deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum)
 {
     assert(wptr != 0);
     assert(max_size_dblks > 0);
@@ -68,6 +70,7 @@ deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
     std::size_t rec_offs = rec_offs_dblks * QLS_DBLK_SIZE_BYTES;
     std::size_t rem = max_size_dblks * QLS_DBLK_SIZE_BYTES;
     std::size_t wr_cnt = 0;
+
     if (rec_offs_dblks) // Continuation of split dequeue record (over 2 or more pages)
     {
         if (size_dblks(rec_size()) - rec_offs_dblks > max_size_dblks) // Further split required
@@ -84,8 +87,10 @@ deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
                 rem -= wsize;
             }
             rec_offs -= _deq_hdr._xidsize - wsize2;
+            checksum.addData((unsigned char*)wptr, wr_cnt);
             if (rem)
             {
+                _deq_tail._checksum = checksum.getChecksum();
                 wsize = sizeof(_deq_tail) > rec_offs ? sizeof(_deq_tail) - rec_offs : 0;
                 wsize2 = wsize;
                 if (wsize)
@@ -109,8 +114,10 @@ deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
             {
                 std::memcpy(wptr, (const char*)_xidp + rec_offs, wsize);
                 wr_cnt += wsize;
+                checksum.addData((unsigned char*)wptr, wr_cnt);
             }
             rec_offs -= _deq_hdr._xidsize - wsize;
+            _deq_tail._checksum = checksum.getChecksum();
             wsize = sizeof(_deq_tail) > rec_offs ? sizeof(_deq_tail) - rec_offs : 0;
             if (wsize)
             {
@@ -142,8 +149,10 @@ deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
                 wr_cnt += wsize;
                 rem -= wsize;
             }
+            checksum.addData((unsigned char*)wptr, wr_cnt);
             if (rem)
             {
+                _deq_tail._checksum = checksum.getChecksum();
                 wsize = rem >= sizeof(_deq_tail) ? sizeof(_deq_tail) : rem;
                 std::memcpy((char*)wptr + wr_cnt, (void*)&_deq_tail, wsize);
                 wr_cnt += wsize;
@@ -157,6 +166,8 @@ deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
             {
                 std::memcpy((char*)wptr + wr_cnt, _xidp, _deq_hdr._xidsize);
                 wr_cnt += _deq_hdr._xidsize;
+                checksum.addData((unsigned char*)wptr, wr_cnt);
+                _deq_tail._checksum = checksum.getChecksum();
                 std::memcpy((char*)wptr + wr_cnt, (void*)&_deq_tail, sizeof(_deq_tail));
                 wr_cnt += sizeof(_deq_tail);
             }
@@ -172,14 +183,12 @@ deq_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
 bool
 deq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
 {
-    uint32_t checksum = 0UL; // TODO: Add checksum math
     if (rec_offs == 0)
     {
-        //_deq_hdr.hdr_copy(h);
         ::rec_hdr_copy(&_deq_hdr._rhdr, &h);
         ifsp->read((char*)&_deq_hdr._deq_rid, sizeof(_deq_hdr._deq_rid));
         ifsp->read((char*)&_deq_hdr._xidsize, sizeof(_deq_hdr._xidsize));
-        rec_offs = sizeof(_deq_hdr);
+        rec_offs = sizeof(::deq_hdr_t);
         // Read header, allocate (if req'd) for xid
         if (_deq_hdr._xidsize)
         {
@@ -223,14 +232,18 @@ deq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
     ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
     assert(!ifsp->fail() && !ifsp->bad());
     if (_deq_hdr._xidsize) {
-        int res = ::rec_tail_check(&_deq_tail, &_deq_hdr._rhdr, checksum);
+        Checksum checksum;
+        checksum.addData((unsigned char*)&_deq_hdr, sizeof(_deq_hdr));
+        checksum.addData((unsigned char*)_buff, _deq_hdr._xidsize);
+        uint32_t cs = checksum.getChecksum();
+        int res = ::rec_tail_check(&_deq_tail, &_deq_hdr._rhdr, cs);
         if (res != 0) {
             std::stringstream oss;
             switch (res) {
               case 1: oss << std::hex << "Magic: expected 0x" << ~_deq_hdr._rhdr._magic << "; found 0x" << _deq_tail._xmagic; break;
               case 2: oss << std::hex << "Serial: expected 0x" << _deq_hdr._rhdr._serial << "; found 0x" << _deq_tail._serial; break;
               case 3: oss << std::hex << "Record Id: expected 0x" << _deq_hdr._rhdr._rid << "; found 0x" << _deq_tail._rid; break;
-              case 4: oss << std::hex << "Checksum: expected 0x" << checksum << "; found 0x" << _deq_tail._checksum; break;
+              case 4: oss << std::hex << "Checksum: expected 0x" << cs << "; found 0x" << _deq_tail._checksum; break;
               default: oss << "Unknown error " << res;
             }
             throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "deq_rec", "decode"); // TODO: Don't throw exception, log info

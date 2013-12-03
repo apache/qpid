@@ -6,10 +6,10 @@ Store:
 1. (SOLVED) Overwrite identity: When recovering a previously used file, if the write boundary coincides with old record
    start, no way of discriminating old from new at boundary (used to use OWI).
 
-2. QPID-5357: Recycling files while in use not working, however, files are recovered to EFP during recovery. Must solve
+2. (SOLVED) QPID-5357: Recycling files while in use not working, however, files are recovered to EFP during recovery. Must solve
    #1 first.
 
-3. QPID-5358: Checksum not implemented in record tail, not checked during read.
+3. (SOLVED) QPID-5358: Checksum not implemented in record tail, not checked during read.
 
 4. QPID-5359: Rework qpid management parameters and controls (QMF).
 
@@ -27,9 +27,15 @@ Store:
    * Store analysis and status
    * Recovery/reading of message content
 
+Current bugs and performance issues:
+------------------------------------
+1. RH Bugzilla 1035843 - Slow performance for producers
+2. RH Bugzilla 1036071 - Crash when deleting queue
+3. RH Bugzilla 1035802 - Broker won't recover with durable queue
+4. RH Bugzilla 1036026 - Unable to create durable queue - framing error
+
 Code tidy-up
 ------------
-
 * Remove old comments
 * Use c++ cast templates instead of (xxx)y
 * Member names: xxx_
