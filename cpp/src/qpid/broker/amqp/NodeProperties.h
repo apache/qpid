@@ -24,6 +24,7 @@
 #include "qpid/amqp/MapReader.h"
 #include "qpid/types/Variant.h"
 #include "qpid/broker/QueueSettings.h"
+#include <set>
 #include <boost/shared_ptr.hpp>
 
 struct pn_data_t;
@@ -77,8 +78,10 @@ class NodeProperties : public qpid::amqp::MapReader
     std::string alternateExchange;
     qpid::types::Variant::Map properties;
     QueueSettings::LifetimePolicy lifetime;
+    std::set<std::string> specified;
 
     void process(const std::string&, const qpid::types::Variant&, const qpid::amqp::Descriptor*);
+    bool wasSpecified(const std::string& key);
 };
 }}} // namespace qpid::broker::amqp
 

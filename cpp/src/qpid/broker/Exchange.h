@@ -180,6 +180,7 @@ public:
 
     const std::string& getName() const { return name; }
     bool isDurable() { return durable; }
+    QPID_BROKER_EXTERN bool isAutoDelete() const;
     QPID_BROKER_EXTERN const qpid::framing::FieldTable& getArgs() const { return args; }
     QPID_BROKER_EXTERN void setArgs(const framing::FieldTable&);
 
