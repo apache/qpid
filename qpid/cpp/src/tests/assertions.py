@@ -69,8 +69,17 @@ class AssertionTests (VersionTest):
         self.ssn.sender("%s; {create:always, node:{durable:True}}" % name)
         self.ssn.sender("%s; {assert:always, node:{durable:True}}" % name)
 
-    def test_queue_options(self):
+    def test_queue_is_autodelete(self):
         name = str(uuid4())
+        self.ssn.sender("%s; {create:always, node:{x-declare:{auto-delete:True}}}" % name)
+        self.ssn.sender("%s; {assert:always, node:{x-declare:{auto-delete:True}}}" % name)
+        try:
+            self.ssn.sender("%s; {assert:always, node:{x-declare:{auto-delete:False}}}" % name)
+            assert False, "Expected assertion to fail for auto-delete"
+        except AssertionFailed: None
+        except MessagingError: None
+
+    def do_test_queue_options(self, name):
         self.ssn.sender("%s; {create:always, node:{x-declare:{arguments:{foo:bar,'qpid.last_value_queue_key':abc}}}}" % name)
         self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments:{'qpid.last_value_queue_key':abc}}}}" % name)
         try:
@@ -88,6 +97,21 @@ class AssertionTests (VersionTest):
             assert False, "Expected assertion to fail on option with different value"
         except AssertionFailed: None
         except MessagingError: None
+
+    def test_queue_options(self):
+        self.do_test_queue_options(str(uuid4()))
+
+    def test_queue_options_from_0_10(self):
+        name = str(uuid4())
+        self.do_test_queue_options(name)
+        ssn_0_10 = self.create_connection("amqp0-10", True).session()
+        ssn_0_10.sender("%s; {assert:always, node:{x-declare:{arguments:{'qpid.last_value_queue_key':abc}}}}" % name)
+        try:
+            ssn_0_10.sender("%s; {assert:always, node:{x-declare:{arguments:{'qpid.last_value_key':xyz}}}}" % name)
+            assert False, "Expected assertion to fail on option with different value"
+        except AssertionFailed: None
+        except MessagingError: None
+
 
     def test_exchanges_alternate_exchange1(self):
         name = str(uuid4())
@@ -129,6 +153,16 @@ class AssertionTests (VersionTest):
         except AssertionFailed: None
         except MessagingError: None
 
+    def test_exchange_is_autodelete(self):
+        name = str(uuid4())
+        self.ssn.sender("%s; {create:always, node:{type:topic, x-declare:{auto-delete:True}}}" % name)
+        self.ssn.sender("%s; {assert:always, node:{x-declare:{auto-delete:True}}}" % name)
+        try:
+            self.ssn.sender("%s; {assert:always, node:{x-declare:{auto-delete:False}}}" % name)
+            assert False, "Expected assertion to fail for auto-delete"
+        except AssertionFailed: None
+        except MessagingError: None
+
     def test_exchange_options(self):
         name = str(uuid4())
         self.ssn.sender("%s; {create:always, node:{type:topic, x-declare:{arguments:{foo:bar,'qpid.msg_sequence':True}}}}" % name)
@@ -143,4 +177,3 @@ class AssertionTests (VersionTest):
             assert False, "Expected assertion to fail on unspecified option"
         except AssertionFailed: None
         except MessagingError: None
-
