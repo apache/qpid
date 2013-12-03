@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cstring>
+#include "qpid/linearstore/journal/Checksum.h"
 #include "qpid/linearstore/journal/jexception.h"
 
 namespace qpid {
@@ -55,10 +56,11 @@ txn_rec::reset(const bool commitFlag, const uint64_t serial, const  uint64_t rid
     _txn_tail._xmagic = ~_txn_hdr._rhdr._magic;
     _txn_tail._serial = serial;
     _txn_tail._rid = rid;
+    _txn_tail._checksum = 0UL;
 }
 
 uint32_t
-txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
+txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum)
 {
     assert(wptr != 0);
     assert(max_size_dblks > 0);
@@ -83,8 +85,10 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
                 rem -= wsize;
             }
             rec_offs -= _txn_hdr._xidsize - wsize2;
+            checksum.addData((unsigned char*)wptr, wr_cnt);
             if (rem)
             {
+                _txn_tail._checksum = checksum.getChecksum();
                 wsize = sizeof(_txn_tail) > rec_offs ? sizeof(_txn_tail) - rec_offs : 0;
                 wsize2 = wsize;
                 if (wsize)
@@ -108,8 +112,10 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
             {
                 std::memcpy(wptr, (const char*)_xidp + rec_offs, wsize);
                 wr_cnt += wsize;
+                checksum.addData((unsigned char*)wptr, wr_cnt);
             }
             rec_offs -= _txn_hdr._xidsize - wsize;
+            _txn_tail._checksum = checksum.getChecksum();
             wsize = sizeof(_txn_tail) > rec_offs ? sizeof(_txn_tail) - rec_offs : 0;
             if (wsize)
             {
@@ -141,8 +147,10 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
                 wr_cnt += wsize;
                 rem -= wsize;
             }
+            checksum.addData((unsigned char*)wptr, wr_cnt);
             if (rem)
             {
+                _txn_tail._checksum = checksum.getChecksum();
                 wsize = rem >= sizeof(_txn_tail) ? sizeof(_txn_tail) : rem;
                 std::memcpy((char*)wptr + wr_cnt, (void*)&_txn_tail, wsize);
                 wr_cnt += wsize;
@@ -154,6 +162,8 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
         {
             std::memcpy((char*)wptr + wr_cnt, _xidp, _txn_hdr._xidsize);
             wr_cnt += _txn_hdr._xidsize;
+            checksum.addData((unsigned char*)wptr, wr_cnt);
+            _txn_tail._checksum = checksum.getChecksum();
             std::memcpy((char*)wptr + wr_cnt, (void*)&_txn_tail, sizeof(_txn_tail));
             wr_cnt += sizeof(_txn_tail);
 #ifdef QLS_CLEAN
@@ -168,14 +178,12 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks)
 bool
 txn_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
 {
-    uint32_t checksum = 0UL; // TODO: Add checksum math
     if (rec_offs == 0)
     {
         // Read header, allocate for xid
-        //_txn_hdr.hdr_copy(h);
         ::rec_hdr_copy(&_txn_hdr._rhdr, &h);
         ifsp->read((char*)&_txn_hdr._xidsize, sizeof(_txn_hdr._xidsize));
-        rec_offs = sizeof(txn_hdr_t);
+        rec_offs = sizeof(::txn_hdr_t);
         _buff = std::malloc(_txn_hdr._xidsize);
         MALLOC_CHK(_buff, "_buff", "txn_rec", "rcv_decode");
     }
@@ -216,14 +224,19 @@ txn_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
         throw jexception(jerrno::JERR_JREC_BADRECTAIL); // TODO: complete exception detail
     }
     assert(!ifsp->fail() && !ifsp->bad());
-    int res = ::rec_tail_check(&_txn_tail, &_txn_hdr._rhdr, checksum);
+    assert(_txn_hdr._xidsize > 0);
+    Checksum checksum;
+    checksum.addData((unsigned char*)&_txn_hdr, sizeof(_txn_hdr));
+    checksum.addData((unsigned char*)_buff, _txn_hdr._xidsize);
+    uint32_t cs = checksum.getChecksum();
+    int res = ::rec_tail_check(&_txn_tail, &_txn_hdr._rhdr, cs);
     if (res != 0) {
         std::stringstream oss;
         switch (res) {
           case 1: oss << std::hex << "Magic: expected 0x" << ~_txn_hdr._rhdr._magic << "; found 0x" << _txn_tail._xmagic; break;
           case 2: oss << std::hex << "Serial: expected 0x" << _txn_hdr._rhdr._serial << "; found 0x" << _txn_tail._serial; break;
           case 3: oss << std::hex << "Record Id: expected 0x" << _txn_hdr._rhdr._rid << "; found 0x" << _txn_tail._rid; break;
-          case 4: oss << std::hex << "Checksum: expected 0x" << checksum << "; found 0x" << _txn_tail._checksum; break;
+          case 4: oss << std::hex << "Checksum: expected 0x" << cs << "; found 0x" << _txn_tail._checksum; break;
           default: oss << "Unknown error " << res;
         }
         throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "txn_rec", "decode"); // TODO: Don't throw exception, log info

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iomanip>
+#include "qpid/linearstore/journal/Checksum.h"
 #include "qpid/linearstore/journal/data_tok.h"
 #include "qpid/linearstore/journal/deq_rec.h"
 #include "qpid/linearstore/journal/EmptyFilePool.h"
@@ -200,6 +201,32 @@ bool RecoveryManager::readNextRemainingRecord(void** const dataPtrPtr,
         throw jexception(jerrno::JERR__MALLOC, oss.str(), "RecoveryManager", "readNextRemainingRecord");
     }
     readJournalData((char*)*dataPtrPtr, dataSize);
+
+    // Check enqueue record checksum
+    Checksum checksum;
+    checksum.addData((unsigned char*)&enqueueHeader, sizeof(::enq_hdr_t));
+    if (xidSize > 0) {
+        checksum.addData((unsigned char*)*xidPtrPtr, xidSize);
+    }
+    if (dataSize > 0) {
+        checksum.addData((unsigned char*)*dataPtrPtr, dataSize);
+    }
+    ::rec_tail_t enqueueTail;
+    inFileStream_.read((char*)&enqueueTail, sizeof(::rec_tail_t));
+    uint32_t cs = checksum.getChecksum();
+//std::cout << std::hex << "### rid=0x" << enqueueHeader._rhdr._rid << " rtcs=0x" << enqueueTail._checksum << " cs=0x" << cs << std::dec << std::endl; // DEBUG
+    int res = ::rec_tail_check(&enqueueTail, &enqueueHeader._rhdr, cs);
+    if (res != 0) {
+        std::stringstream oss;
+        switch (res) {
+          case 1: oss << std::hex << "Magic: expected 0x" << ~enqueueHeader._rhdr._magic << "; found 0x" << enqueueTail._xmagic; break;
+          case 2: oss << std::hex << "Serial: expected 0x" << enqueueHeader._rhdr._serial << "; found 0x" << enqueueTail._serial; break;
+          case 3: oss << std::hex << "Record Id: expected 0x" << enqueueHeader._rhdr._rid << "; found 0x" << enqueueTail._rid; break;
+          case 4: oss << std::hex << "Checksum: expected 0x" << cs << "; found 0x" << enqueueTail._checksum; break;
+          default: oss << "Unknown error " << res;
+        }
+        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "enq_rec", "decode"); // TODO: Don't throw exception, log info
+    }
 
     // Set data token
     dtokp->set_wstate(data_tok::ENQ);
