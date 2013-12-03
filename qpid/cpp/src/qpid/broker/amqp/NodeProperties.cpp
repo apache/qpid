@@ -27,6 +27,7 @@
 #include "qpid/amqp/Descriptor.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/types/encodings.h"
 #include "qpid/types/Variant.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/log/Statement.h"
@@ -305,14 +306,23 @@ void NodeProperties::onTimestampValue(const CharSequence& key, int64_t value, co
     process(key.str(), value, d);
 }
 
+namespace {
+qpid::types::Variant utf8(const std::string& s)
+{
+    qpid::types::Variant v(s);
+    v.setEncoding(qpid::types::encodings::UTF8);
+    return v;
+}
+}
+
 void NodeProperties::onStringValue(const CharSequence& key, const CharSequence& value, const Descriptor* d)
 {
-    process(key.str(), value.str(), d);
+    process(key.str(), utf8(value.str()), d);
 }
 
 void NodeProperties::onSymbolValue(const CharSequence& key, const CharSequence& value, const Descriptor* d)
 {
-    process(key.str(), value.str(), d);
+    process(key.str(), utf8(value.str()), d);
 }
 
 QueueSettings NodeProperties::getQueueSettings()
