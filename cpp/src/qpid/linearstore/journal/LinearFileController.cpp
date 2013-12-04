@@ -91,6 +91,10 @@ void LinearFileController::pullEmptyFileFromEfp() {
     addJournalFile(ef, emptyFilePoolPtr_->getIdentity(), getNextFileSeqNum(), 0);
 }
 
+void LinearFileController::restoreEmptyFile(const std::string& fileName) {
+    addJournalFile(fileName, emptyFilePoolPtr_->getIdentity(), getNextFileSeqNum(), 0);
+}
+
 void LinearFileController::purgeEmptyFilesToEfp() {
     slock l(journalFileListMutex_);
     purgeEmptyFilesToEfpNoLock();
