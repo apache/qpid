@@ -38,7 +38,7 @@
 namespace qpid {
 namespace sys {
 namespace windows {
-    
+
 /*
  * SSL/Schannel shim between the frame-handling and AsynchIO layers.
  * SslAsynchIO creates a regular AsynchIO object to handle I/O and this class
@@ -147,6 +147,7 @@ public:
 
 private:
     std::string serverHost;
+    bool clientCertRequested;
 
     // Client- and server-side SSL subclasses implement these to do the
     // proper negotiation steps. negotiateStep() is called with a buffer

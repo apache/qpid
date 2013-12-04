@@ -121,6 +121,7 @@ SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
     SecInvalidateHandle(&credHandle);
     memset(&cred, 0, sizeof(cred));
     cred.dwVersion = SCHANNEL_CRED_VERSION;
+    cred.dwFlags = SCH_CRED_NO_DEFAULT_CREDS;
 
     // In case EXTERNAL SASL mechanism has been selected, we need to find
     // the client certificate with the private key which should be used
