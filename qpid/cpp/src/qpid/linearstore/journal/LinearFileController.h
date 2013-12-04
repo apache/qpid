@@ -68,6 +68,7 @@ public:
     efpFileSize_sblks_t fileSize_sblks() const;
     uint64_t getNextRecordId();
     void pullEmptyFileFromEfp();
+    void restoreEmptyFile(const std::string& fileName);
     void purgeEmptyFilesToEfp();
 
     // Functions for manipulating counts of non-current JournalFile instances in journalFileList_

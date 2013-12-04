@@ -71,6 +71,7 @@ protected:
     uint64_t highestRecordId_;                  ///< Highest rid found
     uint64_t highestFileNumber_;                ///< Highest file number found
     bool lastFileFullFlag_;                     ///< Last file is full
+    std::string uninitializedJournal_;          ///< File name of uninitialized journal found during header analysis
 
     // State for recovery of individual enqueued records
     uint64_t currentSerial_;

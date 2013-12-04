@@ -242,11 +242,17 @@ bool RecoveryManager::readNextRemainingRecord(void** const dataPtrPtr,
 
 void RecoveryManager::setLinearFileControllerJournals(lfcAddJournalFileFn fnPtr,
                                                       LinearFileController* lfcPtr) {
-    for (fileNumberMapConstItr_t i = fileNumberMap_.begin(); i != fileNumberMap_.end(); ++i) {
-        uint32_t fileDblkCount = i->first == highestFileNumber_ ?               // Is this this last file?
-                                 endOffset_ / QLS_DBLK_SIZE_BYTES :             // Last file uses _endOffset
-                                 efpFileSize_kib_ * 1024 / QLS_DBLK_SIZE_BYTES; // All others use file size to make them full
-        (lfcPtr->*fnPtr)(i->second, fileDblkCount);
+    if (journalEmptyFlag_) {
+        if (uninitializedJournal_.size() > 0) {
+            lfcPtr->restoreEmptyFile(uninitializedJournal_);
+        }
+    } else {
+        for (fileNumberMapConstItr_t i = fileNumberMap_.begin(); i != fileNumberMap_.end(); ++i) {
+            uint32_t fileDblkCount = i->first == highestFileNumber_ ?               // Is this this last file?
+                                     endOffset_ / QLS_DBLK_SIZE_BYTES :             // Last file uses _endOffset
+                                     efpFileSize_kib_ * 1024 / QLS_DBLK_SIZE_BYTES; // All others use file size to make them full
+            (lfcPtr->*fnPtr)(i->second, fileDblkCount);
+        }
     }
 }
 
@@ -332,7 +338,17 @@ void RecoveryManager::analyzeJournalFileHeaders(efpIdentity_t& efpIdentity) {
     jdir::read_dir(journalDirectory_, directoryList, false, true, false, true);
     for (directoryListConstItr_t i = directoryList.begin(); i != directoryList.end(); ++i) {
         readJournalFileHeader(*i, fileHeader, headerQueueName);
-        if (headerQueueName.compare(queueName_) != 0) {
+        if (headerQueueName.empty()) {
+            std::ostringstream oss;
+            if (uninitializedJournal_.empty()) {
+                oss << "Journal file " << (*i) << " is first uninitialized (not yet written) journal file.";
+                journalLogRef_.log(JournalLog::LOG_NOTICE, queueName_, oss.str());
+                uninitializedJournal_ = *i;
+            } else {
+                oss << "Journal file " << (*i) << " is second or greater uninitialized journal file - ignoring";
+                journalLogRef_.log(JournalLog::LOG_WARN, queueName_, oss.str());
+            }
+        } else if (headerQueueName.compare(queueName_) != 0) {
             std::ostringstream oss;
             oss << "Journal file " << (*i) << " belongs to queue \"" << headerQueueName << "\": ignoring";
             journalLogRef_.log(JournalLog::LOG_WARN, queueName_, oss.str());
@@ -344,9 +360,18 @@ void RecoveryManager::analyzeJournalFileHeaders(efpIdentity_t& efpIdentity) {
             }
         }
     }
+
+    // TODO: Logic weak here for detecting error conditions in journal, specifically when no
+    // valid files exist, or files from mixed EFPs. Currently last read file header determines
+    // efpIdentity.
     efpIdentity.pn_ = fileHeader._efp_partition;
     efpIdentity.ds_ = fileHeader._data_size_kib;
-    currentJournalFileConstItr_ = fileNumberMap_.begin();
+
+    if (fileNumberMap_.empty()) {
+        journalEmptyFlag_ = true;
+    } else {
+        currentJournalFileConstItr_ = fileNumberMap_.begin();
+    }
 }
 
 void RecoveryManager::checkFileStreamOk(bool checkEof) {
@@ -471,6 +496,9 @@ bool RecoveryManager::getFile(const uint64_t fileNumber, bool jumpToFirstRecordO
 }
 
 bool RecoveryManager::getNextFile(bool jumpToFirstRecordOffsetFlag) {
+    if (fileNumberMap_.empty()) {
+        return false;
+    }
     if (inFileStream_.is_open()) {
         inFileStream_.close();
 //std::cout << " .f=" << getCurrentFileName() << "]" << std::flush; // DEBUG
