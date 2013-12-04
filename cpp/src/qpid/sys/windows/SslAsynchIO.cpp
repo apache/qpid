@@ -435,7 +435,7 @@ ClientSslAsynchIO::ClientSslAsynchIO(const std::string& brokerHost,
                                      IdleCallback iCb,
                                      NegotiateDoneCallback nCb) :
     SslAsynchIO(s, hCred, rCb, eofCb, disCb, cCb, eCb, iCb, nCb),
-    serverHost(brokerHost)
+    serverHost(brokerHost), clientCertRequested(false)
 {
 }
 
@@ -445,7 +445,7 @@ void ClientSslAsynchIO::startNegotiate() {
 
     // Need a buffer to receive the token to send to the server.
     BufferBase *buff = aio->getQueuedBuffer();
-    ULONG ctxtRequested = ISC_REQ_STREAM;
+    ULONG ctxtRequested = ISC_REQ_STREAM | ISC_REQ_USE_SUPPLIED_CREDS;
     ULONG ctxtAttrs;
     // sendBuffs gets information to forward to the peer.
     SecBuffer sendBuffs[2];
@@ -471,6 +471,7 @@ void ClientSslAsynchIO::startNegotiate() {
                                                          &sendBuffDesc,
                                                          &ctxtAttrs,
                                                          NULL);
+
     if (status == SEC_I_CONTINUE_NEEDED) {
         buff->dataCount = sendBuffs[0].cbBuffer;
         aio->queueWrite(buff);
@@ -480,7 +481,7 @@ void ClientSslAsynchIO::startNegotiate() {
 void ClientSslAsynchIO::negotiateStep(BufferBase* buff) {
     // SEC_CHAR is non-const, so do all the typing here.
     SEC_CHAR *host = const_cast<SEC_CHAR *>(serverHost.c_str());
-    ULONG ctxtRequested = ISC_REQ_STREAM;
+    ULONG ctxtRequested = ISC_REQ_STREAM | ISC_REQ_USE_SUPPLIED_CREDS;
     ULONG ctxtAttrs;
 
     // tokenBuffs describe the buffer that's coming in. It should have
@@ -535,6 +536,17 @@ void ClientSslAsynchIO::negotiateStep(BufferBase* buff) {
     if (buff)
         aio->queueReadBuffer(buff);
     if (status == SEC_I_CONTINUE_NEEDED) {
+        // check if server has requested a client certificate
+        if (!clientCertRequested) {
+            SecPkgContext_IssuerListInfoEx caList;
+            memset(&caList, 0, sizeof(caList));
+            ::QueryContextAttributes(&ctxtHandle, SECPKG_ATTR_ISSUER_LIST_EX, &caList);
+            if (caList.cIssuers > 0)
+                clientCertRequested = true;
+            if (caList.aIssuers)
+                ::FreeContextBuffer(caList.aIssuers);
+        }
+
         sendbuff->dataCount = sendBuffs[0].cbBuffer;
         aio->queueWrite(sendbuff);
         return;
@@ -545,8 +557,13 @@ void ClientSslAsynchIO::negotiateStep(BufferBase* buff) {
     // either session stop or negotiation done (session up).
     if (status == SEC_E_OK || status == SEC_I_CONTEXT_EXPIRED)
         negotiationDone();
-    else
+    else {
+        if (clientCertRequested && status == SEC_E_CERT_UNKNOWN)
+            // ISC_REQ_USE_SUPPLIED_CREDS makes us reponsible for this case
+            // (no client cert).  Map it to its counterpart:
+            status = SEC_E_INCOMPLETE_CREDENTIALS;
         negotiationFailed(status);
+    }
 }
 
 /*************************************************/
