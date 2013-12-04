@@ -57,7 +57,7 @@ int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, con
 
 int file_hdr_check(file_hdr_t* hdr, const uint32_t magic, const uint16_t version, const uint64_t data_size_kib) {
     int res = rec_hdr_check_base(&hdr->_rhdr, magic, version);
-    if (res != 0) return 0;
+    if (res != 0) return res;
     if (hdr->_data_size_kib != data_size_kib) return 3;
     return 0;
 }
