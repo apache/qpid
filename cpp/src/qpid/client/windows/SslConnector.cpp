@@ -43,6 +43,16 @@
 #undef SECURITY_WIN32
 #include <winsock2.h>
 
+/*
+ * Note on client certificates: The Posix/NSS implementation performs a lazy
+ * client certificate search part way through the ssl handshake if the server
+ * requests one.  Here, it is not known in advance if the server will
+ * request the certificate so the certificate is pre-loaded (even if never
+ * used).  To match the Linux behavior, client certificate load problems are
+ * remembered and reported later if appropriate, but do not prevent the
+ * connection attempt.
+ */
+
 namespace qpid {
 namespace client {
 namespace windows {
@@ -51,6 +61,15 @@ using qpid::sys::Socket;
 
 class SslConnector : public qpid::client::TCPConnector
 {
+    struct SavedError {
+        std::string logMessage;
+        std::string error;
+        void set(const std::string &lm, const std::string es);
+        void set(const std::string &lm, int status);
+        void clear();
+        bool pending();
+    };
+
     qpid::sys::windows::ClientSslAsynchIO *shim;
     boost::shared_ptr<qpid::sys::Poller> poller;
     std::string brokerHost;
@@ -59,13 +78,16 @@ class SslConnector : public qpid::client::TCPConnector
     SCHANNEL_CRED cred;
     CredHandle credHandle;
     TimeStamp credExpiry;
+    SavedError clientCertError;
 
     virtual ~SslConnector();
     void negotiationDone(SECURITY_STATUS status);
 
     void connect(const std::string& host, const std::string& port);
     void connected(const Socket&);
+    PCCERT_CONTEXT findCertificate(const std::string& name);
     void loadPrivCertStore();
+    std::string getPasswd(const std::string& filename);
     void importHostCert(const ConnectionSettings&);
 
 public:
@@ -100,16 +122,24 @@ namespace {
         ~StaticInit() { }
     } init;
 
-    std::string getPasswd(const std::string& filename);
-    PCCERT_CONTEXT findCertificate(const std::string& name, HCERTSTORE& store);
 }
 
 void SslConnector::negotiationDone(SECURITY_STATUS status)
 {
-    if (status == SEC_E_OK)
+    if (status == SEC_E_OK) {
+        clientCertError.clear();
         initAmqp();
-    else
-        connectFailed(QPID_MSG(qpid::sys::strError(status)));
+    }
+    else {
+        if (status == SEC_E_INCOMPLETE_CREDENTIALS && clientCertError.pending()) {
+            // Server requested a client cert but we supplied none for the following reason:
+            if (!clientCertError.logMessage.empty())
+                QPID_LOG(warning, clientCertError.logMessage);
+            connectFailed(QPID_MSG(clientCertError.error));
+        }
+        else
+            connectFailed(QPID_MSG(qpid::sys::strError(status)));
+    }
 }
 
 SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
@@ -123,13 +153,10 @@ SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
     cred.dwVersion = SCHANNEL_CRED_VERSION;
     cred.dwFlags = SCH_CRED_NO_DEFAULT_CREDS;
 
-    // In case EXTERNAL SASL mechanism has been selected, we need to find
-    // the client certificate with the private key which should be used
-    if (settings.mechanism == std::string("EXTERNAL"))  {
-        const std::string& name = (settings.sslCertName != "") ?
-            settings.sslCertName : qpid::sys::ssl::SslOptions::global.certName;
-        loadPrivCertStore();
-        cert = findCertificate(name, certStore);
+    const std::string& name = (settings.sslCertName != "") ?
+        settings.sslCertName : qpid::sys::ssl::SslOptions::global.certName;
+    cert = findCertificate(name);
+    if (cert != NULL) {
         // assign the certificate into the credentials
         cred.paCred = &cert;
         cred.cCreds = 1;
@@ -192,8 +219,8 @@ void SslConnector::loadPrivCertStore()
                           CERT_SYSTEM_STORE_CURRENT_USER, store);
         if (!certStore) {
             HRESULT status = GetLastError();
-            QPID_LOG(warning, "Could not open system certificate store: " << store);
-            throw QPID_WINDOWS_ERROR(status);
+            clientCertError.set(Msg() << "Could not open system certificate store: " << store, status);
+            return;
         }
         QPID_LOG(debug, "SslConnector using certifcates from system store: " << store);
     } else {
@@ -203,8 +230,8 @@ void SslConnector::loadPrivCertStore()
             FILE_ATTRIBUTE_NORMAL, NULL);
         if (INVALID_HANDLE_VALUE == certFileHandle) {
             HRESULT status = GetLastError();
-            QPID_LOG(warning, "Failed to open the file holding the private key: " << opts.certFilename);
-            throw QPID_WINDOWS_ERROR(status);
+            clientCertError.set(Msg() << "Failed to open the file holding the private key: " << opts.certFilename, status);
+            return;
         }
         std::vector<BYTE> certEncoded;
         DWORD certEncodedSize = 0L;
@@ -219,15 +246,15 @@ void SslConnector::loadPrivCertStore()
             if (!result) {
                 // the read failed, return the error as an HRESULT
                 HRESULT status = GetLastError();
-                QPID_LOG(warning, "Reading the private key from file failed " << opts.certFilename);
                 CloseHandle(certFileHandle);
-                throw QPID_WINDOWS_ERROR(status);
+                clientCertError.set(Msg() << "Reading the private key from file failed " << opts.certFilename, status);
+                return;
             }
         }
         else {
             HRESULT status = GetLastError();
-            QPID_LOG(warning, "Unable to read the certificate file " << opts.certFilename);
-            throw QPID_WINDOWS_ERROR(status);
+            clientCertError.set(Msg() << "Unable to read the certificate file " << opts.certFilename, status);
+            return;
         }
         CloseHandle(certFileHandle);
 
@@ -237,33 +264,37 @@ void SslConnector::loadPrivCertStore()
 
         // get passwd from file and convert to null terminated wchar_t (Windows UCS2)
         std::string passwd = getPasswd(opts.certPasswordFile);
+        if (clientCertError.pending())
+            return;
         int pwlen = passwd.length();
         std::vector<wchar_t> pwUCS2(pwlen + 1, L'\0');
         int nwc = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, passwd.data(), pwlen, &pwUCS2[0], pwlen);
         if (!nwc) {
             HRESULT status = GetLastError();
-            QPID_LOG(warning, "Error converting password from UTF8");
-            throw QPID_WINDOWS_ERROR(status);
+            clientCertError.set("Error converting password from UTF8", status);
+            return;
         }
 
         certStore = PFXImportCertStore(&blobData, &pwUCS2[0], 0);
         if (certStore == NULL) {
             HRESULT status = GetLastError();
-            QPID_LOG(warning, "Failed to open the certificate store");
-            throw QPID_WINDOWS_ERROR(status);
+            clientCertError.set("Failed to open the certificate store", status);
+            return;
         }
         QPID_LOG(debug, "SslConnector using certificate from pkcs#12 file: " << opts.certFilename);
     }
 }
 
 
-namespace {
-
-PCCERT_CONTEXT findCertificate(const std::string& name, HCERTSTORE& store)
+PCCERT_CONTEXT SslConnector::findCertificate(const std::string& name)
 {
+        loadPrivCertStore();
+        if (clientCertError.pending())
+            return NULL;
+
         // search for the certificate by Friendly Name
         PCCERT_CONTEXT tmpctx = NULL;
-        while (tmpctx = CertEnumCertificatesInStore(store, tmpctx)) {
+        while (tmpctx = CertEnumCertificatesInStore(certStore, tmpctx)) {
             DWORD len = CertGetNameString(tmpctx, CERT_NAME_FRIENDLY_DISPLAY_TYPE,
                                           0, NULL, NULL, 0);
             if (len == 1)
@@ -278,14 +309,14 @@ PCCERT_CONTEXT findCertificate(const std::string& name, HCERTSTORE& store)
 
         // verify whether some certificate has been found
         if (tmpctx == NULL) {
-            QPID_LOG(warning, "Certificate not found in the certificate store for name " << name);
-            throw qpid::Exception(QPID_MSG("client certificate not found"));
+            clientCertError.set(Msg() << "Client SSL/TLS certificate not found in the certificate store for name " << name,
+                                "client certificate not found");
         }
         return tmpctx;
 }
 
 
-std::string getPasswd(const std::string& filename)
+std::string SslConnector::getPasswd(const std::string& filename)
 {
     std::string passwd;
     if (filename == "")
@@ -296,14 +327,15 @@ std::string getPasswd(const std::string& filename)
 
     if (INVALID_HANDLE_VALUE == pwfHandle) {
         HRESULT status = GetLastError();
-        QPID_LOG(warning, "Failed to open the password file: " << filename);
-        throw QPID_WINDOWS_ERROR(status);
+        clientCertError.set(Msg() << "Failed to open the password file: " << filename, status);
+        return passwd;
     }
 
     const DWORD fileSize = GetFileSize(pwfHandle, NULL);
     if (fileSize == INVALID_FILE_SIZE) {
         CloseHandle(pwfHandle);
-        throw qpid::Exception(QPID_MSG("Cannot read password file"));
+        clientCertError.set("", "Cannot read password file");
+        return passwd;
     }
 
     std::vector<char> pwbuf;
@@ -312,8 +344,8 @@ std::string getPasswd(const std::string& filename)
     if (!ReadFile(pwfHandle, &pwbuf[0], fileSize, &nbytes, NULL)) {
         HRESULT status = GetLastError();
         CloseHandle(pwfHandle);
-        QPID_LOG(warning, "Error reading password file");
-        throw QPID_WINDOWS_ERROR(status);
+        clientCertError.set("Error reading password file", status);
+        return passwd;
     }
     CloseHandle(pwfHandle);
 
@@ -332,6 +364,24 @@ std::string getPasswd(const std::string& filename)
 
     return passwd;
 }
-} // namespace
+
+void SslConnector::SavedError::set(const std::string &lm, const std::string es) {
+    logMessage = lm;
+    error = es;
+}
+
+void SslConnector::SavedError::set(const std::string &lm, int status) {
+    logMessage = lm;
+    error = qpid::sys::strError(status);
+}
+
+void SslConnector::SavedError::clear() {
+    logMessage.clear();
+    error.clear();
+}
+
+bool SslConnector::SavedError::pending() {
+    return !logMessage.empty() || !error.empty();
+}
 
 }}} // namespace qpid::client::windows
