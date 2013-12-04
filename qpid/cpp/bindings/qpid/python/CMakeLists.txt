@@ -20,15 +20,19 @@
 ##------------------------------------------------------
 ## Use Swig to generate a literal binding to the C++ API
 ##------------------------------------------------------
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES CPLUSPLUS ON)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i
-   PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
 
-list(APPEND SWIG_MODULE_qpid_messaging_python_EXTRA_DEPS
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/qpid.i
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/swig_python_typemaps.i
+# NB For python the SWIG module name must have the same name as the input .i file for CMake to generate the
+# correct dependencies
+
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/qpid_messaging.i PROPERTIES
+    CPLUSPLUS ON
+    SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include;-I${qpid-cpp_SOURCE_DIR}/bindings")
+
+list(APPEND SWIG_MODULE_qpid_messaging_EXTRA_DEPS
+    ${CMAKE_SOURCE_DIR}/include/qpid/qpid.i
+    ${CMAKE_SOURCE_DIR}/include/qpid/swig_python_typemaps.i
 )
-swig_add_module(qpid_messaging python ${CMAKE_CURRENT_SOURCE_DIR}/python.i)
+swig_add_module(qpid_messaging python ${CMAKE_CURRENT_SOURCE_DIR}/qpid_messaging.i)
 swig_link_libraries(qpid_messaging qpidmessaging qpidtypes ${PYTHON_LIBRARIES})
 
 set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing")
