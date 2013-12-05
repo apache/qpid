@@ -37,6 +37,7 @@
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Time.h"
+#include "config.h"
 #include <vector>
 extern "C" {
 #include <proton/engine.h>
@@ -45,6 +46,31 @@ extern "C" {
 namespace qpid {
 namespace messaging {
 namespace amqp {
+namespace {
+//remove conditional when 0.5 is no longer supported
+#ifdef HAVE_PROTON_TRACER
+void do_trace(pn_transport_t* transport, const char* message)
+{
+    ConnectionContext* c = reinterpret_cast<ConnectionContext*>(pn_transport_get_context(transport));
+    if (c) c->trace(message);
+}
+
+void set_tracer(pn_transport_t* transport, void* context)
+{
+    pn_transport_set_context(transport, context);
+    pn_transport_set_tracer(transport, &do_trace);
+}
+#else
+void set_tracer(pn_transport_t*, void*)
+{
+}
+#endif
+}
+
+void ConnectionContext::trace(const char* message) const
+{
+    QPID_LOG_CAT(trace, protocol, "[" << identifier << "]: " << message);
+}
 
 ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::Variant::Map& o)
     : qpid::messaging::ConnectionOptions(o),
@@ -67,7 +93,10 @@ ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::
     pn_connection_set_container(connection, identifier.c_str());
     bool enableTrace(false);
     QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
-    if (enableTrace) pn_transport_trace(engine, PN_TRACE_FRM);
+    if (enableTrace) {
+        pn_transport_trace(engine, PN_TRACE_FRM);
+        set_tracer(engine, this);
+    }
 }
 
 ConnectionContext::~ConnectionContext()
