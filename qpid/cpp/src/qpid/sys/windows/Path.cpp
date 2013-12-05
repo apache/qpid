@@ -38,7 +38,7 @@ namespace {
 bool getStat(const std::string& path, struct _stat& s) {
     if (::_stat(path.c_str(), &s)) {
         if (errno == ENOENT) return false;
-        throw qpid::Exception (strError(errno) + ": Invalid path: " + path);
+        throw qpid::Exception("cannot stat: " + path + ": " + strError(errno))
     }
     return true;
 }
