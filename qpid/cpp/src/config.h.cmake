@@ -61,5 +61,6 @@
 #cmakedefine HAVE_SYS_SDT_H ${HAVE_SYS_SDT_H}
 #cmakedefine HAVE_LOG_AUTHPRIV
 #cmakedefine HAVE_LOG_FTP
+#cmakedefine HAVE_PROTON_TRACER
 
 #endif /* QPID_CONFIG_H */
