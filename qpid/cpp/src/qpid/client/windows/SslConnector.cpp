@@ -212,11 +212,15 @@ void SslConnector::loadPrivCertStore()
     //  Get a handle to the system store or pkcs#12 file
     qpid::sys::ssl::SslOptions& opts = qpid::sys::ssl::SslOptions::global;
     if (opts.certFilename.empty()) {
-        // opening the system store
-        const char *store = opts.certStore.empty() ? "MY" : opts.certStore.c_str();
+        // opening a system store, names are not case sensitive
+        std::string store = opts.certStore.empty() ? "my" : opts.certStore;
+        std::transform(store.begin(), store.end(), store.begin(), ::tolower);
+        // map confusing GUI name to actual registry store name
+        if (store == "personal")
+            store = "my";
         certStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
                           CERT_STORE_OPEN_EXISTING_FLAG | CERT_STORE_READONLY_FLAG |
-                          CERT_SYSTEM_STORE_CURRENT_USER, store);
+                          CERT_SYSTEM_STORE_CURRENT_USER, store.c_str());
         if (!certStore) {
             HRESULT status = GetLastError();
             clientCertError.set(Msg() << "Could not open system certificate store: " << store, status);
