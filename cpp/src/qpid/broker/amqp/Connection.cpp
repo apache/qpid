@@ -30,6 +30,7 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/OutputControl.h"
+#include "config.h"
 #include <sstream>
 extern "C" {
 #include <proton/engine.h>
@@ -39,6 +40,31 @@ extern "C" {
 namespace qpid {
 namespace broker {
 namespace amqp {
+namespace {
+//remove conditional when 0.5 is no longer supported
+#ifdef HAVE_PROTON_TRACER
+void do_trace(pn_transport_t* transport, const char* message)
+{
+    Connection* c = reinterpret_cast<Connection*>(pn_transport_get_context(transport));
+    if (c) c->trace(message);
+}
+
+void set_tracer(pn_transport_t* transport, void* context)
+{
+    pn_transport_set_context(transport, context);
+    pn_transport_set_tracer(transport, &do_trace);
+}
+#else
+void set_tracer(pn_transport_t*, void*)
+{
+}
+#endif
+}
+
+void Connection::trace(const char* message) const
+{
+    QPID_LOG_CAT(trace, protocol, "[" << id << "]: " << message);
+}
 
 Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, BrokerContext& b, bool saslInUse)
     : BrokerContext(b), ManagedConnection(getBroker(), i),
@@ -53,7 +79,10 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, Broker
     out.activateOutput();
     bool enableTrace(false);
     QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
-    if (enableTrace) pn_transport_trace(transport, PN_TRACE_FRM);
+    if (enableTrace) {
+        pn_transport_trace(transport, PN_TRACE_FRM);
+        set_tracer(transport, this);
+    }
 
     getBroker().getConnectionObservers().connection(*this);
     if (!saslInUse) {

@@ -114,6 +114,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     std::string getUrl() const;
     const qpid::sys::SecuritySettings* getTransportSecuritySettings();
     void initSecurityLayer(qpid::sys::SecurityLayer&);
+    void trace(const char*) const;
 
   private:
     typedef std::map<std::string, boost::shared_ptr<SessionContext> > SessionMap;
