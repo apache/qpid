@@ -672,6 +672,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidcommon_platform_SOURCES
     qpid/log/windows/SinkOptions.cpp
     qpid/sys/windows/AsynchIO.cpp
+    qpid/sys/windows/Path.cpp
     qpid/sys/windows/FileSysDir.cpp
     qpid/sys/windows/IocpPoller.cpp
     qpid/sys/windows/IOHandle.cpp
@@ -766,6 +767,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidcommon_platform_SOURCES
     qpid/sys/posix/AsynchIO.cpp
     qpid/sys/posix/Fork.cpp
+    qpid/sys/posix/Path.cpp
     qpid/sys/posix/FileSysDir.cpp
     qpid/sys/posix/IOHandle.cpp
     qpid/sys/posix/LockFile.cpp
