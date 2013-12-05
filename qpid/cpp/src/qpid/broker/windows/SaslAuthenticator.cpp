@@ -43,6 +43,7 @@ class NullAuthenticator : public SaslAuthenticator
 {
     qpid::broker::amqp_0_10::Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
+    string realm;
 public:
     NullAuthenticator(qpid::broker::amqp_0_10::Connection& connection);
     ~NullAuthenticator();
@@ -92,13 +93,21 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(qpid::br
     }
 }
 
-NullAuthenticator::NullAuthenticator(qpid::broker::amqp_0_10::Connection& c) : connection(c), client(c.getOutput()) {}
+NullAuthenticator::NullAuthenticator(qpid::broker::amqp_0_10::Connection& c) :
+    connection(c), client(c.getOutput()), realm("@"+c.getBroker().getOptions().realm) {}
 NullAuthenticator::~NullAuthenticator() {}
 
 void NullAuthenticator::getMechanisms(Array& mechanisms)
 {
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("ANONYMOUS")));
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));
+}
+
+namespace {
+bool endsWith(const std::string& str, const std::string& ending) {
+    return (ending.size() <= str.size()) &&
+        (str.compare(str.size() - ending.size(), ending.size(), ending) == 0);
+}
 }
 
 void NullAuthenticator::start(const string& mechanism, const string* response)
@@ -110,6 +119,7 @@ void NullAuthenticator::start(const string& mechanism, const string* response)
             string::size_type i = temp.find((char)0);
             string uid = temp.substr(0, i);
             string pwd = temp.substr(i + 1);
+            if (!endsWith(uid, realm)) uid += realm;
             connection.setUserId(uid);
         }
     } else {
