@@ -21,6 +21,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
+#include "qpid/sys/Path.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/shared_ptr.hpp>
@@ -68,11 +69,11 @@ struct AclPlugin : public Plugin {
 
     	if (acl) throw Exception("ACL plugin cannot be initialized twice in one process.");
 
-    	if (values.aclFile.at(0) != '/' && !b.getDataDir().getPath().empty()) {
-            std::ostringstream oss;
-            oss << b.getDataDir().getPath() << "/" << values.aclFile;
-            values.aclFile = oss.str();
-    	}
+        sys::Path aclFile(values.aclFile);
+        sys::Path dataDir(b.getDataDir().getPath());
+        if (!aclFile.isAbsolute() && !dataDir.empty())
+            values.aclFile =  (dataDir + aclFile).str();
+
         acl = new Acl(values, b);
         b.setAcl(acl.get());
         b.addFinalizer(boost::bind(&AclPlugin::shutdown, this));
