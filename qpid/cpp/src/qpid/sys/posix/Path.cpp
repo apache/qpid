@@ -55,10 +55,6 @@ bool Path::exists () const {
 
 bool Path::isFile() const { return isFlag(path, S_IFREG); }
 bool Path::isDirectory() const { return isFlag(path, S_IFDIR); }
-
-bool Path::isAbsolute() const {
-    return (path.size() > 0 && (path[0] == separator[0] || path[0] == '/'))
-        || (path.size() > 1 && (isalpha(path[0]) && path[1] == ':'));
-}
+bool Path::isAbsolute() const { return (path.size() > 0 && path[0] == separator[0]); }
 
 }} // namespace qpid::sys
