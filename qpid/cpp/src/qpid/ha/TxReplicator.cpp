@@ -237,7 +237,7 @@ void TxReplicator::backups(const string& data, sys::Mutex::ScopedLock& l) {
 
 void TxReplicator::end(sys::Mutex::ScopedLock&) {
     ended = true;
-    txBuffer.reset();
+    txBuffer = 0;
     // QueueReplicator::destroy cancels subscription to the primary tx-queue
     // which allows the primary to clean up resources.
     sys::Mutex::ScopedUnlock u(lock);
