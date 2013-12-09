@@ -247,22 +247,18 @@ endif (BUILD_SASL)
 #
 add_executable (echotest echotest.cpp ${platform_test_additions})
 target_link_libraries (echotest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
 remember_location(echotest)
 
 add_executable (publish publish.cpp ${platform_test_additions})
 target_link_libraries (publish qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
 remember_location(publish)
 
 add_executable (consume consume.cpp ${platform_test_additions})
 target_link_libraries (consume qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
 remember_location(consume)
 
 add_executable (header_test header_test.cpp ${platform_test_additions})
 target_link_libraries (header_test qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 remember_location(header_test)
 
 add_executable (declare_queues declare_queues.cpp ${platform_test_additions})
@@ -279,12 +275,10 @@ remember_location(resuming_receiver)
 
 add_executable (txshift txshift.cpp ${platform_test_additions})
 target_link_libraries (txshift qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txshift)
 
 add_executable (txjob txjob.cpp ${platform_test_additions})
 target_link_libraries (txjob qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-#txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txjob)
 
 add_executable (datagen datagen.cpp ${platform_test_additions})
