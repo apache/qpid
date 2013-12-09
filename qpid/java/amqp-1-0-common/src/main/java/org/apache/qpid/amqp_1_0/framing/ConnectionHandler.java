@@ -331,15 +331,12 @@ public class ConnectionHandler
 
         public void getBytes(final BytesProcessor processor, final boolean wait)
         {
-            if(!_conn.closedForOutput())
-            {
-                processor.processBytes(_buffer);
-            }
+            processor.processBytes(_buffer);
         }
 
         public boolean closed()
         {
-            return !_conn.closedForOutput() && !_buffer.hasRemaining();
+            return !_buffer.hasRemaining();
         }
     }
 
