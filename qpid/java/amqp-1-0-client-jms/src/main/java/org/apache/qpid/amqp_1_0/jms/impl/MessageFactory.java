@@ -63,6 +63,11 @@ class MessageFactory
             section = iter.hasNext() ? iter.next() : null;
         }
 
+        if(section instanceof DeliveryAnnotations)
+        {
+            section = iter.hasNext() ? iter.next() : null;
+        }
+        
         if(section instanceof MessageAnnotations)
         {
             messageAnnotations = (MessageAnnotations) section;
