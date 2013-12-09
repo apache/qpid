@@ -24,6 +24,7 @@ package org.apache.qpid.amqp_1_0.transport;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.codec.ValueWriter;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
@@ -39,11 +40,11 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
 
-
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
+
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -290,8 +291,16 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
 
     private SessionEndpoint getSession(final short channel)
     {
-        // TODO assert existence, check channel state
-        return _receivingSessions[channel];
+        SessionEndpoint session = _receivingSessions[channel];
+        if (session == null)
+        {
+            Error error = new Error();
+            error.setCondition(ConnectionError.FRAMING_ERROR);
+            error.setDescription("Frame received on channel " + channel + " which is not known as a begun session.");
+            this.handleError(error);
+        }
+        
+        return session;
     }
 
 
@@ -470,6 +479,11 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                     endpoint.setReceivingChannel(channel);
                     endpoint.setNextIncomingId(begin.getNextOutgoingId());
                     endpoint.setOutgoingSessionCredit(begin.getIncomingWindow());
+                    
+                    if (endpoint.getState() == SessionState.END_SENT)
+                    {
+                        _sendingSessions[myChannelId] = null;
+                    }
                 }
                 else
                 {
@@ -551,41 +565,59 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     }
 
 
-    public synchronized void sendEnd(short channel, End end)
+    public synchronized void sendEnd(short channel, End end, boolean remove)
     {
         send(channel, end);
-        _sendingSessions[channel] = null;
+        if (remove)
+        {
+            _sendingSessions[channel] = null;
+        }
     }
 
     public synchronized void receiveAttach(short channel, Attach attach)
     {
         SessionEndpoint endPoint = getSession(channel);
-        endPoint.receiveAttach(attach);
+        if (endPoint != null)
+        {
+            endPoint.receiveAttach(attach);
+        }
     }
 
 
     public synchronized void receiveDetach(short channel, Detach detach)
     {
         SessionEndpoint endPoint = getSession(channel);
-        endPoint.receiveDetach(detach);
+        if (endPoint != null)
+        {
+            endPoint.receiveDetach(detach);
+        }
     }
 
     public synchronized void receiveTransfer(short channel, Transfer transfer)
     {
         SessionEndpoint endPoint = getSession(channel);
-        endPoint.receiveTransfer(transfer);
+        if (endPoint != null)
+        {
+            endPoint.receiveTransfer(transfer);
+        }
     }
 
     public synchronized void receiveDisposition(short channel, Disposition disposition)
     {
         SessionEndpoint endPoint = getSession(channel);
-        endPoint.receiveDisposition(disposition);
+        if (endPoint != null)
+        {
+            endPoint.receiveDisposition(disposition);
+        }
     }
 
     public synchronized void receiveFlow(short channel, Flow flow)
     {
         SessionEndpoint endPoint = getSession(channel);
-        endPoint.receiveFlow(flow);
+        if (endPoint != null)
+        {
+            endPoint.receiveFlow(flow);
+        }
     }
 
 
@@ -667,8 +699,9 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
             Close close = new Close();
             close.setError(error);
             send((short) 0, close);
+            
+            this.setClosedForOutput(true);
         }
-        _closedForInput = true;
     }
 
     private final Logger _logger = Logger.getLogger("FRM");

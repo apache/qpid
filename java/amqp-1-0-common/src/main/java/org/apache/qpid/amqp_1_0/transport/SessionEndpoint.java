@@ -118,6 +118,9 @@ public class SessionEndpoint
             case BEGIN_SENT:
                 _state = SessionState.ACTIVE;
                 break;
+            case END_PIPE:
+                _state = SessionState.END_SENT;
+                break;
             default:
                 // TODO error
 
@@ -158,6 +161,10 @@ public class SessionEndpoint
         {
             switch(_state)
             {
+                case BEGIN_SENT:
+                    _connection.sendEnd(getSendingChannel(), new End(), false);
+                    _state = SessionState.END_PIPE;
+                    break;
                 case END_SENT:
                     _state = SessionState.ENDED;
                     break;
@@ -165,7 +172,7 @@ public class SessionEndpoint
                     detachLinks();
                     _sessionEventListener.remoteEnd(end);
                     short sendChannel = getSendingChannel();
-                    _connection.sendEnd(sendChannel, new End());
+                    _connection.sendEnd(sendChannel, new End(), true);
                     _state = end == null ? SessionState.END_SENT : SessionState.ENDED;
                     break;
                 default:
@@ -175,7 +182,7 @@ public class SessionEndpoint
                     error.setCondition(AmqpError.ILLEGAL_STATE);
                     error.setDescription("END called on Session which has not been opened");
                     reply.setError(error);
-                    _connection.sendEnd(sendChannel, reply);
+                    _connection.sendEnd(sendChannel, reply, true);
                     break;
 
 
