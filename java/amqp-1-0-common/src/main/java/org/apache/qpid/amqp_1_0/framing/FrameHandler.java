@@ -272,13 +272,14 @@ public class FrameHandler implements ProtocolHandler
         {
             _connection.handleError(frameParsingError);
         }
-        return this;
         }
         catch(RuntimeException e)
         {
+            // This exception is unexpected. The up layer should handle error condition gracefully
+            _connection.handleError(this.createError(ConnectionError.CONNECTION_FORCED, e.toString()));
             e.printStackTrace();
-            throw e;
         }
+        return this;
     }
 
     private static String toHex(ByteBuffer in)
