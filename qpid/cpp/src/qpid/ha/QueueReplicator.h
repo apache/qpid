@@ -38,6 +38,7 @@ class Queue;
 class QueueRegistry;
 class SessionHandler;
 class Deliverable;
+class ExchangeRegistry;
 }
 
 namespace ha {
@@ -59,9 +60,12 @@ class QueueReplicator : public broker::Exchange,
   public:
     static const std::string QPID_SYNC_FREQUENCY;
     static const std::string REPLICATOR_PREFIX;
+    typedef std::vector<boost::shared_ptr<QueueReplicator> > Vector;
 
     static std::string replicatorName(const std::string& queueName);
     static bool isReplicatorName(const std::string&);
+    /*** Copy QueueReplicators from the registry */
+    static void copy(broker::ExchangeRegistry&, Vector& result);
 
     QueueReplicator(HaBroker&,
                     boost::shared_ptr<broker::Queue> q,
@@ -78,7 +82,6 @@ class QueueReplicator : public broker::Exchange,
 
     // Set if the queue has ever been subscribed to, used for auto-delete cleanup.
     void setSubscribed() { subscribed = true; }
-    bool isSubscribed() { return subscribed; }
 
     boost::shared_ptr<broker::Queue> getQueue() const { return queue; }
 
@@ -89,6 +92,8 @@ class QueueReplicator : public broker::Exchange,
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
     bool hasBindings();
+
+    void promoted();
 
   protected:
     typedef boost::function<void(const std::string&, sys::Mutex::ScopedLock&)> DispatchFn;

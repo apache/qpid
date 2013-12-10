@@ -94,7 +94,16 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     logPrefix("Primary: "), active(false),
     replicationTest(hb.getSettings().replicateDefault.get())
 {
+    // Note that at this point, we are still rejecting client connections.
+    // So we are safe from client interference while we set up the primary.
+
     hb.getMembership().setStatus(RECOVERING);
+
+    // Process all QueueReplicators, handles auto-delete queues.
+    QueueReplicator::Vector qrs;
+    QueueReplicator::copy(hb.getBroker().getExchanges(), qrs);
+    std::for_each(qrs.begin(), qrs.end(), boost::bind(&QueueReplicator::promoted, _1));
+
     broker::QueueRegistry& queues = hb.getBroker().getQueues();
     queues.eachQueue(boost::bind(&Primary::initializeQueue, this, _1));
     if (expect.empty()) {
