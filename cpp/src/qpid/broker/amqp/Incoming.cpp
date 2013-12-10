@@ -20,6 +20,7 @@
  */
 #include "Incoming.h"
 #include "Exception.h"
+#include "ManagedConnection.h"
 #include "Message.h"
 #include "Session.h"
 #include "qpid/amqp/descriptors.h"
@@ -116,6 +117,7 @@ void DecodingIncoming::readable(pn_delivery_t* delivery)
     pn_link_advance(link);
 
     qpid::broker::Message message(received, received);
+    message.setPublisher(session->getParent());
     userid.verify(message.getUserId());
     message.computeExpiration(expiryPolicy);
     handle(message);
