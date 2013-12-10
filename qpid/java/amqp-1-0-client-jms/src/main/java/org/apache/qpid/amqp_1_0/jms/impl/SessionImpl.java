@@ -276,14 +276,23 @@ public class SessionImpl implements Session, QueueSession, TopicSession
         {
             _closed = true;
             _dispatcher.close();
-            for(MessageConsumerImpl consumer : _consumers)
+            
+            List<MessageConsumerImpl> consumers = null;
+            List<MessageProducerImpl> producers = null;
+            synchronized (_session.getEndpoint().getLock())
+            {
+                consumers = new ArrayList<MessageConsumerImpl>(_consumers);
+                producers = new ArrayList<MessageProducerImpl>(_producers);
+            }
+            for(MessageConsumerImpl consumer : consumers)
             {
                 consumer.close();
             }
-            for(MessageProducerImpl producer : _producers)
+            for(MessageProducerImpl producer : producers)
             {
                 producer.close();
             }
+            
             _session.close();
             _connection.removeSession(this);
         }
