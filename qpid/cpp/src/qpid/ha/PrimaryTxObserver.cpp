@@ -26,7 +26,6 @@
 #include "QueueGuard.h"
 #include "RemoteBackup.h"
 #include "ReplicatingSubscription.h"
-#include "QueueReplicator.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
@@ -121,7 +120,7 @@ void PrimaryTxObserver::initialize() {
         throw InvalidArgumentException(
             QPID_MSG(logPrefix << "TX replication queue already exists."));
     txQueue = result.first;
-    txQueue->markInUse(true); // Prevent auto-delete till we are done.
+    txQueue->markInUse(); // Prevent auto-delete till we are done.
     txQueue->deliver(TxBackupsEvent(backups).message());
 
 }
@@ -228,7 +227,8 @@ void PrimaryTxObserver::end(Mutex::ScopedLock&) {
     // If there are no outstanding completions, break pointer cycle here.
     // Otherwise break it in cancel() when the remaining completions are done.
     if (incomplete.empty()) txBuffer = 0;
-    txQueue->releaseFromUse(true); // txQueue will auto-delete
+    txQueue->releaseFromUse();  // txQueue will auto-delete
+    txQueue->scheduleAutoDelete();
     txQueue.reset();
     try {
         broker.getExchanges().destroy(getExchangeName());
