@@ -18,15 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb.upgrade;
+package org.apache.qpid.server.store.berkeleydb;
 
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
+import org.apache.qpid.server.model.VirtualHost;
 
-import org.apache.qpid.AMQStoreException;
-
-public interface StoreUpgrade
+public interface EnvironmentFacadeFactory
 {
-    void performUpgrade(Environment environment, UpgradeInteractionHandler handler, String virtualHostName)
-            throws DatabaseException, AMQStoreException;
+
+    EnvironmentFacade createEnvironmentFacade(String name, String storeLocation, VirtualHost virtualHost);
+
 }

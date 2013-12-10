@@ -20,22 +20,15 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+
 import com.sleepycat.bind.tuple.IntegerBinding;
-import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.OperationStatus;
-import com.sleepycat.je.Transaction;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
-import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
 
 public class UpgraderFailOnNewerVersionTest extends AbstractUpgradeTestCase
 {
@@ -102,7 +95,7 @@ public class UpgraderFailOnNewerVersionTest extends AbstractUpgradeTestCase
         catch(AMQStoreException ex)
         {
             assertEquals("Incorrect exception thrown", "Database version 999 is higher than the most recent known version: "
-                                                        + AbstractBDBMessageStore.VERSION, ex.getMessage());
+                                                        + BDBMessageStore.VERSION, ex.getMessage());
         }
     }
 

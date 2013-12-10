@@ -27,7 +27,7 @@ import org.apache.qpid.server.model.VirtualHost;
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
     {
     }
 
@@ -42,7 +42,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records)
     {
     }
 
@@ -65,12 +65,12 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
     }
 
@@ -93,7 +93,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
     }
 

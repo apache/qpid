@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost;
+package org.apache.qpid.server.store;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,6 +46,11 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
+import org.apache.qpid.server.virtualhost.BindingRecoverer;
+import org.apache.qpid.server.virtualhost.DefaultUpgraderProvider;
+import org.apache.qpid.server.virtualhost.ExchangeRecoverer;
+import org.apache.qpid.server.virtualhost.QueueRecoverer;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
@@ -59,6 +64,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.same;
 
 import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
 
@@ -402,6 +408,32 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         _durableConfigurationRecoverer.completeConfigurationRecovery();
 
         assertEquals(customExchange, _vhost.getQueue(queueId).getAlternateExchange());
+    }
+
+    @SuppressWarnings("unchecked")
+    public void testRecovererCacheIsClearedAfterComplete()
+    {
+        String queueName = getName();
+        UUID bindingId = new UUID(99, 99);
+        when(_directExchange.getBinding(same(queueName), any(AMQQueue.class), any(Map.class))).thenReturn(mock(org.apache.qpid.server.binding.Binding.class));
+
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
+        _durableConfigurationRecoverer.configuredObject(bindingId, Binding.class.getSimpleName(), createBinding(queueName, DIRECT_EXCHANGE_ID, QUEUE_ID));
+        _durableConfigurationRecoverer.configuredObject(QUEUE_ID, Queue.class.getSimpleName(), createQueue(queueName, DIRECT_EXCHANGE_ID));
+
+        Object cachedBinding = _durableConfigurationRecoverer.getResolvedObject(Binding.class.getSimpleName(), bindingId);
+        assertNotNull("Binding is not cached:" + cachedBinding, cachedBinding);
+
+        Object cachedQueue = _durableConfigurationRecoverer.getResolvedObject(Queue.class.getSimpleName(), QUEUE_ID);
+        assertNotNull("Queue is not cached:" + cachedQueue, cachedQueue);
+
+        _durableConfigurationRecoverer.completeConfigurationRecovery();
+
+        cachedBinding = _durableConfigurationRecoverer.getResolvedObject(Binding.class.getSimpleName(), bindingId);
+        assertNull("Binding is cached:" + cachedBinding, cachedBinding);
+
+        cachedQueue = _durableConfigurationRecoverer.getResolvedObject(Queue.class.getSimpleName(), QUEUE_ID);
+        assertNull("Queue is cached:" + cachedQueue, cachedQueue);
     }
 
     private void verifyCorrectUpdates(final ConfiguredObjectRecord[] expected) throws AMQStoreException

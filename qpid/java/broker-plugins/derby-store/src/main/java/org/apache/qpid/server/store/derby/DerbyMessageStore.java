@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -99,7 +100,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         return "bigint";
     }
 
-    protected void doClose() throws SQLException
+    protected void doClose() throws AMQStoreException
     {
         try
         {
@@ -117,7 +118,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
             else
             {
                 getLogger().error("Exception whilst shutting down the store: " + e);
-                throw e;
+                throw new AMQStoreException("Cannot close store", e);
             }
         }
     }

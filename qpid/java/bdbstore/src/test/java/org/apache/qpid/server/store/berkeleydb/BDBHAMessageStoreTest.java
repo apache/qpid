@@ -32,9 +32,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
-import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
 
 import static org.mockito.Matchers.eq;
@@ -98,18 +96,18 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), BrokerTestHelper.createBrokerMock());
 
         _virtualHost = BrokerTestHelper.createVirtualHost(configuration,null,_modelVhost);
-        BDBHAMessageStore store = (BDBHAMessageStore) _virtualHost.getMessageStore();
+        BDBMessageStore store = (BDBMessageStore) _virtualHost.getMessageStore();
 
         // test whether JVM system settings were applied
-        Environment env = store.getEnvironment();
-        assertEquals("Unexpected number of cleaner threads", TEST_NUMBER_OF_THREADS, env.getConfig().getConfigParam(EnvironmentConfig.CLEANER_THREADS));
-        assertEquals("Unexpected log file max", TEST_LOG_FILE_MAX, env.getConfig().getConfigParam(EnvironmentConfig.LOG_FILE_MAX));
+        EnvironmentFacade env = store.getEnvironmentFacade();
+        assertEquals("Unexpected number of cleaner threads", TEST_NUMBER_OF_THREADS, env.getEnvironment().getConfig().getConfigParam(EnvironmentConfig.CLEANER_THREADS));
+        assertEquals("Unexpected log file max", TEST_LOG_FILE_MAX, env.getEnvironment().getConfig().getConfigParam(EnvironmentConfig.LOG_FILE_MAX));
 
-        ReplicatedEnvironment repEnv = store.getReplicatedEnvironment();
+        ReplicatedEnvironmentFacade repEnv = (ReplicatedEnvironmentFacade)store.getEnvironmentFacade();
         assertEquals("Unexpected number of elections primary retries", TEST_ELECTION_RETRIES,
-                repEnv.getConfig().getConfigParam(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES));
+                repEnv.getEnvironment().getConfig().getConfigParam(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES));
         assertEquals("Unexpected number of elections primary retries", TEST_ENV_CONSISTENCY_TIMEOUT,
-                repEnv.getConfig().getConfigParam(ReplicationConfig.ENV_CONSISTENCY_TIMEOUT));
+                repEnv.getEnvironment().getConfig().getConfigParam(ReplicationConfig.ENV_CONSISTENCY_TIMEOUT));
     }
 
     private void addVirtualHostConfiguration() throws Exception

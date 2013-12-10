@@ -68,6 +68,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
     @Override
     public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
     {
+        reset();
         _logSubject = new MessageStoreLogSubject(_name, store.getClass().getSimpleName());
 
         _store = store;
@@ -103,8 +104,16 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         checkUnresolvedDependencies();
         applyUpgrade();
 
+        reset();
         CurrentActor.get().message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
         return CURRENT_CONFIG_VERSION;
+    }
+
+    private void reset()
+    {
+        _resolvedObjects.clear();
+        _unresolvedObjects.clear();
+        _dependencyListeners.clear();
     }
 
     private void applyUpgrade()

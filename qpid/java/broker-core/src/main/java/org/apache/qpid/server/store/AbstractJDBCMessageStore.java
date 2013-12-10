@@ -177,7 +177,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler)
     {
         _stateManager.attainState(State.INITIALISING);
         _configRecoveryHandler = configRecoveryHandler;
@@ -187,7 +187,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws AMQStoreException
     {
         if(_stateManager.isInState(State.INITIAL))
         {
@@ -197,8 +197,14 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         _virtualHost = virtualHost;
         _tlogRecoveryHandler = tlogRecoveryHandler;
         _messageRecoveryHandler = recoveryHandler;
-
-        completeInitialisation();
+        try
+        {
+            completeInitialisation();
+        }
+        catch(Exception e)
+        {
+            throw new AMQStoreException("Cannot initialize store", e);
+        }
     }
 
     private void completeInitialisation() throws ClassNotFoundException, SQLException, AMQStoreException
@@ -209,8 +215,10 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate() throws AMQStoreException
     {
+        try
+        {
         if(_stateManager.isInState(State.INITIALISING))
         {
             completeInitialisation();
@@ -234,6 +242,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
 
         _stateManager.attainState(State.ACTIVE);
+        }
+        catch(Exception e)
+        {
+            throw new AMQStoreException("Cannot activate store", e);
+        }
     }
 
     private void commonConfiguration()
@@ -668,7 +681,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void close() throws Exception
+    public void close() throws AMQStoreException
     {
         _closed.getAndSet(true);
         _stateManager.attainState(State.CLOSING);
@@ -679,7 +692,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
 
-    protected abstract void doClose() throws Exception;
+    protected abstract void doClose() throws AMQStoreException;
 
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)

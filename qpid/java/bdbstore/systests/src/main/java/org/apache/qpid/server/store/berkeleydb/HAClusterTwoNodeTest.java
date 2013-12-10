@@ -20,6 +20,7 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.io.IOException;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -27,6 +28,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
+import javax.management.JMException;
 import javax.management.ObjectName;
 
 import org.apache.qpid.jms.ConnectionURL;
@@ -143,7 +145,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         try
         {
             assertProducingConsuming(connection);
-            fail("JMS peristent operations succeded on Master 'not designated primary' buy they should fail as replica is not available");
+            fail("JMS peristent operations succeded on Master 'not designated primary' but they should fail as replica is not available");
         }
         catch(JMSException e)
         {
@@ -190,6 +192,54 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         final Connection connection = getConnection(_brokerFailoverUrl);
         assertNotNull("Expected to get a valid connection to new primary", connection);
         assertProducingConsuming(connection);
+    }
+
+    public void testMasterNotDesignatedPrimaryAssignedDesignatedPrimaryLaterOn() throws Exception
+    {
+        startCluster(false);
+
+        // Shutdown replica
+        _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
+
+        // Do transaction
+        final Connection connection = getConnection(_brokerFailoverUrl);
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Destination destination = session.createQueue(getTestQueueName());
+        try
+        {
+            session.createConsumer(destination);
+            fail("Creation of durable queue should fail as there is no majority");
+        }
+        catch (JMSException je)
+        {
+            // pass
+            je.printStackTrace();
+        }
+
+        // Check master is in UNKNOWN
+        ManagedBDBHAMessageStore bean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfPrimary());
+        awaitNodeToAttainState(bean, "UNKNOWN");
+
+        // Designate primary
+        bean.setDesignatedPrimary(true);
+
+        // Check master is MASTER
+        awaitNodeToAttainState(bean, "MASTER");
+
+        final Connection connection2 = getConnection(_brokerFailoverUrl);
+        assertProducingConsuming(connection2);
+    }
+
+    private void awaitNodeToAttainState(ManagedBDBHAMessageStore bean, String desiredState)
+            throws IOException, JMException, InterruptedException
+    {
+        final long startTime = System.currentTimeMillis();
+        while(!bean.getNodeState().equals(desiredState) && (System.currentTimeMillis() - startTime) < 30000)
+        {
+            _logger.debug("Awaiting node to transit into " + desiredState + " state");
+            Thread.sleep(1000);
+        }
+        assertEquals("Node is in unexpected state", desiredState, bean.getNodeState());
     }
 
     private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(

@@ -20,8 +20,16 @@ package org.apache.qpid.server.store.berkeleydb;
  *
  */
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.AbstractActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -37,9 +45,14 @@ import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHostConfigRecoveryHandler;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
+import com.sleepycat.je.rep.StateChangeEvent;
+import com.sleepycat.je.rep.StateChangeListener;
+
 public class BDBHAVirtualHost extends AbstractVirtualHost
 {
-    private BDBHAMessageStore _messageStore;
+    private static final Logger LOGGER = Logger.getLogger(BDBHAVirtualHost.class);
+
+    private BDBMessageStore _messageStore;
 
     private boolean _inVhostInitiatedClose;
 
@@ -57,7 +70,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
     protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
     {
-        _messageStore = new BDBHAMessageStore();
+        _messageStore = new BDBMessageStore(ReplicatedEnvironmentFacade.TYPE, new ReplicatedEnvironmentFacadeFactory());
 
         final MessageStoreLogSubject storeLogSubject =
                 new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
@@ -85,6 +98,8 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                 virtualHost, recoveryHandler,
                 recoveryHandler
         );
+
+        ((ReplicatedEnvironmentFacade)_messageStore.getEnvironmentFacade()).setStateChangeListener(new BDBHAMessageStoreStateChangeListener());
     }
 
 
@@ -202,4 +217,140 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         }
     }
 
+    private class BDBHAMessageStoreStateChangeListener implements StateChangeListener
+    {
+        // TODO shutdown the executor
+        private final Executor _executor = Executors.newSingleThreadExecutor();
+
+        @Override
+        public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
+        {
+            com.sleepycat.je.rep.ReplicatedEnvironment.State state = stateChangeEvent.getState();
+
+            if (LOGGER.isInfoEnabled())
+            {
+                LOGGER.info("Received BDB event indicating transition to state " + state);
+            }
+
+            switch (state)
+            {
+            case MASTER:
+                activateStoreAsync();
+                break;
+            case REPLICA:
+                passivateStoreAsync();
+                break;
+            case DETACHED:
+                LOGGER.error("BDB replicated node in detached state, therefore passivating.");
+                passivateStoreAsync();
+                break;
+            case UNKNOWN:
+                LOGGER.warn("BDB replicated node in unknown state (hopefully temporarily)");
+                break;
+            default:
+                LOGGER.error("Unexpected state change: " + state);
+                throw new IllegalStateException("Unexpected state change: " + state);
+            }
+        }
+
+        /**
+         * Calls {@link MessageStore#activate()}.
+         *
+         * <p/>
+         *
+         * This is done a background thread, in line with
+         * {@link StateChangeListener#stateChange(StateChangeEvent)}'s JavaDoc, because
+         * activate may execute transactions, which can't complete until
+         * {@link StateChangeListener#stateChange(StateChangeEvent)} has returned.
+         */
+        private void activateStoreAsync()
+        {
+            String threadName = "BDBHANodeActivationThread-" + getName();
+            executeStateChangeAsync(new Callable<Void>()
+            {
+                @Override
+                public Void call() throws Exception
+                {
+                    try
+                    {
+                        _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
+                        _messageStore.activate();
+                    }
+                    catch (Exception e)
+                    {
+                        LOGGER.error("Failed to activate on hearing MASTER change event", e);
+                        throw e;
+                    }
+                    return null;
+                }
+            }, threadName);
+        }
+
+        private void passivateStoreAsync()
+        {
+            String threadName = "BDBHANodePassivationThread-" + getName();
+            executeStateChangeAsync(new Callable<Void>()
+            {
+
+                @Override
+                public Void call() throws Exception
+                {
+                    try
+                    {
+                        if (_messageStore._stateManager.isNotInState(org.apache.qpid.server.store.State.INITIALISED))
+                        {
+                            LOGGER.debug("Store becoming passive");
+                            _messageStore._stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        LOGGER.error("Failed to passivate on hearing REPLICA or DETACHED change event", e);
+                        throw e;
+                    }
+                    return null;
+                }
+            }, threadName);
+        }
+
+        private void executeStateChangeAsync(final Callable<Void> callable, final String threadName)
+        {
+            final RootMessageLogger _rootLogger = CurrentActor.get().getRootMessageLogger();
+
+            _executor.execute(new Runnable()
+            {
+
+                @Override
+                public void run()
+                {
+                    final String originalThreadName = Thread.currentThread().getName();
+                    Thread.currentThread().setName(threadName);
+                    try
+                    {
+                        CurrentActor.set(new AbstractActor(_rootLogger)
+                        {
+                            @Override
+                            public String getLogMessage()
+                            {
+                                return threadName;
+                            }
+                        });
+
+                        try
+                        {
+                            callable.call();
+                        }
+                        catch (Exception e)
+                        {
+                            LOGGER.error("Exception during state change", e);
+                        }
+                    }
+                    finally
+                    {
+                        Thread.currentThread().setName(originalThreadName);
+                    }
+                }
+            });
+        }
+    }
 }

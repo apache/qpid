@@ -143,7 +143,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
 
             CompositeData row = groupMembers.get(new Object[] {nodeName});
             assertNotNull("Table does not contain row for node name " + nodeName, row);
-            assertEquals(nodeHostPort, row.get(BDBHAMessageStore.GRP_MEM_COL_NODE_HOST_PORT));
+            assertEquals(nodeHostPort, row.get(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT));
         }
     }
 
@@ -215,7 +215,12 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         catch(RuntimeException rte)
         {
             //check cause was BDBs EnvironmentFailureException
-            assertTrue(rte.getMessage().contains(EnvironmentFailureException.class.getName()));
+            boolean isExpectedException = rte.getMessage().contains(EnvironmentFailureException.class.getName());
+            if (!isExpectedException)
+            {
+                rte.printStackTrace();
+            }
+            assertTrue("Unexpected exception message:" + rte.getMessage(), isExpectedException);
             // PASS
         }
     }

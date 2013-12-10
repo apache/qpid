@@ -22,14 +22,9 @@ package org.apache.qpid.server.store;
 
 import java.util.Map;
 import java.util.UUID;
-import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
 
 public interface DurableConfigurationStore
 {
@@ -51,7 +46,7 @@ public interface DurableConfigurationStore
      * @param recoveryHandler  Handler to be called as the store recovers on start up
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception;
+    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws AMQStoreException;
 
 
     /**
@@ -95,5 +90,5 @@ public interface DurableConfigurationStore
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException;
 
 
-    void close() throws Exception;
+    void close() throws AMQStoreException;
 }

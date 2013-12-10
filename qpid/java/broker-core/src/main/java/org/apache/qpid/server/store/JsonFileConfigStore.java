@@ -65,8 +65,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void configureConfigStore(final VirtualHost virtualHost, final ConfigurationRecoveryHandler recoveryHandler)
-            throws Exception
+    public void configureConfigStore(final VirtualHost virtualHost, final ConfigurationRecoveryHandler recoveryHandler) throws AMQStoreException
     {
         _name = virtualHost.getName();
 
@@ -75,38 +74,44 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             throw new AMQStoreException("Cannot determine path for configuration storage");
         }
-        _directoryName = (String) storePathAttr;
-        _configFileName = _name + ".json";
-        _backupFileName = _name + ".bak";
-        checkDirectoryIsWritable(_directoryName);
-        getFileLock();
-
-        if(!fileExists(_configFileName))
+        try
         {
-            if(!fileExists(_backupFileName))
+            _directoryName = (String) storePathAttr;
+            _configFileName = _name + ".json";
+            _backupFileName = _name + ".bak";
+            checkDirectoryIsWritable(_directoryName);
+            getFileLock();
+
+            if(!fileExists(_configFileName))
             {
-                File newFile = new File(_directoryName, _configFileName);
-                _objectMapper.writeValue(newFile, Collections.emptyMap());
+                if(!fileExists(_backupFileName))
+                {
+                    File newFile = new File(_directoryName, _configFileName);
+                    _objectMapper.writeValue(newFile, Collections.emptyMap());
+                }
+                else
+                {
+                    renameFile(_backupFileName, _configFileName);
+                }
             }
-            else
+
+            load();
+            recoveryHandler.beginConfigurationRecovery(this,_configVersion);
+            List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
+            for(ConfiguredObjectRecord record : records)
             {
-                renameFile(_backupFileName, _configFileName);
+                recoveryHandler.configuredObject(record.getId(), record.getType(), record.getAttributes());
+            }
+            int oldConfigVersion = _configVersion;
+            _configVersion = recoveryHandler.completeConfigurationRecovery();
+            if(oldConfigVersion != _configVersion)
+            {
+                save();
             }
         }
-
-
-        load();
-        recoveryHandler.beginConfigurationRecovery(this,_configVersion);
-        List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
-        for(ConfiguredObjectRecord record : records)
+        catch(IOException e)
         {
-            recoveryHandler.configuredObject(record.getId(), record.getType(), record.getAttributes());
-        }
-        int oldConfigVersion = _configVersion;
-        _configVersion = recoveryHandler.completeConfigurationRecovery();
-        if(oldConfigVersion != _configVersion)
-        {
-            save();
+            throw new AMQStoreException("Cannot configure store", e);
         }
     }
 
@@ -472,11 +477,15 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         save();
     }
 
-    public void close() throws Exception
+    public void close() throws AMQStoreException
     {
         try
         {
             releaseFileLock();
+        }
+        catch(Exception e)
+        {
+            throw new AMQStoreException("Cannot release file lock", e);
         }
         finally
         {

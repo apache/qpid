@@ -48,7 +48,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
     // ***** MessageStore Interface.
 
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws AMQStoreException
     {
         _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
 
@@ -67,9 +67,17 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
         if (messageStoreClass != null)
         {
-            Class<?> clazz = Class.forName(messageStoreClass);
-
-            Object o = clazz.newInstance();
+            Class<?> clazz = null;
+            Object o = null;
+            try
+            {
+                clazz = Class.forName(messageStoreClass);
+                o = clazz.newInstance();
+            }
+            catch(Exception e)
+            {
+                throw new AMQStoreException("Cannot instantiate message store:" + messageStoreClass, e );
+            }
 
             if (!(o instanceof MessageStore))
             {
@@ -152,19 +160,19 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
 
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws AMQStoreException
     {
         _realStore.configureMessageStore(virtualHost, messageRecoveryHandler, tlogRecoveryHandler);
     }
 
-    public void close() throws Exception
+    public void close() throws AMQStoreException
     {
         doPreDelay("close");
         _realStore.close();
         doPostDelay("close");
     }
 
-    public <M extends StorableMessageMetaData> StoredMessage<M> addMessage(M metaData)
+    public <M extends StorableMessageMetaData> StoredMessage<M> addMessage(M metaData) throws AMQStoreException
     {
         return _realStore.addMessage(metaData);
     }
@@ -219,7 +227,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         doPostDelay("update");
     }
 
-    public Transaction newTransaction()
+    public Transaction newTransaction() throws AMQStoreException
     {
         doPreDelay("beginTran");
         Transaction txn = new SlowTransaction(_realStore.newTransaction());
@@ -311,7 +319,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate() throws AMQStoreException
     {
        _realStore.activate();
     }

@@ -20,11 +20,16 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
+
 public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements DurableConfiguredObjectRecoverer
 {
+    private static final Logger LOGGER = Logger.getLogger(AbstractDurableConfiguredObjectRecoverer.class);
+
     @Override
     public void load(final DurableConfigurationRecoverer durableConfigurationRecoverer,
                      final UUID id,
@@ -67,7 +72,6 @@ public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements Dur
         {
             durableConfigurationRecoverer.addUnresolvedObject(getType(), id, obj);
         }
-
     }
 
     public abstract UnresolvedObject<T> createUnresolvedObject(final UUID id,

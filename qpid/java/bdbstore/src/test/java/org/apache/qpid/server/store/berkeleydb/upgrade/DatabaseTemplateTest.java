@@ -26,6 +26,7 @@ import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import junit.framework.TestCase;
 
 import com.sleepycat.je.Database;

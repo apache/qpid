@@ -356,7 +356,15 @@ public class ServerSessionDelegate extends SessionDelegate
     private StoredMessage<MessageMetaData_0_10> createStoreMessage(final MessageTransfer xfr,
                                                                    final MessageMetaData_0_10 messageMetaData, final MessageStore store)
     {
-        final StoredMessage<MessageMetaData_0_10> storeMessage = store.addMessage(messageMetaData);
+        StoredMessage<MessageMetaData_0_10> storeMessage;
+        try
+        {
+            storeMessage = store.addMessage(messageMetaData);
+        }
+        catch (AMQStoreException e)
+        {
+           throw new RuntimeException("Cannot store the message", e);
+        }
         ByteBuffer body = xfr.getBody();
         if(body != null)
         {

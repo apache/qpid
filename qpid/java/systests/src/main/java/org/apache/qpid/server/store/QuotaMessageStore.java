@@ -49,7 +49,6 @@ public class
 
     @Override
     public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
-            throws Exception
     {
         Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
         _persistentSizeHighThreshold = overfullAttr == null
@@ -76,13 +75,13 @@ public class
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         _stateManager.attainState(State.INITIALISED);
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
         _stateManager.attainState(State.ACTIVATING);
         _stateManager.attainState(State.ACTIVE);
@@ -152,7 +151,7 @@ public class
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         _stateManager.attainState(State.CLOSING);
         _closed.getAndSet(true);

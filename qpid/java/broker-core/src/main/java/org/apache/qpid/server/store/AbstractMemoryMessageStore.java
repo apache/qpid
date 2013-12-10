@@ -80,14 +80,14 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
     {
         _stateManager.attainState(State.INITIALISING);
     }
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         if(_stateManager.isInState(State.INITIAL))
         {
@@ -97,7 +97,7 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
 
         if(_stateManager.isInState(State.INITIALISING))
@@ -110,7 +110,7 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public StoredMessage addMessage(StorableMessageMetaData metaData)
+    public StoredMessage<? extends StorableMessageMetaData> addMessage(StorableMessageMetaData metaData)
     {
         final long id = _messageId.getAndIncrement();
         StoredMemoryMessage message = new StoredMemoryMessage(id, metaData);
@@ -131,7 +131,7 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         _stateManager.attainState(State.CLOSING);
         _closed.getAndSet(true);

@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoderImpl;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
@@ -147,7 +149,15 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
                     _sectionDecoder,
                     immutableSections);
 
-            StoredMessage<MessageMetaData_1_0> storedMessage = _vhost.getMessageStore().addMessage(mmd);
+            StoredMessage<MessageMetaData_1_0> storedMessage;
+            try
+            {
+                storedMessage = _vhost.getMessageStore().addMessage(mmd);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new RuntimeException("Cannot store message", e);
+            }
 
             boolean skipping = true;
             int offset = 0;

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.VirtualHost;
 
 /**
@@ -41,11 +42,11 @@ public interface MessageStore
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
     void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                               TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception;
+                               TransactionLogRecoveryHandler tlogRecoveryHandler) throws AMQStoreException;
 
-    void activate() throws Exception;
+    void activate() throws AMQStoreException;
 
-    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
+    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData) throws AMQStoreException;
 
 
     /**
@@ -55,14 +56,14 @@ public interface MessageStore
      */
     boolean isPersistent();
 
-    Transaction newTransaction();
+    Transaction newTransaction() throws AMQStoreException;
 
     /**
      * Called to close and cleanup any resources used by the message store.
      *
      * @throws Exception If the close fails.
      */
-    void close() throws Exception;
+    void close() throws AMQStoreException;
 
     void addEventListener(EventListener eventListener, Event... events);
 

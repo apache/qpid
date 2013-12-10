@@ -27,6 +27,7 @@ import java.util.Collections;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -603,7 +604,7 @@ public class MessageStoreTest extends QpidTestCase
         }
     }
 
-    private void sendMessageOnExchange(Exchange exchange, String routingKey, boolean deliveryMode)
+    private void sendMessageOnExchange(Exchange exchange, String routingKey, boolean deliveryMode) throws AMQStoreException
     {
         //Set MessagePersistence
         BasicContentHeaderProperties properties = new BasicContentHeaderProperties();

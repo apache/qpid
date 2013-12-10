@@ -25,7 +25,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
@@ -34,7 +34,6 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
-import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 
 public class Upgrader
@@ -64,7 +63,7 @@ public class Upgrader
 
             if(versionDb.count() == 0L)
             {
-                int sourceVersion = isEmpty ? AbstractBDBMessageStore.VERSION: identifyOldStoreVersion();
+                int sourceVersion = isEmpty ? BDBMessageStore.VERSION: identifyOldStoreVersion();
                 DatabaseEntry key = new DatabaseEntry();
                 IntegerBinding.intToEntry(sourceVersion, key);
                 DatabaseEntry value = new DatabaseEntry();
@@ -74,11 +73,11 @@ public class Upgrader
             }
 
             int version = getSourceVersion(versionDb);
-            if(version > AbstractBDBMessageStore.VERSION)
+            if(version > BDBMessageStore.VERSION)
             {
                 throw new AMQStoreException("Database version " + version
                                             + " is higher than the most recent known version: "
-                                            + AbstractBDBMessageStore.VERSION);
+                                            + BDBMessageStore.VERSION);
             }
             performUpgradeFromVersion(version, versionDb);
         }
@@ -127,7 +126,7 @@ public class Upgrader
     void performUpgradeFromVersion(int sourceVersion, Database versionDb)
             throws AMQStoreException
     {
-        while(sourceVersion != AbstractBDBMessageStore.VERSION)
+        while(sourceVersion != BDBMessageStore.VERSION)
         {
             upgrade(sourceVersion, ++sourceVersion);
             DatabaseEntry key = new DatabaseEntry();
