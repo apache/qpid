@@ -26,6 +26,7 @@ public enum SessionState
     ACTIVE,
     INACTIVE,
     BEGIN_SENT,
+    END_PIPE,
     BEGIN_RECVD,
     END_SENT,
     END_RECVD,
