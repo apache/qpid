@@ -148,7 +148,7 @@ class BrokerReplicator : public broker::Exchange,
     void deleteQueue(const std::string& name, bool purge=true);
     void deleteExchange(const std::string& name);
 
-    void disconnectedExchange(boost::shared_ptr<broker::Exchange>);
+    void disconnectedQueueReplicator(boost::shared_ptr<broker::Exchange>);
     void disconnected();
 
     void setMembership(const types::Variant::List&); // Set membership from list.

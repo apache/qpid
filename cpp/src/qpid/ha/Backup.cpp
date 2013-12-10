@@ -100,8 +100,8 @@ Role* Backup::recover(Mutex::ScopedLock&) {
         // Reset membership before allowing backups to connect.
         backups = membership.otherBackups();
         membership.clear();
-        return new Primary(haBroker, backups);
     }
+    return new Primary(haBroker, backups);
 }
 
 Role* Backup::promote() {
