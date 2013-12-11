@@ -90,7 +90,7 @@ public:
     int getDeliveryCount() const { return deliveryCount; }
     void resetDeliveryCount() { deliveryCount = -1; }
 
-    void setPublisher(const Connection& p);
+    QPID_BROKER_EXTERN void setPublisher(const Connection& p);
     const Connection* getPublisher() const;
     bool isLocalTo(const OwnershipToken*) const;
 
