@@ -213,6 +213,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                 {
                     maxSessions = Integer.parseInt(keyValuePair[1]);
                 }
+                else
+                {
+                    throw new MalformedURLException("Unknown URL option: '"+keyValuePair[0]+"' in connection URL: "+urlString);
+                }
             }
         }
 
