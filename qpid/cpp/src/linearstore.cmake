@@ -45,8 +45,8 @@ else (DEFINED linearstore_force)
 		            #
 		            # allow linearstore to be built
 		            #
-                    message(STATUS "BerkeleyDB for C++, libaio and uuid found, Linearstore support enabled")
-		            set (linearstore_default ON)
+                    message(STATUS "BerkeleyDB for C++, libaio and uuid found, Linearstore support may be enabled (currently experimental and disabled by default)")
+                    set (linearstore_default OFF) # Temporarily disabled
 		        else (HAVE_UUID AND HAVE_UUID_H)
                     if (NOT HAVE_UUID)
                         message(STATUS "Linearstore requires uuid which is absent.")
