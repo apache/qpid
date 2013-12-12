@@ -54,6 +54,11 @@
  *   <li><p>Subclasses of Queue and Exchange</p></li>
  * </ul>
  *
+ * Add-on modules to the broker:
+ *
+ * - \ref ha-module "High Availability"
+ *
+ *
  *
  * <h2>Starting Points: Client</h2>
  *
@@ -64,7 +69,3 @@
  * <p>TBD</p>
  *
  */
-
-
-
-
