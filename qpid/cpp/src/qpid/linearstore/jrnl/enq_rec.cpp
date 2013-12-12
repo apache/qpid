@@ -352,12 +352,12 @@ enq_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
         //_enq_hdr.hdr_copy(h);
         ::rec_hdr_copy(&_enq_hdr._rhdr, &h);
         rd_cnt = sizeof(rec_hdr_t);
-        _enq_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        std::memcpy(&_enq_hdr._xidsize, (char*)rptr + rd_cnt, sizeof(std::size_t));
         rd_cnt += sizeof(std::size_t);
 #if defined(JRNL_32_BIT)
         rd_cnt += sizeof(uint32_t); // Filler 0
 #endif
-        _enq_hdr._dsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        std::memcpy(&_enq_hdr._dsize, (char*)rptr + rd_cnt, sizeof(std::size_t));
         rd_cnt = sizeof(enq_hdr_t);
         chk_hdr();
         if (_enq_hdr._xidsize + (::is_enq_external(&_enq_hdr) ? 0 : _enq_hdr._dsize))

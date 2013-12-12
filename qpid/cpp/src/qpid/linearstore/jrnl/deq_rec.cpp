@@ -280,9 +280,9 @@ deq_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
         //_deq_hdr.hdr_copy(h);
         ::rec_hdr_copy(&_deq_hdr._rhdr, &h);
         rd_cnt = sizeof(rec_hdr_t);
-        _deq_hdr._deq_rid = *(uint64_t*)((char*)rptr + rd_cnt);
+        std::memcpy(&_deq_hdr._deq_rid, (char*)rptr + rd_cnt, sizeof(u_int64_t));
         rd_cnt += sizeof(uint64_t);
-        _deq_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        std::memcpy(&_deq_hdr._xidsize, (char*)rptr + rd_cnt, sizeof(std::size_t));
         rd_cnt = sizeof(deq_hdr_t);
         chk_hdr();
         if (_deq_hdr._xidsize)

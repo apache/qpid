@@ -263,7 +263,7 @@ txn_rec::decode(rec_hdr_t& h, void* rptr, uint32_t rec_offs_dblks, uint32_t max_
 #if defined(JRNL_BIG_ENDIAN) && defined(JRNL_32_BIT)
         rd_cnt += sizeof(uint32_t); // Filler 0
 #endif
-        _txn_hdr._xidsize = *(std::size_t*)((char*)rptr + rd_cnt);
+        std::memcpy(&_txn_hdr._xidsize, (char*)rptr + rd_cnt, sizeof(std::size_t));
         rd_cnt = sizeof(txn_hdr_t);
         chk_hdr();
         _buff = std::malloc(_txn_hdr._xidsize);
