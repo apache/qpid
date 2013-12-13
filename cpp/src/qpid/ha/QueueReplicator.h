@@ -85,8 +85,6 @@ class QueueReplicator : public broker::Exchange,
 
     boost::shared_ptr<broker::Queue> getQueue() const { return queue; }
 
-    ReplicationId getMaxId();
-
     // No-op unused Exchange virtual functions.
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);

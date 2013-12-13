@@ -22,17 +22,18 @@
 #include "BackupConnectionExcluder.h"
 #include "ConnectionObserver.h"
 #include "HaBroker.h"
+#include "IdSetter.h"
 #include "Primary.h"
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
 #include "Settings.h"
 #include "StandAlone.h"
 #include "QueueSnapshot.h"
-#include "QueueSnapshots.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/assert.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/BrokerObserver.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/SignalHandler.h"
@@ -60,6 +61,20 @@ using sys::Mutex;
 using boost::shared_ptr;
 using boost::dynamic_pointer_cast;
 
+// In a HaBroker we always need to add QueueSnapshot and IdSetter to each queue
+// because we don't know in advance which queues might be used for stand-alone
+// replication.
+//
+// TODO aconway 2013-12-13: Can we restrict this to queues identified as replicated?
+//
+class HaBroker::BrokerObserver : public broker::BrokerObserver {
+  public:
+    void queueCreate(const boost::shared_ptr<broker::Queue>& q) {
+        q->getObservers().add(boost::shared_ptr<QueueSnapshot>(new QueueSnapshot));
+        q->getMessageInterceptors().add(boost::shared_ptr<IdSetter>(new IdSetter));
+    }
+};
+
 // Called in Plugin::earlyInitialize
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : systemId(b.getSystem()->getSystemId().data()),
@@ -69,8 +84,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
       observer(new ConnectionObserver(*this, systemId)),
       role(new StandAlone),
       membership(BrokerInfo(systemId, STANDALONE), *this),
-      failoverExchange(new FailoverExchange(*b.GetVhostObject(), b)),
-      queueSnapshots(shared_ptr<QueueSnapshots>(new QueueSnapshots))
+      failoverExchange(new FailoverExchange(*b.GetVhostObject(), b))
 {
     // If we are joining a cluster we must start excluding clients now,
     // otherwise there's a window for a client to connect before we get to
@@ -82,8 +96,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         broker.getConnectionObservers().add(observer);
         broker.getExchanges().registerExchange(failoverExchange);
     }
-    // QueueSnapshots are needed for standalone replication as well as cluster.
-    broker.getBrokerObservers().add(queueSnapshots);
+    broker.getBrokerObservers().add(boost::shared_ptr<BrokerObserver>(new BrokerObserver()));
 }
 
 namespace {
