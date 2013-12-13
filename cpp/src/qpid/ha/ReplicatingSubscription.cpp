@@ -150,12 +150,12 @@ void ReplicatingSubscription::initialize() {
         // However we must attach the observer _before_ we snapshot for
         // initial dequeues to be sure we don't miss any dequeues
         // between the snapshot and attaching the observer.
-        queue->addObserver(
+        queue->getObservers().add(
             boost::dynamic_pointer_cast<ReplicatingSubscription>(shared_from_this()));
         boost::shared_ptr<QueueSnapshot> snapshot = haBroker.getQueueSnapshots()->get(queue);
         // There may be no snapshot if the queue is being deleted concurrently.
         if (!snapshot) {
-            queue->removeObserver(
+            queue->getObservers().remove(
                 boost::dynamic_pointer_cast<ReplicatingSubscription>(shared_from_this()));
             throw ResourceDeletedException(logPrefix+"Can't subscribe, queue deleted");
         }
@@ -254,7 +254,7 @@ void ReplicatingSubscription::cancel()
     }
     QPID_LOG(debug, logPrefix << "Cancelled");
     if (primary) primary->removeReplica(*this);
-    getQueue()->removeObserver(
+    getQueue()->getObservers().remove(
         boost::dynamic_pointer_cast<ReplicatingSubscription>(shared_from_this()));
     guard->cancel();
     ConsumerImpl::cancel();

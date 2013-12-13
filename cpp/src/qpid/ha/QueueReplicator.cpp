@@ -175,7 +175,7 @@ void QueueReplicator::activate() {
         boost::shared_ptr<ErrorListener>(new ErrorListener(shared_from_this())));
 
     // Enable callback to destroy()
-    queue->addObserver(
+    queue->getObservers().add(
         boost::shared_ptr<QueueObserver>(new QueueObserver(shared_from_this())));
 }
 

@@ -55,8 +55,8 @@ QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
     info.printId(os) << ": ";
     logPrefix = os.str();
     observer.reset(new QueueObserver(*this));
-    queue.addObserver(observer);
-    // Set first after calling addObserver so we know that the back of the
+    queue.getObservers().add(observer);
+    // Set first after adding the observer so we know that the back of the
     // queue+1 is (or will be) a guarded position.
     QueuePosition front, back;
     q.getRange(front, back, broker::REPLICATOR);
@@ -86,7 +86,7 @@ void QueueGuard::dequeued(const Message& m) {
 }
 
 void QueueGuard::cancel() {
-    queue.removeObserver(observer);
+    queue.getObservers().remove(observer);
     Mutex::ScopedLock l(lock);
     if (cancelled) return;
     QPID_LOG(debug, logPrefix << "Cancelled");

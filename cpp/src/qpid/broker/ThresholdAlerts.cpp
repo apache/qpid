@@ -93,7 +93,7 @@ void ThresholdAlerts::observe(Queue& queue, qpid::management::ManagementAgent& a
         boost::shared_ptr<QueueObserver> observer(
         new ThresholdAlerts(queue.getName(), agent, ctu, ctd, stu, std, (_ctd == 0 && _std == 0))
         );
-        queue.addObserver(observer);
+        queue.getObservers().add(observer);
     }
 }
 
