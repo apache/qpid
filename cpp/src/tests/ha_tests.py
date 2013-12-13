@@ -272,33 +272,34 @@ class ReplicationTests(HaBrokerTest):
 
     def test_standalone_queue_replica(self):
         """Test replication of individual queues outside of cluster mode"""
-        l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
-        try:
-            primary = HaBroker(self, name="primary", ha_cluster=False,
-                               args=["--ha-queue-replication=yes"]);
-            pc = primary.connect()
-            ps = pc.session().sender("q;{create:always}")
-            pr = pc.session().receiver("q;{create:always}")
-            backup = HaBroker(self, name="backup", ha_cluster=False,
-                              args=["--ha-queue-replication=yes"])
-            br = backup.connect().session().receiver("q;{create:always}")
+        primary = HaBroker(self, name="primary", ha_cluster=False,
+                           args=["--ha-queue-replication=yes"]);
+        pc = primary.connect()
+        ps = pc.session().sender("q;{create:always}")
+        pr = pc.session().receiver("q;{create:always}")
+        backup = HaBroker(self, name="backup", ha_cluster=False,
+                          args=["--ha-queue-replication=yes"])
+        bs = backup.connect().session()
+        br = bs.receiver("q;{create:always}")
 
-            # Set up replication with qpid-ha
-            backup.replicate(primary.host_port(), "q")
-            ps.send("a", timeout=1)
-            backup.assert_browse_backup("q", ["a"])
-            ps.send("b", timeout=1)
-            backup.assert_browse_backup("q", ["a", "b"])
-            self.assertEqual("a", pr.fetch().content)
-            pr.session.acknowledge()
-            backup.assert_browse_backup("q", ["b"])
+        def srange(*args): return [str(i) for i in xrange(*args)]
 
-            # Set up replication with qpid-config
-            ps2 = pc.session().sender("q2;{create:always}")
-            backup.config_replicate(primary.host_port(), "q2");
-            ps2.send("x", timeout=1)
-            backup.assert_browse_backup("q2", ["x"])
-        finally: l.restore()
+        for m in srange(3): ps.send(m)
+        # Set up replication with qpid-ha
+        backup.replicate(primary.host_port(), "q")
+        backup.assert_browse_backup("q", srange(3))
+        for m in srange(3,6): ps.send(str(m))
+        backup.assert_browse_backup("q", srange(6))
+        self.assertEqual("0", pr.fetch().content)
+        pr.session.acknowledge()
+        backup.assert_browse_backup("q", srange(1,6))
+
+        # Set up replication with qpid-config
+        ps2 = pc.session().sender("q2;{create:always}")
+        backup.config_replicate(primary.host_port(), "q2");
+        ps2.send("x", timeout=1)
+        backup.assert_browse_backup("q2", ["x"])
+
 
     def test_standalone_queue_replica_failover(self):
         """Test individual queue replication from a cluster to a standalone

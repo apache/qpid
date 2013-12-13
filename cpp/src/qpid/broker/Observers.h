@@ -59,6 +59,14 @@ class Observers
         std::for_each(copy.begin(), copy.end(), f);
     }
 
+    template <class T> boost::shared_ptr<T> findType() const {
+        sys::Mutex::ScopedLock l(lock);
+        typename Set::const_iterator i =
+            std::find_if(observers.begin(), observers.end(), &isA<T>);
+        return i == observers.end() ?
+            boost::shared_ptr<T>() : boost::dynamic_pointer_cast<T>(*i);
+    }
+
   protected:
     typedef std::set<ObserverPtr> Set;
     Observers() : lock(myLock) {}
@@ -69,6 +77,10 @@ class Observers
     /** Iterate over the observers without taking the lock, caller must hold the lock */
     template <class F> void each(F f, const sys::Mutex::ScopedLock&) {
         std::for_each(observers.begin(), observers.end(), f);
+    }
+
+    template <class T> static bool isA(const ObserverPtr&o) {
+        return boost::dynamic_pointer_cast<T>(o);
     }
 
     mutable sys::Mutex myLock;
