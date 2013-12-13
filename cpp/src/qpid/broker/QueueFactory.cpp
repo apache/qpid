@@ -90,7 +90,7 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
     if (settings.groupKey.size()) {
         boost::shared_ptr<MessageGroupManager> mgm(MessageGroupManager::create( name, *(queue->messages), settings));
         queue->allocator = mgm;
-        queue->addObserver(mgm);
+        queue->getObservers().add(mgm);
     } else {
         queue->allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *(queue->messages) ));
     }

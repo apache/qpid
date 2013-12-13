@@ -31,7 +31,7 @@
 #include "qpid/broker/PersistableQueue.h"
 #include "qpid/broker/QueueBindings.h"
 #include "qpid/broker/QueueListeners.h"
-#include "qpid/broker/QueueObserver.h"
+#include "qpid/broker/QueueObservers.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/broker/TxOp.h"
 
@@ -169,7 +169,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         bool eligible;
     };
 
-    typedef std::set< boost::shared_ptr<QueueObserver> > Observers;
     enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
     typedef boost::function1<void, Message&> MessageFunctor;
 
@@ -211,7 +210,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     qmf::org::apache::qpid::broker::Broker::shared_ptr brokerMgmtObject;
     sys::AtomicValue<uint32_t> dequeueSincePurge; // Count dequeues since last purge.
     int eventMode;
-    Observers observers;
+    QueueObservers observers;
     MessageInterceptors interceptors;
     std::string seqNoKey;
     Broker* broker;
@@ -446,12 +445,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         bindings.eachBinding(f);
     }
 
-    /** Apply f to each Observer on the queue */
-    template <class F> void eachObserver(F f) {
-        sys::Mutex::ScopedLock l(messageLock);
-        std::for_each<Observers::iterator, F>(observers.begin(), observers.end(), f);
-    }
-
     /**
      * Set the sequence number for the back of the queue, the
      * next message enqueued will be pos+1.
@@ -484,11 +477,12 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         SubscriptionType type=CONSUMER
     );
 
-    QPID_BROKER_EXTERN void addObserver(boost::shared_ptr<QueueObserver>);
-    QPID_BROKER_EXTERN void removeObserver(boost::shared_ptr<QueueObserver>);
+
     QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);
 
     QPID_BROKER_EXTERN MessageInterceptors& getMessageInterceptors() { return interceptors; }
+    QPID_BROKER_EXTERN QueueObservers& getObservers() { return observers; }
+
     /**
      * Notify queue that recovery has completed.
      */
