@@ -37,7 +37,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
+import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -56,6 +59,7 @@ import com.sleepycat.je.rep.NetworkRestore;
 import com.sleepycat.je.rep.NetworkRestoreConfig;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
+import com.sleepycat.je.rep.ReplicationGroup;
 import com.sleepycat.je.rep.ReplicationMutableConfig;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
@@ -64,6 +68,8 @@ import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
+    private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
+
     @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
     {{
@@ -101,7 +107,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         put(ReplicationConfig.ENV_UNKNOWN_STATE_TIMEOUT, "5 s");
     }});
 
-    private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
     public static final String TYPE = "BDB-HA";
 
     // TODO: get rid of these names
@@ -111,28 +116,34 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private volatile ReplicatedEnvironment _environment;
     private CommitThreadWrapper _commitThreadWrapper;
 
-    private String _groupName;
-    private String _nodeName;
-    private String _nodeHostPort;
-    private String _helperHostPort;
-    private Durability _durability;
-    private boolean _designatedPrimary;
-    private boolean _coalescingSync;
+    private final String _groupName;
+    private final String _nodeName;
+    private final String _nodeHostPort;
+    private final String _helperHostPort;
+    private final Durability _durability;
+    private final boolean _designatedPrimary;
+    private final boolean _coalescingSync;
     private volatile StateChangeListener _stateChangeListener;
-    private String _environmentPath;
-    private Map<String, String> _environmentParameters;
-    private Map<String, String> _replicationEnvironmentParameters;
-    private String _name;
-    private ExecutorService _executor = Executors.newFixedThreadPool(1);
-    private AtomicReference<State> _state = new AtomicReference<State>(State.INITIAL);
+    private final String _environmentPath;
+    private final Map<String, String> _environmentParameters;
+    private final Map<String, String> _replicationEnvironmentParameters;
+    private final String _name;
+    private final ExecutorService _executor = Executors.newFixedThreadPool(1);
+    private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIAL);
 
     private final ConcurrentMap<String, Database> _databases = new ConcurrentHashMap<String, Database>();
 
-    public ReplicatedEnvironmentFacade(String name, String environmentPath, String groupName, String nodeName, String nodeHostPort,
-            String helperHostPort, Durability durability, boolean designatedPrimary, boolean coalescingSync,
-            Map<String, String> environmentParameters, Map<String, String> replicationEnvironmentParameters)
-    {
+    private ReplicationGroupListener _replicationGroupListener;
+    private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
 
+
+    public ReplicatedEnvironmentFacade(String name, String environmentPath,
+            String groupName, String nodeName, String nodeHostPort,
+            String helperHostPort, Durability durability,
+            Boolean designatedPrimary, Boolean coalescingSync,
+            Map<String, String> envConfigMap,
+            Map<String, String> replicationConfig, RemoteReplicationNodeFactory remoteReplicationNodeFactory)
+    {
         _name = name;
         _environmentPath = environmentPath;
         _groupName = groupName;
@@ -142,14 +153,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _durability = durability;
         _designatedPrimary = designatedPrimary;
         _coalescingSync = coalescingSync;
-        _environmentParameters = environmentParameters;
-        _replicationEnvironmentParameters = replicationEnvironmentParameters;
+        _environmentParameters = envConfigMap;
+        _replicationEnvironmentParameters = replicationConfig;
 
+        _remoteReplicationNodeFactory = remoteReplicationNodeFactory;
         _state.set(State.OPENING);
         _environment = createEnvironment(environmentPath, groupName, nodeName, nodeHostPort, helperHostPort, durability,
-                designatedPrimary, environmentParameters, replicationEnvironmentParameters);
-        startCommitThread(name, _environment);
+                designatedPrimary, _environmentParameters, _replicationEnvironmentParameters);
+        startCommitThread(_name, _environment);
     }
+
 
     @Override
     public StoreFuture commit(final Transaction tx, final boolean syncCommit) throws AMQStoreException
@@ -430,6 +443,42 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return _state.get();
     }
 
+    /**
+     * Sets the replication group listener.  Whenever a new listener is set, the listener
+     * will hear {@link ReplicationGroupListener#onReplicationNodeRecovered(org.apache.qpid.server.model.ReplicationNode)
+     * for every existing remote node.
+     *
+     * @param replicationGroupListener listener
+     */
+    public void setReplicationGroupListener(ReplicationGroupListener replicationGroupListener)
+    {
+        _replicationGroupListener = replicationGroupListener;
+        if (_replicationGroupListener != null)
+        {
+            notifyExistingRemoteReplicationNodes(_replicationGroupListener);
+        }
+    }
+
+    private void notifyExistingRemoteReplicationNodes(ReplicationGroupListener listener)
+    {
+        ReplicationGroup group = _environment.getGroup();
+        Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getElectableNodes());
+        String localNodeName = getNodeName();
+
+        for (ReplicationNode replicationNode : nodes)
+        {
+            String discoveredNodeName = replicationNode.getName();
+            if (!discoveredNodeName.equals(localNodeName))
+            {
+                // TODO remote replication nodes should be cached
+                RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(group.getName(),
+                                                                             replicationNode.getName(),
+                                                                             replicationNode.getHostName(), replicationNode.getPort());
+                listener.onReplicationNodeRecovered(remoteNode);
+            }
+        }
+    }
+
     private ReplicationGroupAdmin createReplicationGroupAdmin()
     {
         final Set<InetSocketAddress> helpers = new HashSet<InetSocketAddress>();
@@ -652,5 +701,4 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         CLOSING,
         CLOSED
     }
-
 }

@@ -25,6 +25,8 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
+import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
 
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.ReplicaAckPolicy;
@@ -81,7 +83,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         }
 
         return new ReplicatedEnvironmentFacade(name, storeLocation, groupName, nodeName, nodeHostPort, helperHostPort, durability,
-                designatedPrimary, coalescingSync, envConfigMap, replicationConfig);
+                designatedPrimary, coalescingSync, envConfigMap, replicationConfig, new RemoteReplicationNodeFactoryImpl(virtualHost));
     }
 
     private String getValidatedStringAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName)
@@ -126,4 +128,19 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         return defaultVal;
     }
 
+    private static class RemoteReplicationNodeFactoryImpl implements RemoteReplicationNodeFactory
+    {
+        private VirtualHost _virtualHost;
+
+        public RemoteReplicationNodeFactoryImpl(VirtualHost virtualHost)
+        {
+            _virtualHost = virtualHost;
+        }
+
+        @Override
+        public RemoteReplicationNode create(String groupName, String nodeName, String host, int port)
+        {
+            return new RemoteReplicationNode(groupName, nodeName, host, port, _virtualHost);
+        }
+    }
 }

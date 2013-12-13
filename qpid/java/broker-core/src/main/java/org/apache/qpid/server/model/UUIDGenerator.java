@@ -97,4 +97,9 @@ public class UUIDGenerator
     {
         return createUUID(PreferencesProvider.class.getName(), authenticationProviderName, preferencesProviderName);
     }
+
+    public static UUID generateReplicationNodeId(String groupName, String nodeName)
+    {
+        return createUUID(ReplicationNode.class.getName(), groupName, nodeName);
+    }
 }

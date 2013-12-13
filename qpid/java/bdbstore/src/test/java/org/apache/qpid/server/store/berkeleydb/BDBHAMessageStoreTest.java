@@ -22,11 +22,12 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
 import java.net.InetAddress;
-
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -65,7 +66,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
 
         FileUtils.delete(new File(_workDir), true);
         _configXml = new XMLConfiguration();
-        _modelVhost = mock(org.apache.qpid.server.model.VirtualHost.class);
+        _modelVhost = mock(TestVirtualHost.class);
 
 
         BrokerTestHelper.setUp();
@@ -95,7 +96,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         String vhostName = "test" + _masterPort;
         VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), BrokerTestHelper.createBrokerMock());
 
-        _virtualHost = BrokerTestHelper.createVirtualHost(configuration,null,_modelVhost);
+        _virtualHost = BrokerTestHelper.createVirtualHost(configuration, null, _modelVhost);
         BDBMessageStore store = (BDBMessageStore) _virtualHost.getMessageStore();
 
         // test whether JVM system settings were applied
@@ -125,7 +126,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         _configXml.addProperty("virtualhosts.virtualhost.name", vhostName);
         _configXml.addProperty(vhostPrefix + ".type", BDBHAVirtualHostFactory.TYPE);
 
-        when(_modelVhost.getAttribute(eq(_modelVhost.STORE_PATH))).thenReturn(_workDir + File.separator
+        when(_modelVhost.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_PATH))).thenReturn(_workDir + File.separator
                                                                                         + port);
         when(_modelVhost.getAttribute(eq("haGroupName"))).thenReturn(_groupName);
         when(_modelVhost.getAttribute(eq("haNodeName"))).thenReturn(nodeName);
@@ -162,5 +163,10 @@ public class BDBHAMessageStoreTest extends QpidTestCase
             throw new IllegalStateException("Helper port not yet assigned.");
         }
         return _host + ":" + _masterPort;
+    }
+
+    // TODO: a temporary work around against issue with casting VirtualHost model object to ReplicationGroupListener in the BDBHAVH
+    public static interface TestVirtualHost extends org.apache.qpid.server.model.VirtualHost, ReplicationGroupListener
+    {
     }
 }

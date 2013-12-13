@@ -55,6 +55,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueType;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -66,6 +67,7 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -82,7 +84,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostListener;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
 
-public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener
+public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener, ReplicationGroupListener
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
 
@@ -110,6 +112,8 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     private final Broker _broker;
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private StatisticsGatherer _brokerStatisticsGatherer;
+
+    private final List<ReplicationNode> _replicationNodes = new ArrayList<ReplicationNode>();
 
     public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
@@ -254,6 +258,15 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         synchronized (_exchangeAdapters)
         {
             return new ArrayList<Exchange>(_exchangeAdapters.values());
+        }
+    }
+
+    @Override
+    public Collection<ReplicationNode> getReplicationNodes()
+    {
+        synchronized (_replicationNodes)
+        {
+            return Collections.unmodifiableList(_replicationNodes);
         }
     }
 
@@ -1252,4 +1265,11 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             throw new AccessControlException("Setting of virtual host attributes is denied");
         }
     }
+
+    @Override
+    public void onReplicationNodeRecovered(ReplicationNode node)
+    {
+        _replicationNodes.add(node);
+    }
+
 }

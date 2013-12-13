@@ -32,6 +32,7 @@ import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -80,8 +81,6 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         _messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
         _messageStore.addEventListener(new BeforeCloseListener(), Event.BEFORE_CLOSE);
 
-
-
         _messageStore.addEventListener(new AfterInitialisationListener(), Event.AFTER_INIT);
         _messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
 
@@ -99,7 +98,10 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                 recoveryHandler
         );
 
-        ((ReplicatedEnvironmentFacade)_messageStore.getEnvironmentFacade()).setStateChangeListener(new BDBHAMessageStoreStateChangeListener());
+        // Make the virtualhost model object a replication group listener
+        ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) _messageStore.getEnvironmentFacade();
+        environmentFacade.setReplicationGroupListener((ReplicationGroupListener) virtualHost);
+        environmentFacade.setStateChangeListener(new BDBHAMessageStoreStateChangeListener());
     }
 
 

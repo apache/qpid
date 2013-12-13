@@ -131,6 +131,7 @@ public interface VirtualHost extends ConfiguredObject
     Collection<Connection> getConnections();
     Collection<Queue> getQueues();
     Collection<Exchange> getExchanges();
+    Collection<ReplicationNode> getReplicationNodes();
 
     Exchange createExchange(String name, State initialState, boolean durable,
                             LifetimePolicy lifetime, long ttl, String type, Map<String, Object> attributes)

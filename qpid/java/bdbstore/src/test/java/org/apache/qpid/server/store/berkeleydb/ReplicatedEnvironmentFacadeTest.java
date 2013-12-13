@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +40,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.replication.ReplicationGroupListener;
+import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
+import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
@@ -65,6 +72,7 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
     private static final boolean TEST_DESIGNATED_PRIMARY = true;
     private static final boolean TEST_COALESCING_SYNC = true;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
+    private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = mock(RemoteReplicationNodeFactory.class);;
 
     public void tearDown() throws Exception
     {
@@ -134,6 +142,24 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
         expectedMember.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT, TEST_NODE_HOST_PORT);
         Set<Map<String, String>> expectedGroupMembers = Collections.singleton(expectedMember);
         assertEquals("Unexpected group members", expectedGroupMembers, new HashSet<Map<String, String>>(groupMembers));
+    }
+
+    public void testReplicationGroupListenerHearsAboutExistingRemoteReplicationNodes() throws Exception
+    {
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = getEnvironmentFacade();
+        String nodeName2 = TEST_NODE_NAME + "_2";
+        String host = "localhost";
+        int port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node2NodeHostPort = host + ":" + port;
+        joinReplica(nodeName2, node2NodeHostPort);
+
+        List<Map<String, String>> groupMembers = replicatedEnvironmentFacade.getGroupMembers();
+        assertEquals("Unexpected number of nodes at start of test", 2, groupMembers.size());
+
+        ReplicationGroupListener listener = mock(ReplicationGroupListener.class);
+        replicatedEnvironmentFacade.setReplicationGroupListener(listener);
+        verify(listener).onReplicationNodeRecovered(any(RemoteReplicationNode.class));
+        verify(_remoteReplicationNodeFactory).create(TEST_GROUP_NAME, nodeName2, host, port);
     }
 
     public void testRemoveNodeFromGroup() throws Exception
@@ -418,7 +444,7 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
 
         ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(getName(), nodePath, TEST_GROUP_NAME, nodeName,
                 nodeHostPort, TEST_NODE_HELPER_HOST_PORT, TEST_DURABILITY, designatedPrimary, TEST_COALESCING_SYNC,
-                Collections.<String, String> emptyMap(), repConfig);
+                Collections.<String, String> emptyMap(), repConfig, _remoteReplicationNodeFactory);
         return ref;
     }
 
