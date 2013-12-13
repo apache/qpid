@@ -53,7 +53,7 @@ class  QueueSnapshot : public broker::QueueObserver
 
     void requeued(const broker::Message&) {}
 
-    ReplicationIdSet snapshot() {
+    ReplicationIdSet getSnapshot() {
         sys::Mutex::ScopedLock l(lock);
         return set;
     }

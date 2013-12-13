@@ -104,8 +104,6 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     QueueReplicator::copy(hb.getBroker().getExchanges(), qrs);
     std::for_each(qrs.begin(), qrs.end(), boost::bind(&QueueReplicator::promoted, _1));
 
-    broker::QueueRegistry& queues = hb.getBroker().getQueues();
-    queues.eachQueue(boost::bind(&Primary::initializeQueue, this, _1));
     if (expect.empty()) {
         QPID_LOG(notice, logPrefix << "Promoted to primary. No expected backups.");
     }
@@ -138,15 +136,6 @@ Primary::~Primary() {
     if (timerTask) timerTask->cancel();
     haBroker.getBroker().getBrokerObservers().remove(brokerObserver);
     haBroker.getObserver()->reset();
-}
-
-void Primary::initializeQueue(boost::shared_ptr<broker::Queue> q) {
-    if (replicationTest.useLevel(*q) == ALL) {
-        boost::shared_ptr<QueueReplicator> qr = haBroker.findQueueReplicator(q->getName());
-        ReplicationId firstId = qr ? qr->getMaxId()+1 : ReplicationId(1);
-        q->getMessageInterceptors().add(
-            boost::shared_ptr<IdSetter>(new IdSetter(q->getName(), firstId)));
-    }
 }
 
 void Primary::checkReady() {
@@ -261,7 +250,6 @@ void Primary::queueCreate(const QueuePtr& q) {
     if (level) {
         QPID_LOG(debug, logPrefix << "Created queue " << q->getName()
                  << " replication: " << printable(level));
-        initializeQueue(q);
         // Give each queue a unique id. Used by backups to avoid confusion of
         // same-named queues.
         q->addArgument(QPID_HA_UUID, types::Variant(Uuid(true)));

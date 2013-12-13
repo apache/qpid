@@ -43,15 +43,11 @@ namespace ha {
 class IdSetter : public broker::MessageInterceptor
 {
   public:
-    IdSetter(const std::string& q, ReplicationId firstId) : nextId(firstId), name(q) {
-        QPID_LOG(trace, "Initial replication ID for " << name << " =" << nextId.get());
-    }
-
+    IdSetter(ReplicationId firstId=1) : nextId(firstId) {}
     void record(broker::Message& m) { m.setReplicationId(nextId++); }
 
   private:
     sys::AtomicValue<uint32_t> nextId;
-    std::string name;
 };
 
 }} // namespace qpid::ha
