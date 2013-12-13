@@ -24,19 +24,14 @@
 
 #include "BrokerObserver.h"
 #include "Observers.h"
-#include "qpid/sys/Mutex.h"
 
 namespace qpid {
 namespace broker {
 
 /**
- * A broker observer that delegates to a collection of broker observers.
- *
- * THREAD SAFE
+ * Collection of BrokerObserver.
  */
-class BrokerObservers : public BrokerObserver,
-                               public Observers<BrokerObserver>
-{
+class BrokerObservers : public Observers<BrokerObserver> {
   public:
     void queueCreate(const boost::shared_ptr<Queue>& q) {
         each(boost::bind(&BrokerObserver::queueCreate, _1, q));
@@ -54,15 +49,13 @@ class BrokerObservers : public BrokerObserver,
               const boost::shared_ptr<Queue>& queue,
               const std::string& key,
               const framing::FieldTable& args) {
-        each(boost::bind(
-                 &BrokerObserver::bind, _1, exchange, queue, key, args));
+        each(boost::bind(&BrokerObserver::bind, _1, exchange, queue, key, args));
     }
     void unbind(const boost::shared_ptr<Exchange>& exchange,
                 const boost::shared_ptr<Queue>& queue,
                 const std::string& key,
                 const framing::FieldTable& args) {
-        each(boost::bind(
-                 &BrokerObserver::unbind, _1, exchange, queue, key, args));
+        each(boost::bind(&BrokerObserver::unbind, _1, exchange, queue, key, args));
     }
     void startTx(const boost::intrusive_ptr<TxBuffer>& tx) {
         each(boost::bind(&BrokerObserver::startTx, _1, tx));
@@ -70,6 +63,9 @@ class BrokerObservers : public BrokerObserver,
     void startDtx(const boost::intrusive_ptr<DtxBuffer>& dtx) {
         each(boost::bind(&BrokerObserver::startDtx, _1, dtx));
     }
+
+  private:
+    template <class F> void each(F f) { Observers<BrokerObserver>::each(f); }
 };
 
 }} // namespace qpid::broker

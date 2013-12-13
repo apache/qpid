@@ -244,7 +244,7 @@ void QueueFlowLimit::observe(Queue& queue)
     }
 
     /* set up the observer */
-    queue.addObserver(shared_from_this());
+    queue.getObservers().add(shared_from_this());
 }
 
 /** returns ptr to a QueueFlowLimit, else 0 if no limit */

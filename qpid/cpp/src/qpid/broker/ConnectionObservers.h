@@ -30,11 +30,8 @@ namespace broker {
 
 /**
  * A collection of connection observers.
- * Calling a ConnectionObserver function will call that function on each observer.
- * THREAD SAFE.
  */
-class ConnectionObservers : public ConnectionObserver,
-                            public Observers<ConnectionObserver>
+class ConnectionObservers : public Observers<ConnectionObserver>
 {
   public:
     void connection(Connection& c) {

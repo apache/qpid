@@ -45,18 +45,14 @@ class QueueSnapshots : public broker::BrokerObserver
   public:
     boost::shared_ptr<QueueSnapshot> get(const boost::shared_ptr<broker::Queue>& q) const {
         boost::shared_ptr<QueueSnapshot> qs;
-        q->eachObserver(
+        q->getObservers().each(
             boost::bind(QueueSnapshots::saveQueueSnapshot, _1, boost::ref(qs)));
         return qs;
     }
 
     // BrokerObserver overrides.
     void queueCreate(const boost::shared_ptr<broker::Queue>& q) {
-        q->addObserver(boost::shared_ptr<QueueSnapshot>(new QueueSnapshot));
-    }
-
-    void queueDestroy(const boost::shared_ptr<broker::Queue>& q) {
-        q->removeObserver(get(q));
+        q->getObservers().add(boost::shared_ptr<QueueSnapshot>(new QueueSnapshot));
     }
 
   private:
