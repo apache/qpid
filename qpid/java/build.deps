@@ -82,7 +82,7 @@ broker-core.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
 #Borrow the broker-core libs, hack for release binary generation
 broker.libs=${broker-core.libs}
 
-broker-plugins-management-http.libs=${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api}  ${jackson-core} ${jackson-mapper} ${dojo}
+broker-plugins-management-http.libs=${dojo}
 broker-plugins.libs=${log4j} ${commons-configuration.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
