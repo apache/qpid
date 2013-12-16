@@ -380,7 +380,7 @@ jcntl::handle_aio_wait(const iores res, iores& resout, const data_tok* dtp)
         while (_wmgr.curr_pg_blocked())
         {
             if (_wmgr.get_aio_evt_rem() == 0) {
-std::cout << "&&&&&& jcntl::handle_aio_wait() " << _wmgr.status_str() << std::endl; // DEBUG
+//std::cout << "&&&&&& jcntl::handle_aio_wait() " << _wmgr.status_str() << std::endl; // DEBUG
                 throw jexception("_wmgr.curr_pg_blocked() with no events remaining"); // TODO - complete exception
             }
             if (_wmgr.get_events(&_aio_cmpl_timeout, false) == jerrno::AIO_TIMEOUT)

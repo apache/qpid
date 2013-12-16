@@ -51,6 +51,10 @@ add_messaging_example(client)
 add_messaging_example(server)
 add_messaging_example(server_reconnect)
 
+add_executable(qc2_spout qc2_spout.cpp Formatter.cpp Utils.cpp OptionParser.cpp)
+set_target_properties(qc2_spout PROPERTIES OUTPUT_NAME qc2_spout)
+target_link_libraries(qc2_spout qpidmessaging qpidtypes ${_boost_libs_needed})
+
 # These don't need Boost or OptionParser
 add_executable(hello_world hello_world.cpp)
 set_target_properties(hello_world PROPERTIES OUTPUT_NAME hello_world)
