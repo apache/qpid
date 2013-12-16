@@ -84,7 +84,7 @@ class Observers
     }
 
     mutable sys::Mutex myLock;
-    mutable sys::Mutex& lock;
+    sys::Mutex& lock;
     Set observers;
 };
 
