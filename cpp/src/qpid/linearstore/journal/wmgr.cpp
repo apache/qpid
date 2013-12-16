@@ -621,8 +621,8 @@ wmgr::flush_check(iores& res,
         }
 
         // If file is full, rotate to next file
-        uint32_t fileSize_pgs = _lfc.fileSize_sblks() / _cache_pgsize_sblks;
-        if (_pg_cntr >= fileSize_pgs)
+        uint32_t dataSize_pgs = _lfc.dataSize_sblks() / _cache_pgsize_sblks;
+        if (_pg_cntr >= dataSize_pgs)
         {
 //std::cout << _pg_cntr << ">=" << fileSize_pgs << std::flush;
             get_next_file();
@@ -638,8 +638,8 @@ iores
 wmgr::flush()
 {
     iores res = write_flush();
-    uint32_t fileSize_pgs = _lfc.fileSize_sblks() / _cache_pgsize_sblks;
-    if (res == RHM_IORES_SUCCESS && _pg_cntr >= fileSize_pgs) {
+    uint32_t dataSize_pgs = _lfc.dataSize_sblks() / _cache_pgsize_sblks;
+    if (res == RHM_IORES_SUCCESS && _pg_cntr >= dataSize_pgs) {
         get_next_file();
     }
     return res;
