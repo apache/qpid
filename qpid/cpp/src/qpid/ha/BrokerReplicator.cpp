@@ -892,7 +892,7 @@ void BrokerReplicator::disconnected() {
 
     // Make copy of exchanges so we can work outside the registry lock.
     ExchangeVector exs;
-    exchanges.eachExchange(boost::bind(&ExchangeVector::push_back, boost::ref(exs), _1));
+    exchanges.eachExchange(boost::bind(&exchangeAccumulatorCallback, boost::ref(exs), _1));
     for_each(exs.begin(), exs.end(),
              boost::bind(&BrokerReplicator::disconnectedQueueReplicator, this, _1));
 }
