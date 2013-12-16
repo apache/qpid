@@ -17,7 +17,10 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-$2 --help | grep -v 'Usage: ' | sed -f $(dirname $0)/groffify_options.sed > .temp.options.groff
+
+test -n "$3" || { echo "Usage: $0 <source> <qpidd> <output>"; exit 1; }
+
+$2 --help --no-module-dir | grep -v 'Usage: ' | sed -f $(dirname $0)/groffify_options.sed > .temp.options.groff
 cat $1 | sed -f $(dirname $0)/groffify_template.sed | sed -e '/^\.PP$/ r .temp.options.groff' -e "/^.SH NAME/ i\
 .TH QPIDD \"1\" \"$(date +'%B %Y')\" \"$($2 -v)\" \"User Commands\"
 " > $3
