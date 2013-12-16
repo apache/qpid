@@ -584,7 +584,6 @@ option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
 if (BUILD_HA)
     set (ha_SOURCES
 	qpid/ha/QueueSnapshot.h
-	qpid/ha/QueueSnapshots.h
         qpid/ha/AlternateExchangeSetter.h
         qpid/ha/Backup.cpp
         qpid/ha/Backup.h
