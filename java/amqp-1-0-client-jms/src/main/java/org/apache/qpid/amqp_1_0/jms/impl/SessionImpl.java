@@ -523,6 +523,13 @@ public class SessionImpl implements Session, QueueSession, TopicSession
             messageConsumer = new TopicSubscriberImpl(name, true, (org.apache.qpid.amqp_1_0.jms.Topic) topic, this,
                                                       selector,
                                                       noLocal);
+
+            if(_dispatcherThread == null)
+            {
+                _dispatcherThread = new Thread(_dispatcher);
+                _dispatcherThread.start();
+            }
+
             addConsumer(messageConsumer);
             if(_connection.isStarted())
             {
