@@ -336,6 +336,7 @@ void Primary::opened(broker::Connection& connection) {
         } else {
             QPID_LOG(info, logPrefix << "Known backup reconnection: " << info);
             i->second->setConnection(&connection);
+            backup = i->second;
         }
         if (info.getStatus() == JOINING) {
             info.setStatus(CATCHUP);

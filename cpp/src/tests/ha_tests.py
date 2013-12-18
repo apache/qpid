@@ -253,8 +253,6 @@ class ReplicationTests(HaBrokerTest):
         """Verify that a backup broker fails over and recovers queue state"""
         brokers = HaCluster(self, 3)
         brokers[0].connect().session().sender("q;{create:always}").send("a")
-        for b in brokers[1:]: b.assert_browse_backup("q", ["a"], msg=b)
-        brokers[0].expect = EXPECT_EXIT_FAIL
         brokers.kill(0)
         brokers[1].connect().session().sender("q").send("b")
         brokers[2].assert_browse_backup("q", ["a","b"])
@@ -262,6 +260,13 @@ class ReplicationTests(HaBrokerTest):
         self.assertEqual("a", s.receiver("q").fetch().content)
         s.acknowledge()
         brokers[2].assert_browse_backup("q", ["b"])
+
+    def test_empty_backup_failover(self):
+        """Verify that a new primary becomes active with no queues.
+        Regression test for QPID-5430"""
+        brokers = HaCluster(self, 3)
+        brokers.kill(0)
+        brokers[1].wait_status("active")
 
     def test_qpid_config_replication(self):
         """Set up replication via qpid-config"""
