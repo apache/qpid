@@ -71,6 +71,7 @@ class Encoder
     void writeFloat(float, const Descriptor* d=0);
     void writeDouble(double, const Descriptor* d=0);
     void writeUuid(const qpid::types::Uuid&, const Descriptor* d=0);
+    void writeTimestamp(int64_t, const Descriptor* d=0);
 
     void writeSymbol(const CharSequence&, const Descriptor* d=0);
     void writeSymbol(const std::string&, const Descriptor* d=0);

@@ -246,6 +246,12 @@ void Encoder::writeLong(int64_t i, const Descriptor* d)
     write((uint64_t) i, typecodes::LONG, d);
 }
 
+void Encoder::writeTimestamp(int64_t t, const Descriptor* d)
+{
+    write((uint64_t) t, typecodes::TIMESTAMP, d);
+}
+
+
 void Encoder::writeFloat(float f, const Descriptor* d)
 {
     write(f, typecodes::FLOAT, d);

@@ -116,10 +116,10 @@ void MessageEncoder::writeProperties(const Properties& msg)
         if (msg.hasContentEncoding()) writeSymbol(msg.getContentEncoding());
         else if (fields > 7) writeNull();
 
-        if (msg.hasAbsoluteExpiryTime()) writeLong(msg.getAbsoluteExpiryTime());
+        if (msg.hasAbsoluteExpiryTime()) writeTimestamp(msg.getAbsoluteExpiryTime());
         else if (fields > 8) writeNull();
 
-        if (msg.hasCreationTime()) writeLong(msg.getCreationTime());
+        if (msg.hasCreationTime()) writeTimestamp(msg.getCreationTime());
         else if (fields > 9) writeNull();
 
         if (msg.hasGroupId()) writeString(msg.getGroupId());
