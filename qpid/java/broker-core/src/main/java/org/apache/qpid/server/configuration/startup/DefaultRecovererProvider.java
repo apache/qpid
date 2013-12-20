@@ -33,6 +33,7 @@ import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
@@ -126,7 +127,10 @@ public class DefaultRecovererProvider implements RecovererProvider
         {
             return new PluginRecoverer(_pluginFactoryServiceLoader);
         }
-
+        else if(ReplicationNode.class.getSimpleName().equals(type))
+        {
+            return new ReplicationNodeRecoverer();
+        }
         return null;
     }
 

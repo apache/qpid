@@ -121,11 +121,6 @@ public class VirtualHostConfiguration extends AbstractConfiguration
         return getLongValue("housekeeping.checkPeriod", _defaultHouseKeepingCheckPeriod);
     }
 
-    public Configuration getStoreConfiguration()
-    {
-        return getConfig().subset("store");
-    }
-
     public String getMessageStoreClass()
     {
         return getStringValue("store.class", null);

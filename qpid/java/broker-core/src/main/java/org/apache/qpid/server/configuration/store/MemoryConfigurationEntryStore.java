@@ -40,6 +40,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import javax.management.ObjectName;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -57,6 +59,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 
 public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 {
@@ -547,7 +550,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             }
             else if (fieldNode.isObject())
             {
-                // ignore, in-line objects are not supported yet
+                attributes.put(fieldName, toObject(fieldNode) );
             }
             else
             {

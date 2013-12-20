@@ -60,6 +60,12 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         store.save(newParentEntry, new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), store));
     }
 
+    @Override
+    protected ConfigurationEntryStore reOpenStore()
+    {
+        return getStore();
+    }
+
     public void testCreateWithNullLocationAndNullInitialStore()
     {
         try
@@ -130,4 +136,5 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     {
         assertEquals("Unexpected type", "memory", getStore().getType());
     }
+
 }

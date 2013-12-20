@@ -141,7 +141,7 @@ public class StateManagerTest extends TestCase implements EventListener
 
         performInvalidTransitions(StateManager.INITIALISE, State.INITIALISED);
         performInvalidTransitions(StateManager.INITALISE_COMPLETE, State.ACTIVATING, State.CLOSING);
-        performInvalidTransitions(StateManager.ACTIVATE, State.ACTIVE);
+        performInvalidTransitions(StateManager.ACTIVATE, State.ACTIVE, State.CLOSING);
         performInvalidTransitions(StateManager.ACTIVATE_COMPLETE, State.QUIESCING, State.CLOSING, State.INITIALISED);
         performInvalidTransitions(StateManager.QUIESCE, State.QUIESCED);
         performInvalidTransitions(StateManager.QUIESCE_COMPLETE, State.ACTIVATING, State.CLOSING);

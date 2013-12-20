@@ -281,7 +281,6 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                     catch (Exception e)
                     {
                         LOGGER.error("Failed to activate on hearing MASTER change event", e);
-                        throw e;
                     }
                     return null;
                 }
@@ -308,7 +307,6 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                     catch (Exception e)
                     {
                         LOGGER.error("Failed to passivate on hearing REPLICA or DETACHED change event", e);
-                        throw e;
                     }
                     return null;
                 }

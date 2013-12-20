@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration.store;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -34,6 +35,7 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
@@ -96,6 +98,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     protected abstract ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception;
 
     protected abstract void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId);
+
+    protected abstract ConfigurationEntryStore reOpenStore();
 
     protected final void addConfiguration(UUID id, String type, Map<String, Object> attributes)
     {
@@ -434,4 +438,53 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _store.save(newAuthenticationProviderConfigEntry, preferencesProviderEntry);
     }
 
+    public void testAddHaVirtualHostWithReplicationNode()
+    {
+        String nodeName = "nodeName";
+        String groupName = "groupName";
+        String hostPort = "localhost:9999";
+        String helperHostPort = "localhost:8888";
+        Map<String, String> parameters = new HashMap<String, String>();
+        parameters.put("param1", "value1");
+        parameters.put("param2", "value2");
+        UUID nodeId = UUID.randomUUID();
+
+        Map<String, Object> nodeAttributes = new HashMap<String, Object>();
+        nodeAttributes.put(ReplicationNode.NAME, nodeName);
+        nodeAttributes.put(ReplicationNode.GROUP_NAME, groupName);
+        nodeAttributes.put(ReplicationNode.HOST_PORT, hostPort);
+        nodeAttributes.put(ReplicationNode.HELPER_HOST_PORT, helperHostPort);
+        nodeAttributes.put(ReplicationNode.PARAMETERS, parameters);
+
+        ConfigurationEntry nodeEntry  = new ConfigurationEntry(nodeId, ReplicationNode.class.getSimpleName(), nodeAttributes,
+                Collections.<UUID>emptySet(), _store);
+        Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put(VirtualHost.NAME, "ha");
+        virtualHostAttributes.put(VirtualHost.TYPE, "DUMMY-HA");
+        UUID virtualHostId = UUID.randomUUID();
+        Set<UUID> childrenIds = Collections.singleton(nodeId);
+        ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
+                childrenIds, _store);
+
+        ConfigurationEntry brokerEntry = _store.getRootEntry();
+        Set<UUID> brokerChildren = new HashSet<UUID>(brokerEntry.getChildrenIds());
+        brokerChildren.add(virtualHostId);
+        ConfigurationEntry newRootEntry = new ConfigurationEntry(brokerEntry.getId(), brokerEntry.getType(), brokerEntry.getAttributes(), brokerChildren, _store);
+        _store.save(hostEntry, nodeEntry, newRootEntry);
+
+        _store = reOpenStore();
+
+        ConfigurationEntry loadedHostEntry = _store.getEntry(virtualHostId);
+
+        assertEquals("Unexpected type", VirtualHost.class.getSimpleName(), loadedHostEntry.getType());
+        assertEquals("Unexpected virtual host id",  virtualHostId, loadedHostEntry.getId());
+        assertEquals("Unexpected virtual host attributes", virtualHostAttributes, loadedHostEntry.getAttributes());
+        assertEquals("Unexpected virtual host children", childrenIds, loadedHostEntry.getChildrenIds());
+
+        ConfigurationEntry loadedNodeEntry = _store.getEntry(nodeId);
+        assertEquals("Unexpected type", ReplicationNode.class.getSimpleName(), loadedNodeEntry.getType());
+        assertEquals("Unexpected node id",  nodeId, loadedNodeEntry.getId());
+        assertEquals("Unexpected node attributes", nodeAttributes, loadedNodeEntry.getAttributes());
+        assertTrue("Unexpected node children", loadedNodeEntry.getChildrenIds().isEmpty());
+    }
 }

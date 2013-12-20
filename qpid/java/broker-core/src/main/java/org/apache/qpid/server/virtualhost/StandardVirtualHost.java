@@ -48,6 +48,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
     private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
     {
+        //TODO: we should not be using hostConfig for store creation
         final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.STORE_TYPE);
         String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
         MessageStore  messageStore = null;

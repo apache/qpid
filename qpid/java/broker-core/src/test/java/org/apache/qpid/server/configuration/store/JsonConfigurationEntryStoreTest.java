@@ -71,6 +71,12 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         return store;
     }
 
+    @Override
+    protected ConfigurationEntryStore reOpenStore()
+    {
+        return new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
+    }
+
     private File createStoreFile(UUID brokerId, Map<String, Object> brokerAttributes) throws IOException,
             JsonGenerationException, JsonMappingException
     {
@@ -265,4 +271,5 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected preferences provider type", FileSystemPreferencesProvider.PROVIDER_TYPE,
                 attributes.get(PreferencesProvider.TYPE));
     }
+
 }

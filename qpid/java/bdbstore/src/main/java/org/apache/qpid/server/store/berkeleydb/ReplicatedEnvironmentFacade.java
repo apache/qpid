@@ -198,6 +198,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             try
             {
+                LOGGER.debug("Closing replicated environment facade");
                 _executor.shutdownNow();
                 stopCommitThread();
                 closeDatabases();

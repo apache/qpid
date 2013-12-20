@@ -90,6 +90,7 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
     @Override
     public Map<String,Object> createVirtualHostConfiguration(VirtualHostAdapter virtualHostAdapter)
     {
+        //TODO: DO we really need it?
         Map<String,Object> convertedMap = new LinkedHashMap<String, Object>();
         convertedMap.put("store.type", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TYPE));
         convertedMap.put("store.environment-path", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH));
@@ -102,6 +103,8 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
     {
         Map<String,Object> convertedMap = new LinkedHashMap<String, Object>();
         Configuration storeConfiguration = configuration.subset("store");
+
+        //TODO: If store class is specified, convert class into type
         convertedMap.put(org.apache.qpid.server.model.VirtualHost.STORE_TYPE, storeConfiguration.getString("type"));
         convertedMap.put(org.apache.qpid.server.model.VirtualHost.STORE_PATH, storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY));
 

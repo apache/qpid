@@ -27,7 +27,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.ReplicationNodeFactory;
-import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHostFactory;
 
 public class LocalReplicationNodeFactory implements ReplicationNodeFactory
 {
@@ -35,7 +35,7 @@ public class LocalReplicationNodeFactory implements ReplicationNodeFactory
     @Override
     public String getType()
     {
-        return ReplicatedEnvironmentFacade.TYPE;
+        return BDBHAVirtualHostFactory.TYPE;
     }
 
     @Override
@@ -44,7 +44,10 @@ public class LocalReplicationNodeFactory implements ReplicationNodeFactory
     {
         // TODO KW Temporary code 
         Broker broker = virtualHost.getParent(Broker.class);
-
+        if (broker == null)
+        {
+            throw new IllegalStateException("Cannot find the broker among virtual host parents");
+        }
         return new LocalReplicationNode(id, attributes, virtualHost, broker.getTaskExecutor());
     }
 

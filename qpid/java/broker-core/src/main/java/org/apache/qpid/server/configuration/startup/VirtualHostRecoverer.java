@@ -21,21 +21,17 @@
 package org.apache.qpid.server.configuration.startup;
 
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
-import org.apache.qpid.server.plugin.ReplicationNodeFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.util.MapValueConverter;
 
 public class VirtualHostRecoverer implements ConfiguredObjectRecoverer<VirtualHost>
 {
@@ -55,48 +51,15 @@ public class VirtualHostRecoverer implements ConfiguredObjectRecoverer<VirtualHo
         Map<String, Object> attributes = entry.getAttributes();
         VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(entry.getId(), attributes, broker, _brokerStatisticsGatherer, broker.getTaskExecutor());
 
-        // TODO temporary code to bridge from VH attributes to LocalReplicationNode - will be move into a new ReplicationNodeRecoverer
-        if (attributes.containsKey(VirtualHost.TYPE))
+        Map<String, Collection<ConfigurationEntry>> childEntries = entry.getChildren();
+        for (Map.Entry<String, Collection<ConfigurationEntry>> childrenEntry : childEntries.entrySet())
         {
-            String type = MapValueConverter.getStringAttribute(VirtualHost.TYPE, attributes);
-            ReplicationNodeFactory replicationNodeFactory = ReplicationNodeFactory.FACTORIES.get(type);
-            
-            UUID uuid = null;
-            Map<String, Object> replicationNodeAttributes = new HashMap<String, Object>();
-            replicationNodeAttributes.put(ReplicationNode.NAME, attributes.get("haNodeName"));
-            replicationNodeAttributes.put(ReplicationNode.GROUP_NAME, attributes.get("haGroupName"));
-            replicationNodeAttributes.put(ReplicationNode.HOST_PORT, attributes.get("haNodeAddress"));
-            replicationNodeAttributes.put(ReplicationNode.HELPER_HOST_PORT, attributes.get("haHelperAddress"));
-
-            if (attributes.get("haDurability") != null)
+            String childType = childrenEntry.getKey();
+            ConfiguredObjectRecoverer<? extends ConfiguredObject> recoverer = recovererProvider.getRecoverer(childType);
+            for (ConfigurationEntry childEntry : childrenEntry.getValue())
             {
-                replicationNodeAttributes.put(ReplicationNode.DURABILITY, attributes.get("haDurability"));
-            }
-
-            if (attributes.get("haDesignatedPrimary") != null)
-            {
-                replicationNodeAttributes.put(ReplicationNode.DESIGNATED_PRIMARY, attributes.get("haDesignatedPrimary"));
-            }
-
-            if (attributes.get("haCoalescingSync") != null)
-            {
-                replicationNodeAttributes.put(ReplicationNode.COALESCING_SYNC, attributes.get("haCoalescingSync"));
-            }
-
-            if (attributes.get("bdbEnvironmentConfig") != null)
-            {
-                replicationNodeAttributes.put(ReplicationNode.PARAMETERS, attributes.get("bdbEnvironmentConfig"));
-            }
-
-            if (attributes.get("haReplicationConfig") != null)
-            {
-                replicationNodeAttributes.put(ReplicationNode.REPLICATION_PARAMETERS, attributes.get("haReplicationConfig"));
-            }
-
-            if (replicationNodeFactory != null)
-            {
-                ReplicationNode node = replicationNodeFactory.createInstance(uuid , attributes, virtualHostAdapter);
-                virtualHostAdapter.onReplicationNodeRecovered(node);
+                ConfiguredObject configuredObject = recoverer.create(recovererProvider, childEntry, virtualHostAdapter);
+                virtualHostAdapter.recoverChild(configuredObject);
             }
         }
         return virtualHostAdapter;

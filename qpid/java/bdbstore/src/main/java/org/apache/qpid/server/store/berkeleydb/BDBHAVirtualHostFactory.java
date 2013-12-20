@@ -66,82 +66,27 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        validateAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH, String.class, attributes);
-        validateAttribute("haGroupName", String.class, attributes);
-        validateAttribute("haNodeName", String.class, attributes);
-        validateAttribute("haNodeAddress", String.class, attributes);
-        validateAttribute("haHelperAddress", String.class, attributes);
     }
 
-    private void validateAttribute(String attrName, Class<?> clazz, Map<String, Object> attributes)
-    {
-        Object attr = attributes.get(attrName);
-        if(!clazz.isInstance(attr))
-        {
-            throw new IllegalArgumentException("Attribute '"+ attrName
-                                               +"' is required and must be of type "+clazz.getSimpleName()+".");
-        }
-    }
 
     @Override
     public Map<String, Object> createVirtualHostConfiguration(VirtualHostAdapter virtualHostAdapter)
     {
+        //TODO: Dead code?
         LinkedHashMap<String,Object> convertedMap = new LinkedHashMap<String, Object>();
         convertedMap.put("store.environment-path", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH));
-
         return convertedMap;
     }
 
+    @Override
     public Map<String, Object> convertVirtualHostConfiguration(Configuration configuration)
     {
-
         LinkedHashMap<String,Object> convertedMap = new LinkedHashMap<String, Object>();
-
         Configuration storeConfiguration = configuration.subset("store");
-
         convertedMap.put(org.apache.qpid.server.model.VirtualHost.STORE_PATH, storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY));
         convertedMap.put(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE, storeConfiguration.getString(MessageStoreConstants.OVERFULL_SIZE_PROPERTY));
         convertedMap.put(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE, storeConfiguration.getString(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY));
-        convertedMap.put("haGroupName", configuration.getString("store.highAvailability.groupName"));
-        convertedMap.put("haNodeName", configuration.getString("store.highAvailability.nodeName"));
-        convertedMap.put("haNodeAddress", configuration.getString("store.highAvailability.nodeHostPort"));
-        convertedMap.put("haHelperAddress", configuration.getString("store.highAvailability.helperHostPort"));
-
-        final Object haDurability = configuration.getString("store.highAvailability.durability");
-        if(haDurability !=null)
-        {
-            convertedMap.put("haDurability", haDurability);
-        }
-
-        final Object designatedPrimary = configuration.getString("store.highAvailability.designatedPrimary");
-        if(designatedPrimary!=null)
-        {
-            convertedMap.put("haDesignatedPrimary", designatedPrimary);
-        }
-
-        final Object coalescingSync = configuration.getString("store.highAvailability.coalescingSync");
-        if(coalescingSync!=null)
-        {
-            convertedMap.put("haCoalescingSync", coalescingSync);
-        }
-
-
-        Map<String, String> attributes = getEnvironmentMap(storeConfiguration, "envConfig");
-
-        if(!attributes.isEmpty())
-        {
-            convertedMap.put("bdbEnvironmentConfig",attributes);
-        }
-
-        attributes = getEnvironmentMap(storeConfiguration, "repConfig");
-
-        if(!attributes.isEmpty())
-        {
-            convertedMap.put("haReplicationConfig",attributes);
-        }
-
         return convertedMap;
-
     }
 
     private Map<String, String> getEnvironmentMap(Configuration storeConfiguration, String configName)

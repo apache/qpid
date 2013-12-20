@@ -1290,7 +1290,21 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @Override
     public void onReplicationNodeRecovered(ReplicationNode node)
     {
+        //TODO: should we be adding ConfigurationChangeListener to node?
         _replicationNodes.add(node);
+    }
+
+    public void recoverChild(ConfiguredObject configuredObject)
+    {
+        if (configuredObject instanceof ReplicationNode)
+        {
+            ReplicationNode node = (ReplicationNode)configuredObject;
+            onReplicationNodeRecovered(node);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Cannot recover child of type :" + configuredObject.getClass().getName());
+        }
     }
 
 }
