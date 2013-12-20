@@ -155,7 +155,7 @@ jcntl::enqueue_data_record(const void* const data_buff,
     check_wstatus("enqueue_data_record");
     {
         slock s(_wr_mutex);
-        while (handle_aio_wait(_wmgr.enqueue(data_buff, tot_data_len, this_data_len, dtokp, 0, 0, transient, false), r,
+        while (handle_aio_wait(_wmgr.enqueue(data_buff, tot_data_len, this_data_len, dtokp, 0, 0, false, transient, false), r,
                         dtokp)) ;
     }
     return r;
@@ -170,7 +170,7 @@ jcntl::enqueue_extern_data_record(const std::size_t tot_data_len,
     check_wstatus("enqueue_extern_data_record");
     {
         slock s(_wr_mutex);
-        while (handle_aio_wait(_wmgr.enqueue(0, tot_data_len, 0, dtokp, 0, 0, transient, true), r, dtokp)) ;
+        while (handle_aio_wait(_wmgr.enqueue(0, tot_data_len, 0, dtokp, 0, 0, false, transient, true), r, dtokp)) ;
     }
     return r;
 }
@@ -181,6 +181,7 @@ jcntl::enqueue_txn_data_record(const void* const data_buff,
                                const std::size_t this_data_len,
                                data_tok* dtokp,
                                const std::string& xid,
+                               const bool tpc_flag,
                                const bool transient)
 {
     iores r;
@@ -188,7 +189,7 @@ jcntl::enqueue_txn_data_record(const void* const data_buff,
     {
         slock s(_wr_mutex);
         while (handle_aio_wait(_wmgr.enqueue(data_buff, tot_data_len, this_data_len, dtokp, xid.data(), xid.size(),
-                        transient, false), r, dtokp)) ;
+                        tpc_flag, transient, false), r, dtokp)) ;
     }
     return r;
 }
@@ -197,14 +198,15 @@ iores
 jcntl::enqueue_extern_txn_data_record(const std::size_t tot_data_len,
                                       data_tok* dtokp,
                                       const std::string& xid,
+                                      const bool tpc_flag,
                                       const bool transient)
 {
     iores r;
     check_wstatus("enqueue_extern_txn_data_record");
     {
         slock s(_wr_mutex);
-        while (handle_aio_wait(_wmgr.enqueue(0, tot_data_len, 0, dtokp, xid.data(), xid.size(), transient, true), r,
-                        dtokp)) ;
+        while (handle_aio_wait(_wmgr.enqueue(0, tot_data_len, 0, dtokp, xid.data(), xid.size(), tpc_flag, transient,
+                        true), r, dtokp)) ;
     }
     return r;
 }
@@ -234,7 +236,7 @@ jcntl::dequeue_data_record(data_tok* const dtokp,
     check_wstatus("dequeue_data");
     {
         slock s(_wr_mutex);
-        while (handle_aio_wait(_wmgr.dequeue(dtokp, 0, 0, txn_coml_commit), r, dtokp)) ;
+        while (handle_aio_wait(_wmgr.dequeue(dtokp, 0, 0, false, txn_coml_commit), r, dtokp)) ;
     }
     return r;
 }
@@ -242,13 +244,14 @@ jcntl::dequeue_data_record(data_tok* const dtokp,
 iores
 jcntl::dequeue_txn_data_record(data_tok* const dtokp,
                                const std::string& xid,
+                               const bool tpc_flag,
                                const bool txn_coml_commit)
 {
     iores r;
     check_wstatus("dequeue_data");
     {
         slock s(_wr_mutex);
-        while (handle_aio_wait(_wmgr.dequeue(dtokp, xid.data(), xid.size(), txn_coml_commit), r, dtokp)) ;
+        while (handle_aio_wait(_wmgr.dequeue(dtokp, xid.data(), xid.size(), tpc_flag, txn_coml_commit), r, dtokp)) ;
     }
     return r;
 }

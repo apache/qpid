@@ -270,11 +270,11 @@ public:
                               const std::size_t tot_data_len,
                               const std::size_t this_data_len,
                               data_tok* dtokp,
-                              const bool transient = false);
+                              const bool transient);
 
     iores enqueue_extern_data_record(const std::size_t tot_data_len,
                                      data_tok* dtokp,
-                                     const bool transient = false);
+                                     const bool transient);
 
     /**
     * \brief Enqueue data.
@@ -294,12 +294,14 @@ public:
                                   const std::size_t this_data_len,
                                   data_tok* dtokp,
                                   const std::string& xid,
-                                  const bool transient = false);
+                                  const bool tpc_flag,
+                                  const bool transient);
 
     iores enqueue_extern_txn_data_record(const std::size_t tot_data_len,
                                          data_tok* dtokp,
                                          const std::string& xid,
-                                         const bool transient = false);
+                                         const bool tpc_flag,
+                                         const bool transient);
 
     /**
     * \brief Reads data from the journal. It is the responsibility of the reader to free
@@ -350,7 +352,7 @@ public:
                            bool& transient,
                            bool& external,
                            data_tok* const dtokp,
-                           bool ignore_pending_txns = false);
+                           bool ignore_pending_txns);
 
     /**
     * \brief Dequeues (marks as no longer needed) data record in journal.
@@ -370,7 +372,7 @@ public:
     * \exception TODO
     */
     iores dequeue_data_record(data_tok* const dtokp,
-                              const bool txn_coml_commit = false);
+                              const bool txn_coml_commit);
 
     /**
     * \brief Dequeues (marks as no longer needed) data record in journal.
@@ -393,7 +395,8 @@ public:
     */
     iores dequeue_txn_data_record(data_tok* const dtokp,
                                   const std::string& xid,
-                                  const bool txn_coml_commit = false);
+                                  const bool tpc_flag,
+                                  const bool txn_coml_commit);
 
     /**
     * \brief Abort the transaction for all records enqueued or dequeued with the matching xid.
@@ -458,12 +461,12 @@ public:
     * \param block_till_aio_cmpl If true, will block the thread while waiting for all
     *     outstanding AIO operations to complete.
     */
-    void stop(const bool block_till_aio_cmpl = false);
+    void stop(const bool block_till_aio_cmpl);
 
     /**
     * \brief Force a flush of the write page cache, creating a single AIO write operation.
     */
-    iores flush(const bool block_till_aio_cmpl = false);
+    iores flush(const bool block_till_aio_cmpl);
 
     inline uint32_t get_enq_cnt() const { return _emap.size(); } // TODO: _emap: Thread safe?
 
@@ -480,7 +483,7 @@ public:
     *     false if the rid is transactionally enqueued and is not committed, or if it is
     *     locked (i.e. transactionally dequeued, but the dequeue has not been committed).
     */
-    inline bool is_enqueued(const uint64_t rid, bool ignore_lock = false) { return _emap.is_enqueued(rid, ignore_lock); }
+    inline bool is_enqueued(const uint64_t rid, bool ignore_lock) { return _emap.is_enqueued(rid, ignore_lock); }
 
     inline bool is_locked(const uint64_t rid) {
         if (_emap.is_enqueued(rid, true) < enq_map::EMAP_OK)

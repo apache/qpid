@@ -97,11 +97,13 @@ public:
                   data_tok* dtokp,
                   const void* const xid_ptr,
                   const std::size_t xid_len,
+                  const bool tpc_flag,
                   const bool transient,
                   const bool external);
     iores dequeue(data_tok* dtokp,
                   const void* const xid_ptr,
                   const std::size_t xid_len,
+                  const bool tpc_flag,
                   const bool txn_coml_commit);
     iores abort(data_tok* dtokp,
                 const void* const xid_ptr,
