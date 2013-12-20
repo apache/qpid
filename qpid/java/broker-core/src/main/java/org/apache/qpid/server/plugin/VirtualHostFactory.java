@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -48,6 +49,8 @@ public interface VirtualHostFactory extends Pluggable
     Map<String, Object> createVirtualHostConfiguration(VirtualHostAdapter virtualHostAdapter);
 
     Map<String,Object> convertVirtualHostConfiguration(Configuration configuration);
+
+    ReplicationNode createReplicationNode(Configuration configuration, org.apache.qpid.server.model.VirtualHost virtualHost);
 
     static final class TYPES
     {

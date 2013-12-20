@@ -20,7 +20,32 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-public interface RemoteReplicationNodeFactory
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.ReplicationNodeFactory;
+import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
+
+public class LocalReplicationNodeFactory implements ReplicationNodeFactory
 {
-    RemoteReplicationNode create(String groupName, String nodeName, String hostPort);
+
+    @Override
+    public String getType()
+    {
+        return ReplicatedEnvironmentFacade.TYPE;
+    }
+
+    @Override
+    public ReplicationNode createInstance(UUID id,
+            Map<String, Object> attributes, VirtualHost virtualHost)
+    {
+        // TODO KW Temporary code 
+        Broker broker = virtualHost.getParent(Broker.class);
+
+        return new LocalReplicationNode(id, attributes, virtualHost, broker.getTaskExecutor());
+    }
+
 }

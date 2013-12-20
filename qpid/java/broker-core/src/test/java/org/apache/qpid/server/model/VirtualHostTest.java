@@ -23,12 +23,11 @@ package org.apache.qpid.server.model;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.RecovererProvider;
@@ -42,6 +41,7 @@ import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
 
 public class VirtualHostTest extends QpidTestCase
 {
@@ -49,6 +49,7 @@ public class VirtualHostTest extends QpidTestCase
     private Broker _broker;
     private StatisticsGatherer _statisticsGatherer;
     private RecovererProvider _recovererProvider;
+    private File _configFile;
 
     @Override
     protected void setUp() throws Exception
@@ -68,6 +69,10 @@ public class VirtualHostTest extends QpidTestCase
     @Override
     protected void tearDown() throws Exception
     {
+        if (_configFile != null)
+        {
+            _configFile.delete();
+        }
         super.tearDown();
         CurrentActor.remove();
     }
@@ -148,6 +153,18 @@ public class VirtualHostTest extends QpidTestCase
 
     }
 
+    public void testCreateVirtualHostFromConfigurationFile()
+    {
+        String hostName = getName();
+        int maximuMessageAge = 123;
+        VirtualHost host = createHostFromConfiguration(hostName, maximuMessageAge);
+        host.setDesiredState(State.INITIALISING, State.ACTIVE);
+        assertEquals("Unexpected host name", hostName, host.getName());
+        assertEquals("Unexpected host type", StandardVirtualHostFactory.TYPE, host.getType());
+        assertEquals("Unexpected store type", TestMemoryMessageStore.TYPE, host.getAttribute(VirtualHost.STORE_TYPE));
+        assertEquals("Unexpected maximum message age alert", maximuMessageAge, host.getAttribute(VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE));
+    }
+
     private VirtualHost createHost()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -167,4 +184,18 @@ public class VirtualHostTest extends QpidTestCase
         return new VirtualHostRecoverer(_statisticsGatherer).create(_recovererProvider, entry, _broker);
     }
 
+    private VirtualHost createHostFromConfiguration(String hostName, long maximuMessageAge)
+    {
+        String content = "<virtualhosts><virtualhost><name>" + hostName + "</name><" + hostName + ">"
+                        + "<queues><maximumMessageAge>" + maximuMessageAge + "</maximumMessageAge></queues>"
+                        + "<store><class>" + TestMemoryMessageStore.class.getName() + "</class></store>"
+                        + "</" + hostName + "></virtualhost></virtualhosts>";
+        _configFile = TestFileUtils.createTempFile(this, ".virtualhost.xml", content);
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.CONFIG_PATH, _configFile.getAbsolutePath());
+        return createHost(attributes);
+    }
 }
+
+    

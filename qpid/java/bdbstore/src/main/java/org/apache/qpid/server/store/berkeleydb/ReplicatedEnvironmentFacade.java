@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static org.apache.qpid.server.model.ReplicationNode.*;
+
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -136,32 +138,30 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private ReplicationGroupListener _replicationGroupListener;
     private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
 
-
+    @SuppressWarnings("unchecked")
     public ReplicatedEnvironmentFacade(String name, String environmentPath,
-            String groupName, String nodeName, String nodeHostPort,
-            String helperHostPort, Durability durability,
-            Boolean designatedPrimary, Boolean coalescingSync,
-            Map<String, String> envConfigMap,
-            Map<String, String> replicationConfig, RemoteReplicationNodeFactory remoteReplicationNodeFactory)
+            org.apache.qpid.server.model.ReplicationNode replicationNode,
+            RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
-        _name = name;
+         _name = name;
         _environmentPath = environmentPath;
-        _groupName = groupName;
-        _nodeName = nodeName;
-        _nodeHostPort = nodeHostPort;
-        _helperHostPort = helperHostPort;
-        _durability = durability;
-        _designatedPrimary = designatedPrimary;
-        _coalescingSync = coalescingSync;
-        _environmentParameters = envConfigMap;
-        _replicationEnvironmentParameters = replicationConfig;
+        _groupName = (String)replicationNode.getAttribute(GROUP_NAME);
+        _nodeName = replicationNode.getName();
+        _nodeHostPort = (String)replicationNode.getAttribute(HOST_PORT);;
+        _helperHostPort = (String)replicationNode.getAttribute(HELPER_HOST_PORT);
+        _durability = Durability.parse((String)replicationNode.getAttribute(DURABILITY));
+        _designatedPrimary = (Boolean)replicationNode.getAttribute(DESIGNATED_PRIMARY);
+        _coalescingSync = (Boolean)replicationNode.getAttribute(COALESCING_SYNC);
+        _environmentParameters = (Map<String, String>)replicationNode.getAttribute(PARAMETERS);
+        _replicationEnvironmentParameters = (Map<String, String>)replicationNode.getAttribute(REPLICATION_PARAMETERS);
 
         _remoteReplicationNodeFactory = remoteReplicationNodeFactory;
         _state.set(State.OPENING);
-        _environment = createEnvironment(environmentPath, groupName, nodeName, nodeHostPort, helperHostPort, durability,
-                designatedPrimary, _environmentParameters, _replicationEnvironmentParameters);
+        _environment = createEnvironment();
         startCommitThread(_name, _environment);
     }
+
+
 
 
     @Override
@@ -473,7 +473,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 // TODO remote replication nodes should be cached
                 RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(group.getName(),
                                                                              replicationNode.getName(),
-                                                                             replicationNode.getHostName(), replicationNode.getPort());
+                                                                             replicationNode.getHostName() + ":" + replicationNode.getPort());
                 listener.onReplicationNodeRecovered(remoteNode);
             }
         }
@@ -543,8 +543,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         Set<String> databaseNames = new HashSet<String>(_databases.keySet());
         closeEnvironmentSafely();
 
-        _environment = createEnvironment(_environmentPath, _groupName, _nodeName, _nodeHostPort, _helperHostPort, _durability,
-                _designatedPrimary, _environmentParameters, _replicationEnvironmentParameters);
+        _environment = createEnvironment();
 
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
@@ -610,37 +609,35 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private ReplicatedEnvironment createEnvironment(String environmentPath, String groupName, String nodeName, String nodeHostPort,
-            String helperHostPort, Durability durability, boolean designatedPrimary, Map<String, String> environmentParameters,
-            Map<String, String> replicationEnvironmentParameters)
+    private ReplicatedEnvironment createEnvironment()
     {
         if (LOGGER.isInfoEnabled())
         {
             LOGGER.info("Creating environment");
-            LOGGER.info("Environment path " + environmentPath);
-            LOGGER.info("Group name " + groupName);
-            LOGGER.info("Node name " + nodeName);
-            LOGGER.info("Node host port " + nodeHostPort);
-            LOGGER.info("Helper host port " + helperHostPort);
-            LOGGER.info("Durability " + durability);
+            LOGGER.info("Environment path " + _environmentPath);
+            LOGGER.info("Group name " + _groupName);
+            LOGGER.info("Node name " + _nodeName);
+            LOGGER.info("Node host port " + _nodeHostPort);
+            LOGGER.info("Helper host port " + _helperHostPort);
+            LOGGER.info("Durability " + _durability);
             LOGGER.info("Coalescing sync " + _coalescingSync);
-            LOGGER.info("Designated primary (applicable to 2 node case only) " + designatedPrimary);
+            LOGGER.info("Designated primary (applicable to 2 node case only) " + _designatedPrimary);
         }
 
         Map<String, String> replicationEnvironmentSettings = new HashMap<String, String>(REPCONFIG_DEFAULTS);
-        if (replicationEnvironmentParameters != null && !replicationEnvironmentParameters.isEmpty())
+        if (_replicationEnvironmentParameters != null && !_replicationEnvironmentParameters.isEmpty())
         {
-            replicationEnvironmentSettings.putAll(replicationEnvironmentParameters);
+            replicationEnvironmentSettings.putAll(_replicationEnvironmentParameters);
         }
         Map<String, String> environmentSettings = new HashMap<String, String>(EnvironmentFacade.ENVCONFIG_DEFAULTS);
-        if (environmentParameters != null && !environmentParameters.isEmpty())
+        if (_environmentParameters != null && !_environmentParameters.isEmpty())
         {
-            environmentSettings.putAll(environmentParameters);
+            environmentSettings.putAll(_environmentParameters);
         }
 
-        final ReplicationConfig replicationConfig = new ReplicationConfig(groupName, nodeName, nodeHostPort);
-        replicationConfig.setHelperHosts(helperHostPort);
-        replicationConfig.setDesignatedPrimary(designatedPrimary);
+        final ReplicationConfig replicationConfig = new ReplicationConfig(_groupName, _nodeName, _nodeHostPort);
+        replicationConfig.setHelperHosts(_helperHostPort);
+        replicationConfig.setDesignatedPrimary(_designatedPrimary);
 
         for (Map.Entry<String, String> configItem : replicationEnvironmentSettings.entrySet())
         {
@@ -655,7 +652,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
-        envConfig.setDurability(durability);
+        envConfig.setDurability(_durability);
 
         for (Map.Entry<String, String> configItem : environmentSettings.entrySet())
         {
@@ -667,9 +664,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
         ReplicatedEnvironment environment = null;
+        File environmentPathFile = new File(_environmentPath);
         try
         {
-            environment = new ReplicatedEnvironment(new File(environmentPath), replicationConfig, envConfig);
+            environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         catch (final InsufficientLogException ile)
         {
@@ -678,7 +676,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             NetworkRestoreConfig config = new NetworkRestoreConfig();
             config.setRetainLogFiles(false);
             restore.execute(ile, config);
-            environment = new ReplicatedEnvironment(new File(environmentPath), replicationConfig, envConfig);
+            environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         return environment;
     }

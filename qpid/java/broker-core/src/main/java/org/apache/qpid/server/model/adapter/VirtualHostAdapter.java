@@ -120,8 +120,8 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
         _broker = broker;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
-        validateAttributes();
         addParent(Broker.class, broker);
+        validateAttributes();
     }
 
     private void validateAttributes()
@@ -163,7 +163,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         // pre-load the configuration in order to validate
         try
         {
-            createVirtualHostConfiguration(name);
+            createVirtualHostConfiguration(name, null);
         }
         catch(ConfigurationException e)
         {
@@ -577,6 +577,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         return _statistics;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
@@ -595,6 +596,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         else if(clazz == VirtualHostAlias.class)
         {
             return (Collection<C>) getAliases();
+        }
+        else if (clazz == ReplicationNode.class)
+        {
+            return (Collection<C>)getReplicationNodes();
         }
         else
         {
@@ -629,6 +634,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new UnsupportedOperationException();
         }
+        
+        // TODO KW change add child to add the replication node?
+        
         throw new IllegalArgumentException("Cannot create a child of class " + childClass.getSimpleName());
     }
 
@@ -1131,7 +1139,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         String virtualHostName = getName();
         try
         {
-            VirtualHostConfiguration configuration = createVirtualHostConfiguration(virtualHostName);
+            VirtualHostConfiguration configuration = createVirtualHostConfiguration(virtualHostName, this);
             String type = configuration.getType();
             final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
             if(factory == null)
@@ -1171,12 +1179,13 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
     }
 
-    private VirtualHostConfiguration createVirtualHostConfiguration(String virtualHostName) throws ConfigurationException
+    private VirtualHostConfiguration createVirtualHostConfiguration(String virtualHostName, ReplicationGroupListener listener) throws ConfigurationException
     {
         VirtualHostConfiguration configuration;
         String configurationFile = (String)getAttribute(CONFIG_PATH);
         if (configurationFile == null)
         {
+            LOGGER.debug("Creating virtual host configuration from the attributes");
             final MyConfiguration basicConfiguration = new MyConfiguration();
             PropertiesConfiguration config = new PropertiesConfiguration();
             final String type = (String) getAttribute(TYPE);
@@ -1198,6 +1207,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
         else
         {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Creating virtual host configuration from configuration file " + configurationFile);
+            }
             if (!new File(configurationFile).exists())
             {
                 throw new IllegalConfigurationException("Configuration file '" + configurationFile + "' does not exist");
@@ -1213,7 +1226,15 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                     changeAttribute(entry.getKey(), getAttribute(entry.getKey()), entry.getValue());
                 }
             }
-
+            ReplicationNode replicationNode = factory.createReplicationNode(configuration.getConfig(), this);
+            if (listener != null && replicationNode != null)
+            {
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Replication node " + replicationNode);
+                }
+                listener.onReplicationNodeRecovered(replicationNode);
+            }
         }
         return configuration;
     }

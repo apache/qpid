@@ -18,9 +18,19 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb.replication;
+package org.apache.qpid.server.plugin;
 
-public interface RemoteReplicationNodeFactory
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.VirtualHost;
+
+public interface ReplicationNodeFactory extends Pluggable
 {
-    RemoteReplicationNode create(String groupName, String nodeName, String hostPort);
+
+    PluggableFactoryLoader<ReplicationNodeFactory> FACTORIES = new PluggableFactoryLoader<ReplicationNodeFactory>(ReplicationNodeFactory.class, false);
+
+    ReplicationNode createInstance(UUID id, Map<String, Object> attributes, VirtualHost virtualHost);
+
 }

@@ -313,21 +313,7 @@ public class MapValueConverter
                 else if (typeObject instanceof ParameterizedType)
                 {
                     ParameterizedType parameterizedType= (ParameterizedType)typeObject;
-                    Type type = parameterizedType.getRawType();
-                    if (type == Set.class)
-                    {
-                        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                        if (actualTypeArguments.length != 1)
-                        {
-                            throw new IllegalArgumentException("Set type argument is not specified");
-                        }
-                        Class<?> classObject = (Class<?>)actualTypeArguments[0];
-                        value = toSet(rawValue, classObject, attributeName);
-                    }
-                    else
-                    {
-                        throw new IllegalArgumentException("Conversion into " + parameterizedType + " is not yet supported");
-                    }
+                    value = convertParameterizedType(rawValue, parameterizedType, attributeName);
                 }
                 else
                 {
@@ -344,6 +330,62 @@ public class MapValueConverter
         return attributes;
     }
 
+    private static Object convertParameterizedType(Object rawValue, ParameterizedType parameterizedType, String attributeName)
+    {
+        Type type = parameterizedType.getRawType();
+        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+        Object convertedValue;
+        if (type == Set.class)
+        {
+            if (actualTypeArguments.length != 1)
+            {
+                throw new IllegalArgumentException("Unexpected number of Set type arguments " + actualTypeArguments.length);
+            }
+            Class<?> classObject = (Class<?>)actualTypeArguments[0];
+            convertedValue = toSet(rawValue, classObject, attributeName);
+        }
+        else if (type == Map.class)
+        {
+            if (actualTypeArguments.length != 2)
+            {
+                throw new IllegalArgumentException("Unexpected number of Map type arguments " + actualTypeArguments.length);
+            }
+            Class<?> keyClassObject = (Class<?>)actualTypeArguments[0];
+            Class<?> valueClassObject = (Class<?>)actualTypeArguments[1];
+            convertedValue = toMap(rawValue, keyClassObject, valueClassObject, attributeName);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Conversion into " + parameterizedType + " is not yet supported");
+        }
+        return convertedValue;
+    }
+
+    private static <K,V> Map<K, V> toMap(Object rawValue, Class<K> keyClassObject, Class<V> valueClassObject, String attributeName)
+    {
+        if (rawValue == null)
+        {
+            return null;
+        }
+        if (rawValue instanceof Map)
+        {
+             Map<K, V> convertedMap =  new HashMap<K, V>();
+             Map<?, ?> rawMap = (Map<?,?>)rawValue;
+
+             for (Map.Entry<?, ?> entry : rawMap.entrySet())
+             {
+                 K convertedKey = convert(entry.getKey(), keyClassObject, attributeName + " (map key)");
+                 V convertedValue = convert(entry.getValue(), valueClassObject,  attributeName + " (map value)");
+                 convertedMap.put(convertedKey, convertedValue);
+             }
+             return convertedMap;
+        }
+        else
+        {
+            throw new IllegalArgumentException("rawValue is not of unexpected type Map, was : " + rawValue.getClass());
+        }
+    }
+
     public static <T> Set<T> toSet(Object rawValue, Class<T> setItemClass, String attributeName)
     {
         if (rawValue == null)
@@ -353,7 +395,7 @@ public class MapValueConverter
         HashSet<T> set = new HashSet<T>();
         if (rawValue instanceof Iterable)
         {
-             Iterable<?> iterable = (Iterable<?>)rawValue;
+            Iterable<?> iterable = (Iterable<?>)rawValue;
             for (Object object : iterable)
             {
                 T converted = convert(object, setItemClass, attributeName);

@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
@@ -114,5 +115,11 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
 
         return convertedMap;
 
+    }
+
+    @Override
+    public ReplicationNode createReplicationNode(Configuration configuration, org.apache.qpid.server.model.VirtualHost virtualHost)
+    {
+        return null;
     }
 }

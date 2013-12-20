@@ -23,12 +23,18 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.server.store.berkeleydb.replication.LocalReplicationNode;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -155,4 +161,53 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
         }
         return attributes;
     }
+
+    @Override
+    public ReplicationNode createReplicationNode(Configuration configuration, org.apache.qpid.server.model.VirtualHost virtualHost)
+    {
+        Configuration storeConfiguration = configuration.subset("store");
+
+        String nodeName = storeConfiguration.getString("highAvailability.nodeName");
+        String groupName = storeConfiguration.getString("highAvailability.groupName");
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(ReplicationNode.NAME, nodeName);
+        attributes.put(ReplicationNode.GROUP_NAME, groupName);
+        attributes.put(ReplicationNode.HOST_PORT, storeConfiguration.getString("highAvailability.nodeHostPort"));
+        attributes.put(ReplicationNode.HELPER_HOST_PORT, storeConfiguration.getString("highAvailability.helperHostPort"));
+
+        String durability = storeConfiguration.getString("highAvailability.durability");
+        if (durability != null)
+        {
+            attributes.put(ReplicationNode.DURABILITY, durability);
+        }
+
+        String designatedPrimary = storeConfiguration.getString("highAvailability.designatedPrimary");
+        if (designatedPrimary != null)
+        {
+            attributes.put(ReplicationNode.DESIGNATED_PRIMARY, designatedPrimary);
+        }
+
+        String coalescingSync = storeConfiguration.getString("highAvailability.coalescingSync");
+        if (coalescingSync != null)
+        {
+            attributes.put(ReplicationNode.COALESCING_SYNC, coalescingSync);
+        }
+
+        Map<String, String> envAttributes = getEnvironmentMap(storeConfiguration, "envConfig");
+        if (envAttributes != null && envAttributes.size() > 0)
+        {
+            attributes.put(ReplicationNode.PARAMETERS, envAttributes);
+        }
+
+        Map<String, String> repAttributes = getEnvironmentMap(storeConfiguration, "repConfig");
+        if (repAttributes != null && repAttributes.size() > 0)
+        {
+            attributes.put(ReplicationNode.REPLICATION_PARAMETERS, repAttributes);
+        }
+
+        Broker broker = virtualHost.getParent(Broker.class);
+        UUID uuid = UUIDGenerator.generateReplicationNodeId(groupName, nodeName);
+        return new LocalReplicationNode(uuid, attributes, virtualHost, broker.getTaskExecutor());
+    }
+
 }

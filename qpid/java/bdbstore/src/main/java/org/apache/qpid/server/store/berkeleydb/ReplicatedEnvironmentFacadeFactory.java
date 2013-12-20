@@ -20,112 +20,38 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collection;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
 
 import com.sleepycat.je.Durability;
-import com.sleepycat.je.Durability.ReplicaAckPolicy;
 import com.sleepycat.je.Durability.SyncPolicy;
 
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
-
-    private static final Durability DEFAULT_DURABILITY = new Durability(SyncPolicy.NO_SYNC, SyncPolicy.NO_SYNC,
-            ReplicaAckPolicy.SIMPLE_MAJORITY);
-
-    @SuppressWarnings("unchecked")
     @Override
     public EnvironmentFacade createEnvironmentFacade(String name, String storeLocation, VirtualHost virtualHost)
     {
-        // Mandatory configuration
-        String groupName = getValidatedStringAttribute(virtualHost, "haGroupName");
-        String nodeName = getValidatedStringAttribute(virtualHost, "haNodeName");
-        String nodeHostPort = getValidatedStringAttribute(virtualHost, "haNodeAddress");
-        String helperHostPort = getValidatedStringAttribute(virtualHost, "haHelperAddress");
-
-        // Optional configuration
-        Durability durability = null;
-        String durabilitySetting = getStringAttribute(virtualHost, "haDurability", null);
-        if (durabilitySetting == null)
+        Collection<ReplicationNode> replicationNodes = virtualHost.getChildren(ReplicationNode.class);
+        if (replicationNodes == null || replicationNodes.size() != 1)
         {
-            durability = DEFAULT_DURABILITY;
+            throw new IllegalStateException("Expected exactly one replication node but got " + (replicationNodes==null ? 0 :replicationNodes.size()) + " nodes");
         }
-        else
-        {
-            durability = Durability.parse(durabilitySetting);
-        }
-        Boolean designatedPrimary = getBooleanAttribute(virtualHost, "haDesignatedPrimary", Boolean.FALSE);
-        Boolean coalescingSync = getBooleanAttribute(virtualHost, "haCoalescingSync", Boolean.TRUE);
+        ReplicationNode localNode = replicationNodes.iterator().next();
+        String durability = (String)localNode.getAttribute(ReplicationNode.DURABILITY);
+        Boolean coalescingSync = (Boolean)localNode.getAttribute(ReplicationNode.COALESCING_SYNC);
 
-        Map<String, String> replicationConfig = null;
-        Object repConfigAttr = virtualHost.getAttribute("haReplicationConfig");
-        if (repConfigAttr instanceof Map)
-        {
-            replicationConfig = new HashMap<String, String>((Map<String, String>) repConfigAttr);
-        }
-
-        if (coalescingSync && durability.getLocalSync() == SyncPolicy.SYNC)
+        if (coalescingSync && Durability.parse(durability).getLocalSync() == SyncPolicy.SYNC)
         {
             throw new IllegalConfigurationException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        Map<String, String> envConfigMap = null;
-        Object bdbEnvConfigAttr = virtualHost.getAttribute("bdbEnvironmentConfig");
-        if (bdbEnvConfigAttr instanceof Map)
-        {
-            envConfigMap = new HashMap<String, String>((Map<String, String>) bdbEnvConfigAttr);
-        }
-
-        return new ReplicatedEnvironmentFacade(name, storeLocation, groupName, nodeName, nodeHostPort, helperHostPort, durability,
-                designatedPrimary, coalescingSync, envConfigMap, replicationConfig, new RemoteReplicationNodeFactoryImpl(virtualHost));
-    }
-
-    private String getValidatedStringAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if (attrValue != null)
-        {
-            return attrValue.toString();
-        }
-        else
-        {
-            throw new IllegalConfigurationException("BDB HA configuration key not found. Please specify configuration attribute: "
-                    + attributeName);
-        }
-    }
-
-    private String getStringAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName, String defaultVal)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if (attrValue != null)
-        {
-            return attrValue.toString();
-        }
-        return defaultVal;
-    }
-
-    private boolean getBooleanAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName, boolean defaultVal)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if (attrValue != null)
-        {
-            if (attrValue instanceof Boolean)
-            {
-                return ((Boolean) attrValue).booleanValue();
-            }
-            else if (attrValue instanceof String)
-            {
-                return Boolean.parseBoolean((String) attrValue);
-            }
-
-        }
-        return defaultVal;
+        return new ReplicatedEnvironmentFacade(name, storeLocation, localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
     }
 
     private static class RemoteReplicationNodeFactoryImpl implements RemoteReplicationNodeFactory
@@ -138,9 +64,9 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         }
 
         @Override
-        public RemoteReplicationNode create(String groupName, String nodeName, String host, int port)
+        public RemoteReplicationNode create(String groupName, String nodeName, String hostPort)
         {
-            return new RemoteReplicationNode(groupName, nodeName, host, port, _virtualHost);
+            return new RemoteReplicationNode(groupName, nodeName, hostPort, _virtualHost);
         }
     }
 }

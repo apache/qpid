@@ -20,9 +20,18 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.mockito.Mockito.any;
+import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
+import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
+import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
+import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
+import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.NAME;
+import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -40,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
@@ -68,12 +78,18 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
     private static final String TEST_NODE_NAME = "testNodeName";
     private static final String TEST_NODE_HOST_PORT = "localhost:" + TEST_NODE_PORT;
     private static final String TEST_NODE_HELPER_HOST_PORT = TEST_NODE_HOST_PORT;
-    private static final Durability TEST_DURABILITY = Durability.parse("NO_SYNC,NO_SYNC,SIMPLE_MAJORITY");
+    private static final String TEST_DURABILITY = Durability.parse("NO_SYNC,NO_SYNC,SIMPLE_MAJORITY").toString();
     private static final boolean TEST_DESIGNATED_PRIMARY = true;
     private static final boolean TEST_COALESCING_SYNC = true;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
-    private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = mock(RemoteReplicationNodeFactory.class);;
+    private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = mock(RemoteReplicationNodeFactory.class);
 
+    public void setUp() throws Exception
+    {
+        super.setUp();
+    }
+
+    @Override
     public void tearDown() throws Exception
     {
         try
@@ -159,7 +175,7 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
         ReplicationGroupListener listener = mock(ReplicationGroupListener.class);
         replicatedEnvironmentFacade.setReplicationGroupListener(listener);
         verify(listener).onReplicationNodeRecovered(any(RemoteReplicationNode.class));
-        verify(_remoteReplicationNodeFactory).create(TEST_GROUP_NAME, nodeName2, host, port);
+        verify(_remoteReplicationNodeFactory).create(TEST_GROUP_NAME, nodeName2, node2NodeHostPort);
     }
 
     public void testRemoveNodeFromGroup() throws Exception
@@ -340,7 +356,7 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
         ReplicatedEnvironmentFacade ref = null;
         try
         {
-            ref = createReplicatedEnvironmentFacade(nodeName, nodePath, TEST_NODE_HOST_PORT, false);
+            ref = createReplicatedEnvironmentFacade(nodePath, nodeName, TEST_NODE_HOST_PORT, false);
             assertEquals("Unexpected state " + ref.getFacadeState(), ReplicatedEnvironmentFacade.State.OPENING, ref.getFacadeState());
 
             final CountDownLatch nodeAwaitLatch = new CountDownLatch(1);
@@ -415,7 +431,7 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
     private ReplicatedEnvironmentFacade join(String nodeName, String nodePath, String nodeHostPort, boolean designatedPrimary,
             final CountDownLatch nodeAwaitLatch, final State expectedState)
     {
-        ReplicatedEnvironmentFacade ref = createReplicatedEnvironmentFacade(nodeName, nodePath, nodeHostPort, designatedPrimary);
+        ReplicatedEnvironmentFacade ref = createReplicatedEnvironmentFacade(nodePath, nodeName, nodeHostPort, designatedPrimary);
 
         if (expectedState == State.REPLICA)
         {
@@ -435,17 +451,11 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
         return ref;
     }
 
-    private ReplicatedEnvironmentFacade createReplicatedEnvironmentFacade(String nodeName, String nodePath, String nodeHostPort,
+    private ReplicatedEnvironmentFacade createReplicatedEnvironmentFacade(String nodePath, String nodeName, String nodeHostPort,
             boolean designatedPrimary)
     {
-        Map<String, String> repConfig = new HashMap<String, String>();
-        repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
-        repConfig.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
-
-        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(getName(), nodePath, TEST_GROUP_NAME, nodeName,
-                nodeHostPort, TEST_NODE_HELPER_HOST_PORT, TEST_DURABILITY, designatedPrimary, TEST_COALESCING_SYNC,
-                Collections.<String, String> emptyMap(), repConfig, _remoteReplicationNodeFactory);
-        return ref;
+        ReplicationNode node = createReplicationNodeMock(nodeName, nodeHostPort, designatedPrimary);
+        return new ReplicatedEnvironmentFacade(getName(), nodePath, node, _remoteReplicationNodeFactory);
     }
 
     private ReplicatedEnvironmentFacade[] startClusterSequentially(int nodeNumber) throws InterruptedException
@@ -472,4 +482,24 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
         environmentFacade.openDatabases(new String[] { databaseName }, dbConfig);
         return dbConfig;
     }
+
+    private ReplicationNode createReplicationNodeMock(String nodeName, String nodeHostPort, boolean designatedPrimary)
+    {
+        ReplicationNode node =  mock(ReplicationNode.class);
+        when(node.getAttribute(NAME)).thenReturn(nodeName);
+        when(node.getName()).thenReturn(nodeName);
+        when(node.getAttribute(HOST_PORT)).thenReturn(nodeHostPort);
+        when(node.getAttribute(DESIGNATED_PRIMARY)).thenReturn(designatedPrimary);
+        when(node.getAttribute(GROUP_NAME)).thenReturn(TEST_GROUP_NAME);
+        when(node.getAttribute(HELPER_HOST_PORT)).thenReturn(TEST_NODE_HELPER_HOST_PORT);
+        when(node.getAttribute(DURABILITY)).thenReturn(TEST_DURABILITY);
+        when(node.getAttribute(COALESCING_SYNC)).thenReturn(TEST_COALESCING_SYNC);
+
+        Map<String, String> repConfig = new HashMap<String, String>();
+        repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
+        repConfig.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
+        when(node.getAttribute(REPLICATION_PARAMETERS)).thenReturn(repConfig);
+        return node;
+    }
+
 }

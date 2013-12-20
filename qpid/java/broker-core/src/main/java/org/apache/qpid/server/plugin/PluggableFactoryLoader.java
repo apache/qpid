@@ -31,11 +31,17 @@ public class PluggableFactoryLoader<T extends Pluggable>
     private final Map<String, T> _factoriesMap;
     private final Set<String> _types;
 
+    
     public PluggableFactoryLoader(Class<T> factoryClass)
+    {
+        this(factoryClass, true);
+    }
+
+    public PluggableFactoryLoader(Class<T> factoryClass, boolean atLeastOnce)
     {
         Map<String, T> fm = new HashMap<String, T>();
         QpidServiceLoader<T> qpidServiceLoader = new QpidServiceLoader<T>();
-        Iterable<T> factories = qpidServiceLoader.atLeastOneInstanceOf(factoryClass);
+        Iterable<T> factories = atLeastOnce? qpidServiceLoader.atLeastOneInstanceOf(factoryClass) : qpidServiceLoader.instancesOf(factoryClass);
         for (T factory : factories)
         {
             String descriptiveType = factory.getType();
