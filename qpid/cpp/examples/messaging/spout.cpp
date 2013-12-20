@@ -22,6 +22,7 @@
 #include <qpid/messaging/Address.h>
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Message.h>
+#include <qpid/messaging/Message_ostream.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/types/Variant.h>
@@ -51,6 +52,7 @@ struct Options : OptionParser
     string_vector entries;
     std::string content;
     std::string connectionOptions;
+    bool print;
 
     Options()
         : OptionParser("Usage: spout [OPTIONS] ADDRESS", "Send messages to the specified address"),
@@ -69,6 +71,7 @@ struct Options : OptionParser
         add("map,M", entries, "specify entry for map content");
         add("content", content, "specify textual content");
         add("connection-options", connectionOptions, "connection options string in the form {name1:value1, name2:value2}");
+        add("print", print, "print each message sent");
     }
 
     static bool nameval(const std::string& in, std::string& name, std::string& value)
@@ -137,7 +140,6 @@ struct Options : OptionParser
     }
 };
 
-
 int main(int argc, char** argv)
 {
     Options options;
@@ -170,6 +172,7 @@ int main(int argc, char** argv)
                 std::stringstream spoutid;
                 spoutid << id << ":" << count;
                 message.getProperties()["spout-id"] = spoutid.str();
+                if (options.print) std::cout << message << std::endl;
                 sender.send(message);
             }
             session.sync();
