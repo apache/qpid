@@ -21,7 +21,7 @@
 
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Message.h>
-#include <qpid/messaging/Message_ostream.h>
+#include <qpid/messaging/Message_io.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
 

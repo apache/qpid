@@ -1064,7 +1064,7 @@ set (qpidmessaging_SOURCES
      qpid/messaging/ConnectionOptions.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
-     qpid/messaging/Message_ostream.cpp
+     qpid/messaging/Message_io.cpp
      qpid/messaging/ProtocolRegistry.cpp
      qpid/messaging/amqp/EncodedMessage.h
      qpid/messaging/amqp/EncodedMessage.cpp
