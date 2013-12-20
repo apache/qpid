@@ -22,7 +22,6 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_RECOVERYSTATE_H_
 #define QPID_LINEARSTORE_JOURNAL_RECOVERYSTATE_H_
 
-#include <deque>
 #include <fstream>
 #include <map>
 #include "qpid/linearstore/journal/LinearFileController.h"
@@ -44,6 +43,16 @@ class JournalLog;
 class jrec;
 class txn_map;
 
+struct RecoveredRecordData_t {
+    uint64_t recordId_;
+    uint64_t fileId_;
+    std::streampos fileOffset_;
+    bool pendingTransaction_;
+    RecoveredRecordData_t(const uint64_t rid, const uint64_t fid, const std::streampos foffs, bool ptxn);
+};
+
+bool recordIdListCompare(RecoveredRecordData_t a, RecoveredRecordData_t b);
+
 class RecoveryManager
 {
 protected:
@@ -53,7 +62,7 @@ protected:
     typedef std::map<uint64_t, JournalFile*> fileNumberMap_t;
     typedef fileNumberMap_t::iterator fileNumberMapItr_t;
     typedef fileNumberMap_t::const_iterator fileNumberMapConstItr_t;
-    typedef std::vector<uint64_t> recordIdList_t;
+    typedef std::vector<RecoveredRecordData_t> recordIdList_t;
     typedef recordIdList_t::const_iterator recordIdListConstItr_t;
 
     // Location and identity
@@ -123,6 +132,7 @@ protected:
     bool getNextFile(bool jumpToFirstRecordOffsetFlag);
     bool getNextRecordHeader();
     bool needNextFile();
+    void prepareRecordList();
     bool readFileHeader();
     void readJournalData(char* target, const std::streamsize size);
     void removeEmptyFiles(EmptyFilePool* emptyFilePoolPtr);

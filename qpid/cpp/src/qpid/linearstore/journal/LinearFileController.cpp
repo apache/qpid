@@ -51,6 +51,10 @@ void LinearFileController::initialize(const std::string& journalDirectory,
 }
 
 void LinearFileController::finalize() {
+    if (currentJournalFilePtr_) {
+        currentJournalFilePtr_->close();
+        currentJournalFilePtr_ = NULL;
+    }
     while (!journalFileList_.empty()) {
         delete journalFileList_.front();
         journalFileList_.pop_front();

@@ -42,13 +42,15 @@ namespace journal {
         uint16_t pfid_;     ///< Physical file id, to be used when transferring to emap on commit
         uint64_t foffs_;    ///< Offset in file for this record
         bool enq_flag_;     ///< If true, enq op, otherwise deq op
-        bool commit_flag_;  ///< (2PC transactions) Records 2PC complete c/a mode
+        bool tpc_flag_;     ///< 2PC transaction if true
+        bool commit_flag_;  ///< TPL only: (2PC transactions) Records 2PC complete c/a mode
         bool aio_compl_;    ///< Initially false, set to true when record AIO returns
         txn_data_t(const uint64_t rid,
                    const uint64_t drid,
                    const uint16_t pfid,
                    const uint64_t foffs,
                    const bool enq_flag,
+                   const bool tpc_flag,
                    const bool commit_flag = false);
     } txn_data_t;
     typedef std::vector<txn_data_t> txn_data_list;

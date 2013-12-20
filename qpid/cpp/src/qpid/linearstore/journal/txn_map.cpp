@@ -39,12 +39,14 @@ txn_data_t::txn_data_t(const uint64_t rid,
                        const uint16_t pfid,
                        const uint64_t foffs,
                        const bool enq_flag,
+                       const bool tpc_flag,
                        const bool commit_flag):
         rid_(rid),
         drid_(drid),
         pfid_(pfid),
         foffs_(foffs),
         enq_flag_(enq_flag),
+        tpc_flag_(tpc_flag),
         commit_flag_(commit_flag),
         aio_compl_(false)
 {}
