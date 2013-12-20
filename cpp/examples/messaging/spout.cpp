@@ -22,7 +22,7 @@
 #include <qpid/messaging/Address.h>
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Message.h>
-#include <qpid/messaging/Message_ostream.h>
+#include <qpid/messaging/Message_io.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/types/Variant.h>
