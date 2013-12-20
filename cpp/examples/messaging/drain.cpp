@@ -21,6 +21,7 @@
 
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Message.h>
+#include <qpid/messaging/Message_ostream.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
 
@@ -92,17 +93,7 @@ int main(int argc, char** argv)
             int i = 0;
 
             while (receiver.fetch(message, timeout)) {
-                std::cout << "Message(properties=" << message.getProperties();
-                if (!message.getSubject().empty()) {
-                    std::cout << ", subject='" << message.getSubject() << "'";
-                }
-                std::cout << ", content='";
-                if (message.getContentType() == "amqp/map") {
-                    std::cout << message.getContentObject().asMap();
-                } else {
-                    std::cout << message.getContentObject();
-                }
-                std::cout  << "')" << std::endl;
+                std::cout << message << std::endl;
                 session.acknowledge();
                 if (count && (++i == count))
                     break;
