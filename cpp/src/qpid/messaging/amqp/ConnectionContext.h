@@ -150,6 +150,8 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     CodecAdapter codecAdapter;
 
     void check();
+    bool checkDisconnected();
+    void waitNoReconnect();
     void wait();
     void waitUntil(qpid::sys::AbsTime until);
     void wait(boost::shared_ptr<SessionContext>);
