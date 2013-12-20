@@ -47,6 +47,18 @@ namespace qpid {
 namespace messaging {
 namespace amqp {
 namespace {
+
+std::string asString(const std::vector<std::string>& v) {
+    std::stringstream os;
+    os << "[";
+    for(std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i ) {
+        if (i != v.begin()) os << ", ";
+        os << '"' << *i << '"';
+    }
+    os << "]";
+    return os.str();
+}
+
 //remove conditional when 0.5 is no longer supported
 #ifdef HAVE_PROTON_TRACER
 void do_trace(pn_transport_t* transport, const char* message)
@@ -437,27 +449,33 @@ void ConnectionContext::reset()
     pn_transport_bind(engine, connection);
 }
 
-void ConnectionContext::check()
-{
-    if (state == DISCONNECTED) {
+void ConnectionContext::check() {
+    if (checkDisconnected()) {
         if (ConnectionOptions::reconnect) {
-            reset();
             autoconnect();
         } else {
             throw qpid::messaging::TransportFailure("Disconnected (reconnect disabled)");
         }
     }
-    if ((pn_connection_state(connection) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
-        pn_condition_t* error = pn_connection_remote_condition(connection);
-        std::stringstream text;
-        if (pn_condition_is_set(error)) {
-            text << "Connection closed by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
-        } else {
-            text << "Connection closed by peer";
+}
+
+bool ConnectionContext::checkDisconnected() {
+    if (state == DISCONNECTED) {
+        reset();
+    } else {
+        if ((pn_connection_state(connection) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
+            pn_condition_t* error = pn_connection_remote_condition(connection);
+            std::stringstream text;
+            if (pn_condition_is_set(error)) {
+                text << "Connection closed by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
+            } else {
+                text << "Connection closed by peer";
+            }
+            pn_connection_close(connection);
+            throw qpid::messaging::ConnectionError(text.str());
         }
-        pn_connection_close(connection);
-        throw qpid::messaging::ConnectionError(text.str());
     }
+    return state == DISCONNECTED;
 }
 
 void ConnectionContext::wait()
@@ -843,16 +861,6 @@ void ConnectionContext::open()
 
 
 namespace {
-std::string asString(const std::vector<std::string>& v) {
-    std::stringstream os;
-    os << "[";
-    for(std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i ) {
-        if (i != v.begin()) os << ", ";
-        os << *i;
-    }
-    os << "]";
-    return os.str();
-}
 double FOREVER(std::numeric_limits<double>::max());
 bool expired(const sys::AbsTime& start, double timeout)
 {
@@ -894,6 +902,7 @@ bool ConnectionContext::tryConnect()
             if (tryConnect(qpid::Url(*i, protocol.empty() ? qpid::Address::TCP : protocol))) {
                 return true;
             }
+            QPID_LOG(info, "Failed to connect to " << *i);
         } catch (const qpid::messaging::TransportFailure& e) {
             QPID_LOG(info, "Failed to connect to " << *i << ": " << e.what());
         }
@@ -923,6 +932,13 @@ void ConnectionContext::reconnect()
     }
 }
 
+void ConnectionContext::waitNoReconnect() {
+    if (!checkDisconnected()) {
+        lock.wait();
+        checkDisconnected();
+    }
+}
+
 bool ConnectionContext::tryConnect(const Url& url)
 {
     if (url.getUser().size()) username = url.getUser();
@@ -934,10 +950,11 @@ bool ConnectionContext::tryConnect(const Url& url)
             setCurrentUrl(*i);
             if (sasl.get()) {
                 wakeupDriver();
-                while (!sasl->authenticated()) {
+                while (!sasl->authenticated() && state != DISCONNECTED) {
                     QPID_LOG(debug, id << " Waiting to be authenticated...");
-                    wait();
+                    waitNoReconnect();
                 }
+                if (state == DISCONNECTED) continue;
                 QPID_LOG(debug, id << " Authenticated");
             }
 
@@ -945,9 +962,10 @@ bool ConnectionContext::tryConnect(const Url& url)
             setProperties();
             pn_connection_open(connection);
             wakeupDriver(); //want to write
-            while (pn_connection_state(connection) & PN_REMOTE_UNINIT) {
-                wait();
-            }
+            while ((pn_connection_state(connection) & PN_REMOTE_UNINIT) &&
+                   state != DISCONNECTED)
+                waitNoReconnect();
+            if (state == DISCONNECTED) continue;
             if (!(pn_connection_state(connection) & PN_REMOTE_ACTIVE)) {
                 throw qpid::messaging::ConnectionError("Failed to open connection");
             }
