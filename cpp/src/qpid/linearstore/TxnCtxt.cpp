@@ -114,7 +114,7 @@ void TxnCtxt::sync() {
 
 void TxnCtxt::jrnl_flush(JournalImpl* jc) {
     if (jc && !(jc->is_txn_synced(getXid())))
-        jc->flush();
+        jc->flush(false);
 }
 
 void TxnCtxt::jrnl_sync(JournalImpl* jc, timespec* timeout) {

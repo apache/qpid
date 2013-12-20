@@ -30,23 +30,36 @@
 namespace qpid {
 namespace linearstore {
 
-InactivityFireEvent::InactivityFireEvent(JournalImpl* p, const qpid::sys::Duration timeout):
-    qpid::sys::TimerTask(timeout, "JournalInactive:"+p->id()), _parent(p) {}
+InactivityFireEvent::InactivityFireEvent(JournalImpl* p,
+                                         const ::qpid::sys::Duration timeout):
+        ::qpid::sys::TimerTask(timeout, "JournalInactive:"+p->id()), _parent(p) {}
 
-void InactivityFireEvent::fire() { qpid::sys::Mutex::ScopedLock sl(_ife_lock); if (_parent) _parent->flushFire(); }
+void InactivityFireEvent::fire() {
+    ::qpid::sys::Mutex::ScopedLock sl(_ife_lock);
+    if (_parent) {
+        _parent->flushFire();
+    }
+}
 
-GetEventsFireEvent::GetEventsFireEvent(JournalImpl* p, const qpid::sys::Duration timeout):
-    qpid::sys::TimerTask(timeout, "JournalGetEvents:"+p->id()), _parent(p) {}
+GetEventsFireEvent::GetEventsFireEvent(JournalImpl* p,
+                                       const ::qpid::sys::Duration timeout):
+        ::qpid::sys::TimerTask(timeout, "JournalGetEvents:"+p->id()), _parent(p)
+{}
 
-void GetEventsFireEvent::fire() { qpid::sys::Mutex::ScopedLock sl(_gefe_lock); if (_parent) _parent->getEventsFire(); }
+void GetEventsFireEvent::fire() {
+    ::qpid::sys::Mutex::ScopedLock sl(_gefe_lock);
+    if (_parent) {
+        _parent->getEventsFire();
+    }
+}
 
-JournalImpl::JournalImpl(qpid::sys::Timer& timer_,
+JournalImpl::JournalImpl(::qpid::sys::Timer& timer_,
                          const std::string& journalId,
                          const std::string& journalDirectory,
                          JournalLogImpl& journalLogRef,
-                         const qpid::sys::Duration getEventsTimeout,
-                         const qpid::sys::Duration flushTimeout,
-                         qpid::management::ManagementAgent* a,
+                         const ::qpid::sys::Duration getEventsTimeout,
+                         const ::qpid::sys::Duration flushTimeout,
+                         ::qpid::management::ManagementAgent* a,
                          DeleteCallback onDelete):
                          jcntl(journalId, journalDirectory, journalLogRef),
                          timer(timer_),
@@ -76,7 +89,7 @@ JournalImpl::~JournalImpl()
     if (deleteCallback) deleteCallback(*this);
     if (_init_flag && !_stop_flag){
     	try { stop(true); } // NOTE: This will *block* until all outstanding disk aio calls are complete!
-        catch (const qpid::linearstore::journal::jexception& e) { QLS_LOG2(error, _jid, e.what()); }
+        catch (const ::qpid::linearstore::journal::jexception& e) { QLS_LOG2(error, _jid, e.what()); }
 	}
     getEventsFireEventsPtr->cancel();
     inactivityFireEventPtr->cancel();
@@ -90,7 +103,7 @@ JournalImpl::~JournalImpl()
 }
 
 void
-JournalImpl::initManagement(qpid::management::ManagementAgent* a)
+JournalImpl::initManagement(::qpid::management::ManagementAgent* a)
 {
     _agent = a;
     if (_agent != 0)
@@ -117,10 +130,10 @@ JournalImpl::initManagement(qpid::management::ManagementAgent* a)
 
 
 void
-JournalImpl::initialize(qpid::linearstore::journal::EmptyFilePool* efpp_,
+JournalImpl::initialize(::qpid::linearstore::journal::EmptyFilePool* efpp_,
                         const uint16_t wcache_num_pages,
                         const uint32_t wcache_pgsize_sblks,
-                        qpid::linearstore::journal::aio_callback* const cbp)
+                        ::qpid::linearstore::journal::aio_callback* const cbp)
 {
 //    efpp->createJournal(_jdir);
 //    QLS_LOG2(notice, _jid, "Initialized");
@@ -152,10 +165,10 @@ JournalImpl::initialize(qpid::linearstore::journal::EmptyFilePool* efpp_,
 }
 
 void
-JournalImpl::recover(boost::shared_ptr<qpid::linearstore::journal::EmptyFilePoolManager> efpm,
+JournalImpl::recover(boost::shared_ptr< ::qpid::linearstore::journal::EmptyFilePoolManager> efpm,
                      const uint16_t wcache_num_pages,
                      const uint32_t wcache_pgsize_sblks,
-                     qpid::linearstore::journal::aio_callback* const cbp,
+                     ::qpid::linearstore::journal::aio_callback* const cbp,
                      boost::ptr_list<PreparedTransaction>* prep_tx_list_ptr,
                      uint64_t& highest_rid,
                      uint64_t queue_id)
@@ -196,8 +209,8 @@ JournalImpl::recover(boost::shared_ptr<qpid::linearstore::journal::EmptyFilePool
     if (prep_tx_list_ptr)
     {
         for (PreparedTransaction::list::iterator i = prep_tx_list_ptr->begin(); i != prep_tx_list_ptr->end(); i++) {
-            qpid::linearstore::journal::txn_data_list tdl = _tmap.get_tdata_list(i->xid); // tdl will be empty if xid not found
-            for (qpid::linearstore::journal::tdl_itr tdl_itr = tdl.begin(); tdl_itr < tdl.end(); tdl_itr++) {
+            ::qpid::linearstore::journal::txn_data_list tdl = _tmap.get_tdata_list(i->xid); // tdl will be empty if xid not found
+            for (::qpid::linearstore::journal::tdl_itr tdl_itr = tdl.begin(); tdl_itr < tdl.end(); tdl_itr++) {
                 if (tdl_itr->enq_flag_) { // enqueue op
                     i->enqueues->add(queue_id, tdl_itr->rid_);
                 } else { // dequeue op
@@ -237,8 +250,11 @@ JournalImpl::recover_complete()
 
 
 void
-JournalImpl::enqueue_data_record(const void* const data_buff, const size_t tot_data_len,
-        const size_t this_data_len, qpid::linearstore::journal::data_tok* dtokp, const bool transient)
+JournalImpl::enqueue_data_record(const void* const data_buff,
+                                 const size_t tot_data_len,
+                                 const size_t this_data_len,
+                                 ::qpid::linearstore::journal::data_tok* dtokp,
+                                 const bool transient)
 {
     handleIoResult(jcntl::enqueue_data_record(data_buff, tot_data_len, this_data_len, dtokp, transient));
 
@@ -250,8 +266,9 @@ JournalImpl::enqueue_data_record(const void* const data_buff, const size_t tot_d
 }
 
 void
-JournalImpl::enqueue_extern_data_record(const size_t tot_data_len, qpid::linearstore::journal::data_tok* dtokp,
-        const bool transient)
+JournalImpl::enqueue_extern_data_record(const size_t tot_data_len,
+                                        ::qpid::linearstore::journal::data_tok* dtokp,
+                                        const bool transient)
 {
     handleIoResult(jcntl::enqueue_extern_data_record(tot_data_len, dtokp, transient));
 
@@ -263,12 +280,17 @@ JournalImpl::enqueue_extern_data_record(const size_t tot_data_len, qpid::linears
 }
 
 void
-JournalImpl::enqueue_txn_data_record(const void* const data_buff, const size_t tot_data_len,
-        const size_t this_data_len, qpid::linearstore::journal::data_tok* dtokp, const std::string& xid, const bool transient)
+JournalImpl::enqueue_txn_data_record(const void* const data_buff,
+                                     const size_t tot_data_len,
+                                     const size_t this_data_len,
+                                     ::qpid::linearstore::journal::data_tok* dtokp,
+                                     const std::string& xid,
+                                     const bool tpc_flag,
+                                     const bool transient)
 {
     bool txn_incr = _mgmtObject.get() != 0 ? _tmap.in_map(xid) : false;
 
-    handleIoResult(jcntl::enqueue_txn_data_record(data_buff, tot_data_len, this_data_len, dtokp, xid, transient));
+    handleIoResult(jcntl::enqueue_txn_data_record(data_buff, tot_data_len, this_data_len, dtokp, xid, tpc_flag, transient));
 
     if (_mgmtObject.get() != 0)
     {
@@ -281,12 +303,15 @@ JournalImpl::enqueue_txn_data_record(const void* const data_buff, const size_t t
 }
 
 void
-JournalImpl::enqueue_extern_txn_data_record(const size_t tot_data_len, qpid::linearstore::journal::data_tok* dtokp,
-        const std::string& xid, const bool transient)
+JournalImpl::enqueue_extern_txn_data_record(const size_t tot_data_len,
+                                            ::qpid::linearstore::journal::data_tok* dtokp,
+                                            const std::string& xid,
+                                            const bool tpc_flag,
+                                            const bool transient)
 {
     bool txn_incr = _mgmtObject.get() != 0 ? _tmap.in_map(xid) : false;
 
-    handleIoResult(jcntl::enqueue_extern_txn_data_record(tot_data_len, dtokp, xid, transient));
+    handleIoResult(jcntl::enqueue_extern_txn_data_record(tot_data_len, dtokp, xid, tpc_flag, transient));
 
     if (_mgmtObject.get() != 0)
     {
@@ -299,7 +324,8 @@ JournalImpl::enqueue_extern_txn_data_record(const size_t tot_data_len, qpid::lin
 }
 
 void
-JournalImpl::dequeue_data_record(qpid::linearstore::journal::data_tok* const dtokp, const bool txn_coml_commit)
+JournalImpl::dequeue_data_record(::qpid::linearstore::journal::data_tok* const dtokp,
+                                 const bool txn_coml_commit)
 {
     handleIoResult(jcntl::dequeue_data_record(dtokp, txn_coml_commit));
 
@@ -312,11 +338,14 @@ JournalImpl::dequeue_data_record(qpid::linearstore::journal::data_tok* const dto
 }
 
 void
-JournalImpl::dequeue_txn_data_record(qpid::linearstore::journal::data_tok* const dtokp, const std::string& xid, const bool txn_coml_commit)
+JournalImpl::dequeue_txn_data_record(::qpid::linearstore::journal::data_tok* const dtokp,
+                                     const std::string& xid,
+                                     const bool tpc_flag,
+                                     const bool txn_coml_commit)
 {
     bool txn_incr = _mgmtObject.get() != 0 ? _tmap.in_map(xid) : false;
 
-    handleIoResult(jcntl::dequeue_txn_data_record(dtokp, xid, txn_coml_commit));
+    handleIoResult(jcntl::dequeue_txn_data_record(dtokp, xid, tpc_flag, txn_coml_commit));
 
     if (_mgmtObject.get() != 0)
     {
@@ -329,7 +358,8 @@ JournalImpl::dequeue_txn_data_record(qpid::linearstore::journal::data_tok* const
 }
 
 void
-JournalImpl::txn_abort(qpid::linearstore::journal::data_tok* const dtokp, const std::string& xid)
+JournalImpl::txn_abort(::qpid::linearstore::journal::data_tok* const dtokp,
+                       const std::string& xid)
 {
     handleIoResult(jcntl::txn_abort(dtokp, xid));
 
@@ -341,7 +371,8 @@ JournalImpl::txn_abort(qpid::linearstore::journal::data_tok* const dtokp, const 
 }
 
 void
-JournalImpl::txn_commit(qpid::linearstore::journal::data_tok* const dtokp, const std::string& xid)
+JournalImpl::txn_commit(::qpid::linearstore::journal::data_tok* const dtokp,
+                        const std::string& xid)
 {
     handleIoResult(jcntl::txn_commit(dtokp, xid));
 
@@ -366,12 +397,12 @@ JournalImpl::stop(bool block_till_aio_cmpl)
     }
 }
 
-qpid::linearstore::journal::iores
+::qpid::linearstore::journal::iores
 JournalImpl::flush(const bool block_till_aio_cmpl)
 {
-    const qpid::linearstore::journal::iores res = jcntl::flush(block_till_aio_cmpl);
+    const ::qpid::linearstore::journal::iores res = jcntl::flush(block_till_aio_cmpl);
     {
-        qpid::sys::Mutex::ScopedLock sl(_getf_lock);
+        ::qpid::sys::Mutex::ScopedLock sl(_getf_lock);
         if (_wmgr.get_aio_evt_rem() && !getEventsTimerSetFlag) { setGetEventTimer(); }
     }
     return res;
@@ -380,7 +411,7 @@ JournalImpl::flush(const bool block_till_aio_cmpl)
 void
 JournalImpl::getEventsFire()
 {
-    qpid::sys::Mutex::ScopedLock sl(_getf_lock);
+    ::qpid::sys::Mutex::ScopedLock sl(_getf_lock);
     getEventsTimerSetFlag = false;
     if (_wmgr.get_aio_evt_rem()) { jcntl::get_wr_events(0); }
     if (_wmgr.get_aio_evt_rem()) { setGetEventTimer(); }
@@ -394,7 +425,7 @@ JournalImpl::flushFire()
         flushTriggeredFlag = false;
     } else {
         if (!flushTriggeredFlag) {
-            flush();
+            flush(false);
             flushTriggeredFlag = true;
         }
     }
@@ -405,20 +436,20 @@ JournalImpl::flushFire()
 }
 
 void
-JournalImpl::wr_aio_cb(std::vector<qpid::linearstore::journal::data_tok*>& dtokl)
+JournalImpl::wr_aio_cb(std::vector< ::qpid::linearstore::journal::data_tok*>& dtokl)
 {
-    for (std::vector<qpid::linearstore::journal::data_tok*>::const_iterator i=dtokl.begin(); i!=dtokl.end(); i++)
+    for (std::vector< ::qpid::linearstore::journal::data_tok*>::const_iterator i=dtokl.begin(); i!=dtokl.end(); i++)
     {
         DataTokenImpl* dtokp = static_cast<DataTokenImpl*>(*i);
 	    if (/*!is_stopped() &&*/ dtokp->getSourceMessage())
 	    {
 		    switch (dtokp->wstate())
 		    {
- 			    case qpid::linearstore::journal::data_tok::ENQ:
+ 			    case ::qpid::linearstore::journal::data_tok::ENQ:
 //std::cout << "<<<>>> JournalImpl::wr_aio_cb() ENQ dtokp rid=0x" << std::hex << dtokp->rid() << std::dec << std::endl << std::flush; // DEBUG
              	    dtokp->getSourceMessage()->enqueueComplete();
  				    break;
-			    case qpid::linearstore::journal::data_tok::DEQ:
+			    case ::qpid::linearstore::journal::data_tok::DEQ:
 //std::cout << "<<<>>> JournalImpl::wr_aio_cb() DEQ dtokp rid=0x" << std::hex << dtokp->rid() << std::dec << std::endl << std::flush; // DEBUG
 /* Don't need to signal until we have a way to ack completion of dequeue in AMQP
                     dtokp->getSourceMessage()->dequeueComplete();
@@ -443,25 +474,25 @@ JournalImpl::createStore() {
 }
 
 void
-JournalImpl::handleIoResult(const qpid::linearstore::journal::iores r)
+JournalImpl::handleIoResult(const ::qpid::linearstore::journal::iores r)
 {
     writeActivityFlag = true;
     switch (r)
     {
-        case qpid::linearstore::journal::RHM_IORES_SUCCESS:
+        case ::qpid::linearstore::journal::RHM_IORES_SUCCESS:
             return;
         default:
             {
                 std::ostringstream oss;
-                oss << "Unexpected I/O response (" << qpid::linearstore::journal::iores_str(r) << ").";
+                oss << "Unexpected I/O response (" << ::qpid::linearstore::journal::iores_str(r) << ").";
                 QLS_LOG2(error, _jid, oss.str());
                 THROW_STORE_FULL_EXCEPTION(oss.str());
             }
     }
 }
 
-qpid::management::Manageable::status_t JournalImpl::ManagementMethod (uint32_t /*methodId*/,
-                                                                      qpid::management::Args& /*args*/,
+::qpid::management::Manageable::status_t JournalImpl::ManagementMethod (uint32_t /*methodId*/,
+                                                                      ::qpid::management::Args& /*args*/,
                                                                       std::string& /*text*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;

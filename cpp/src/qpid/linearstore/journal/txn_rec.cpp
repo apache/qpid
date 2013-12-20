@@ -220,11 +220,9 @@ txn_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
         }
     }
     ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
-    if (::rec_tail_check(&_txn_tail, &_txn_hdr._rhdr, 0)) { // TODO: add checksum
-        throw jexception(jerrno::JERR_JREC_BADRECTAIL); // TODO: complete exception detail
-    }
     assert(!ifsp->fail() && !ifsp->bad());
     assert(_txn_hdr._xidsize > 0);
+
     Checksum checksum;
     checksum.addData((unsigned char*)&_txn_hdr, sizeof(_txn_hdr));
     checksum.addData((unsigned char*)_buff, _txn_hdr._xidsize);
