@@ -1,6 +1,3 @@
-#ifndef QPID_MESSAGING_MESSAGE_OSTREAM_H
-#define QPID_MESSAGING_MESSAGE_OSTREAM_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,14 +18,28 @@
  * under the License.
  *
  */
-#include "Message.h"
-#include <iosfwd>
+#include "qpid/messaging/Message_io.h"
+#include <ostream>
 
 namespace qpid {
 namespace messaging {
 
-QPID_MESSAGING_EXTERN std::ostream& operator<<(std::ostream&, const Message&);
+using namespace std;
+ostream& operator<<(ostream& o, const Message& message) {
+    o << "Message(properties=" << message.getProperties();
+    if (!message.getSubject().empty()) {
+        o << ", subject='" << message.getSubject() << "'";
+    }
+    if (!message.getContentObject().isVoid()) {
+        o << ", content='";
+        if (message.getContentType() == "amqp/map") {
+            o << message.getContentObject().asMap();
+        } else {
+            o << message.getContentObject();
+        }
+    }
+    o  << "')";
+    return o;
+}
 
 }} // namespace qpid::messaging
-
-#endif  /*!QPID_MESSAGING_MESSAGE_OSTREAM_H*/
