@@ -48,12 +48,12 @@ bool testProperty(const std::string& k, const qpid::types::Variant::Map& m)
     else return i->second;
 }
 
-qpid::types::Variant::Map filter(const qpid::types::Variant::Map& properties)
+qpid::types::Variant::Map filter(const qpid::types::Variant::Map& properties, bool queue)
 {
     qpid::types::Variant::Map filtered = properties;
     filtered.erase(DURABLE);
     filtered.erase(EXCHANGE);
-    filtered.erase(ALTERNATE_EXCHANGE);
+    if (queue) filtered.erase(ALTERNATE_EXCHANGE);
     return filtered;
 }
 }
@@ -65,13 +65,13 @@ Topic::Topic(Broker& broker, const std::string& n, boost::shared_ptr<Exchange> e
     if (exchange->getName().empty()) throw qpid::Exception("Exchange must be specified.");
 
     qpid::types::Variant::Map unused;
-    qpid::types::Variant::Map filtered = filter(properties);
+    qpid::types::Variant::Map filtered = filter(properties, true);
     policy.populate(filtered, unused);
 
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent != 0) {
         topic = _qmf::Topic::shared_ptr(new _qmf::Topic(agent, this, name, exchange->GetManagementObject()->getObjectId(), durable));
-        topic->set_properties(filtered);
+        topic->set_properties(filter(properties, false));
         agent->addObject(topic);
     }
 }
