@@ -29,7 +29,6 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ReplicationNode;
@@ -37,6 +36,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractAdapter;
+import org.apache.qpid.server.model.adapter.NoStatistics;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
 
@@ -127,25 +127,15 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     @Override
     public State getDesiredState()
     {
-        throw new UnsupportedOperationException();
+        // TODO
+        return getActualState();
     }
 
     @Override
     public State getActualState()
     {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void addChangeListener(ConfigurationChangeListener listener)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean removeChangeListener(ConfigurationChangeListener listener)
-    {
-        throw new UnsupportedOperationException();
+        // TODO
+        return null;
     }
 
     @Override
@@ -210,6 +200,14 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
         {
             return isDurable();
         }
+        else if(STATE.equals(attributeName))
+        {
+            return getActualState();
+        }
+        else if(TIME_TO_LIVE.equals(attributeName))
+        {
+            return getLifetimePolicy();
+        }
         return super.getAttribute(attributeName);
     }
 
@@ -224,7 +222,7 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     @Override
     public Statistics getStatistics()
     {
-        throw new UnsupportedOperationException();
+        return NoStatistics.getInstance();
     }
 
     @Override

@@ -68,6 +68,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
@@ -298,6 +299,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         addRestServlet(root, "truststore", TrustStore.class);
         addRestServlet(root, "plugin", Plugin.class);
         addRestServlet(root, "preferencesprovider", AuthenticationProvider.class, PreferencesProvider.class);
+        addRestServlet(root, "replicationnode", VirtualHost.class, ReplicationNode.class);
 
         root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/rest/userpreferences/*");
         root.addServlet(new ServletHolder(new LoggedOnUserPreferencesServlet()), "/rest/preferences");

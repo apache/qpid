@@ -63,6 +63,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.ReplicationNodeFactory;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -607,6 +608,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
@@ -634,9 +636,11 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new UnsupportedOperationException();
         }
-        
-        // TODO KW change add child to add the replication node?
-        
+        else if(childClass == ReplicationNode.class)
+        {
+            return (C)createReplicationNode(attributes);
+        }
+
         throw new IllegalArgumentException("Cannot create a child of class " + childClass.getSimpleName());
     }
 
@@ -1070,7 +1074,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             }
             catch(RuntimeException e)
             {
-                changeAttribute(STATE, State.INITIALISING, State.ERRORED);
+                changeAttribute(STATE, getActualState(), State.ERRORED);
                 if (_broker.isManagementMode())
                 {
                     LOGGER.warn("Failed to activate virtual host: " + getName(), e);
@@ -1128,6 +1132,11 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 _virtualHost = null;
             }
             setAttribute(VirtualHost.STATE, getActualState(), State.DELETED);
+            return true;
+        }
+        else if (desiredState == State.QUIESCED)
+        {
+            setAttribute(VirtualHost.STATE, getActualState(), State.QUIESCED);
             return true;
         }
         return false;
@@ -1254,7 +1263,20 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        throw new UnsupportedOperationException("Changing attributes on virtualhosts is not supported.");
+        // TODO: a hack to change a virtual host state only
+        if (attributes.size() == 2 && attributes.containsKey(STATE) && getName().equals(attributes.get(NAME)))
+        {
+            State newState = MapValueConverter.getEnumAttribute(State.class, STATE, attributes);
+            State actualState = getActualState();
+            if (actualState != newState )
+            {
+                super.changeAttributes(attributes);
+            }
+        }
+        else
+        {
+            throw new UnsupportedOperationException("Changing attributes on virtualhosts is not supported.");
+        }
     }
 
     @Override
@@ -1299,12 +1321,45 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         if (configuredObject instanceof ReplicationNode)
         {
             ReplicationNode node = (ReplicationNode)configuredObject;
+            if (!_replicationNodes.isEmpty())
+            {
+                throw new IllegalStateException("Replication node cannot be recovered because virtual host already contains replication node");
+            }
             onReplicationNodeRecovered(node);
         }
         else
         {
             throw new IllegalArgumentException("Cannot recover child of type :" + configuredObject.getClass().getName());
         }
+    }
+
+    private ReplicationNode createReplicationNode(Map<String, Object> attributes)
+    {
+        ReplicationNode node = null;
+
+        String type = getType();
+        ReplicationNodeFactory factory = ReplicationNodeFactory.FACTORIES.get(type);
+        if (factory == null)
+        {
+            throw new IllegalConfigurationException("Cannot find replication node factory for type " + type);
+        }
+
+        String groupName = MapValueConverter.getStringAttribute(ReplicationNode.GROUP_NAME, attributes);
+        String nodeName = MapValueConverter.getStringAttribute(ReplicationNode.NAME, attributes);
+
+        synchronized (_replicationNodes)
+        {
+            if (!_replicationNodes.isEmpty())
+            {
+                throw new IllegalStateException("Replication node cannot be created because virtual host already contains replication node");
+            }
+            node = factory.createInstance(UUIDGenerator.generateReplicationNodeId(groupName, nodeName), attributes, this);
+            node.setDesiredState(State.INITIALISING, State.ACTIVE);
+
+            _replicationNodes.add(node);
+        }
+        //TODO: make VirtualHost a ConfigurationChangeListener and add it to node to listen for delete events
+        return node;
     }
 
 }

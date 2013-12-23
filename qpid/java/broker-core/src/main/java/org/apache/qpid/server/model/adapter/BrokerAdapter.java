@@ -297,9 +297,10 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
         SecurityManager.setAccessChecksDisabled(true);
+        State desiredState = MapValueConverter.getEnumAttribute(State.class, VirtualHost.STATE, attributes, State.ACTIVE);
         try
         {
-            virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
+            virtualHostAdapter.setDesiredState(State.INITIALISING, desiredState);
         }
         finally
         {
