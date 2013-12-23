@@ -197,7 +197,7 @@ wmgr::enqueue(const void* const data_buff,
             if (xid_len) // If part of transaction, add to transaction map
             {
                 std::string xid((const char*)xid_ptr, xid_len);
-                _tmap.insert_txn_data(xid, txn_data_t(rid, 0, dtokp->fid(), 0, true, tpc_flag));
+                _tmap.insert_txn_data(xid, txn_data_t(rid, 0, dtokp->fid(), 0, true, tpc_flag, false));
             }
             else
             {
@@ -314,7 +314,7 @@ wmgr::dequeue(data_tok* dtokp,
                 // If the enqueue is part of a pending txn, it will not yet be in emap
                 _emap.lock(dequeue_rid); // ignore rid not found error
                 std::string xid((const char*)xid_ptr, xid_len);
-                _tmap.insert_txn_data(xid, txn_data_t(rid, dequeue_rid, dtokp->fid(), 0, false, tpc_flag));
+                _tmap.insert_txn_data(xid, txn_data_t(rid, dequeue_rid, dtokp->fid(), 0, false, tpc_flag, false));
             }
             else
             {
