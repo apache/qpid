@@ -598,7 +598,7 @@ bool RecoveryManager::getNextRecordHeader()
                             throw jexception(jerrno::JERR_RCVM_NULLXID, "ENQ", "RecoveryManager", "getNextRecordHeader");
                         }
                         std::string xid((char*)xidp, er.xid_size());
-                        transactionMapRef_.insert_txn_data(xid, txn_data_t(h._rid, 0, start_fid, file_pos, true, false /*tpcFlag*/));
+                        transactionMapRef_.insert_txn_data(xid, txn_data_t(h._rid, 0, start_fid, file_pos, true, false, false));
                         if (transactionMapRef_.set_aio_compl(xid, h._rid) < txn_map::TMAP_OK) { // fail - xid or rid not found
                             std::ostringstream oss;
                             oss << std::hex << "_tmap.set_aio_compl: txn_enq xid=\"" << xid << "\" rid=0x" << h._rid;
@@ -637,7 +637,7 @@ bool RecoveryManager::getNextRecordHeader()
                     }
                     std::string xid((char*)xidp, dr.xid_size());
                     transactionMapRef_.insert_txn_data(xid, txn_data_t(dr.rid(), dr.deq_rid(), start_fid, file_pos,
-                                                       false, dr.is_txn_coml_commit()));
+                                                       false, false, dr.is_txn_coml_commit()));
                     if (transactionMapRef_.set_aio_compl(xid, dr.rid()) < txn_map::TMAP_OK) { // fail - xid or rid not found
                         std::ostringstream oss;
                         oss << std::hex << "_tmap.set_aio_compl: txn_deq xid=\"" << xid << "\" rid=0x" << dr.rid();

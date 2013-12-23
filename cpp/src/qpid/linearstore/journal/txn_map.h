@@ -51,7 +51,7 @@ namespace journal {
                    const uint64_t foffs,
                    const bool enq_flag,
                    const bool tpc_flag,
-                   const bool commit_flag = false);
+                   const bool commit_flag);
     } txn_data_t;
     typedef std::vector<txn_data_t> txn_data_list;
     typedef txn_data_list::iterator tdl_itr;

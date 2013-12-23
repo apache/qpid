@@ -641,7 +641,7 @@ void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry_)
                 ++tpcCnt;
             }
         }
-        if (tpcCnt > 0 && tpcCnt != tdl.size()) THROW_STORE_EXCEPTION("Inconsistent TPL 2PC count");
+        if (tpcCnt > 0 && tpcCnt != tdl.size()) THROW_STORE_EXCEPTION("MessageStoreImpl::recover(): Inconsistent TPL 2PC count");
         bool commitFlag = abortCnt == 0;
 
         // If a record is found that is dequeued but not committed/aborted from tplStore, then a complete() call
@@ -963,7 +963,7 @@ void MessageStoreImpl::recoverMessages(TxnCtxt& /*txn*/,
                             ++tpcCnt;
                         }
                     }
-                    if (tpcCnt > 0 && tpcCnt != tdl.size()) THROW_STORE_EXCEPTION("Inconsistent TPL 2PC count");
+                    if (tpcCnt > 0 && tpcCnt != tdl.size()) THROW_STORE_EXCEPTION("MessageStoreImpl::recoverMessages(): Inconsistent TPL 2PC count");
                     if (deqCnt > 0 || tpcCnt == 0) {
                         if (jc->is_enqueued(rid, true)) {
                             // Enqueue is non-tx, dequeue tx
@@ -1120,7 +1120,7 @@ void MessageStoreImpl::collectPreparedXids(std::set<std::string>& xids)
             }
         }
         if (tpcCnt > 0) {
-            if (tpcCnt != tdl.size()) THROW_STORE_EXCEPTION("Inconsistent TPL 2PC count");
+            if (tpcCnt != tdl.size()) THROW_STORE_EXCEPTION("MessageStoreImpl::collectPreparedXids: Inconsistent TPL 2PC count");
             if (enqCnt - deqCnt > 0) {
                 xids.insert(*i);
             }
