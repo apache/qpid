@@ -39,6 +39,7 @@ import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
@@ -115,10 +116,15 @@ public class TestBrokerConfiguration
         return null;
     }
 
-    public UUID addObjectConfiguration(String name, String type, Map<String, Object> attributes)
+    public UUID addObjectConfiguration(String type, Map<String, Object> attributes)
+    {
+        return addObjectConfiguration(type, attributes, Collections.<UUID>emptySet());
+    }
+
+    public UUID addObjectConfiguration(String type, Map<String, Object> attributes, Set<UUID> childrenIds)
     {
         UUID id = UUIDGenerator.generateRandomUUID();
-        addObjectConfiguration(id, type, attributes);
+        addObjectConfiguration(id, type, attributes, childrenIds);
         return id;
     }
 
@@ -127,7 +133,7 @@ public class TestBrokerConfiguration
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(PluginFactory.PLUGIN_TYPE, MANAGEMENT_JMX_PLUGIN_TYPE);
         attributes.put(Plugin.NAME, ENTRY_NAME_JMX_MANAGEMENT);
-        return addObjectConfiguration(ENTRY_NAME_JMX_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
+        return addObjectConfiguration(Plugin.class.getSimpleName(), attributes);
     }
 
     public UUID addHttpManagementConfiguration()
@@ -135,7 +141,7 @@ public class TestBrokerConfiguration
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(PluginFactory.PLUGIN_TYPE, MANAGEMENT_HTTP_PLUGIN_TYPE);
         attributes.put(Plugin.NAME, ENTRY_NAME_HTTP_MANAGEMENT);
-        return addObjectConfiguration(ENTRY_NAME_HTTP_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
+        return addObjectConfiguration(Plugin.class.getSimpleName(), attributes);
     }
 
     public UUID addGroupFileConfiguration(String groupFilePath)
@@ -160,44 +166,37 @@ public class TestBrokerConfiguration
 
     public UUID addPortConfiguration(Map<String, Object> attributes)
     {
-        String name = (String) attributes.get(Port.NAME);
-        return addObjectConfiguration(name, Port.class.getSimpleName(), attributes);
+        return addObjectConfiguration(Port.class.getSimpleName(), attributes);
     }
 
     public UUID addVirtualHostConfiguration(Map<String, Object> attributes)
     {
-        String name = (String) attributes.get(VirtualHost.NAME);
-        return addObjectConfiguration(name, VirtualHost.class.getSimpleName(), attributes);
+        return addObjectConfiguration(VirtualHost.class.getSimpleName(), attributes);
     }
 
     public UUID addAuthenticationProviderConfiguration(Map<String, Object> attributes)
     {
-        String name = (String) attributes.get(AuthenticationProvider.NAME);
-        return addObjectConfiguration(name, AuthenticationProvider.class.getSimpleName(), attributes);
+        return addObjectConfiguration(AuthenticationProvider.class.getSimpleName(), attributes);
     }
 
     public UUID addGroupProviderConfiguration(Map<String, Object> attributes)
     {
-        String name = (String) attributes.get(GroupProvider.NAME);
-        return addObjectConfiguration(name, GroupProvider.class.getSimpleName(), attributes);
+        return addObjectConfiguration(GroupProvider.class.getSimpleName(), attributes);
     }
 
     public UUID addAccessControlConfiguration(Map<String, Object> attributes)
     {
-        String name = (String) attributes.get(AccessControlProvider.NAME);
-        return addObjectConfiguration(name, AccessControlProvider.class.getSimpleName(), attributes);
+        return addObjectConfiguration(AccessControlProvider.class.getSimpleName(), attributes);
     }
 
     public UUID addTrustStoreConfiguration(Map<String, Object> attributes)
     {
-        String name = (String) attributes.get(TrustStore.NAME);
-        return addObjectConfiguration(name, TrustStore.class.getSimpleName(), attributes);
+        return addObjectConfiguration(TrustStore.class.getSimpleName(), attributes);
     }
 
     public UUID addKeyStoreConfiguration(Map<String, Object> attributes)
     {
-        String name = (String) attributes.get(KeyStore.NAME);
-        return addObjectConfiguration(name, KeyStore.class.getSimpleName(), attributes);
+        return addObjectConfiguration(KeyStore.class.getSimpleName(), attributes);
     }
 
     private boolean setObjectAttributes(ConfigurationEntry entry, Map<String, Object> attributes)
@@ -240,20 +239,26 @@ public class TestBrokerConfiguration
         return null;
     }
 
-    private void addObjectConfiguration(UUID id, String type, Map<String, Object> attributes)
+    private void addObjectConfiguration(UUID id, String type, Map<String, Object> attributes, Set<UUID> childrenId)
     {
-        ConfigurationEntry entry = new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), _store);
-        ConfigurationEntry root = _store.getRootEntry();
+        ConfigurationEntry parent = _store.getRootEntry();
+        addObjectConfigurationToParent(parent, id, type, attributes, childrenId);
+    }
 
-        Map<String, Collection<ConfigurationEntry>> children = root.getChildren();
+    private void addObjectConfigurationToParent(ConfigurationEntry parent, UUID id, String type, Map<String, Object> attributes,
+            Set<UUID> childrenId)
+    {
+        ConfigurationEntry entry = new ConfigurationEntry(id, type, attributes, childrenId, _store);
+
+        Map<String, Collection<ConfigurationEntry>> children = parent.getChildren();
 
         verifyChildWithNameDoesNotExist(id, type, attributes, children);
 
-        Set<UUID> childrenIds = new HashSet<UUID>(root.getChildrenIds());
+        Set<UUID> childrenIds = new HashSet<UUID>(parent.getChildrenIds());
         childrenIds.add(id);
-        ConfigurationEntry newRoot = new ConfigurationEntry(root.getId(), root.getType(), root.getAttributes(), childrenIds,
+        ConfigurationEntry newParent = new ConfigurationEntry(parent.getId(), parent.getType(), parent.getAttributes(), childrenIds,
                 _store);
-        _store.save(newRoot, entry);
+        _store.save(newParent, entry);
     }
 
     private void verifyChildWithNameDoesNotExist(UUID id, String type,
@@ -306,6 +311,14 @@ public class TestBrokerConfiguration
         children.add(pp.getId());
         ConfigurationEntry newAp = new ConfigurationEntry(ap.getId(), ap.getType(), ap.getAttributes(), children, _store);
         _store.save(newAp, pp);
+    }
+
+    public UUID addReplicationNodeConfiguration(UUID hostId, Map<String, Object> replicationNodeAttributes)
+    {
+        ConfigurationEntry parent = _store.getEntry(hostId);
+        UUID id = UUID.randomUUID();
+        addObjectConfigurationToParent(parent, id, ReplicationNode.class.getSimpleName(), replicationNodeAttributes, Collections.<UUID>emptySet());
+        return id;
     }
 
 }

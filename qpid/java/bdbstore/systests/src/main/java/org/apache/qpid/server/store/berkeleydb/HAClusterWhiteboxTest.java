@@ -60,7 +60,7 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
 
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
-        _clusterCreator.configureClusterNodes();
+        _clusterCreator.configureClusterNodes(null);
         _clusterCreator.startCluster();
 
         super.setUp();

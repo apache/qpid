@@ -21,6 +21,8 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -86,15 +88,11 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     {
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
-        String storeConfigKeyPrefix = _clusterCreator.getStoreConfigKeyPrefix();
+        Map<String,String> replicationParameters = new HashMap<String, String>();
+        replicationParameters.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
+        replicationParameters.put(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES, "0");
 
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).name", ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT);
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).value", "2 s");
-
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).name", ReplicationConfig.ELECTIONS_PRIMARY_RETRIES);
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).value", "0");
-
-        _clusterCreator.configureClusterNodes();
+        _clusterCreator.configureClusterNodes(replicationParameters);
         _clusterCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);
         _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();
         _clusterCreator.startCluster();

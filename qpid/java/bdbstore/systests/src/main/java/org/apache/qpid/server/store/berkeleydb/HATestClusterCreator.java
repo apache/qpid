@@ -26,9 +26,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -38,13 +38,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
 
 public class HATestClusterCreator
@@ -65,17 +65,14 @@ public class HATestClusterCreator
     private static final int CONNECTDELAY = 75;
 
     private final QpidBrokerTestCase _testcase;
-    private final Map<Integer, Integer> _brokerPortToBdbPortMap = new HashMap<Integer, Integer>();
-    private final Map<Integer, BrokerConfigHolder> _brokerConfigurations = new TreeMap<Integer, BrokerConfigHolder>();
+    private final Map<Integer, Integer> _brokerPortToBdbPortMap = new TreeMap<Integer, Integer>();
     private final String _virtualHostName;
-    private final String _vhostStoreConfigKeyPrefix;
 
     private final String _ipAddressOfBroker;
     private final String _groupName ;
     private final int _numberOfNodes;
     private int _bdbHelperPort;
     private int _primaryBrokerPort;
-    private String _vhostConfigKeyPrefix;
 
     public HATestClusterCreator(QpidBrokerTestCase testcase, String virtualHostName, int numberOfNodes)
     {
@@ -84,12 +81,10 @@ public class HATestClusterCreator
         _groupName = "group" + _testcase.getName();
         _ipAddressOfBroker = getIpAddressOfBrokerHost();
         _numberOfNodes = numberOfNodes;
-        _vhostConfigKeyPrefix = "virtualhosts.virtualhost." + _virtualHostName + ".";
-        _vhostStoreConfigKeyPrefix = _vhostConfigKeyPrefix + "store.";
         _bdbHelperPort = 0;
     }
 
-    public void configureClusterNodes() throws Exception
+    public void configureClusterNodes(Map<String,String> replicationParameters) throws Exception
     {
         int brokerPort = _testcase.findFreePort();
 
@@ -104,10 +99,7 @@ public class HATestClusterCreator
                 _bdbHelperPort = bdbPort;
             }
 
-            configureClusterNode(brokerPort, bdbPort);
-            TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
-            brokerConfiguration.addJmxManagementConfiguration();
-            collectConfig(brokerPort, brokerConfiguration, _testcase.getTestVirtualhosts());
+            configureClusterNodeInBrokerConfiguration(brokerPort, bdbPort, replicationParameters);
 
             brokerPort = _testcase.getNextAvailable(bdbPort + 1);
         }
@@ -119,35 +111,24 @@ public class HATestClusterCreator
         {
             throw new IllegalArgumentException("Only two nodes groups have the concept of primary");
         }
+        Map.Entry<Integer, Integer> portsEntry = _brokerPortToBdbPortMap.entrySet().iterator().next();
+        TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(portsEntry.getKey());
+        String nodeName = getNodeNameForNodeAt(portsEntry.getValue());
+        brokerConfiguration.setObjectAttribute(nodeName, ReplicationNode.DESIGNATED_PRIMARY, designatedPrimary);
 
-        final Entry<Integer, BrokerConfigHolder> brokerConfigEntry = _brokerConfigurations.entrySet().iterator().next();
-        final String configKey = getConfigKey("highAvailability.designatedPrimary");
-        brokerConfigEntry.getValue().getTestVirtualhosts().setProperty(configKey, Boolean.toString(designatedPrimary));
-        _primaryBrokerPort = brokerConfigEntry.getKey();
-    }
-
-    /**
-     * @param configKeySuffix "highAvailability.designatedPrimary", for example
-     * @return "virtualhost.test.store.highAvailability.designatedPrimary", for example
-     */
-    private String getConfigKey(String configKeySuffix)
-    {
-        final String configKey = StringUtils.substringAfter(_vhostStoreConfigKeyPrefix + configKeySuffix, "virtualhosts.");
-        return configKey;
+        // store broker configuration on next restart
+        brokerConfiguration.setSaved(false);
+        _primaryBrokerPort = portsEntry.getKey();
     }
 
     public void startNode(final int brokerPortNumber) throws Exception
     {
-        final BrokerConfigHolder brokerConfigHolder = _brokerConfigurations.get(brokerPortNumber);
-
-        _testcase.setTestVirtualhosts(brokerConfigHolder.getTestVirtualhosts());
-
         _testcase.startBroker(brokerPortNumber);
     }
 
     public void startCluster() throws Exception
     {
-        for (final Integer brokerPortNumber : _brokerConfigurations.keySet())
+        for (final Integer brokerPortNumber : _brokerPortToBdbPortMap.keySet())
         {
             startNode(brokerPortNumber);
         }
@@ -155,21 +136,19 @@ public class HATestClusterCreator
 
     public void startClusterParallel() throws Exception
     {
-        final ExecutorService executor = Executors.newFixedThreadPool(_brokerConfigurations.size());
+        final ExecutorService executor = Executors.newFixedThreadPool(_brokerPortToBdbPortMap.size());
         try
         {
             List<Future<Object>> brokers = new CopyOnWriteArrayList<Future<Object>>();
-            for (final Integer brokerPortNumber : _brokerConfigurations.keySet())
+            for (final Integer brokerPortNumber : _brokerPortToBdbPortMap.keySet())
             {
-                final BrokerConfigHolder brokerConfigHolder = _brokerConfigurations.get(brokerPortNumber);
                 Future<Object> future = executor.submit(new Callable<Object>()
                 {
                     public Object call()
                     {
                         try
                         {
-                            _testcase.startBroker(brokerPortNumber, brokerConfigHolder.getTestConfiguration(),
-                                    brokerConfigHolder.getTestVirtualhosts());
+                            _testcase.startBroker(brokerPortNumber);
                             return "OK";
                         }
                         catch (Exception e)
@@ -213,7 +192,7 @@ public class HATestClusterCreator
 
     public void stopCluster() throws Exception
     {
-        for (final Integer brokerPortNumber : _brokerConfigurations.keySet())
+        for (final Integer brokerPortNumber : _brokerPortToBdbPortMap.keySet())
         {
             try
             {
@@ -301,6 +280,11 @@ public class HATestClusterCreator
         return _groupName;
     }
 
+    public String getNodeNameForBrokerPort(final int brokerPort)
+    {
+        return getNodeNameForNodeAt(_brokerPortToBdbPortMap.get(brokerPort));
+    }
+    
     public String getNodeNameForNodeAt(final int bdbPort)
     {
         return "node" + _testcase.getName() + bdbPort;
@@ -345,21 +329,37 @@ public class HATestClusterCreator
 
     public Set<Integer> getBrokerPortNumbersForNodes()
     {
-        return new HashSet<Integer>(_brokerConfigurations.keySet());
+        return new HashSet<Integer>(_brokerPortToBdbPortMap.keySet());
     }
 
-    private void configureClusterNode(final int brokerPort, final int bdbPort) throws Exception
+    private void configureClusterNodeInBrokerConfiguration(final int brokerPort, final int bdbPort, Map<String,String> replicationParameters) throws Exception
     {
-        final String nodeName = getNodeNameForNodeAt(bdbPort);
+        String nodeName = getNodeNameForNodeAt(bdbPort);
+        TestBrokerConfiguration config = _testcase.getBrokerConfiguration(brokerPort);
 
+        //remove default non-ha test virtual host
+        config.removeObjectConfiguration("test");
 
-        _testcase.setVirtualHostConfigurationProperty(_vhostConfigKeyPrefix + "type", BDBHAVirtualHostFactory.TYPE);
-        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "class", "org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore");
+        // replication node
+        Map<String, Object> replicationNodeAttributes = new HashMap<String, Object>();
+        replicationNodeAttributes.put(ReplicationNode.NAME, nodeName);
+        replicationNodeAttributes.put(ReplicationNode.GROUP_NAME, _groupName);
+        replicationNodeAttributes.put(ReplicationNode.HOST_PORT, getNodeHostPortForNodeAt(bdbPort));
+        replicationNodeAttributes.put(ReplicationNode.HELPER_HOST_PORT, getHelperHostPort());
+        if (replicationParameters != null)
+        {
+            replicationNodeAttributes.put(ReplicationNode.REPLICATION_PARAMETERS, replicationParameters);
+        }
 
-        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.groupName", _groupName);
-        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.nodeName", nodeName);
-        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.nodeHostPort", getNodeHostPortForNodeAt(bdbPort));
-        _testcase.setVirtualHostConfigurationProperty(_vhostStoreConfigKeyPrefix + "highAvailability.helperHostPort", getHelperHostPort());
+        // ha virtual host
+        Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put(VirtualHost.NAME, _virtualHostName);
+        virtualHostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
+
+        UUID hostId = config.addVirtualHostConfiguration(virtualHostAttributes);
+        config.addReplicationNodeConfiguration(hostId, replicationNodeAttributes);
+
+        config.addJmxManagementConfiguration();
     }
 
     public String getIpAddressOfBrokerHost()
@@ -374,56 +374,5 @@ public class HATestClusterCreator
             throw new RuntimeException("Could not determine IP address of host : " + brokerHost, e);
         }
     }
-
-    private void collectConfig(final int brokerPortNumber, TestBrokerConfiguration testConfiguration, XMLConfiguration testVirtualhosts)
-    {
-        _brokerConfigurations.put(brokerPortNumber, new BrokerConfigHolder(testConfiguration,
-                                                                    (XMLConfiguration) testVirtualhosts.clone()));
-    }
-
-    public class BrokerConfigHolder
-    {
-        private final TestBrokerConfiguration _testConfiguration;
-        private final XMLConfiguration _testVirtualhosts;
-
-        public BrokerConfigHolder(TestBrokerConfiguration testConfiguration, XMLConfiguration testVirtualhosts)
-        {
-            _testConfiguration = testConfiguration;
-            _testVirtualhosts = testVirtualhosts;
-        }
-
-        public TestBrokerConfiguration getTestConfiguration()
-        {
-            return _testConfiguration;
-        }
-
-        public XMLConfiguration getTestVirtualhosts()
-        {
-            return _testVirtualhosts;
-        }
-    }
-
-    public void modifyClusterNodeBdbAddress(int brokerPortNumberToBeMoved, int newBdbPort)
-    {
-        final BrokerConfigHolder brokerConfigHolder = _brokerConfigurations.get(brokerPortNumberToBeMoved);
-        final XMLConfiguration virtualHostConfig = brokerConfigHolder.getTestVirtualhosts();
-
-        final String configKey = getConfigKey("highAvailability.nodeHostPort");
-        final String oldBdbHostPort = virtualHostConfig.getString(configKey);
-
-        final String[] oldHostAndPort = StringUtils.split(oldBdbHostPort, ":");
-        final String oldHost = oldHostAndPort[0];
-
-        final String newBdbHostPort = oldHost + ":" + newBdbPort;
-
-        virtualHostConfig.setProperty(configKey, newBdbHostPort);
-        collectConfig(brokerPortNumberToBeMoved, brokerConfigHolder.getTestConfiguration(), virtualHostConfig);
-    }
-
-    public String getStoreConfigKeyPrefix()
-    {
-        return _vhostStoreConfigKeyPrefix;
-    }
-
 
 }

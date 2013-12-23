@@ -61,7 +61,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
 
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
 
-        _clusterCreator.configureClusterNodes();
+        _clusterCreator.configureClusterNodes(null);
 
         _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();
 

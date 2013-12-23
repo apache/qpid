@@ -42,6 +42,10 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             throw new IllegalStateException("Expected exactly one replication node but got " + (replicationNodes==null ? 0 :replicationNodes.size()) + " nodes");
         }
         ReplicationNode localNode = replicationNodes.iterator().next();
+        if (!localNode.isLocal())
+        {
+            throw new IllegalStateException("Cannot find local replication node among virtual host nodes");
+        }
         String durability = (String)localNode.getAttribute(ReplicationNode.DURABILITY);
         Boolean coalescingSync = (Boolean)localNode.getAttribute(ReplicationNode.COALESCING_SYNC);
 

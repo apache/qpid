@@ -195,8 +195,6 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
         return ReplicationNode.AVAILABLE_ATTRIBUTES;
     }
 
-
-    @SuppressWarnings("unchecked")
     @Override
     public Object getAttribute(String attributeName)
     {
@@ -263,6 +261,12 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean isLocal()
+    {
+        return true;
     }
 
 }

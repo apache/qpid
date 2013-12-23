@@ -33,6 +33,7 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -92,6 +93,28 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         VirtualHost object = mock(VirtualHost.class);
         Queue queue = mock(Queue.class);
         _listener.childAdded(object, queue);
+        verifyNoMoreInteractions(_store);
+    }
+
+    public void testLocalReplicationNodeAddedForVirtualHost()
+    {
+        notifyBrokerStarted();
+
+        VirtualHost object = mock(VirtualHost.class);
+        ReplicationNode node = mock(ReplicationNode.class);
+        when(node.isLocal()).thenReturn(true);
+        _listener.childAdded(object, node);
+        verify(_store).save(any(ConfigurationEntry.class), any(ConfigurationEntry.class));
+    }
+
+    public void testRemoteReplicationNodeAddedForVirtualHost()
+    {
+        notifyBrokerStarted();
+
+        VirtualHost object = mock(VirtualHost.class);
+        ReplicationNode node = mock(ReplicationNode.class);
+        when(node.isLocal()).thenReturn(false);
+        _listener.childAdded(object, node);
         verifyNoMoreInteractions(_store);
     }
 

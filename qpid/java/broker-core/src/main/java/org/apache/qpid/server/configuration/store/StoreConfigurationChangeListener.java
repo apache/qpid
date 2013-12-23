@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 
@@ -61,8 +62,9 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     @Override
     public void childAdded(ConfiguredObject object, ConfiguredObject child)
     {
-        // exclude VirtualHost children from storing in broker store
-        if (!(object instanceof VirtualHost))
+        // exclude VirtualHost children (except for local ReplicationNode) from storing in broker stores
+        if (!(object instanceof VirtualHost) || (object instanceof VirtualHost && child instanceof ReplicationNode
+                && ((ReplicationNode) child).isLocal()))
         {
             child.addChangeListener(this);
             ConfigurationEntry parentEntry = toConfigurationEntry(object);
@@ -95,10 +97,10 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
 
     private Set<UUID> getChildernIds(ConfiguredObject object, Class<? extends ConfiguredObject> objectType)
     {
-        // Virtual Host children's IDs should not be stored in broker store
+        // Virtual Host children's IDs (except local replication node) should not be stored in broker store
         if (object instanceof VirtualHost)
         {
-            return Collections.emptySet();
+            return getVirtualHostStorableChildrenIds((VirtualHost)object);
         }
         Set<UUID> childrenIds = new TreeSet<UUID>();
         Collection<Class<? extends ConfiguredObject>> childClasses = Model.getInstance().getChildTypes(objectType);
@@ -117,6 +119,32 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
             }
         }
         return childrenIds;
+    }
+
+    private Set<UUID> getVirtualHostStorableChildrenIds(VirtualHost host)
+    {
+        Collection<ReplicationNode> nodes = host.getChildren(ReplicationNode.class);
+        if (nodes.isEmpty())
+        {
+            return Collections.emptySet();
+        }
+        else
+        {
+            ReplicationNode localNode = null;
+            for (ReplicationNode node : nodes)
+            {
+                if (node.isLocal())
+                {
+                    localNode = node;
+                    break;
+                }
+            }
+            if (localNode == null)
+            {
+                throw new IllegalStateException("Cannot find local replication node among virtual host nodes");
+            }
+            return Collections.singleton(localNode.getId());
+        }
     }
 
     private Class<? extends ConfiguredObject> getConfiguredObjectType(ConfiguredObject object)

@@ -13,4 +13,10 @@ public class RemoteReplicationNode extends AbstractReplicationNode
         super(groupName, nodeName, hostPort, virtualHost);
     }
 
+    @Override
+    public boolean isLocal()
+    {
+        return false;
+    }
+
 }

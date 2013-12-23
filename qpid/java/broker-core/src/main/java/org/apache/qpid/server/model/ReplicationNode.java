@@ -111,4 +111,5 @@ public interface ReplicationNode extends ConfiguredObject
                             STORE_PATH
                             ));
 
+    public boolean isLocal();
 }
