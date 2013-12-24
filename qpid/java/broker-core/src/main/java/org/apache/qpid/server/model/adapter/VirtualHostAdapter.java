@@ -529,7 +529,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             case ACTIVE:
                 return State.ACTIVE;
             case PASSIVE:
-                return State.REPLICA;
+                return State.UNAVAILABLE;
             case STOPPED:
                 return State.STOPPED;
             case ERRORED:
@@ -1270,7 +1270,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             State actualState = getActualState();
             if (actualState != newState )
             {
-                super.changeAttributes(attributes);
+                super.changeAttributes(Collections.<String, Object>singletonMap(STATE, newState));
             }
         }
         else

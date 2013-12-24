@@ -75,9 +75,6 @@ public interface ReplicationNode extends ConfiguredObject
     /** Map with additional implementation specific replication parameters*/
     String REPLICATION_PARAMETERS               = "replicationParameters";
 
-    /** Name of the node which is a master at the moment*/
-    String MASTER_NODE                          = "masterNode";
-
     /** Store path */
     String STORE_PATH                           = "storePath";
 
@@ -107,7 +104,6 @@ public interface ReplicationNode extends ConfiguredObject
                             LAST_KNOWN_REPLICATION_TRANSACTION_ID,
                             PARAMETERS,
                             REPLICATION_PARAMETERS,
-                            MASTER_NODE,
                             STORE_PATH
                             ));
 

@@ -21,56 +21,94 @@
  -->
 
 <div class="virtualhost">
-    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Virtual Host Attributes',  open: true">
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Name:</div>
-            <div class="name" style="float:left;"></div>
+
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Name:</div>
+        <div class="name" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Type:</div>
+        <div class="type" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Actual State:</div>
+        <div class="state" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Durable:</div>
+        <div class="durable" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Lifespan:</div>
+        <div class="lifetimePolicy" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Inbound:</div>
+        <div style="float:left;">
+            <span class="msgInRate"></span>
+            <span> msg/s</span>
+            <span class="bytesInRate"></span>
+            <span class="bytesInRateUnits"></span>
         </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">State:</div>
-            <div class="state" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Outbound:</div>
+        <div style="float:left;">
+            <span class="msgOutRate"></span>
+            <span> msg/s</span>
+            <span class="bytesOutRate"></span>
+            <span class="bytesOutRateUnits"></span>
         </div>
+    </div>
+    <div class="configPathDiv" style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Config Path:</div>
+        <div class="configPath" style="float:left;"></div>
+    </div>
+    <div style="clear:both"></div>
+
+    <div class="virtualHostDetails"></div>
+    <br/>
+
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
         <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Durable:</div>
-            <div class="durable" style="float:left;"></div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Lifespan:</div>
-            <div class="lifetimePolicy" style="float:left;"></div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Inbound:</div>
+            <div class="formLabel-labelCell" style="float:left; width: 200px">Queue Depth:</div>
             <div style="float:left;">
-                <span class="msgInRate"></span>
-                <span> msg/s</span>
-                <span class="bytesInRate"></span>
-                <span class="bytesInRateUnits"></span>
+                <span class="alertThresholdQueueDepthMessages"></span>
+                <span>msgs</span>
             </div>
         </div>
         <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Outbound:</div>
+            <div class="formLabel-labelCell" style="float:left; width: 200px">Queue Depth:</div>
             <div style="float:left;">
-                <span class="msgOutRate"></span>
-                <span> msg/s</span>
-                <span class="bytesOutRate"></span>
-                <span class="bytesOutRateUnits"></span>
+                <span class="alertThresholdQueueDepthBytes"></span>
+                <span class="alertThresholdQueueDepthBytesUnits"></span>
             </div>
         </div>
         <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Type:</div>
-            <div class="storeType" style="float:left;"></div>
+            <div class="formLabel-labelCell" style="float:left; width: 200px">Message Age:</div>
+            <div style="float:left;">
+                <span class="alertThresholdMessageAge"></span>
+                <span class="alertThresholdMessageAgeUnits"></span>
+            </div>
         </div>
         <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Path:</div>
-            <div class="storePath" style="float:left;"></div>
+            <div class="formLabel-labelCell" style="float:left; width: 200px">Message Size:</div>
+            <div style="float:left;">
+                <span class="alertThresholdMessageSize"></span>
+                <span class="alertThresholdMessageSizeUnits"></span>
+            </div>
         </div>
-        <div class="configPathDiv" style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Config Path:</div>
-            <div class="configPath" style="float:left;"></div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 200px">Alert frequency:</div>
+            <div style="float:left;">
+                <span class="alertRepeatGap"></span>
+                <span class="alertRepeatGapUnits"></span>
+            </div>
         </div>
         <div style="clear:both"></div>
-      </div>
+    </div>
     <br/>
+
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchanges'">
         <div class="exchanges"></div>
         <button data-dojo-type="dijit.form.Button" class="addExchangeButton">Add Exchange</button>
@@ -86,44 +124,6 @@
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Connections'">
         <div class="connections"></div>
     </div>
-    <br/>
-    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 150px;">Queue Depth:</div>
-            <div style="float:left;">
-                <span class="alertThresholdQueueDepthMessages"></span>
-                <span>msgs</span>
-            </div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 150px;">Queue Depth:</div>
-            <div style="float:left;">
-                <span class="alertThresholdQueueDepthBytes"></span>
-                <span class="alertThresholdQueueDepthBytesUnits"></span>
-            </div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 150px;">Message Age:</div>
-            <div style="float:left;">
-                <span class="alertThresholdMessageAge"></span>
-                <span class="alertThresholdMessageAgeUnits"></span>
-            </div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 150px;">Message Size:</div>
-            <div style="float:left;">
-                <span class="alertThresholdMessageSize"></span>
-                <span class="alertThresholdMessageSizeUnits"></span>
-            </div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 150px;">Alert frequency:</div>
-            <div style="float:left;">
-                <span class="alertRepeatGap"></span>
-                <span class="alertRepeatGapUnits"></span>
-            </div>
-        </div>
-        <div style="clear:both"></div>
-    </div>
+
 </div>
 

@@ -137,6 +137,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private ReplicationGroupListener _replicationGroupListener;
     private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
+    private long _joinTime;
+    private String _lastKnownReplicationTransactionId;
 
     @SuppressWarnings("unchecked")
     public ReplicatedEnvironmentFacade(String name, String environmentPath,
@@ -160,9 +162,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _environment = createEnvironment();
         startCommitThread(_name, _environment);
     }
-
-
-
 
     @Override
     public StoreFuture commit(final Transaction tx, final boolean syncCommit) throws AMQStoreException
@@ -283,6 +282,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             if (_state.compareAndSet(State.OPENING, State.OPEN) || _state.compareAndSet(State.RESTARTING, State.OPEN))
             {
                 LOGGER.info("The environment facade is in open state");
+                _joinTime = System.currentTimeMillis();
             }
         }
         if (_state.get() != State.CLOSING && _state.get() != State.CLOSED)
@@ -316,7 +316,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return _nodeName;
     }
 
-    public String getNodeHostPort()
+    public String getHostPort()
     {
         return _nodeHostPort;
     }
@@ -345,6 +345,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     public boolean isDesignatedPrimary()
     {
         return _environment.getRepMutableConfig().getDesignatedPrimary();
+    }
+
+    public int getQuorumOverride()
+    {
+        return _environment.getRepMutableConfig().getElectableGroupSizeOverride();
     }
 
     public List<Map<String, String>> getGroupMembers()
@@ -422,7 +427,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    public int getNodePriority()
+    public int getPriority()
     {
         ReplicationMutableConfig repConfig = _environment.getRepMutableConfig();
         return repConfig.getNodePriority();
@@ -432,6 +437,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     {
         ReplicationMutableConfig repConfig = _environment.getRepMutableConfig();
         return repConfig.getElectableGroupSizeOverride();
+    }
+
+    public long getJoinTime()
+    {
+        return _joinTime ;
+    }
+
+    public String getLastKnownReplicationTransactionId()
+    {
+        return _lastKnownReplicationTransactionId;
     }
 
     public ReplicatedEnvironment getEnvironment()
@@ -700,4 +715,5 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         CLOSING,
         CLOSED
     }
+
 }

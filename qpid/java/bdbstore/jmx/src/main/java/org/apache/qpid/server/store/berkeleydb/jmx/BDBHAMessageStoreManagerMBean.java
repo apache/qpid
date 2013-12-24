@@ -110,7 +110,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public String getNodeHostPort()
     {
-        return _replicatedEnvironmentFacade.getNodeHostPort();
+        return _replicatedEnvironmentFacade.getHostPort();
     }
 
     @Override

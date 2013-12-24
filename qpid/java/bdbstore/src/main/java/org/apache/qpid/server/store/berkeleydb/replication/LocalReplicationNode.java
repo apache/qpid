@@ -37,6 +37,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractAdapter;
 import org.apache.qpid.server.model.adapter.NoStatistics;
+import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
 
@@ -80,6 +81,7 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     }};
 
     private final VirtualHost _virtualHost;
+    private ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
 
     //TODO: add state management
     public LocalReplicationNode(UUID id, Map<String, Object> attributes, VirtualHost virtualHost, TaskExecutor taskExecutor)
@@ -208,6 +210,57 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
         {
             return getLifetimePolicy();
         }
+        if (_replicatedEnvironmentFacade != null)
+        {
+            if(ROLE.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getNodeState();
+            }
+            else if(DURABILITY.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getDurability();
+            }
+            else if(PRIORITY.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getPriority();
+            }
+            else if(GROUP_NAME.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getGroupName();
+            }
+            else if(NAME.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getNodeName();
+            }
+            else if(HOST_PORT.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getHostPort();
+            }
+            else if(HELPER_HOST_PORT.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getHelperHostPort();
+            }
+            else if(COALESCING_SYNC.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.isCoalescingSync();
+            }
+            else if(DESIGNATED_PRIMARY.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.isDesignatedPrimary();
+            }
+            else if(QUORUM_OVERRIDE.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getQuorumOverride();
+            }
+            else if(JOIN_TIME.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getJoinTime();
+            }
+            else if(LAST_KNOWN_REPLICATION_TRANSACTION_ID.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getLastKnownReplicationTransactionId();
+            }
+        }
         return super.getAttribute(attributeName);
     }
 
@@ -265,6 +318,11 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     public boolean isLocal()
     {
         return true;
+    }
+
+    public void setReplicatedEnvironmentFacade(ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
+    {
+        _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
     }
 
 }

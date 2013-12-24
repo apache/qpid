@@ -122,7 +122,7 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
 
     public void testGetNodeHostPort()
     {
-        assertEquals("Unexpected node host port", TEST_NODE_HOST_PORT, getEnvironmentFacade().getNodeHostPort());
+        assertEquals("Unexpected node host port", TEST_NODE_HOST_PORT, getEnvironmentFacade().getHostPort());
     }
 
     public void testGetHelperHostPort()
@@ -201,7 +201,7 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
 
     public void testGetNodePriority()
     {
-        assertEquals("Unexpected node priority", 1, getEnvironmentFacade().getNodePriority());
+        assertEquals("Unexpected node priority", 1, getEnvironmentFacade().getPriority());
     }
 
     public void testGetElectableGroupSizeOverride()
@@ -235,8 +235,8 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
         }
 
         // restore quorum
-        nodes[1] = joinReplica(TEST_NODE_NAME + "_1", nodes[1].getNodeHostPort());
-        nodes[2] = joinReplica(TEST_NODE_NAME + "_2", nodes[2].getNodeHostPort());
+        nodes[1] = joinReplica(TEST_NODE_NAME + "_1", nodes[1].getHostPort());
+        nodes[2] = joinReplica(TEST_NODE_NAME + "_2", nodes[2].getHostPort());
 
         environmentFacade.setStateChangeListener(new StateChangeListener()
         {
@@ -335,8 +335,8 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
         }
 
         // restore quorum
-        nodes[1] = joinReplica(TEST_NODE_NAME + "_1", nodes[1].getNodeHostPort());
-        nodes[2] = joinReplica(TEST_NODE_NAME + "_2", nodes[2].getNodeHostPort());
+        nodes[1] = joinReplica(TEST_NODE_NAME + "_1", nodes[1].getHostPort());
+        nodes[2] = joinReplica(TEST_NODE_NAME + "_2", nodes[2].getHostPort());
 
         long start = System.currentTimeMillis();
         while(environmentFacade.getFacadeState() != ReplicatedEnvironmentFacade.State.OPEN && System.currentTimeMillis() - start < 10000l)

@@ -105,7 +105,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testNodeHostPort() throws Exception
     {
-        when(_replicatedEnvironmentFacadee.getNodeHostPort()).thenReturn(TEST_NODE_HOST_PORT);
+        when(_replicatedEnvironmentFacadee.getHostPort()).thenReturn(TEST_NODE_HOST_PORT);
 
         assertEquals(TEST_NODE_HOST_PORT, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_HOST_PORT));
     }

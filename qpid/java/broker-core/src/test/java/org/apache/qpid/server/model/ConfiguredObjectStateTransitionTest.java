@@ -141,7 +141,7 @@ public class ConfiguredObjectStateTransitionTest extends QpidTestCase
     private void assertAllInvalidStateTransitions(ConfigurationEntry providerEntry)
     {
         ConfiguredObject provider = createConfiguredObject(providerEntry);
-        assertInvalidStateTransition(provider, State.INITIALISING, State.REPLICA);
+        assertInvalidStateTransition(provider, State.INITIALISING, State.UNAVAILABLE);
 
         provider.setDesiredState(State.INITIALISING, State.QUIESCED);
         assertInvalidStateTransition(provider, State.QUIESCED, State.INITIALISING);
@@ -153,7 +153,7 @@ public class ConfiguredObjectStateTransitionTest extends QpidTestCase
         assertInvalidStateTransition(provider, State.DELETED, State.INITIALISING);
         assertInvalidStateTransition(provider, State.DELETED, State.QUIESCED);
         assertInvalidStateTransition(provider, State.DELETED, State.ACTIVE);
-        assertInvalidStateTransition(provider, State.DELETED, State.REPLICA);
+        assertInvalidStateTransition(provider, State.DELETED, State.UNAVAILABLE);
         assertInvalidStateTransition(provider, State.DELETED, State.ERRORED);
     }
 

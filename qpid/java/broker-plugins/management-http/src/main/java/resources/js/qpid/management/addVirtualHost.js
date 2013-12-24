@@ -130,7 +130,22 @@ define(["dojo/_base/xhr",
                                              sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newVirtualHost),
-                                             load: function(x) {that.success = true; },
+                                             load: function(x)
+                                             {
+                                               if (addVirtualHost.typeSpecificWidget && addVirtualHost.typeSpecificWidget.save
+                                                   && typeof addVirtualHost.typeSpecificWidget.save == "function")
+                                               {
+                                                 that.success = addVirtualHost.typeSpecificWidget.save(newVirtualHost.name);
+                                                 if (!that.success)
+                                                 {
+                                                   that.failureReason = addVirtualHost.failureReason
+                                                 }
+                                               }
+                                               else
+                                               {
+                                                 that.success = true;
+                                               }
+                                             },
                                              error: function(error) {that.success = false; that.failureReason = error;}});
 
                                     if(this.success === true)
@@ -156,12 +171,14 @@ define(["dojo/_base/xhr",
                 function(vhostType)
                 {
                     vhostType.show();
+                    addVirtualHost.typeSpecificWidget = vhostType;
                 });
             }
         }
 
         addVirtualHost.show = function() {
             var that = this;
+            this.typeSpecificWidget = null;
             dom.byId("addVirtualHost.typeSpecificDiv").innerHTML = "";
             registry.byId("formAddVirtualHost").reset();
             dojo.byId("formAddVirtualHost.id").value="";

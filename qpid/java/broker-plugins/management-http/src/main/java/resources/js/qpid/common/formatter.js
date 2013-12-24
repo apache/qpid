@@ -27,6 +27,10 @@ define(function () {
             var returnVal = { units: "B",
                               value: "0"};
 
+            if (!amount)
+            {
+              return returnVal;
+            }
 
             if(amount < 1000)
             {
@@ -56,6 +60,10 @@ define(function () {
         {
             var returnVal = { units: "ms",
                               value: "0"};
+            if (!amount)
+            {
+              return returnVal;
+            }
 
             if(amount < 1000)
             {

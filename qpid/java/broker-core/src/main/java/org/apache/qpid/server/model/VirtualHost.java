@@ -89,6 +89,8 @@ public interface VirtualHost extends ConfiguredObject
     String UPDATED                              = "updated";
     String CONFIG_PATH                          = "configPath";
 
+    String QUIESCE_ON_MASTER_CHANGE             = "quiesceOnMasterChange";
+
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
@@ -122,7 +124,8 @@ public interface VirtualHost extends ConfiguredObject
                             QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE,
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                            CONFIG_PATH));
+                            CONFIG_PATH,
+                            QUIESCE_ON_MASTER_CHANGE));
 
     int CURRENT_CONFIG_VERSION = 3;
 

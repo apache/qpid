@@ -1,0 +1,107 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<br/>
+<div  data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Replication Group'">
+    <div style="clear:both">
+        <div class="formLabel-labelCell" style="float:left; width: 200px">Desired State:</div>
+        <div class="desiredState" style="float:left;">ACTIVE</div>
+    </div>
+    <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Quiesce On Master Change:</div>
+      <div style="float:left;">
+          <input class="quiesceOnMasterChange" type="checkbox" disabled='disabled'/>
+      </div>
+    </div>
+    <div style="clear:both"></div>
+
+    <div class="dijitDialogPaneActionBar">
+          <button data-dojo-type="dijit.form.Button" class="activateVirtualHostButton"  data-dojo-props="label: 'Activate', disabled: true" type="button">Activate</button>
+          <button data-dojo-type="dijit.form.Button" class="quiesceVirtualHostButton" type="button">Quiesce</button>
+          <button data-dojo-type="dijit.form.Button" class="stopVirtualHostButton" type="button">Stop</button>
+          <button data-dojo-type="dijit.form.Button" class="editVirtualHostButton" type="button">Edit</button>
+    </div>
+</div>
+<br/>
+
+<div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Node'">
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Node Name:</div>
+      <div class="name" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+       <div class="formLabel-labelCell" style="float:left; width: 200px">Store Path:</div>
+       <div class="storePath" style="float:left;"></div>
+  </div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">State:</div>
+      <div class="state" style="float:left;">ACTIVE</div>
+  </div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Role:</div>
+      <div class="role" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Host and Port:</div>
+      <div class="hostPort" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+    <div class="formLabel-labelCell" style="float:left; width: 200px;">Helper Node Host and Port:</div>
+    <div class="helperHostPort" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+    <div class="formLabel-labelCell" style="float:left; width: 200px;">Coalescing Sync:</div>
+    <div class="coalescingSync" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+    <div class="formLabel-labelCell" style="float:left; width: 200px;">Durability:</div>
+    <div class="durability" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both" class="designatedPrimaryContainer">
+    <div class="formLabel-labelCell" style="float:left; width: 200px;">Designated Primary:</div>
+    <div class="designatedPrimary" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both" class="priorityContainer">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Priority:</div>
+      <div class="priority" style="float:left;">Never</div>
+  </div>
+  <div style="clear:both" class="quorumOverrideContainer">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Quorum override:</div>
+      <div style="float:left;">
+          <span class="quorumOverride" >N/A</span>
+          <span style="margin-left: 20px;">[ 0 signifies simple majority ]</span>
+      </div>
+  </div>
+  <div style="clear:both"></div>
+  <div class="dijitDialogPaneActionBar">
+      <button data-dojo-type="dijit.form.Button" class="activateNodeButton" type="button" data-dojo-props="iconClass: 'dijitEditorIconCreateLink', disabled: true">Activate</button>
+      <button data-dojo-type="dijit.form.Button" class="stopNodeButton" type="button" data-dojo-props="iconClass: 'dijitEditorIconUnlink'">Stop</button>
+      <button data-dojo-type="dijit.form.Button" class="editNodeButton" type="button">Edit</button>
+  </div>
+</div>
+
+<br/>
+<div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Group nodes'">
+    <div class="cluserNodes"></div>
+    <div class="cluserNodesToolbar dijitDialogPaneActionBar">
+      <button data-dojo-type="dijit.form.Button" class="removeNodeButton" data-dojo-props="iconClass: 'dijitIconDelete'">Remove Node</button>
+      <button data-dojo-type="dijit.form.Button" class="transferMasterButton" data-dojo-props="iconClass: 'dijitIconConfigure'">Make Node Master</button>
+    </div>
+</div>

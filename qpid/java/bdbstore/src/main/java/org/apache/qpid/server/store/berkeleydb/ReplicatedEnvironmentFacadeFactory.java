@@ -25,6 +25,7 @@ import java.util.Collection;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.berkeleydb.replication.LocalReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
 
@@ -42,7 +43,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             throw new IllegalStateException("Expected exactly one replication node but got " + (replicationNodes==null ? 0 :replicationNodes.size()) + " nodes");
         }
         ReplicationNode localNode = replicationNodes.iterator().next();
-        if (!localNode.isLocal())
+        if (!(localNode instanceof LocalReplicationNode))
         {
             throw new IllegalStateException("Cannot find local replication node among virtual host nodes");
         }
@@ -55,7 +56,9 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        return new ReplicatedEnvironmentFacade(name, storeLocation, localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
+        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(name, storeLocation, localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
+        ((LocalReplicationNode)localNode).setReplicatedEnvironmentFacade(facade);
+        return facade;
     }
 
     private static class RemoteReplicationNodeFactoryImpl implements RemoteReplicationNodeFactory

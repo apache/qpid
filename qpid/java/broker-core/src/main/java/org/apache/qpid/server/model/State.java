@@ -27,6 +27,6 @@ public enum State
     STOPPED,
     ACTIVE,
     DELETED,
-    REPLICA,
+    UNAVAILABLE,
     ERRORED
 }

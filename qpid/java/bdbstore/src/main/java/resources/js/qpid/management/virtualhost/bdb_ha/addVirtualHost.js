@@ -25,8 +25,13 @@ define(["dojo/_base/xhr",
         "dijit/registry",
         "dojo/parser",
         "dojo/_base/array",
+        "dojo/json",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array) {
+    function (xhr, dom, construct, win, registry, parser, array, json) {
+        var nodeFields = ["storePath", "groupName", "nodeName", "state", "role", "hostPort", "helperHostPort",
+                    "coalescingSync", "designatedPrimary", "durability", "priority",
+                    "quorumOverride"];
+
         return {
             show: function() {
 
@@ -45,7 +50,44 @@ define(["dojo/_base/xhr",
                      load:  function(data) {
                                 node.innerHTML = data;
                                 parser.parse(node);
+                                for(var i = 0; i < nodeFields.length; i++)
+                                {
+                                  that[nodeFields[i]] = registry.byId("formAddVirtualHost.specific." + nodeFields[i]);
+                                }
                      }});
+            },
+            save: function(virtualHostName)
+            {
+              var node = {};
+              for(var i = 0; i < nodeFields.length; i++)
+              {
+                var fieldName = nodeFields[i];
+                var widget = this[fieldName];
+                if (widget)
+                {
+                  node[fieldName] = widget.type=="checkbox"? widget.get("checked"): widget.value;
+                }
+              }
+              node.name = this.nodeName.value;
+              var that = this;
+              xhr.put({url: "rest/replicationnode/" + encodeURIComponent(virtualHostName) + "/" + encodeURIComponent(this.nodeName.value),
+                sync: true, handleAs: "json",
+                headers: { "Content-Type": "application/json"},
+                putData: json.stringify(node),
+                load: function(x) { that.success = true; },
+                error: function(error) {that.success = false; that.failureReason = error;}});
+
+              if (this.success)
+              {
+                xhr.put({url: "rest/virtualhost/" + encodeURIComponent(virtualHostName),
+                  sync: true, handleAs: "json",
+                  headers: { "Content-Type": "application/json"},
+                  putData: json.stringify({state: "ACTIVE"}),
+                  load: function(x) { that.success = true; },
+                  error: function(error) {that.success = false; that.failureReason = error;}});
+              }
+
+              return this.success;
             }
         };
     });

@@ -32,6 +32,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addQueue",
         "qpid/management/addExchange",
         "dojox/grid/EnhancedGrid",
+        "dijit/form/ToggleButton",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange, EnhancedGrid) {
 
@@ -63,8 +64,6 @@ define(["dojo/_base/xhr",
 
                             updater.add( that.vhostUpdater );
 
-                            that.vhostUpdater.update();
-
                             var addQueueButton = query(".addQueueButton", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addQueueButton), "onClick", function(evt){ addQueue.show(that.name) });
 
@@ -95,6 +94,23 @@ define(["dojo/_base/xhr",
                             );
                         }});
 
+               var vhostData = this.vhostUpdater.vhostData;
+               var virtualHostDetailsDiv = query(".virtualHostDetails", contentPane.containerNode)[0];
+               require(["qpid/management/virtualhost/" + vhostData.type.toLowerCase() + "/show"],
+                   function(VirtualHostDetails) {
+                     try
+                     {
+                         that.vhostUpdater.details = new VirtualHostDetails(virtualHostDetailsDiv);
+                         that.vhostUpdater.details.update(vhostData);
+                     }
+                     catch(e)
+                     {
+                       if (console && console.error)
+                       {
+                         console.error(e);
+                       }
+                     }
+                 });
            };
 
            VirtualHost.prototype.close = function() {
@@ -118,6 +134,7 @@ define(["dojo/_base/xhr",
                }
 
                storeNodes(["name",
+                           "type",
                            "state",
                            "durable",
                            "lifetimePolicy",
@@ -136,15 +153,13 @@ define(["dojo/_base/xhr",
                            "msgOutRate",
                            "bytesOutRate",
                            "bytesOutRateUnits",
-                           "storeType",
-                           "storePath",
                            "configPath"]);
 
                this.query = "rest/virtualhost/"+ encodeURIComponent(vhost.name);
 
                var that = this;
 
-               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data) {
+               xhr.get({url: this.query, sync: true, handleAs: "json"}).then(function(data) {
                    that.vhostData = data[0];
 
                    if (!that.vhostData.hasOwnProperty("configPath"))
@@ -172,7 +187,7 @@ define(["dojo/_base/xhr",
                                 }};
 
                    that.updateHeader();
-                   that.queuesGrid = new UpdatableStore(that.vhostData.queues, findNode("queues"),
+                   that.queuesGrid = new UpdatableStore(that.vhostData.queues || [], findNode("queues"),
                                                         [ { name: "Name",    field: "name",      width: "90px"},
                                                             { name: "Messages", field: "queueDepthMessages", width: "90px"},
                                                             { name: "Arguments",   field: "arguments",     width: "100%"}
@@ -188,7 +203,7 @@ define(["dojo/_base/xhr",
                                                                          });
                                                         } , gridProperties, EnhancedGrid);
 
-                   that.exchangesGrid = new UpdatableStore(that.vhostData.exchanges, findNode("exchanges"),
+                   that.exchangesGrid = new UpdatableStore(that.vhostData.exchanges || [], findNode("exchanges"),
                                                            [
                                                              { name: "Name",    field: "name", width: "120px"},
                                                              { name: "Type", field: "type", width: "120px"},
@@ -206,7 +221,7 @@ define(["dojo/_base/xhr",
                                                            } , gridProperties, EnhancedGrid);
 
 
-                   that.connectionsGrid = new UpdatableStore(that.vhostData.connections,
+                   that.connectionsGrid = new UpdatableStore(that.vhostData.connections || [],
                                                              findNode("connections"),
                                                              [ { name: "Name",    field: "name",      width: "150px"},
                                                                  { name: "User", field: "principal", width: "120px"},
@@ -232,9 +247,6 @@ define(["dojo/_base/xhr",
                                                                                   controller.show("connection", connectionName, vhost, theItem.id);
                                                                               });
                                                              } );
-
-
-
                });
 
            }
@@ -242,150 +254,172 @@ define(["dojo/_base/xhr",
            Updater.prototype.updateHeader = function()
            {
                this.name.innerHTML = entities.encode(String(this.vhostData[ "name" ]));
+               this.type.innerHTML = entities.encode(String(this.vhostData[ "type" ]));
                this.state.innerHTML = entities.encode(String(this.vhostData[ "state" ]));
                this.durable.innerHTML = entities.encode(String(this.vhostData[ "durable" ]));
                this.lifetimePolicy.innerHTML = entities.encode(String(this.vhostData[ "lifetimePolicy" ]));
-               this.storeType.innerHTML = entities.encode(String(this.vhostData[ "storeType" ]));
-               this.storePath.innerHTML = entities.encode(String(this.vhostData[ "storePath" ]));
                this.configPath.innerHTML = entities.encode(String(this.vhostData[ "configPath" ]));
            };
 
            Updater.prototype.update = function()
            {
-
                var thisObj = this;
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                    .then(function(data) {
-                       thisObj.vhostData = data[0];
-                       util.flattenStatistics( thisObj.vhostData );
-                       var connections = thisObj.vhostData[ "connections" ];
-                       var queues = thisObj.vhostData[ "queues" ];
-                       var exchanges = thisObj.vhostData[ "exchanges" ];
-
-                       thisObj.updateHeader();
-
-
-                       // update alerting info
-                       var alertRepeatGap = formatter.formatTime( thisObj.vhostData["queue.alertRepeatGap"] );
-
-                       thisObj.alertRepeatGap.innerHTML = alertRepeatGap.value;
-                       thisObj.alertRepeatGapUnits.innerHTML = alertRepeatGap.units;
-
-
-                       var alertMsgAge = formatter.formatTime( thisObj.vhostData["queue.alertThresholdMessageAge"] );
-
-                       thisObj.alertThresholdMessageAge.innerHTML = alertMsgAge.value;
-                       thisObj.alertThresholdMessageAgeUnits.innerHTML = alertMsgAge.units;
-
-                       var alertMsgSize = formatter.formatBytes( thisObj.vhostData["queue.alertThresholdMessageSize"] );
-
-                       thisObj.alertThresholdMessageSize.innerHTML = alertMsgSize.value;
-                       thisObj.alertThresholdMessageSizeUnits.innerHTML = alertMsgSize.units;
-
-                       var alertQueueDepth = formatter.formatBytes( thisObj.vhostData["queue.alertThresholdQueueDepthBytes"] );
-
-                       thisObj.alertThresholdQueueDepthBytes.innerHTML = alertQueueDepth.value;
-                       thisObj.alertThresholdQueueDepthBytesUnits.innerHTML = alertQueueDepth.units;
-
-                       thisObj.alertThresholdQueueDepthMessages.innerHTML = entities.encode(String(thisObj.vhostData["queue.alertThresholdQueueDepthMessages"]));
-
-                       var stats = thisObj.vhostData[ "statistics" ];
-
-                       var sampleTime = new Date();
-                       var messageIn = stats["messagesIn"];
-                       var bytesIn = stats["bytesIn"];
-                       var messageOut = stats["messagesOut"];
-                       var bytesOut = stats["bytesOut"];
-
-                       if(thisObj.sampleTime)
+                     try
+                     {
+                       thisObj.performUpdate(data[0]);
+                     }
+                     catch(e)
+                     {
+                       if (console && console.error)
                        {
-                           var samplePeriod = sampleTime.getTime() - thisObj.sampleTime.getTime();
-
-                           var msgInRate = (1000 * (messageIn - thisObj.messageIn)) / samplePeriod;
-                           var msgOutRate = (1000 * (messageOut - thisObj.messageOut)) / samplePeriod;
-                           var bytesInRate = (1000 * (bytesIn - thisObj.bytesIn)) / samplePeriod;
-                           var bytesOutRate = (1000 * (bytesOut - thisObj.bytesOut)) / samplePeriod;
-
-                           thisObj.msgInRate.innerHTML = msgInRate.toFixed(0);
-                           var bytesInFormat = formatter.formatBytes( bytesInRate );
-                           thisObj.bytesInRate.innerHTML = "(" + bytesInFormat.value;
-                           thisObj.bytesInRateUnits.innerHTML = bytesInFormat.units + "/s)";
-
-                           thisObj.msgOutRate.innerHTML = msgOutRate.toFixed(0);
-                           var bytesOutFormat = formatter.formatBytes( bytesOutRate );
-                           thisObj.bytesOutRate.innerHTML = "(" + bytesOutFormat.value;
-                           thisObj.bytesOutRateUnits.innerHTML = bytesOutFormat.units + "/s)";
-
-                           if(connections && thisObj.connections)
-                           {
-                               for(var i=0; i < connections.length; i++)
-                               {
-                                   var connection = connections[i];
-                                   for(var j = 0; j < thisObj.connections.length; j++)
-                                   {
-                                       var oldConnection = thisObj.connections[j];
-                                       if(oldConnection.id == connection.id)
-                                       {
-                                           msgOutRate = (1000 * (connection.messagesOut - oldConnection.messagesOut)) /
-                                                        samplePeriod;
-                                           connection.msgOutRate = msgOutRate.toFixed(0) + "msg/s";
-
-                                           bytesOutRate = (1000 * (connection.bytesOut - oldConnection.bytesOut)) /
-                                                          samplePeriod;
-                                           var bytesOutRateFormat = formatter.formatBytes( bytesOutRate );
-                                           connection.bytesOutRate = bytesOutRateFormat.value + bytesOutRateFormat.units + "/s";
-
-
-                                           msgInRate = (1000 * (connection.messagesIn - oldConnection.messagesIn)) /
-                                                       samplePeriod;
-                                           connection.msgInRate = msgInRate.toFixed(0) + "msg/s";
-
-                                           bytesInRate = (1000 * (connection.bytesIn - oldConnection.bytesIn)) /
-                                                         samplePeriod;
-                                           var bytesInRateFormat = formatter.formatBytes( bytesInRate );
-                                           connection.bytesInRate = bytesInRateFormat.value + bytesInRateFormat.units + "/s";
-                                       }
-
-
-                                   }
-
-                               }
-                           }
+                         console.error(e);
                        }
-
-                       thisObj.sampleTime = sampleTime;
-                       thisObj.messageIn = messageIn;
-                       thisObj.bytesIn = bytesIn;
-                       thisObj.messageOut = messageOut;
-                       thisObj.bytesOut = bytesOut;
-                       thisObj.connections = connections;
-
-                       // update queues
-                       thisObj.queuesGrid.update(thisObj.vhostData.queues);
-
-                       // update exchanges
-                       thisObj.exchangesGrid.update(thisObj.vhostData.exchanges);
-
-                       var exchangesGrid = thisObj.exchangesGrid.grid;
-                       for(var i=0; i< thisObj.vhostData.exchanges.length; i++)
-                       {
-                           var data = exchangesGrid.getItem(i);
-                           var isStandard = false;
-                           if (data && data.name)
-                           {
-                               isStandard = util.isReservedExchangeName(data.name);
-                           }
-                           exchangesGrid.rowSelectCell.setDisabled(i, isStandard);
-                       }
-
-                       // update connections
-                       thisObj.connectionsGrid.update(thisObj.vhostData.connections)
-
-
+                     }
                    });
            };
 
+           Updater.prototype.performUpdate = function(vhostData)
+           {
+             this.vhostData = vhostData;
+             util.flattenStatistics( this.vhostData );
+             var connections = this.vhostData[ "connections" ];
+             var queues = this.vhostData[ "queues" ];
+             var exchanges = this.vhostData[ "exchanges" ];
+
+             this.updateHeader();
+
+             // update alerting info
+             var alertRepeatGap = formatter.formatTime( this.vhostData["queue.alertRepeatGap"] );
+
+             this.alertRepeatGap.innerHTML = alertRepeatGap.value;
+             this.alertRepeatGapUnits.innerHTML = alertRepeatGap.units;
+
+
+             var alertMsgAge = formatter.formatTime( this.vhostData["queue.alertThresholdMessageAge"] );
+
+             this.alertThresholdMessageAge.innerHTML = alertMsgAge.value;
+             this.alertThresholdMessageAgeUnits.innerHTML = alertMsgAge.units;
+
+             var alertMsgSize = formatter.formatBytes( this.vhostData["queue.alertThresholdMessageSize"] );
+
+             this.alertThresholdMessageSize.innerHTML = alertMsgSize.value;
+             this.alertThresholdMessageSizeUnits.innerHTML = alertMsgSize.units;
+
+             var alertQueueDepth = formatter.formatBytes( this.vhostData["queue.alertThresholdQueueDepthBytes"] );
+
+             this.alertThresholdQueueDepthBytes.innerHTML = alertQueueDepth.value;
+             this.alertThresholdQueueDepthBytesUnits.innerHTML = alertQueueDepth.units;
+
+             this.alertThresholdQueueDepthMessages.innerHTML = entities.encode(String(this.vhostData["queue.alertThresholdQueueDepthMessages"]));
+
+             var stats = this.vhostData[ "statistics" ] || {};
+
+             var sampleTime = new Date();
+             var messageIn = stats["messagesIn"];
+             var bytesIn = stats["bytesIn"];
+             var messageOut = stats["messagesOut"];
+             var bytesOut = stats["bytesOut"];
+
+             if(this.sampleTime)
+             {
+                 var samplePeriod = sampleTime.getTime() - this.sampleTime.getTime();
+
+                 var msgInRate = (1000 * (messageIn - this.messageIn)) / samplePeriod;
+                 var msgOutRate = (1000 * (messageOut - this.messageOut)) / samplePeriod;
+                 var bytesInRate = (1000 * (bytesIn - this.bytesIn)) / samplePeriod;
+                 var bytesOutRate = (1000 * (bytesOut - this.bytesOut)) / samplePeriod;
+
+                 this.msgInRate.innerHTML = msgInRate.toFixed(0);
+                 var bytesInFormat = formatter.formatBytes( bytesInRate );
+                 this.bytesInRate.innerHTML = "(" + bytesInFormat.value;
+                 this.bytesInRateUnits.innerHTML = bytesInFormat.units + "/s)";
+
+                 this.msgOutRate.innerHTML = msgOutRate.toFixed(0);
+                 var bytesOutFormat = formatter.formatBytes( bytesOutRate );
+                 this.bytesOutRate.innerHTML = "(" + bytesOutFormat.value;
+                 this.bytesOutRateUnits.innerHTML = bytesOutFormat.units + "/s)";
+
+                 if(connections && this.connections)
+                 {
+                     for(var i=0; i < connections.length; i++)
+                     {
+                         var connection = connections[i];
+                         for(var j = 0; j < this.connections.length; j++)
+                         {
+                             var oldConnection = this.connections[j];
+                             if(oldConnection.id == connection.id)
+                             {
+                                 msgOutRate = (1000 * (connection.messagesOut - oldConnection.messagesOut)) /
+                                              samplePeriod;
+                                 connection.msgOutRate = msgOutRate.toFixed(0) + "msg/s";
+
+                                 bytesOutRate = (1000 * (connection.bytesOut - oldConnection.bytesOut)) /
+                                                samplePeriod;
+                                 var bytesOutRateFormat = formatter.formatBytes( bytesOutRate );
+                                 connection.bytesOutRate = bytesOutRateFormat.value + bytesOutRateFormat.units + "/s";
+
+
+                                 msgInRate = (1000 * (connection.messagesIn - oldConnection.messagesIn)) /
+                                             samplePeriod;
+                                 connection.msgInRate = msgInRate.toFixed(0) + "msg/s";
+
+                                 bytesInRate = (1000 * (connection.bytesIn - oldConnection.bytesIn)) /
+                                               samplePeriod;
+                                 var bytesInRateFormat = formatter.formatBytes( bytesInRate );
+                                 connection.bytesInRate = bytesInRateFormat.value + bytesInRateFormat.units + "/s";
+                             }
+
+
+                         }
+
+                     }
+                 }
+             }
+
+             this.sampleTime = sampleTime;
+             this.messageIn = messageIn;
+             this.bytesIn = bytesIn;
+             this.messageOut = messageOut;
+             this.bytesOut = bytesOut;
+             this.connections = connections;
+
+             // update queues
+             if (this.vhostData.queues)
+             {
+               this.queuesGrid.update(this.vhostData.queues);
+             }
+
+             // update exchanges
+             if (this.vhostData.exchanges)
+             {
+               this.exchangesGrid.update(this.vhostData.exchanges);
+               var exchangesGrid = this.exchangesGrid.grid;
+               for(var i=0; i< this.vhostData.exchanges.length; i++)
+               {
+                   var data = exchangesGrid.getItem(i);
+                   var isStandard = false;
+                   if (data && data.name)
+                   {
+                       isStandard = util.isReservedExchangeName(data.name);
+                   }
+                   exchangesGrid.rowSelectCell.setDisabled(i, isStandard);
+               }
+             }
+
+             // update connections
+             if (this.vhostData.connections)
+             {
+               this.connectionsGrid.update(this.vhostData.connections);
+             }
+
+             if (this.details)
+             {
+               this.details.update(this.vhostData);
+             }
+           }
 
            return VirtualHost;
        });
