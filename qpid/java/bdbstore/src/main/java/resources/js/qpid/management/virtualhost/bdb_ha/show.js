@@ -44,6 +44,19 @@ define(["dojo/_base/xhr",
     return query("." + nodeClass, containerNode)[0];
   }
 
+  function convertMap(map)
+  {
+    var data =[];
+    for(var propName in map)
+    {
+        if(map.hasOwnProperty(propName))
+        {
+          data.push({id: propName, name: propName, value: map[propName]});
+        }
+    }
+    return data;
+  }
+
   function BDBHA(containerNode) {
     var that = this;
     xhr.get({url: "virtualhost/bdb_ha/show.html",
@@ -74,6 +87,8 @@ define(["dojo/_base/xhr",
         var name = nodeFields[i];
         this[name].innerHTML = entities.encode(String(localNode[name]));
       }
+      this.parametersGrid.update(convertMap(localNode.parameters));
+      this.replicationParametersGrid.update(convertMap(localNode.replicationParameters));
       if (nodes.length < 3)
       {
         this.designatedPrimaryContainer.style.display="block";
@@ -138,6 +153,22 @@ define(["dojo/_base/xhr",
           }
         },
         EnhancedGrid, true );
+
+    this.parametersGrid = new UpdatableStore([],
+        findNode("parameters", containerNode),
+        [
+         { name: 'Name', field: 'name', width: '50%' },
+         { name: 'Value', field: 'value', width: '50%' }
+        ],
+        null, null, null, true );
+
+    this.replicationParametersGrid = new UpdatableStore([],
+        findNode("replicationParameters", containerNode),
+        [
+         { name: 'Name', field: 'name', width: '50%' },
+         { name: 'Value', field: 'value', width: '50%' }
+        ],
+        null, null, null, true );
   }
 
   BDBHA.prototype._initFields = function(nodeFields, containerNode)

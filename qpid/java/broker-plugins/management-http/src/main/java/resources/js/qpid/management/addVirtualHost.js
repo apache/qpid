@@ -123,30 +123,27 @@ define(["dojo/_base/xhr",
                                         alert("Either configuration file or type have to be specified!");
                                         return false;
                                     }
-                                    var newVirtualHost = convertToVirtualHost(formValues);
-                                    var that = this;
 
-                                    xhr.put({url: "rest/virtualhost/" + encodeURIComponent(newVirtualHost.name),
-                                             sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newVirtualHost),
-                                             load: function(x)
-                                             {
-                                               if (addVirtualHost.typeSpecificWidget && addVirtualHost.typeSpecificWidget.save
-                                                   && typeof addVirtualHost.typeSpecificWidget.save == "function")
-                                               {
-                                                 that.success = addVirtualHost.typeSpecificWidget.save(newVirtualHost.name);
-                                                 if (!that.success)
-                                                 {
-                                                   that.failureReason = addVirtualHost.failureReason
-                                                 }
-                                               }
-                                               else
-                                               {
-                                                 that.success = true;
-                                               }
-                                             },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
+                                    if (addVirtualHost.typeSpecificWidget && addVirtualHost.typeSpecificWidget.save
+                                        && typeof addVirtualHost.typeSpecificWidget.save == "function")
+                                    {
+                                      this.success = addVirtualHost.typeSpecificWidget.save();
+                                      if (!this.success)
+                                      {
+                                        this.failureReason = addVirtualHost.failureReason
+                                      }
+                                    }
+                                    else
+                                    {
+                                      var that = this;
+                                      var newVirtualHost = convertToVirtualHost(formValues);
+                                      xhr.put({url: "rest/virtualhost/" + encodeURIComponent(newVirtualHost.name),
+                                        sync: true, handleAs: "json",
+                                        headers: { "Content-Type": "application/json"},
+                                        putData: json.toJson(newVirtualHost),
+                                        load: function(){ that.success = true; },
+                                        error: function(error) {that.success = false; that.failureReason = error;}});
+                                    }
 
                                     if(this.success === true)
                                     {

@@ -56,35 +56,61 @@ define(["dojo/_base/xhr",
                                 }
                      }});
             },
-            save: function(virtualHostName)
+            save: function()
             {
-              var node = {};
-              for(var i = 0; i < nodeFields.length; i++)
-              {
-                var fieldName = nodeFields[i];
-                var widget = this[fieldName];
-                if (widget)
-                {
-                  node[fieldName] = widget.type=="checkbox"? widget.get("checked"): widget.value;
-                }
-              }
-              node.name = this.nodeName.value;
+              this.success = false;
               var that = this;
-              xhr.put({url: "rest/replicationnode/" + encodeURIComponent(virtualHostName) + "/" + encodeURIComponent(this.nodeName.value),
+              var virtualHostName = registry.byId("formAddVirtualHost.name").get("value");
+              var virtualHostNameEncoded = encodeURIComponent(virtualHostName);
+
+
+              // create virtual host in QUIESCED state
+              var hostData =
+              {
+                  state: "QUIESCED",
+                  name: virtualHostName,
+                  type: registry.byId("addVirtualHost.type").get("value"),
+              };
+
+              xhr.put({url: "rest/virtualhost/" + virtualHostNameEncoded,
                 sync: true, handleAs: "json",
                 headers: { "Content-Type": "application/json"},
-                putData: json.stringify(node),
+                putData: json.stringify(hostData),
                 load: function(x) { that.success = true; },
                 error: function(error) {that.success = false; that.failureReason = error;}});
 
+              // if success, create node
               if (this.success)
               {
-                xhr.put({url: "rest/virtualhost/" + encodeURIComponent(virtualHostName),
+                var node = {};
+                for(var i = 0; i < nodeFields.length; i++)
+                {
+                  var fieldName = nodeFields[i];
+                  var widget = this[fieldName];
+                  if (widget)
+                  {
+                    node[fieldName] = widget.type=="checkbox"? widget.get("checked"): widget.get("value");
+                  }
+                }
+
+                node.name = this.nodeName.value;
+                xhr.put({url: "rest/replicationnode/" + virtualHostNameEncoded + "/" + encodeURIComponent(this.nodeName.value),
                   sync: true, handleAs: "json",
                   headers: { "Content-Type": "application/json"},
-                  putData: json.stringify({state: "ACTIVE"}),
+                  putData: json.stringify(node),
                   load: function(x) { that.success = true; },
                   error: function(error) {that.success = false; that.failureReason = error;}});
+
+                // if success, change virtual host state to ACTIVE
+                if (this.success)
+                {
+                  xhr.put({url: "rest/virtualhost/" + virtualHostNameEncoded,
+                    sync: true, handleAs: "json",
+                    headers: { "Content-Type": "application/json"},
+                    putData: json.stringify({state: "ACTIVE"}),
+                    load: function(x) { that.success = true; },
+                    error: function(error) {that.success = false; that.failureReason = error;}});
+                }
               }
 
               return this.success;
