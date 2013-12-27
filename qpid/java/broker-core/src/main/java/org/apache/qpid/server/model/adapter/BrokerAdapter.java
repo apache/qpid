@@ -290,6 +290,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
+        State desiredState = MapValueConverter.getEnumAttribute(State.class, VirtualHost.STATE, attributes, State.ACTIVE);
+
+        //TODO: do no save state attribute if it is present
+        attributes.remove(VirtualHost.STATE);
+
         final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), attributes, this,
                 _statisticsGatherer, getTaskExecutor());
         addVirtualHost(virtualHostAdapter);
@@ -297,7 +302,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
         SecurityManager.setAccessChecksDisabled(true);
-        State desiredState = MapValueConverter.getEnumAttribute(State.class, VirtualHost.STATE, attributes, State.ACTIVE);
         try
         {
             virtualHostAdapter.setDesiredState(State.INITIALISING, desiredState);

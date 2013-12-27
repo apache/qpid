@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,8 @@ public class VirtualHostRestTest extends QpidRestTestCase
         responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
         assertEquals("Unexpected response code for virtual host update status", 200, responseCode);
 
+        waitForVirtualHostActivation(hostName, 10000l);
+
         Map<String, Object> replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + hostName + "/" + nodeName);
         assertLocalNode(nodeData, replicationNodeDetails);
         try
@@ -77,7 +80,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
             // make sure that the host is saved in the broker store
             restartBroker();
 
-            Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostName);
+            Map<String, Object> hostDetails = waitForVirtualHostActivation(hostName, 10000l);
             Asserts.assertVirtualHost(hostName, hostDetails);
             assertEquals("Unexpected virtual host type", BDBHAVirtualHostFactory.TYPE.toString(), hostDetails.get(VirtualHost.TYPE));
 
@@ -109,4 +112,18 @@ public class VirtualHostRestTest extends QpidRestTestCase
         }
     }
 
+    private Map<String, Object> waitForVirtualHostActivation(String hostName, long timeout) throws IOException
+    {
+        Map<String, Object> hostDetails = null;
+        long startTime = System.currentTimeMillis();
+        boolean isActive = false;
+        do
+        {
+            hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostName);
+            isActive = hostDetails.get(VirtualHost.STATE).equals(State.ACTIVE.name());
+        }
+        while(!isActive && System.currentTimeMillis() - startTime < timeout );
+        assertTrue("Unexpected virtual host state:" + hostDetails.get(VirtualHost.STATE), isActive);
+        return hostDetails;
+    }
 }
