@@ -1268,7 +1268,12 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             State newState = MapValueConverter.getEnumAttribute(State.class, STATE, attributes);
             State actualState = getActualState();
-            if (actualState != newState )
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug(String.format("Change virtual host %s state from %s to %s", getName(), actualState.toString(),
+                        newState.toString()));
+            }
+            if (actualState != newState && setState(actualState, newState))
             {
                 super.changeAttributes(Collections.<String, Object>singletonMap(STATE, newState));
             }

@@ -70,6 +70,8 @@ public class VirtualHostRestTest extends QpidRestTestCase
         responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
         assertEquals("Unexpected response code for virtual host update status", 200, responseCode);
 
+        Map<String, Object> replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + hostName + "/" + nodeName);
+        assertLocalNode(nodeData, replicationNodeDetails);
         try
         {
             // make sure that the host is saved in the broker store
@@ -85,7 +87,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
             assertLocalNode(nodeData, nodes.get(0));
 
             // verify that that node rest interface returns the same node attributes
-            Map<String, Object> replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + hostName + "/" + nodeName);
+            replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + hostName + "/" + nodeName);
             assertLocalNode(nodeData, replicationNodeDetails);
         }
         finally
