@@ -359,7 +359,7 @@
 							specify an alternative transport mechanism that implements the interface
 								<varname>org.apache.qpid.transport.network.OutgoingNetworkTransport</varname>.</para></entry>
 				</row>
-				<row>
+				<row id="JMS-Client-0-8-System-Properties-SyncOpTimeout">
 					<entry>qpid.sync_op_timeout</entry>
 					<entry>long</entry>
 					<entry>60000</entry>

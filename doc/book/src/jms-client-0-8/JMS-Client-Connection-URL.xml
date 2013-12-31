@@ -56,7 +56,7 @@
 				</row>
 			</thead>
 			<tbody>
-				<row>
+				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-Brokerlist">
 					<entry> brokerlist </entry>
 					<entry> see below </entry>
 					<entry> List of one or more broker addresses. </entry>
