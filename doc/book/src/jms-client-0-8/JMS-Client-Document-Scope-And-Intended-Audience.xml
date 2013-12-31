@@ -37,11 +37,10 @@
     client. The specifications for these protocols is available from the <ulink
       url="http://www.amqp.org">AMQP web site</ulink>. </para>
 
-  <para>
-    The document covers some specific implementation details of JMS connections, sessions, consumers and producers
-    in <xref linkend="JMS-Client-0-8-Client-Understanding"/>. It also demonstrates how to write a simple
-    point to point and simple publish/subscribe application using Qpid JMS Client in <xref linkend="JMS-Client-0-8-Examples"/>. 
-  </para>
+  <para> The document covers some specific implementation details of JMS connections, sessions,
+    consumers and producers in <xref linkend="JMS-Client-0-8-Client-Understanding"/>. It also
+    demonstrates how to write a simple point to point and simple publish/subscribe application using
+    Qpid JMS Client in <xref linkend="JMS-Client-0-8-Examples"/>. </para>
 
   <para>The Qpid JMS Client supports various configuration options which can be set via JVM system
     properties, connection URLs and JNDI configuration file. The setting of system properties is
@@ -56,10 +55,10 @@
     provides the extended operation set to invoke those features. </para>
 
   <para>
-    <xref linkend="JMS-Client-0-8-Turning-On-Logging"/> provides the details about turning on client logging
-    which can help in debugging of various issues while developing the messaging applications.
-  </para>
+    <xref linkend="JMS-Client-0-8-Logging"/> provides the details about turning on client logging
+    which can help in debugging of various issues while developing the messaging applications. </para>
 
-   <para>The details about Qpid JMS Client Exceptions are provided in <xref linkend="JMS-Client-0-8-Exceptions"/></para>
+  <para>The details about Qpid JMS Client Exceptions are provided in <xref
+      linkend="JMS-Client-0-8-Appendix-Exceptions"/></para>
 
 </chapter>
