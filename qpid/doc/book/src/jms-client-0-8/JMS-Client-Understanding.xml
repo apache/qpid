@@ -60,12 +60,11 @@
     <para>The Qpid JMS client provides a single implementation of the InitialContextFactory in class
         <literal>org.apache.qpid.jndi.PropertiesFileInitialContextFactory</literal>. This
       implementation is backed by a <ulink url="&oracleJdkDocUrl;java/util/Properties.html"
-        >Properties</ulink> object which can of course be loaded from an external properties file, or
-      created programatically.</para>
-    <para>The examples in the previous chapter illustrated the Java code required to
-      <link linkend="JMS-Client-0-8-Examples-PTP">create the InitialContext</link> and an <link
-        linkend="JMS-Client-0-8-Examples-PTP-PropertiesFile">example properties
-      file</link>.</para>
+        >Properties</ulink> object which can of course be loaded from an external properties file,
+      or created programatically.</para>
+    <para>The examples in the previous chapter illustrated the Java code required to <link
+        linkend="JMS-Client-0-8-Examples-PTP">create the InitialContext</link> and an <link
+        linkend="JMS-Client-0-8-Examples-PTP-PropertiesFile">example properties file</link>.</para>
     <para>Note that the Qpid Broker does not present a JNDI interface to the application.</para>
     <figure>
       <title>JNDI overview</title>
@@ -113,9 +112,10 @@
         originating system.</para>
       <para>If, after all retries are exhausted, failover has failed to reconnect the application,
         the Connection's <ulink url="&oracleJeeDocUrl;javax/jms/ExceptionListener.html"
-          >ExceptionListener</ulink> will receive a JMSException with a linked exception of
-        AMQDisconnectedException. Any further use of the JMS objects (Connection, Session etc), will
-        results in a <ulink url="&oracleJeeDocUrl;javax/jms/IllegalStateException.html"
+          >ExceptionListener</ulink> will receive a JMSException with a linked exception of <ulink
+          url="JMS-Client-0-8-Appendix-Exceptions-AMQDisconnectedException"
+          >AMQDisconnectedException</ulink>. Any further use of the JMS objects (Connection, Session
+        etc), will results in a <ulink url="&oracleJeeDocUrl;javax/jms/IllegalStateException.html"
           >IllegalStateException</ulink>.</para>
       <para>Configure failover using the Connection URL. Here's an example Connection URL utilising
         failover between two brokers. Note the use of the broker options <link
@@ -346,9 +346,11 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
       <para>The Message is returned to the application in an asynchronous fashion via the
         Connection's <ulink url="&oracleJeeDocUrl;javax/jms/ExceptionListener.html"
           >ExceptionListener</ulink>. When a message is returned, it will be invoked with a
-        JMSException whose linked exception is an AMQNoRouteException. The returned message is
-        available to the application by calling AMQNoRouteException#getUndeliveredMessage(). The
-        ExceptionListener will be invoked exactly once for each returned message.</para>
+        JMSException whose linked exception is an <ulink
+          url="JMS-Client-0-8-Appendix-Exceptions-AMQNoRouteException">AMQNoRouteException</ulink>.
+        The returned message is available to the application by calling
+        AMQNoRouteException#getUndeliveredMessage(). The ExceptionListener will be invoked exactly
+        once for each returned message.</para>
       <para>The mandatory message feature is turned <emphasis>on</emphasis> by default for Queue
         destinations and <emphasis>off</emphasis> for Topic destinations. This can be overridden
         using system properties <link linkend="JMS-Client-0-8-System-Properties-DefaultMandatory"
@@ -377,9 +379,10 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
         asynchronous fashion using the Connection's <ulink
           url="&oracleJeeDocUrl;javax/jms/ExceptionListener.html">ExceptionListener</ulink>.</para>
       <para>The ExceptionListener will be invoked with a JMSException whose linked exception is an
-        AMQNoConsumersException. The returned message is available to the application by calling
-        AMQNoConsumersException#getUndeliveredMessage(). The ExceptionListener will be invoked
-        exactly once for each returned message.</para>
+          <ulink url="JMS-Client-0-8-Appendix-Exceptions-AMQNoConsumersException"
+          >AMQNoConsumersException</ulink>. The returned message is available to the application by
+        calling AMQNoConsumersException#getUndeliveredMessage(). The ExceptionListener will be
+        invoked exactly once for each returned message.</para>
       <para>The immediate message feature is turned <emphasis>off</emphasis> by default. It can be
         enabled with system property <link
           linkend="JMS-Client-0-8-System-Properties-DefaultImmediate"

@@ -35,12 +35,12 @@
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Connection-URL.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Binding-URL.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-System-Properties.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Turning-On-Logging.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Logging.xml"/>
 
     <!-- TODO:
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Interoperability.xml"/>
     -->
-   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Exceptions.xml"/>
+   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Appendix-Exceptions.xml"/>
    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Appendix-Maven.xml"/>
  
  
