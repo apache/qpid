@@ -40,7 +40,7 @@
   <para>
     The document covers some specific implementation details of JMS connections, sessions, consumers and producers
     in <xref linkend="JMS-Client-0-8-Client-Understanding"/>. It also demonstrates how to write a simple
-    <emphasis>Hello World</emphasis> application using Qpid JMS Client in <xref linkend="JMS-Client-0-8-Hello-World-Example"/>. 
+    point to point and simple publish/subscribe application using Qpid JMS Client in <xref linkend="JMS-Client-0-8-Examples"/>. 
   </para>
 
   <para>The Qpid JMS Client supports various configuration options which can be set via JVM system
