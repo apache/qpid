@@ -37,6 +37,8 @@
 <!ENTITY oracleJmsSpec "http://docs.oracle.com/cd/E19957-01/816-5904-10/816-5904-10.pdf">
 <!ENTITY oracleJdkDocUrl "http://docs.oracle.com/javase/6/docs/api/">
 <!ENTITY oracleJeeDocUrl "http://docs.oracle.com/javaee/6/api/">
+<!ENTITY oracleJmsTutorial "http://docs.oracle.com/javaee/6/tutorial/doc/bncdq.html">
+
 
 
 

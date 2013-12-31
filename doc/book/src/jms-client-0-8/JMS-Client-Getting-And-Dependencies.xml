@@ -28,7 +28,7 @@
 
 <chapter id="JMS-Client-0-8-JMS-Getting-And-Dependencies">
   <title>Getting the Client And Dependencies</title>
-  <section>
+  <section id="JMS-Client-0-8-JMS-Getting-And-Dependencies-Getting">
     <title>Getting the Client</title>
     <para>The Qpid JMS client is available as a bundle or from &qpidMavenRepoDesc;.</para>
     <para>The bundle (a .tar.gz) includes the Qpid JMS client itself (formed by two JAR: qpid-client
@@ -47,7 +47,7 @@
     ]]></screen>
     <para><xref linkend="JMS-Client-0-8-Appendix-Maven"/> illustrates a minimal Maven POM required to use the Qpid Client.</para>
   </section>
-  <section>
+  <section id="JMS-Client-0-8-JMS-Getting-And-Dependencies-Dependencies">
     <title>Dependencies</title>
     <para>The Qpid JMS client has minimal set of external dependencies. </para>
     <para> It requires: <itemizedlist>

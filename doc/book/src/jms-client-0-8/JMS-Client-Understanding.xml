@@ -62,9 +62,9 @@
       implementation is backed by a <ulink url="&oracleJdkDocUrl;java/util/Properties.html"
         >Properties</ulink> object which can of course be loaded from an external properties file, or
       created programatically.</para>
-    <para>The Hello World example in the previous chapter illustrated the Java code required to
-        <link linkend="callout-java-properties">create the InitialContext</link> and an <link
-        linkend="JMS-Client-0-8-Hello-World-Example-PropertiesFile">example properties
+    <para>The examples in the previous chapter illustrated the Java code required to
+      <link linkend="JMS-Client-0-8-Examples-PTP">create the InitialContext</link> and an <link
+        linkend="JMS-Client-0-8-Examples-PTP-PropertiesFile">example properties
       file</link>.</para>
     <para>Note that the Qpid Broker does not present a JNDI interface to the application.</para>
     <figure>
@@ -449,8 +449,8 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
           url="&oracleJeeDocUrl;javax/jms/Session.html#createDurableSubscriber(javax.jms.Topic,%20java.lang.String)"
           >Session#createDurableSubscriber(javax.jms.Topic,java.lang.String)</ulink></para>
       <para>Calling <ulink
-          url="&oracleJeeDocUrl;javax/jms/Session.html#unsubscriber(java.lang.String)"
-          >Session#unsubscriber(java.lang.String)</ulink> deletes the underlying queue.</para>
+          url="&oracleJeeDocUrl;javax/jms/Session.html#unsubscribe(java.lang.String)"
+          >Session#unsubscribe(java.lang.String)</ulink> deletes the underlying queue.</para>
       <para>Non-durable topic subscriptions use a <emphasis>non-durable</emphasis>,
           <emphasis>exclusive</emphasis> and <emphasis>auto-delete</emphasis> queue named as
         follows:</para>

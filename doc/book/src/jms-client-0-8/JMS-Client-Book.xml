@@ -26,7 +26,7 @@
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Introduction.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Document-Scope-And-Intended-Audience.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Getting-And-Dependencies.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Hello-World-Example.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Examples.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Understanding.xml"/>
     <!-- TODO:
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-JMS-Extensions.xml"/>
