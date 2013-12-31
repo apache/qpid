@@ -43,7 +43,7 @@ destination.<jndi name>=<binding url>
   <para>An arbitrary number of connection factories, queues, topics, queues or destinations or can
     be declared in the JNDI properties file. Each JNDI name must be unique.</para>
   <para>The application looks up the objects via an InitialContext. This lookup and an example JNDI
-    properties file is provided in <xref linkend="JMS-Client-0-8-Hello-World-Example"/></para>
+    properties file is provided in <xref linkend="JMS-Client-0-8-Examples"/></para>
   <para>We now consider each JMS administered object type in turn.</para>
 
   <section id="JMS-Client-0-8-JNDI-Properties-Format-ConnectionFactory">

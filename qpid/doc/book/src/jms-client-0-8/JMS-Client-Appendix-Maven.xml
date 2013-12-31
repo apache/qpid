@@ -29,8 +29,8 @@
 <appendix id="JMS-Client-0-8-Appendix-Maven">
   <title>Minimal Maven POM</title>
   <para> The following is a minimal Maven POM required to use the Qpid Client. It is suitable for
-    use with the <link linkend="JMS-Client-0-8-Hello-World-Example">examples</link> included in this
-    book</para>
+    use with the <link linkend="JMS-Client-0-8-Examples">examples</link> included in this
+    book.</para>
 
   <example>
     <title>Minimal Maven POM </title>
