@@ -34,6 +34,8 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import javax.jms.Message;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.Rejected;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
@@ -221,7 +223,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         }
         catch (Sender.SenderClosingException e)
         {
-            final JMSException jmsException = new JMSException("error closing");
+            final JMSException jmsException = new JMSException("Error closing producer: " + e.getMessage());
             jmsException.setLinkedException(e);
             throw jmsException;
         }
@@ -312,6 +314,12 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         catch (LinkDetachedException e)
         {
             JMSException jmsException = new InvalidDestinationException("Sender has been closed");
+            jmsException.setLinkedException(e);
+            throw jmsException;
+        }
+        catch (TimeoutException e)
+        {
+            JMSException jmsException = new JMSException("Timed out while waiting to get credit to send");
             jmsException.setLinkedException(e);
             throw jmsException;
         }

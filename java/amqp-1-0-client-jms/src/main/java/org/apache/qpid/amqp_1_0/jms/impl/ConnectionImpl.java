@@ -370,20 +370,46 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             
             _lock.notifyAll();
         }
-        
+
+        List<JMSException> errors = new ArrayList<JMSException>();
+
         if (sessions != null)
         {
             for(SessionImpl session : sessions)
             {
-                session.close();
+                try
+                {
+                    session.close();
+                }
+                catch(JMSException e)
+                {
+                    errors.add(e);
+                }
             }
             for(CloseTask task : closeTasks)
             {
                 task.onClose();
             }
-            if(closeConnection) {
-                _conn.close();
+            if(closeConnection)
+            {
+                try
+                {
+                    _conn.close();
+                }
+                catch (ConnectionErrorException e)
+                {
+                    final JMSException jmsException = new JMSException("Error while closing connection: " + e.getMessage());
+                    jmsException.setLinkedException(e);
+                    throw jmsException;
+                }
             }
+        }
+
+        if(!errors.isEmpty())
+        {
+            final JMSException jmsException = new JMSException("Error while closing connection: " + errors.get(0).getMessage());
+            jmsException.setLinkedException(errors.get(0));
+            throw jmsException;
         }
     }
 
