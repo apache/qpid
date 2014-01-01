@@ -28,6 +28,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 public abstract class LinkEndpoint<T extends LinkEventListener>
 {
@@ -323,6 +324,23 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
     {
         return _session.getLock();
     }
+
+
+    public long getSyncTimeout()
+    {
+        return _session.getSyncTimeout();
+    }
+
+    public void waitUntil(Predicate predicate) throws TimeoutException, InterruptedException
+    {
+        _session.waitUntil(predicate);
+    }
+
+    public void waitUntil(Predicate predicate, long timeout) throws TimeoutException, InterruptedException
+    {
+        _session.waitUntil(predicate, timeout);
+    }
+
 
     public void attach()
     {

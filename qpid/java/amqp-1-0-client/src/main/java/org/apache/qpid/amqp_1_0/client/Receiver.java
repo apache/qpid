@@ -23,6 +23,7 @@ package org.apache.qpid.amqp_1_0.client;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
+import org.apache.qpid.amqp_1_0.transport.Predicate;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkListener;
 
@@ -38,6 +39,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeoutException;
 
 public class Receiver implements DeliveryStateHandler
 {
@@ -137,36 +139,47 @@ public class Receiver implements DeliveryStateHandler
         _endpoint.setLocalUnsettled(unsettled);
         _endpoint.attach();
 
-        synchronized(_endpoint.getLock())
+        try
         {
-            while(!_endpoint.isAttached() && !_endpoint.isDetached())
+            _endpoint.waitUntil(new Predicate()
             {
-                try
+
+                @Override
+                public boolean isSatisfied()
                 {
-                    _endpoint.getLock().wait();
+                    return _endpoint.isAttached() || _endpoint.isDetached();
                 }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
-            }
+            });
+        }
+        catch (TimeoutException e)
+        {
+            throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR,"Timeout waiting for attach");
+        }
+        catch (InterruptedException e)
+        {
+            throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR,"Interrupted while waiting for attach");
         }
 
         if(_endpoint.getSource() == null)
         {
-            synchronized(_endpoint.getLock())
+            try
             {
-                while(!_endpoint.isDetached())
+                _endpoint.waitUntil(new Predicate()
                 {
-                    try
+                    @Override
+                    public boolean isSatisfied()
                     {
-                        _endpoint.getLock().wait();
+                        return _endpoint.isDetached();
                     }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-                }
+                });
+            }
+            catch (TimeoutException e)
+            {
+                throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR,"Timeout waiting for detach following failed attach");
+            }
+            catch (InterruptedException e)
+            {
+                throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR,"Interrupted whil waiting for detach following failed attach");
             }
             throw new ConnectionErrorException(getError());
         }

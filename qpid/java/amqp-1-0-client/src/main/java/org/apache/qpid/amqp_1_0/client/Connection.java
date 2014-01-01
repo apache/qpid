@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,11 +37,13 @@ import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
 import org.apache.qpid.amqp_1_0.transport.AMQPTransport;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.Container;
+import org.apache.qpid.amqp_1_0.transport.Predicate;
 import org.apache.qpid.amqp_1_0.transport.StateChangeListener;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 
@@ -357,22 +360,16 @@ public class Connection implements SocketExceptionHandler
         return _conn;
     }
 
-    public void awaitOpen()
+    public void awaitOpen() throws TimeoutException, InterruptedException
     {
-        synchronized(getEndpoint().getLock())
+        getEndpoint().waitUntil(new Predicate()
         {
-            while(!getEndpoint().isOpen() && !getEndpoint().isClosed())
+            @Override
+            public boolean isSatisfied()
             {
-                try
-                {
-                    getEndpoint().getLock().wait();
-                }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
+                return getEndpoint().isOpen() || getEndpoint().isClosed();
             }
-        }
+        });
 
     }
 
@@ -417,24 +414,34 @@ public class Connection implements SocketExceptionHandler
         }
     }
 
-    public void close()
+    public void close() throws ConnectionErrorException
     {
         _conn.close();
 
-        synchronized (_conn.getLock())
+        try
         {
-            while(!_conn.closedForInput())
+            _conn.waitUntil(new Predicate()
             {
-                try
+                @Override
+                public boolean isSatisfied()
                 {
-                    _conn.getLock().wait();
+                    return _conn.closedForInput();
                 }
-                catch (InterruptedException e)
-                {
-
-                }
-            }
+            });
         }
+        catch (InterruptedException e)
+        {
+            throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR, "Interrupted while waiting for connection closure");
+        }
+        catch (TimeoutException e)
+        {
+            throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR, "Timed out while waiting for connection closure");
+        }
+        if(_conn.getRemoteError() != null)
+        {
+            throw new ConnectionErrorException(_conn.getRemoteError());
+        }
+
     }
 
     /**

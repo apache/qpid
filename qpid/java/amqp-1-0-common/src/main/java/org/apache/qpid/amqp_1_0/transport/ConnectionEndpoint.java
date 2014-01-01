@@ -40,10 +40,8 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
 
-import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import javax.security.sasl.SaslServerFactory;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -51,7 +49,7 @@ import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,6 +69,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
 
     private static final short DEFAULT_CHANNEL_MAX = Integer.getInteger("amqp.channel_max", 255).shortValue();
     private static final int DEFAULT_MAX_FRAME = Integer.getInteger("amqp.max_frame_size", 1 << 15);
+    private static final long DEFAULT_SYNC_TIMEOUT = Long.getLong("amqp.connection_sync_timeout",5000l);
 
 
     private ConnectionState _state = ConnectionState.UNOPENED;
@@ -122,6 +121,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private Error _remoteError;
 
     private Map _properties;
+    private long _syncTimeout = DEFAULT_SYNC_TIMEOUT;
 
     public ConnectionEndpoint(Container container, SaslServerProvider cbs)
     {
@@ -1053,5 +1053,43 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     public void setChannelMax(final short channelMax)
     {
         _channelMax = channelMax;
+    }
+
+    public long getSyncTimeout()
+    {
+        return _syncTimeout;
+    }
+
+    public void setSyncTimeout(final long syncTimeout)
+    {
+        _syncTimeout = syncTimeout;
+    }
+
+    public void waitUntil(Predicate predicate) throws InterruptedException, TimeoutException
+    {
+        waitUntil(predicate, _syncTimeout);
+    }
+
+    public void waitUntil(Predicate predicate, long timeout) throws InterruptedException, TimeoutException
+    {
+        long endTime = System.currentTimeMillis() + timeout;
+
+        synchronized(getLock())
+        {
+            while(!predicate.isSatisfied())
+            {
+                getLock().wait(timeout);
+
+                if(!predicate.isSatisfied())
+                {
+                    timeout = endTime - System.currentTimeMillis();
+                    if(timeout <= 0l)
+                    {
+                        throw new TimeoutException();
+                    }
+                }
+            }
+        }
+
     }
 }
