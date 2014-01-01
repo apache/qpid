@@ -35,6 +35,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 public class SessionEndpoint
 {
@@ -617,6 +618,23 @@ catch(IllegalArgumentException e)
     {
         return _connection.getLock();
     }
+
+
+    public long getSyncTimeout()
+    {
+        return _connection.getSyncTimeout();
+    }
+
+    public void waitUntil(Predicate predicate) throws TimeoutException, InterruptedException
+    {
+        _connection.waitUntil(predicate);
+    }
+
+    public void waitUntil(Predicate predicate, long timeout) throws TimeoutException, InterruptedException
+    {
+        _connection.waitUntil(predicate, timeout);
+    }
+
 
     public ReceivingLinkEndpoint createReceivingLinkEndpoint(final String name,
                                                              String targetAddr,

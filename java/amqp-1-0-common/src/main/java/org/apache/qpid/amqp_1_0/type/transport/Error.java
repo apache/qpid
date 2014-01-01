@@ -31,14 +31,23 @@ import java.util.Map;
 import org.apache.qpid.amqp_1_0.type.*;
 
 public class Error
-  {
-
+{
 
     private ErrorCondition _condition;
 
     private String _description;
 
     private Map _info;
+
+    public Error()
+    {
+    }
+
+    public Error(final ErrorCondition condition, final String description)
+    {
+        _condition = condition;
+        _description = description;
+    }
 
     public ErrorCondition getCondition()
     {

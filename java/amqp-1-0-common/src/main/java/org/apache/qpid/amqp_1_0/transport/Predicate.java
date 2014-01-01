@@ -18,28 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.amqp_1_0.client;
+package org.apache.qpid.amqp_1_0.transport;
 
-import org.apache.qpid.amqp_1_0.type.ErrorCondition;
-import org.apache.qpid.amqp_1_0.type.transport.Error;
-
-public class ConnectionErrorException extends ConnectionException
+public interface Predicate
 {
-    protected final Error _remoteError;
-
-    public ConnectionErrorException(ErrorCondition condition,final String description)
-    {
-        this(new Error(condition, description));
-    }
-
-    public ConnectionErrorException(Error remoteError)
-    {
-        super(remoteError.getDescription());
-        _remoteError = remoteError;
-    }
-
-    public org.apache.qpid.amqp_1_0.type.transport.Error getRemoteError()
-    {
-        return _remoteError;
-    }
+    boolean isSatisfied();
 }
