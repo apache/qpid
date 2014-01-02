@@ -395,7 +395,7 @@ public class Sender implements DeliveryStateHandler
         }
         _session.removeSender(this);
         _endpoint.setSource(null);
-        _endpoint.detach();
+        _endpoint.close();
         _closed = true;
 
         try
