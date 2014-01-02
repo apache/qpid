@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
 find_package(PythonInterp REQUIRED)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
-                -c "from distutils.sysconfig import get_python_lib; print get_python_lib(False)"
+                -c "from distutils.sysconfig import get_python_lib; print get_python_lib(False, prefix='${CMAKE_INSTALL_PREFIX}')"
                 OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
