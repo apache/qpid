@@ -22,14 +22,9 @@ package org.apache.qpid.server.store;
 
 import java.util.Map;
 import java.util.UUID;
-import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
 
 public interface DurableConfigurationStore
 {

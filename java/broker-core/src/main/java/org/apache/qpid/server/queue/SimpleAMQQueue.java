@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.BrokerProperties;
