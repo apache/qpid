@@ -23,7 +23,6 @@ package org.apache.qpid.server.plugin;
 import java.util.UUID;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 

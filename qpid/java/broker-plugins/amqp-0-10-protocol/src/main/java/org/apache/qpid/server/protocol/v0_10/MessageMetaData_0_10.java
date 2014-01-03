@@ -20,7 +20,6 @@
 */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;

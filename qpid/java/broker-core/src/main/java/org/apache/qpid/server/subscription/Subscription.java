@@ -22,7 +22,6 @@ package org.apache.qpid.server.subscription;
 
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
