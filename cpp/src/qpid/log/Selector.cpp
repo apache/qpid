@@ -220,6 +220,8 @@ bool Selector::isDisabled(Level level, const char* function) {
 // level/function/category set from an actual QPID_LOG Statement.
 //
 bool Selector::isEnabled(Level level, const char* function, Category category) {
+    if (level==critical)
+        return true;                    // critical cannot be disabled
     if (isDisabled(level, function))
         return false;                   // Disabled by function name
     if (disableFlags[level][category])
