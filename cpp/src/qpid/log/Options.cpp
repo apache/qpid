@@ -27,8 +27,6 @@
 namespace qpid {
 namespace log {
 
-using namespace std;
-
 Options::Options(const std::string& argv0_, const std::string& name_) :
     qpid::Options(name_),
     argv0(argv0_),
@@ -45,25 +43,15 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
 {
     selectors.push_back("notice+");
 
-    ostringstream levels;
-    levels << LevelTraits::name(Level(0));
-    for (int i = 1; i < LevelTraits::COUNT; ++i)
-        levels << " " << LevelTraits::name(Level(i));
-
-    ostringstream categories;
-    categories << CategoryTraits::name(Category(0));
-    for (int i = 1; i < CategoryTraits::COUNT; ++i)
-        categories << " " << CategoryTraits::name(Category(i));
-
     addOptions()
         ("trace,t", optValue(trace), "Enables all logging" )
         ("log-enable", optValue(selectors, "RULE"),
          ("Enables logging for selected levels and components. "
           "RULE is in the form 'LEVEL[+-][:PATTERN]'\n"
-          "LEVEL is one of: \n\t "+levels.str()+"\n"
+          "LEVEL is one of: \n\t "+getLevels()+"\n"
           "PATTERN is a logging category name, or a namespace-qualified "
           "function name or name fragment. "
-          "Logging category names are: \n\t "+categories.str()+"\n"
+          "Logging category names are: \n\t "+getCategories()+"\n"
           "For example:\n"
           "\t'--log-enable warning+'\n"
           "logs all warning, error and critical messages.\n"
@@ -75,10 +63,10 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
         ("log-disable", optValue(deselectors, "RULE"),
          ("Disables logging for selected levels and components. "
           "RULE is in the form 'LEVEL[+-][:PATTERN]'\n"
-          "LEVEL is one of: \n\t "+levels.str()+"\n"
+          "LEVEL is one of: \n\t "+getLevels()+"\n"
           "PATTERN is a logging category name, or a namespace-qualified "
           "function name or name fragment. "
-          "Logging category names are: \n\t "+categories.str()+"\n"
+          "Logging category names are: \n\t "+getCategories()+"\n"
           "For example:\n"
           "\t'--log-disable warning-'\n"
           "disables logging all warning, notice, info, debug, and trace messages.\n"
@@ -137,6 +125,24 @@ Options& Options::operator=(const Options& x) {
         *sinkOptions = *x.sinkOptions;
     }
     return *this;
+}
+
+std::string getLevels()
+{
+    std::ostringstream levels;
+    levels << LevelTraits::name(Level(0));
+    for (int i = 1; i < LevelTraits::COUNT; ++i)
+        levels << " " << LevelTraits::name(Level(i));
+    return levels.str();
+}
+
+std::string getCategories()
+{
+    std::ostringstream categories;
+    categories << CategoryTraits::name(Category(0));
+    for (int i = 1; i < CategoryTraits::COUNT; ++i)
+        categories << " " << CategoryTraits::name(Category(i));
+    return categories.str();
 }
 
 }} // namespace qpid::log

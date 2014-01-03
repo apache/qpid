@@ -68,7 +68,7 @@ Logger::Logger() : flags(0) {
     // Initialize myself from env variables so all programs
     // (e.g. tests) can use logging even if they don't parse
     // command line args.
-    Options opts("");
+    Options opts;
     opts.parse(0, 0);
     configure(opts);
 }
