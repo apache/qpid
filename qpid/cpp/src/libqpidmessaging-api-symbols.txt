@@ -115,6 +115,14 @@ qpid::messaging::Message::getContentPtr() const
 qpid::messaging::Message::getContentSize() const
 qpid::messaging::Message::setProperty(std::string const&, qpid::types::Variant const&)
 
+# Logger
+qpid::messaging::Logger::configure(int, char const**, std::string const&)
+qpid::messaging::Logger::log(qpid::messaging::Level, char const*, int, char const*, std::string const&)
+qpid::messaging::Logger::setOutput(qpid::messaging::LoggerOutput&)
+qpid::messaging::Logger::usage()
+
+qpid::messaging::LoggerOutput::~LoggerOutput()
+
 # Receiver
 qpid::messaging::Receiver::Receiver(qpid::messaging::ReceiverImpl*)
 qpid::messaging::Receiver::Receiver(qpid::messaging::Receiver const&)
