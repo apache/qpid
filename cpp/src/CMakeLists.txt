@@ -1055,6 +1055,7 @@ set (qpidmessaging_SOURCES
      qpid/messaging/Duration.cpp
      qpid/messaging/exceptions.cpp
      qpid/messaging/FailoverUpdates.cpp
+     qpid/messaging/Logger.cpp
      qpid/messaging/Message.cpp
      qpid/messaging/Receiver.cpp
      qpid/messaging/Session.cpp
@@ -1073,7 +1074,7 @@ set (qpidmessaging_SOURCES
 add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
-target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon ${PROTON_LIBRARIES})
+target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}" ${PROTON_LIBRARIES})
 set_target_properties (qpidmessaging PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}"

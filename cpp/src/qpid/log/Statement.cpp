@@ -200,7 +200,7 @@ const char* names[LevelTraits::COUNT] = {
 
 const char* catNames[CategoryTraits::COUNT] = {
     "Security", "Broker", "Management", "Protocol", "System", "HA", "Messaging",
-    "Store", "Network", "Test", "Client", "Model", "Unspecified"
+    "Store", "Network", "Test", "Client", "Application", "Model", "Unspecified"
 };
 
 } // namespace
@@ -235,4 +235,5 @@ Category CategoryTraits::category(const char* name) {
 const char* CategoryTraits::name(Category c) {
     return catNames[c];
 }
+
 }} // namespace qpid::log
