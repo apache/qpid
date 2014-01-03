@@ -65,6 +65,7 @@ class NodeProperties : public qpid::amqp::MapReader
     bool isExclusive() const;
     bool isAutodelete() const;
     std::string getExchangeType() const;
+    std::string getSpecifiedExchangeType() const;
     std::string getAlternateExchange() const;
     bool trackControllingLink() const;
     const qpid::types::Variant::Map& getProperties() const;
@@ -81,7 +82,7 @@ class NodeProperties : public qpid::amqp::MapReader
     std::set<std::string> specified;
 
     void process(const std::string&, const qpid::types::Variant&, const qpid::amqp::Descriptor*);
-    bool wasSpecified(const std::string& key);
+    bool wasSpecified(const std::string& key) const;
 };
 }}} // namespace qpid::broker::amqp
 

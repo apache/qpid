@@ -234,7 +234,7 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     node.properties.read(pn_terminus_properties(terminus));
 
     if (node.exchange && createOnDemand && isTopicRequested) {
-        if (!node.properties.getExchangeType().empty() && node.properties.getExchangeType() != node.exchange->getType()) {
+        if (!node.properties.getSpecifiedExchangeType().empty() && node.properties.getExchangeType() != node.exchange->getType()) {
             //emulate 0-10 exchange-declare behaviour
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "Exchange of different type already exists");
         }
