@@ -41,7 +41,7 @@ enum Level { trace, debug, info, notice, warning, error, critical };
 class QPID_MESSAGING_CLASS_EXTERN LoggerOutput
 {
 public:
-    virtual ~LoggerOutput();
+    QPID_MESSAGING_EXTERN virtual ~LoggerOutput();
 
     /**
      * Override this member function to receive log messages.
