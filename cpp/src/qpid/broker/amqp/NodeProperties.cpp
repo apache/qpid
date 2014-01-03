@@ -54,6 +54,7 @@ const std::string EXCLUSIVE("exclusive");
 const std::string AUTO_DELETE("auto-delete");
 const std::string ALTERNATE_EXCHANGE("alternate-exchange");
 const std::string EXCHANGE_TYPE("exchange-type");
+const std::string EMPTY;
 
 pn_bytes_t convert(const std::string& s)
 {
@@ -113,7 +114,7 @@ void NodeProperties::read(pn_data_t* data)
 
 }
 
-bool NodeProperties::wasSpecified(const std::string& key)
+bool NodeProperties::wasSpecified(const std::string& key) const
 {
     return specified.find(key) != specified.end();
 }
@@ -361,6 +362,10 @@ bool NodeProperties::isAutodelete() const
 std::string NodeProperties::getExchangeType() const
 {
     return exchangeType;
+}
+std::string NodeProperties::getSpecifiedExchangeType() const
+{
+    return wasSpecified(EXCHANGE_TYPE) ? exchangeType : EMPTY;
 }
 std::string NodeProperties::getAlternateExchange() const
 {
