@@ -22,17 +22,12 @@ package org.apache.qpid.server.exchange;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InboundMessage;
@@ -41,7 +36,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class FanoutExchange extends AbstractExchange
 {

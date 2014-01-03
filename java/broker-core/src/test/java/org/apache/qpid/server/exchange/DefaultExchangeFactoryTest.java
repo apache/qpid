@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;

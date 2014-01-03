@@ -23,8 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.framing.AMQTypedValue;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.AMQMessageHeader;

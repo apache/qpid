@@ -21,7 +21,6 @@
 
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InboundMessage;
 

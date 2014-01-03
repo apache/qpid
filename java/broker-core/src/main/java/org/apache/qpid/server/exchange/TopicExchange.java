@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;

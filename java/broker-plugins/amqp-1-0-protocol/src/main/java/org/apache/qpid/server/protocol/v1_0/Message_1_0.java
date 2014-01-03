@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;

@@ -29,8 +29,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
