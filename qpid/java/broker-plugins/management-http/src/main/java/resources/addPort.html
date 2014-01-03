@@ -42,9 +42,11 @@
                     data-dojo-props="name:'authenticationProvider',label:'Authentication Provider*:', searchAttr: 'name', required: true, placeHolder: 'Select Provider'">
                 </select>
             </div>
-            <div id="formAddPort:fieldsAMQP">
+            <div id="formAddPort:fieldsBindingAddress">
                 <input id="formAddPort.bindingAddress" type="text" name="bindingAddress" placeholder="*"
-                   dojoType="dijit.form.TextBox" data-dojo-props="label: 'Binding address:'"/>
+                       dojoType="dijit.form.TextBox" data-dojo-props="label: 'Binding address:'"/>
+            </div>
+            <div id="formAddPort:fieldsAMQP">
                 <input id="formAddPort.protocolsDefault" type="checkbox" checked="checked"
                    dojoType="dijit.form.CheckBox" data-dojo-props="label: 'Support default protocols:'"/>
                 <select id="formAddPort.protocolsAMQP" name="protocols" data-dojo-type="dijit.form.MultiSelect" multiple="true"
