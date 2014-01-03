@@ -261,6 +261,11 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
                 throw new IllegalArgumentException("Unexpected transport on port " + port.getName() + ":" + transports);
             }
             lastPort = port.getPort();
+            String bindingAddress = port.getBindingAddress();
+            if(bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
+            {
+                connector.setHost(bindingAddress.trim());
+            }
             connector.setPort(port.getPort());
             server.addConnector(connector);
         }
