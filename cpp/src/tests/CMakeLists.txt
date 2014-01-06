@@ -300,16 +300,12 @@ if (BUILD_SASL)
     remember_location(sasl_version)
 endif (BUILD_SASL)
 
-# This should ideally be done as part of the test run, but I don't know a way
-# to get these arguments and the working directory set like Makefile.am does,
-# and have that run during the test pass.
-#
-# Need to check to see that the python tools are included as part of the source
-# tree first and don't install them or run dependent tests if they are not there
-#
+# Always run the python install, setup.py is smart enough to do only what is needed.
 set (python_bld ${CMAKE_CURRENT_BINARY_DIR}/python)
-execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --prefix=${pythoon_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
-                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../python)
+set (python_src ${CMAKE_SOURCE_DIR}/../python)
+add_custom_target(python_bld ALL
+  COMMAND ${PYTHON_EXECUTABLE} setup.py install --prefix=${python_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
+  WORKING_DIRECTORY ${python_src})
 
 if (BUILD_SASL)
     add_test (sasl_fed ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed${test_script_suffix})
