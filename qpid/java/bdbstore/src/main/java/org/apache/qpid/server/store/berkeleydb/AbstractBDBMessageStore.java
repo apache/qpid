@@ -25,6 +25,7 @@ import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.*;
 import com.sleepycat.je.Transaction;
+
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
@@ -37,7 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -74,6 +77,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         put(EnvironmentConfig.LOCK_N_LOCK_TABLES, "7");
         put(EnvironmentConfig.STATS_COLLECT, "false"); // Turn off stats generation - feature introduced (and on by default) from BDB JE 5.0.84
     }});
+
+    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private Environment _environment;
 
@@ -384,9 +389,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      */
     public void close() throws Exception
     {
-        _stateManager.attainState(State.CLOSING);
-        closeInternal();
-        _stateManager.attainState(State.CLOSED);
+        if (_closed.compareAndSet(false, true))
+        {
+            _stateManager.attainState(State.CLOSING);
+            closeInternal();
+            _stateManager.attainState(State.CLOSED);
+        }
     }
 
     protected void closeInternal() throws Exception
