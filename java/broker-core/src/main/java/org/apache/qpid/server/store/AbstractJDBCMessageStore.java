@@ -79,7 +79,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final int DB_VERSION = 7;
 
     private final AtomicLong _messageId = new AtomicLong(0);
-    private AtomicBoolean _closed = new AtomicBoolean(false);
+    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private static final String CREATE_DB_VERSION_TABLE = "CREATE TABLE "+ DB_VERSION_TABLE_NAME + " ( version int not null )";
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+ DB_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
@@ -670,12 +670,15 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void close() throws Exception
     {
-        _closed.getAndSet(true);
-        _stateManager.attainState(State.CLOSING);
+        if (_closed.compareAndSet(false, true))
+        {
+            _closed.getAndSet(true);
+            _stateManager.attainState(State.CLOSING);
 
-        doClose();
+            doClose();
 
-        _stateManager.attainState(State.CLOSED);
+            _stateManager.attainState(State.CLOSED);
+        }
     }
 
 
