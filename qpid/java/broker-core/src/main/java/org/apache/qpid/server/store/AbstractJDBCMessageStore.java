@@ -672,7 +672,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     {
         if (_closed.compareAndSet(false, true))
         {
-            _closed.getAndSet(true);
             _stateManager.attainState(State.CLOSING);
 
             doClose();
