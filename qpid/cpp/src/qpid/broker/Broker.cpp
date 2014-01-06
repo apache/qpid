@@ -417,6 +417,12 @@ boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
 
 void Broker::setStore (const boost::shared_ptr<MessageStore>& _store)
 {
+    // Exit now if multiple store plugins are attempting to load
+    if (!NullMessageStore::isNullStore(store.get())) {
+        QPID_LOG(error, "Multiple store plugins are not supported");
+        throw Exception(QPID_MSG("Failed to start broker: Multiple store plugins were loaded"));
+    }
+
     store.reset(new MessageStoreModule (_store));
     setStore();
 }
