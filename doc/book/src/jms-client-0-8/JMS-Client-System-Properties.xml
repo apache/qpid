@@ -184,6 +184,15 @@
 							Destination), if creating it if is does not already
 						exist.</para></entry>
 				</row>
+				<row id="JMS-Client-0-8-System-Properties-BindQueues">
+					<entry>qpid.bind_queues</entry>
+					<entry>Boolean</entry>
+					<entry>true</entry>
+					<entry><para>If true, creating a consumer will also bind the queue to the
+							to the exchange using the routing key as a binding key. The
+							exchange name, queue name and routing key are taken from 
+							the Binding URL associated with the Destination.</para></entry>
+				</row>
 				<row id="JMS-Client-0-8-System-Properties-RejectBehaviour">
 					<entry>qpid.reject.behaviour</entry>
 					<entry>String</entry>
