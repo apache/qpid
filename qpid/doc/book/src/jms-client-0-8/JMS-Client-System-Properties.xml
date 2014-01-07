@@ -172,7 +172,7 @@
 					<entry>true</entry>
 					<entry><para>If true, creating a consumer will also declare the exchange on the
 							Broker (specified within the Binding URL associated with the
-							Destination), if creating it if is does not already exist.
+							Destination), creating it if is does not already exist.
 						</para></entry>
 				</row>
 				<row id="JMS-Client-0-8-System-Properties-DeclareQueues">
@@ -181,7 +181,7 @@
 					<entry>true</entry>
 					<entry><para>If true, creating a consumer will also declare the queue on the
 							Broker (specified within the Binding URL associated with the
-							Destination), if creating it if is does not already
+							Destination), creating it if is does not already
 						exist.</para></entry>
 				</row>
 				<row id="JMS-Client-0-8-System-Properties-BindQueues">
