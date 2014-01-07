@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.test.client.message;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -41,7 +40,7 @@ import javax.jms.Session;
 import javax.jms.Topic;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
-import java.nio.BufferOverflowException;
+
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -88,15 +87,15 @@ public class JMSDestinationTest extends QpidBrokerTestCase
 
         _connection.start();
 
-        Message message = consumer.receive(10000);
+        Message receivedMessage = consumer.receive(10000);
 
-        assertNotNull("Message should not be null", message);
+        assertNotNull("Message should not be null", receivedMessage);
 
-        Destination destination = message.getJMSDestination();
+        Destination receivedDestination = receivedMessage.getJMSDestination();
 
-        assertNotNull("JMSDestination should not be null", destination);
+        assertNotNull("JMSDestination should not be null", receivedDestination);
 
-        assertEquals("Incorrect Destination type", queue.getClass(), destination.getClass());
+        assertEquals("Incorrect Destination type", queue.getClass(), receivedDestination.getClass());
     }
 
     /**
@@ -115,15 +114,14 @@ public class JMSDestinationTest extends QpidBrokerTestCase
 
         _connection.start();
 
-        Message message = consumer.receive(10000);
+        Message receivedMessage = consumer.receive(10000);
 
-        assertNotNull("Message should not be null", message);
+        assertNotNull("Message should not be null", receivedMessage);
 
-        Destination destination = message.getJMSDestination();
+        Destination receivedDestination = receivedMessage.getJMSDestination();
 
-        assertNotNull("JMSDestination should not be null", destination);
-
-        assertEquals("Incorrect Destination type", topic.getClass(), destination.getClass());
+        assertNotNull("JMSDestination should not be null", receivedDestination);
+        assertEquals("Incorrect Destination type", topic.getClass(), receivedDestination.getClass());
     }
 
     /**
@@ -191,11 +189,11 @@ public class JMSDestinationTest extends QpidBrokerTestCase
 
             assertNotNull("Message should not be null", message);
 
-            Destination destination = message.getJMSDestination();
+            Destination receivedDestination = message.getJMSDestination();
 
-            assertNotNull("JMSDestination should not be null", destination);
+            assertNotNull("JMSDestination should not be null", receivedDestination);
 
-            assertEquals("Incorrect Destination type", queue.getClass(), destination.getClass());
+            assertEquals("Incorrect Destination type", queue.getClass(), receivedDestination.getClass());
 
         }
         finally
@@ -238,11 +236,11 @@ public class JMSDestinationTest extends QpidBrokerTestCase
 
         assertNotNull("Message should not be null", _message);
 
-        Destination destination = _message.getJMSDestination();
+        Destination receivedDestination = _message.getJMSDestination();
 
-        assertNotNull("JMSDestination should not be null", destination);
+        assertNotNull("JMSDestination should not be null", receivedDestination);
 
-        assertEquals("Incorrect Destination type", queue.getClass(), destination.getClass());
+        assertEquals("Incorrect Destination type", queue.getClass(), receivedDestination.getClass());
     }
 
     /**
@@ -305,17 +303,7 @@ public class JMSDestinationTest extends QpidBrokerTestCase
         // b) we can actually send without a BufferOverFlow.
 
         MessageProducer producer = session08.createProducer(queue);
-
-        try
-        {
-            producer.send(message);
-        }
-        catch (BufferOverflowException bofe)
-        {
-            // Print the stack trace so we can validate where the execption occured.
-            bofe.printStackTrace();
-            fail("BufferOverflowException thrown during send");
-        }
+        producer.send(message);
 
         message = consumer.receive(1000);
 
@@ -327,45 +315,45 @@ public class JMSDestinationTest extends QpidBrokerTestCase
 
     }
 
-    /**
-     * Send a message to a custom exchange and then verify
-     * the message received has the proper destination set
-     *
-     * @throws Exception
-     */
-    public void testGetDestinationWithCustomExchange() throws Exception
+    public void testQueueWithBindingUrlUsingCustomExchange() throws Exception
     {
+        String exchangeName = "exch_" + getTestQueueName();
+        String queueName = "queue_" + getTestQueueName();
+        
+        String address = String.format("direct://%s/%s/%s?routingkey='%s'", exchangeName, queueName, queueName, queueName);
+        sendReceive(address);
+    }
 
-        AMQDestination dest = new AMQAnyDestination(new AMQShortString("my-exchange"),
-                                                    new AMQShortString("direct"),
-                                                    new AMQShortString("test"),
-                                                    false,
-                                                    false,
-                                                    new AMQShortString("test"),
-                                                    false,
-                                                    new AMQShortString[]{new AMQShortString("test")});
-        
-        // to force the creation of my-exchange.
-        sendMessage(_session, dest, 1);
-        
-        MessageProducer prod = _session.createProducer(dest);
-        
+    public void testQueueWithBindingUrlUsingAmqDirectExchange() throws Exception
+    {
+        String queueName = getTestQueueName();
+        String address = String.format("direct://amq.direct/%s/%s?routingkey='%s'", queueName, queueName, queueName);
+        sendReceive(address);
+    }
+
+    public void testQueueWithBindingUrlUsingDefaultExchange() throws Exception
+    {
+        String queueName = getTestQueueName();
+        String address = String.format("direct:///%s/%s?routingkey='%s'", queueName, queueName, queueName);
+        sendReceive(address);
+    }
+
+    private void sendReceive(String address) throws JMSException, Exception
+    {
+        Destination dest = _session.createQueue(address);
         MessageConsumer consumer = _session.createConsumer(dest);
-        
+
         _connection.start();
 
         sendMessage(_session, dest, 1);
-        
-        Message message = consumer.receive(10000);
 
-        assertNotNull("Message should not be null", message);
+        Message receivedMessage = consumer.receive(10000);
 
-        Destination destination = message.getJMSDestination();
+        assertNotNull("Message should not be null", receivedMessage);
 
-        assertNotNull("JMSDestination should not be null", destination);
+        Destination receivedDestination = receivedMessage.getJMSDestination();
 
-        assertEquals("Incorrect Destination name", "my-exchange", dest.getExchangeName().asString());
-        assertEquals("Incorrect Destination type", "direct", dest.getExchangeClass().asString());
-        assertEquals("Incorrect Routing Key", "test", dest.getRoutingKey().asString());
+        assertNotNull("JMSDestination should not be null", receivedDestination);
+        assertEquals("JMSDestination should match that sent", address, receivedDestination.toString());
     }
 }

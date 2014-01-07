@@ -31,6 +31,7 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.BindingURL;
 
 import javax.jms.Connection;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -158,6 +159,28 @@ public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
         assertFalse("exchange should not exist", _jmxUtils.doesManagedObjectExist(exchangeObjectName2));
     }
 
+    public void testQueueNotBoundDuringConsumerCreation() throws Exception
+    {
+        setSystemProperty(ClientProperties.QPID_BIND_QUEUES_PROP_NAME, "false");
+        setSystemProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "true");
+
+        Connection connection = getConnection();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        Queue queue = session.createQueue(getTestQueueName());
+        session.createConsumer(queue);
+
+        try
+        {
+            session.createProducer(queue).send(session.createMessage());
+            fail("JMSException should be thrown as the queue does not exist");
+        }
+        catch (InvalidDestinationException ide)
+        {
+            //PASS
+        }
+    }
     private void checkExceptionErrorCode(JMSException original, AMQConstant code)
     {
         Exception linked = original.getLinkedException();
