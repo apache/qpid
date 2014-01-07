@@ -253,7 +253,7 @@ class Broker(Popen):
 
         self.test = test
         self._port=port
-        if BrokerTest.store_lib:
+        if BrokerTest.store_lib and not test_store:
             args = args + ['--load-module', BrokerTest.store_lib]
             if BrokerTest.sql_store_lib:
                 args = args + ['--load-module', BrokerTest.sql_store_lib]
