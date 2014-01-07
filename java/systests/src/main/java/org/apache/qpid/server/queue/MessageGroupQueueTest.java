@@ -20,22 +20,28 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class MessageGroupQueueTest extends QpidBrokerTestCase
 {
@@ -469,7 +475,6 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
 
     }
 
-
     private Message createMessage(int msg, String group) throws JMSException
     {
         Message send = producerSession.createTextMessage("Message: " + msg);
@@ -477,5 +482,123 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
         send.setStringProperty("group", group);
 
         return send;
+    }
+
+    /**
+     * Tests that when a number of new messages for a given groupid are arriving while the delivery group
+     * state is also in the process of being emptied (due to acking a message while using prefetch=1), that only
+     * 1 of a number of existing consumers is ever receiving messages for the shared group at a time.
+     */
+    public void testSingleSharedGroupWithMultipleConsumers() throws Exception
+    {
+        final Map<String,Object> arguments = new HashMap<String, Object>();
+        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"group");
+        arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
+
+        ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), true, false, false, arguments);
+        queue = (Queue) producerSession.createQueue("direct://amq.direct/"+QUEUE+"/"+QUEUE+"?durable='false'&autodelete='true'");
+
+        ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
+        producer = producerSession.createProducer(queue);
+
+
+        consumerConnection.close();
+        Map<String, String> options = new HashMap<String, String>();
+        options.put(ConnectionURL.OPTIONS_MAXPREFETCH, "1");
+        consumerConnection = getConnectionWithOptions(options);
+
+        int numMessages = 100;
+        SharedGroupTestMessageListener groupingTestMessageListener = new SharedGroupTestMessageListener(numMessages);
+
+        Session cs1 = ((AMQConnection)consumerConnection).createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session cs2 = ((AMQConnection)consumerConnection).createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session cs3 = ((AMQConnection)consumerConnection).createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session cs4 = ((AMQConnection)consumerConnection).createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        MessageConsumer consumer1 = cs1.createConsumer(queue);
+        consumer1.setMessageListener(groupingTestMessageListener);
+        MessageConsumer consumer2 = cs2.createConsumer(queue);
+        consumer2.setMessageListener(groupingTestMessageListener);
+        MessageConsumer consumer3 = cs3.createConsumer(queue);
+        consumer3.setMessageListener(groupingTestMessageListener);
+        MessageConsumer consumer4 = cs4.createConsumer(queue);
+        consumer4.setMessageListener(groupingTestMessageListener);
+        consumerConnection.start();
+
+        for(int i = 1; i <= numMessages; i++)
+        {
+            producer.send(createMessage(i, "GROUP"));
+        }
+        producerSession.commit();
+        producer.close();
+        producerSession.close();
+        producerConnection.close();
+
+        assertTrue("Mesages not all recieved in the allowed timeframe", groupingTestMessageListener.waitForLatch(30));
+        assertEquals("Unexpected concurrent processing of messages for the group", 0, groupingTestMessageListener.getConcurrentProcessingCases());
+        assertNull("Unexpecte throwable in message listeners", groupingTestMessageListener.getThrowable());
+    }
+
+    public static class SharedGroupTestMessageListener implements MessageListener
+    {
+        private final CountDownLatch _count;
+        private final AtomicInteger _activeListeners = new AtomicInteger();
+        private final AtomicInteger _concurrentProcessingCases = new AtomicInteger();
+        private Throwable _throwable;
+
+        public SharedGroupTestMessageListener(int numMessages)
+        {
+            _count = new CountDownLatch(numMessages);
+        }
+
+        public void onMessage(Message message)
+        {
+            try
+            {
+                int currentActiveListeners = _activeListeners.incrementAndGet();
+
+                if (currentActiveListeners > 1)
+                {
+                    _concurrentProcessingCases.incrementAndGet();
+
+                    System.err.println("Concurrent processing when handling message: " + message.getIntProperty("msg"));
+                }
+
+                try
+                {
+                    Thread.sleep(25);
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
+
+                _activeListeners.decrementAndGet();
+            }
+            catch (Throwable t)
+            {
+                _throwable = t;
+                t.printStackTrace();
+            }
+            finally
+            {
+                _count.countDown();
+            }
+        }
+
+        public boolean waitForLatch(int seconds) throws Exception
+        {
+            return _count.await(seconds, TimeUnit.SECONDS);
+        }
+
+        public int getConcurrentProcessingCases()
+        {
+            return _concurrentProcessingCases.get();
+        }
+
+        public Throwable getThrowable()
+        {
+            return _throwable;
+        }
     }
 }

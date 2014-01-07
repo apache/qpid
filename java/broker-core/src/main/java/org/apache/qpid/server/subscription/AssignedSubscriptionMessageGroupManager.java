@@ -63,6 +63,18 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
 
     public boolean acceptMessage(Subscription sub, QueueEntry entry)
     {
+        if(assignMessage(sub, entry))
+        {
+            return entry.acquire(sub);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private boolean assignMessage(Subscription sub, QueueEntry entry)
+    {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         if(groupVal == null)
         {
