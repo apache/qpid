@@ -30,9 +30,8 @@
 
 <chapter id="JMS-Client-0-8-Introduction">
   <title>Introduction</title>
-  <para>Qpid JMS client is an implementation of <ulink
-      url="http://download.oracle.com/otndocs/jcp/7195-jms-1.1-fr-spec-oth-JSpec/">JMS specification
-      1.1</ulink>. It utilises an AMQP transport layer for the performing of messaging operations.
+  <para>Qpid JMS client is an implementation of <ulink url="&oracleJmsSpec;">JMS specification
+      1.1</ulink>. It utilises an <ulink url="&amqpSrc;">AMQP</ulink> transport layer for the performing of messaging operations.
     The client is intended to be used for the writing of JMS compatible messaging applications. Such
     applications can send and receive messages via any AMQP-compatible brokers like RabbitMQ, Qpid
     Java Broker which support the AMQP protocols 0-8, 0-9, or 0-9-1.</para>
@@ -44,7 +43,7 @@
     <title>Using the Qpid JMS client with 0-10</title>
     <para>This book documents the behaviour of the Qpid JMS client when used with the AMQP
       protocols <emphasis>0-8, 0-9, and 0-9-1</emphasis> only. For behaviour when using the client
-      with AMQP 0-10 protocol, please refer to Programming in Apache Qpid.</para>
+      with AMQP 0-10 protocol, please refer to <ulink url="&qpidProgrammingBook;">Programming in Apache Qpid</ulink>.</para>
   </important>
 
 </chapter>
