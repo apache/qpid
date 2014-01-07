@@ -109,7 +109,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** System property to enable failure if strict AMQP compliance is violated. */
     public static final String STRICT_AMQP_FATAL = "STRICT_AMQP_FATAL";
 
-    /** Strickt AMQP failure default. */
+    /** Strict AMQP failure default. */
     public static final String STRICT_AMQP_FATAL_DEFAULT = "true";
 
     /** System property to enable immediate message prefetching. */
@@ -123,6 +123,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     private final boolean _declareExchanges =
         Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_DECLARE_EXCHANGES_PROP_NAME, "true"));
+
+    private final boolean _bindQueues =
+            Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_BIND_QUEUES_PROP_NAME, "true"));
 
     private final boolean _useAMQPEncodedMapMessage;
 
@@ -2870,10 +2873,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 declareQueue(amqd, consumer.isNoLocal(), nowait);
             }
-            if(!isBound(amqd.getExchangeName(), amqd.getAMQQueueName(), amqd.getRoutingKey()))
+            if (_bindQueues)
             {
-                bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(),
-                        amqd instanceof AMQTopic ? consumer.getArguments() : null, amqd.getExchangeName(), amqd, nowait);
+                if(!isBound(amqd.getExchangeName(), amqd.getAMQQueueName(), amqd.getRoutingKey()))
+                {
+                    bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(),
+                            amqd instanceof AMQTopic ? consumer.getArguments() : null, amqd.getExchangeName(), amqd, nowait);
+                }
             }
 
         }
