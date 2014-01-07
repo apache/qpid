@@ -116,7 +116,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     {
 
         return getMessageFactory().createMessage(messageFrame.getDeliveryTag(),
-                messageFrame.isRedelivered(), messageFrame.getExchange(),
+                messageFrame.isRedelivered(), messageFrame.getExchange() == null ? AMQShortString.EMPTY_STRING : messageFrame.getExchange(),
                 messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies(),
                 _queueDestinationCache, _topicDestinationCache);
 

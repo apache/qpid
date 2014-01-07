@@ -563,11 +563,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                    String alternateExchangeName)
             throws AMQException
     {
-
-        if(_exchangeRegistry.isReservedExchangeName(name))
-        {
-            throw new ReservedExchangeNameException(name);
-        }
         synchronized (_exchangeRegistry)
         {
             Exchange existing;
@@ -575,6 +570,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             {
                 throw new ExchangeExistsException(name,existing);
             }
+            if(_exchangeRegistry.isReservedExchangeName(name))
+            {
+                throw new ReservedExchangeNameException(name);
+            }
+
             Exchange alternateExchange;
 
             if(alternateExchangeName != null)
