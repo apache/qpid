@@ -32,9 +32,11 @@
 <!ENTITY qpidJavaBrokerBook "../../AMQP-Messaging-Broker-Java-Book/html/">
 <!ENTITY qpidSrc "http://svn.apache.org/viewvc/qpid/trunk/qpid/java/">
 
+<!ENTITY amqpSrc "http://www.amqp.org">
+
 <!-- Oracle javadoc -->
 
-<!ENTITY oracleJmsSpec "http://docs.oracle.com/cd/E19957-01/816-5904-10/816-5904-10.pdf">
+<!ENTITY oracleJmsSpec "http://download.oracle.com/otndocs/jcp/7195-jms-1.1-fr-spec-oth-JSpec/">
 <!ENTITY oracleJdkDocUrl "http://docs.oracle.com/javase/6/docs/api/">
 <!ENTITY oracleJeeDocUrl "http://docs.oracle.com/javaee/6/api/">
 <!ENTITY oracleJmsTutorial "http://docs.oracle.com/javaee/6/tutorial/doc/bncdq.html">

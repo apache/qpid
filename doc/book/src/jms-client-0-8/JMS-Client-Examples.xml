@@ -48,7 +48,7 @@
 
 		<example id="JMS-Client-0-8-Examples-PTP-Java">
 			<title>JMS Example - Point to Point Messaging</title>
-			<programlisting lang="java">
+			<programlisting language="java">
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -67,29 +67,29 @@ public class Hello {
     private void runTest() throws Exception {
       Properties properties = new Properties();
       properties.load(this.getClass().getResourceAsStream("helloworld.properties"));  <co id="ptp-java-properties" linkends="callout-ptp-properties"/>
-      Context context = new InitialContext(properties);   <co id="ptp-java-context" linkends="callout-ptp-context"/>
+      Context context = new InitialContext(properties);                               <co id="ptp-java-context" linkends="callout-ptp-context"/>
 
       ConnectionFactory connectionFactory
-          = (ConnectionFactory) context.lookup("qpidConnectionFactory"); <co id="ptp-java-connection-factory" linkends="callout-ptp-connection-factory"/>
-      Connection connection = connectionFactory.createConnection();  <co id="ptp-java-connection" linkends="callout-ptp-connection"/>
-      connection.start();  <co id="ptp-java-start" linkends="callout-ptp-start"/>
+          = (ConnectionFactory) context.lookup("qpidConnectionFactory");              <co id="ptp-java-connection-factory" linkends="callout-ptp-connection-factory"/>
+      Connection connection = connectionFactory.createConnection();                   <co id="ptp-java-connection" linkends="callout-ptp-connection"/>
+      connection.start();                                                             <co id="ptp-java-start" linkends="callout-ptp-start"/>
 
-      Session session = connection.createSession(true, Session.SESSION_TRANSACTED);<co id="ptp-java-session" linkends="callout-ptp-session"/>
-      Queue queue = (Queue) context.lookup("myqueue");  <co id="ptp-java-destination" linkends="callout-ptp-destination"/>
+      Session session = connection.createSession(true, Session.SESSION_TRANSACTED);   <co id="ptp-java-session" linkends="callout-ptp-session"/>
+      Queue queue = (Queue) context.lookup("myqueue");                                <co id="ptp-java-destination" linkends="callout-ptp-destination"/>
 
-      MessageConsumer messageConsumer = session.createConsumer(queue);  <co id="ptp-java-consumer" linkends="callout-ptp-consumer"/>
-      MessageProducer messageProducer = session.createProducer(queue);  <co id="ptp-java-producer" linkends="callout-ptp-producer"/>
+      MessageConsumer messageConsumer = session.createConsumer(queue);                <co id="ptp-java-consumer" linkends="callout-ptp-consumer"/>
+      MessageProducer messageProducer = session.createProducer(queue);                <co id="ptp-java-producer" linkends="callout-ptp-producer"/>
 
-      TextMessage message = session.createTextMessage("Hello world!");        <co id="ptp-java-send" linkends="callout-ptp-send"/>
+      TextMessage message = session.createTextMessage("Hello world!");                <co id="ptp-java-send" linkends="callout-ptp-send"/>
       messageProducer.send(message);
       session.commit();
 
-      message = (TextMessage)messageConsumer.receive();    <co id="ptp-java-receive" linkends="callout-ptp-receive"/>
+      message = (TextMessage)messageConsumer.receive();                               <co id="ptp-java-receive" linkends="callout-ptp-receive"/>
       session.commit();
       System.out.println(message.getText());
 
-      connection.close();  <co id="ptp-java-close" linkends="callout-ptp-close"/>
-      context.close();   <co id="ptp-java-jndi-close" linkends="callout-ptp-jndi-close"/>
+      connection.close();                                                             <co id="ptp-java-close" linkends="callout-ptp-close"/>
+      context.close();                                                                <co id="ptp-java-jndi-close" linkends="callout-ptp-jndi-close"/>
     }
 }
 	</programlisting>
@@ -118,7 +118,7 @@ public class Hello {
 				<para>Creates a transactional session.</para>
 			</callout>
 			<callout id="callout-ptp-destination" arearefs="ptp-java-destination">
-				<para>Looks up a destination for the queue with JNDI name myqueue.</para>
+				<para>Looks up a destination for the queue with JNDI name <emphasis>myqueue</emphasis>.</para>
 			</callout>
 			<callout id="callout-ptp-consumer" arearefs="ptp-java-consumer">
 				<para>Creates a consumer that reads messages from the queue<footnote>
@@ -137,7 +137,7 @@ public class Hello {
 				<para>Creates a producer that sends messages to the queue.</para>
 			</callout>
 			<callout id="callout-ptp-send" arearefs="ptp-java-send">
-				<para>Creates a new TextMessages, publishes the messages and commits the
+				<para>Creates a new message of type <emphasis>javax.jms.TextMessage</emphasis>, publishes the message and commits the
 					session.</para>
 			</callout>
 			<callout id="callout-ptp-receive" arearefs="ptp-java-receive">
@@ -159,10 +159,10 @@ public class Hello {
 
 		<example id="JMS-Client-0-8-Examples-PTP-PropertiesFile">
 			<title>JMS Example - Point to Point Messaging - JNDI Properties</title>
-			<programlisting>
+			<programlisting language="properties">
 java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 connectionfactory.qpidConnectionFactory = amqp://guest:guest@clientid/?brokerlist='tcp://localhost:5672' <co id="ptp-properties-connectionfactory" linkends="callout-ptp-properties-connectionfactory"/>
-queue.myqueue = queue1 <co id="ptp-properties-destination" linkends="callout-ptp-properties-destination"/>
+queue.myqueue = queue1                                                                                   <co id="ptp-properties-destination" linkends="callout-ptp-properties-destination"/>
 	</programlisting>
 		</example>
 
@@ -171,7 +171,7 @@ queue.myqueue = queue1 <co id="ptp-properties-destination" linkends="callout-ptp
 				arearefs="ptp-properties-connectionfactory">
 				<para>Defines a connection factory from which Connections can be created. The syntax
 					of a ConnectionURL is given in <xref
-						linkend="JMS-Client-0-8-JNDI-Properties-Format"/>.</para>
+						linkend="JMS-Client-0-8-Connection-URL"/>.</para>
 			</callout>
 			<callout id="callout-ptp-properties-destination" arearefs="ptp-properties-destination">
 				<para>Defines a queue for which MessageProducers and/or MessageConsumers send and
@@ -190,7 +190,7 @@ queue.myqueue = queue1 <co id="ptp-properties-destination" linkends="callout-ptp
 
 		<example id="JMS-Client-0-8-Examples-PubSub-Java">
 			<title>JMS Example - Publish/subscribe Messaging</title>
-			<programlisting lang="java">
+			<programlisting language="java">
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -218,9 +218,9 @@ public class StocksExample {
       connection.start();
 
       Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-      Topic priceTopic = (Topic) context.lookup("myprices"); <co id="pubsub-java-destination" linkends="callout-pubsub-destination"/>
+      Topic priceTopic = (Topic) context.lookup("myprices");                             <co id="pubsub-java-destination" linkends="callout-pubsub-destination"/>
 
-      MessageConsumer subscriber1 = session.createDurableSubscriber(priceTopic, "sub1");  <co id="pubsub-java-subscribers" linkends="callout-pubsub-subscribers"/>
+      MessageConsumer subscriber1 = session.createDurableSubscriber(priceTopic, "sub1"); <co id="pubsub-java-subscribers" linkends="callout-pubsub-subscribers"/>
       MessageConsumer subscriber2 = session.createDurableSubscriber(priceTopic, "sub2" /*, "price > 150", false*/ );
       MessageProducer messageProducer = session.createProducer(priceTopic);
 
@@ -238,7 +238,7 @@ public class StocksExample {
       session.commit();
       System.out.println("Subscriber 2 received : " + message);
 
-      session.unsubscribe("sub1"); <co id="pubsub-java-unsubscribe" linkends="callout-pubsub-unsubscribe"/>
+      session.unsubscribe("sub1");                                                       <co id="pubsub-java-unsubscribe" linkends="callout-pubsub-unsubscribe"/>
       session.unsubscribe("sub2");
       connection.close();
       context.close();

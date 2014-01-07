@@ -34,8 +34,8 @@
     knowledge of AMQP basic concepts would be advantageous for reading of this document. </para>
 
   <para> This document only covers the usage of 0-8, 0-9 and 0-9-1 AMQP protocols with Qpid JMS
-    client. The specifications for these protocols is available from the <ulink
-      url="http://www.amqp.org">AMQP web site</ulink>. </para>
+    client. The specifications for these protocols are available from the <ulink
+      url="&amqpSrc;">AMQP web site</ulink>. </para>
 
   <para> The document covers some specific implementation details of JMS connections, sessions,
     consumers and producers in <xref linkend="JMS-Client-0-8-Client-Understanding"/>. It also
