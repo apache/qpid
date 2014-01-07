@@ -90,8 +90,8 @@
       is closed when the application calls <ulink
         url="&oracleJeeDocUrl;javax/jms/Connection.html#close()">Connection#close()</ulink>, but it
       can also be closed if the connection is closed from the Broker side (via a Management
-      operation). The JMS connection will also be closed if the underlying TCP/IP connection is
-      broken.</para>
+      operation or broker shutdown or running into coditions which AMQP specifications treats as errors and mandates closing the connection).
+      The JMS connection will also be closed if the underlying TCP/IP connection is broken.</para>
     <para>Qpid connections have failover and heartbeating capabilities. They support SSL and
       client-auth. These are described in the sub-sections that follow.</para>
     <section id="JMS-Client-0-8-Client-Understanding-Connection-Failover">
@@ -136,6 +136,16 @@ amqp://username:password@clientid/test
         </screen>
       </example>
       <para>For full details see <xref linkend="JMS-Client-0-8-Connection-URL"/></para>
+      <note>Note, that a single broker failover is enabled by default. If the failover behaviour is not desired it can be switched off
+       by setting a failover option to <emphasis>nofailover</emphasis> as in the example below
+       <example>
+        <title>Connection URL configured with nofailover</title>
+        <screen><![CDATA[
+amqp://username:password@clientid/test
+            ?brokerlist='tcp://localhost:15672?failover='nofailover']]>
+        </screen>
+      </example>
+       </note>
       <!-- TODO perhaps mention ConnectionListener?-->
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-Connection-Heartbeating">
@@ -274,6 +284,17 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
           >MessageConsumer#receive()</ulink> for Consumer B on the same Session, the application
         will hang indefinitely as even if messages suitable for B arrive at the Broker. Those
         messages can never be sent to the Session as no space is available in prefetch. </para>
+      <note>Please note, when the acknowlegement mode <emphasis>Session#SESSION_TRANSACTED</emphasis>
+       or <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis> is set on a consuming session,
+       the prefetched messages are released from the prefetch buffer on transaction commit/rollback
+       (in case of acknowledgement mode <emphasis>Session#SESSION_TRANSACTED</emphasis> )
+       or acknowledgement of the messages receipt (in case of acknowledgement mode
+       <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis> ). If the consuming application does not commit/rollback
+       the receiving transaction (for example, due to mistakes in application exception handling logic),
+       the prefetched messages continue to remain in the prefetch buffer preventing the delivery of the following messages.
+       As result, the application might stop the receiving of the messages
+       until the transaction is committed/rolled back (for <emphasis>Session#SESSION_TRANSACTED</emphasis> )
+       or received messages are acknowledged (for <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis>).</note>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-Session-TemporaryQueues">
       <title>TemporaryQueues</title>
@@ -358,6 +379,10 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
           linkend="JMS-Client-0-8-System-Properties-DefaultMandatoryTopic"
             ><literal>qpid.default_mandatory_topic</literal></link> for Queues and Topics
         respectively.</para>
+      <note>Please note, according to AMQP specifications the mandatory flag on a message tells the server
+       how to react if the message cannot be routed to a  queue. If this flag is set, the server will return an unroutable message with a
+       Return method. If this flag is zero, the server silently drops the message. Please, refer <ulink url="&amqpSrc;">AMQP specifications</ulink>
+       for more details.</note>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-MessageProducer-CloseWhenNoRoute">
       <title>Close When No Route</title>
@@ -373,6 +398,7 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-MessageProducer-ImmediateMessage">
       <title>Immediate Messages</title>
+      <para>This feature is defined in <ulink url="&amqpSrc;">AMQP specifications</ulink>.</para>
       <para>When this feature is enabled, when publishing a message the Broker ensures that a
         Consumer is attached to queue. If there is no Consumer attached to the queue, the message is
         returned to the publisher's connection. The Message is returned to the application in an
