@@ -449,12 +449,6 @@ boost::intrusive_ptr<PersistableMessage> Message::merge(const std::map<std::stri
     }
     copy->data.resize(position);//annotationsSize may be slightly bigger than needed if optimisations are used (e.g. smallint)
     copy->scan();
-    {
-        qpid::amqp::MapBuilder builder;
-        qpid::amqp::Decoder decoder(copy->messageAnnotations.data, copy->messageAnnotations.size);
-        decoder.read(builder);
-        QPID_LOG(notice, "Merged annotations are now: " << builder.getMap() << " raw=" << std::hex << std::string(copy->messageAnnotations.data, copy->messageAnnotations.size) << " " << copy->messageAnnotations.size << " bytes");
-    }
     assert(copy->messageAnnotations);
     assert(copy->bareMessage.size == bareMessage.size);
     assert(copy->footer.size == footer.size);
