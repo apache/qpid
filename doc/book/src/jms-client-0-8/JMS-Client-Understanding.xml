@@ -457,11 +457,13 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
             by the Binding URL associated with the Destination.</para>
         </listitem>
       </orderedlist>
-      <para>The exchange and queue declare side effect can be suppressed using system properties
+      <para>The exchange declare, queue declare and bind side effects can be suppressed using system properties
           <link linkend="JMS-Client-0-8-System-Properties-DeclareExchanges"
-            ><literal>qpid.declare_exchanges</literal></link> and <link
+            ><literal>qpid.declare_exchanges</literal></link>, <link
           linkend="JMS-Client-0-8-System-Properties-DeclareQueues"
-            ><literal>qpid.declare_queues</literal></link>.</para>
+            ><literal>qpid.declare_queues</literal></link> and
+          <link linkend="JMS-Client-0-8-System-Properties-BindQueues"
+            ><literal>qpid.bind_queues</literal></link>.</para>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-MessageConsumer-TopicSubscriptions">
       <title>Topic Subscriptions</title>
