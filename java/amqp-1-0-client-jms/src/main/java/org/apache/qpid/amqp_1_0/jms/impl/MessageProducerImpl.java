@@ -301,8 +301,8 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         final org.apache.qpid.amqp_1_0.client.Message clientMessage = new org.apache.qpid.amqp_1_0.client.Message(msg.getSections());
 
         DispositionAction action = null;
-
-        if(_syncPublish)
+        final boolean doSync = _syncPublish || (deliveryMode == DeliveryMode.PERSISTENT && _session.getTxn() == null);
+        if(doSync)
         {
             action = new DispositionAction(_sender);
         }
@@ -324,7 +324,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             throw jmsException;
         }
 
-        if(_syncPublish && !action.wasAccepted(_syncPublishTimeout))
+        if(doSync && !action.wasAccepted(_syncPublishTimeout))
         {
             if (action.getOutcome() instanceof Rejected)
             {
