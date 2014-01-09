@@ -75,6 +75,7 @@ void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src) {
 
 void file_hdr_reset(file_hdr_t* target) {
     target->_rhdr._uflag = 0;
+    target->_rhdr._serial = 0;
     target->_rhdr._rid = 0;
     target->_fro = 0;
     target->_ts_sec = 0;
@@ -85,6 +86,7 @@ void file_hdr_reset(file_hdr_t* target) {
 
 int is_file_hdr_reset(file_hdr_t* target) {
     return target->_rhdr._uflag == 0 &&
+           target->_rhdr._serial == 0 &&
            target->_rhdr._rid == 0 &&
            target->_ts_sec == 0 &&
            target->_ts_nsec == 0 &&

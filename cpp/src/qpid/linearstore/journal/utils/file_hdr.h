@@ -51,7 +51,7 @@ extern "C"{
  * +---+---+---+---+---+---+---+---+   |
  * |              rid              |   |
  * +---+---+---+---+---+---+---+---+  -+
- * |  fs   | partn |   reserved    |
+ * |  fhs  | partn |   reserved    |
  * +---+---+---+---+---+---+---+---+
  * |           data-size           |
  * +---+---+---+---+---+---+---+---+
@@ -70,7 +70,7 @@ extern "C"{
  *
  * ver = Journal version
  * rid = Record ID
- * fs = File header size in sblks (defined by JRNL_SBLK_SIZE)
+ * fhs = File header size in sblks (defined by JRNL_SBLK_SIZE)
  * partn = EFP partition from which this file came
  * fro = First Record Offset
  * qnl = Length of the queue name in octets.

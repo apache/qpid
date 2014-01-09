@@ -58,8 +58,9 @@ Current bugs and performance issues:
 4. (UNABLE TO REPRODUCE) BZ 1036026 - Unable to create durable queue - framing error - possibly caused by running both stores at the same time
 5. (UNABLE TO REPRODUCE) BZ 1038599 - Abort when deleting used queue after restart - may be dup of QPID-5387 (BZ 1036071)
 6. BZ 1039522 - Crash during recovery - JournalFile::getFqFileName() -JERR_JREC_BADRECTAIL
-6. BZ 1039525 - Crash during recovery - journal::jexception - JERR_JREC_BADRECTAIL
-7. (FIXED) QPID-5442 (BZ 1039949) - DTX test failure - missing XIDs
+7. BZ 1039525 - Crash during recovery - journal::jexception - JERR_JREC_BADRECTAIL
+8. (FIXED) QPID-5442 (BZ 1039949) - DTX test failure - missing XIDs
+9. (FIXED) QPID-5460 (BZ 1051097) - Transactional messages lost during recovery
 
 Code tidy-up
 ------------

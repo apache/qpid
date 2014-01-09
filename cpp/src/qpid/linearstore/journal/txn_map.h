@@ -53,8 +53,20 @@ namespace journal {
                    const bool tpc_flag,
                    const bool commit_flag);
     } txn_data_t;
-    typedef std::vector<txn_data_t> txn_data_list;
-    typedef txn_data_list::iterator tdl_itr;
+    typedef std::vector<txn_data_t> txn_data_list_t;
+    typedef txn_data_list_t::iterator tdl_itr_t;
+    typedef txn_data_list_t::const_iterator tdl_const_itr_t;
+
+    typedef struct txn_op_stats_t
+    {
+        uint16_t enqCnt;
+        uint16_t deqCnt;
+        uint16_t tpcCnt;
+        uint16_t abortCnt;
+        uint16_t commitCnt;
+        uint64_t rid;
+        txn_op_stats_t(const txn_data_list_t& tdl);
+    } txn_op_stats_t;
 
     /**
     * \class txn_map
@@ -102,21 +114,21 @@ namespace journal {
         static int16_t TMAP_SYNCED;
 
     private:
-        typedef std::pair<std::string, txn_data_list> xmap_param;
-        typedef std::map<std::string, txn_data_list> xmap;
+        typedef std::pair<std::string, txn_data_list_t> xmap_param;
+        typedef std::map<std::string, txn_data_list_t> xmap;
         typedef xmap::iterator xmap_itr;
 
         xmap _map;
         smutex _mutex;
-        const txn_data_list _empty_data_list;
+        const txn_data_list_t _empty_data_list;
 
     public:
         txn_map();
         virtual ~txn_map();
 
         bool insert_txn_data(const std::string& xid, const txn_data_t& td);
-        const txn_data_list get_tdata_list(const std::string& xid);
-        const txn_data_list get_remove_tdata_list(const std::string& xid);
+        const txn_data_list_t get_tdata_list(const std::string& xid);
+        const txn_data_list_t get_remove_tdata_list(const std::string& xid);
         bool in_map(const std::string& xid);
         uint32_t enq_cnt();
         uint32_t deq_cnt();
@@ -130,7 +142,7 @@ namespace journal {
         void xid_list(std::vector<std::string>& xv);
     private:
         uint32_t cnt(const bool enq_flag);
-        const txn_data_list get_tdata_list_nolock(const std::string& xid);
+        const txn_data_list_t get_tdata_list_nolock(const std::string& xid);
     };
 
 }}}

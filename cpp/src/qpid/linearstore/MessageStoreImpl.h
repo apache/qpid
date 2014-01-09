@@ -235,18 +235,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     }
     void chkTplStoreInit();
 
-    // debug aid for printing XIDs that may contain non-printable chars
-    static std::string xid2str(const std::string xid) {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        for (unsigned i=0; i<xid.size(); i++) {
-            if (isprint(xid[i]))
-                oss << xid[i];
-            else
-                oss << "/" << std::setw(2) << (int)((char)xid[i]);
-        }
-        return oss.str();
-    }
+    static std::string str2hexnum(const std::string& str);
 
   public:
     typedef boost::shared_ptr<MessageStoreImpl> shared_ptr;
