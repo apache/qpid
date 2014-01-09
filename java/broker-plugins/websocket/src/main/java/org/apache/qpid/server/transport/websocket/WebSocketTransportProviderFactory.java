@@ -18,37 +18,36 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.server.transport.websocket;
 
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.TransportProviderFactory;
+import org.apache.qpid.server.transport.TransportProvider;
+
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Set;
 
-public enum Transport
+public class WebSocketTransportProviderFactory implements TransportProviderFactory
 {
-    TCP,
-    SSL,
-    WS,
-    WSS,
-    SCTP;
 
-    public static Transport valueOfObject(Object transportObject)
+    private static final String TYPE = "Websocket";
+
+    @Override
+    public Set<Set<Transport>> getSupportedTransports()
     {
-        Transport transport;
-        if (transportObject instanceof Transport)
-        {
-            transport = (Transport) transportObject;
-        }
-        else
-        {
-            try
-            {
-                transport = Transport.valueOf(String.valueOf(transportObject));
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Can't convert '" + transportObject
-                        + "' to one of the supported transports: " + EnumSet.allOf(Transport.class), e);
-            }
-        }
-        return transport;
+        return Collections.singleton((Set<Transport>)EnumSet.of(Transport.WS));
+    }
+
+    @Override
+    public TransportProvider getTransportProvider(final Set<Transport> transports)
+    {
+        return new WebSocketTransportProvider();
+    }
+
+    @Override
+    public String getType()
+    {
+        return TYPE;
     }
 }

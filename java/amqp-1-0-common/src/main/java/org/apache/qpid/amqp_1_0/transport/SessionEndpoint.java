@@ -580,19 +580,7 @@ public class SessionEndpoint
             if(payload != null && payloadSent < payload.remaining())
             {
                 payload = payload.duplicate();
-try
-{
                 payload.position(payload.position()+payloadSent);
-}
-catch(IllegalArgumentException e)
-{
-    System.err.println("UNEXPECTED");
-    System.err.println("Payload Position: " + payload.position());
-    System.err.println("Payload Sent: " + payloadSent);
-    System.err.println("Payload Remaining: " + payload.remaining());
-    throw e;
-
-}
 
                 Transfer secondTransfer = new Transfer();
 

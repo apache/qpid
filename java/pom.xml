@@ -137,6 +137,7 @@
   <modules>
     <module>amqp-1-0-client</module>
     <module>amqp-1-0-client-jms</module>
+    <module>amqp-1-0-client-websocket</module>
     <module>amqp-1-0-common</module>
     <module>broker</module>
     <module>broker-core</module>
@@ -153,6 +154,7 @@
     <module>broker-plugins/management-http</module>
     <module>broker-plugins/management-jmx</module>
     <module>broker-plugins/memory-store</module>
+    <module>broker-plugins/websocket</module>
     <module>common</module>
     <module>client</module>
     <module>management/common</module>

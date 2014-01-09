@@ -18,37 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.amqp_1_0.client;
 
-import java.util.EnumSet;
+import java.util.Arrays;
+import java.util.Collection;
 
-public enum Transport
+public class TCPTransportProviderFactory implements TransportProviderFactory
 {
-    TCP,
-    SSL,
-    WS,
-    WSS,
-    SCTP;
-
-    public static Transport valueOfObject(Object transportObject)
+    @Override
+    public Collection<String> getSupportedTransports()
     {
-        Transport transport;
-        if (transportObject instanceof Transport)
-        {
-            transport = (Transport) transportObject;
-        }
-        else
-        {
-            try
-            {
-                transport = Transport.valueOf(String.valueOf(transportObject));
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Can't convert '" + transportObject
-                        + "' to one of the supported transports: " + EnumSet.allOf(Transport.class), e);
-            }
-        }
-        return transport;
+        return Arrays.asList("amqp","amqps");
+    }
+
+    @Override
+    public TransportProvider getProvider(final String transport)
+    {
+        return new TCPTransportProvier(transport);
     }
 }
