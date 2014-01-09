@@ -36,6 +36,7 @@ import org.apache.qpid.amqp_1_0.jms.ConnectionFactory;
 
 public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnectionFactory, QueueConnectionFactory
 {
+    private final String _protocol;
     private String _host;
     private int _port;
     private String _username;
@@ -98,6 +99,20 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                                  final boolean ssl,
                                  final int maxSessions)
     {
+        this(ssl?"amqps":"amqp",host,port,username,password,clientId,remoteHost,ssl,maxSessions);
+    }
+
+    public ConnectionFactoryImpl(final String protocol,
+                                 final String host,
+                                 final int port,
+                                 final String username,
+                                 final String password,
+                                 final String clientId,
+                                 final String remoteHost,
+                                 final boolean ssl,
+                                 final int maxSessions)
+    {
+        _protocol = protocol;
         _host = host;
         _port = port;
         _username = username;
@@ -115,7 +130,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     public ConnectionImpl createConnection(final String username, final String password) throws JMSException
     {
-        ConnectionImpl connection = new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl, _maxSessions);
+        ConnectionImpl connection = new ConnectionImpl(_protocol,_host, _port, username, password, _clientId, _remoteHost, _ssl, _maxSessions);
         connection.setQueuePrefix(_queuePrefix);
         connection.setTopicPrefix(_topicPrefix);
         connection.setUseBinaryMessageId(_useBinaryMessageId);
@@ -138,10 +153,12 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         {
             protocol = "amqp";
         }
+/*
         else if(!protocol.equals("amqp") && !protocol.equals("amqps"))
         {
             throw new MalformedURLException("Protocol '"+protocol+"' unknown. Must be one of 'amqp' or 'amqps'.");
         }
+*/
         String host = url.getHost();
         int port = url.getPort();
 
@@ -226,7 +243,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         }
 
         ConnectionFactoryImpl connectionFactory =
-                new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl, maxSessions);
+                new ConnectionFactoryImpl(protocol,host, port, username, password, clientId, remoteHost, ssl, maxSessions);
         connectionFactory.setUseBinaryMessageId(binaryMessageId);
         connectionFactory.setSyncPublish(syncPublish);
 

@@ -135,6 +135,12 @@
     <artifact name="qpid-amqp-1-0-client-jms" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-amqp-1-0-client-jms" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-amqp-1-0-client-jms" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-client-websocket" type="pom" ext="pom"/>
+    <artifact name="qpid-amqp-1-0-client-websocket" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-amqp-1-0-client-websocket" type="jar" ext="jar"/>
+    <artifact name="qpid-amqp-1-0-client-websocket" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-amqp-1-0-client-websocket" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-amqp-1-0-client-websocket" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-management-common" type="pom" ext="pom"/>
     <artifact name="qpid-management-common" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-management-common" type="jar" ext="jar"/>

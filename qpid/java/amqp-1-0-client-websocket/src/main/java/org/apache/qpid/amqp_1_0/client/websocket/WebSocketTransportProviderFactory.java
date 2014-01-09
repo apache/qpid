@@ -18,14 +18,25 @@
  * under the License.
  *
  */
-package org.apache.qpid.amqp_1_0.framing;
+package org.apache.qpid.amqp_1_0.client.websocket;
 
-/**
- * Callback interface for processing socket exceptions.
- */
-public interface SocketExceptionHandler
+import org.apache.qpid.amqp_1_0.client.TransportProvider;
+import org.apache.qpid.amqp_1_0.client.TransportProviderFactory;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+public class WebSocketTransportProviderFactory implements TransportProviderFactory
 {
+    @Override
+    public Collection<String> getSupportedTransports()
+    {
+        return Arrays.asList("ws", "wss");
+    }
 
-  public void processSocketException(Exception exception);
-
+    @Override
+    public TransportProvider getProvider(final String transport)
+    {
+        return new WebSocketProvider(transport);
+    }
 }

@@ -18,37 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.server.plugin;
 
-import java.util.EnumSet;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.transport.TransportProvider;
 
-public enum Transport
+import java.util.Set;
+
+public interface TransportProviderFactory extends Pluggable
 {
-    TCP,
-    SSL,
-    WS,
-    WSS,
-    SCTP;
+    Set<Set<Transport>> getSupportedTransports();
 
-    public static Transport valueOfObject(Object transportObject)
-    {
-        Transport transport;
-        if (transportObject instanceof Transport)
-        {
-            transport = (Transport) transportObject;
-        }
-        else
-        {
-            try
-            {
-                transport = Transport.valueOf(String.valueOf(transportObject));
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Can't convert '" + transportObject
-                        + "' to one of the supported transports: " + EnumSet.allOf(Transport.class), e);
-            }
-        }
-        return transport;
-    }
+    TransportProvider getTransportProvider(Set<Transport> transports);
+
+
 }

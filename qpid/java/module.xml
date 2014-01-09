@@ -584,8 +584,8 @@
     <copylist todir="${build.lib}" dir="${project.root}" files="${module.libs}"/>
   </target>
 
-
-  <target name="libs-release" description="copy dependencies into module release">
+  
+  <target name="libs-release-basic" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
       <echo message="${module.libs}"/>
     <copylist todir="${module.release}/lib" dir="${project.root}" files="${module.libs}"/>
@@ -594,8 +594,16 @@
     <!-- Copy the jar for this module -->
     <copy todir="${module.release}/lib" failonerror="true">
         <fileset file="${module.jar}"/>
+    </copy>
+  </target>
+
+  <target name="libs-release-module-depends" description="copy dependencies into module release" unless="release.exclude.module.deps">
+    <copy todir="${module.release}/lib" failonerror="true">
         <fileset dir="${build.lib}" includes="${module.depends.jars}"/>
     </copy>
+  </target>
+
+  <target name="libs-release" description="copy dependencies into module release" depends="libs-release-basic,libs-release-module-depends">
   </target>
 
   <target name="resources" description="copy resources into build tree">
