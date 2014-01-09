@@ -233,6 +233,33 @@ class ReplicationTests(HaBrokerTest):
             c.close()
         finally: l.restore()
 
+
+    def test_heartbeat_python(self):
+        """Verify that a python client with a heartbeat specified disconnects
+        from a stalled broker and does not hang indefinitely."""
+
+        broker = Broker(self)
+        broker_addr = broker.host_port()
+
+        # Case 1: Connect before stalling the broker, use the connection after stalling.
+        c = Connection(broker_addr, heartbeat=1)
+        c.open()
+        os.kill(broker.pid, signal.SIGSTOP) # Stall the broker
+        self.assertRaises(ConnectionError, c.session().sender, "foo")
+
+        # Case 2: Connect to a stalled broker
+        c = Connection(broker_addr, heartbeat=1)
+        self.assertRaises(ConnectionError, c.open)
+
+        # Case 3: Re-connect to a stalled broker.
+        broker2 = Broker(self)
+        c = Connection(broker2.host_port(), heartbeat=1, reconnect_limit=1,
+                       reconnect=True, reconnect_urls=[broker_addr],
+                       reconnect_log=False) # Hide expected warnings
+        c.open()
+        broker2.kill()          # Cause re-connection to broker
+        self.assertRaises(ConnectionError, c.session().sender, "foo")
+
     def test_failover_cpp(self):
         """Verify that failover works in the C++ client."""
         cluster = HaCluster(self, 2)
