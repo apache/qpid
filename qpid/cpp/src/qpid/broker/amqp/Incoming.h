@@ -78,6 +78,7 @@ class DecodingIncoming : public Incoming
   private:
     boost::shared_ptr<Session> session;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
+    boost::intrusive_ptr<Message> partial;
 };
 
 }}} // namespace qpid::broker::amqp
