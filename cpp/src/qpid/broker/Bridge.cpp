@@ -200,9 +200,10 @@ void Bridge::create(amqp_0_10::Connection& c)
     if (args.i_srcIsLocal) sessionHandler.getSession()->enableReceiverTracking();
 }
 
-void Bridge::cancel(amqp_0_10::Connection&)
+void Bridge::cancel(amqp_0_10::Connection& c)
 {
-    if (resetProxy()) {
+    // If &c != conn then we have failed over so the old connection is closed.
+    if (&c == conn && resetProxy()) {
         peer->getMessage().cancel(args.i_dest);
         peer->getSession().detach(sessionName);
     }
