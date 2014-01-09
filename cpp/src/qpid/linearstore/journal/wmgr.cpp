@@ -426,8 +426,8 @@ wmgr::abort(data_tok* dtokp,
 
             // Delete this txn from tmap, unlock any locked records in emap
             std::string xid((const char*)xid_ptr, xid_len);
-            txn_data_list tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-            for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++)
+            txn_data_list_t tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+            for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++)
             {
 				if (!itr->enq_flag_)
 				    _emap.unlock(itr->drid_); // ignore rid not found error
@@ -525,8 +525,8 @@ wmgr::commit(data_tok* dtokp,
 
             // Delete this txn from tmap, process records into emap
             std::string xid((const char*)xid_ptr, xid_len);
-            txn_data_list tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-            for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++)
+            txn_data_list_t tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+            for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++)
             {
                 if (itr->enq_flag_) // txn enqueue
                 {

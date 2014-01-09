@@ -51,6 +51,38 @@ txn_data_t::txn_data_t(const uint64_t rid,
         aio_compl_(false)
 {}
 
+txn_op_stats_t::txn_op_stats_t(const txn_data_list_t& tdl) :
+        enqCnt(0U),
+        deqCnt(0U),
+        tpcCnt(0U),
+        abortCnt(0U),
+        commitCnt(0U),
+        rid(0ULL)
+{
+    for (tdl_const_itr_t i=tdl.begin(); i!=tdl.end(); ++i) {
+        if (i->enq_flag_) {
+            ++enqCnt;
+            rid = i->rid_;
+        } else {
+            ++deqCnt;
+            if (i->commit_flag_) {
+                ++commitCnt;
+            } else {
+                ++abortCnt;
+            }
+        }
+        if (i->tpc_flag_) {
+            ++tpcCnt;
+        }
+    }
+    if (tpcCnt > 0 && tpcCnt != tdl.size()) {
+        throw jexception("Inconsistent 2PC count"); // TODO: complete exception details
+    }
+    if (abortCnt > 0 && commitCnt > 0) {
+        throw jexception("Both abort and commit in same transaction"); // TODO: complete exception details
+    }
+}
+
 txn_map::txn_map():
         _map()/*,
         _pfid_txn_cnt()*/
@@ -66,7 +98,7 @@ txn_map::insert_txn_data(const std::string& xid, const txn_data_t& td)
     xmap_itr itr = _map.find(xid);
     if (itr == _map.end()) // not found in map
     {
-        txn_data_list list;
+        txn_data_list_t list;
         list.push_back(td);
         std::pair<xmap_itr, bool> ret = _map.insert(xmap_param(xid, list));
         if (!ret.second) // duplicate
@@ -77,14 +109,14 @@ txn_map::insert_txn_data(const std::string& xid, const txn_data_t& td)
     return ok;
 }
 
-const txn_data_list
+const txn_data_list_t
 txn_map::get_tdata_list(const std::string& xid)
 {
     slock s(_mutex);
     return get_tdata_list_nolock(xid);
 }
 
-const txn_data_list
+const txn_data_list_t
 txn_map::get_tdata_list_nolock(const std::string& xid)
 {
     xmap_itr itr = _map.find(xid);
@@ -93,14 +125,14 @@ txn_map::get_tdata_list_nolock(const std::string& xid)
     return itr->second;
 }
 
-const txn_data_list
+const txn_data_list_t
 txn_map::get_remove_tdata_list(const std::string& xid)
 {
     slock s(_mutex);
     xmap_itr itr = _map.find(xid);
     if (itr == _map.end()) // not found in map
         return _empty_data_list;
-    txn_data_list list = itr->second;
+    txn_data_list_t list = itr->second;
     _map.erase(itr);
     return list;
 }
@@ -132,7 +164,7 @@ txn_map::cnt(const bool enq_flag)
     uint32_t c = 0;
     for (xmap_itr i = _map.begin(); i != _map.end(); i++)
     {
-        for (tdl_itr j = i->second.begin(); j < i->second.end(); j++)
+        for (tdl_itr_t j = i->second.begin(); j < i->second.end(); j++)
         {
             if (j->enq_flag_ == enq_flag)
                 c++;
@@ -149,7 +181,7 @@ txn_map::is_txn_synced(const std::string& xid)
     if (itr == _map.end()) // not found in map
         return TMAP_XID_NOT_FOUND;
     bool is_synced = true;
-    for (tdl_itr litr = itr->second.begin(); litr < itr->second.end(); litr++)
+    for (tdl_itr_t litr = itr->second.begin(); litr < itr->second.end(); litr++)
     {
         if (!litr->aio_compl_)
         {
@@ -167,7 +199,7 @@ txn_map::set_aio_compl(const std::string& xid, const uint64_t rid)
     xmap_itr itr = _map.find(xid);
     if (itr == _map.end()) // xid not found in map
         return TMAP_XID_NOT_FOUND;
-    for (tdl_itr litr = itr->second.begin(); litr < itr->second.end(); litr++)
+    for (tdl_itr_t litr = itr->second.begin(); litr < itr->second.end(); litr++)
     {
         if (litr->rid_ == rid)
         {
@@ -185,8 +217,8 @@ txn_map::data_exists(const std::string& xid, const uint64_t rid)
     bool found = false;
     {
         slock s(_mutex);
-        txn_data_list tdl = get_tdata_list_nolock(xid);
-        tdl_itr itr = tdl.begin();
+        txn_data_list_t tdl = get_tdata_list_nolock(xid);
+        tdl_itr_t itr = tdl.begin();
         while (itr != tdl.end() && !found)
         {
             found = itr->rid_ == rid;
@@ -204,8 +236,8 @@ txn_map::is_enq(const uint64_t rid)
         slock s(_mutex);
         for (xmap_itr i = _map.begin(); i != _map.end() && !found; i++)
         {
-            txn_data_list list = i->second;
-            for (tdl_itr j = list.begin(); j < list.end() && !found; j++)
+            txn_data_list_t list = i->second;
+            for (tdl_itr_t j = list.begin(); j < list.end() && !found; j++)
             {
                 if (j->enq_flag_)
                     found = j->rid_ == rid;
