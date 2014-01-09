@@ -27,6 +27,7 @@
 #include "qpid/broker/AsyncCompletion.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
@@ -111,19 +112,38 @@ DecodingIncoming::~DecodingIncoming() {}
 
 void DecodingIncoming::readable(pn_delivery_t* delivery)
 {
-    boost::intrusive_ptr<Message> received(new Message(pn_delivery_pending(delivery)));
-    /*ssize_t read = */pn_link_recv(link, received->getData(), received->getSize());
-    received->scan();
-    pn_link_advance(link);
+    size_t pending = pn_delivery_pending(delivery);
+    size_t offset = partial ? partial->getSize() : 0;
+    boost::intrusive_ptr<Message> received(new Message(offset + pending));
+    if (partial) {
+        ::memcpy(received->getData(), partial->getData(), offset);
+        partial = boost::intrusive_ptr<Message>();
+    }
+    assert(received->getSize() == pending + offset);
+    pn_link_recv(link, received->getData() + offset, pending);
 
-    qpid::broker::Message message(received, received);
-    message.setPublisher(session->getParent());
-    userid.verify(message.getUserId());
-    message.computeExpiration(expiryPolicy);
-    handle(message);
-    --window;
-    received->begin();
-    Transfer t(delivery, session);
-    received->end(t);
+    if (pn_delivery_partial(delivery)) {
+        QPID_LOG(debug, "Message incomplete: received " << pending << " bytes, now have " << received->getSize());
+        partial = received;
+    } else {
+        if (offset) {
+            QPID_LOG(debug, "Message complete: received " << pending << " bytes, " << received->getSize() << " in total");
+        } else {
+            QPID_LOG(debug, "Message received: " << received->getSize() << " bytes");
+        }
+
+        received->scan();
+        pn_link_advance(link);
+
+        qpid::broker::Message message(received, received);
+        message.setPublisher(session->getParent());
+        userid.verify(message.getUserId());
+        message.computeExpiration(expiryPolicy);
+        handle(message);
+        --window;
+        received->begin();
+        Transfer t(delivery, session);
+        received->end(t);
+    }
 }
 }}} // namespace qpid::broker::amqp
