@@ -43,8 +43,8 @@
 #define QLS_WMGR_MAXWAITUS              100         /**< Max. wait time (us) before submitting AIO */
 
 #define QLS_JRNL_FILE_EXTENSION         ".jrnl"     /**< Extension for journal data files */
-#define QLS_TXA_MAGIC                   0x61534c51  /**< ("RHMa" in little endian) Magic for dtx abort hdrs */
-#define QLS_TXC_MAGIC                   0x63534c51  /**< ("RHMc" in little endian) Magic for dtx commit hdrs */
+#define QLS_TXA_MAGIC                   0x61534c51  /**< ("QLSa" in little endian) Magic for dtx abort hdrs */
+#define QLS_TXC_MAGIC                   0x63534c51  /**< ("QLSc" in little endian) Magic for dtx commit hdrs */
 #define QLS_DEQ_MAGIC                   0x64534c51  /**< ("QLSd" in little endian) Magic for deq rec hdrs */
 #define QLS_ENQ_MAGIC                   0x65534c51  /**< ("QLSe" in little endian) Magic for enq rec hdrs */
 #define QLS_FILE_MAGIC                  0x66534c51  /**< ("QLSf" in little endian) Magic for file hdrs */

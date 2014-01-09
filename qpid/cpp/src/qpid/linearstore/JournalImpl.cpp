@@ -193,6 +193,7 @@ JournalImpl::recover(boost::shared_ptr< ::qpid::linearstore::journal::EmptyFileP
     }
 */
 
+    // TODO: This is ugly, find a way for RecoveryManager to use boost::ptr_list<PreparedTransaction>* directly
     if (prep_tx_list_ptr) {
         // Create list of prepared xids
         std::vector<std::string> prep_xid_list;
@@ -209,8 +210,8 @@ JournalImpl::recover(boost::shared_ptr< ::qpid::linearstore::journal::EmptyFileP
     if (prep_tx_list_ptr)
     {
         for (PreparedTransaction::list::iterator i = prep_tx_list_ptr->begin(); i != prep_tx_list_ptr->end(); i++) {
-            ::qpid::linearstore::journal::txn_data_list tdl = _tmap.get_tdata_list(i->xid); // tdl will be empty if xid not found
-            for (::qpid::linearstore::journal::tdl_itr tdl_itr = tdl.begin(); tdl_itr < tdl.end(); tdl_itr++) {
+            ::qpid::linearstore::journal::txn_data_list_t tdl = _tmap.get_tdata_list(i->xid); // tdl will be empty if xid not found
+            for (::qpid::linearstore::journal::tdl_itr_t tdl_itr = tdl.begin(); tdl_itr < tdl.end(); tdl_itr++) {
                 if (tdl_itr->enq_flag_) { // enqueue op
                     i->enqueues->add(queue_id, tdl_itr->rid_);
                 } else { // dequeue op

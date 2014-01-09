@@ -117,14 +117,13 @@ void RecoveryManager::analyzeJournals(const std::vector<std::string>* preparedTr
                 std::vector<std::string>::const_iterator pitr =
                         std::find(preparedTransactionListPtr->begin(), preparedTransactionListPtr->end(), *itr);
                 if (pitr == preparedTransactionListPtr->end()) { // not found in prepared list
-                    txn_data_list tdl = transactionMapRef_.get_remove_tdata_list(*itr); // tdl will be empty if xid not found
+                    txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(*itr); // tdl will be empty if xid not found
                     // Unlock any affected enqueues in emap
-                    for (tdl_itr i=tdl.begin(); i<tdl.end(); i++) {
+                    for (tdl_itr_t i=tdl.begin(); i<tdl.end(); i++) {
                         if (i->enq_flag_) { // enq op - decrement enqueue count
                             fileNumberMap_[i->pfid_]->decrEnqueuedRecordCount();
                         } else if (enqueueMapRef_.is_enqueued(i->drid_, true)) { // deq op - unlock enq record
-                            int16_t ret = enqueueMapRef_.unlock(i->drid_);
-                            if (ret < enq_map::EMAP_OK) { // fail
+                            if (enqueueMapRef_.unlock(i->drid_) < enq_map::EMAP_OK) { // fail
                                 // enq_map::unlock()'s only error is enq_map::EMAP_RID_NOT_FOUND
                                 std::ostringstream oss;
                                 oss << std::hex << "_emap.unlock(): drid=0x\"" << i->drid_;
@@ -669,8 +668,8 @@ bool RecoveryManager::getNextRecordHeader()
                     throw jexception(jerrno::JERR_RCVM_NULLXID, "ABT", "RecoveryManager", "getNextRecordHeader");
                 }
                 std::string xid((char*)xidp, ar.xid_size());
-                txn_data_list tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-                for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++) {
+                txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+                for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++) {
                     if (itr->enq_flag_) {
                         fileNumberMap_[itr->pfid_]->decrEnqueuedRecordCount();
                     } else {
@@ -697,8 +696,8 @@ bool RecoveryManager::getNextRecordHeader()
                     throw jexception(jerrno::JERR_RCVM_NULLXID, "CMT", "RecoveryManager", "getNextRecordHeader");
                 }
                 std::string xid((char*)xidp, cr.xid_size());
-                txn_data_list tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-                for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++) {
+                txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+                for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++) {
                     if (itr->enq_flag_) { // txn enqueue
 //std::cout << "[rid=0x" << std::hex << itr->rid_ << std::dec << " fid=" << itr->pfid_ << " fpos=0x" << std::hex << itr->foffs_ << "]" << std::dec << std::flush; // DEBUG
                         if (enqueueMapRef_.insert_pfid(itr->rid_, itr->pfid_, itr->foffs_) < enq_map::EMAP_OK) { // fail
@@ -766,8 +765,8 @@ void RecoveryManager::prepareRecordList() {
     std::vector<std::string> xidList;
     transactionMapRef_.xid_list(xidList);
     for (std::vector<std::string>::const_iterator j=xidList.begin(); j!=xidList.end(); ++j) {
-        qpid::linearstore::journal::txn_data_list tdsl = transactionMapRef_.get_tdata_list(*j);
-        for (qpid::linearstore::journal::tdl_itr k=tdsl.begin(); k!=tdsl.end(); ++k) {
+        qpid::linearstore::journal::txn_data_list_t tdsl = transactionMapRef_.get_tdata_list(*j);
+        for (qpid::linearstore::journal::tdl_itr_t k=tdsl.begin(); k!=tdsl.end(); ++k) {
             if (k->enq_flag_) {
                 recordIdList_.push_back(RecoveredRecordData_t(k->rid_, k->pfid_, k->foffs_, true));
             }
