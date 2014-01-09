@@ -65,6 +65,12 @@ public class ConnectionHandler
     public boolean parse(ByteBuffer in)
     {
 
+        if(RAW_LOGGER.isLoggable(Level.FINE))
+        {
+            Binary b = new Binary(in.array(),in.arrayOffset()+in.position(),in.remaining());
+            RAW_LOGGER.fine("RECV [" + _connection.getRemoteAddress() + "] : " + b.toString());
+        }
+
         while(in.hasRemaining() && !isDone())
         {
             _delegate = _delegate.parse(in);
@@ -376,6 +382,47 @@ public class ConnectionHandler
     }
 
 
+    public static class SequentialFrameSource implements FrameSource
+    {
+        private Queue<FrameSource> _sources = new LinkedList<FrameSource>();
+
+        public SequentialFrameSource(FrameSource... sources)
+        {
+            _sources.addAll(Arrays.asList(sources));
+        }
+
+        public synchronized void addSource(FrameSource source)
+        {
+            _sources.add(source);
+        }
+
+        @Override
+        public synchronized AMQFrame getNextFrame(final boolean wait)
+        {
+            FrameSource src = _sources.peek();
+            while (src != null && src.closed())
+            {
+                _sources.poll();
+                src = _sources.peek();
+            }
+
+            if(src != null)
+            {
+                return src.getNextFrame(wait);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public boolean closed()
+        {
+            return _sources.isEmpty();
+        }
+    }
+
+
     public static class BytesOutputHandler implements Runnable, BytesProcessor
     {
 
@@ -383,27 +430,27 @@ public class ConnectionHandler
         private BytesSource _bytesSource;
         private boolean _closed;
         private ConnectionEndpoint _conn;
-        private SocketExceptionHandler _exceptionHandler;
+        private ExceptionHandler _exceptionHandler;
 
-        public BytesOutputHandler(OutputStream outputStream, BytesSource source, ConnectionEndpoint conn, SocketExceptionHandler exceptionHandler)
+        public BytesOutputHandler(OutputStream outputStream, BytesSource source, ConnectionEndpoint conn, ExceptionHandler exceptionHandler)
+        {
+            _outputStream = outputStream;
+            _bytesSource = source;
+            _conn = conn;
+            _exceptionHandler = exceptionHandler;
+        }
+
+        public void run()
+        {
+
+            final BytesSource bytesSource = _bytesSource;
+
+            while(!(_closed || bytesSource.closed()))
             {
-                _outputStream = outputStream;
-                _bytesSource = source;
-                _conn = conn;
-                _exceptionHandler = exceptionHandler;
+                _bytesSource.getBytes(this, true);
             }
 
-            public void run()
-            {
-
-                final BytesSource bytesSource = _bytesSource;
-
-                while(!(_closed || bytesSource.closed()))
-                {
-                    _bytesSource.getBytes(this, true);
-                }
-
-            }
+        }
 
         public void processBytes(final ByteBuffer buf)
         {
@@ -423,7 +470,7 @@ public class ConnectionHandler
             catch (IOException e)
             {
                 _closed = true;
-                _exceptionHandler.processSocketException(e);
+                _exceptionHandler.handleException(e);
             }
         }
     }

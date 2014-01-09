@@ -38,6 +38,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
 {
 
+    private final String _protocol;
     private ConnectionMetaData _connectionMetaData;
     private volatile ExceptionListener _exceptionListener;
 
@@ -87,8 +88,15 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         this(host, port, username, password, clientId, remoteHost, ssl,0);
     }
 
+
     public ConnectionImpl(String host, int port, String username, String password, String clientId, String remoteHost, boolean ssl, int maxSessions) throws JMSException
     {
+        this(ssl?"amqps":"amqp",host,port,username,password,clientId,remoteHost,ssl,maxSessions);
+    }
+
+    public ConnectionImpl(String protocol, String host, int port, String username, String password, String clientId, String remoteHost, boolean ssl, int maxSessions) throws JMSException
+    {
+        _protocol = protocol;
         _host = host;
         _port = port;
         _username = username;
@@ -109,10 +117,10 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 _state = State.STOPPED;
 
                 Container container = _clientId == null ? new Container() : new Container(_clientId);
-                // TODO - authentication, containerId, clientId, ssl?, etc
+
                 try
                 {
-                    _conn = new org.apache.qpid.amqp_1_0.client.Connection(_host,
+                    _conn = new org.apache.qpid.amqp_1_0.client.Connection(_protocol, _host,
                             _port, _username, _password, container, _remoteHost, _ssl,
                             _maxSessions - 1);
                     _conn.setConnectionErrorTask(new ConnectionErrorTask());

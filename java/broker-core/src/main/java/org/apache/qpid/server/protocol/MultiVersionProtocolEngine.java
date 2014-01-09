@@ -38,6 +38,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
+import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.security.SSLStatus;
@@ -274,9 +275,9 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public void received(ByteBuffer msg)
         {
-
             _lastReadTime = System.currentTimeMillis();
-            ByteBuffer msgheader = msg.duplicate();
+            ByteBuffer msgheader = msg.duplicate().slice();
+
             if(_header.remaining() > msgheader.limit())
             {
                 msg.position(msg.limit());
@@ -328,6 +329,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                         defaultSupportedReplyBytes = _creators[i].getHeaderIdentifier();
                     }
                 }
+
 
                 if(newDelegate == null && looksLikeSSL(headerBytes))
                 {

@@ -18,37 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.amqp_1_0.client;
 
-import java.util.EnumSet;
+import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
+import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
+import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
+import org.apache.qpid.amqp_1_0.type.FrameBody;
 
-public enum Transport
+public interface TransportProvider
 {
-    TCP,
-    SSL,
-    WS,
-    WSS,
-    SCTP;
-
-    public static Transport valueOfObject(Object transportObject)
-    {
-        Transport transport;
-        if (transportObject instanceof Transport)
-        {
-            transport = (Transport) transportObject;
-        }
-        else
-        {
-            try
-            {
-                transport = Transport.valueOf(String.valueOf(transportObject));
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Can't convert '" + transportObject
-                        + "' to one of the supported transports: " + EnumSet.allOf(Transport.class), e);
-            }
-        }
-        return transport;
-    }
+    void connect(ConnectionEndpoint conn,
+                 String address,
+                 int port,
+                 boolean ssl,
+                 ExceptionHandler exceptionHandler) throws ConnectionException;
 }

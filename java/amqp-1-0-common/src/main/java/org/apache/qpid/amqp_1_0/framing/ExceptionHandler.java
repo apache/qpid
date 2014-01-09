@@ -18,37 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.amqp_1_0.framing;
 
-import java.util.EnumSet;
-
-public enum Transport
+/**
+ * Callback interface for processing socket exceptions.
+ */
+public interface ExceptionHandler
 {
-    TCP,
-    SSL,
-    WS,
-    WSS,
-    SCTP;
 
-    public static Transport valueOfObject(Object transportObject)
-    {
-        Transport transport;
-        if (transportObject instanceof Transport)
-        {
-            transport = (Transport) transportObject;
-        }
-        else
-        {
-            try
-            {
-                transport = Transport.valueOf(String.valueOf(transportObject));
-            }
-            catch (Exception e)
-            {
-                throw new IllegalArgumentException("Can't convert '" + transportObject
-                        + "' to one of the supported transports: " + EnumSet.allOf(Transport.class), e);
-            }
-        }
-        return transport;
-    }
+  public void handleException(Exception exception);
+
 }
