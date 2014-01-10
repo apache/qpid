@@ -1271,11 +1271,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
         else if (throwable instanceof IOException)
         {
-            _logger.error("IOException caught in" + this + ", session closed implictly: " + throwable);
+            _logger.info("IOException caught in " + this + ", connection closed implicitly: " + throwable);
         }
         else
         {
-            _logger.error("Exception caught in" + this + ", closing session explictly: " + throwable, throwable);
+            _logger.error("Exception caught in " + this + ", closing connection explicitly: " + throwable, throwable);
 
 
             MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(getProtocolVersion());
