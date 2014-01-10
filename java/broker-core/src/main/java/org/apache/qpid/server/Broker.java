@@ -123,6 +123,7 @@ public class Broker
         }
         catch(Exception e)
         {
+            LOGGER.fatal("Exception during startup", e);
             try
             {
                 _applicationRegistry.close();
