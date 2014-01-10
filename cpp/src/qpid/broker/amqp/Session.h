@@ -100,7 +100,8 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
         boost::shared_ptr<qpid::broker::amqp::Topic> topic;
         boost::shared_ptr<Relay> relay;
         NodeProperties properties;
-        ResolvedNode(bool isDynamic) : properties(isDynamic) {}
+        bool created;
+        ResolvedNode(bool isDynamic) : properties(isDynamic), created(false) {}
     };
 
     ResolvedNode resolve(const std::string name, pn_terminus_t* terminus, bool incoming);
