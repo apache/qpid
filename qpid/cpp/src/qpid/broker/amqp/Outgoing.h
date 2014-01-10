@@ -90,6 +90,7 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
   public:
     OutgoingFromQueue(Broker&, const std::string& source, const std::string& target, boost::shared_ptr<Queue> q, pn_link_t* l, Session&,
                       qpid::sys::OutputControl& o, SubscriptionType type, bool exclusive, bool isControllingUser);
+    ~OutgoingFromQueue();
     void setSubjectFilter(const std::string&);
     void setSelectorFilter(const std::string&);
     void init();
@@ -144,6 +145,7 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
     std::string subjectFilter;
     boost::scoped_ptr<Selector> selector;
     bool unreliable;
+    bool cancelled;
 };
 }}} // namespace qpid::broker::amqp
 

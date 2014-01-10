@@ -251,14 +251,20 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 }
                 qpid::framing::FieldTable args;
                 qpid::amqp_0_10::translate(node.properties.getProperties(), args);
-                node.exchange = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.isAutodelete(),
-                                                                      node.properties.getAlternateExchange(),
-                                                                      args, connection.getUserId(), connection.getId()).first;
+                std::pair<boost::shared_ptr<Exchange>, bool> result
+                    = connection.getBroker().createExchange(name, node.properties.getExchangeType(), node.properties.isDurable(), node.properties.isAutodelete(),
+                                                            node.properties.getAlternateExchange(),
+                                                            args, connection.getUserId(), connection.getId());
+                node.exchange = result.first;
+                node.created = result.second;
             } else {
                 if (node.exchange) {
                     QPID_LOG_CAT(warning, model, "Node name will be ambiguous, creation of queue named " << name << " requested when exchange of the same name already exists");
                 }
-                node.queue = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId()).first;
+                std::pair<boost::shared_ptr<Queue>, bool> result
+                    = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId());
+                node.queue = result.first;
+                node.created = result.second;
             }
         } else {
             boost::shared_ptr<NodePolicy> nodePolicy = connection.getNodePolicies().match(name);
@@ -415,7 +421,7 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         source = sourceAddress;
     }
     if (node.queue) {
-        boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source, node.properties.trackControllingLink()));
+        boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source, node.created && node.properties.trackControllingLink()));
         incoming[link] = q;
     } else if (node.exchange) {
         boost::shared_ptr<Incoming> e(new IncomingToExchange(connection.getBroker(), *this, node.exchange, link, source));
@@ -460,7 +466,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         if (type == CONSUMER && node.queue->hasExclusiveOwner() && !node.queue->isExclusiveOwner(this)) {
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, std::string("Cannot consume from exclusive queue ") + node.queue->getName());
         }
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, type, false, node.properties.trackControllingLink()));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, type, false, node.created && node.properties.trackControllingLink()));
         q->init();
         filter.apply(q);
         outgoing[link] = q;

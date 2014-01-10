@@ -66,7 +66,8 @@ OutgoingFromQueue::OutgoingFromQueue(Broker& broker, const std::string& source, 
       current(0), outstanding(0),
       buffer(1024)/*used only for header at present*/,
       //for exclusive queues, assume unreliable unless reliable is explicitly requested; otherwise assume reliable unless unreliable requested
-      unreliable(exclusive ? !requested_reliable(link) : requested_unreliable(link))
+      unreliable(exclusive ? !requested_reliable(link) : requested_unreliable(link)),
+      cancelled(false)
 {
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         deliveries[i].init(i);
@@ -181,6 +182,13 @@ void OutgoingFromQueue::detached()
     }
     if (exclusive) queue->releaseExclusiveOwnership();
     else if (isControllingUser) queue->releaseFromUse(true);
+    cancelled = true;
+}
+
+
+OutgoingFromQueue::~OutgoingFromQueue()
+{
+    if (!cancelled && isControllingUser) queue->releaseFromUse(true);
 }
 
 //Consumer interface:
