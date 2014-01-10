@@ -521,16 +521,17 @@ void Queue::markInUse(bool controlling)
 
 void Queue::releaseFromUse(bool controlling)
 {
+    bool trydelete;
     if (controlling) {
-        {
-            Mutex::ScopedLock locker(messageLock);
-            users.removeLifecycleController();
-        }
-        scheduleAutoDelete();
+        Mutex::ScopedLock locker(messageLock);
+        users.removeLifecycleController();
+        trydelete = true;
     } else {
         Mutex::ScopedLock locker(messageLock);
         users.removeOther();
+        trydelete = isUnused(locker);
     }
+    if (trydelete) scheduleAutoDelete();
 }
 
 void Queue::consume(Consumer::shared_ptr c, bool requestExclusive)
