@@ -480,7 +480,8 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         if (node.topic) {
             settings = node.topic->getPolicy();
             settings.durable = durable;
-            settings.autodelete = autodelete;
+            //only determine autodelete from link details if the policy did not imply autodeletion
+            if (!settings.autodelete) settings.autodelete = autodelete;
             altExchange = node.topic->getAlternateExchange();
         }
         settings.autoDeleteDelay = pn_terminus_get_timeout(source);
