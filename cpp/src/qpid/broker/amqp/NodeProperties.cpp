@@ -105,7 +105,8 @@ bool getLifetimeDescriptorSymbol(QueueSettings::LifetimePolicy policy, pn_bytes_
 
 }
 
-NodeProperties::NodeProperties() : received(false), queue(true), durable(false), autoDelete(false), exclusive(false), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
+NodeProperties::NodeProperties(bool isDynamic) : received(false), queue(true), durable(false), autoDelete(false), exclusive(false),
+                                                 dynamic(isDynamic), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
 
 void NodeProperties::read(pn_data_t* data)
 {
@@ -335,7 +336,9 @@ void NodeProperties::onSymbolValue(const CharSequence& key, const CharSequence& 
 
 QueueSettings NodeProperties::getQueueSettings()
 {
-    QueueSettings settings(durable, autoDelete);
+    //assume autodelete for dynamic nodes unless explicitly requested
+    //otherwise or unless durability is requested
+    QueueSettings settings(durable, autoDelete || (dynamic && !wasSpecified(AUTO_DELETE) && !durable));
     qpid::types::Variant::Map unused;
     settings.populate(properties, unused);
     settings.lifetime = lifetime;
