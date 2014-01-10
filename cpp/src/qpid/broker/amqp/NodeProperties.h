@@ -38,7 +38,7 @@ namespace amqp {
 class NodeProperties : public qpid::amqp::MapReader
 {
   public:
-    NodeProperties();
+    NodeProperties(bool isDynamic);
     void read(pn_data_t*);
     void write(pn_data_t*,boost::shared_ptr<Queue>);
     void write(pn_data_t*,boost::shared_ptr<Exchange>);
@@ -75,6 +75,7 @@ class NodeProperties : public qpid::amqp::MapReader
     bool durable;
     bool autoDelete;
     bool exclusive;
+    bool dynamic;
     std::string exchangeType;
     std::string alternateExchange;
     qpid::types::Variant::Map properties;
