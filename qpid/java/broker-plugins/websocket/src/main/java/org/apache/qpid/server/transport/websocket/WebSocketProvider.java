@@ -268,14 +268,9 @@ class WebSocketProvider implements AcceptingTransport
         }
 
         @Override
-        public void setPeerPrincipal(final Principal principal)
-        {
-            _principal = principal;
-        }
-
-        @Override
         public Principal getPeerPrincipal()
         {
+            //TODO: how do we populate this?
             return _principal;
         }
 

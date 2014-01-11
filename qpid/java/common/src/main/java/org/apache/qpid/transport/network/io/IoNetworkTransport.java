@@ -245,19 +245,6 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
                         ticker.setConnection(connection);
 
-                        if(_sslContext != null && socket instanceof SSLSocket)
-                        {
-                            try
-                            {
-                                Principal peerPrincipal = ((SSLSocket) socket).getSession().getPeerPrincipal();
-                                connection.setPeerPrincipal(peerPrincipal);
-                            }
-                            catch(SSLPeerUnverifiedException e)
-                            {
-                                // ignore
-                            }
-                        }
-
                         engine.setNetworkConnection(connection, connection.getSender());
 
                         connection.start();

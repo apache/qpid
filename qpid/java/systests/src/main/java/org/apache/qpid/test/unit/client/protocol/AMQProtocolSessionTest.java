@@ -154,11 +154,6 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
         }
 
         @Override
-        public void setPeerPrincipal(Principal principal)
-        {
-        }
-
-        @Override
         public Principal getPeerPrincipal()
         {
             return null;
