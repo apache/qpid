@@ -28,7 +28,7 @@ import org.apache.qpid.qmf2.common.QmfQuery;
 import org.apache.qpid.qmf2.common.WorkItem;
 
 /**
- * Descriptions below are taken from <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> 
+ * Descriptions below are taken from <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> 
  * <pre>
  * QUERY: The QUERY WorkItem describes a query that the application must service. The application should call the 
  *        queryResponse() method for each object that satisfies the query. When complete, the application must call the 
