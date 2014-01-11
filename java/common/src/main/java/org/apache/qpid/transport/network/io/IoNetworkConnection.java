@@ -24,11 +24,14 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSocket;
+
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.NetworkConnection;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,15 +42,11 @@ public class IoNetworkConnection implements NetworkConnection
     private final long _timeout;
     private final IoSender _ioSender;
     private final IoReceiver _ioReceiver;
-    private Principal _principal;
     private int _maxReadIdle;
     private int _maxWriteIdle;
-
-    public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> delegate,
-                               int sendBufferSize, int receiveBufferSize, long timeout)
-    {
-        this(socket,delegate,sendBufferSize,receiveBufferSize,timeout,null);
-    }
+    private Principal _principal;
+    private boolean _principalChecked;
+    private final Object _lock = new Object();
 
     public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> delegate,
             int sendBufferSize, int receiveBufferSize, long timeout, Ticker ticker)
@@ -108,15 +107,29 @@ public class IoNetworkConnection implements NetworkConnection
     }
 
     @Override
-    public void setPeerPrincipal(Principal principal)
-    {
-        _principal = principal;
-    }
-
-    @Override
     public Principal getPeerPrincipal()
     {
-        return _principal;
+        synchronized (_lock)
+        {
+            if(!_principalChecked)
+            {
+                if(_socket instanceof SSLSocket)
+                {
+                    try
+                    {
+                        _principal = ((SSLSocket) _socket).getSession().getPeerPrincipal();
+                    }
+                    catch(SSLPeerUnverifiedException e)
+                    {
+                        _principal = null;
+                    }
+                }
+
+                _principalChecked = true;
+            }
+
+            return _principal;
+        }
     }
 
     @Override
