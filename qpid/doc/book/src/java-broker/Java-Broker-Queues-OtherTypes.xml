@@ -320,23 +320,40 @@ topicExchange.createNewBinding("queue", "testBindingKey", arguments);]]></progra
           to the same group. <emphasis>Consumption ordering</emphasis> means one of two things
           depending on how the queue has been configured.
             <itemizedlist>
-              <listitem>In default mode, each group is assigned to a consumer for
-              the lifetime of the consumer.</listitem>
-              <listitem>In C++ compatibility mode (which gives the same behaviour
-              as the C++ Qpid Broker), the Broker enforces a looser guarantee, nameley that all the
-              <emphasis>currently unacknowledged messages</emphasis> in a group will be sent to the
-              same consumer.  This means that only one consumer can be processing messages from a particular
-              group at a given time.  When the consumer acknowledges all of its acquired
-              messages, then the broker <emphasis>may</emphasis> pass the next pending message
-              from that group to a different consumer.</listitem>
+              <listitem>
+                In default mode, a group gets assigned to a single consumer for
+                the lifetime of that consumer, and the broker will pass all subsequent messages in
+                the group to that consumer.
+              </listitem>
+              <listitem>
+                In 'shared groups' mode (which gives the same behaviour
+                as the Qpid C++ Broker) the broker enforces a looser guarantee, namely that all the
+                <emphasis>currently unacknowledged messages</emphasis> in a group are sent to the
+                same consumer, but the consumer used may change over time even if the consumers do not.
+                This means that only one consumer can be processing messages from a particular group at
+                any given time, however if the consumer acknowledges all of its acquired messages then
+                the broker <emphasis>may</emphasis> pass the next pending message in that group to a
+                different consumer.
+              </listitem>
             </itemizedlist>
           </listitem>
         </itemizedlist>
       </para>
       <para>
-        The absence of a value in the designated header field for grouping as treated as indicative
-        of a lack of desire for the message to be grouped. Messages with such a lack of a value will
-        be distributed to any available consumer.
+        The absence of a value in the designated group header field of a message is treated as follows:
+        <itemizedlist>
+          <listitem>
+            In default mode, failure for a message to specify a group is treated as a desire for the message
+            not to be grouped at all. Such messages will be distributed to any available consumer, without
+            the ordering quarantees imposed by grouping.
+          </listitem>
+          <listitem>
+            In 'shared groups' mode (which gives the same behaviour as the Qpid C++ Broker) the broker assigns messages
+            without a group value to a 'default group'. Therefore, all such "unidentified" messages are considered by
+            the broker as part of the same group, which will handled like any other group. The name of
+            this default group is "qpid.no-group", although it can be customised as detailed below.
+          </listitem>
+        </itemizedlist>
       </para>
       <para>
         Note that message grouping has no effect on queue browsers.
@@ -395,11 +412,23 @@ topicExchange.createNewBinding("queue", "testBindingKey", arguments);]]></progra
                 <row>
                   <entry>qpid.shared_msg_group</entry>
                   <entry>Provide a value of "1" to switch on
-                  <link linkend="Java-Broker-Queues-OtherTypes-BrokerRole">C++ compatibility mode</link></entry>
+                  <link linkend="Java-Broker-Queues-OtherTypes-BrokerRole">'shared groups' mode</link>.</entry>
+                </row>
+                <row>
+                  <entry>qpid.default_msg_group</entry>
+                  <entry>The value to use as the default group when operating in
+                  <link linkend="Java-Broker-Queues-OtherTypes-BrokerRole">'shared groups' mode</link>.</entry>
                 </row>
               </tbody>
             </tgroup>
           </table>
+      </para>
+      <para>
+        The default group for groups operating in 'shared groups' mode can be updated broker-wide using a system property as follows,
+        however do note that the queue declaration argument detailed above takes precedence:
+      </para>
+      <para>
+        -Dqpid.broker_default-shared-message-group="your.default.shared.group"
       </para>
       <para>
         It is important to note that there is no need to provide the actual group
