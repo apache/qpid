@@ -47,8 +47,6 @@ public interface NetworkConnection
 
     void setMaxReadIdle(int sec);
 
-    void setPeerPrincipal(Principal principal);
-
     Principal getPeerPrincipal();
 
     int getMaxReadIdle();

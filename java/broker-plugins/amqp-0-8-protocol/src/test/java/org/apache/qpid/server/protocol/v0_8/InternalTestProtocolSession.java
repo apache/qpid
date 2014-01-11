@@ -314,11 +314,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
 
         @Override
-        public void setPeerPrincipal(Principal principal)
-        {
-        }
-
-        @Override
         public Principal getPeerPrincipal()
         {
             return null;

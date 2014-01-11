@@ -75,11 +75,6 @@ public class TestNetworkConnection implements NetworkConnection
     }
 
     @Override
-    public void setPeerPrincipal(Principal principal)
-    {
-    }
-
-    @Override
     public Principal getPeerPrincipal()
     {
         return null;

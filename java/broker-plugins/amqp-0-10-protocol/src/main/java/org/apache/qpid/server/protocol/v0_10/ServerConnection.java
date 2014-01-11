@@ -73,7 +73,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private Port _port;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
-    private Principal _peerPrincipal;
     private NetworkConnection _networkConnection;
     private Transport _transport;
     private volatile boolean _stopped;
@@ -529,12 +528,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
     public Principal getPeerPrincipal()
     {
-        return _peerPrincipal;
-    }
-
-    public void setPeerPrincipal(Principal peerPrincipal)
-    {
-        _peerPrincipal = peerPrincipal;
+        return _networkConnection.getPeerPrincipal();
     }
 
     @Override
