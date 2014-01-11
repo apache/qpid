@@ -39,7 +39,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  * Once instantiated, the SchemaProperty is immutable.
  * <p>
  * Note that there appear to be some differences between the fields mentioned in
- * <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API propsal</a> and
+ * <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API propsal</a> and
  * <a href=https://cwiki.apache.org/qpid/qmf-map-message-protocol.html>QMF2 Map Message protocol</a>.
  * I've gone with what's stated in the protocol documentation as this seems more accurate, at least for Qpid 0.10
  *

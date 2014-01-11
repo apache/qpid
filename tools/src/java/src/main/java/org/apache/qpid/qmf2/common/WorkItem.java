@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.qpid.qmf2.console.Agent;
 
 /**
- * Descriptions below are taken from <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> 
+ * Descriptions below are taken from <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> 
  * <p>
  * A WorkItem describes an event that has arrived for the application to process.
  * <p>

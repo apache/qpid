@@ -26,7 +26,7 @@ import java.util.Map;
 import org.apache.qpid.qmf2.common.QmfEvent;
 
 /**
- * Descriptions below are taken from <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> 
+ * Descriptions below are taken from <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> 
  * <pre>
  * EVENT_RECEIVED: When an Agent generates a QmfEvent an EVENT_RECEIVED WorkItem is pushed onto the work-queue.
  *                 The WorkItem's getParam() call returns a map which contains a reference to the Console Agent

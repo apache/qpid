@@ -35,7 +35,7 @@ import org.apache.qpid.qmf2.common.QmfException;
 
 /**
  * The AgentExternal class must be used by those applications that implement the external store model described in 
- * <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a>. 
+ * <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a>. 
  * <p>
  * The AgentExternal class extends the Agent class by adding interfaces that notify the application when it needs to
  * service a request for management operations from the agent.
