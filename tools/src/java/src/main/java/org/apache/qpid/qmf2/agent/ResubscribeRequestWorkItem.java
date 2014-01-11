@@ -27,7 +27,7 @@ import org.apache.qpid.qmf2.common.Handle;
 import org.apache.qpid.qmf2.common.WorkItem;
 
 /**
- * Descriptions below are taken from <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> 
+ * Descriptions below are taken from <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> 
  * <pre>
  * RESUBSCRIBE_REQUEST: The RESUBSCRIBE_REQUEST is sent by a Console to renew an existing subscription.  The Console may 
  *                      request a new duration for the subscription, otherwise the previous lifetime interval is repeated.

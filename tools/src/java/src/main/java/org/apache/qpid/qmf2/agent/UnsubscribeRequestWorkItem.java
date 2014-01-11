@@ -27,7 +27,7 @@ import org.apache.qpid.qmf2.common.Handle;
 import org.apache.qpid.qmf2.common.WorkItem;
 
 /**
- * Descriptions below are taken from <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> 
+ * Descriptions below are taken from <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> 
  * <pre>
  * UNSUBSCRIBE_REQUEST: The UNSUBSCRIBE_REQUEST is sent by a Console to terminate an existing subscription. The Agent 
  *                      application should terminate the given subscription if it exists, and cancel sending any further 

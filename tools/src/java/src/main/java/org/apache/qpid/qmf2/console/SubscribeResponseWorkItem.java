@@ -27,7 +27,7 @@ import org.apache.qpid.qmf2.common.Handle;
 import org.apache.qpid.qmf2.common.WorkItem;
 
 /**
- * Descriptions below are taken from <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> 
+ * Descriptions below are taken from <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> 
  * <pre>
  * SUBSCRIBE_RESPONSE: The SUBSCRIBE_RESPONSE WorkItem returns the result of a subscription request made by
  *                     this Console.  This WorkItem is generated when the Console's createSubscription() is
