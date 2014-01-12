@@ -19,9 +19,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-
-import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,7 +38,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
@@ -203,10 +199,5 @@ public class AmqpPortAdapter extends PortAdapter
             return AmqpProtocolVersion.valueOf(defaultAmqpSupportedReply);
         }
         return null;
-    }
-
-    public String toString()
-    {
-        return getName();
     }
 }
