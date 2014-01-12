@@ -136,5 +136,11 @@ class TCPandSSLTransport implements AcceptingTransport
         {
             return _bindingSocketAddress;
         }
+
+        @Override
+        public String toString()
+        {
+            return _port.toString();
+        }
     }
 }

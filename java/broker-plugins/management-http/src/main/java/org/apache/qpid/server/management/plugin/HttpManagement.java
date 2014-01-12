@@ -182,7 +182,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Failed to start http management on ports " + httpPorts);
+            throw new RuntimeException("Failed to start HTTP management on ports : " + httpPorts, e);
         }
 
         CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
@@ -199,7 +199,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             }
             catch (Exception e)
             {
-                throw new RuntimeException("Failed to stop http management on port " + getHttpPorts(getBroker().getPorts()));
+                throw new RuntimeException("Failed to stop HTTP management on ports : " + getHttpPorts(getBroker().getPorts()));
             }
         }
 

@@ -556,4 +556,11 @@ public class PortAdapter extends AbstractAdapter implements Port
 
         return trustStores;
     }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", port=" + getPort() + "]";
+    }
+
 }
