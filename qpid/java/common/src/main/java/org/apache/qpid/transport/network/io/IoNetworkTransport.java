@@ -146,7 +146,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         }
         catch (IOException e)
         {
-            throw new TransportException("Unable to start server socket", e);
+            throw new TransportException("Failed to start AMQP on port : " + config, e);
         }
     }
 
