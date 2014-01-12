@@ -61,6 +61,8 @@ Current bugs and performance issues:
 7. BZ 1039525 - Crash during recovery - journal::jexception - JERR_JREC_BADRECTAIL
 8. (FIXED) QPID-5442 (BZ 1039949) - DTX test failure - missing XIDs
 9. (FIXED) QPID-5460 (BZ 1051097) - Transactional messages lost during recovery
+10. QPID-5464 - Incompletely created journal files accumulate in EFP
+11. QPID-5473 (BZ 1051924) - Recovery where last record in file is truncated (ie spans files), but following file is uninitialized causes crash
 
 Code tidy-up
 ------------

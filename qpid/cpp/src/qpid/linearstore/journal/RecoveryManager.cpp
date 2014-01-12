@@ -456,7 +456,7 @@ void RecoveryManager::checkJournalAlignment(const std::streampos recordPosition)
 bool RecoveryManager::decodeRecord(jrec& record,
                                    std::size_t& cumulativeSizeRead,
                                    ::rec_hdr_t& headerRecord,
-                                    std::streampos& fileOffset)
+                                   std::streampos& fileOffset)
 {
     std::streampos start_file_offs = fileOffset;
 
@@ -478,7 +478,6 @@ bool RecoveryManager::decodeRecord(jrec& record,
         }
         if (!done && needNextFile()) {
             if (!getNextFile(false)) {
-                checkJournalAlignment(start_file_offs);
                 return false;
             }
         }
