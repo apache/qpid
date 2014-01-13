@@ -82,7 +82,7 @@ public class AmqpPortAdapter extends PortAdapter
         }
 
         SSLContext sslContext = null;
-        if (transports.contains(Transport.SSL))
+        if (transports.contains(Transport.SSL) || transports.contains(Transport.WSS))
         {
             sslContext = createSslContext();
         }
