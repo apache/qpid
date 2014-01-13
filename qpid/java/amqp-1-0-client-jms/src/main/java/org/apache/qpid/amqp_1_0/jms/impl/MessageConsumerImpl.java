@@ -76,6 +76,7 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     private Binary _lastTxnUpdate;
     private final List<Message> _recoverReplayMessages = new ArrayList<Message>();
     private final List<Message> _replaymessages = new ArrayList<Message>();
+    private int _maxPrefetch = 100;
 
     MessageConsumerImpl(final Destination destination,
                         final SessionImpl session,
@@ -117,6 +118,10 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
             throw new InvalidDestinationException("Invalid destination class " + destination.getClass().getName());
         }
         _session = session;
+        if(session.getMaxPrefetch() != 0)
+        {
+            _maxPrefetch = session.getMaxPrefetch();
+        }
 
         _receiver = createClientReceiver();
         _receiver.setRemoteErrorListener(new Runnable()
@@ -442,7 +447,7 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
 
     public void start()
     {
-        _receiver.setCredit(UnsignedInteger.valueOf(100), true);
+        _receiver.setCredit(UnsignedInteger.valueOf(getMaxPrefetch()), true);
     }
 
     public Queue getQueue() throws JMSException
@@ -486,5 +491,15 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
                 _session.messageArrived(this);
             }
         }
+    }
+
+    public int getMaxPrefetch()
+    {
+        return _maxPrefetch;
+    }
+
+    public void setMaxPrefetch(final int maxPrefetch)
+    {
+        _maxPrefetch = maxPrefetch;
     }
 }
