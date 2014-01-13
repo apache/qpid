@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.systest.rest;
 
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -65,16 +68,19 @@ import org.codehaus.jackson.type.TypeReference;
 public class RestTestHelper
 {
     private static final Logger LOGGER = Logger.getLogger(RestTestHelper.class);
+    private static final String CERT_ALIAS_APP1 = "app1";
 
     private int _httpPort;
 
     private boolean _useSsl;
+
 
     private String _username;
 
     private String _password;
 
     private File _passwdFile;
+    private boolean _useSslAuth;
 
     public RestTestHelper(int httpPort)
     {
@@ -110,7 +116,30 @@ public class RestTestHelper
     {
         URL url = getManagementURL(path);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-        if(_useSsl)
+
+        if(_useSslAuth)
+        {
+            try
+            {
+                // We have to use a SSLSocketFactory from a new SSLContext so that we don't re-use
+                // the JVM's defaults that may have been initialised in previous tests.
+
+                SSLContext sslContext = SSLContextFactory.buildClientContext(
+                        TRUSTSTORE, TRUSTSTORE_PASSWORD,
+                        KeyStore.getDefaultType(),
+                        TrustManagerFactory.getDefaultAlgorithm(),
+                        KEYSTORE, KEYSTORE_PASSWORD, KeyStore.getDefaultType(), KeyManagerFactory.getDefaultAlgorithm(), CERT_ALIAS_APP1);
+
+                SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+                ((HttpsURLConnection) httpCon).setSSLSocketFactory(sslSocketFactory);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        else if(_useSsl)
         {
             try
             {
@@ -474,5 +503,11 @@ public class RestTestHelper
         HttpURLConnection connection = openManagementConnection(path, "GET");
         connection.connect();
         return readConnectionInputStream(connection);
+    }
+
+    public void setUseSslAuth(final boolean useSslAuth)
+    {
+        _useSslAuth = useSslAuth;
+        _useSsl = true;
     }
 }

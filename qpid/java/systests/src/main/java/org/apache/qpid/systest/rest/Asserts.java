@@ -126,7 +126,7 @@ public class Asserts
                 Queue.DISCARDS_TTL_MESSAGES, Queue.STATE_CHANGED);
     }
 
-    public static void assertAttributesPresent(Map<String, Object> data, String[] attributes)
+    public static void assertAttributesPresent(Map<String, Object> data, String... attributes)
     {
         for (String name : attributes)
         {

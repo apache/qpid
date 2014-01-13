@@ -284,6 +284,11 @@ public class SaslServlet extends AbstractServlet
     @Override
     protected Subject getAuthorisedSubject(HttpServletRequest request)
     {
-        return HttpManagementUtil.getAuthorisedSubject(request.getSession());
+        Subject subject = HttpManagementUtil.getAuthorisedSubject(request.getSession());
+        if(subject == null)
+        {
+            subject = HttpManagementUtil.tryToAuthenticate(request, HttpManagementUtil.getManagementConfiguration(getServletContext()));
+        }
+        return subject;
     }
 }
