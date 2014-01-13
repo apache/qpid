@@ -212,7 +212,6 @@ class WebSocketProvider implements AcceptingTransport
         private Principal _principal;
         private int _maxWriteIdle;
         private int _maxReadIdle;
-        private Principal _peerPrincipal;
 
         public ConnectionWrapper(final WebSocket.Connection connection,
                                  final SocketAddress localAddress,
@@ -310,7 +309,7 @@ class WebSocketProvider implements AcceptingTransport
 
         void setPeerPrincipal(final Principal peerPrincipal)
         {
-            _peerPrincipal = peerPrincipal;
+            _principal = peerPrincipal;
         }
     }
 }
