@@ -62,12 +62,6 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
     private boolean _syncPublish = Boolean.parseBoolean(System.getProperty("qpid.sync_publish", "false"));
     private int _maxSessions;
-    private int _maxPrefetch;
-
-    public void setMaxPrefetch(final int maxPrefetch)
-    {
-        _maxPrefetch = maxPrefetch;
-    }
 
     private static enum State
     {
@@ -196,10 +190,6 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             SessionImpl session = new SessionImpl(this, acknowledgeMode);
             session.setQueueSession(_isQueueConnection);
             session.setTopicSession(_isTopicConnection);
-            if(_maxPrefetch != 0)
-            {
-                session.setMaxPrefetch(_maxPrefetch);
-            }
             
             boolean connectionStarted = false;
             synchronized(_lock)
