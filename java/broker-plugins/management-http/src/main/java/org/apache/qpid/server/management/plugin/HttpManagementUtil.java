@@ -23,10 +23,14 @@ package org.apache.qpid.server.management.plugin;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
+import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
 
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -36,11 +40,17 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.HttpManagementActor;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class HttpManagementUtil
 {
@@ -164,16 +174,40 @@ public class HttpManagementUtil
         session.setAttribute(ATTR_LOGIN_LOGOUT_REPORTER, new LoginLogoutReporter(logActor, subject));
     }
 
-    private static Subject tryToAuthenticate(HttpServletRequest request, HttpManagementConfiguration managementConfig)
+    public static Subject tryToAuthenticate(HttpServletRequest request, HttpManagementConfiguration managementConfig)
     {
         Subject subject = null;
         SocketAddress localAddress = getSocketAddress(request);
-        SubjectCreator subjectCreator = managementConfig.getAuthenticationProvider(localAddress).getSubjectCreator();
+        final AuthenticationProvider authenticationProvider = managementConfig.getAuthenticationProvider(localAddress);
+        SubjectCreator subjectCreator = authenticationProvider.getSubjectCreator();
         String remoteUser = request.getRemoteUser();
 
         if (remoteUser != null || subjectCreator.isAnonymousAuthenticationAllowed())
         {
             subject = authenticateUser(subjectCreator, remoteUser, null);
+        }
+        else if(subjectCreator.isExternalAuthenticationAllowed()
+                && Collections.list(request.getAttributeNames()).contains("javax.servlet.request.X509Certificate"))
+        {
+            Principal principal = null;
+            X509Certificate[] certificates =
+                    (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+            if(certificates != null && certificates.length != 0)
+            {
+                principal = certificates[0].getSubjectX500Principal();
+
+                if(!Boolean.valueOf(String.valueOf(authenticationProvider.getAttribute(ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN))))
+                {
+                    String username;
+                    String dn = ((X500Principal) principal).getName(X500Principal.RFC2253);
+
+
+                    username = SSLUtil.getIdFromSubjectDN(dn);
+                    principal = new  UsernamePrincipal(username);
+                }
+
+                subject = subjectCreator.createSubjectWithGroups(new AuthenticatedPrincipal(principal));
+            }
         }
         else
         {
