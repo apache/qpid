@@ -35,6 +35,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
@@ -226,7 +227,8 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         }
         else if(name.equals(PORT))
         {
-            return String.valueOf(_connection.getPort());
+            Port port = _connection.getPort();
+            return String.valueOf(port == null ? null : port.getName());
         }
         return super.getAttribute(name);
     }
