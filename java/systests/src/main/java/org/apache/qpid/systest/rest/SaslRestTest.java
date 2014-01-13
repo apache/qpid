@@ -55,6 +55,8 @@ public class SaslRestTest extends QpidRestTestCase
     public void startBrokerNow() throws Exception
     {
         super.startBroker();
+
+        getRestTestHelper().setUsernameAndPassword(null,null);
     }
 
     public void testGetMechanismsWithBrokerPlainPasswordPrincipalDatabase() throws Exception
@@ -71,7 +73,7 @@ public class SaslRestTest extends QpidRestTestCase
         {
             assertTrue("Mechanism " + mechanism + " is not found", mechanisms.contains(mechanism));
         }
-        assertNull("Unexpected user was returned", saslData.get("user"));
+        assertNull("Unexpected user was returned: " + saslData.get("user"), saslData.get("user"));
     }
 
     public void testGetMechanismsWithBrokerBase64MD5FilePrincipalDatabase() throws Exception
@@ -89,7 +91,8 @@ public class SaslRestTest extends QpidRestTestCase
         {
             assertTrue("Mechanism " + mechanism + " is not found", mechanisms.contains(mechanism));
         }
-        assertNull("Unexpected user was returned", saslData.get("user"));
+
+        assertNull("Unexpected user was returned: " + saslData.get("user"), saslData.get("user"));
     }
 
     public void testPlainSaslAuthenticationForValidCredentials() throws Exception
