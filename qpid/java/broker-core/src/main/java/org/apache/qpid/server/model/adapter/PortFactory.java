@@ -111,7 +111,7 @@ public class PortFactory
                 throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust stores configured.");
             }
 
-            if(useClientAuth && !port.getTransports().contains(Transport.SSL))
+            if(useClientAuth && !(port.getTransports().contains(Transport.SSL) || port.getTransports().contains(Transport.WSS)))
             {
                 throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesn't use SSL transport.");
             }

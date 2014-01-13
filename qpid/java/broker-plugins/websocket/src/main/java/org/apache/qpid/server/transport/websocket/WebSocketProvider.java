@@ -34,6 +34,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.WebSocket;
@@ -46,6 +47,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 
 class WebSocketProvider implements AcceptingTransport
@@ -97,7 +101,8 @@ class WebSocketProvider implements AcceptingTransport
         {
             SslContextFactory factory = new SslContextFactory();
             factory.setSslContext(_sslContext);
-            connector = new SslSocketConnector(factory);
+            factory.setNeedClientAuth(true);
+            connector = new SslSelectChannelConnector(factory);
         }
         else
         {
@@ -116,9 +121,21 @@ class WebSocketProvider implements AcceptingTransport
             @Override
             public WebSocket doWebSocketConnect(final HttpServletRequest request, final String protocol)
             {
+
+                Principal principal = null;
+                if(Collections.list(request.getAttributeNames()).contains("javax.servlet.request.X509Certificate"))
+                {
+                    X509Certificate[] certificates =
+                            (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+                    if(certificates != null && certificates.length != 0)
+                    {
+                        principal = certificates[0].getSubjectDN();
+                    }
+                }
+
                 SocketAddress remoteAddress = new InetSocketAddress(request.getRemoteHost(), request.getRemotePort());
                 SocketAddress localAddress = new InetSocketAddress(request.getLocalName(), request.getLocalPort());
-                return AMQP_WEBSOCKET_SUBPROTOCOL.equals(protocol) ? new AmqpWebSocket(_transport, localAddress, remoteAddress) : null;
+                return AMQP_WEBSOCKET_SUBPROTOCOL.equals(protocol) ? new AmqpWebSocket(_transport, localAddress, remoteAddress, principal) : null;
             }
         };
 
@@ -144,17 +161,20 @@ class WebSocketProvider implements AcceptingTransport
     {
         private final SocketAddress _localAddress;
         private final SocketAddress _remoteAddress;
+        private final Principal _userPrincipal;
         private Connection _connection;
         private final Transport _transport;
         private ProtocolEngine _engine;
 
         private AmqpWebSocket(final Transport transport,
                               final SocketAddress localAddress,
-                              final SocketAddress remoteAddress)
+                              final SocketAddress remoteAddress,
+                              final Principal userPrincipal)
         {
             _transport = transport;
             _localAddress = localAddress;
             _remoteAddress = remoteAddress;
+            _userPrincipal = userPrincipal;
         }
 
         @Override
@@ -170,7 +190,9 @@ class WebSocketProvider implements AcceptingTransport
 
             _engine = _factory.newProtocolEngine();
 
-            final NetworkConnection connectionWrapper = new ConnectionWrapper(connection, _localAddress, _remoteAddress);
+            final ConnectionWrapper connectionWrapper =
+                    new ConnectionWrapper(connection, _localAddress, _remoteAddress);
+            connectionWrapper.setPeerPrincipal(_userPrincipal);
             _engine.setNetworkConnection(connectionWrapper, connectionWrapper.getSender());
 
         }
@@ -190,6 +212,7 @@ class WebSocketProvider implements AcceptingTransport
         private Principal _principal;
         private int _maxWriteIdle;
         private int _maxReadIdle;
+        private Principal _peerPrincipal;
 
         public ConnectionWrapper(final WebSocket.Connection connection,
                                  final SocketAddress localAddress,
@@ -270,7 +293,6 @@ class WebSocketProvider implements AcceptingTransport
         @Override
         public Principal getPeerPrincipal()
         {
-            //TODO: how do we populate this?
             return _principal;
         }
 
@@ -284,6 +306,11 @@ class WebSocketProvider implements AcceptingTransport
         public int getMaxWriteIdle()
         {
             return _maxWriteIdle;
+        }
+
+        void setPeerPrincipal(final Principal peerPrincipal)
+        {
+            _peerPrincipal = peerPrincipal;
         }
     }
 }
