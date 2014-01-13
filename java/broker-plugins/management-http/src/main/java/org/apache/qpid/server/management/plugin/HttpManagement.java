@@ -199,7 +199,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             }
             catch (Exception e)
             {
-                throw new RuntimeException("Failed to stop HTTP management on ports : " + getHttpPorts(getBroker().getPorts()));
+                throw new RuntimeException("Failed to stop HTTP management on ports : " + getHttpPorts(getBroker().getPorts()), e);
             }
         }
 
