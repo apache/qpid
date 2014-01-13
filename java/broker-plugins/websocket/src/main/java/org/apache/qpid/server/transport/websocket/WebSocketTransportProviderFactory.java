@@ -24,8 +24,10 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.transport.TransportProvider;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 public class WebSocketTransportProviderFactory implements TransportProviderFactory
@@ -36,7 +38,8 @@ public class WebSocketTransportProviderFactory implements TransportProviderFacto
     @Override
     public Set<Set<Transport>> getSupportedTransports()
     {
-        return Collections.singleton((Set<Transport>)EnumSet.of(Transport.WS));
+        return new HashSet<Set<Transport>>(Arrays.asList(EnumSet.of(Transport.WS),
+                                                         EnumSet.of(Transport.WSS)));
     }
 
     @Override
