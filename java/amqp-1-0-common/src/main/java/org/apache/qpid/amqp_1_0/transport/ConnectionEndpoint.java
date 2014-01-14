@@ -103,7 +103,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private UnsignedInteger _handleMax = UnsignedInteger.MAX_VALUE;
     private ConnectionEventListener _connectionEventListener = ConnectionEventListener.DEFAULT;
     private String _password;
-    private final boolean _requiresSASLClient;
+    private boolean _requiresSASLClient;
     private final boolean _requiresSASLServer;
 
 
@@ -140,6 +140,14 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         _requiresSASLServer = false;
     }
 
+    public void setPrincipal(Principal user)
+    {
+        if(_user == null)
+        {
+            _user = user;
+            _requiresSASLClient = user != null;
+        }
+    }
 
     public synchronized void open()
     {

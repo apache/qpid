@@ -27,14 +27,15 @@ import org.apache.qpid.amqp_1_0.framing.AMQFrame;
 import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
 import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
-import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.websocket.WebSocket;
 import org.eclipse.jetty.websocket.WebSocketClient;
 import org.eclipse.jetty.websocket.WebSocketClientFactory;
 
-import java.io.IOException;
+import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +46,7 @@ class WebSocketProvider implements TransportProvider
 
     private static final byte AMQP_HEADER_FRAME_TYPE = (byte) 222;
     private static int _connections;
+    private static QueuedThreadPool _threadPool;
     private final String _transport;
     private static WebSocketClientFactory _factory;
 
@@ -53,23 +55,51 @@ class WebSocketProvider implements TransportProvider
         _transport = transport;
     }
 
-    private static synchronized WebSocketClient createWebSocketClient() throws Exception
+    private static synchronized WebSocketClientFactory getWebSocketClientFactory(SSLContext context) throws Exception
     {
-        if(_factory == null)
+        if(_threadPool == null)
         {
-            _factory = new WebSocketClientFactory();
-            _factory.start();
+            _threadPool = new QueuedThreadPool();
         }
-        _connections++;
-        return _factory.newWebSocketClient();
+        if(context != null)
+        {
+            WebSocketClientFactory factory = new WebSocketClientFactory(_threadPool);
+            SslContextFactory sslContextFactory = factory.getSslContextFactory();
+
+
+            sslContextFactory.setSslContext(context);
+
+            factory.start();
+
+            return factory;
+        }
+        else
+        {
+            if(_factory == null)
+            {
+                _factory = new WebSocketClientFactory(_threadPool);
+                _factory.start();
+            }
+            _connections++;
+            return _factory;
+        }
     }
 
-    private static synchronized void removeClient() throws Exception
+
+    private static synchronized void removeClient(final WebSocketClientFactory factory) throws Exception
     {
-        if(--_connections == 0)
+
+        if(factory == _factory)
         {
-            _factory.stop();
-            _factory = null;
+            if(--_connections == 0)
+            {
+                _factory.stop();
+                _factory = null;
+            }
+        }
+        else
+        {
+            factory.stop();
         }
     }
 
@@ -77,13 +107,13 @@ class WebSocketProvider implements TransportProvider
     public void connect(final ConnectionEndpoint conn,
                         final String address,
                         final int port,
-                        final boolean ssl,
-                        final ExceptionHandler exceptionHandler) throws ConnectionException
+                        final SSLContext sslContext, final ExceptionHandler exceptionHandler) throws ConnectionException
     {
 
         try
         {
-            WebSocketClient client = createWebSocketClient();
+            final WebSocketClientFactory webSocketClientFactory = getWebSocketClientFactory(sslContext);
+            WebSocketClient client = webSocketClientFactory.newWebSocketClient();
             // Configure the client
             client.setProtocol(AMQP_WEBSOCKET_SUBPROTOCOL);
 
@@ -138,7 +168,7 @@ class WebSocketProvider implements TransportProvider
                 public void onOpen(Connection connection)
                 {
 
-                    Thread outputThread = new Thread(new FrameOutputThread(connection, src, conn, exceptionHandler));
+                    Thread outputThread = new Thread(new FrameOutputThread(connection, src, conn, exceptionHandler, webSocketClientFactory));
                     outputThread.setDaemon(true);
                     outputThread.start();
                 }
@@ -226,17 +256,19 @@ class WebSocketProvider implements TransportProvider
         private final ExceptionHandler _exceptionHandler;
         private final FrameWriter _frameWriter;
         private final byte[] _buffer;
+        private final WebSocketClientFactory _factory;
 
         public FrameOutputThread(final WebSocket.Connection connection,
                                  final ConnectionHandler.FrameSource src,
                                  final ConnectionEndpoint conn,
-                                 final ExceptionHandler exceptionHandler)
+                                 final ExceptionHandler exceptionHandler, final WebSocketClientFactory factory)
         {
             _connection = connection;
             _frameSource = src;
             _exceptionHandler = exceptionHandler;
             _frameWriter = new FrameWriter(conn.getDescribedTypeRegistry());
             _buffer = new byte[conn.getMaxFrameSize()];
+            _factory = factory;
         }
 
         @Override
@@ -278,7 +310,7 @@ class WebSocketProvider implements TransportProvider
             {
                 try
                 {
-                    removeClient();
+                    removeClient(_factory);
                 }
                 catch (Exception e)
                 {
