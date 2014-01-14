@@ -34,6 +34,9 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.NoStatistics;
+
+import com.sleepycat.je.Durability;
 
 public abstract class AbstractReplicationNode implements ReplicationNode
 {
@@ -177,6 +180,18 @@ public abstract class AbstractReplicationNode implements ReplicationNode
         {
             return getLifetimePolicy();
         }
+        else if (ReplicationNode.TIME_TO_LIVE.equals(name))
+        {
+            return 0L;
+        }
+        else if (ReplicationNode.CREATED.equals(name))
+        {
+            return 0L;
+        }
+        else if (ReplicationNode.UPDATED.equals(name))
+        {
+            return 0L;
+        }
         else if (ReplicationNode.DURABLE.equals(name))
         {
             return isDurable();
@@ -189,7 +204,67 @@ public abstract class AbstractReplicationNode implements ReplicationNode
         {
             return _groupName;
         }
-        throw new UnsupportedOperationException();
+        else if (ReplicationNode.TYPE.equals(name))
+        {
+            // TODO
+            return null;
+        }
+        else if (ReplicationNode.STATE.equals(name))
+        {
+            // TODO
+            return State.UNAVAILABLE;
+        }
+        else if (ReplicationNode.ROLE.equals(name))
+        {
+            // TODO
+            return null;
+        }
+        else if (ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID.equals(name))
+        {
+            // TODO
+            return null;
+        }
+        else if (ReplicationNode.HELPER_HOST_PORT.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.DURABILITY.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.COALESCING_SYNC.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.DESIGNATED_PRIMARY.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.PRIORITY.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.QUORUM_OVERRIDE.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.JOIN_TIME.equals(name))
+        {
+            return 0l;
+        }
+        else if (ReplicationNode.PARAMETERS.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.REPLICATION_PARAMETERS.equals(name))
+        {
+            return null;
+        }
+        else if (ReplicationNode.STORE_PATH.equals(name))
+        {
+            return null;
+        }
+        throw new UnsupportedOperationException("Attribute " + name + " is not supported");
     }
 
     @Override
@@ -209,7 +284,7 @@ public abstract class AbstractReplicationNode implements ReplicationNode
     @Override
     public Statistics getStatistics()
     {
-        throw new UnsupportedOperationException();
+        return NoStatistics.getInstance();
     }
 
     @Override
