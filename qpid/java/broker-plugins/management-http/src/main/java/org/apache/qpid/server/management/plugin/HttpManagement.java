@@ -23,15 +23,13 @@ package org.apache.qpid.server.management.plugin;
 import java.lang.reflect.Type;
 import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -78,6 +76,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Server;
@@ -183,7 +182,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Failed to start http management on ports " + httpPorts);
+            throw new RuntimeException("Failed to start HTTP management on ports : " + httpPorts, e);
         }
 
         CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
@@ -200,7 +199,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             }
             catch (Exception e)
             {
-                throw new RuntimeException("Failed to stop http management on port " + getHttpPorts(getBroker().getPorts()));
+                throw new RuntimeException("Failed to stop HTTP management on ports : " + getHttpPorts(getBroker().getPorts()), e);
             }
         }
 
@@ -240,28 +239,93 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             else if (transports.contains(Transport.SSL))
             {
                 KeyStore keyStore = port.getKeyStore();
+                Collection<TrustStore> trustStores = port.getTrustStores();
                 if (keyStore == null)
                 {
                     throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
                 }
                 SslContextFactory factory = new SslContextFactory();
+                final boolean needClientAuth = Boolean.valueOf(String.valueOf(port.getAttribute(Port.NEED_CLIENT_AUTH)));
+                final boolean wantClientAuth = Boolean.valueOf(String.valueOf(port.getAttribute(Port.WANT_CLIENT_AUTH)));
+                boolean needClientCert = needClientAuth || wantClientAuth;
+                if (needClientCert && trustStores.isEmpty())
+                {
+                    throw new IllegalConfigurationException("Client certificate authentication is enabled on AMQP port '"
+                                                            + this.getName() + "' but no trust store defined");
+                }
+
                 try
                 {
                     SSLContext sslContext = SSLContext.getInstance("TLS");
-                    sslContext.init(keyStore.getKeyManagers(), null, null);
+                    KeyManager[] keyManagers = keyStore.getKeyManagers();
+
+                    TrustManager[] trustManagers;
+                    if(trustStores == null || trustStores.isEmpty())
+                    {
+                        trustManagers = null;
+                    }
+                    else if(trustStores.size() == 1)
+                    {
+                        trustManagers = trustStores.iterator().next().getTrustManagers();
+                    }
+                    else
+                    {
+                        Collection<TrustManager> trustManagerList = new ArrayList<TrustManager>();
+                        final QpidMultipleTrustManager mulTrustManager = new QpidMultipleTrustManager();
+
+                        for(TrustStore ts : trustStores)
+                        {
+                            TrustManager[] managers = ts.getTrustManagers();
+                            if(managers != null)
+                            {
+                                for(TrustManager manager : managers)
+                                {
+                                    if(manager instanceof X509TrustManager)
+                                    {
+                                        mulTrustManager.addTrustManager((X509TrustManager)manager);
+                                    }
+                                    else
+                                    {
+                                        trustManagerList.add(manager);
+                                    }
+                                }
+                            }
+                        }
+                        if(!mulTrustManager.isEmpty())
+                        {
+                            trustManagerList.add(mulTrustManager);
+                        }
+                        trustManagers = trustManagerList.toArray(new TrustManager[trustManagerList.size()]);
+                    }
+                    sslContext.init(keyManagers, trustManagers, null);
+
                     factory.setSslContext(sslContext);
+                    if(needClientAuth)
+                    {
+                        factory.setNeedClientAuth(true);
+                    }
+                    else if(wantClientAuth)
+                    {
+                        factory.setWantClientAuth(true);
+                    }
                 }
                 catch (GeneralSecurityException e)
                 {
                     throw new RuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
                 }
                 connector = new SslSocketConnector(factory);
+
             }
             else
             {
                 throw new IllegalArgumentException("Unexpected transport on port " + port.getName() + ":" + transports);
             }
             lastPort = port.getPort();
+            String bindingAddress = port.getBindingAddress();
+            if(bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
+            {
+                connector.setHost(bindingAddress.trim());
+            }
             connector.setPort(port.getPort());
             server.addConnector(connector);
         }

@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.qpid.amqp_1_0.type.Section;
@@ -280,7 +282,8 @@ public class Respond extends Util
         }
     }
 
-    private void respond(Message m) throws Sender.SenderCreationException, ConnectionClosedException, LinkDetachedException
+    private void respond(Message m)
+            throws Sender.SenderCreationException, ConnectionClosedException, LinkDetachedException, TimeoutException
     {
         List<Section> sections = m.getPayload();
         String replyTo = null;

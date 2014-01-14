@@ -233,11 +233,6 @@ public class IdleTimeoutTickerTest extends TestCase implements TransportActivity
     }
 
     @Override
-    public void setPeerPrincipal(Principal principal)
-    {
-    }
-
-    @Override
     public Principal getPeerPrincipal()
     {
         return null;

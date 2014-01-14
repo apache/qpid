@@ -35,6 +35,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 public class SessionEndpoint
 {
@@ -579,19 +580,7 @@ public class SessionEndpoint
             if(payload != null && payloadSent < payload.remaining())
             {
                 payload = payload.duplicate();
-try
-{
                 payload.position(payload.position()+payloadSent);
-}
-catch(IllegalArgumentException e)
-{
-    System.err.println("UNEXPECTED");
-    System.err.println("Payload Position: " + payload.position());
-    System.err.println("Payload Sent: " + payloadSent);
-    System.err.println("Payload Remaining: " + payload.remaining());
-    throw e;
-
-}
 
                 Transfer secondTransfer = new Transfer();
 
@@ -617,6 +606,23 @@ catch(IllegalArgumentException e)
     {
         return _connection.getLock();
     }
+
+
+    public long getSyncTimeout()
+    {
+        return _connection.getSyncTimeout();
+    }
+
+    public void waitUntil(Predicate predicate) throws TimeoutException, InterruptedException
+    {
+        _connection.waitUntil(predicate);
+    }
+
+    public void waitUntil(Predicate predicate, long timeout) throws TimeoutException, InterruptedException
+    {
+        _connection.waitUntil(predicate, timeout);
+    }
+
 
     public ReceivingLinkEndpoint createReceivingLinkEndpoint(final String name,
                                                              String targetAddr,

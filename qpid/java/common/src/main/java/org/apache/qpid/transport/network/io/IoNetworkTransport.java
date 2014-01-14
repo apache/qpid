@@ -146,7 +146,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         }
         catch (IOException e)
         {
-            throw new TransportException("Unable to start server socket", e);
+            throw new TransportException("Failed to start AMQP on port : " + config, e);
         }
     }
 
@@ -244,19 +244,6 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                         connection.setMaxReadIdle(HANSHAKE_TIMEOUT);
 
                         ticker.setConnection(connection);
-
-                        if(_sslContext != null && socket instanceof SSLSocket)
-                        {
-                            try
-                            {
-                                Principal peerPrincipal = ((SSLSocket) socket).getSession().getPeerPrincipal();
-                                connection.setPeerPrincipal(peerPrincipal);
-                            }
-                            catch(SSLPeerUnverifiedException e)
-                            {
-                                // ignore
-                            }
-                        }
 
                         engine.setNetworkConnection(connection, connection.getSender());
 

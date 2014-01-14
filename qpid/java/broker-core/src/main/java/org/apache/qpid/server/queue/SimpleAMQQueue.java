@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -734,7 +733,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                     && mightAssign(sub, entry)
                     && !sub.wouldSuspend(entry))
                 {
-                    if (sub.acquires() && !(assign(sub, entry) && entry.acquire(sub)))
+                    if (sub.acquires() && !assign(sub, entry))
                     {
                         // restore credit here that would have been taken away by wouldSuspend since we didn't manage
                         // to acquire the entry for this subscription
@@ -755,9 +754,17 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     private boolean assign(final Subscription sub, final QueueEntry entry)
     {
-        return _messageGroupManager == null || _messageGroupManager.acceptMessage(sub, entry);
+        if(_messageGroupManager == null)
+        {
+            //no grouping, try to acquire immediately.
+            return entry.acquire(sub);
+        }
+        else
+        {
+            //the group manager is responsible for acquiring the message if/when appropriate
+            return _messageGroupManager.acceptMessage(sub, entry);
+        }
     }
-
 
     private boolean mightAssign(final Subscription sub, final QueueEntry entry)
     {
@@ -1646,7 +1653,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 {
                     if (!sub.wouldSuspend(node))
                     {
-                        if (sub.acquires() && !(assign(sub, node) && node.acquire(sub)))
+                        if (sub.acquires() && !assign(sub, node))
                         {
                             // restore credit here that would have been taken away by wouldSuspend since we didn't manage
                             // to acquire the entry for this subscription

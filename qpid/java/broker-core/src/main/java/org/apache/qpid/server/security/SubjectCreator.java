@@ -37,6 +37,7 @@ import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationS
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 
 /**
  * Creates a {@link Subject} formed by the {@link Principal}'s returned from:
@@ -129,6 +130,17 @@ public class SubjectCreator
         }
     }
 
+    public Subject createSubjectWithGroups(Principal principal)
+    {
+        Subject authenticationSubject = new Subject();
+
+        authenticationSubject.getPrincipals().add(principal);
+        authenticationSubject.getPrincipals().addAll(getGroupPrincipals(principal.getName()));
+        authenticationSubject.setReadOnly();
+
+        return authenticationSubject;
+    }
+
     public Subject createSubjectWithGroups(String username)
     {
         Subject authenticationSubject = new Subject();
@@ -158,5 +170,10 @@ public class SubjectCreator
     public boolean isAnonymousAuthenticationAllowed()
     {
         return _authenticationManager instanceof AnonymousAuthenticationManager;
+    }
+
+    public boolean isExternalAuthenticationAllowed()
+    {
+        return _authenticationManager instanceof ExternalAuthenticationManager;
     }
 }

@@ -127,9 +127,9 @@ public class FrameHandler implements ProtocolHandler
                         break;
                     }
 
-                    else if(size > _connection.getMaxFrameSize())
+                    else if(size > _connection.getDesiredMaxFrameSize().intValue())
                     {
-                        frameParsingError = createFramingError("specified frame size %d larger than maximum frame header size %d", size, _connection.getMaxFrameSize());
+                        frameParsingError = createFramingError("specified frame size %d larger than maximum frame header size %d", size, _connection.getDesiredMaxFrameSize().intValue());
                         state = State.ERROR;
                         break;
                     }

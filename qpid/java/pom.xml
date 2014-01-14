@@ -29,22 +29,24 @@
   <packaging>pom</packaging>
 
   <!-- ###### TODO ######
-
+    - Fix the jca/rar pom module name, it should be qpid-ra not qpid-rar.
+    - Add the Excludes files, log4j config, etc test resources to a module (qpid-test-utils?) which can be
+      used (extracted?) by the others to prevent them having to reference outside their directly for the files.
+      - Fix what the systests/perftests do to copy the test-profiles dir to the necessary location.
+      - Fix the log4j configuration property to work with all the modules, resolve the currently generated log4j exceptions during test runs.
     - Add project details such as Website, Mailing List, SCM.
-    - Test deploying the modules to a local Nexus instance (overriding the repo properties).
-      - Dont deploy modules we aren't already doing so.
-    - Decide on name for this parent module.
     - Fix the version numbers in all the modules.
-    - Align the XML in the pom files consistently, fix whitepsace errors.
-    - Complete setting properties for the dependency version numbers.
-    - Use dependancy management sections to control the version numbers.
-    - Add LICENCE, NOTICE, README files to the binary assemblies.
-    - Add the test profiles, log4j config etc to a module which can be extracted by the others.
-      - Then fix log4j configuration property to work with all modules.
-      - Then fix what the systests/perftests do to copy the test-profiles dir to the encessary location.
+    - Decide on a final name for this parent module, qpid-project isnt necessarily appropriate given it doesnt encompass the whole project.
+    - Test deploying the modules to a local Nexus instance (by overriding the repo properties locally).
+      - Ensure we dont deploy modules we aren't already doing so, it will make changing them later less of a pain for everyone.
     - Figure out dependency setup for optional bdbstore tests.
-    - Add the other test profiles
+    - Add the other test profiles, e.g. derby and other protocols.
     - Generate HTML reports of the test results
+      - Decide on how to handle the surefire report target re-running the tests (there is a report-only task that doesnt, provided as a workaround)
+    - Add LICENCE, NOTICE, README files to the binary assemblies.
+    - Complete setting properties for all the dependency version numbers from the modules.
+    - Use dependancy management sections to control the version numbers?
+    - Align the XML in the pom files consistently, fix whitepsace errors.
 
     === Once the Ant build is removed ===
     - Move all the resources to be in the /src/foo/resources folders.
@@ -55,6 +57,7 @@
     - Fix the tests not to be dependant on the working dir being the java dir.
     - Fix the tests not to be dependant on the test config/output dirs being children of qpid.home.
       - Remove the QBTC output file mechanics, rely on Surefire to do it?
+    - JUnit test profiles instead of Exludes files?
   -->
 
   <properties>
@@ -134,6 +137,7 @@
   <modules>
     <module>amqp-1-0-client</module>
     <module>amqp-1-0-client-jms</module>
+    <module>amqp-1-0-client-websocket</module>
     <module>amqp-1-0-common</module>
     <module>broker</module>
     <module>broker-core</module>
@@ -150,6 +154,7 @@
     <module>broker-plugins/management-http</module>
     <module>broker-plugins/management-jmx</module>
     <module>broker-plugins/memory-store</module>
+    <module>broker-plugins/websocket</module>
     <module>common</module>
     <module>client</module>
     <module>management/common</module>

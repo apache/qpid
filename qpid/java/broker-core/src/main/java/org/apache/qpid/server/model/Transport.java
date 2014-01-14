@@ -25,7 +25,10 @@ import java.util.EnumSet;
 public enum Transport
 {
     TCP,
-    SSL;
+    SSL,
+    WS,
+    WSS,
+    SCTP;
 
     public static Transport valueOfObject(Object transportObject)
     {

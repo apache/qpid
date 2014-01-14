@@ -24,6 +24,7 @@ import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
+import org.apache.qpid.amqp_1_0.transport.Predicate;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkListener;
 import org.apache.qpid.amqp_1_0.type.*;
@@ -39,10 +40,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class Sender implements DeliveryStateHandler
 {
+    private static final long UNSETTLED_MESSAGE_TIMEOUT_MULTIPLIER = 1000l;
+    private static final long DEFAULT_CREDIT_TIMEOUT = 30000l;
+
     private SendingLinkEndpoint _endpoint;
     private int _id;
     private Session _session;
@@ -150,17 +156,26 @@ public class Sender implements DeliveryStateHandler
 
         synchronized(_endpoint.getLock())
         {
-            while(!(_endpoint.isAttached() || _endpoint.isDetached()))
+            try
             {
-                try
-                {
-                    _endpoint.getLock().wait();
-                }
-                catch (InterruptedException e)
-                {
-                    throw new SenderCreationException(e);
-                }
+                _endpoint.waitUntil(new Predicate()
+                                    {
+                                        @Override
+                                        public boolean isSatisfied()
+                                        {
+                                            return _endpoint.isAttached() || _endpoint.isDetached();
+                                        }
+                                    });
             }
+            catch (TimeoutException e)
+            {
+                throw new SenderCreationException(e);
+            }
+            catch (InterruptedException e)
+            {
+                throw new SenderCreationException(e);
+            }
+
             if (session.getEndpoint().isEnded())
             {
                 throw new SenderCreationException("Session is closed while creating link, target: " + target.getAddress());
@@ -225,22 +240,22 @@ public class Sender implements DeliveryStateHandler
         return _endpoint.getTarget();
     }
 
-    public void send(Message message) throws LinkDetachedException
+    public void send(Message message) throws LinkDetachedException, TimeoutException
     {
         send(message, null, null);
     }
 
-    public void send(Message message, final OutcomeAction action) throws LinkDetachedException
+    public void send(Message message, final OutcomeAction action) throws LinkDetachedException, TimeoutException
     {
         send(message, null, action);
     }
 
-    public void send(Message message, final Transaction txn) throws LinkDetachedException
+    public void send(Message message, final Transaction txn) throws LinkDetachedException, TimeoutException
     {
         send(message, txn, null);
     }
 
-    public void send(Message message, final Transaction txn, OutcomeAction action) throws LinkDetachedException
+    public void send(Message message, final Transaction txn, OutcomeAction action) throws LinkDetachedException, TimeoutException
     {
 
         List<Section> sections = message.getPayload();
@@ -290,19 +305,26 @@ public class Sender implements DeliveryStateHandler
             xfr.setSettled(message.getSettled() || _endpoint.getSendingSettlementMode() == SenderSettleMode.SETTLED);
         }
         final Object lock = _endpoint.getLock();
+
         synchronized(lock)
         {
-            while(!_endpoint.hasCreditToSend() && !_endpoint.isDetached())
+
+            try
             {
-                try
-                {
-                    lock.wait();
-                }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
+                _endpoint.waitUntil(new Predicate()
+                                    {
+                                        @Override
+                                        public boolean isSatisfied()
+                                        {
+                                            return _endpoint.hasCreditToSend() || _endpoint.isDetached();
+                                        }
+                                    }, getCreditTimeout());
             }
+            catch (InterruptedException e)
+            {
+                throw new TimeoutException("Interrupted while waiting for credit");
+            }
+
             if(_endpoint.isDetached())
             {
                 throw new LinkDetachedException(_error);
@@ -312,27 +334,24 @@ public class Sender implements DeliveryStateHandler
                 _outcomeActions.put(message.getDeliveryTag(), action);
             }
             _endpoint.transfer(xfr);
-            //TODO - rationalise sending of flows
-            // _endpoint.sendFlow();
         }
 
         if(_windowSize != 0)
         {
-            synchronized(lock)
+            try
             {
-
-
-                while(_endpoint.getUnsettledCount() >= _windowSize)
-                {
-                    try
-                    {
-                        lock.wait();
-                    }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-                }
+                _endpoint.waitUntil(new Predicate()
+                                    {
+                                        @Override
+                                        public boolean isSatisfied()
+                                        {
+                                            return _endpoint.getUnsettledCount() < _windowSize;
+                                        }
+                                    }, getUnsettledTimeout());
+            }
+            catch (InterruptedException e)
+            {
+                throw new TimeoutException("Interrupted while waiting for the window to expand to allow sending");
             }
 
         }
@@ -340,48 +359,80 @@ public class Sender implements DeliveryStateHandler
 
     }
 
+    private long getCreditTimeout()
+    {
+        return _endpoint.getSyncTimeout() < DEFAULT_CREDIT_TIMEOUT ? DEFAULT_CREDIT_TIMEOUT : _endpoint.getSyncTimeout();
+    }
+
     public void close() throws SenderClosingException
     {
+        boolean unsettledDeliveries = false;
 
         if(_windowSize != 0)
         {
-            synchronized(_endpoint.getLock())
+            long timeout = getUnsettledTimeout();
+
+            try
             {
-
-
-                while(_endpoint.getUnsettledCount() > 0)
+                _endpoint.waitUntil(new Predicate()
                 {
-                    try
+                    @Override
+                    public boolean isSatisfied()
                     {
-                        _endpoint.getLock().wait();
+                        return _endpoint.getUnsettledCount() == 0;
                     }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-                }
+                }, timeout);
+            }
+            catch (InterruptedException e)
+            {
+                unsettledDeliveries = true;
+            }
+            catch (TimeoutException e)
+            {
+                unsettledDeliveries = true;
             }
 
         }
         _session.removeSender(this);
         _endpoint.setSource(null);
-        _endpoint.detach();
+        _endpoint.close();
         _closed = true;
 
-        synchronized(_endpoint.getLock())
+        try
         {
-            while(!_endpoint.isDetached())
+            _endpoint.waitUntil(new Predicate()
             {
-                try
+                @Override
+                public boolean isSatisfied()
                 {
-                    _endpoint.getLock().wait();
+                    return _endpoint.isDetached();
                 }
-                catch (InterruptedException e)
-                {
-                    throw new SenderClosingException(e);
-                }
-            }
+            });
         }
+        catch (TimeoutException e)
+        {
+            throw new SenderClosingException("Timed out attempting to detach link", e);
+        }
+        catch (InterruptedException e)
+        {
+            throw new SenderClosingException("Interrupted while attempting to detach link", e);
+        }
+        if(unsettledDeliveries && _endpoint.getUnsettledCount() > 0)
+        {
+            throw new SenderClosingException("Some messages may not have been received by the recipient");
+        }
+    }
+
+    private long getUnsettledTimeout()
+    {
+        long timeout = _endpoint.getSyncTimeout();
+
+        // give a generous timeout where there are unsettled messages
+        if(timeout < _endpoint.getUnsettledCount() * UNSETTLED_MESSAGE_TIMEOUT_MULTIPLIER)
+        {
+            timeout = _endpoint.getUnsettledCount() * UNSETTLED_MESSAGE_TIMEOUT_MULTIPLIER;
+        }
+        return timeout;
     }
 
     public boolean isClosed()
@@ -468,9 +519,19 @@ public class Sender implements DeliveryStateHandler
 
     public class SenderClosingException extends Exception
     {
+        public SenderClosingException(final String message, final Throwable cause)
+        {
+            super(message, cause);
+        }
+
         public SenderClosingException(Throwable e)
         {
             super(e);
+        }
+
+        public SenderClosingException(final String message)
+        {
+            super(message);
         }
     }
 

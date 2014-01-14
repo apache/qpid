@@ -79,6 +79,7 @@ public interface Connection extends ConfiguredObject
     public static final String REMOTE_PROCESS_PID = "remoteProcessPid";
     public static final String SESSION_COUNT_LIMIT = "sessionCountLimit";
     public static final String TRANSPORT = "transport";
+    /** Name of port associated with the connection */
     public static final String PORT = "port";
 
 

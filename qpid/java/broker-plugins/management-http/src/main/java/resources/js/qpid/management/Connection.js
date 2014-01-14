@@ -84,12 +84,11 @@ define(["dojo/_base/xhr",
                }
 
                storeNodes(["name",
-                           "state",
-                           "durable",
+                           "clientVersion",
+                           "clientId",
                            "principal",
                            "port",
                            "transport",
-                           "lifetimePolicy",
                            "msgInRate",
                            "bytesInRate",
                            "bytesInRateUnits",
@@ -125,12 +124,11 @@ define(["dojo/_base/xhr",
            ConnectionUpdater.prototype.updateHeader = function()
            {
               this.name.innerHTML = entities.encode(String(this.connectionData[ "name" ]));
-              this.state.innerHTML = entities.encode(String(this.connectionData[ "state" ]));
-              this.durable.innerHTML = entities.encode(String(this.connectionData[ "durable" ]));
+              this.clientId.innerHTML = entities.encode(String(this.connectionData[ "clientId" ]));
+              this.clientVersion.innerHTML = entities.encode(String(this.connectionData[ "clientVersion" ]));
               this.principal.innerHTML = entities.encode(String(this.connectionData[ "principal" ]));
               this.port.innerHTML = entities.encode(String(this.connectionData[ "port" ]));
               this.transport.innerHTML = entities.encode(String(this.connectionData[ "transport" ]));
-              this.lifetimePolicy.innerHTML = entities.encode(String(this.connectionData[ "lifetimePolicy" ]));
 
            };
 

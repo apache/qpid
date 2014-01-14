@@ -35,6 +35,8 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 public class QpidRestTestCase extends QpidBrokerTestCase
 {
     public static final String ANONYMOUS_AUTHENTICATION_PROVIDER = "testAnonymous";
+    public static final String EXTERNAL_AUTHENTICATION_PROVIDER = "testExternal";
+
     public static final String TEST1_VIRTUALHOST = "test";
     public static final String TEST2_VIRTUALHOST = "test2";
     public static final String TEST3_VIRTUALHOST = "test3";

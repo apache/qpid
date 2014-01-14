@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
@@ -83,6 +84,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static String CONFIG_VERSION_DB_NAME = "CONFIG_VERSION";
     private static final String[] DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, MESSAGE_META_DATA_DB_NAME,
             MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME, CONFIG_VERSION_DB_NAME };
+
+    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private EnvironmentFacade _environmentFacade;
     private final AtomicLong _messageId = new AtomicLong(0);
@@ -282,16 +285,19 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public void close() throws AMQStoreException
     {
-        _stateManager.attainState(State.CLOSING);
-        try
+        if (_closed.compareAndSet(false, true))
         {
-            closeEnvironment();
+	    _stateManager.attainState(State.CLOSING);
+	    try
+	    {
+		closeEnvironment();
+	    }
+	    catch(DatabaseException e)
+	    {
+		throw new AMQStoreException("Exception occured on message store close", e);
+	    }
+	    _stateManager.attainState(State.CLOSED);
         }
-        catch(DatabaseException e)
-        {
-            throw new AMQStoreException("Exception occured on message store close", e);
-        }
-        _stateManager.attainState(State.CLOSED);
     }
 
     private void closeEnvironment()

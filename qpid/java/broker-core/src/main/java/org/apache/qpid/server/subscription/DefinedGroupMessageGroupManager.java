@@ -136,9 +136,21 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
 
     public synchronized boolean acceptMessage(final Subscription sub, final QueueEntry entry)
     {
+        if(assignMessage(sub, entry))
+        {
+            return entry.acquire(sub);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private boolean assignMessage(final Subscription sub, final QueueEntry entry)
+    {
         Object groupId = getKey(entry);
         Group group = _groupMap.get(groupId);
-        
+
         if(group == null || !group.isValid())
         {
             group = new Group(groupId, sub);
@@ -152,11 +164,10 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
             {
                 return false;
             }
-
         }
-        
+
         Subscription assignedSub = group.getSubscription();
-        
+
         if(assignedSub == sub)
         {
             entry.addStateChangeListener(new GroupStateChangeListener(group, entry));
@@ -167,8 +178,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
             return false;            
         }
     }
-    
-    
+
     public synchronized QueueEntry findEarliestAssignedAvailableEntry(final Subscription sub)
     {
         EntryFinder visitor = new EntryFinder(sub);

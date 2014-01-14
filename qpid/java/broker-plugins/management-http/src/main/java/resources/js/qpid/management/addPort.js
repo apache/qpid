@@ -110,7 +110,7 @@ define(["dojo/_base/xhr",
                 }
 
                 var type = dijit.byId("formAddPort.type").value;
-                if (type == "AMQP")
+                if (type == "AMQP" || type == "HTTP")
                 {
                     var transportWidget = registry.byId("formAddPort.transports");
                     var needClientAuth = dijit.byId("formAddPort.needClientAuth");
@@ -154,7 +154,7 @@ define(["dojo/_base/xhr",
             {
                 var clientAuthPanel = dojo.byId("formAddPort:fieldsClientAuth");
                 var display = clientAuthPanel.style.display;
-                if (transportType == "SSL" && protocolType == "AMQP")
+                if (transportType == "SSL" && (protocolType == "AMQP" || protocolType == "HTTP"))
                 {
                     clientAuthPanel.style.display = "block";
                     registry.byId("formAddPort.needClientAuth").set("disabled", false);
@@ -212,8 +212,11 @@ define(["dojo/_base/xhr",
                                 });
 
                                 var isAMQP = ("AMQP" == newValue);
-                                registry.byId("formAddPort.needClientAuth").set("enabled", isAMQP);
-                                registry.byId("formAddPort.wantClientAuth").set("enabled", isAMQP);
+
+                                var isHTTP = ("HTTP" == newValue);
+
+                                registry.byId("formAddPort.needClientAuth").set("enabled", isAMQP || isHTTP);
+                                registry.byId("formAddPort.wantClientAuth").set("enabled", isAMQP || isHTTP);
 
                                 registry.byId("formAddPort:fields" + newValue).domNode.style.display = "block";
                                 var defaultsAMQPProtocols = registry.byId("formAddPort.protocolsDefault");
@@ -246,13 +249,15 @@ define(["dojo/_base/xhr",
                                 transportWidget.set("disabled", disableTransportWidget);
                                 registry.byId("formAddPort.authenticationProvider").set("disabled", isRMI);
                                 registry.byId("formAddPort:fieldsAuthenticationProvider").domNode.style.display = isRMI? "none" : "block";
+                                registry.byId("formAddPort:fieldsBindingAddress").domNode.style.display = newValue == "JMX" ? "none" : "block";
+
                             });
 
                             theForm = registry.byId("formAddPort");
 
                             var containers = ["formAddPort:fields", "formAddPort:fieldsTransportSSL", "formAddPort:fieldsAMQP",
                                               "formAddPort:fieldsJMX", "formAddPort:fieldsHTTP", "formAddPort:transport",
-                                              "formAddPort:fieldsClientAuthCheckboxes", "formAddPort:fieldsAuthenticationProvider"];
+                                              "formAddPort:fieldsClientAuthCheckboxes", "formAddPort:fieldsAuthenticationProvider", "formAddPort:fieldsBindingAddress"];
                             var labelWidthValue = "200";
                             for(var i = 0; i < containers.length; i++)
                             {
@@ -448,8 +453,10 @@ define(["dojo/_base/xhr",
                        {
                            var httpProtocolsWidget = registry.byId("formAddPort.protocolsHTTP");
                            httpProtocolsWidget.set("disabled", false);
-                           httpProtocolsWidget.set("value", protocols[0])
+                           httpProtocolsWidget.set("value", protocols[0]);
                            typeWidget.set("value", "HTTP");
+                           var addressWidget = registry.byId("formAddPort.bindingAddress");
+                           addressWidget.set("value", port.bindingAddress)
                        }
                        registry.byId("formAddPort:fields" + typeWidget.value).domNode.style.display = "block";
                        typeWidget.set("disabled", true);

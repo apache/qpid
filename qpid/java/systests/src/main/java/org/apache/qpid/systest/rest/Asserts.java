@@ -41,6 +41,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class Asserts
 {
@@ -126,7 +127,7 @@ public class Asserts
                 Queue.DISCARDS_TTL_MESSAGES, Queue.STATE_CHANGED);
     }
 
-    public static void assertAttributesPresent(Map<String, Object> data, String[] attributes)
+    public static void assertAttributesPresent(Map<String, Object> data, String... attributes)
     {
         for (String name : attributes)
         {
@@ -164,6 +165,8 @@ public class Asserts
                 Connection.INCOMING, Connection.REMOTE_PROCESS_NAME, Connection.REMOTE_PROCESS_PID,
                 Connection.LOCAL_ADDRESS, Connection.PROPERTIES);
 
+        assertEquals("Unexpected value for connection attribute " + Connection.PORT,
+                TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, connectionData.get(Connection.PORT));
         assertEquals("Unexpected value of connection attribute " + Connection.SESSION_COUNT_LIMIT,
                 (int) connection.getMaximumChannelCount(), connectionData.get(Connection.SESSION_COUNT_LIMIT));
         assertEquals("Unexpected value of connection attribute " + Connection.CLIENT_ID, "clientid",

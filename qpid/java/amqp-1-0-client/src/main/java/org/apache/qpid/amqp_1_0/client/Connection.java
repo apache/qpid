@@ -20,33 +20,27 @@
  */
 package org.apache.qpid.amqp_1_0.client;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ServiceLoader;
+import java.util.concurrent.TimeoutException;
 
-import javax.net.ssl.SSLSocketFactory;
-
-import org.apache.qpid.amqp_1_0.framing.SocketExceptionHandler;
+import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
 import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
-import org.apache.qpid.amqp_1_0.transport.AMQPTransport;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.Container;
-import org.apache.qpid.amqp_1_0.transport.StateChangeListener;
-import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.transport.Predicate;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 
-public class Connection implements SocketExceptionHandler
+import javax.net.ssl.SSLContext;
+
+public class Connection implements ExceptionHandler
 {
-    private static final Logger RAW_LOGGER = Logger.getLogger("RAW");
     private static final int MAX_FRAME_SIZE = 65536;
 
     private String _address;
@@ -145,6 +139,20 @@ public class Connection implements SocketExceptionHandler
     }
 
 
+    public Connection(final String protocol,
+                      final String address,
+                      final int port,
+                      final String username,
+                      final String password,
+                      final Container container,
+                      final String remoteHost,
+                      final SSLContext sslContext,
+                      final int channelMax) throws ConnectionException
+    {
+        this(protocol, address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,sslContext,
+             channelMax);
+    }
+
     public Connection(final String address,
                       final int port,
                       final String username,
@@ -155,141 +163,119 @@ public class Connection implements SocketExceptionHandler
                       boolean ssl,
                       int channelMax) throws ConnectionException
     {
+        this(ssl?"amqp":"amqps",address,port,username,password,maxFrameSize,container,remoteHostname,getSslContext(ssl),channelMax);
+    }
 
-        _address = address;
-
+    private static SSLContext getSslContext(final boolean ssl) throws ConnectionException
+    {
         try
         {
-            final Socket s;
-            if(ssl)
-            {
-                s = SSLSocketFactory.getDefault().createSocket(address, port);
-            }
-            else
-            {
-                s = new Socket(address, port);
-            }
-
-
-            Principal principal = username == null ? null : new Principal()
-            {
-
-                public String getName()
-                {
-                    return username;
-                }
-            };
-            _conn = new ConnectionEndpoint(container, principal, password);
-            if(channelMax >= 0)
-            {
-                _conn.setChannelMax((short)channelMax);
-            }
-            _conn.setDesiredMaxFrameSize(UnsignedInteger.valueOf(maxFrameSize));
-            _conn.setRemoteAddress(s.getRemoteSocketAddress());
-            _conn.setRemoteHostname(remoteHostname);
-
-
-
-            ConnectionHandler.FrameOutput<FrameBody> out = new ConnectionHandler.FrameOutput<FrameBody>(_conn);
-
-
-            final OutputStream outputStream = s.getOutputStream();
-
-            ConnectionHandler.BytesSource src;
-
-            if(_conn.requiresSASL())
-            {
-                ConnectionHandler.FrameOutput<SaslFrameBody> saslOut = new ConnectionHandler.FrameOutput<SaslFrameBody>(_conn);
-
-                src =  new ConnectionHandler.SequentialBytesSource(new ConnectionHandler.HeaderBytesSource(_conn, (byte)'A',
-                                                                                                           (byte)'M',
-                                                                                                           (byte)'Q',
-                                                                                                           (byte)'P',
-                                                                                                           (byte)3,
-                                                                                                           (byte)1,
-                                                                                                           (byte)0,
-                                                                                                           (byte)0),
-                                                                   new ConnectionHandler.FrameToBytesSourceAdapter(saslOut,_conn.getDescribedTypeRegistry()),
-                                                                   new ConnectionHandler.HeaderBytesSource(_conn, (byte)'A',
-                                                                                                           (byte)'M',
-                                                                                                           (byte)'Q',
-                                                                                                           (byte)'P',
-                                                                                                           (byte)0,
-                                                                                                           (byte)1,
-                                                                                                           (byte)0,
-                                                                                                           (byte)0),
-                                                                   new ConnectionHandler.FrameToBytesSourceAdapter(out,_conn.getDescribedTypeRegistry())
-                );
-
-                _conn.setSaslFrameOutput(saslOut);
-            }
-            else
-            {
-                src =  new ConnectionHandler.SequentialBytesSource(new ConnectionHandler.HeaderBytesSource(_conn,(byte)'A',
-                                                                                                           (byte)'M',
-                                                                                                           (byte)'Q',
-                                                                                                           (byte)'P',
-                                                                                                           (byte)0,
-                                                                                                           (byte)1,
-                                                                                                           (byte)0,
-                                                                                                           (byte)0),
-                                                                   new ConnectionHandler.FrameToBytesSourceAdapter(out,_conn.getDescribedTypeRegistry())
-                );
-            }
-
-
-            ConnectionHandler.BytesOutputHandler outputHandler = new ConnectionHandler.BytesOutputHandler(outputStream, src, _conn, this);
-            Thread outputThread = new Thread(outputHandler);
-            outputThread.setDaemon(true);
-            outputThread.start();
-            _conn.setFrameOutputHandler(out);
-
-
-
-            final ConnectionHandler handler = new ConnectionHandler(_conn);
-            final InputStream inputStream = s.getInputStream();
-
-            Thread inputThread = new Thread(new Runnable()
-            {
-
-                public void run()
-                {
-                    try
-                    {
-                        doRead(handler, inputStream);
-                    }
-                    finally
-                    {
-                        if(_conn.closedForInput() && _conn.closedForOutput())
-                        {
-                            try
-                            {
-                                synchronized (outputStream)
-                                {
-                                    s.close();
-                                }
-                            }
-                            catch (IOException e)
-                            {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                            }
-                        }
-                    }
-                }
-            });
-
-            inputThread.setDaemon(true);
-            inputThread.start();
-
-            _conn.open();
-
+            return ssl ? SSLContext.getDefault() : null;
         }
-        catch (IOException e)
+        catch (NoSuchAlgorithmException e)
         {
             throw new ConnectionException(e);
         }
+    }
+
+    public Connection(final String protocol,
+                      final String address,
+                      final int port,
+                      final String username,
+                      final String password,
+                      final int maxFrameSize,
+                      final Container container,
+                      final String remoteHostname,
+                      SSLContext sslContext,
+                      int channelMax) throws ConnectionException
+    {
+
+        _address = address;
 
 
+        Principal principal = username == null ? null : new Principal()
+        {
+
+            public String getName()
+            {
+                return username;
+            }
+        };
+        _conn = new ConnectionEndpoint(container, principal, password);
+        if(channelMax >= 0)
+        {
+            _conn.setChannelMax((short)channelMax);
+        }
+        _conn.setDesiredMaxFrameSize(UnsignedInteger.valueOf(maxFrameSize));
+        _conn.setRemoteHostname(remoteHostname);
+
+        ConnectionHandler.FrameOutput<FrameBody> out = new ConnectionHandler.FrameOutput<FrameBody>(_conn);
+
+        ConnectionHandler.BytesSource src;
+
+        if(_conn.requiresSASL())
+        {
+            ConnectionHandler.FrameOutput<SaslFrameBody> saslOut = new ConnectionHandler.FrameOutput<SaslFrameBody>(_conn);
+
+            src =  new ConnectionHandler.SequentialBytesSource(new ConnectionHandler.HeaderBytesSource(_conn, (byte)'A',
+                                                                                                       (byte)'M',
+                                                                                                       (byte)'Q',
+                                                                                                       (byte)'P',
+                                                                                                       (byte)3,
+                                                                                                       (byte)1,
+                                                                                                       (byte)0,
+                                                                                                       (byte)0),
+                                                               new ConnectionHandler.FrameToBytesSourceAdapter(saslOut,_conn.getDescribedTypeRegistry()),
+                                                               new ConnectionHandler.HeaderBytesSource(_conn, (byte)'A',
+                                                                                                       (byte)'M',
+                                                                                                       (byte)'Q',
+                                                                                                       (byte)'P',
+                                                                                                       (byte)0,
+                                                                                                       (byte)1,
+                                                                                                       (byte)0,
+                                                                                                       (byte)0),
+                                                               new ConnectionHandler.FrameToBytesSourceAdapter(out,_conn.getDescribedTypeRegistry())
+            );
+
+            _conn.setSaslFrameOutput(saslOut);
+        }
+        else
+        {
+            src =  new ConnectionHandler.SequentialBytesSource(new ConnectionHandler.HeaderBytesSource(_conn,(byte)'A',
+                                                                                                       (byte)'M',
+                                                                                                       (byte)'Q',
+                                                                                                       (byte)'P',
+                                                                                                       (byte)0,
+                                                                                                       (byte)1,
+                                                                                                       (byte)0,
+                                                                                                       (byte)0),
+                                                               new ConnectionHandler.FrameToBytesSourceAdapter(out,_conn.getDescribedTypeRegistry())
+            );
+        }
+
+        TransportProvider transportProvider = getTransportProvider(protocol);
+
+        transportProvider.connect(_conn,address,port, sslContext, this);
+
+
+        _conn.open();
+
+    }
+
+    private TransportProvider getTransportProvider(final String protocol) throws ConnectionException
+    {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        ServiceLoader<TransportProviderFactory> providerFactories = ServiceLoader.load(TransportProviderFactory.class, classLoader);
+
+        for(TransportProviderFactory tpf : providerFactories)
+        {
+            if(tpf.getSupportedTransports().contains(protocol))
+            {
+                return tpf.getProvider(protocol);
+            }
+        }
+
+        throw new ConnectionException("Unknown protocol: " + protocol);
     }
 
     private Connection(ConnectionEndpoint endpoint)
@@ -297,45 +283,6 @@ public class Connection implements SocketExceptionHandler
         _conn = endpoint;
     }
 
-
-    private void doRead(final AMQPTransport transport, final InputStream inputStream)
-    {
-        byte[] buf = new byte[2<<15];
-        ByteBuffer bbuf = ByteBuffer.wrap(buf);
-        final Object lock = new Object();
-        transport.setInputStateChangeListener(new StateChangeListener(){
-
-            public void onStateChange(final boolean active)
-            {
-                synchronized(lock)
-                {
-                    lock.notifyAll();
-                }
-            }
-        });
-
-        try
-        {
-            int read;
-            while((read = inputStream.read(buf)) != -1)
-            {
-                bbuf.position(0);
-                bbuf.limit(read);
-
-                while(bbuf.hasRemaining() && transport.isOpenForInput())
-                {
-                    transport.processBytes(bbuf);
-                }
-
-
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-    }
 
     public Session createSession() throws ConnectionException
     {
@@ -357,84 +304,47 @@ public class Connection implements SocketExceptionHandler
         return _conn;
     }
 
-    public void awaitOpen()
+    public void awaitOpen() throws TimeoutException, InterruptedException
     {
-        synchronized(getEndpoint().getLock())
+        getEndpoint().waitUntil(new Predicate()
         {
-            while(!getEndpoint().isOpen() && !getEndpoint().isClosed())
+            @Override
+            public boolean isSatisfied()
             {
-                try
-                {
-                    getEndpoint().getLock().wait();
-                }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
+                return getEndpoint().isOpen() || getEndpoint().isClosed();
             }
-        }
+        });
 
     }
 
-    private void doRead(final ConnectionHandler handler, final InputStream inputStream)
-    {
-        byte[] buf = new byte[2<<15];
-
-
-        try
-        {
-            int read;
-            boolean done = false;
-            while(!handler.isDone() && (read = inputStream.read(buf)) != -1)
-            {
-                ByteBuffer bbuf = ByteBuffer.wrap(buf, 0, read);
-                Binary b = new Binary(buf,0,read);
-
-                if(RAW_LOGGER.isLoggable(Level.FINE))
-                {
-                    RAW_LOGGER.fine("RECV [" + _conn.getRemoteAddress() + "] : " + b.toString());
-                }
-                while(bbuf.hasRemaining() && !handler.isDone())
-                {
-                    handler.parse(bbuf);
-                }
-
-
-            }
-            if(!handler.isDone())
-            {
-                _conn.inputClosed();
-                if(_conn.getConnectionEventListener() != null)
-                {
-                    _conn.getConnectionEventListener().closeReceived();
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            _conn.inputClosed();
-            e.printStackTrace();
-        }
-    }
-
-    public void close()
+    public void close() throws ConnectionErrorException
     {
         _conn.close();
 
-        synchronized (_conn.getLock())
+        try
         {
-            while(!_conn.closedForInput())
+            _conn.waitUntil(new Predicate()
             {
-                try
+                @Override
+                public boolean isSatisfied()
                 {
-                    _conn.getLock().wait();
+                    return _conn.closedForInput();
                 }
-                catch (InterruptedException e)
-                {
-
-                }
-            }
+            });
         }
+        catch (InterruptedException e)
+        {
+            throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR, "Interrupted while waiting for connection closure");
+        }
+        catch (TimeoutException e)
+        {
+            throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR, "Timed out while waiting for connection closure");
+        }
+        if(_conn.getRemoteError() != null)
+        {
+            throw new ConnectionErrorException(_conn.getRemoteError());
+        }
+
     }
 
     /**
@@ -458,7 +368,7 @@ public class Connection implements SocketExceptionHandler
     }
 
     @Override
-    public void processSocketException(Exception exception)
+    public void handleException(Exception exception)
     {
         Error socketError = new Error();
         socketError.setDescription(exception.getClass() + ": " + exception.getMessage());

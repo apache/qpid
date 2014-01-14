@@ -212,10 +212,21 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         ServerSession s = (ServerSession) session;
                         queue.setExclusiveOwningSession(s);
+
+                        ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
+                        {
+                            public void doTask(ServerSession session)
+                            {
+                                if(queue.getExclusiveOwningSession() == session)
+                                {
+                                    queue.setExclusiveOwningSession(null);
+                                }
+                            }
+                        });
+
                         if(queue.getAuthorizationHolder() == null)
                         {
                             queue.setAuthorizationHolder(s);
-                            queue.setExclusiveOwningSession(s);
                             ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
                             {
                                 public void doTask(ServerSession session)
@@ -223,7 +234,6 @@ public class ServerSessionDelegate extends SessionDelegate
                                     if(queue.getAuthorizationHolder() == session)
                                     {
                                         queue.setAuthorizationHolder(null);
-                                        queue.setExclusiveOwningSession(null);
                                     }
                                 }
                             });

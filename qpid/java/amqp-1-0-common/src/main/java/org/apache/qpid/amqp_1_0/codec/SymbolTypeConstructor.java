@@ -66,20 +66,7 @@ public class SymbolTypeConstructor extends VariableWidthTypeConstructor
         if(symbolVal == null)
         {
             ByteBuffer dup = in.duplicate();
-            try
-            {
-                dup.limit(in.position()+size);
-            }
-            catch (IllegalArgumentException e)
-            {
-                System.err.println("in.position(): " + in.position());
-                System.err.println("size: " + size);
-                System.err.println("dup.position(): " + dup.position());
-                System.err.println("dup.capacity(): " + dup.capacity());
-                System.err.println("dup.limit(): " + dup.limit());
-                throw e;
-
-            }
+            dup.limit(in.position()+size);
             CharBuffer charBuf = ASCII.decode(dup);
 
 

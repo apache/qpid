@@ -215,12 +215,10 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         catch(RuntimeException rte)
         {
             //check cause was BDBs EnvironmentFailureException
-            boolean isExpectedException = rte.getMessage().contains(EnvironmentFailureException.class.getName());
-            if (!isExpectedException)
-            {
-                rte.printStackTrace();
-            }
-            assertTrue("Unexpected exception message:" + rte.getMessage(), isExpectedException);
+            assertTrue("Message '"+rte.getMessage()+"' does not contain '"
+                       + EnvironmentFailureException.class.getName()
+                       + "'.",
+                       rte.getMessage().contains(EnvironmentFailureException.class.getName()));
             // PASS
         }
     }

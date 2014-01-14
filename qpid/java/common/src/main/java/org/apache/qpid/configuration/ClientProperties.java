@@ -230,6 +230,12 @@ public class ClientProperties
      * producer/consumer creation when using BindingURLs.
      */
     public static final String QPID_DECLARE_EXCHANGES_PROP_NAME = "qpid.declare_exchanges";
+    /**
+     * System property to control whether the client will bind queues during
+     * consumer creation when using BindingURLs.
+     */
+    public static final String QPID_BIND_QUEUES_PROP_NAME = "qpid.bind_queues";
+
     public static final String VERIFY_QUEUE_ON_SEND = "qpid.verify_queue_on_send";
 
     public static final String QPID_MAX_CACHED_ADDR_OPTION_STRINGS = "qpid.max_cached_address_option_strings";

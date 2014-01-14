@@ -25,7 +25,6 @@ import java.security.Principal;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;

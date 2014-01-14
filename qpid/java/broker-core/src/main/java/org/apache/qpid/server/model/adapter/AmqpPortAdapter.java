@@ -19,12 +19,8 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-
-import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,21 +38,21 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
-import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.server.transport.AcceptingTransport;
+import org.apache.qpid.server.transport.TransportProvider;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
 public class AmqpPortAdapter extends PortAdapter
 {
     private final Broker _broker;
-    private IncomingNetworkTransport _transport;
+    private AcceptingTransport _transport;
 
     public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaultAttributes, TaskExecutor taskExecutor)
     {
@@ -70,42 +66,36 @@ public class AmqpPortAdapter extends PortAdapter
         Collection<Transport> transports = getTransports();
         Set<AmqpProtocolVersion> supported = convertFromModelProtocolsToAmqp(getProtocols());
 
+        TransportProvider transportProvider = null;
+        final HashSet<Transport> transportSet = new HashSet<Transport>(transports);
+        for(TransportProviderFactory tpf : (new QpidServiceLoader<TransportProviderFactory>()).instancesOf(TransportProviderFactory.class))
+        {
+            if(tpf.getSupportedTransports().contains(transports))
+            {
+                transportProvider = tpf.getTransportProvider(transportSet);
+            }
+        }
+
+        if(transportProvider == null)
+        {
+            throw new IllegalConfigurationException("No transport providers found which can satisfy the requirement to support the transports: " + transports);
+        }
+
         SSLContext sslContext = null;
-        if (transports.contains(Transport.SSL))
+        if (transports.contains(Transport.SSL) || transports.contains(Transport.WSS))
         {
             sslContext = createSslContext();
         }
 
         AmqpProtocolVersion defaultSupportedProtocolReply = getDefaultAmqpSupportedReply();
 
-        String bindingAddress = (String) getAttribute(Port.BINDING_ADDRESS);
-        if (WILDCARD_ADDRESS.equals(bindingAddress))
-        {
-            bindingAddress = null;
-        }
-        Integer port = (Integer) getAttribute(Port.PORT);
-        InetSocketAddress bindingSocketAddress = null;
-        if ( bindingAddress == null )
-        {
-            bindingSocketAddress = new InetSocketAddress(port);
-        }
-        else
-        {
-            bindingSocketAddress = new InetSocketAddress(bindingAddress, port);
-        }
+        _transport = transportProvider.createTransport(transportSet,
+                                                       sslContext,
+                                                       this,
+                                                       supported,
+                                                       defaultSupportedProtocolReply);
 
-        final NetworkTransportConfiguration settings = new ServerNetworkTransportConfiguration(
-                bindingSocketAddress, (Boolean)getAttribute(TCP_NO_DELAY),
-                (Integer)getAttribute(SEND_BUFFER_SIZE), (Integer)getAttribute(RECEIVE_BUFFER_SIZE),
-                (Boolean)getAttribute(NEED_CLIENT_AUTH), (Boolean)getAttribute(WANT_CLIENT_AUTH));
-
-        _transport = org.apache.qpid.transport.network.Transport.getIncomingTransportInstance();
-        final MultiVersionProtocolEngineFactory protocolEngineFactory = new MultiVersionProtocolEngineFactory(
-                _broker, transports.contains(Transport.TCP) ? sslContext : null,
-                settings.wantClientAuth(), settings.needClientAuth(),
-                supported, defaultSupportedProtocolReply, this, transports.contains(Transport.TCP) ? Transport.TCP : Transport.SSL);
-
-        _transport.accept(settings, protocolEngineFactory, transports.contains(Transport.TCP) ? null : sslContext);
+        _transport.start();
         for(Transport transport : getTransports())
         {
             CurrentActor.get().message(BrokerMessages.LISTENING(String.valueOf(transport), getPort()));
@@ -209,69 +199,5 @@ public class AmqpPortAdapter extends PortAdapter
             return AmqpProtocolVersion.valueOf(defaultAmqpSupportedReply);
         }
         return null;
-    }
-
-    class ServerNetworkTransportConfiguration implements NetworkTransportConfiguration
-    {
-        private final InetSocketAddress _bindingSocketAddress;
-        private final Boolean _tcpNoDelay;
-        private final Integer _sendBufferSize;
-        private final Integer _receiveBufferSize;
-        private final boolean _needClientAuth;
-        private final boolean _wantClientAuth;
-
-        public ServerNetworkTransportConfiguration(
-                InetSocketAddress bindingSocketAddress, boolean tcpNoDelay,
-                int sendBufferSize, int receiveBufferSize,
-                boolean needClientAuth, boolean wantClientAuth)
-        {
-            _bindingSocketAddress = bindingSocketAddress;
-            _tcpNoDelay = tcpNoDelay;
-            _sendBufferSize = sendBufferSize;
-            _receiveBufferSize = receiveBufferSize;
-            _needClientAuth = needClientAuth;
-            _wantClientAuth = wantClientAuth;
-        }
-
-        @Override
-        public boolean wantClientAuth()
-        {
-            return _wantClientAuth;
-        }
-
-        @Override
-        public boolean needClientAuth()
-        {
-            return _needClientAuth;
-        }
-
-        @Override
-        public Boolean getTcpNoDelay()
-        {
-            return _tcpNoDelay;
-        }
-
-        @Override
-        public Integer getSendBufferSize()
-        {
-            return _sendBufferSize;
-        }
-
-        @Override
-        public Integer getReceiveBufferSize()
-        {
-            return _receiveBufferSize;
-        }
-
-        @Override
-        public InetSocketAddress getAddress()
-        {
-            return _bindingSocketAddress;
-        }
-    };
-
-    public String toString()
-    {
-        return getName();
     }
 }

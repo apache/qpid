@@ -34,6 +34,8 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import javax.jms.Message;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.Rejected;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
@@ -221,7 +223,7 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         }
         catch (Sender.SenderClosingException e)
         {
-            final JMSException jmsException = new JMSException("error closing");
+            final JMSException jmsException = new JMSException("Error closing producer: " + e.getMessage());
             jmsException.setLinkedException(e);
             throw jmsException;
         }
@@ -299,8 +301,8 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         final org.apache.qpid.amqp_1_0.client.Message clientMessage = new org.apache.qpid.amqp_1_0.client.Message(msg.getSections());
 
         DispositionAction action = null;
-
-        if(_syncPublish)
+        final boolean doSync = _syncPublish || (deliveryMode == DeliveryMode.PERSISTENT && _session.getTxn() == null);
+        if(doSync)
         {
             action = new DispositionAction(_sender);
         }
@@ -315,8 +317,14 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             jmsException.setLinkedException(e);
             throw jmsException;
         }
+        catch (TimeoutException e)
+        {
+            JMSException jmsException = new JMSException("Timed out while waiting to get credit to send");
+            jmsException.setLinkedException(e);
+            throw jmsException;
+        }
 
-        if(_syncPublish && !action.wasAccepted(_syncPublishTimeout))
+        if(doSync && !action.wasAccepted(_syncPublishTimeout))
         {
             if (action.getOutcome() instanceof Rejected)
             {

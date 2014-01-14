@@ -20,15 +20,21 @@
  */
 package org.apache.qpid.amqp_1_0.client;
 
+import org.apache.qpid.amqp_1_0.type.ErrorCondition;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class ConnectionErrorException extends ConnectionException
 {
     protected final Error _remoteError;
 
+    public ConnectionErrorException(ErrorCondition condition,final String description)
+    {
+        this(new Error(condition, description));
+    }
+
     public ConnectionErrorException(Error remoteError)
     {
-        super();
+        super(remoteError.getDescription());
         _remoteError = remoteError;
     }
 

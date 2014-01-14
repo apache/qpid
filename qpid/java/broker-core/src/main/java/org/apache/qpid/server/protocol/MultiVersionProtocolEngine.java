@@ -30,6 +30,8 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSocket;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -38,6 +40,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
+import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.security.SSLStatus;
@@ -142,11 +145,6 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     }
 
     private static final int MINIMUM_REQUIRED_HEADER_BYTES = 8;
-
-    public void setNetworkConnection(NetworkConnection networkConnection)
-    {
-        setNetworkConnection(networkConnection, networkConnection.getSender());
-    }
 
     public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
     {
@@ -274,9 +272,9 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public void received(ByteBuffer msg)
         {
-
             _lastReadTime = System.currentTimeMillis();
-            ByteBuffer msgheader = msg.duplicate();
+            ByteBuffer msgheader = msg.duplicate().slice();
+
             if(_header.remaining() > msgheader.limit())
             {
                 msg.position(msg.limit());
@@ -328,6 +326,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                         defaultSupportedReplyBytes = _creators[i].getHeaderIdentifier();
                     }
                 }
+
 
                 if(newDelegate == null && looksLikeSSL(headerBytes))
                 {
@@ -475,7 +474,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             SSLStatus sslStatus = new SSLStatus();
             _sslReceiver = new SSLReceiver(_engine,_decryptEngine,sslStatus);
             _sslSender = new SSLBufferingSender(_engine,_sender,sslStatus);
-            _decryptEngine.setNetworkConnection(new SSLNetworkConnection(_engine,_network, _sslSender));
+            _decryptEngine.setNetworkConnection(new SSLNetworkConnection(_engine,_network, _sslSender), _sslSender);
         }
 
         @Override
@@ -592,6 +591,9 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         private final NetworkConnection _network;
         private final SSLBufferingSender _sslSender;
         private final SSLEngine _engine;
+        private Principal _principal;
+        private boolean _principalChecked;
+        private final Object _lock = new Object();
 
         public SSLNetworkConnection(SSLEngine engine, NetworkConnection network,
                                     SSLBufferingSender sslSender)
@@ -647,21 +649,25 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
 
         @Override
-        public void setPeerPrincipal(Principal principal)
-        {
-            _network.setPeerPrincipal(principal);
-        }
-
-        @Override
         public Principal getPeerPrincipal()
         {
-            try
+            synchronized (_lock)
             {
-                return _engine.getSession().getPeerPrincipal();
-            }
-            catch (SSLPeerUnverifiedException e)
-            {
-                return null;
+                if(!_principalChecked)
+                {
+                    try
+                    {
+                        _principal =  _engine.getSession().getPeerPrincipal();
+                    }
+                    catch (SSLPeerUnverifiedException e)
+                    {
+                        _principal = null;
+                    }
+
+                    _principalChecked = true;
+                }
+
+                return _principal;
             }
         }
 

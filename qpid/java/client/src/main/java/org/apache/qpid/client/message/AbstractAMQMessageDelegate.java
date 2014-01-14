@@ -60,7 +60,10 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
         _exchangeTypeToDestinationType.put(ExchangeDefaults.FANOUT_EXCHANGE_CLASS, AMQDestination.TOPIC_TYPE);
         _exchangeTypeToDestinationType.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS, AMQDestination.QUEUE_TYPE);
 
-        _exchangeMap.put("", new ExchangeInfo("","",AMQDestination.QUEUE_TYPE));
+        _exchangeMap.put(ExchangeDefaults.DEFAULT_EXCHANGE_NAME,
+                         new ExchangeInfo(ExchangeDefaults.DEFAULT_EXCHANGE_NAME,
+                                          ExchangeDefaults.DIRECT_EXCHANGE_CLASS,
+                                          AMQDestination.QUEUE_TYPE));
 
         _exchangeMap.put(ExchangeDefaults.DIRECT_EXCHANGE_NAME,
                          new ExchangeInfo(ExchangeDefaults.DIRECT_EXCHANGE_NAME,
