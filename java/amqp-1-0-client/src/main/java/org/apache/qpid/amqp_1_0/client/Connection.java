@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.amqp_1_0.client;
 
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeoutException;
@@ -35,6 +36,8 @@ import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
+
+import javax.net.ssl.SSLContext;
 
 public class Connection implements ExceptionHandler
 {
@@ -143,10 +146,10 @@ public class Connection implements ExceptionHandler
                       final String password,
                       final Container container,
                       final String remoteHost,
-                      final boolean ssl,
+                      final SSLContext sslContext,
                       final int channelMax) throws ConnectionException
     {
-        this(protocol, address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,ssl,
+        this(protocol, address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,sslContext,
              channelMax);
     }
 
@@ -160,7 +163,19 @@ public class Connection implements ExceptionHandler
                       boolean ssl,
                       int channelMax) throws ConnectionException
     {
-        this(ssl?"amqp":"amqps",address,port,username,password,maxFrameSize,container,remoteHostname,ssl,channelMax);
+        this(ssl?"amqp":"amqps",address,port,username,password,maxFrameSize,container,remoteHostname,getSslContext(ssl),channelMax);
+    }
+
+    private static SSLContext getSslContext(final boolean ssl) throws ConnectionException
+    {
+        try
+        {
+            return ssl ? SSLContext.getDefault() : null;
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new ConnectionException(e);
+        }
     }
 
     public Connection(final String protocol,
@@ -171,7 +186,7 @@ public class Connection implements ExceptionHandler
                       final int maxFrameSize,
                       final Container container,
                       final String remoteHostname,
-                      boolean ssl,
+                      SSLContext sslContext,
                       int channelMax) throws ConnectionException
     {
 
@@ -240,7 +255,7 @@ public class Connection implements ExceptionHandler
 
         TransportProvider transportProvider = getTransportProvider(protocol);
 
-        transportProvider.connect(_conn,address,port,ssl, this);
+        transportProvider.connect(_conn,address,port, sslContext, this);
 
 
         _conn.open();

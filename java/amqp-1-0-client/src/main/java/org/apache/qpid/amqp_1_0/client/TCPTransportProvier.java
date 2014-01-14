@@ -26,6 +26,8 @@ import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,15 +48,19 @@ class TCPTransportProvier implements TransportProvider
     public void connect(final ConnectionEndpoint conn,
                         final String address,
                         final int port,
-                        final boolean ssl,
+                        final SSLContext sslContext,
                         final ExceptionHandler exceptionHandler) throws ConnectionException
     {
         try
         {
             final Socket s;
-            if(ssl)
+            if(sslContext != null)
             {
-                s = SSLSocketFactory.getDefault().createSocket(address, port);
+                final SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+
+                SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(address, port);
+
+                s=sslSocket;
             }
             else
             {
@@ -62,6 +68,7 @@ class TCPTransportProvier implements TransportProvider
             }
 
             conn.setRemoteAddress(s.getRemoteSocketAddress());
+
 
 
             ConnectionHandler.FrameOutput<FrameBody> out = new ConnectionHandler.FrameOutput<FrameBody>(conn);
