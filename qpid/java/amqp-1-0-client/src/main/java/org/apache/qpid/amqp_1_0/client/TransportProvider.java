@@ -25,11 +25,13 @@ import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 
+import javax.net.ssl.SSLContext;
+
 public interface TransportProvider
 {
     void connect(ConnectionEndpoint conn,
                  String address,
                  int port,
-                 boolean ssl,
+                 SSLContext sslContext,
                  ExceptionHandler exceptionHandler) throws ConnectionException;
 }

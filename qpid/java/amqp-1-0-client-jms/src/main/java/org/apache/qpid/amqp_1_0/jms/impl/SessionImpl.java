@@ -81,6 +81,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     private boolean _isQueueSession;
     private boolean _isTopicSession;
     private Transaction _txn;
+    private int _maxPrefetch;
 
     protected SessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode) throws JMSException
     {
@@ -841,6 +842,16 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     Transaction getTxn()
     {
         return _txn;
+    }
+
+    public void setMaxPrefetch(final int maxPrefetch)
+    {
+        _maxPrefetch = maxPrefetch;
+    }
+
+    public int getMaxPrefetch()
+    {
+        return _maxPrefetch;
     }
 
     private class Dispatcher implements Runnable
