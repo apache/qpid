@@ -143,7 +143,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
                         {
                             // pass
                         }
-                        elapsed += System.currentTimeMillis() - start;
+                        elapsed = System.currentTimeMillis() - start;
                     }
 
                     checkNotAlreadyClosed();
