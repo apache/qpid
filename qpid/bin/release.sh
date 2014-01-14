@@ -258,6 +258,7 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/jca/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-client/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-client-jms/release/maven artifacts/
+  cp -a qpid-${VER}/java/amqp-1-0-client-websocket/release/maven artifacts/
   cp -a qpid-${VER}/java/amqp-1-0-common/release/maven artifacts/
   cp -a qpid-${VER}/java/client/release/maven artifacts/
   cp -a qpid-${VER}/java/common/release/maven artifacts/
@@ -279,6 +280,7 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp -a qpid-${VER}/java/broker-plugins/management-http/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/management-jmx/release/maven artifacts/
   cp -a qpid-${VER}/java/broker-plugins/memory-store/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker-plugins/websocket/release/maven artifacts/
   cp -a qpid-${VER}/java/bdbstore/jmx/release/maven artifacts/
 fi
 

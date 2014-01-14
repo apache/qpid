@@ -117,6 +117,12 @@
     <artifact name="qpid-broker-plugins-jdbc-provider-bone" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-broker-plugins-jdbc-provider-bone" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-jdbc-provider-bone" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-websocket" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-websocket" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-websocket" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-websocket" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-websocket" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-websocket" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-amqp-1-0-common" type="pom" ext="pom"/>
     <artifact name="qpid-amqp-1-0-common" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-amqp-1-0-common" type="jar" ext="jar"/>
