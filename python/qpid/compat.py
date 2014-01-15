@@ -18,6 +18,8 @@
 #
 
 import sys
+import errno
+import time
 
 try:
   set = set
@@ -42,6 +44,7 @@ if tuple(sys.version_info[0:2]) < (2, 4):
     return old_select(list(rlist), list(wlist), list(xlist), timeout)
 else:
   from select import select
+  from select import error as SelectError
 
 class BaseWaiter:
 
@@ -49,8 +52,18 @@ class BaseWaiter:
     self._do_write()
 
   def wait(self, timeout=None):
+    start = time.time()
     if timeout is not None:
-      ready, _, _ = select([self], [], [], timeout)
+      while True:
+        try:
+          ready, _, _ = select([self], [], [], timeout)
+          break
+        except SelectError, e:
+          if e[0] == errno.EINTR:
+            elapsed = time.time() - start
+            timeout = timeout - elapsed
+          else:
+            raise e
     else:
       ready = True
 
