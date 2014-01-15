@@ -70,6 +70,7 @@ public class Connection extends ConnectionInvoker
     public static final int MIN_USABLE_CHANNEL_NUM = 0;
     private long _lastSendTime;
     private long _lastReadTime;
+    private NetworkConnection _networkConnection;
 
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
@@ -229,12 +230,13 @@ public class Connection extends ConnectionInvoker
                 addConnectionListener((ConnectionListener)secureReceiver);
             }
 
-            NetworkConnection network = transport.connect(settings, secureReceiver, new ConnectionActivity());
+            _networkConnection = transport.connect(settings, secureReceiver, new ConnectionActivity());
 
-            setRemoteAddress(network.getRemoteAddress());
-            setLocalAddress(network.getLocalAddress());
 
-            final Sender<ByteBuffer> secureSender = securityLayer.sender(network.getSender());
+            setRemoteAddress(_networkConnection.getRemoteAddress());
+            setLocalAddress(_networkConnection.getLocalAddress());
+
+            final Sender<ByteBuffer> secureSender = securityLayer.sender(_networkConnection.getSender());
             if(secureSender instanceof ConnectionListener)
             {
                 addConnectionListener((ConnectionListener)secureSender);
@@ -785,14 +787,26 @@ public class Connection extends ConnectionInvoker
         @Override
         public void writerIdle()
         {
+            getConnectionDelegate().writerIdle(Connection.this);
             connectionHeartbeat();
         }
 
         @Override
         public void readerIdle()
         {
-            // TODO
-
+            log.error("Closing connection as no heartbeat or other activity detected within specified interval");
+            _networkConnection.close();
         }
+    }
+
+
+    public void setNetworkConnection(NetworkConnection network)
+    {
+        _networkConnection = network;
+    }
+
+    public NetworkConnection getNetworkConnection()
+    {
+        return _networkConnection;
     }
 }
