@@ -17,52 +17,70 @@
 # under the License.
 #
 
-LinearStore issues:
+Linear Store issues:
 
-Store:
-------
+Current/pending:
+================
+ Q-JIRA RHBZ     Description / Comments
+ ------ -------  ----------------------
+   5359 -        Linearstore: Implement new management schema and wire into store
+   5360 -        Linearstore: Evaluate and rework logging to produce a consistent log outputConsistent logging
+   5361 -        Linearstore: No tests for linearstore functionality currently exist
+                   * No existing tests for linearstore:
+                   ** Basic broker-level tests for txn and non-txn recovery
+                   ** Store-level tests which check write boundary conditions
+                   ** EFP tests, including file recovery, error management
+                   ** Unit tests
+                   ** Basic performance tests
+   5362 -        Linearstore: No store tools exist for examining the journals
+                   svn r.1558888 2014-01-09: WIP checkin for linearstore version of qpid_qls_analyze. Needs testing and tidy-up.
+                   * Store analysis and status
+                   * Recovery/reading of message content
+                   * Empty file pool status and management
+   5464 -        [linearstore] Incompletely created journal files accumulate in EFP
+   5479 1053701  [linearstore] Using recovered store results in "JERR_JNLF_FILEOFFSOVFL: Attempted to increase submitted offset past file size. (JournalFile::submittedDblkCount)" error message
+   5480 1053749  [linearstore] Recovery of store failure with "JERR_MAP_NOTFOUND: Key not found in map." error message
+   -    1035843  Slow performance for producers
+   -    1036026  [LinearStore] Qpid linear store unable to create durable queue - framing-error: Queue <q-name>: create() failed: jexception 0x0000
+                   UNABLE TO REPRODUCE - but Frantizek has additional info
+   -    1039522  Qpid crashes while recovering from linear store around apid::linearstore::journal::JournalFile::getFqFileName() including enq_rec::decode() threw JERR_JREC_BAD_RECTAIL
+   -    1039525  Qpid crashes while recovering from linear store around apid::linearstore::journal::jexception::format including enq_rec::decode() threw JERR_JREC_BAD_REC_TAIL
+                   * Possible dup of 1039522
 
-1. (FIXED) Overwrite identity: When recovering a previously used file, if the write boundary coincides with old record
-   start, no way of discriminating old from new at boundary (used to use OWI).
+Fixed/closed:
+=============
+ Q-JIRA RHBZ     Description / Comments
+ ------ -------  ----------------------
+   5357 1052518  Linearstore: Empty file recycling not functional
+                   svn r.1545563 2013-11-26: Propsed fix
+   5358 1052727  Linearstore: Checksums not implemented in record tail
+                   svn r.1547601 2013-12-03: Propsed fix
+   5387 1036071  Linearstore: Segmentation fault when deleting queue
+                   svn r.1547641 2013-12-03: Propsed fix
+   5388 1035802  Linearstore: Segmentation fault when recovering empty queue
+                   svn r.1547921 2013-12-04: Propsed fix
+NO-JIRA -        Added missing Apache copyright/license text
+                   svn r.1551304 2013-12-16: Propsed fix
+   5425 1052445  Linearstore: Transaction Prepared List (TPL) fails with jexception 0x0402 AtomicCounter::addLimit() threw JERR_JNLF_FILEOFFSOVFL
+                   svn r.1551361 2013-12-16: Proposed fix
+   5442 1039949  Linearstore: Dtx recover test fails
+                   svn r.1552772 2013-12-20: Proposed fix
+   5444 1052775  Linearstore: Recovering from qpid-txtest fails with "Inconsistent TPL 2PC count" error message
+                   svn r.1553148 2013-12-23: Proposed fix
+   -    1038599  [LinearStore] Abort when deleting used queue after restart
+                   CLOSED-NOTABUG 2014-01-06
+   5460 1051097  [linearstore] Recovery of store which contains prepared but incomplete transactions results in message loss
+                   svn r.1556892 2014-01-09: Proposed fix
+   5473 1051924  [linearstore] Recovery of journal in which last logical file contains truncated record causes crash
+                   svn r.1557620 2014-01-12: Proposed fix
 
-2. (FIXED) QPID-5357: Recycling files while in use not working, however, files are recovered to EFP during recovery. Must solve
-   #1 first.
-
-3. (FIXED) QPID-5358: Checksum not implemented in record tail, not checked during read.
-
-4. QPID-5359: Rework qpid management parameters and controls (QMF).
-
-5. QPID-5360: Consistent logging: rework logging to provide uniform and consistent logging from store (both logging
-   level and places where logging occurs).
-
-6. QPID-5361: No tests
-   * No existing tests for linearstore:
-   ** Basic broker-level tests for txn and non-txn recovery
-   ** Store-level tests which check write boundary conditions
-   ** Unit tests
-   ** Basic performance tests
-
-7: QPID-5362: No tools
-   * Store analysis and status
-   * Recovery/reading of message content
-
-8. One journal file lost when queue deleted. All files except for one are recycled back to the EFP.
-
-9. Complete exceptions - several exceptions thrown using jexception have no exception numbers
-
-Current bugs and performance issues:
-------------------------------------
-1. BZ 1035843 - Slow performance for producers
-2. (FIXED) QPID-5387 (BZ 1036071) - Crash when deleting queue
-3. (FIXED) QPID-5388 (BZ 1035802) - Segmentation fault when recovering empty queue
-4. (UNABLE TO REPRODUCE) BZ 1036026 - Unable to create durable queue - framing error - possibly caused by running both stores at the same time
-5. (UNABLE TO REPRODUCE) BZ 1038599 - Abort when deleting used queue after restart - may be dup of QPID-5387 (BZ 1036071)
-6. BZ 1039522 - Crash during recovery - JournalFile::getFqFileName() -JERR_JREC_BADRECTAIL
-7. BZ 1039525 - Crash during recovery - journal::jexception - JERR_JREC_BADRECTAIL
-8. (FIXED) QPID-5442 (BZ 1039949) - DTX test failure - missing XIDs
-9. (FIXED) QPID-5460 (BZ 1051097) - Transactional messages lost during recovery
-10. QPID-5464 - Incompletely created journal files accumulate in EFP
-11. QPID-5473 (BZ 1051924) - Recovery where last record in file is truncated (ie spans files), but following file is uninitialized causes crash
+Future:
+=======
+* One journal file lost when queue deleted. All files except for one are recycled back to the EFP.
+* Complete exceptions - several exceptions thrown using jexception have no exception numbers
+* Investigate ability of store to detect missing journal files, especially from logical end of a journal
+* Investigate ability of store to handle file muddle-ups (ie journal files from EFP which are not zeroed or other journals)
+* Look at improving the efficiency of recovery - right now the entire store is read once, and then each recovered record xid and data is read again
 
 Code tidy-up
 ------------

@@ -40,7 +40,8 @@ private:
     ::enq_hdr_t _enq_hdr;   ///< Local instance of enqueue header struct
     const void* _xidp;      ///< xid pointer for encoding (for writing to disk)
     const void* _data;      ///< Pointer to data to be written to disk
-    void* _buff;            ///< Pointer to buffer to receive data read from disk
+    void* _xid_buff;
+    void* _data_buff;
     ::rec_tail_t _enq_tail; ///< Local instance of enqueue tail struct
 
 public:
@@ -62,6 +63,7 @@ public:
     std::size_t rec_size() const;
     static std::size_t rec_size(const std::size_t xidsize, const std::size_t dsize, const bool external);
     inline uint64_t rid() const { return _enq_hdr._rhdr._rid; }
+    void check_rec_tail() const;
 
 private:
     virtual void clean();

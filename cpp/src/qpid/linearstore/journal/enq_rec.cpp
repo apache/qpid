@@ -34,7 +34,8 @@ enq_rec::enq_rec():
         jrec(), // superclass
         _xidp(0),
         _data(0),
-        _buff(0)
+        _xid_buff(0),
+        _data_buff(0)
 {
     ::enq_hdr_init(&_enq_hdr, QLS_ENQ_MAGIC, QLS_JRNL_VERSION, 0, 0, 0, 0, false);
     ::rec_tail_copy(&_enq_tail, &_enq_hdr._rhdr, 0);
@@ -57,7 +58,6 @@ enq_rec::reset(const uint64_t serial, const uint64_t rid, const void* const dbuf
     _enq_hdr._dsize = dlen;
     _xidp = xidp;
     _data = dbuf;
-    _buff = 0;
     _enq_tail._serial = serial;
     _enq_tail._rid = rid;
 }
@@ -229,15 +229,20 @@ enq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
         rec_offs = sizeof(::enq_hdr_t);
         if (_enq_hdr._xidsize > 0)
         {
-            _buff = std::malloc(_enq_hdr._xidsize);
-            MALLOC_CHK(_buff, "_buff", "enq_rec", "rcv_decode");
+            _xid_buff = std::malloc(_enq_hdr._xidsize);
+            MALLOC_CHK(_xid_buff, "_xid_buff", "enq_rec", "decode");
+        }
+        if (_enq_hdr._dsize > 0)
+        {
+            _data_buff = std::malloc(_enq_hdr._dsize);
+            MALLOC_CHK(_data_buff, "_data_buff", "enq_rec", "decode")
         }
     }
     if (rec_offs < sizeof(_enq_hdr) + _enq_hdr._xidsize)
     {
         // Read xid (or continue reading xid)
         std::size_t offs = rec_offs - sizeof(_enq_hdr);
-        ifsp->read((char*)_buff + offs, _enq_hdr._xidsize - offs);
+        ifsp->read((char*)_xid_buff + offs, _enq_hdr._xidsize - offs);
         std::size_t size_read = ifsp->gcount();
         rec_offs += size_read;
         if (size_read < _enq_hdr._xidsize - offs)
@@ -253,9 +258,9 @@ enq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
     {
         if (rec_offs < sizeof(_enq_hdr) + _enq_hdr._xidsize +  _enq_hdr._dsize)
         {
-            // Ignore data (or continue ignoring data)
+            // Read data (or continue reading data)
             std::size_t offs = rec_offs - sizeof(_enq_hdr) - _enq_hdr._xidsize;
-            ifsp->ignore(_enq_hdr._dsize - offs);
+            ifsp->read((char*)_data_buff + offs, _enq_hdr._dsize - offs);
             std::size_t size_read = ifsp->gcount();
             rec_offs += size_read;
             if (size_read < _enq_hdr._dsize - offs)
@@ -286,6 +291,7 @@ enq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
             assert(!ifsp->fail() && !ifsp->bad());
             return false;
         }
+        check_rec_tail();
     }
     ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
     assert(!ifsp->fail() && !ifsp->bad());
@@ -295,27 +301,25 @@ enq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
 std::size_t
 enq_rec::get_xid(void** const xidpp)
 {
-    if (!_buff || !_enq_hdr._xidsize)
-    {
+    if (!_xid_buff || !_enq_hdr._xidsize) {
         *xidpp = 0;
         return 0;
     }
-    *xidpp = _buff;
+    *xidpp = _xid_buff;
     return _enq_hdr._xidsize;
 }
 
 std::size_t
 enq_rec::get_data(void** const datapp)
 {
-    if (!_buff)
-    {
+    if (!_data_buff) {
         *datapp = 0;
         return 0;
     }
     if (::is_enq_external(&_enq_hdr))
         *datapp = 0;
     else
-        *datapp = (void*)((char*)_buff + _enq_hdr._xidsize);
+        *datapp = _data_buff;
     return _enq_hdr._dsize;
 }
 
@@ -348,9 +352,46 @@ enq_rec::rec_size(const std::size_t xidsize, const std::size_t dsize, const bool
 }
 
 void
-enq_rec::clean()
-{
-    // clean up allocated memory here
+enq_rec::check_rec_tail() const {
+    Checksum checksum;
+    checksum.addData((const unsigned char*)&_enq_hdr, sizeof(::enq_hdr_t));
+    if (_enq_hdr._xidsize > 0) {
+        checksum.addData((const unsigned char*)_xid_buff, _enq_hdr._xidsize);
+    }
+    if (_enq_hdr._dsize > 0) {
+        checksum.addData((const unsigned char*)_data_buff, _enq_hdr._dsize);
+    }
+    uint32_t cs = checksum.getChecksum();
+    uint16_t res = ::rec_tail_check(&_enq_tail, &_enq_hdr._rhdr, cs);
+    if (res != 0) {
+        std::stringstream oss;
+        oss << std::hex;
+        if (res & ::REC_TAIL_MAGIC_ERR_MASK) {
+            oss << std::endl << "  Magic: expected 0x" << ~_enq_hdr._rhdr._magic << "; found 0x" << _enq_tail._xmagic;
+        }
+        if (res & ::REC_TAIL_SERIAL_ERR_MASK) {
+            oss << std::endl << "  Serial: expected 0x" << _enq_hdr._rhdr._serial << "; found 0x" << _enq_tail._serial;
+        }
+        if (res & ::REC_TAIL_RID_ERR_MASK) {
+            oss << std::endl << "  Record Id: expected 0x" << _enq_hdr._rhdr._rid << "; found 0x" << _enq_tail._rid;
+        }
+        if (res & ::REC_TAIL_CHECKSUM_ERR_MASK) {
+            oss << std::endl << "  Checksum: expected 0x" << cs << "; found 0x" << _enq_tail._checksum;
+        }
+        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "enq_rec", "check_rec_tail");
+    }
+}
+
+void
+enq_rec::clean() {
+    if (_xid_buff) {
+        std::free(_xid_buff);
+        _xid_buff = 0;
+    }
+    if (_data_buff) {
+        std::free(_data_buff);
+        _data_buff = 0;
+    }
 }
 
 }}}
