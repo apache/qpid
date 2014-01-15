@@ -57,20 +57,19 @@ void StatusCheckThread::run() {
     try {
         // Check for self connections
         Variant::Map options, clientProperties;
-        clientProperties[ConnectionObserver::ADMIN_TAG] = 1; // Allow connection to backups.
+        clientProperties[ConnectionObserver::ADMIN_TAG] = 1; // Allow connection to backups
         clientProperties[ConnectionObserver::ADDRESS_TAG] = url.str();
-        clientProperties[ConnectionObserver::BACKUP_TAG] = statusCheck.haBroker.getBrokerInfo().asMap();
+        clientProperties[ConnectionObserver::BACKUP_TAG] = statusCheck.brokerInfo.asMap();
 
         // Set connection options
-        Settings settings(statusCheck.haBroker.getSettings());
+        const Settings& settings = statusCheck.settings;
         if (settings.username.size()) options["username"] = settings.username;
         if (settings.password.size()) options["password"] = settings.password;
         if (settings.mechanism.size()) options["sasl_mechanisms"] = settings.mechanism;
         options["client-properties"] = clientProperties;
-        sys::Duration heartbeat(statusCheck.haBroker.getBroker().getOptions().linkHeartbeatInterval);
-        options["heartbeat"] = heartbeat/sys::TIME_SEC;
-        c = Connection(url.str(), options);
+        options["heartbeat"] = statusCheck.heartbeat/sys::TIME_SEC;
 
+        c = Connection(url.str(), options);
         c.open();
         Session session = c.createSession();
         messaging::Address responses("#;{create:always,node:{x-declare:{exclusive:True,auto-delete:True,arguments:{'qpid.replicate':none}}}}");
@@ -88,7 +87,7 @@ void StatusCheckThread::run() {
         content["_object_id"] = oid;
         encode(content, request);
         s.send(request);
-        messaging::Duration timeout(heartbeat/sys::TIME_MSEC);
+        messaging::Duration timeout(statusCheck.heartbeat/sys::TIME_MSEC);
         Message response = r.fetch(timeout);
         session.acknowledge();
         Variant::List contentIn;
@@ -103,17 +102,18 @@ void StatusCheckThread::run() {
             }
         }
         else
-            QPID_LOG(error, logPrefix << "Invalid response " << response.getContent())
-    } catch(const exception& error) {
-        // Its not an error to fail to connect to self.
-        if (statusCheck.haBroker.getBrokerInfo().getAddress() != url[0])
-            QPID_LOG(warning, logPrefix << error.what());
-    }
+            QPID_LOG(error, logPrefix << "Invalid response " << response.getContent());
+    } catch(...) {}
     try { c.close(); } catch(...) {}
     delete this;
 }
 
-StatusCheck::StatusCheck(HaBroker& hb) : promote(true), haBroker(hb)
+// Note: Don't use hb outside of the constructor, it may be deleted.
+StatusCheck::StatusCheck(HaBroker& hb) :
+    promote(true),
+    settings(hb.getSettings()),
+    heartbeat(hb.getBroker().getOptions().linkHeartbeatInterval),
+    brokerInfo(hb.getBrokerInfo())
 {}
 
 StatusCheck::~StatusCheck() {

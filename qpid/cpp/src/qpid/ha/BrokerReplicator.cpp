@@ -863,6 +863,23 @@ bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const fra
 bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 bool BrokerReplicator::hasBindings() { return false; }
 
+// ConnectionObserver methods
+void BrokerReplicator::connection(broker::Connection&) {}
+void BrokerReplicator::opened(broker::Connection&) {}
+
+void BrokerReplicator::closed(broker::Connection& c) {
+    if (link && &c == connect) disconnected();
+}
+
+void BrokerReplicator::forced(broker::Connection& c, const std::string& message) {
+    if (link && &c == link->getConnection()) {
+        haBroker.shutdown(
+            QPID_MSG(logPrefix << "Connection forced, cluster may be misconfigured: "
+                     << message));
+    }
+    closed(c);
+}
+
 string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
 
 void BrokerReplicator::disconnectedQueueReplicator(boost::shared_ptr<Exchange> ex) {
