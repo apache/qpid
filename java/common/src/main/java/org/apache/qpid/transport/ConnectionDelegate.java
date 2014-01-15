@@ -105,4 +105,9 @@ public abstract class ConnectionDelegate
             ssn.closed();
         }
     }
+
+    public void writerIdle(final Connection connection)
+    {
+        connection.doHeartBeat();
+    }
 }
