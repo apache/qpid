@@ -413,7 +413,7 @@ namespace Messaging {
 
         void SetContent(cli::array<System::Byte> ^ bytes, int offset, int size);
 
-        //TODO:: void setContent(Bytes{} bytes, offset, length);
+        void SetContentObject(System::Object ^ managedObject);
 
         // get content as string
         System::String ^ GetContent();
@@ -429,6 +429,9 @@ namespace Messaging {
 
         // get content as bytes
         void GetContent(cli::array<System::Byte> ^ arr);
+
+        // get content as object
+        void GetContentObject(System::Object ^ object);
 
         //
         // ContentSize

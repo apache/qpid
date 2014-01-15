@@ -72,5 +72,10 @@ namespace Messaging {
         static void NativeToManaged(
             ::qpid::types::Variant::List & qpidList,
             QpidList ^ managedList);
+
+        // The given object is a qpid Variant
+        // Return it as a managed System::Object
+        static System::Object ^ NativeToManagedObject(
+            ::qpid::types::Variant & nativeObject);
     };
 }}}}

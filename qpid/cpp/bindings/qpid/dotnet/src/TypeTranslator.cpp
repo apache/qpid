@@ -266,97 +266,11 @@ namespace Messaging {
     {
         // For each object in the message map,
         //  create a .NET object and add it to the dictionary.
-        for (::qpid::types::Variant::Map::const_iterator i = qpidMap.begin(); i != qpidMap.end(); ++i) {
-            // Get the name
+        for (::qpid::types::Variant::Map::const_iterator i = qpidMap.begin(); i != qpidMap.end(); ++i)
+        {
             System::String ^ elementName = gcnew String(i->first.c_str());
-
-            ::qpid::types::Variant     variant = i->second;
-            ::qpid::types::VariantType vType   = variant.getType();
-
-            switch (vType)
-            {
-            case ::qpid::types::VAR_VOID:
-                dict[elementName] = nullptr;
-                break;
-
-            case ::qpid::types::VAR_BOOL:
-                dict[elementName] = variant.asBool();
-                break;
-
-            case ::qpid::types::VAR_UINT8:
-                dict[elementName] = variant.asUint8();
-                break;
-
-            case ::qpid::types::VAR_UINT16:
-                dict[elementName] = variant.asUint16();
-                break;
-
-            case ::qpid::types::VAR_UINT32:
-                dict[elementName] = variant.asUint32();
-                break;
-
-            case ::qpid::types::VAR_UINT64:
-                dict[elementName] = variant.asUint64();
-                break;
-
-            case ::qpid::types::VAR_INT8:
-                dict[elementName] = variant.asInt8();
-                break;
-
-            case ::qpid::types::VAR_INT16:
-                dict[elementName] = variant.asInt16();
-                break;
-
-            case ::qpid::types::VAR_INT32:
-                dict[elementName] = variant.asInt32();
-                break;
-
-            case ::qpid::types::VAR_INT64:
-                dict[elementName] = variant.asInt64();
-                break;
-
-            case ::qpid::types::VAR_FLOAT:
-                dict[elementName] = variant.asFloat();
-                break;
-
-            case ::qpid::types::VAR_DOUBLE:
-                dict[elementName] = variant.asDouble();
-                break;
-
-            case ::qpid::types::VAR_STRING:
-                {
-                    System::String ^ elementValue = gcnew System::String(variant.asString().c_str());
-                    dict[elementName] = elementValue;
-                    break;
-                }
-            case ::qpid::types::VAR_MAP:
-                {
-                    QpidMap ^ newDict = gcnew QpidMap();
-
-                    NativeToManaged(variant.asMap(), newDict);
-
-                    dict[elementName] = newDict;
-                    break;
-                }
-
-            case ::qpid::types::VAR_LIST:
-                {
-                    QpidList ^ newList = gcnew QpidList();
-
-                    NativeToManaged(variant.asList(), newList);
-
-                    dict[elementName] = newList;
-                    break;
-                }
-
-            case ::qpid::types::VAR_UUID:
-                {
-                    System::String ^ elementValue = gcnew System::String(variant.asUuid().str().c_str());
-                    System::Guid ^ newGuid = System::Guid(elementValue);
-                    dict[elementName] = newGuid;
-                }
-                break;
-            }
+            ::qpid::types::Variant variant = i->second;
+            dict[elementName] = NativeToManagedObject(variant);
         }
     }
 
@@ -370,92 +284,137 @@ namespace Messaging {
         for (::qpid::types::Variant::List::const_iterator i = qpidList.begin(); i != qpidList.end(); ++i)
         {
             ::qpid::types::Variant     variant = *i;
-            ::qpid::types::VariantType vType   = variant.getType();
+            (*managedList).Add( NativeToManagedObject(variant) );
+        }
+    }
 
-            switch (vType)
+
+    System::Object ^ TypeTranslator::NativeToManagedObject(
+        ::qpid::types::Variant & nativeObject)
+    {
+        //  create a .NET object and return it
+        ::qpid::types::VariantType vType   = nativeObject.getType();
+        System::Object ^ managedObject = nullptr;
+
+        switch (vType)
+        {
+        case ::qpid::types::VAR_VOID:
             {
-            case ::qpid::types::VAR_VOID:
-                (*managedList).Add(nullptr);
-                break;
-
-            case ::qpid::types::VAR_BOOL:
-                (*managedList).Add(variant.asBool());
-                break;
-
-            case ::qpid::types::VAR_UINT8:
-                (*managedList).Add(variant.asUint8());
-                break;
-
-            case ::qpid::types::VAR_UINT16:
-                (*managedList).Add(variant.asUint16());
-                break;
-
-            case ::qpid::types::VAR_UINT32:
-                (*managedList).Add(variant.asUint32());
-                break;
-
-            case ::qpid::types::VAR_UINT64:
-                (*managedList).Add(variant.asUint64());
-                break;
-
-            case ::qpid::types::VAR_INT8:
-                (*managedList).Add(variant.asInt8());
-                break;
-
-            case ::qpid::types::VAR_INT16:
-                (*managedList).Add(variant.asInt16());
-                break;
-
-            case ::qpid::types::VAR_INT32:
-                (*managedList).Add(variant.asInt32());
-                break;
-
-            case ::qpid::types::VAR_INT64:
-                (*managedList).Add(variant.asInt64());
-                break;
-
-            case ::qpid::types::VAR_FLOAT:
-                (*managedList).Add(variant.asFloat());
-                break;
-
-            case ::qpid::types::VAR_DOUBLE:
-                (*managedList).Add(variant.asDouble());
-                break;
-
-            case ::qpid::types::VAR_STRING:
-                {
-                    System::String ^ elementValue = gcnew System::String(variant.asString().c_str());
-                    (*managedList).Add(elementValue);
-                    break;
-                }
-            case ::qpid::types::VAR_MAP:
-                {
-                    QpidMap ^ newDict = gcnew QpidMap();
-
-                    NativeToManaged(variant.asMap(), newDict);
-
-                    (*managedList).Add(newDict);
-                    break;
-                }
-
-            case ::qpid::types::VAR_LIST:
-                {
-                    QpidList ^ newList = gcnew QpidList();
-
-                    NativeToManaged(variant.asList(), newList);
-
-                    (*managedList).Add(newList);
-                    break;
-                }
-
-            case ::qpid::types::VAR_UUID:
-                {
-                    System::String ^ elementValue = gcnew System::String(variant.asUuid().str().c_str());
-                    System::Guid ^ newGuid = System::Guid(elementValue);
-                    (*managedList).Add(newGuid);
-                }
                 break;
             }
+
+        case ::qpid::types::VAR_BOOL:
+            {
+                bool result = nativeObject.asBool();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_UINT8:
+            {
+                byte result = nativeObject.asUint8();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_UINT16:
+            {
+                unsigned short result = nativeObject.asUint16();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_UINT32:
+            {
+                unsigned long result = nativeObject.asUint32();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_UINT64:
+            {
+                unsigned __int64 result = nativeObject.asUint64();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_INT8:
+            {
+                System::SByte result = nativeObject.asInt8();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_INT16:
+            {
+                short result = nativeObject.asInt16();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_INT32:
+            {
+                long result = nativeObject.asInt32();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_INT64:
+            {
+                __int64 result = nativeObject.asInt64();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_FLOAT:
+            {
+                float result = nativeObject.asFloat();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_DOUBLE:
+            {
+                double result = nativeObject.asDouble();
+                managedObject = result;
+                break;
+            }
+
+        case ::qpid::types::VAR_STRING:
+            {
+                System::String ^ elementValue = gcnew System::String(nativeObject.asString().c_str());
+                managedObject = elementValue;
+                break;
+            }
+        case ::qpid::types::VAR_MAP:
+            {
+                QpidMap ^ newDict = gcnew QpidMap();
+
+                NativeToManaged(nativeObject.asMap(), newDict);
+
+                managedObject = newDict;
+                break;
+            }
+
+        case ::qpid::types::VAR_LIST:
+            {
+                QpidList ^ newList = gcnew QpidList();
+
+                NativeToManaged(nativeObject.asList(), newList);
+
+                managedObject = newList;
+                break;
+            }
+
+        case ::qpid::types::VAR_UUID:
+            {
+                System::String ^ elementValue = gcnew System::String(nativeObject.asUuid().str().c_str());
+                System::Guid ^ newGuid = System::Guid(elementValue);
+                managedObject = newGuid;
+            }
+            break;
         }
+
+        return managedObject;
     }
 }}}}
