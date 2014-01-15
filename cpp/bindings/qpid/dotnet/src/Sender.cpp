@@ -23,11 +23,13 @@
 #include <string>
 #include <limits>
 
+#include "qpid/messaging/Address.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/Message.h"
 
 #include "Sender.h"
+#include "Address.h"
 #include "Message.h"
 #include "QpidException.h"
 
@@ -198,5 +200,45 @@ namespace Messaging {
         {
             throw newException;
         }
+    }
+
+    Org::Apache::Qpid::Messaging::Address ^ Sender::GetAddress()
+    {
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
+        System::Exception           ^ newException = nullptr;
+        Messaging::Address          ^ newAddress   = nullptr;
+
+        try
+        {
+            // fetch unmanaged Address
+            ::qpid::messaging::Address addr =
+                nativeObjPtr->getAddress();
+
+            // create a managed Address
+            newAddress = gcnew Address(addr);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        finally
+        {
+            if (newException != nullptr)
+            {
+                if (newAddress != nullptr)
+                {
+                    delete newAddress;
+                }
+            }
+        }
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+
+        return newAddress;
     }
 }}}}
