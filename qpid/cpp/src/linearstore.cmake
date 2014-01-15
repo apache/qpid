@@ -30,39 +30,22 @@ else (DEFINED linearstore_force)
         #
         include (finddb.cmake)
         if (DB_FOUND)
-	        #
-	        # find libaio
-	        #
-	        CHECK_LIBRARY_EXISTS (aio io_queue_init "" HAVE_AIO)
-	        CHECK_INCLUDE_FILES (libaio.h HAVE_AIO_H)
-	        if (HAVE_AIO AND HAVE_AIO_H)
-	            #
-		        # find libuuid
-		        #
-  	            CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
-		        CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
-		        if (HAVE_UUID AND HAVE_UUID_H)
-		            #
-		            # allow linearstore to be built
-		            #
-                    message(STATUS "BerkeleyDB for C++, libaio and uuid found, Linearstore support enabled")
-		            set (linearstore_default ON)
-		        else (HAVE_UUID AND HAVE_UUID_H)
-                    if (NOT HAVE_UUID)
-                        message(STATUS "Linearstore requires uuid which is absent.")
-                    endif (NOT HAVE_UUID)
-                    if (NOT HAVE_UUID_H)
-                        message(STATUS "Linearstore requires uuid.h which is absent.")
-                    endif (NOT HAVE_UUID_H)
-		        endif (HAVE_UUID AND HAVE_UUID_H)
-	        else (HAVE_AIO AND HAVE_AIO_H)
+            #
+            # find libaio
+            #
+            CHECK_LIBRARY_EXISTS (aio io_queue_init "" HAVE_AIO)
+            CHECK_INCLUDE_FILES (libaio.h HAVE_AIO_H)
+            if (HAVE_AIO AND HAVE_AIO_H)
+                message(STATUS "BerkeleyDB for C++ and libaio found, Linearstore support enabled")
+                set (linearstore_default ON)
+            else (HAVE_AIO AND HAVE_AIO_H)
                 if (NOT HAVE_AIO)
                     message(STATUS "Linearstore requires libaio which is absent.")
                 endif (NOT HAVE_AIO)
                 if (NOT HAVE_AIO_H)
                     message(STATUS "Linearstore requires libaio.h which is absent.")
                 endif (NOT HAVE_AIO_H)
-	        endif (HAVE_AIO AND HAVE_AIO_H)
+            endif (HAVE_AIO AND HAVE_AIO_H)
         else (DB_FOUND)
             message(STATUS "Linearstore requires BerkeleyDB for C++ which is absent.")
         endif (DB_FOUND)
@@ -84,12 +67,6 @@ if (BUILD_LINEARSTORE)
     if (NOT HAVE_AIO_H)
         message(FATAL_ERROR "Linearstore requires libaio.h which is absent.")
     endif (NOT HAVE_AIO_H)
-    if (NOT HAVE_UUID)
-        message(FATAL_ERROR "Linearstore requires uuid which is absent.")
-    endif (NOT HAVE_UUID)
-    if (NOT HAVE_UUID_H)
-        message(FATAL_ERROR "Linearstore requires uuid.h which is absent.")
-    endif (NOT HAVE_UUID_H)
 
     # Journal source files
     set (linear_jrnl_SOURCES
@@ -105,8 +82,8 @@ if (BUILD_LINEARSTORE)
         qpid/linearstore/journal/jdir.cpp
         qpid/linearstore/journal/jerrno.cpp
         qpid/linearstore/journal/jexception.cpp
-		qpid/linearstore/journal/JournalFile.cpp
-		qpid/linearstore/journal/JournalLog.cpp
+        qpid/linearstore/journal/JournalFile.cpp
+        qpid/linearstore/journal/JournalLog.cpp
         qpid/linearstore/journal/LinearFileController.cpp
         qpid/linearstore/journal/pmgr.cpp
         qpid/linearstore/journal/RecoveryManager.cpp
