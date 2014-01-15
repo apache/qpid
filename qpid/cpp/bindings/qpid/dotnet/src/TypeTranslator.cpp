@@ -42,8 +42,9 @@ namespace Messaging {
     // The given object is a Dictionary.
     // Add its elements to the qpid map.
     //
-    void TypeTranslator::ManagedToNative(QpidMap ^ theDictionary,
-                                         ::qpid::types::Variant::Map & qpidMap)
+    void TypeTranslator::ManagedToNative(
+        QpidMap ^ theDictionary,
+        ::qpid::types::Variant::Map & qpidMap)
     {
         // iterate the items, converting each to a variant and adding to the map
         for each (System::Collections::Generic::KeyValuePair
@@ -107,8 +108,9 @@ namespace Messaging {
     // The given object is a List.
     // Add its elements to the qpid list.
     //
-    void TypeTranslator::ManagedToNative(QpidList ^ theList,
-                                         ::qpid::types::Variant::List & qpidList)
+    void TypeTranslator::ManagedToNative(
+        QpidList ^ theList,
+        ::qpid::types::Variant::List & qpidList)
     {
         // iterate the items, converting each to a variant and adding to the map
         for each (System::Object ^ listObj in theList)
@@ -162,8 +164,9 @@ namespace Messaging {
     // Returns a variant representing simple native type object.
     // Not to be called for Map/List objects.
     //
-    void TypeTranslator::ManagedToNativeObject(System::Object ^ managedValue,
-                               ::qpid::types::Variant & qpidVariant)
+    void TypeTranslator::ManagedToNativeObject(
+        System::Object ^ managedValue,
+        ::qpid::types::Variant & qpidVariant)
     {
         System::Type     ^ typeP    = (*managedValue).GetType();
         System::TypeCode   typeCode = System::Type::GetTypeCode( typeP );
@@ -257,8 +260,9 @@ namespace Messaging {
     // Given a user Dictionary and a qpid map,
     //   extract the qpid elements and put them into the dictionary.
     //
-    void TypeTranslator::NativeToManaged(::qpid::types::Variant::Map & qpidMap,
-                                         QpidMap ^ dict)
+    void TypeTranslator::NativeToManaged(
+        ::qpid::types::Variant::Map & qpidMap,
+        QpidMap ^ dict)
     {
         // For each object in the message map,
         //  create a .NET object and add it to the dictionary.
@@ -357,7 +361,9 @@ namespace Messaging {
     }
 
 
-    void TypeTranslator::NativeToManaged(::qpid::types::Variant::List & qpidList, QpidList ^ managedList)
+    void TypeTranslator::NativeToManaged(
+        ::qpid::types::Variant::List & qpidList,
+        QpidList ^ managedList)
     {
         // For each object in the qpidList
         //  create a .NET object and add it to the managed List.

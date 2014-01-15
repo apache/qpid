@@ -55,8 +55,8 @@ namespace Messaging {
 
     // unmanaged clone
     Session::Session(const ::qpid::messaging::Session & session,
-        Org::Apache::Qpid::Messaging::Connection ^ connRef) :
-    parentConnectionp(connRef)
+        Org::Apache::Qpid::Messaging::Connection ^ connRef)
+        : parentConnectionp(connRef)
     {
         System::Exception ^ newException = nullptr;
 
