@@ -24,7 +24,6 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.v0_10.ServerConnection;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
@@ -164,7 +163,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
 
     public void readerIdle()
     {
-        //Todo
+        _connection.getLogActor().message(ConnectionMessages.IDLE_CLOSE());
+        _network.close();
     }
 
     public String getAddress()

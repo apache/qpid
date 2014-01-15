@@ -236,7 +236,6 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
 
         final NetworkConnection networkConnection = sconn.getNetworkConnection();
-
         if(ok.hasHeartbeat())
         {
             int heartbeat = ok.getHeartbeat();
@@ -351,5 +350,12 @@ public class ServerConnectionDelegate extends ServerDelegate
     public String getClientProduct()
     {
         return _clientProperties == null ? null : (String) _clientProperties.get(ConnectionStartProperties.PRODUCT);
+    }
+
+    @Override
+    protected int getHeartbeatMax()
+    {
+        int delay = (Integer)_broker.getAttribute(Broker.CONNECTION_HEART_BEAT_DELAY);
+        return delay == 0 ? super.getHeartbeatMax() : delay;
     }
 }

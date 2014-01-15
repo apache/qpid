@@ -549,16 +549,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         super.setLocalAddress(localAddress);
     }
 
-    public void setNetworkConnection(NetworkConnection network)
-    {
-        _networkConnection = network;
-    }
-
-    public NetworkConnection getNetworkConnection()
-    {
-        return _networkConnection;
-    }
-
     public void doHeartbeat()
     {
         super.doHeartBeat();
