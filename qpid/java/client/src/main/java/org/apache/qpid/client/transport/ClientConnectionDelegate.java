@@ -179,17 +179,21 @@ public class ClientConnectionDelegate extends ClientDelegate
     }
 
     @Override
-    public void connectionHeartbeat(Connection conn, ConnectionHeartbeat hearbeat)
+    public void connectionHeartbeat(Connection conn, ConnectionHeartbeat heartbeat)
     {
-        // ClientDelegate simply responds to heartbeats with heartbeats
         _heartbeatListener.heartbeatReceived();
-        super.connectionHeartbeat(conn, hearbeat);
-        _heartbeatListener.heartbeatSent();
     }
 
 
     public void setHeartbeatListener(HeartbeatListener listener)
     {
         _heartbeatListener = listener == null ? HeartbeatListener.DEFAULT : listener;
+    }
+
+    @Override
+    public void writerIdle(final Connection connection)
+    {
+        super.writerIdle(connection);
+        _heartbeatListener.heartbeatSent();
     }
 }

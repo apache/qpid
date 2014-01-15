@@ -143,6 +143,8 @@ public class ClientDelegate extends ConnectionDelegate
                               actualHeartbeatInterval);
 
         int idleTimeout = (int)(actualHeartbeatInterval * 1000 * heartbeatTimeoutFactor);
+        conn.getNetworkConnection().setMaxReadIdle((int)(actualHeartbeatInterval*heartbeatTimeoutFactor));
+        conn.getNetworkConnection().setMaxWriteIdle(actualHeartbeatInterval);
         conn.setIdleTimeout(idleTimeout);
 
         int channelMax = tune.getChannelMax();
