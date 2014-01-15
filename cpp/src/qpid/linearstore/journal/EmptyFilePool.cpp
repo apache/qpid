@@ -28,9 +28,9 @@
 #include "qpid/linearstore/journal/JournalLog.h"
 #include "qpid/linearstore/journal/slock.h"
 #include "qpid/linearstore/journal/utils/file_hdr.h"
+#include "qpid/sys/uuid.h"
 #include <sys/stat.h>
 #include <unistd.h>
-#include <uuid/uuid.h>
 #include <vector>
 
 //#include <iostream> // DEBUG
