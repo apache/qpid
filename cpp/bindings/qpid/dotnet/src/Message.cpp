@@ -404,6 +404,32 @@ namespace Messaging {
         }
     }
 
+    
+    void Message::SetContentObject(System::Object ^ managedObject)
+    {
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
+        System::Exception ^ newException = nullptr;
+
+        try
+        {
+            ::qpid::types::Variant nativeObjValue;
+            TypeTranslator::ManagedToNativeObject(managedObject, nativeObjValue);
+            nativeObjPtr->setContentObject(nativeObjValue);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+    }
+
 
     System::String ^ Message::GetContent()
     {
@@ -539,6 +565,31 @@ namespace Messaging {
     }
 
 
+    void Message::GetContentObject(System::Object ^ managedObject)
+    {
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
+        System::Exception ^ newException = nullptr;
+
+        try
+        {
+            ::qpid::types::Variant nativeObject = nativeObjPtr->getContentObject();
+
+            managedObject = TypeTranslator::NativeToManagedObject(nativeObject);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+    }
+    
     System::String ^ Message::MapAsString(System::Collections::Generic::Dictionary<
         System::String^, System::Object^> ^ dict)
     {
