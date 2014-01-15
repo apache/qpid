@@ -29,13 +29,13 @@ using namespace System;
 [Serializable]
 public ref class QpidException : System::Exception
 {
- public:
+public:
 
- QpidException()
-    : System::Exception() {}
+    QpidException()
+        : System::Exception() {}
 
- QpidException(String^ estring)
-    : System::Exception(estring) {}
+    QpidException(String^ estring)
+        : System::Exception(estring) {}
 
 };
 

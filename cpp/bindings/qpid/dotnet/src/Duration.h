@@ -42,14 +42,14 @@ namespace Messaging {
 
     public:
 
-        Duration(const Duration % rhs) :
-            milliseconds(rhs.milliseconds) {}
+        Duration(const Duration % rhs)
+            : milliseconds(rhs.milliseconds) {}
 
-        explicit Duration(System::UInt64 mS) :
-            milliseconds(mS) {}
+        explicit Duration(System::UInt64 mS)
+            : milliseconds(mS) {}
 
-        Duration()                           :
-            milliseconds(System::UInt64::MaxValue) {}
+        Duration()
+            : milliseconds(System::UInt64::MaxValue) {}
 
         property System::UInt64 Milliseconds
         {
