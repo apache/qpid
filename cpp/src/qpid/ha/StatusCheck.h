@@ -65,7 +65,9 @@ class StatusCheck
     sys::Mutex lock;
     std::vector<sys::Thread> threads;
     bool promote;
-    HaBroker& haBroker;
+    const Settings settings;
+    const sys::Duration heartbeat;
+    const BrokerInfo brokerInfo;
 
   friend class StatusCheckThread;
 };

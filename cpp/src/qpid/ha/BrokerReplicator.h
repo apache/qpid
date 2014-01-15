@@ -90,10 +90,10 @@ class BrokerReplicator : public broker::Exchange,
     bool hasBindings();
 
     // ConnectionObserver methods
-    void connection(broker::Connection&) {}
-    void opened(broker::Connection&) {}
-    void closed(broker::Connection& c) { if (link && &c == connect) disconnected(); }
-    void forced(broker::Connection& c, const std::string& /*message*/) { closed(c); }
+    void connection(broker::Connection&);
+    void opened(broker::Connection&);
+    void closed(broker::Connection&);
+    void forced(broker::Connection&, const std::string& /*message*/);
 
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
 
