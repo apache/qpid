@@ -39,7 +39,7 @@ class txn_rec : public jrec
 private:
     ::txn_hdr_t _txn_hdr;   ///< Local instance of transaction header struct
     const void* _xidp;      ///< xid pointer for encoding (writing to disk)
-    void* _buff;            ///< Pointer to buffer to receive data read from disk
+    void* _xid_buff;        ///< Pointer to buffer to receive xid read from disk
     ::rec_tail_t _txn_tail; ///< Local instance of enqueue tail struct
 
 public:
@@ -57,6 +57,7 @@ public:
     std::size_t xid_size() const;
     std::size_t rec_size() const;
     inline uint64_t rid() const { return _txn_hdr._rhdr._rid; }
+    void check_rec_tail() const;
 
 private:
     virtual void clean();

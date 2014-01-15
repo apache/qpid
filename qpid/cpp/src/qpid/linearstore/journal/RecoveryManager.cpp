@@ -221,28 +221,34 @@ bool RecoveryManager::readNextRemainingRecord(void** const dataPtrPtr,
 
     // Check enqueue record checksum
     Checksum checksum;
-    checksum.addData((unsigned char*)&enqueueHeader, sizeof(::enq_hdr_t));
+    checksum.addData((const unsigned char*)&enqueueHeader, sizeof(::enq_hdr_t));
     if (xidSize > 0) {
-        checksum.addData((unsigned char*)*xidPtrPtr, xidSize);
+        checksum.addData((const unsigned char*)*xidPtrPtr, xidSize);
     }
     if (dataSize > 0) {
-        checksum.addData((unsigned char*)*dataPtrPtr, dataSize);
+        checksum.addData((const unsigned char*)*dataPtrPtr, dataSize);
     }
     ::rec_tail_t enqueueTail;
     inFileStream_.read((char*)&enqueueTail, sizeof(::rec_tail_t));
     uint32_t cs = checksum.getChecksum();
 //std::cout << std::hex << "### rid=0x" << enqueueHeader._rhdr._rid << " rtcs=0x" << enqueueTail._checksum << " cs=0x" << cs << std::dec << std::endl; // DEBUG
-    int res = ::rec_tail_check(&enqueueTail, &enqueueHeader._rhdr, cs);
+    uint16_t res = ::rec_tail_check(&enqueueTail, &enqueueHeader._rhdr, cs);
     if (res != 0) {
         std::stringstream oss;
-        switch (res) {
-          case 1: oss << std::hex << "Magic: expected 0x" << ~enqueueHeader._rhdr._magic << "; found 0x" << enqueueTail._xmagic; break;
-          case 2: oss << std::hex << "Serial: expected 0x" << enqueueHeader._rhdr._serial << "; found 0x" << enqueueTail._serial; break;
-          case 3: oss << std::hex << "Record Id: expected 0x" << enqueueHeader._rhdr._rid << "; found 0x" << enqueueTail._rid; break;
-          case 4: oss << std::hex << "Checksum: expected 0x" << cs << "; found 0x" << enqueueTail._checksum; break;
-          default: oss << "Unknown error " << res;
+        oss << "Bad record tail:" << std::hex;
+        if (res & ::REC_TAIL_MAGIC_ERR_MASK) {
+            oss << std::endl << "  Magic: expected 0x" << ~enqueueHeader._rhdr._magic << "; found 0x" << enqueueTail._xmagic;
         }
-        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "enq_rec", "decode"); // TODO: Don't throw exception, log info
+        if (res & ::REC_TAIL_SERIAL_ERR_MASK) {
+            oss << std::endl << "  Serial: expected 0x" << enqueueHeader._rhdr._serial << "; found 0x" << enqueueTail._serial;
+        }
+        if (res & ::REC_TAIL_RID_ERR_MASK) {
+            oss << std::endl << "  Record Id: expected 0x" << enqueueHeader._rhdr._rid << "; found 0x" << enqueueTail._rid;
+        }
+        if (res & ::REC_TAIL_CHECKSUM_ERR_MASK) {
+            oss << std::endl << "  Checksum: expected 0x" << cs << "; found 0x" << enqueueTail._checksum;
+        }
+        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "RecoveryManager", "readNextRemainingRecord"); // TODO: Don't throw exception, log info
     }
 
     // Set data token
@@ -472,7 +478,13 @@ bool RecoveryManager::decodeRecord(jrec& record,
             done = record.decode(headerRecord, &inFileStream_, cumulativeSizeRead);
         }
         catch (const jexception& e) {
-            journalLogRef_.log(JournalLog::LOG_INFO, queueName_, e.what());
+            if (e.err_code() == jerrno::JERR_JREC_BADRECTAIL) {
+                std::ostringstream oss;
+                oss << jerrno::err_msg(e.err_code()) << e.additional_info();
+                journalLogRef_.log(JournalLog::LOG_INFO, queueName_, oss.str());
+            } else {
+                journalLogRef_.log(JournalLog::LOG_INFO, queueName_, e.what());
+            }
             checkJournalAlignment(start_file_offs);
             return false;
         }
@@ -602,7 +614,6 @@ bool RecoveryManager::getNextRecordHeader()
                             oss << std::hex << "_tmap.set_aio_compl: txn_enq xid=\"" << xid << "\" rid=0x" << h._rid;
                             throw jexception(jerrno::JERR_MAP_NOTFOUND, oss.str(), "RecoveryManager", "getNextRecordHeader");
                         }
-                        std::free(xidp);
                     } else {
                         if (enqueueMapRef_.insert_pfid(h._rid, start_fid, file_pos) < enq_map::EMAP_OK) { // fail
                             // The only error code emap::insert_pfid() returns is enq_map::EMAP_DUP_RID.
@@ -641,7 +652,6 @@ bool RecoveryManager::getNextRecordHeader()
                         oss << std::hex << "_tmap.set_aio_compl: txn_deq xid=\"" << xid << "\" rid=0x" << dr.rid();
                         throw jexception(jerrno::JERR_MAP_NOTFOUND, oss.str(), "RecoveryManager", "getNextRecordHeader");
                     }
-                    std::free(xidp);
                 } else {
                     uint64_t enq_fid;
                     if (enqueueMapRef_.get_remove_pfid(dr.deq_rid(), enq_fid, true) == enq_map::EMAP_OK) { // ignore not found error
@@ -675,7 +685,6 @@ bool RecoveryManager::getNextRecordHeader()
                         enqueueMapRef_.unlock(itr->drid_); // ignore not found error
                     }
                 }
-                std::free(xidp);
             }
             break;
         case QLS_TXC_MAGIC:
@@ -711,7 +720,6 @@ bool RecoveryManager::getNextRecordHeader()
                             fileNumberMap_[enq_fid]->decrEnqueuedRecordCount();
                     }
                 }
-                std::free(xidp);
             }
             break;
         case QLS_EMPTY_MAGIC:

@@ -63,10 +63,15 @@ typedef struct rec_tail_t {
     uint64_t _rid;			/**< Record ID (rotating 64-bit counter) */
 } rec_tail_t;
 
+static const uint16_t REC_TAIL_MAGIC_ERR_MASK = 0x01;
+static const uint16_t REC_TAIL_SERIAL_ERR_MASK = 0x02;
+static const uint16_t REC_TAIL_RID_ERR_MASK = 0x04;
+static const uint16_t REC_TAIL_CHECKSUM_ERR_MASK = 0x08;
+
 void rec_tail_init(rec_tail_t* dest, const uint32_t xmagic, const uint32_t checksum, const uint64_t serial,
                    const uint64_t rid);
 void rec_tail_copy(rec_tail_t* dest, const rec_hdr_t* src, const uint32_t checksum);
-int rec_tail_check(const rec_tail_t* tail, const rec_hdr_t* header, const uint32_t checksum);
+uint16_t rec_tail_check(const rec_tail_t* tail, const rec_hdr_t* header, const uint32_t checksum);
 
 #pragma pack()
 

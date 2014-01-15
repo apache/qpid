@@ -32,7 +32,7 @@ namespace journal {
 
 deq_rec::deq_rec():
         _xidp(0),
-        _buff(0)
+        _xid_buff(0)
 {
     ::deq_hdr_init(&_deq_hdr, QLS_DEQ_MAGIC, QLS_JRNL_VERSION, 0, 0, 0, 0, 0);
     ::rec_tail_copy(&_deq_tail, &_deq_hdr._rhdr, 0);
@@ -53,7 +53,7 @@ deq_rec::reset(const uint64_t serial, const uint64_t rid, const  uint64_t drid, 
     _deq_hdr._deq_rid = drid;
     _deq_hdr._xidsize = xidlen;
     _xidp = xidp;
-    _buff = 0;
+    _xid_buff = 0;
     _deq_tail._serial = serial;
     _deq_tail._rid = rid;
     _deq_tail._checksum = 0UL;
@@ -192,15 +192,15 @@ deq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
         // Read header, allocate (if req'd) for xid
         if (_deq_hdr._xidsize)
         {
-            _buff = std::malloc(_deq_hdr._xidsize);
-            MALLOC_CHK(_buff, "_buff", "enq_rec", "rcv_decode");
+            _xid_buff = std::malloc(_deq_hdr._xidsize);
+            MALLOC_CHK(_xid_buff, "_buff", "enq_rec", "rcv_decode");
         }
     }
     if (rec_offs < sizeof(_deq_hdr) + _deq_hdr._xidsize)
     {
         // Read xid (or continue reading xid)
         std::size_t offs = rec_offs - sizeof(_deq_hdr);
-        ifsp->read((char*)_buff + offs, _deq_hdr._xidsize - offs);
+        ifsp->read((char*)_xid_buff + offs, _deq_hdr._xidsize - offs);
         std::size_t size_read = ifsp->gcount();
         rec_offs += size_read;
         if (size_read < _deq_hdr._xidsize - offs)
@@ -228,39 +228,22 @@ deq_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
             assert(!ifsp->fail() && !ifsp->bad());
             return false;
         }
+        check_rec_tail();
     }
     ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
     assert(!ifsp->fail() && !ifsp->bad());
-    if (_deq_hdr._xidsize) {
-        Checksum checksum;
-        checksum.addData((unsigned char*)&_deq_hdr, sizeof(_deq_hdr));
-        checksum.addData((unsigned char*)_buff, _deq_hdr._xidsize);
-        uint32_t cs = checksum.getChecksum();
-        int res = ::rec_tail_check(&_deq_tail, &_deq_hdr._rhdr, cs);
-        if (res != 0) {
-            std::stringstream oss;
-            switch (res) {
-              case 1: oss << std::hex << "Magic: expected 0x" << ~_deq_hdr._rhdr._magic << "; found 0x" << _deq_tail._xmagic; break;
-              case 2: oss << std::hex << "Serial: expected 0x" << _deq_hdr._rhdr._serial << "; found 0x" << _deq_tail._serial; break;
-              case 3: oss << std::hex << "Record Id: expected 0x" << _deq_hdr._rhdr._rid << "; found 0x" << _deq_tail._rid; break;
-              case 4: oss << std::hex << "Checksum: expected 0x" << cs << "; found 0x" << _deq_tail._checksum; break;
-              default: oss << "Unknown error " << res;
-            }
-            throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "deq_rec", "decode"); // TODO: Don't throw exception, log info
-        }
-    }
     return true;
 }
 
 std::size_t
 deq_rec::get_xid(void** const xidpp)
 {
-    if (!_buff)
+    if (!_xid_buff)
     {
         *xidpp = 0;
         return 0;
     }
-    *xidpp = _buff;
+    *xidpp = _xid_buff;
     return _deq_hdr._xidsize;
 }
 
@@ -291,9 +274,40 @@ deq_rec::rec_size() const
 }
 
 void
+deq_rec::check_rec_tail() const {
+    Checksum checksum;
+    checksum.addData((const unsigned char*)&_deq_hdr, sizeof(::deq_hdr_t));
+    if (_deq_hdr._xidsize > 0) {
+        checksum.addData((const unsigned char*)_xid_buff, _deq_hdr._xidsize);
+    }
+    uint32_t cs = checksum.getChecksum();
+    uint16_t res = ::rec_tail_check(&_deq_tail, &_deq_hdr._rhdr, cs);
+    if (res != 0) {
+        std::stringstream oss;
+        oss << std::hex;
+        if (res & ::REC_TAIL_MAGIC_ERR_MASK) {
+            oss << std::endl << "  Magic: expected 0x" << ~_deq_hdr._rhdr._magic << "; found 0x" << _deq_tail._xmagic;
+        }
+        if (res & ::REC_TAIL_SERIAL_ERR_MASK) {
+            oss << std::endl << "  Serial: expected 0x" << _deq_hdr._rhdr._serial << "; found 0x" << _deq_tail._serial;
+        }
+        if (res & ::REC_TAIL_RID_ERR_MASK) {
+            oss << std::endl << "  Record Id: expected 0x" << _deq_hdr._rhdr._rid << "; found 0x" << _deq_tail._rid;
+        }
+        if (res & ::REC_TAIL_CHECKSUM_ERR_MASK) {
+            oss << std::endl << "  Checksum: expected 0x" << cs << "; found 0x" << _deq_tail._checksum;
+        }
+        throw jexception(jerrno::JERR_JREC_BADRECTAIL, oss.str(), "deq_rec", "check_rec_tail");
+    }
+}
+
+void
 deq_rec::clean()
 {
-    // clean up allocated memory here
+    if (_xid_buff) {
+        std::free(_xid_buff);
+        _xid_buff = 0;
+    }
 }
 
 }}}

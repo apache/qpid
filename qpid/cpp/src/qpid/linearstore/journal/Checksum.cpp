@@ -30,9 +30,11 @@ Checksum::Checksum() : a(1UL), b(0UL), MOD_ADLER(65521UL) {}
 Checksum::~Checksum() {}
 
 void Checksum::addData(const unsigned char* data, const std::size_t len) {
-    for (uint32_t i = 0; i < len; i++) {
-        a = (a + data[i]) % MOD_ADLER;
-        b = (a + b) % MOD_ADLER;
+    if (data) {
+        for (uint32_t i = 0; i < len; i++) {
+            a = (a + data[i]) % MOD_ADLER;
+            b = (a + b) % MOD_ADLER;
+        }
     }
 }
 
