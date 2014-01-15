@@ -53,8 +53,8 @@ namespace Messaging {
 
     // unmanaged clone
     Receiver::Receiver(const ::qpid::messaging::Receiver & r,
-        Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-    parentSession(sessRef)
+        Org::Apache::Qpid::Messaging::Session ^ sessRef)
+        : parentSession(sessRef)
     {
         System::Exception ^ newException = nullptr;
 
@@ -102,8 +102,8 @@ namespace Messaging {
 
 
     // Copy constructor look-alike (C#)
-    Receiver::Receiver(const Receiver ^ receiver) :
-    parentSession(receiver->parentSession)
+    Receiver::Receiver(const Receiver ^ receiver)
+        : parentSession(receiver->parentSession)
     {
         System::Exception ^ newException = nullptr;
 
@@ -126,8 +126,8 @@ namespace Messaging {
     }
 
     // Copy constructor implicitly dereferenced (C++)
-    Receiver::Receiver(const Receiver % receiver) :
-    parentSession(receiver.parentSession)
+    Receiver::Receiver(const Receiver % receiver)
+        : parentSession(receiver.parentSession)
     {
         System::Exception ^ newException = nullptr;
 
@@ -349,10 +349,10 @@ namespace Messaging {
 
         try
         {
-			msclr::lock lk(privateLock);
-			ThrowIfDisposed();
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
 
-			nativeObjPtr->close();
+            nativeObjPtr->close();
         }
         catch (const ::qpid::types::Exception & error)
         {
