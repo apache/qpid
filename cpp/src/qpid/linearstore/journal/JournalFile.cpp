@@ -279,7 +279,7 @@ const std::string JournalFile::getFileName() const {
 
 //static
 uint64_t JournalFile::getRandom64() {
-    int randomData = ::open("/dev/random", O_RDONLY);
+    int randomData = ::open("/dev/urandom", O_RDONLY);
     if (randomData < 0) {
         throw jexception(); // TODO: Complete exception details
     }
