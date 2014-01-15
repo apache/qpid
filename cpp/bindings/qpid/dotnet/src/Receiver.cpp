@@ -29,6 +29,7 @@
 #include "qpid/messaging/exceptions.h"
 
 #include "Receiver.h"
+#include "Address.h"
 #include "Session.h"
 #include "Message.h"
 #include "Duration.h"
@@ -373,5 +374,45 @@ namespace Messaging {
         {
             throw newException;
         }
+    }
+
+    Org::Apache::Qpid::Messaging::Address ^ Receiver::GetAddress()
+    {
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
+        System::Exception           ^ newException = nullptr;
+        Messaging::Address          ^ newAddress   = nullptr;
+
+        try
+        {
+            // fetch unmanaged Address
+            ::qpid::messaging::Address addr =
+                nativeObjPtr->getAddress();
+
+            // create a managed Address
+            newAddress = gcnew Address(addr);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        finally
+        {
+            if (newException != nullptr)
+            {
+                if (newAddress != nullptr)
+                {
+                    delete newAddress;
+                }
+            }
+        }
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+
+        return newAddress;
     }
 }}}}
