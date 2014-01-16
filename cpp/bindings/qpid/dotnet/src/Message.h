@@ -29,6 +29,7 @@
 #include "QpidMarshal.h"
 #include "Address.h"
 #include "Duration.h"
+#include "QpidException.h"
 #include "TypeTranslator.h"
 
 namespace Org {
@@ -376,17 +377,27 @@ namespace Messaging {
                 msclr::lock lk(privateLock);
                 ThrowIfDisposed();
 
-                ::qpid::types::Variant::Map map;
+                System::Exception ^ newException = nullptr;
 
-                map = nativeObjPtr->getProperties();
+                System::Collections::Generic::Dictionary<System::String^, System::Object^> ^ dict =
+                    gcnew System::Collections::Generic::Dictionary<System::String^, System::Object^> ;
 
-                System::Collections::Generic::Dictionary<
-                    System::String^, System::Object^> ^ dict =
-                    gcnew System::Collections::Generic::Dictionary<
-                    System::String^, System::Object^> ;
+                try
+                {
+                    ::qpid::types::Variant::Map map;
+                    map = nativeObjPtr->getProperties();
+                    TypeTranslator::NativeToManaged(map, dict);
+                }
+                catch (const ::qpid::types::Exception & error)
+                {
+                    String ^ errmsg = gcnew String(error.what());
+                    newException    = gcnew QpidException(errmsg);
+                }
 
-
-                TypeTranslator::NativeToManaged(map, dict);
+                if (newException != nullptr)
+                {
+                    throw newException;
+                }
 
                 return dict;
             }
@@ -398,10 +409,23 @@ namespace Messaging {
                 msclr::lock lk(privateLock);
                 ThrowIfDisposed();
 
-                for each (System::Collections::Generic::KeyValuePair
-                    <System::String^, System::Object^> kvp in properties)
+                System::Exception ^ newException = nullptr;
+
+                try
                 {
-                    SetProperty(kvp.Key, kvp.Value);
+                    ::qpid::types::Variant::Map variantMap;
+                    TypeTranslator::ManagedToNative(properties, variantMap);
+                    nativeObjPtr->setProperties(variantMap);
+                }
+                catch (const ::qpid::types::Exception & error)
+                {
+                    String ^ errmsg = gcnew String(error.what());
+                    newException    = gcnew QpidException(errmsg);
+                }
+
+                if (newException != nullptr)
+                {
+                    throw newException;
                 }
             }
         }
