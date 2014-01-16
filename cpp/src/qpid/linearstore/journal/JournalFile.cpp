@@ -279,18 +279,8 @@ const std::string JournalFile::getFileName() const {
 
 //static
 uint64_t JournalFile::getRandom64() {
-    int randomData = ::open("/dev/urandom", O_RDONLY);
-    if (randomData < 0) {
-        throw jexception(); // TODO: Complete exception details
-    }
-    uint64_t randomNumber;
-    ::size_t size = sizeof(randomNumber);
-    ::ssize_t result = ::read(randomData, (char*)&randomNumber, size);
-    if (result < 0 || result != ssize_t(size)) {
-        throw jexception(); // TODO: Complete exception details
-    }
-    ::close(randomData);
-    return randomNumber;
+    // TODO: ::rand() is not thread safe, either lock or use rand_r(seed) with a thread-local seed.
+    return ((uint64_t)::rand() << QLS_RAND_SHIFT1) | ((uint64_t)::rand() << QLS_RAND_SHIFT2) | (::rand() & QLS_RAND_MASK);
 }
 
 bool JournalFile::isOpen() const {
