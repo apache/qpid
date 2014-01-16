@@ -46,10 +46,15 @@ public class CommitThreadWrapper
         _commitThread.start();
     }
 
+    public void stopCommitThread(RuntimeException e) throws InterruptedException
+    {
+        _commitThread.close(e);
+        _commitThread.join();
+    }
+
     public void stopCommitThread() throws InterruptedException
     {
-        _commitThread.close();
-        _commitThread.join();
+        stopCommitThread(new RuntimeException("Stopping commit thread"));
     }
 
     public StoreFuture commit(Transaction tx, boolean syncCommit)
@@ -65,7 +70,7 @@ public class CommitThreadWrapper
 
         private final CommitThread _commitThread;
         private final Transaction _tx;
-        private DatabaseException _databaseException;
+        private RuntimeException _databaseException;
         private boolean _complete;
         private boolean _syncCommit;
 
@@ -87,7 +92,7 @@ public class CommitThreadWrapper
             notifyAll();
         }
 
-        public synchronized void abort(DatabaseException databaseException)
+        public synchronized void abort(RuntimeException databaseException)
         {
             _complete = true;
             _databaseException = databaseException;
@@ -269,7 +274,10 @@ public class CommitThreadWrapper
 
         public void addJob(BDBCommitFuture commit, final boolean sync)
         {
-
+            if (_stopped.get())
+            {
+                throw new IllegalStateException("Commit thread is stopped");
+            }
             _jobQueue.add(commit);
             if(sync)
             {
@@ -280,11 +288,16 @@ public class CommitThreadWrapper
             }
         }
 
-        public void close()
+        public void close(RuntimeException e)
         {
             synchronized (_lock)
             {
                 _stopped.set(true);
+                BDBCommitFuture commit = null;
+                while ((commit = _jobQueue.poll()) != null)
+                {
+                    commit.abort(e);
+                }
                 _lock.notifyAll();
             }
         }

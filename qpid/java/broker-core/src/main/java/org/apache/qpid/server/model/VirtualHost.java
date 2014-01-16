@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
@@ -172,4 +173,6 @@ public interface VirtualHost extends ConfiguredObject
     MessageStore getMessageStore();
 
     String getType();
+
+    TaskExecutor getTaskExecutor();
 }

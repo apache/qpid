@@ -22,5 +22,5 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 
 public interface RemoteReplicationNodeFactory
 {
-    RemoteReplicationNode create(String groupName, String nodeName, String hostPort);
+    RemoteReplicationNode create(com.sleepycat.je.rep.ReplicationNode jeNode, String groupName);
 }

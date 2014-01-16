@@ -20,7 +20,14 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.apache.qpid.server.model.ReplicationNode.*;
+import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
+import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
+import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
+import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
+import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -35,6 +42,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
@@ -115,9 +125,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
     public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
 
-    private volatile ReplicatedEnvironment _environment;
-    private CommitThreadWrapper _commitThreadWrapper;
-
     private final String _groupName;
     private final String _nodeName;
     private final String _nodeHostPort;
@@ -125,18 +132,21 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final Durability _durability;
     private final boolean _designatedPrimary;
     private final boolean _coalescingSync;
-    private volatile StateChangeListener _stateChangeListener;
     private final String _environmentPath;
     private final Map<String, String> _environmentParameters;
     private final Map<String, String> _replicationEnvironmentParameters;
     private final String _name;
-    private final ExecutorService _executor = Executors.newFixedThreadPool(1);
+    private final ExecutorService _restartEnvironmentExecutor = Executors.newFixedThreadPool(1);
+    private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIAL);
-
     private final ConcurrentMap<String, Database> _databases = new ConcurrentHashMap<String, Database>();
-
-    private ReplicationGroupListener _replicationGroupListener;
+    private final ConcurrentMap<String, org.apache.qpid.server.model.ReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, org.apache.qpid.server.model.ReplicationNode>();
     private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
+
+    private volatile CommitThreadWrapper _commitThreadWrapper;
+    private volatile StateChangeListener _stateChangeListener;
+    private volatile ReplicatedEnvironment _environment;
+    private ReplicationGroupListener _replicationGroupListener;
     private long _joinTime;
     private String _lastKnownReplicationTransactionId;
 
@@ -157,10 +167,22 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _environmentParameters = (Map<String, String>)replicationNode.getAttribute(PARAMETERS);
         _replicationEnvironmentParameters = (Map<String, String>)replicationNode.getAttribute(REPLICATION_PARAMETERS);
 
+        _groupChangeExecutor = Executors.newScheduledThreadPool(1, new ThreadFactory()
+        {
+            @Override
+            public Thread newThread(Runnable r)
+            {
+                return new Thread(r, "GroupChangeLearner_" + _groupName);
+            }
+        });
         _remoteReplicationNodeFactory = remoteReplicationNodeFactory;
         _state.set(State.OPENING);
+        //TODO: add ability to alter the execution period
+        _groupChangeExecutor.scheduleWithFixedDelay(new GroupChangeLearner(), 1, 1, TimeUnit.SECONDS);
+
         _environment = createEnvironment();
-        startCommitThread(_name, _environment);
+        populateExistingRemoteReplicationNodes();
+        _commitThreadWrapper = startCommitThread(_name, _environment);
     }
 
     @Override
@@ -198,7 +220,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             try
             {
                 LOGGER.debug("Closing replicated environment facade");
-                _executor.shutdownNow();
+                _restartEnvironmentExecutor.shutdownNow();
+                _groupChangeExecutor.shutdownNow();
                 stopCommitThread();
                 closeDatabases();
                 closeEnvironment();
@@ -211,25 +234,25 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
     @Override
-    public AMQStoreException handleDatabaseException(String contextMessage, DatabaseException e)
+    public AMQStoreException handleDatabaseException(String contextMessage, final DatabaseException dbe)
     {
-        boolean restart = (e instanceof InsufficientReplicasException || e instanceof InsufficientReplicasException);
+        boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientReplicasException);
         if (restart)
         {
             if (_state.compareAndSet(State.OPEN, State.RESTARTING))
             {
                 if (LOGGER.isDebugEnabled())
                 {
-                    LOGGER.debug("Environment restarting due to exception " + e.getMessage(), e);
+                    LOGGER.debug("Environment restarting due to exception " + dbe.getMessage(), dbe);
                 }
-                _executor.execute(new Runnable()
+                _restartEnvironmentExecutor.execute(new Runnable()
                 {
                     @Override
                     public void run()
                     {
                         try
                         {
-                            restartEnvironment();
+                            restartEnvironment(dbe);
                         }
                         catch (Exception e)
                         {
@@ -244,7 +267,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 LOGGER.info("Cannot restart environment because of facade state: " + _state.get());
             }
         }
-        return new AMQStoreException(contextMessage, e);
+        return new AMQStoreException(contextMessage, dbe);
     }
 
     @Override
@@ -411,7 +434,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         try
         {
             createReplicationGroupAdmin().updateAddress(nodeName, newHostName, newPort);
-
         }
         catch (OperationFailureException ofe)
         {
@@ -475,7 +497,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private void notifyExistingRemoteReplicationNodes(ReplicationGroupListener listener)
+    private void populateExistingRemoteReplicationNodes()
     {
         ReplicationGroup group = _environment.getGroup();
         Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getElectableNodes());
@@ -486,12 +508,18 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             String discoveredNodeName = replicationNode.getName();
             if (!discoveredNodeName.equals(localNodeName))
             {
-                // TODO remote replication nodes should be cached
-                RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(group.getName(),
-                                                                             replicationNode.getName(),
-                                                                             replicationNode.getHostName() + ":" + replicationNode.getPort());
-                listener.onReplicationNodeRecovered(remoteNode);
+                RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, group.getName());
+
+                _remoteReplicationNodes.put(replicationNode.getName(), remoteNode);
             }
+        }
+     }
+
+    private void notifyExistingRemoteReplicationNodes(ReplicationGroupListener listener)
+    {
+        for (org.apache.qpid.server.model.ReplicationNode value : _remoteReplicationNodes.values())
+        {
+            listener.onReplicationNodeRecovered(value);
         }
     }
 
@@ -525,12 +553,30 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private void startCommitThread(String name, Environment environment)
+    private CommitThreadWrapper startCommitThread(String name, Environment environment)
+    {
+        CommitThreadWrapper commitThreadWrapper = null;
+        if (_coalescingSync)
+        {
+            commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + name, environment);
+            commitThreadWrapper.startCommitThread();
+        }
+        return commitThreadWrapper;
+    }
+
+    private void stopCommitThread(RuntimeException dbe)
     {
         if (_coalescingSync)
         {
-            _commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + name, environment);
-            _commitThreadWrapper.startCommitThread();
+            try
+            {
+                _commitThreadWrapper.stopCommitThread(dbe);
+            }
+            catch (InterruptedException e)
+            {
+                LOGGER.warn("Stopping of commit thread is interrupted", e);
+                Thread.interrupted();
+            }
         }
     }
 
@@ -550,11 +596,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private void restartEnvironment() throws AMQStoreException
+    private void restartEnvironment(DatabaseException dbe) throws AMQStoreException
     {
         LOGGER.info("Restarting environment");
 
-        stopCommitThread();
+        stopCommitThread(dbe);
 
         Set<String> databaseNames = new HashSet<String>(_databases.keySet());
         closeEnvironmentSafely();
@@ -566,7 +612,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         // TODO Alex and I think this should be removed.
         openDatabases(databaseNames.toArray(new String[databaseNames.size()]), dbConfig);
 
-        startCommitThread(_name, _environment);
+        _commitThreadWrapper = startCommitThread(_name, _environment);
 
         _environment.setStateChangeListener(this);
 
@@ -695,6 +741,72 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         return environment;
+    }
+
+    private final class GroupChangeLearner implements Runnable
+    {
+        @Override
+        public void run()
+        {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Checking for changes in the group " + _groupName);
+            }
+
+            ReplicatedEnvironment env = _environment;
+            ReplicationGroupListener replicationGroupListener = _replicationGroupListener;
+            if (env != null && env.isValid())
+            {
+                ReplicationGroup group = env.getGroup();
+                Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getElectableNodes());
+                String localNodeName = getNodeName();
+
+                Map<String, org.apache.qpid.server.model.ReplicationNode> removalMap = new HashMap<String, org.apache.qpid.server.model.ReplicationNode>(_remoteReplicationNodes);
+                for (ReplicationNode replicationNode : nodes)
+                {
+                    String discoveredNodeName = replicationNode.getName();
+                    if (!discoveredNodeName.equals(localNodeName))
+                    {
+                        if (!_remoteReplicationNodes.containsKey(discoveredNodeName))
+                        {
+                            if (LOGGER.isDebugEnabled())
+                            {
+                                LOGGER.debug("Remote replication node added '" + replicationNode + "' to '" + _groupName + "'");
+                            }
+
+                            RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, group.getName());
+
+                            _remoteReplicationNodes.put(discoveredNodeName, remoteNode);
+                            if (replicationGroupListener != null)
+                            {
+                                replicationGroupListener.onReplicationNodeAddedToGroup(remoteNode);
+                            }
+                        }
+                        else
+                        {
+                            removalMap.remove(discoveredNodeName);
+                        }
+                    }
+                }
+
+                if (!removalMap.isEmpty())
+                {
+                    for (Map.Entry<String, org.apache.qpid.server.model.ReplicationNode> replicationNodeEntry : removalMap.entrySet())
+                    {
+                        String replicationNodeName = replicationNodeEntry.getKey();
+                        if (LOGGER.isDebugEnabled())
+                        {
+                            LOGGER.debug("Remote replication node removed '" + replicationNodeName + "' from '" + _groupName + "'");
+                        }
+                        _remoteReplicationNodes.remove(replicationNodeName);
+                        if (replicationGroupListener != null)
+                        {
+                            replicationGroupListener.onReplicationNodeRemovedFromGroup(replicationNodeEntry.getValue());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private class LoggingAsyncExceptionListener implements ExceptionListener

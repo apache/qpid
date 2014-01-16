@@ -28,7 +28,7 @@ public interface ReplicationGroupListener
      * Fired when a remote replication node is added to a group.  This event happens
      * exactly once just after a new replication node is created.
      */
-    //void onReplicationNodeAddedToGroup(ReplicationNode node);
+    void onReplicationNodeAddedToGroup(ReplicationNode node);
 
     /**
      * Fired exactly once for each existing remote node.  Used to inform the application
@@ -40,7 +40,7 @@ public interface ReplicationGroupListener
      * Fired when a remote replication node is (permanently) removed from group.  This event
      * happens exactly once just after the existing replication node is deleted.
      */
-    //void onReplicationNodeRemovedFromGroup(ReplicationNode node);
+    void onReplicationNodeRemovedFromGroup(ReplicationNode node);
 
     /**
      * Fired when a remote replication node (that is already a member of the group) joins

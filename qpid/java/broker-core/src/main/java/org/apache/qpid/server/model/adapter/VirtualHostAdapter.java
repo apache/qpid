@@ -116,9 +116,12 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     private final List<ReplicationNode> _replicationNodes = new ArrayList<ReplicationNode>();
 
+    private final TaskExecutor _taskExecutor;
+
     public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
         super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
+        _taskExecutor = taskExecutor;
         _broker = broker;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
         addParent(Broker.class, broker);
@@ -1260,6 +1263,12 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     }
 
     @Override
+    public TaskExecutor getTaskExecutor()
+    {
+        return _taskExecutor;
+    }
+
+    @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
         // TODO: a hack to change a virtual host state only
@@ -1320,6 +1329,18 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         //TODO: should we be adding ConfigurationChangeListener to node?
         _replicationNodes.add(node);
+    }
+
+    @Override
+    public void onReplicationNodeAddedToGroup(ReplicationNode node)
+    {
+        _replicationNodes.add(node);
+    }
+
+    @Override
+    public void onReplicationNodeRemovedFromGroup(ReplicationNode node)
+    {
+        _replicationNodes.remove(node);
     }
 
     public void recoverChild(ConfiguredObject configuredObject)

@@ -21,9 +21,13 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.replication.LocalReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
@@ -61,7 +65,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         return facade;
     }
 
-    private static class RemoteReplicationNodeFactoryImpl implements RemoteReplicationNodeFactory
+    static class RemoteReplicationNodeFactoryImpl implements RemoteReplicationNodeFactory
     {
         private VirtualHost _virtualHost;
 
@@ -71,9 +75,13 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         }
 
         @Override
-        public RemoteReplicationNode create(String groupName, String nodeName, String hostPort)
+        public RemoteReplicationNode create(com.sleepycat.je.rep.ReplicationNode replicationNode, String groupName)
         {
-            return new RemoteReplicationNode(groupName, nodeName, hostPort, _virtualHost);
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(ReplicationNode.NAME, replicationNode.getName());
+            attributes.put(ReplicationNode.GROUP_NAME, groupName);
+            attributes.put(ReplicationNode.HOST_PORT, replicationNode.getHostName() + ":" + replicationNode.getPort());
+            return new RemoteReplicationNode(replicationNode, groupName, _virtualHost, _virtualHost.getTaskExecutor());
         }
     }
 }

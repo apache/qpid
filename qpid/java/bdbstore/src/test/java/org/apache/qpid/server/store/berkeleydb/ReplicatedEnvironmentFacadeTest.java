@@ -47,9 +47,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
@@ -71,6 +73,25 @@ import com.sleepycat.je.rep.StateChangeListener;
 
 public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
 {
+
+    private static class NoopReplicationGroupListener implements ReplicationGroupListener
+    {
+        @Override
+        public void onReplicationNodeRecovered(ReplicationNode node)
+        {
+        }
+
+        @Override
+        public void onReplicationNodeAddedToGroup(ReplicationNode node)
+        {
+        }
+
+        @Override
+        public void onReplicationNodeRemovedFromGroup(ReplicationNode node)
+        {
+        }
+    }
+
     private static final int TEST_NODE_PORT = new QpidTestCase().findFreePort();
     private static final TimeUnit WAIT_STATE_CHANGE_TIME_UNIT = TimeUnit.SECONDS;
     private static final int WAIT_STATE_CHANGE_TIMEOUT = 30;
@@ -82,7 +103,8 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
     private static final boolean TEST_DESIGNATED_PRIMARY = true;
     private static final boolean TEST_COALESCING_SYNC = true;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
-    private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = mock(RemoteReplicationNodeFactory.class);
+    private VirtualHost _virtualHost = mock(VirtualHost.class);
+    private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = new ReplicatedEnvironmentFacadeFactory.RemoteReplicationNodeFactoryImpl(_virtualHost);
 
     public void setUp() throws Exception
     {
@@ -162,20 +184,144 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
 
     public void testReplicationGroupListenerHearsAboutExistingRemoteReplicationNodes() throws Exception
     {
-        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = getEnvironmentFacade();
+        getEnvironmentFacade();
         String nodeName2 = TEST_NODE_NAME + "_2";
         String host = "localhost";
         int port = getNextAvailable(TEST_NODE_PORT + 1);
         String node2NodeHostPort = host + ":" + port;
-        joinReplica(nodeName2, node2NodeHostPort);
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade2 = joinReplica(nodeName2, node2NodeHostPort);
 
-        List<Map<String, String>> groupMembers = replicatedEnvironmentFacade.getGroupMembers();
-        assertEquals("Unexpected number of nodes at start of test", 2, groupMembers.size());
+        List<Map<String, String>> groupMembers = replicatedEnvironmentFacade2.getGroupMembers();
+        assertEquals("Unexpected number of nodes", 2, groupMembers.size());
 
         ReplicationGroupListener listener = mock(ReplicationGroupListener.class);
-        replicatedEnvironmentFacade.setReplicationGroupListener(listener);
+        replicatedEnvironmentFacade2.setReplicationGroupListener(listener);
         verify(listener).onReplicationNodeRecovered(any(RemoteReplicationNode.class));
-        verify(_remoteReplicationNodeFactory).create(TEST_GROUP_NAME, nodeName2, node2NodeHostPort);
+    }
+
+    public void testReplicationGroupListenerHearsNodeAdded() throws Exception
+    {
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = getEnvironmentFacade();
+
+        List<Map<String, String>> initialGroupMembers = replicatedEnvironmentFacade.getGroupMembers();
+        assertEquals("Unexpected number of nodes at start of test", 1, initialGroupMembers.size());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicInteger invocationCount = new AtomicInteger();
+        ReplicationGroupListener listener = new NoopReplicationGroupListener()
+        {
+            @Override
+            public void onReplicationNodeAddedToGroup(ReplicationNode node)
+            {
+                invocationCount.getAndIncrement();
+                latch.countDown();
+            }
+        };
+        replicatedEnvironmentFacade.setReplicationGroupListener(listener);
+
+        String node2Name = TEST_NODE_NAME + "_2";
+        String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        joinReplica(node2Name, node2NodeHostPort);
+
+        assertTrue("Listener not fired within timeout", latch.await(5, TimeUnit.SECONDS));
+
+        List<Map<String, String>> groupMembers = replicatedEnvironmentFacade.getGroupMembers();
+        assertEquals("Unexpected number of nodes", 2, groupMembers.size());
+
+        assertEquals("Unexpected number of listener invocations", 1, invocationCount.get());
+    }
+
+    public void testReplicationGroupListenerHearsNodeRemoved() throws Exception
+    {
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = getEnvironmentFacade();
+        String node2Name = TEST_NODE_NAME + "_2";
+        String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        joinReplica(node2Name, node2NodeHostPort);
+
+        List<Map<String, String>> initialGroupMembers = replicatedEnvironmentFacade.getGroupMembers();
+        assertEquals("Unexpected number of nodes at start of test", 2, initialGroupMembers.size());
+
+        final CountDownLatch nodeDeletedLatch = new CountDownLatch(1);
+        final CountDownLatch nodeAddedLatch = new CountDownLatch(1);
+        final AtomicInteger invocationCount = new AtomicInteger();
+        ReplicationGroupListener listener = new NoopReplicationGroupListener()
+        {
+            @Override
+            public void onReplicationNodeRecovered(ReplicationNode node)
+            {
+                nodeAddedLatch.countDown();
+            }
+
+            @Override
+            public void onReplicationNodeAddedToGroup(ReplicationNode node)
+            {
+                nodeAddedLatch.countDown();
+            }
+
+            @Override
+            public void onReplicationNodeRemovedFromGroup(ReplicationNode node)
+            {
+                invocationCount.getAndIncrement();
+                nodeDeletedLatch.countDown();
+            }
+        };
+
+        replicatedEnvironmentFacade.setReplicationGroupListener(listener);
+
+        // Need to await the listener hearing the addition of the node to the model.
+        assertTrue("Node add not fired within timeout", nodeAddedLatch.await(5, TimeUnit.SECONDS));
+
+        // Now remove the node and ensure we hear the event
+        replicatedEnvironmentFacade.removeNodeFromGroup(node2Name);
+
+        assertTrue("Node delete not fired within timeout", nodeDeletedLatch.await(5, TimeUnit.SECONDS));
+
+        List<Map<String, String>> groupMembers = replicatedEnvironmentFacade.getGroupMembers();
+        assertEquals("Unexpected number of nodes after node removal", 1, groupMembers.size());
+
+        assertEquals("Unexpected number of listener invocations", 1, invocationCount.get());
+    }
+
+    public void testMasterHearsRemoteNodeRoles() throws Exception
+    {
+
+        final CountDownLatch nodeAddedLatch = new CountDownLatch(1);
+        final AtomicReference<ReplicationNode> nodeRef = new AtomicReference<ReplicationNode>();
+        ReplicationGroupListener listener = new NoopReplicationGroupListener()
+        {
+            @Override
+            public void onReplicationNodeAddedToGroup(ReplicationNode node)
+            {
+                nodeRef.set(node);
+                nodeAddedLatch.countDown();
+            }
+        };
+
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = getEnvironmentFacade();
+        replicatedEnvironmentFacade.setReplicationGroupListener(listener);
+
+        String node2Name = TEST_NODE_NAME + "_2";
+        String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        joinReplica(node2Name, node2NodeHostPort);
+
+        List<Map<String, String>> initialGroupMembers = replicatedEnvironmentFacade.getGroupMembers();
+        assertEquals("Unexpected number of nodes at start of test", 2, initialGroupMembers.size());
+
+        assertTrue("Node add not fired within timeout", nodeAddedLatch.await(5, TimeUnit.SECONDS));
+
+        RemoteReplicationNode remoteNode = (RemoteReplicationNode)nodeRef.get();
+        assertEquals("Unexpcted node name", node2Name, remoteNode.getName());
+
+        // Need to poll to await the remote node updating itself
+        long timeout = System.currentTimeMillis() + 5000;
+        while(!State.REPLICA.name().equals(remoteNode.getAttribute(ReplicationNode.ROLE)) && System.currentTimeMillis() < timeout)
+        {
+            Thread.sleep(200);
+        }
+
+        assertEquals("Unexpcted node role (after waiting)", State.REPLICA.name(), remoteNode.getAttribute(ReplicationNode.ROLE));
+        assertNotNull("Replica node " + ReplicationNode.JOIN_TIME + " attribute is not set", remoteNode.getAttribute(ReplicationNode.JOIN_TIME));
+        assertNotNull("Replica node " + ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID + " attribute is not set", remoteNode.getAttribute(ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID));
     }
 
     public void testRemoveNodeFromGroup() throws Exception
