@@ -181,7 +181,7 @@
    <itemizedlist>
      <listitem><literal>all</literal> implies that all the other pairs must match the headers property of a message for that message to be routed
       (i.e. an AND match)</listitem>
-     <listitem>any<literal></literal> implies that the message should be routed if any of the fields in the headers property match one of the
+     <listitem><literal>any</literal> implies that the message should be routed if any of the fields in the headers property match one of the
       fields in the arguments table (i.e. an OR match)</listitem>
    </itemizedlist>
    <para>A field in the bind arguments matches a field in the message if either the field in the bind arguments has no value and a field of the
