@@ -19,6 +19,9 @@
  *
  */
 
+#include <cmath>
+#include <cstdlib>
+
 #ifndef QPID_QLS_JRNL_JCFG_H
 #define QPID_QLS_JRNL_JCFG_H
 
@@ -54,5 +57,15 @@
 
 #define QLS_CLEAN                                   /**< If defined, writes QLS_CLEAN_CHAR to all filled areas on disk */
 #define QLS_CLEAN_CHAR                  0xff        /**< Char used to clear empty space on disk */
+
+namespace qpid {
+namespace linearstore {
+
+    const int QLS_RAND_WIDTH = (int)(::log((RAND_MAX + 1ULL))/::log(2));
+    const int QLS_RAND_SHIFT1 = 64 - QLS_RAND_WIDTH;
+    const int QLS_RAND_SHIFT2 = QLS_RAND_SHIFT1 - QLS_RAND_WIDTH;
+    const int QLS_RAND_MASK = (int)::pow(2, QLS_RAND_SHIFT2) - 1;
+
+}}
 
 #endif /* ifndef QPID_QLS_JRNL_JCFG_H */

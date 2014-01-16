@@ -24,7 +24,7 @@ Current/pending:
  Q-JIRA RHBZ     Description / Comments
  ------ -------  ----------------------
    5359 -        Linearstore: Implement new management schema and wire into store
-   5360 -        Linearstore: Evaluate and rework logging to produce a consistent log outputConsistent logging
+   5360 -        Linearstore: Evaluate and rework logging to produce a consistent log output
    5361 -        Linearstore: No tests for linearstore functionality currently exist
                    * No existing tests for linearstore:
                    ** Basic broker-level tests for txn and non-txn recovery
@@ -39,8 +39,12 @@ Current/pending:
                    * Empty file pool status and management
    5464 -        [linearstore] Incompletely created journal files accumulate in EFP
    5479 1053701  [linearstore] Using recovered store results in "JERR_JNLF_FILEOFFSOVFL: Attempted to increase submitted offset past file size. (JournalFile::submittedDblkCount)" error message
+                   * Probablilty: 2 of 600 (0.3%) using tx-test-soak.sh
    5480 1053749  [linearstore] Recovery of store failure with "JERR_MAP_NOTFOUND: Key not found in map." error message
+                   * Probability: 6 of 600 (1.0%) using tx-test-soak.sh
+                   * If broker is started a second time after failure, it starts correctly and test completes ok.
    5484 1035843  Slow performance for producers
+                   svn r.1558592 fixes an issue with using /dev/random as a source of random numbers for Journal serial numbers.
    -    1036026  [LinearStore] Qpid linear store unable to create durable queue - framing-error: Queue <q-name>: create() failed: jexception 0x0000
                    UNABLE TO REPRODUCE - but Frantizek has additional info
    -    1039522  Qpid crashes while recovering from linear store around apid::linearstore::journal::JournalFile::getFqFileName() including enq_rec::decode() threw JERR_JREC_BAD_RECTAIL
@@ -49,6 +53,7 @@ Current/pending:
    -    1039525  Qpid crashes while recovering from linear store around apid::linearstore::journal::jexception::format including enq_rec::decode() threw JERR_JREC_BAD_REC_TAIL
                    * Possible dup of 1039522
                    * May be fixed by QPID-5483 - waiting for needinfo
+   5487 -        [linearstore] Replace use of /dev/urandom with c random generator calls
 
 Fixed/closed:
 =============
