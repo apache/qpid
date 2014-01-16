@@ -31,6 +31,9 @@ std::string MemoryMappedFile::open(const std::string& /*name*/, const std::strin
 {
     return std::string();
 }
+void MemoryMappedFile::close(const std::string& /*path*/)
+{
+}
 size_t MemoryMappedFile::getPageSize()
 {
     return 0;
