@@ -88,7 +88,9 @@ define(["dojo/_base/xhr",
         this[name].innerHTML = entities.encode(String(localNode[name]));
       }
       this.parametersGrid.update(convertMap(localNode.parameters));
+      this.parametersGrid.grid._refresh();
       this.replicationParametersGrid.update(convertMap(localNode.replicationParameters));
+      this.replicationParametersGrid.grid._refresh();
       if (nodes.length < 3)
       {
         this.designatedPrimaryContainer.style.display="block";
@@ -152,7 +154,7 @@ define(["dojo/_base/xhr",
             indirectSelection: true
           }
         },
-        EnhancedGrid, true );
+        EnhancedGrid, false );
 
     this.parametersGrid = new UpdatableStore([],
         findNode("parameters", containerNode),
@@ -168,7 +170,7 @@ define(["dojo/_base/xhr",
          { name: 'Name', field: 'name', width: '50%' },
          { name: 'Value', field: 'value', width: '50%' }
         ],
-        null, null, null, true );
+        null, null, null, false );
   }
 
   BDBHA.prototype._initFields = function(nodeFields, containerNode)
