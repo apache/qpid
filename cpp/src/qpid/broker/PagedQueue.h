@@ -38,6 +38,7 @@ class ProtocolRegistry;
 class PagedQueue : public Messages {
   public:
     PagedQueue(const std::string& name, const std::string& directory, uint maxLoaded, uint pageFactor, ProtocolRegistry& protocols);
+    ~PagedQueue();
     size_t size();
     bool deleted(const QueueCursor&);
     void publish(const Message& added);

@@ -75,6 +75,11 @@ PagedQueue::PagedQueue(const std::string& name_, const std::string& directory, u
     QPID_LOG(debug, "PagedQueue[" << path << "]");
 }
 
+PagedQueue::~PagedQueue()
+{
+    file.close(path);
+}
+
 size_t PagedQueue::size()
 {
     size_t total(0);

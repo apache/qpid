@@ -71,6 +71,11 @@ std::string MemoryMappedFile::open(const std::string& name, const std::string& d
     state->fd = fd;
     return path;
 }
+void MemoryMappedFile::close(const std::string& path)
+{
+    ::close(state->fd);
+    ::unlink(path.c_str());
+}
 size_t MemoryMappedFile::getPageSize()
 {
     return ::sysconf(_SC_PAGE_SIZE);
