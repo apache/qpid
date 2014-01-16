@@ -155,7 +155,10 @@ if (VALGRIND_FOUND)
 endif (VALGRIND_FOUND)
 
 # Do not keep on linking against transitive library dependencies
+# TODO Need to rework CMake files to use INTERFACE_LINK_LIBRARIES target property
+# When that is done we can remove the next 2 lines completely
 set (CMAKE_LINK_INTERFACE_LIBRARIES "")
+cmake_policy(SET CMP0022 OLD)
 
 if (CMAKE_COMPILER_IS_GNUCXX)
    # Warnings: Enable as many as possible, keep the code clean. Please
