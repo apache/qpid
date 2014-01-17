@@ -65,8 +65,7 @@ std::string MemoryMappedFile::open(const std::string& name, const std::string& d
 {
     std::string path = getFileName(name, directory);
 
-    if (access(path.c_str(), F_OK) != -1) throw qpid::Exception(QPID_MSG("Attempting to re-write file " << path << " for paged queue \"" << name << "\""));
-    int flags = O_CREAT | O_TRUNC | O_RDWR;
+    int flags = O_CREAT | O_EXCL | O_RDWR;
     int fd = ::open(path.c_str(), flags, S_IRUSR | S_IWUSR);
     if (fd == -1) throw qpid::Exception(QPID_MSG("Failed to open memory mapped file " << path << ": " << qpid::sys::strError(errno) << " [flags=" << flags << "]"));
     state->fd = fd;
