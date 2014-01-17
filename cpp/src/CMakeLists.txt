@@ -158,9 +158,9 @@ endif (VALGRIND_FOUND)
 # TODO Need to rework CMake files to use INTERFACE_LINK_LIBRARIES target property
 # When that is done we can remove the next 4 lines completely
 set (CMAKE_LINK_INTERFACE_LIBRARIES "")
-if (DEFINED CMAKE_VERSION AND CMAKE_VERSION VERSION_GREATER "2.8.11")
+if (DEFINED CMAKE_VERSION AND NOT CMAKE_VERSION VERSION_LESS "2.8.12")
   cmake_policy(SET CMP0022 OLD)
-endif (DEFINED CMAKE_VERSION AND CMAKE_VERSION VERSION_GREATER "2.8.11")
+endif (DEFINED CMAKE_VERSION AND NOT CMAKE_VERSION VERSION_LESS "2.8.12")
 
 if (CMAKE_COMPILER_IS_GNUCXX)
    # Warnings: Enable as many as possible, keep the code clean. Please
