@@ -178,6 +178,8 @@ void ExampleAgent::run()
             case AGENT_METHOD:
                 running = method(event);
                 break;
+            default:
+                break;
             }
         }
     }
