@@ -24,6 +24,8 @@
 
 #include <set>
 
+#include <boost/array.hpp>
+
 namespace qpid {
 namespace tests {
 
@@ -51,17 +53,12 @@ boost::array<uint8_t, 16>  sample =  {{0x1b, 0x4e, 0x28, 0xba, 0x2f, 0xa1, 0x11,
 const string sampleStr("1b4e28ba-2fa1-11d2-883f-b9a761bde3fb");
 const string zeroStr("00000000-0000-0000-0000-000000000000");
 
-QPID_AUTO_TEST_CASE(testUuidStr) {
-    Uuid uuid(sampleStr);
-    BOOST_CHECK(uuid == sample);
-}
-
 QPID_AUTO_TEST_CASE(testUuidIstream) {
     Uuid uuid;
     istringstream in(sampleStr);
     in >> uuid;
     BOOST_CHECK(!in.fail());
-    BOOST_CHECK(uuid == sample);
+    BOOST_CHECK(::memcmp(uuid.data(), sample.data(), uuid.size())==0);
 
     istringstream is(zeroStr);
     Uuid zero;
@@ -105,7 +102,7 @@ QPID_AUTO_TEST_CASE(testUuidEncodeDecode) {
     Uuid decoded;
     decoded.decode(rbuf);
     BOOST_CHECK_EQUAL(string(sample.begin(), sample.end()),
-                      string(decoded.begin(), decoded.end()));
+                      string(decoded.data(), decoded.data()+decoded.size()));
 }
 
 QPID_AUTO_TEST_CASE(testTypesUuid)

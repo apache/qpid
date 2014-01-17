@@ -65,25 +65,11 @@ void printHex (const unsigned char *bytes, char *buf, int n) {
 } // namespace
 
 
-void uuid_clear (uuid_t uu) {
-    // all zeros, no change between GUID and UUID
-    UuidCreateNil (reinterpret_cast<UUID*>(uu));
-}
-
-void uuid_copy (uuid_t dst, const uuid_t src) {
-    memcpy (dst, src, qpid::sys::UuidSize);
-}
-
 void uuid_generate (uuid_t out) {
     UUID guid;
     UuidCreate (&guid);
     // Version 4 GUID, convert to UUID
     toUuid (&guid, out);
-}
-
-int uuid_is_null (const uuid_t uu) {
-    RPC_STATUS unused;
-    return UuidIsNil ((UUID*)uu, &unused);
 }
 
 int uuid_parse (const char *in, uuid_t uu) {
@@ -103,35 +89,4 @@ void uuid_unparse (const uuid_t uu, char *out) {
     printHex (in+8, out+19, 2);
     printHex (in+10, out+24, 6);
     out[36] = '\0';
-}
-
-namespace {
-
-typedef struct {
-    uint32_t time_low;
-    uint16_t time_mid;
-    uint16_t time_hi_and_version;
-    uint8_t  clock_seq_hi_and_reserved;
-    uint8_t  clock_seq_low;
-    uint8_t  node[6];
-} rfc_uuid_t;
-
-#undef RFC_CMP
-#define RFC_CMP(a, b) if (a != b) return (a < b) ? -1 : 1
-
-}
-
-int uuid_compare (const uuid_t a, const uuid_t b) {
-    // Could convert each to a GUID and then use UuidEqual(),
-    // but RFC test is straight forward
-    rfc_uuid_t* u1 = (rfc_uuid_t *) a;
-    rfc_uuid_t* u2 = (rfc_uuid_t *) b;
-    RFC_CMP (u1->time_low, u2->time_low);
-    RFC_CMP (u1->time_mid, u2->time_mid);
-    RFC_CMP (u1->time_hi_and_version, u2->time_hi_and_version);
-    RFC_CMP (u1->clock_seq_hi_and_reserved, u2->clock_seq_hi_and_reserved);
-    RFC_CMP (u1->clock_seq_low, u2->clock_seq_low);
-    for (int i = 0; i < 6; i++)
-        RFC_CMP (u1->node[i], u2->node[i]);
-    return 0;
 }

@@ -79,7 +79,7 @@ amqp::MessageId MessageTransfer::getMessageId() const
 
     amqp::MessageId r;
     if (mp->hasMessageId()) {
-        r.set(amqp::CharSequence::create(&mp->getMessageId()[0],16), types::VAR_UUID);
+        r.set(amqp::CharSequence::create(mp->getMessageId().data(),16), types::VAR_UUID);
     }
     return r;
 }

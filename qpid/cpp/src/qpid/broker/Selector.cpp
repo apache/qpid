@@ -30,6 +30,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/types/Variant.h"
 
+#include <stdexcept>
 #include <string>
 #include <sstream>
 #include "qpid/sys/unordered_map.h"

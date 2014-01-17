@@ -29,47 +29,13 @@ namespace framing {
 
 using namespace std;
 
-static const size_t UNPARSED_SIZE=36; 
+Uuid::Uuid(bool unique):
+  qpid::types::Uuid(unique)
+{}
 
-Uuid::Uuid(bool unique) {
-    if (unique) {
-        generate();
-    } else {
-        clear();
-    }
-}
-
-Uuid::Uuid(const uint8_t* data) {
-    assign(data);
-}
-
-Uuid::Uuid(const std::string& s) {
-    if (s.size() != UNPARSED_SIZE)
-        throw IllegalArgumentException(QPID_MSG("Invalid UUID: " << s));
-    if (uuid_parse(const_cast<char *>(&s[0]), c_array()) != 0)
-        throw IllegalArgumentException(QPID_MSG("Invalid UUID: " << s));
-}
-
-void Uuid::assign(const uint8_t* data) {
-    // This const cast is for Solaris which has a 
-    // uuid_copy that takes a non const 2nd argument
-    uuid_copy(c_array(), const_cast<uint8_t*>(data));
-}
-
-void Uuid::generate() {
-    uuid_generate(c_array());
-}
-
-void Uuid::clear() {
-    uuid_clear(c_array());
-}
-
-// Force int 0/!0 to false/true; avoids compile warnings.
-bool Uuid::isNull() const {
-    // This const cast is for Solaris which has a 
-    // uuid_is_null that takes a non const argument
-    return !!uuid_is_null(const_cast<uint8_t*>(data()));
-}
+Uuid::Uuid(const uint8_t* data):
+  qpid::types::Uuid(data)
+{}
 
 void Uuid::encode(Buffer& buf) const {
     buf.putRawData(data(), size());
@@ -78,29 +44,9 @@ void Uuid::encode(Buffer& buf) const {
 void Uuid::decode(Buffer& buf) {
     if (buf.available() < size())
         throw IllegalArgumentException(QPID_MSG("Not enough data for UUID."));
-    buf.getRawData(c_array(), size());
-}
 
-ostream& operator<<(ostream& out, Uuid uuid) {
-    char unparsed[UNPARSED_SIZE + 1];
-    uuid_unparse(uuid.data(), unparsed);
-    return out << unparsed;
-}
-
-istream& operator>>(istream& in, Uuid& uuid) {
-    char unparsed[UNPARSED_SIZE + 1] = {0};
-    in.get(unparsed, sizeof(unparsed));
-    if (!in.fail()) {
-        if (uuid_parse(unparsed, uuid.c_array()) != 0) 
-            in.setstate(ios::failbit);
-    }
-    return in;
-}
-
-std::string Uuid::str() const {
-    std::ostringstream os;
-    os << *this;
-    return os.str();
+    // Break qpid::types::Uuid encapsulation - Nasty, but efficient
+    buf.getRawData(const_cast<uint8_t*>(data()), size());
 }
 
 }} // namespace qpid::framing
