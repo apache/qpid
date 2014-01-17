@@ -71,14 +71,13 @@ void Uuid::generate()
 
 void Uuid::clear()
 {
-    uuid_clear(bytes);
+    ::memset(bytes, 0, Uuid::SIZE);
 }
 
-// Force int 0/!0 to false/true; avoids compile warnings.
 bool Uuid::isNull() const
 {
-    // This const cast is for Solaris which has non const arguments
-    return !!uuid_is_null(const_cast<uint8_t*>(bytes));
+    static Uuid nullUuid;
+    return *this == nullUuid;
 }
 
 Uuid::operator bool() const { return !isNull(); }
@@ -93,8 +92,7 @@ const unsigned char* Uuid::data() const
 
 bool operator==(const Uuid& a, const Uuid& b)
 {
-    // This const cast is for Solaris which has non const arguments
-    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) == 0;
+    return ::memcmp(a.bytes, b.bytes, Uuid::SIZE) == 0;
 }
 
 bool operator!=(const Uuid& a, const Uuid& b)
@@ -104,26 +102,22 @@ bool operator!=(const Uuid& a, const Uuid& b)
 
 bool operator<(const Uuid& a, const Uuid& b)
 {
-    // This const cast is for Solaris which has non const arguments
-    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) < 0;
+    return ::memcmp(a.bytes, b.bytes, Uuid::SIZE) < 0;
 }
 
 bool operator>(const Uuid& a, const Uuid& b)
 {
-    // This const cast is for Solaris which has non const arguments
-    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) > 0;
+    return ::memcmp(a.bytes, b.bytes, Uuid::SIZE) > 0;
 }
 
 bool operator<=(const Uuid& a, const Uuid& b)
 {
-    // This const cast is for Solaris which has non const arguments
-    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) <= 0;
+    return ::memcmp(a.bytes, b.bytes, Uuid::SIZE) <= 0;
 }
 
 bool operator>=(const Uuid& a, const Uuid& b)
 {
-    // This const cast is for Solaris which has non const arguments
-    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) >= 0;
+    return ::memcmp(a.bytes, b.bytes, Uuid::SIZE) >= 0;
 }
 
 ostream& operator<<(ostream& out, Uuid uuid)

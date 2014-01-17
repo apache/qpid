@@ -22,7 +22,7 @@
 #include "qpid/CommonImportExport.h"
 #include "qpid/sys/IntegerTypes.h"
 
-#include <boost/array.hpp>
+#include "qpid/types/Uuid.h"
 
 #include <ostream>
 #include <istream>
@@ -33,62 +33,25 @@ namespace framing {
 class Buffer;
 
 /**
- * A UUID is represented as a boost::array of 16 bytes.
- *
- * Full value semantics, operators ==, < etc.  are provided by
- * boost::array so Uuid can be the key type in a map etc.
- *
- * TODO: change this implementation as it leaks boost into the
- * client API
+ * Framing UUID is now a thine wrapper around qpid::types::Uuid
  */
-struct Uuid : public boost::array<uint8_t, 16> {
+struct Uuid : public qpid::types::Uuid {
     /** If unique is true, generate a unique ID else a null ID. */
     QPID_COMMON_EXTERN Uuid(bool unique=false);
 
     /** Copy from 16 bytes of data. */
     QPID_COMMON_EXTERN Uuid(const uint8_t* data);
 
-    /** Parse format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
-    QPID_COMMON_EXTERN Uuid(const std::string&);
-
-    // Default op= and copy ctor are fine.
-    // boost::array gives us ==, < etc.
-
-    /** Copy from 16 bytes of data. */
-    QPID_COMMON_EXTERN void assign(const uint8_t* data);
-
-    /** Set to a new unique identifier. */
-    QPID_COMMON_EXTERN void generate();
-
-    /** Set to all zeros. */
-    QPID_COMMON_EXTERN void clear();
-
-    /** Test for null (all zeros). */
-    QPID_COMMON_EXTERN bool isNull() const;
-    QPID_COMMON_INLINE_EXTERN operator bool() const { return !isNull(); }
-    QPID_COMMON_INLINE_EXTERN bool operator!() const { return isNull(); }
+    // We get most of our operations directly from qpid::types::Uuid
+    QPID_COMMON_INLINE_EXTERN static size_t size()
+        { return SIZE; }
 
     QPID_COMMON_EXTERN void encode(framing::Buffer& buf) const;
     QPID_COMMON_EXTERN void decode(framing::Buffer& buf);
     QPID_COMMON_INLINE_EXTERN uint32_t encodedSize() const
-        { return static_cast<uint32_t>(size()); }
-
-    /** String value in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
-    QPID_COMMON_EXTERN std::string str() const;
-
-    template <class S> void serialize(S& s) {
-        s.raw(begin(), size());
-    }
+        { return size(); }
 };
 
-/** Print in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
-QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, Uuid);
-
-/** Read from format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
-QPID_COMMON_EXTERN std::istream& operator>>(std::istream&, Uuid&);
-
 }} // namespace qpid::framing
-
-
 
 #endif  /*!QPID_FRAMING_UUID_H*/

@@ -64,7 +64,7 @@ System::System (string _dataDir, Broker* broker)
             }
         }
 
-        mgmtObject = _qmf::System::shared_ptr(new _qmf::System(agent, this, types::Uuid(systemId.c_array())));
+        mgmtObject = _qmf::System::shared_ptr(new _qmf::System(agent, this, systemId));
         qpid::sys::SystemInfo::getSystemId (osName,
                                             nodeName,
                                             release,
