@@ -109,6 +109,9 @@ public class ReplicatedEnvironmentFacadeTest extends EnvironmentFacadeTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+
+        when(_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_INTERVAL)).thenReturn(100L);
+        when(_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT)).thenReturn(100L);
     }
 
     @Override

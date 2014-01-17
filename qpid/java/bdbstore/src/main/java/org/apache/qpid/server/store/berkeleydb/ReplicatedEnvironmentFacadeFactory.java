@@ -83,5 +83,11 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             attributes.put(ReplicationNode.HOST_PORT, replicationNode.getHostName() + ":" + replicationNode.getPort());
             return new RemoteReplicationNode(replicationNode, groupName, _virtualHost, _virtualHost.getTaskExecutor());
         }
+
+        @Override
+        public long getRemoteNodeMonitorInterval()
+        {
+            return (Long)_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_INTERVAL);
+        }
     }
 }

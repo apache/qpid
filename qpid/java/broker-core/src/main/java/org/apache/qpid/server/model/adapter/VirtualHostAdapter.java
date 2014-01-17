@@ -97,7 +97,21 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         put(STORE_TYPE, String.class);
         put(CONFIG_PATH, String.class);
         put(STATE, State.class);
+        put(REMOTE_REPLICATION_NODE_MONITOR_INTERVAL, Long.class);
+        put(REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT, Long.class);
+        put(QUIESCE_ON_MASTER_CHANGE, Boolean.class);
     }});
+
+    private static final long DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_INTERVAL = 10000L;
+    private static final long DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT = 1000L;
+
+    @SuppressWarnings("serial")
+    static final Map<String, Object> DEFAULTS = new HashMap<String, Object>()
+    {{
+        put(REMOTE_REPLICATION_NODE_MONITOR_INTERVAL, DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_INTERVAL);
+        put(REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT, DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT);
+        put(QUIESCE_ON_MASTER_CHANGE, false);
+    }};
 
     private org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
 
@@ -120,7 +134,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
     public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
-        super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
+        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
         _taskExecutor = taskExecutor;
         _broker = broker;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;

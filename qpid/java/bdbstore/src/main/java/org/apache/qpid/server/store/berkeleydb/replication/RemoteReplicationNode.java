@@ -24,10 +24,6 @@ import java.io.IOException;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -48,17 +44,12 @@ import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedExcept
 /**
  * Represents a remote replication node in a BDB group.
  */
-public class RemoteReplicationNode extends AbstractAdapter implements ReplicationNode, Runnable
+public class RemoteReplicationNode extends AbstractAdapter implements ReplicationNode
 {
     private static final Logger LOGGER = Logger.getLogger(RemoteReplicationNode.class);
 
-    //TODO: add attributes for setting the intervals below
-    private static final int DEFAULT_SOCKET_TIMEOUT = 10000;
-    private static final long DEFAULT_STATE_UPDATE_INTERVAL = 1000; //TODO: set it to bigger value
-
-    // TODO: needs to be shared between all remote nodes
-    private final ScheduledExecutorService _updateStateExecutor;
     private final com.sleepycat.je.rep.ReplicationNode _replicationNode;
+    private final VirtualHost _virtualHost;
     private final String _hostPort;
     private final String _groupName;
 
@@ -73,18 +64,7 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         _groupName = groupName;
         _hostPort = replicationNode.getHostName() + ":" + replicationNode.getPort();
         _replicationNode = replicationNode;
-        _updateStateExecutor = Executors.newScheduledThreadPool(1, new ThreadFactory()
-        {
-            @Override
-            public Thread newThread(Runnable r)
-            {
-                return new Thread(r, "Remote node state updater " + getName() + "-" + getAttribute(GROUP_NAME));
-            }
-        });
-
-        //TODO: add attribute for update interval
-        long stateUpdateInterval = DEFAULT_STATE_UPDATE_INTERVAL;
-        _updateStateExecutor.schedule(this, stateUpdateInterval, TimeUnit.MILLISECONDS);
+        _virtualHost = virtualHost;
     }
 
     @Override
@@ -166,7 +146,6 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
     {
         if (desiredState == State.STOPPED)
         {
-            _updateStateExecutor.shutdown();
             return true;
         }
         else
@@ -206,9 +185,10 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         return super.getAttribute(name);
     }
 
-    private void updateNodeState()
+    public void updateNodeState()
     {
-        DbPing ping = new DbPing(_replicationNode, _groupName, DEFAULT_SOCKET_TIMEOUT);
+        Long monitorTimeout = (Long)_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT);
+        DbPing ping = new DbPing(_replicationNode, _groupName, monitorTimeout.intValue());
         String oldRole = _role;
         long oldJoinTime = _joinTime;
         long oldTransactionId = _lastTransactionId;
@@ -247,9 +227,4 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         }
     }
 
-    @Override
-    public void run()
-    {
-        updateNodeState();
-    }
 }

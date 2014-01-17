@@ -91,6 +91,8 @@ public interface VirtualHost extends ConfiguredObject
     String CONFIG_PATH                          = "configPath";
 
     String QUIESCE_ON_MASTER_CHANGE             = "quiesceOnMasterChange";
+    String REMOTE_REPLICATION_NODE_MONITOR_INTERVAL = "remoteReplicationNodeMonitorInterval";
+    String REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT = "remoteReplicationNodeMonitorTimeout";
 
     // Attributes
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
@@ -126,7 +128,9 @@ public interface VirtualHost extends ConfiguredObject
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
                             CONFIG_PATH,
-                            QUIESCE_ON_MASTER_CHANGE));
+                            QUIESCE_ON_MASTER_CHANGE,
+                            REMOTE_REPLICATION_NODE_MONITOR_INTERVAL,
+                            REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT));
 
     int CURRENT_CONFIG_VERSION = 3;
 

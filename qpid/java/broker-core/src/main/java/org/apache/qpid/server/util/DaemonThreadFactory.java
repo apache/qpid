@@ -18,11 +18,23 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb.replication;
+package org.apache.qpid.server.util;
 
-public interface RemoteReplicationNodeFactory
+import java.util.concurrent.ThreadFactory;
+
+public final class DaemonThreadFactory implements ThreadFactory
 {
-    RemoteReplicationNode create(com.sleepycat.je.rep.ReplicationNode jeNode, String groupName);
+    private String _threadName;
+    public DaemonThreadFactory(String threadName)
+    {
+        _threadName = threadName;
+    }
 
-    long getRemoteNodeMonitorInterval();
+    @Override
+    public Thread newThread(Runnable r)
+    {
+        Thread thread = new Thread(r, _threadName);
+        thread.setDaemon(true);
+        return thread;
+    }
 }

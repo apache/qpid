@@ -38,13 +38,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
@@ -53,6 +56,7 @@ import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
+import org.apache.qpid.server.util.DaemonThreadFactory;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -80,7 +84,11 @@ import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
+    public static final String GROUP_CHECK_INTERVAL_PROPERTY_NAME = "qpid.bdb.ha.group_check_interval";
+
     private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
+    private static final long DEFAULT_GROUP_CHECK_INTERVAL = 1000l;
+    private static final long GROUP_CHECK_INTERVAL = Long.getLong(GROUP_CHECK_INTERVAL_PROPERTY_NAME, DEFAULT_GROUP_CHECK_INTERVAL);
 
     @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
@@ -136,11 +144,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final Map<String, String> _environmentParameters;
     private final Map<String, String> _replicationEnvironmentParameters;
     private final String _name;
-    private final ExecutorService _restartEnvironmentExecutor = Executors.newFixedThreadPool(1);
+    private final ExecutorService _restartEnvironmentExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIAL);
     private final ConcurrentMap<String, Database> _databases = new ConcurrentHashMap<String, Database>();
-    private final ConcurrentMap<String, org.apache.qpid.server.model.ReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, org.apache.qpid.server.model.ReplicationNode>();
+    private final ConcurrentMap<String, RemoteReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, RemoteReplicationNode>();
     private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
 
     private volatile CommitThreadWrapper _commitThreadWrapper;
@@ -167,19 +175,13 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _environmentParameters = (Map<String, String>)replicationNode.getAttribute(PARAMETERS);
         _replicationEnvironmentParameters = (Map<String, String>)replicationNode.getAttribute(REPLICATION_PARAMETERS);
 
-        _groupChangeExecutor = Executors.newScheduledThreadPool(1, new ThreadFactory()
-        {
-            @Override
-            public Thread newThread(Runnable r)
-            {
-                return new Thread(r, "GroupChangeLearner_" + _groupName);
-            }
-        });
+        _restartEnvironmentExecutor = Executors.newFixedThreadPool(1, new DaemonThreadFactory("Environment-Restarter:" + _groupName));
+        _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _groupName));
+
         _remoteReplicationNodeFactory = remoteReplicationNodeFactory;
         _state.set(State.OPENING);
-        //TODO: add ability to alter the execution period
-        _groupChangeExecutor.scheduleWithFixedDelay(new GroupChangeLearner(), 1, 1, TimeUnit.SECONDS);
-
+        _groupChangeExecutor.scheduleWithFixedDelay(new GroupChangeLearner(), 0, GROUP_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
+        _groupChangeExecutor.schedule(new RemoteNodeStateLearner(), _remoteReplicationNodeFactory.getRemoteNodeMonitorInterval(), TimeUnit.MILLISECONDS);
         _environment = createEnvironment();
         populateExistingRemoteReplicationNodes();
         _commitThreadWrapper = startCommitThread(_name, _environment);
@@ -806,6 +808,60 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     }
                 }
             }
+        }
+    }
+
+    //TODO: move the class into external class
+    private class RemoteNodeStateLearner implements Callable<Void>
+    {
+        @Override
+        public Void call()
+        {
+            long remoteNodeMonitorInterval = _remoteReplicationNodeFactory.getRemoteNodeMonitorInterval();
+            try
+            {
+                Set<Future<Void>> futures = new HashSet<Future<Void>>();
+                for (Map.Entry<String, RemoteReplicationNode> entry : _remoteReplicationNodes.entrySet())
+                {
+                    final RemoteReplicationNode  node = entry.getValue();
+                    Future<Void> future = _groupChangeExecutor.submit(new Callable<Void>()
+                    {
+                        @Override
+                        public Void call()
+                        {
+                            node.updateNodeState();
+                            return null;
+                        }
+                    });
+                    futures.add(future);
+                }
+
+                for (Future<Void> future : futures)
+                {
+                    try
+                    {
+                        future.get(remoteNodeMonitorInterval, TimeUnit.MILLISECONDS);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                    catch (ExecutionException e)
+                    {
+                        LOGGER.warn("Cannot update node state for group " + _groupName, e.getCause());
+                    }
+                    catch (TimeoutException e)
+                    {
+                        LOGGER.warn("Timeout whilst updating node state for group " + _groupName);
+                        future.cancel(true);
+                    }
+                }
+            }
+            finally
+            {
+                _groupChangeExecutor.schedule(this, remoteNodeMonitorInterval, TimeUnit.MILLISECONDS);
+            }
+            return null;
         }
     }
 
