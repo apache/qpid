@@ -383,7 +383,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   endif (NOT CLOCK_GETTIME_IN_LIBC)
 
   # Ensure we have uuid library
-  CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
+  CHECK_LIBRARY_EXISTS (uuid uuid_generate "" HAVE_UUID)
   CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
   if (NOT HAVE_UUID AND NOT HAVE_UUID_H)
     message(FATAL_ERROR "Uuid library and/or header file not found")
@@ -1006,7 +1006,7 @@ add_msvc_version (qpidclient library dll)
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
 
-target_link_libraries (qpidclient qpidcommon
+target_link_libraries (qpidclient qpidcommon qpidtypes
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        ${ssl_LIBS})
 
