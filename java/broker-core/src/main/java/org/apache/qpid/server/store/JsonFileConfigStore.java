@@ -134,26 +134,32 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         return file.exists();
     }
 
-    private void getFileLock() throws IOException, AMQStoreException
+    private void getFileLock() throws AMQStoreException
     {
         File lockFile = new File(_directoryName, _name + ".lck");
-        lockFile.createNewFile();
-
-        FileOutputStream out = new FileOutputStream(lockFile);
-        FileChannel channel = out.getChannel();
         try
         {
+            lockFile.createNewFile();
+            lockFile.deleteOnExit();
+
+            @SuppressWarnings("resource")
+            FileOutputStream out = new FileOutputStream(lockFile);
+            FileChannel channel = out.getChannel();
             _fileLock = channel.tryLock();
+        }
+        catch (IOException ioe)
+        {
+            throw new AMQStoreException("Cannot create the lock file " + lockFile.getName(), ioe);
         }
         catch(OverlappingFileLockException e)
         {
             _fileLock = null;
         }
+
         if(_fileLock == null)
         {
-            throw new AMQStoreException("Cannot get lock on file " + lockFile.getAbsolutePath() + " is another instance running?");
+            throw new AMQStoreException("Cannot get lock on file " + lockFile.getAbsolutePath() + ". Is another instance running?");
         }
-        lockFile.deleteOnExit();
     }
 
     private void checkDirectoryIsWritable(String directoryName) throws AMQStoreException
@@ -185,7 +191,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         Map data = _objectMapper.readValue(new File(_directoryName,_configFileName),Map.class);
         Collection<Class<? extends ConfiguredObject>> childClasses =
                 MODEL.getChildTypes(VirtualHost.class);
-        String modelVersion = (String) data.remove("modelVersion");
         Object configVersion;
         if((configVersion = data.remove("configVersion")) instanceof Integer)
         {

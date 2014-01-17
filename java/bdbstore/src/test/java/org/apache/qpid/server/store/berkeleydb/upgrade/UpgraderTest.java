@@ -24,7 +24,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
@@ -33,6 +33,7 @@ import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.Environment;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Transaction;
 
@@ -53,7 +54,7 @@ public class UpgraderTest extends AbstractUpgradeTestCase
         _upgrader = new Upgrader(_environment, getVirtualHostName());
     }
 
-    private int getStoreVersion()
+    private int getStoreVersion(Environment environment)
     {
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
@@ -63,7 +64,7 @@ public class UpgraderTest extends AbstractUpgradeTestCase
         Cursor cursor = null;
         try
         {
-            versionDb = _environment.openDatabase(null, Upgrader.VERSION_DB_NAME, dbConfig);
+            versionDb = environment.openDatabase(null, Upgrader.VERSION_DB_NAME, dbConfig);
             cursor = versionDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
@@ -92,9 +93,9 @@ public class UpgraderTest extends AbstractUpgradeTestCase
 
     public void testUpgrade() throws Exception
     {
-        assertEquals("Unexpected store version", -1, getStoreVersion());
+        assertEquals("Unexpected store version", -1, getStoreVersion(_environment));
         _upgrader.upgradeIfNecessary();
-        assertEquals("Unexpected store version", AbstractBDBMessageStore.VERSION, getStoreVersion());
+        assertEquals("Unexpected store version", BDBMessageStore.VERSION, getStoreVersion(_environment));
         assertContent();
     }
 
@@ -104,17 +105,24 @@ public class UpgraderTest extends AbstractUpgradeTestCase
         deleteDirectoryIfExists(nonExistentStoreLocation);
 
         nonExistentStoreLocation.mkdir();
-        _environment = createEnvironment(nonExistentStoreLocation);
-        _upgrader = new Upgrader(_environment, getVirtualHostName());
-        _upgrader.upgradeIfNecessary();
+        Environment emptyEnvironment = createEnvironment(nonExistentStoreLocation);
+        try
+        {
+            _upgrader = new Upgrader(emptyEnvironment, getVirtualHostName());
+            _upgrader.upgradeIfNecessary();
 
-        List<String> databaseNames = _environment.getDatabaseNames();
-        List<String> expectedDatabases = new ArrayList<String>();
-        expectedDatabases.add(Upgrader.VERSION_DB_NAME);
-        assertEquals("Expectedonly VERSION table in initially empty store after upgrade: ", expectedDatabases, databaseNames);
-        assertEquals("Unexpected store version", AbstractBDBMessageStore.VERSION, getStoreVersion());
+            List<String> databaseNames = emptyEnvironment.getDatabaseNames();
+            List<String> expectedDatabases = new ArrayList<String>();
+            expectedDatabases.add(Upgrader.VERSION_DB_NAME);
+            assertEquals("Expectedonly VERSION table in initially empty store after upgrade: ", expectedDatabases, databaseNames);
+            assertEquals("Unexpected store version", BDBMessageStore.VERSION, getStoreVersion(emptyEnvironment));
 
-        nonExistentStoreLocation.delete();
+        }
+        finally
+        {
+            emptyEnvironment.close();
+            nonExistentStoreLocation.delete();
+        }
     }
 
     private void assertContent()

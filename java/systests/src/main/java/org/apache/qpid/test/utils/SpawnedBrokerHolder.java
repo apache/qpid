@@ -20,24 +20,32 @@
  */
 package org.apache.qpid.test.utils;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.util.SystemUtils;
 
 public class SpawnedBrokerHolder implements BrokerHolder
 {
     private static final Logger LOGGER = Logger.getLogger(SpawnedBrokerHolder.class);
 
-    private final boolean _isWindows = String.valueOf(System.getProperty("os.name")).toLowerCase().contains("windows");
     private final Process _process;
     private final Integer _pid;
     private final String _workingDirectory;
     private Set<Integer> _portsUsedByBroker;
+    private final String _brokerCommand;
 
-    public SpawnedBrokerHolder(final Process process, final String workingDirectory, Set<Integer> portsUsedByBroker)
+    public SpawnedBrokerHolder(final Process process, final String workingDirectory, Set<Integer> portsUsedByBroker,
+                               String brokerCmd)
     {
         if(process == null)
         {
@@ -48,6 +56,7 @@ public class SpawnedBrokerHolder implements BrokerHolder
         _pid = retrieveUnixPidIfPossible();
         _workingDirectory = workingDirectory;
         _portsUsedByBroker = portsUsedByBroker;
+        _brokerCommand = brokerCmd;
     }
 
     @Override
@@ -58,6 +67,11 @@ public class SpawnedBrokerHolder implements BrokerHolder
 
     public void shutdown()
     {
+        if(SystemUtils.isWindows())
+        {
+            doWindowsKill();
+        }
+
         LOGGER.info("Destroying broker process");
         _process.destroy();
 
@@ -66,12 +80,85 @@ public class SpawnedBrokerHolder implements BrokerHolder
         waitUntilPortsAreFree();
     }
 
+    private void doWindowsKill()
+    {
+        try
+        {
+            Process p = Runtime.getRuntime().exec(new String[] {"wmic", "process", "list"});
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            String headers = reader.readLine();
+            int processIdOffset = headers.indexOf(" ProcessId") + 1;
+            int parentProcessIdOffset = headers.indexOf(" ParentProcessId") + 1;
+            String parentProcess = null;
+            Map<String,List<String>> parentProcessMap = new HashMap<String, List<String>>();
+
+            while ((line = reader.readLine()) != null)
+            {
+                if(line.length() > processIdOffset)
+                {
+                    String processIdStr = line.substring(processIdOffset);
+                    processIdStr = processIdStr.substring(0, processIdStr.indexOf(' '));
+                    processIdStr.trim();
+
+                    String parentProcessIdStr = line.substring(parentProcessIdOffset);
+                    parentProcessIdStr = parentProcessIdStr.substring(0, parentProcessIdStr.indexOf(' '));
+                    parentProcessIdStr.trim();
+                    if(parentProcessIdStr.length() > 0 && (parentProcess == null || parentProcess.equals(parentProcessIdStr)))
+                    {
+                        List<String> children = parentProcessMap.get(parentProcessIdStr);
+                        if(children == null)
+                        {
+                            children = new ArrayList<String>();
+                            parentProcessMap.put(parentProcessIdStr,children);
+                        }
+                        children.add(processIdStr);
+                    }
+                    if(line.substring(0,_brokerCommand.length()+7).toLowerCase().contains(_brokerCommand.toLowerCase()))
+                    {
+                        parentProcess = processIdStr;
+                    }
+
+                }
+                if(parentProcess != null)
+                {
+                    List<String> children = parentProcessMap.get(parentProcess);
+                    if(children != null)
+                    {
+                        for(String child : children)
+                        {
+                            p = Runtime.getRuntime().exec(new String[] {"taskkill", "/PID", child, "/T", "/F"});
+                            reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                            while((line = reader.readLine()) != null)
+                            {
+                            }
+                        }
+                    }
+                    p = Runtime.getRuntime().exec(new String[] {"taskkill", "/PID", parentProcess, "/T", "/F"});
+                    reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    while((line = reader.readLine()) != null)
+                    {
+                    }
+                }
+
+            }
+        }
+        catch (IOException e)
+        {
+            LOGGER.error("Error whilst killing process " + _brokerCommand, e);
+        }
+    }
+
     @Override
     public void kill()
     {
         if (_pid == null)
         {
-            LOGGER.info("Destroying broker process");
+            if(SystemUtils.isWindows())
+            {
+                doWindowsKill();
+            }
+            LOGGER.info("Destroying broker process (no PID)");
             _process.destroy();
         }
         else
@@ -113,7 +200,7 @@ public class SpawnedBrokerHolder implements BrokerHolder
 
     private Integer retrieveUnixPidIfPossible()
     {
-        if(!_isWindows)
+        if(!SystemUtils.isWindows())
         {
             try
             {

@@ -24,6 +24,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
 import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.util.SystemUtils;
 
 /**
  * Constants for the various properties clients can
@@ -88,11 +89,11 @@ public class ConnectionStartProperties
         fullSystemInfo.append(", ");
         fullSystemInfo.append(System.getProperty("java.vendor"));
         fullSystemInfo.append(", ");
-        fullSystemInfo.append(System.getProperty("os.arch"));
+        fullSystemInfo.append(SystemUtils.getOSArch());
         fullSystemInfo.append(", ");
-        fullSystemInfo.append(System.getProperty("os.name"));
+        fullSystemInfo.append(SystemUtils.getOSName());
         fullSystemInfo.append(", ");
-        fullSystemInfo.append(System.getProperty("os.version"));
+        fullSystemInfo.append(SystemUtils.getOSVersion());
         fullSystemInfo.append(", ");
         fullSystemInfo.append(System.getProperty("sun.os.patch.level"));
 
