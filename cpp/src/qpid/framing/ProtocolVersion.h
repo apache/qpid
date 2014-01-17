@@ -54,10 +54,10 @@ public:
 
     QPID_COMMON_EXTERN bool operator==(ProtocolVersion p) const;
     QPID_COMMON_INLINE_EXTERN bool operator!=(ProtocolVersion p) const { return ! (*this == p); }
-    QPID_COMMON_EXTERN static uint8_t AMQP;
-    QPID_COMMON_EXTERN static uint8_t LEGACY_AMQP;
-    QPID_COMMON_EXTERN static uint8_t TLS;
-    QPID_COMMON_EXTERN static uint8_t SASL;
+    QPID_COMMON_EXTERN static const uint8_t AMQP;
+    QPID_COMMON_EXTERN static const uint8_t LEGACY_AMQP;
+    QPID_COMMON_EXTERN static const uint8_t TLS;
+    QPID_COMMON_EXTERN static const uint8_t SASL;
 };
 
 } // namespace framing
