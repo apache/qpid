@@ -71,6 +71,7 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.util.SystemUtils;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
 {
@@ -750,9 +751,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
         else if(OPERATING_SYSTEM.equals(name))
         {
-            return System.getProperty("os.name") + " "
-                   + System.getProperty("os.version") + " "
-                   + System.getProperty("os.arch");
+            return SystemUtils.getOSString();
         }
         else if(PLATFORM.equals(name))
         {

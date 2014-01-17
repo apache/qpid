@@ -25,6 +25,8 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.log4j.xml.Log4jEntityResolver;
+import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.util.SystemUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -293,7 +295,9 @@ public class LoggingManagementFacade
     public List<String> getAvailableLoggerLevels()
     {
         return new ArrayList<String>()
-        {{
+        {
+            private static final long serialVersionUID = 599203507907836466L;
+        {
            add(Level.ALL.toString());
            add(Level.TRACE.toString());
            add(Level.DEBUG.toString());
@@ -364,35 +368,6 @@ public class LoggingManagementFacade
             throw new IOException("Specified log4j XML configuration file is not writable");
         }
 
-        Transformer transformer = null;
-        transformer = TransformerFactory.newInstance().newTransformer();
-
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, "log4j.dtd");
-        DOMSource source = new DOMSource(doc);
-
-        File tmp;
-        Random r = new Random();
-
-        do
-        {
-            tmp = new File(log4jConfigFile.getAbsolutePath() + r.nextInt() + ".tmp");
-        }
-        while(tmp.exists());
-
-        tmp.deleteOnExit();
-
-        try
-        {
-            StreamResult result = new StreamResult(new FileOutputStream(tmp));
-            transformer.transform(source, result);
-        }
-        catch (TransformerException e)
-        {
-            LOGGER.warn("Could not transform the XML into new file: ", e);
-            throw new IOException("Could not transform the XML into new file: ", e);
-        }
-
         // Swap temp file in to replace existing configuration file.
         File old = new File(log4jConfigFile.getAbsoluteFile() + ".old");
         if (old.exists())
@@ -400,26 +375,75 @@ public class LoggingManagementFacade
             old.delete();
         }
 
-        if(!log4jConfigFile.renameTo(old))
+        if(!SystemUtils.isWindows())
         {
-            //unable to rename the existing file to the backup name
-            LOGGER.error("Could not backup the existing log4j XML file");
-            throw new IOException("Could not backup the existing log4j XML file");
-        }
 
-        if(!tmp.renameTo(log4jConfigFile))
-        {
-            //failed to rename the new file to the required filename
+            File tmp;
+            Random r = new Random();
 
-            if(!old.renameTo(log4jConfigFile))
+            final String absolutePath = log4jConfigFile.getAbsolutePath();
+            do
             {
-                //unable to return the backup to required filename
-                LOGGER.error("Could not rename the new log4j configuration file into place, and unable to restore original file");
-                throw new IOException("Could not rename the new log4j configuration file into place, and unable to restore original file");
+                tmp = new File(absolutePath + r.nextInt() + ".tmp");
+            }
+            while(tmp.exists());
+
+            tmp.deleteOnExit();
+
+            writeConfigToFile(doc, new FileOutputStream(tmp));
+
+            if(!log4jConfigFile.renameTo(old))
+            {
+                //unable to rename the existing file to the backup name
+                LOGGER.error("Could not backup the existing log4j XML file");
+                throw new IOException("Could not backup the existing log4j XML file");
             }
 
-            LOGGER.error("Could not rename the new log4j configuration file into place");
-            throw new IOException("Could not rename the new log4j configuration file into place");
+            if(!tmp.renameTo(new File(absolutePath)))
+            {
+                //failed to rename the new file to the required filename
+
+                if(!old.renameTo(log4jConfigFile))
+                {
+                    //unable to return the backup to required filename
+                    LOGGER.error("Could not rename the new log4j configuration file into place, and unable to restore original file");
+                    throw new IOException("Could not rename the new log4j configuration file into place, and unable to restore original file");
+                }
+
+                LOGGER.error("Could not rename the new log4j configuration file into place");
+                throw new IOException("Could not rename the new log4j configuration file into place");
+            }
+        }
+        else
+        {
+            // In windows we can't do a safe rename current -> old, tmp -> current as it will not allow
+            // a new file with the same name as current to be created while it is still open.
+
+            // Instead we have to do an unsafe "copy current to old", "replace current contents with tmp contents"
+            FileUtils.copy(log4jConfigFile,old);
+            writeConfigToFile(doc, new FileOutputStream(log4jConfigFile));
+        }
+    }
+
+    private void writeConfigToFile(Document doc, FileOutputStream outputFile) throws TransformerConfigurationException, IOException
+    {
+        Transformer transformer = null;
+        transformer = TransformerFactory.newInstance().newTransformer();
+
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, "log4j.dtd");
+        DOMSource source = new DOMSource(doc);
+
+
+        try
+        {
+            StreamResult result = new StreamResult(outputFile);
+            transformer.transform(source, result);
+        }
+        catch (TransformerException e)
+        {
+            LOGGER.warn("Could not transform the XML into new file: ", e);
+            throw new IOException("Could not transform the XML into new file: ", e);
         }
     }
 

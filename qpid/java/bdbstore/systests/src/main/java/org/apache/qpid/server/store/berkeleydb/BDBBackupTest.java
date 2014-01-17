@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.Piper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.util.SystemUtils;
 
 /**
  * Tests the BDB backup script can successfully perform a backup and that
@@ -134,7 +135,7 @@ public class BDBBackupTest extends QpidBrokerTestCase
 
     private void invokeBdbBackup(final File backupFromDir, final File backupToDir) throws Exception
     {
-        if (IS_OS_WINDOWS)
+        if (SystemUtils.isWindows())
         {
             BDBBackup.main(new String[]{"-todir", backupToDir.getAbsolutePath(), "-fromdir", backupFromDir.getAbsolutePath()});
         }

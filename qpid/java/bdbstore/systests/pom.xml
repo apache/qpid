@@ -27,10 +27,10 @@
   <artifactId>qpid-bdbstore-systests</artifactId>
 
   <properties>
-    <broker.home.dir>target/qpid-broker/${project.version}</broker.home.dir>
+    <broker.home.dir>target${file.separator}qpid-broker${file.separator}${project.version}</broker.home.dir>
     <!-- test properties -->
-    <qpid.home>${basedir}/${broker.home.dir}</qpid.home>
-    <qpid.home.qbtc.output>${qpid.home}/qbtc-output</qpid.home.qbtc.output>
+    <qpid.home>${basedir}${file.separator}${broker.home.dir}</qpid.home>
+    <qpid.home.qbtc.output>${qpid.home}${file.separator}qbtc-output</qpid.home.qbtc.output>
   </properties>
 
   <dependencies>
