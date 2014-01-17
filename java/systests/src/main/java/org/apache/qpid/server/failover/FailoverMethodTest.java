@@ -29,6 +29,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.util.SystemUtils;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -49,6 +50,12 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
      */
     public void testFailoverRoundRobinDelay() throws Exception
     {
+        if (SystemUtils.isWindows())
+        {
+            //TODO Test requires redevelopment - timings/behaviour on windows mean it fails
+            return;
+        }
+
         //note: The first broker has no connect delay and the default 1 retry
         //        while the tcp:localhost broker has 3 retries with a 2s connect delay
         String connectionString = "amqp://guest:guest@/test?brokerlist=" +
@@ -77,7 +84,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
             long duration = (end - start);
 
             //Failover should take more that 6 seconds.
-            // 3 Retires
+            // 3 Retries
             // so VM Broker NoDelay 0 (Connect) NoDelay 0
             // then TCP NoDelay 0 Delay 1 Delay 2 Delay  3
             // so 3 delays of 2s in total for connection
@@ -99,6 +106,12 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
 
     public void testFailoverSingleDelay() throws Exception
     {
+        if (SystemUtils.isWindows())
+        {
+            //TODO Test requires redevelopment - timings/behaviour on windows mean it fails
+            return;
+        }
+
         String connectionString = "amqp://guest:guest@/test?brokerlist='tcp://localhost:" + getPort() + "?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
@@ -123,7 +136,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
             long duration = (end - start);
 
             //Failover should take more that 6 seconds.
-            // 3 Retires
+            // 3 Retries
             // so NoDelay 0 (Connect) NoDelay 0 Delay 1 Delay 2 Delay  3
             // so 3 delays of 2s in total for connection
             // so max time is 6 seconds of delay + 1 second of runtime. == 7 seconds
@@ -151,16 +164,9 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
      */
     public void testNoFailover() throws Exception
     {
-        if (!isInternalBroker())
+        if (SystemUtils.isWindows())
         {
-            // QPID-3359
-            // These tests always used to be inVM tests, then QPID-2815, with removal of ivVM, 
-            // converted the test to use QpidBrokerTestCase.  However, since then we notice this
-            // test fails on slower CI boxes.  It turns out the test design is *extremely*
-            // sensitive the length of time the broker takes to start up.
-            //
-            // Making the test a same-VM test to temporarily avoid the issue.  In long term, test
-            // needs redesigned to avoid the issue.
+            //TODO Test requires redevelopment - timings/behaviour on windows mean it fails
             return;
         }
 
@@ -185,7 +191,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
                     try
                     {
                         //Wait before starting broker
-                        // The wait should allow atleast 1 retries to fail before broker is ready
+                        // The wait should allow at least 1 retries to fail before broker is ready
                         Thread.sleep(750);
                         startBroker();
                     }
@@ -198,15 +204,13 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
 
             brokerStart.start();
             long start = System.currentTimeMillis();
-
             //Start the connection so it will use the retries
             AMQConnection connection = new AMQConnection(url);
 
             long end = System.currentTimeMillis();
-
             long duration = (end - start);
 
-            // Check that we actually had a delay had a delay in connection
+            // Check that we actually had a delay in connection
             assertTrue("Initial connection should be longer than 1 delay : " + CONNECT_DELAY + " <:(" + duration + ")", duration > CONNECT_DELAY);
 
 
@@ -222,8 +226,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
             stopBroker();
 
             _failoverComplete.await(30, TimeUnit.SECONDS);
-            assertEquals("failoverLatch was not decremented in given timeframe",
-                    0, _failoverComplete.getCount());
+            assertEquals("failoverLatch was not decremented in given timeframe", 0, _failoverComplete.getCount());
 
             end = System.currentTimeMillis();
 

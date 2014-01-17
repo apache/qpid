@@ -129,7 +129,6 @@ public class FileUtils
 
             StringBuffer inBuffer = new StringBuffer();
 
-            String line;
             int read;
 
             while ((read = is.read(data)) != -1)
@@ -157,6 +156,7 @@ public class FileUtils
      *
      * @return An input stream for the file or resource, or null if one could not be opened.
      */
+    @SuppressWarnings("resource")
     public static InputStream openFileOrDefaultResource(String filename, String defaultResource, ClassLoader cl)
     {
         InputStream is = null;
@@ -173,7 +173,6 @@ public class FileUtils
             {
                 is = null;
             }
-
             if (is == null)
             {
                 // failed on filesystem, so try on classpath
@@ -332,6 +331,8 @@ public class FileUtils
 
     public static class UnableToCopyException extends Exception
     {
+        private static final long serialVersionUID = 956249157141857044L;
+
         UnableToCopyException(String msg)
         {
             super(msg);
