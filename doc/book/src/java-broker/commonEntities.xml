@@ -20,7 +20,6 @@
 -->
 
 <!ENTITY qpidDownloadUrl "http://qpid.apache.org/download.html">
-<!ENTITY qpidProgrammingBook "../../Programming-In-Apache-Qpid/html/">
 <!ENTITY qpidCppBook "../../AMQP-Messaging-Broker-CPP-Book/html/">
 
 <!ENTITY qpidCurrentRelease "0.27">
@@ -29,6 +28,9 @@
 <!ENTITY windowsExtractedBrokerDirName "qpid-broker-&qpidCurrentRelease;">
 <!ENTITY unixBrokerDownloadFileName "qpid-java-broker-&qpidCurrentRelease;.tar.gz">
 <!ENTITY unixExtractedBrokerDirName "qpid-broker-&qpidCurrentRelease;">
+
+<!-- Client doc links -->
+<!ENTITY qpidjmsdocClientConectionUrl "../../Programming-In-Apache-Qpid/html/QpidJNDI.html#section-jms-connection-url">
 
 <!-- Oracle javadoc -->
 <!ENTITY oracleJdkDocUrl "http://docs.oracle.com/javase/6/docs/api/">
