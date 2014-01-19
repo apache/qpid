@@ -459,7 +459,7 @@ topicExchange.createNewBinding("queue", "testBindingKey", arguments);]]></progra
 -Dmax_prefetch=1
 </programlisting>
     <para> The prefetch can be also be adjusted on a per connection basis by adding a
-      <varname>maxprefetch</varname> value to the <ulink url="../../Programming-In-Apache-Qpid/html/QpidJNDI.html#section-jms-connection-url">Connection URLs</ulink>
+      <varname>maxprefetch</varname> value to the <ulink url="&qpidjmsdocClientConectionUrl;">Connection URLs</ulink>
     </para>
     <programlisting>
 amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://localhost:5672'
