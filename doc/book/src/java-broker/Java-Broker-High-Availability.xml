@@ -739,9 +739,9 @@ Current state of node: Node-5001 from group: TestClusterGroup
     <para><emphasis>backup.sh</emphasis> script invokes <classname>org.apache.qpid.server.store.berkeleydb.BDBBackup</classname> to do the job.</para>
     <para>You can also run this class from command line like in an example below:</para>
     <example><title>Performing store backup by using <classname>BDBBackup</classname> class directly</title><command>
-        java -cp qpid-bdbstore-0.18.jar org.apache.qpid.server.store.berkeleydb.BDBBackup -fromdir path/to/store/folder -todir path/to/backup/foldeAr</command>
+        java -cp qpid-bdbstore-&qpidCurrentRelease;.jar org.apache.qpid.server.store.berkeleydb.BDBBackup -fromdir path/to/store/folder -todir path/to/backup/folder</command>
     </example>
-    <para>In the example above BDBBackup utility is called from qpid-bdbstore-0.18.jar to backup the store at <emphasis>path/to/store/folder</emphasis> and copy store logs into <emphasis>path/to/backup/folder</emphasis>.</para>
+    <para>In the example above BDBBackup utility is called from qpid-bdbstore-&qpidCurrentRelease;.jar to backup the store at <emphasis>path/to/store/folder</emphasis> and copy store logs into <emphasis>path/to/backup/folder</emphasis>.</para>
     <para>Linux and Unix users can take advantage of <emphasis>backup.sh</emphasis> bash script by running this script in a similar way.</para>
     <example><title>Performing store backup by using <classname>backup.sh</classname> bash script</title>
         <command>backup.sh -fromdir path/to/store/folder -todir path/to/backup/folder</command>
