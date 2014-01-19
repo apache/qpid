@@ -475,8 +475,7 @@
   <section id="Java-Broker-High-Availability-ClientFailover">
     <title>Client failover configuration</title>
     <para>The details about format of Qpid connection URLs can be found at section
-        <ulink url="../../Programming-In-Apache-Qpid/html/QpidJNDI.html">Connection URLs</ulink>
-        of book <ulink url="../../Programming-In-Apache-Qpid/html/">Programming In Apache Qpid</ulink>.</para>
+        <ulink url="&qpidjmsdocClientConectionUrl;">Connection URLs</ulink> within the client documentation.</para>
     <para>The failover policy option in the connection URL for the HA Cluster should be set to <emphasis>roundrobin</emphasis>.
       The Master broker should be put into a first place in <emphasis>brokerlist</emphasis> URL option.
       The recommended value for <emphasis>connectdelay</emphasis> option in broker URL should be set to
