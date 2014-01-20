@@ -216,7 +216,7 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
     }
     //check whether user is even allowed access to queues/topics before resolving
     authorise.access(name, isQueueRequested, isTopicRequested);
-    ResolvedNode node;
+    ResolvedNode node(pn_terminus_is_dynamic(terminus));
     if (isTopicRequested || !isQueueRequested) {
         node.topic = connection.getTopics().get(name);
         if (node.topic) node.exchange = node.topic->getExchange();

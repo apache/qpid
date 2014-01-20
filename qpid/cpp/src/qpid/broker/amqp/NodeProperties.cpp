@@ -103,12 +103,18 @@ bool getLifetimeDescriptorSymbol(QueueSettings::LifetimePolicy policy, pn_bytes_
 
 }
 
-NodeProperties::NodeProperties() : received(false), queue(true), durable(false), autoDelete(false), exclusive(false), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
+NodeProperties::NodeProperties(bool isDynamic) : received(false), queue(true), durable(false), autoDelete(false), exclusive(false),
+                                                 dynamic(isDynamic), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
 
 void NodeProperties::read(pn_data_t* data)
 {
     DataReader reader(*this);
     reader.read(data);
+}
+
+bool NodeProperties::wasSpecified(const std::string& key) const
+{
+    return specified.find(key) != specified.end();
 }
 
 void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Queue> node)
@@ -202,6 +208,7 @@ void NodeProperties::process(const std::string& key, const qpid::types::Variant&
 {
     received = true;
     QPID_LOG(debug, "Processing node property " << key << " = " << value);
+    specified.insert(key);
     if (key == SUPPORTED_DIST_MODES) {
         if (value == MOVE) queue = true;
         else if (value == COPY) queue = false;
@@ -317,7 +324,9 @@ void NodeProperties::onSymbolValue(const CharSequence& key, const CharSequence& 
 
 QueueSettings NodeProperties::getQueueSettings()
 {
-    QueueSettings settings(durable, autoDelete);
+    //assume autodelete for dynamic nodes unless explicitly requested
+    //otherwise or unless durability is requested
+    QueueSettings settings(durable, autoDelete || (dynamic && !wasSpecified(AUTO_DELETE) && !durable));
     qpid::types::Variant::Map unused;
     settings.populate(properties, unused);
     settings.lifetime = lifetime;
