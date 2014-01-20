@@ -71,6 +71,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
     private static final String QPID_NO_GROUP = "qpid.no-group";
     private static final String DEFAULT_SHARED_MESSAGE_GROUP = System.getProperty(BrokerProperties.PROPERTY_DEFAULT_SHARED_MESSAGE_GROUP, QPID_NO_GROUP);
+    private static final String QPID_NO_DEFAULT_GROUP = "qpid.no-default-group";
 
     // TODO - should make this configurable at the vhost / broker level
     private static final int DEFAULT_MAX_GROUPS = 255;
@@ -246,19 +247,31 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
         if(arguments != null && arguments.containsKey(Queue.MESSAGE_GROUP_KEY))
         {
-            if(arguments.get(Queue.MESSAGE_GROUP_SHARED_GROUPS) != null
-               && (Boolean)(arguments.get(Queue.MESSAGE_GROUP_SHARED_GROUPS)))
+            String messageGroupKey = String.valueOf(arguments.get(Queue.MESSAGE_GROUP_KEY));
+            boolean requestedSharedGroups = arguments.get(Queue.MESSAGE_GROUP_SHARED_GROUPS) != null && (Boolean)(arguments.get(Queue.MESSAGE_GROUP_SHARED_GROUPS));
+
+            //Determine the default group value
+            String defaultGroup = requestedSharedGroups ? DEFAULT_SHARED_MESSAGE_GROUP : null;
+            if(arguments.containsKey(Queue.MESSAGE_GROUP_DEFAULT_GROUP))
             {
-                Object defaultGroup = arguments.get(Queue.MESSAGE_GROUP_DEFAULT_GROUP);
-                _messageGroupManager =
-                        new DefinedGroupMessageGroupManager(String.valueOf(arguments.get(Queue.MESSAGE_GROUP_KEY)),
-                                defaultGroup == null ? DEFAULT_SHARED_MESSAGE_GROUP : defaultGroup.toString(),
-                                this);
+                Object defaultGroupArg = arguments.get(Queue.MESSAGE_GROUP_DEFAULT_GROUP);
+
+                defaultGroup = defaultGroupArg == null ? null : defaultGroupArg.toString();
+            }
+
+            //Remove the default group if requested by the configured value
+            if(QPID_NO_DEFAULT_GROUP.equals(defaultGroup))
+            {
+                defaultGroup = null;
+            }
+
+            if(requestedSharedGroups)
+            {
+                _messageGroupManager = new DefinedGroupMessageGroupManager(messageGroupKey, defaultGroup, this);
             }
             else
             {
-                _messageGroupManager = new AssignedSubscriptionMessageGroupManager(String.valueOf(arguments.get(
-                        Queue.MESSAGE_GROUP_KEY)), DEFAULT_MAX_GROUPS);
+                _messageGroupManager = new AssignedSubscriptionMessageGroupManager(messageGroupKey, defaultGroup, DEFAULT_MAX_GROUPS);
             }
         }
         else
@@ -541,7 +554,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments)
     {
-        QueueEntry entry = _messageGroupManager.findEarliestAssignedAvailableEntry(subscription);
+        QueueEntry entry = _messageGroupManager.findEarliestAssignedAvailableEntry(subscription, this);
         if(clearAssignments)
         {
             _messageGroupManager.clearAssignments(subscription);

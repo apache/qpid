@@ -227,6 +227,7 @@ public class MessageGroupQueueTest extends QpidBrokerTestCase
         producerSession.close();
         producerConnection.close();
 
+        //sessions with a prefetch of 1
         Session cs1 = ((AMQConnection)consumerConnection).createSession(true, Session.SESSION_TRANSACTED,1);
         Session cs2 = ((AMQConnection)consumerConnection).createSession(true, Session.SESSION_TRANSACTED,1);
 

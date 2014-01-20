@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.subscription;
 
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
 public interface MessageGroupManager
@@ -35,7 +36,7 @@ public interface MessageGroupManager
 
     boolean acceptMessage(Subscription sub, QueueEntry entry);
 
-    QueueEntry findEarliestAssignedAvailableEntry(Subscription sub);
+    QueueEntry findEarliestAssignedAvailableEntry(Subscription sub, AMQQueue queue);
 
     void clearAssignments(Subscription sub);
 }
