@@ -158,7 +158,27 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
     @Override
     public Object getAttribute(String name)
     {
-        if (ROLE.equals(name))
+        if (ReplicationNode.ID.equals(name))
+        {
+            return getId();
+        }
+        else if (ReplicationNode.LIFETIME_POLICY.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+        else if (ReplicationNode.DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(STATE.equals(name))
+        {
+            return getActualState();
+        }
+        else if(TIME_TO_LIVE.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+        else if (ROLE.equals(name))
         {
             return _role;
         }
@@ -227,4 +247,9 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         }
     }
 
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return ReplicationNode.AVAILABLE_ATTRIBUTES;
+    }
 }

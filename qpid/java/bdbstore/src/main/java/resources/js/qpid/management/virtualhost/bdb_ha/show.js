@@ -162,7 +162,7 @@ define(["dojo/_base/xhr",
          { name: 'Name', field: 'name', width: '50%' },
          { name: 'Value', field: 'value', width: '50%' }
         ],
-        null, null, null, true );
+        null, null, null, false );
 
     this.replicationParametersGrid = new UpdatableStore([],
         findNode("replicationParameters", containerNode),
