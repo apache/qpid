@@ -75,9 +75,11 @@ void SessionHandle::close()
     connection->endSession(session);
 }
 
-void SessionHandle::sync(bool /*block*/)
+void SessionHandle::sync(bool block)
 {
-    
+    if (block) {
+        connection->sync(session);
+    }
 }
 
 qpid::messaging::Sender SessionHandle::createSender(const qpid::messaging::Address& address)
