@@ -80,7 +80,7 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
             queue->messages = std::auto_ptr<Messages>(new PagedQueue(name, broker->getPagingDirectoryPath(),
                                                                      settings.maxPages ? settings.maxPages : 4,
                                                                      settings.pageFactor ? settings.pageFactor : 1,
-                                                                     broker->getProtocolRegistry()));
+                                                                     broker->getProtocolRegistry(), broker->getExpiryPolicy()));
         }
     } else if (settings.lvqKey.empty()) {//LVQ already handled above
         queue->messages = std::auto_ptr<Messages>(new MessageDeque());
