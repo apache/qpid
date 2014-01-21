@@ -310,10 +310,8 @@ ssl_addr = "ssl:" host [":" port]'
 	      <para><literal>ha-mechanism <replaceable>MECHANISM</replaceable></literal></para>
 	    </entry>
 	    <entry>
-	      Authentication settings used by HA brokers to connect to each other.
-	      If you are using authorization
-	      (<xref linkend="sect-Messaging_User_Guide-Security-Authorization"/>)
-	      then this user must have all permissions.
+	      Authentication settings used by HA brokers to connect to each other,
+	      see <xref linkend="ha-security"/>
 	    </entry>
 	  </row>
 	  <row>
@@ -791,49 +789,52 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   </section>
 
   <section id="ha-security">
-    <title>Security.</title>
+    <title>Security and Access Control.</title>
     <para>
-      You can secure your cluster using the authentication and authorization features
-      described in <xref linkend="chap-Messaging_User_Guide-Security"/>.
+      You can secure your cluster using the authentication and authorization
+      features described in <xref linkend="chap-Messaging_User_Guide-Security"/>.
+      HA brokers use the credentials set by the following options:
     </para>
-    <para>
-      Backup brokers connect to the primary broker and subscribe for management
-      events and queue contents. You can specify the identity used to connect
-      to the primary with the following options:
-    </para>
-    <table frame="all" id="ha-broker-security-options">
-      <title>Security options for High Availability Messaging Cluster</title>
+    <table frame="all" id="ha-security-options">
+      <title>HA Security Options</title>
       <tgroup align="left" cols="2" colsep="1" rowsep="1">
-	<colspec colname="c1" colwidth="1*"/>
-	<colspec colname="c2" colwidth="3*"/>
+	<colspec colname="c1"/>
+	<colspec colname="c2"/>
 	<thead>
 	  <row>
 	    <entry align="center" nameend="c2" namest="c1">
-	      Security options for High Availability Messaging Cluster
+	      HA Security Options
 	    </entry>
 	  </row>
 	</thead>
 	<tbody>
 	  <row>
-	    <entry>
-	      <para><literal>ha-username <replaceable>USER</replaceable></literal></para>
-	      <para><literal>ha-password <replaceable>PASS</replaceable></literal></para>
-	      <para><literal>ha-mechanism <replaceable>MECH</replaceable></literal></para>
-	    </entry>
-	    <entry>
-	      Authentication settings used by HA brokers to connect to each other.
-	      If you are using authorization
-	      (<xref linkend="sect-Messaging_User_Guide-Security-Authorization"/>)
-	      then this user must have all permissions.
-	    </entry>
+	    <entry><para><literal>ha-username</literal> <replaceable>USER</replaceable></para></entry>
+	    <entry><para>User name for HA brokers.</para></entry>
+	  </row>
+	  <row>
+	    <entry><para><literal>ha-password</literal> <replaceable>PASS</replaceable></para></entry>
+	    <entry><para>Password for HA brokers.</para></entry>
+	  </row>
+	  <row>
+	    <entry><para><literal>ha-mechanism</literal> <replaceable>MECHANISM</replaceable></para></entry>
+	    <entry><para>Mechanism for HA brokers.</para></entry>
 	  </row>
 	</tbody>
       </tgroup>
     </table>
     <para>
-      This identity is also used to authorize actions taken on the backup broker to replicate
-      from the primary, for example to create queues or exchanges.
+      This identity is used to authorize federation links from backup to
+      primary.  It is also used to authorize actions on the backup to replicate
+      primary state, for example creating queues and exchanges.
     </para>
+    <para>
+      When using an Access Control List the following ACL rule is required
+      when <literal>ha-username</literal>=<replaceable>USER</replaceable>
+    </para>
+    <programlisting>
+      acl allow <replaceable>USER</replaceable>@QPID all all
+    </programlisting>
   </section>
 
   <section id="ha-other-rm">
