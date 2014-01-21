@@ -125,6 +125,17 @@ bool ConnectionContext::isOpen() const
     return state == CONNECTED && pn_connection_state(connection) & (PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
 }
 
+void ConnectionContext::sync(boost::shared_ptr<SessionContext> ssn)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    //wait for outstanding sends to settle
+    while (!ssn->settled()) {
+        QPID_LOG(debug, "Waiting for sends to settle on sync()");
+        wait(ssn);//wait until message has been confirmed
+    }
+    checkClosed(ssn);
+}
+
 void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
