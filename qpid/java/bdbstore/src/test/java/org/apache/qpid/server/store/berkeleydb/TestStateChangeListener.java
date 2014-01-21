@@ -46,7 +46,7 @@ class TestStateChangeListener implements StateChangeListener
             _latch.countDown();
         }
     }
-    
+
     public boolean awaitForStateChange(long timeout, TimeUnit timeUnit) throws InterruptedException
     {
         return _latch.await(timeout, timeUnit);

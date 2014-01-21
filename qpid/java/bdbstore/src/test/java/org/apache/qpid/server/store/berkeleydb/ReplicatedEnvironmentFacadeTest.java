@@ -166,7 +166,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         }
     }
 
-    
     public void testGetName() throws Exception
     {
         assertEquals("Unexpected name", getName(), ((ReplicatedEnvironmentFacade) createMaster()).getName());
@@ -460,7 +459,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             Thread.sleep(200);
         }
 
-        assertTrue("The node could not rejoin the cluster. State is " + master.getNodeState(), 
+        assertTrue("The node could not rejoin the cluster. State is " + master.getNodeState(),
                 State.REPLICA.name().equals(master.getNodeState()) || State.MASTER.name().equals(master.getNodeState()) );
 
         Environment e2 = master.getEnvironment();
@@ -514,9 +513,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         assertEquals("Node made master an unexpected number of times", 1, masterStateChangeCount.get());
         assertEquals("Node made unknown an unexpected number of times", 1, unknownStateChangeCount.get());
-        
-        // restart other nodes
-        // check state of node 1 is either MASTER or REPLICA
     }
 
     public void testCloseStateTransitions() throws Exception

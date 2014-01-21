@@ -223,12 +223,12 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         catch (IOException e)
         {
             _role = com.sleepycat.je.rep.ReplicatedEnvironment.State.UNKNOWN.name();
-            //LOGGER.warn("Cannot connect to node " + _replicationNode.getName() + " from " + _groupName, e);
+            LOGGER.warn("Cannot connect to node " + _replicationNode.getName() + " from " + _groupName, e);
         }
         catch (ServiceConnectFailedException e)
         {
             _role = com.sleepycat.je.rep.ReplicatedEnvironment.State.UNKNOWN.name();
-            //LOGGER.warn("Cannot retrieve the node details for node " + _replicationNode.getName() + " from " + _groupName, e);
+            LOGGER.warn("Cannot retrieve the node details for node " + _replicationNode.getName() + " from " + _groupName, e);
         }
 
         if (!_role.equals(oldRole))
