@@ -31,13 +31,15 @@
 
 namespace qpid {
 namespace broker {
+class ExpiryPolicy;
 class ProtocolRegistry;
 /**
  *
  */
 class PagedQueue : public Messages {
   public:
-    PagedQueue(const std::string& name, const std::string& directory, uint maxLoaded, uint pageFactor, ProtocolRegistry& protocols);
+    PagedQueue(const std::string& name, const std::string& directory, uint maxLoaded, uint pageFactor, ProtocolRegistry& protocols,
+               boost::intrusive_ptr<ExpiryPolicy>);
     ~PagedQueue();
     size_t size();
     bool deleted(const QueueCursor&);
@@ -60,7 +62,7 @@ class PagedQueue : public Messages {
         bool add(const Message&);
         Message* next(uint32_t version, QueueCursor&);
         Message* find(qpid::framing::SequenceNumber);
-        void load(qpid::sys::MemoryMappedFile&,ProtocolRegistry&);
+        void load(qpid::sys::MemoryMappedFile&,ProtocolRegistry&, boost::intrusive_ptr<ExpiryPolicy>);
         void unload(qpid::sys::MemoryMappedFile&);
         void clear(qpid::sys::MemoryMappedFile&);
         size_t available() const;
@@ -87,6 +89,7 @@ class PagedQueue : public Messages {
     std::list<Page> free;
     uint loaded;
     uint32_t version;
+    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;//needed on reload
 
     void addPages(size_t count);
     Page& newPage(qpid::framing::SequenceNumber);

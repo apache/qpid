@@ -476,7 +476,7 @@ void Exchange::destroy()
         deletionListeners.swap(copy);
     }
     for (std::map<std::string, boost::function0<void> >::iterator i = copy.begin(); i != copy.end(); ++i) {
-        QPID_LOG(notice, "Exchange::destroy() notifying " << i->first);
+        QPID_LOG(debug, "Exchange::destroy() notifying " << i->first);
         if (i->second) i->second();
     }
 }
