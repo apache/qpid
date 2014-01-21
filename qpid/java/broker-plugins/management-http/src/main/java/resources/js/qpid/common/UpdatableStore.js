@@ -18,10 +18,11 @@
  * under the License.
  *
  */
-define(["dojo/store/Memory",
-				"dojox/grid/DataGrid",
-				"dojo/data/ObjectStore",
-				"dojo/store/Observable"], function (Memory, DataGrid, ObjectStore, Observable) {
+define(["qpid/common/util",
+        "dojo/store/Memory",
+        "dojox/grid/DataGrid",
+        "dojo/data/ObjectStore",
+        "dojo/store/Observable"], function (util, Memory, DataGrid, ObjectStore, Observable) {
 
     function UpdatableStore( data, divName, structure, func, props, Grid, notObservable ) {
 
@@ -86,16 +87,7 @@ define(["dojo/store/Memory",
         if(data) {
             for(var i=0; i < data.length; i++) {
                 if(theItem = store.get(data[i].id)) {
-                    var modified;
-                    for(var propName in data[i]) {
-                        if(data[i].hasOwnProperty(propName)) {
-                            if(theItem[ propName ] != data[i][ propName ]) {
-                                theItem[ propName ] = data[i][ propName ];
-                                modified = true;
-                                changed = true;
-                            }
-                        }
-                    }
+                    var modified = !util.equals(theItem, data[i]);
                     if(modified) {
                         // ... check attributes for updates
                         store.notify(theItem, data[i].id);

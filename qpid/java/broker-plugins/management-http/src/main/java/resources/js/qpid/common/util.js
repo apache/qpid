@@ -369,6 +369,94 @@ define(["dojo/_base/xhr",
                {
                    alert(error);
                }
+           };
+
+           util.equals = function(object1, object2)
+           {
+             if (object1 && object2)
+             {
+               if (typeof object1 != typeof object2)
+               {
+                 return false;
+               }
+               else
+               {
+                 if (object1 instanceof Array || typeof object1 == "array")
+                 {
+                   if (object1.length != object2.length)
+                   {
+                     return false;
+                   }
+
+                   for (var i = 0, l=object1.length; i < l; i++)
+                   {
+                     var item = object1[i];
+                     if (item && (item instanceof Array  || typeof item == "array" || item instanceof Object))
+                     {
+                       if (!this.equals(item, object2[i]))
+                       {
+                         return false;
+                       }
+                     }
+                     else if (item != object2[i])
+                     {
+                         return false;
+                     }
+                   }
+
+                   return true;
+                 }
+                 else if (object1 instanceof Object)
+                 {
+                   for (propName in object1)
+                   {
+                       if (object1.hasOwnProperty(propName) != object2.hasOwnProperty(propName))
+                       {
+                           return false;
+                       }
+                       else if (typeof object1[propName] != typeof object2[propName])
+                       {
+                           return false;
+                       }
+                   }
+
+                   for(propName in object2)
+                   {
+                       var object1Prop = object1[propName];
+                       var object2Prop = object2[propName];
+
+                       if (object2.hasOwnProperty(propName) != object1.hasOwnProperty(propName))
+                       {
+                           return false;
+                       }
+                       else if (typeof object1Prop != typeof object2Prop)
+                       {
+                           return false;
+                       }
+
+                       if(!object2.hasOwnProperty(propName))
+                       {
+                         // skip functions
+                         continue;
+                       }
+
+                       if (object1Prop && (object1Prop instanceof Array || typeof object1Prop == "array" || object1Prop instanceof Object))
+                       {
+                         if (!this.equals(object1Prop, object2Prop))
+                         {
+                           return false;
+                         }
+                       }
+                       else if(object1Prop != object2Prop)
+                       {
+                          return false;
+                       }
+                   }
+                   return true;
+                 }
+               }
+             }
+             return object1 === object2;
            }
 
            return util;
