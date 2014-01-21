@@ -25,9 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ReplicationNode;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.replication.LocalReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
@@ -38,6 +36,7 @@ import com.sleepycat.je.Durability.SyncPolicy;
 
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
+
     @Override
     public EnvironmentFacade createEnvironmentFacade(String name, String storeLocation, VirtualHost virtualHost)
     {

@@ -49,7 +49,7 @@ public interface EnvironmentFacade
 
     AMQStoreException handleDatabaseException(String contextMessage, DatabaseException e);
 
-    void openDatabases(String[] databaseNames, DatabaseConfig dbConfig) throws AMQStoreException;
+    void openDatabases(DatabaseConfig dbConfig, String... databaseNames);
 
     void close();
 

@@ -169,7 +169,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         try
         {
             new Upgrader(_environmentFacade.getEnvironment(), _virtualHost.getName()).upgradeIfNecessary();
-            _environmentFacade.openDatabases(DATABASE_NAMES, dbConfig);
+            _environmentFacade.openDatabases(dbConfig, DATABASE_NAMES);
             _totalStoreSize = getSizeOnDisk();
         }
         catch(DatabaseException e)

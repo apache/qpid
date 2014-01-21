@@ -24,10 +24,12 @@ package org.apache.qpid.server.store;
 import java.util.EnumMap;
 import java.util.Map;
 
-import org.apache.qpid.server.store.StateManager.Transition;
+import org.apache.log4j.Logger;
 
 public class StateManager
 {
+    private static final Logger LOGGER = Logger.getLogger(StateManager.class);
+
     private State _state = State.INITIAL;
     private EventListener _eventListener;
 
@@ -117,6 +119,11 @@ public class StateManager
 
     public synchronized void attainState(State desired)
     {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Attaining state from " + _state + " to " + desired);
+        }
+
         Transition transition = null;
         final Map<State, Transition> stateTransitionMap = _validTransitions.get(_state);
         if(stateTransitionMap != null)

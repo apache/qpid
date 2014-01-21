@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store.berkeleydb.replication;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.HashMap;
@@ -33,7 +34,6 @@ import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.util.FileUtils;
 
 public class LocalReplicationNodeTest extends QpidTestCase
 {
@@ -42,7 +42,6 @@ public class LocalReplicationNodeTest extends QpidTestCase
     private UUID _id;
     private VirtualHost _virtualHost;
     private TaskExecutor _taskExecutor;
-    private File _storePath;
 
     @Override
     public void setUp() throws Exception
@@ -50,13 +49,11 @@ public class LocalReplicationNodeTest extends QpidTestCase
         super.setUp();
         _taskExecutor = mock(TaskExecutor.class);
         _virtualHost = mock(VirtualHost.class);
-        _storePath = new File(TMP_FOLDER, "store-" + System.currentTimeMillis());
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        FileUtils.delete(_storePath, true);
         super.tearDown();
     }
 
@@ -135,13 +132,24 @@ public class LocalReplicationNodeTest extends QpidTestCase
 
     public void testSetReplicatedEnvironmentFacade()
     {
-        Map<String, Object> attributes = createValidAttributes();
-        int port = findFreePort();
+        long joinTime = System.currentTimeMillis();
+        int priority = 1;
+        String masterState = "MASTER";
+        int quorumOverride  = 2;
+        int port = 9999;
         String hostPort = "localhost:" + port;
+        String groupName = getTestName();
+        String storePath = TMP_FOLDER + File.separator + groupName;
+        boolean designatedPrimary = true;
+        String nodeName = "nodeName";
+
+        Map<String, Object> attributes = createValidAttributes();
         attributes.put(ReplicationNode.HOST_PORT, hostPort);
         attributes.put(ReplicationNode.HELPER_HOST_PORT, hostPort);
-        attributes.put(ReplicationNode.STORE_PATH, hostPort);
-        attributes.put(ReplicationNode.DESIGNATED_PRIMARY, true);
+        attributes.put(ReplicationNode.STORE_PATH, storePath);
+        attributes.put(ReplicationNode.DESIGNATED_PRIMARY, designatedPrimary);
+        attributes.put(ReplicationNode.GROUP_NAME, groupName);
+        attributes.put(ReplicationNode.NAME, nodeName);
         LocalReplicationNode node = new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor);
 
         assertNull("Unexpected role attribute", node.getAttribute(ReplicationNode.ROLE));
@@ -149,27 +157,24 @@ public class LocalReplicationNodeTest extends QpidTestCase
         assertNull("Unexpected priority attribute", node.getAttribute(ReplicationNode.PRIORITY));
         assertNull("Unexpected join time attribute", node.getAttribute(ReplicationNode.JOIN_TIME));
 
-        _storePath.mkdirs();
-        String name = getTestName();
+        ReplicatedEnvironmentFacade facade  = mock(ReplicatedEnvironmentFacade.class);
+        when(facade.getNodeState()).thenReturn(masterState);
+        when(facade.getPriority()).thenReturn(priority);
+        when(facade.getJoinTime()).thenReturn(joinTime);
+        when(facade.getQuorumOverride()).thenReturn(quorumOverride);
+        when(facade.getGroupName()).thenReturn(groupName);
+        when(facade.getHelperHostPort()).thenReturn(hostPort);
+        when(facade.getHostPort()).thenReturn(hostPort);
+        when(facade.isDesignatedPrimary()).thenReturn(designatedPrimary);
+        when(facade.getNodeName()).thenReturn(nodeName);
 
-        ReplicatedEnvironmentFacade facade = null;
-        try
-        {
-            facade = new ReplicatedEnvironmentFacade(name, _storePath.getAbsolutePath(), node, mock(RemoteReplicationNodeFactory.class));
-            node.setReplicatedEnvironmentFacade(facade);
-            assertEquals("Unexpected role attribute", "MASTER", node.getAttribute(ReplicationNode.ROLE));
-            assertEquals("Unexpected quorum override attribute", 0, node.getAttribute(ReplicationNode.QUORUM_OVERRIDE));
-            assertEquals("Unexpected priority attribute", 1, node.getAttribute(ReplicationNode.PRIORITY));
-            assertNotNull("Unexpected join time attribute", node.getAttribute(ReplicationNode.JOIN_TIME));
-            assertNodeAttributes(attributes, node);
-        }
-        finally
-        {
-            if (facade != null)
-            {
-                facade.close();
-            }
-        }
+        node.setReplicatedEnvironmentFacade(facade);
+        assertEquals("Unexpected role attribute", masterState, node.getAttribute(ReplicationNode.ROLE));
+        assertEquals("Unexpected quorum override attribute", quorumOverride, node.getAttribute(ReplicationNode.QUORUM_OVERRIDE));
+        assertEquals("Unexpected priority attribute", priority, node.getAttribute(ReplicationNode.PRIORITY));
+        assertEquals("Unexpected join time attribute", joinTime, node.getAttribute(ReplicationNode.JOIN_TIME));
+
+        assertNodeAttributes(attributes, node);
     }
 
     private Map<String, Object> createValidAttributes()

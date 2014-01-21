@@ -54,6 +54,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.berkeleydb.replication.DatabasePinger;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
 import org.apache.qpid.server.util.DaemonThreadFactory;
@@ -129,10 +130,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public static final String TYPE = "BDB-HA";
 
-    // TODO: get rid of these names
+    // TODO: JMX will change to observe the model, at that point these names will disappear
     public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
     public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
 
+    private final String _prettyGroupNodeName;
     private final String _groupName;
     private final String _nodeName;
     private final String _nodeHostPort;
@@ -147,23 +149,23 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final ExecutorService _restartEnvironmentExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIAL);
-    private final ConcurrentMap<String, Database> _databases = new ConcurrentHashMap<String, Database>();
+    private final ConcurrentMap<String, DatabaseHolder> _databases = new ConcurrentHashMap<String, DatabaseHolder>();
     private final ConcurrentMap<String, RemoteReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, RemoteReplicationNode>();
     private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
 
+    private final AtomicReference<ReplicationGroupListener> _replicationGroupListener = new AtomicReference<ReplicationGroupListener>();
+    private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
     private volatile CommitThreadWrapper _commitThreadWrapper;
-    private volatile StateChangeListener _stateChangeListener;
     private volatile ReplicatedEnvironment _environment;
-    private ReplicationGroupListener _replicationGroupListener;
     private long _joinTime;
     private String _lastKnownReplicationTransactionId;
 
     @SuppressWarnings("unchecked")
-    public ReplicatedEnvironmentFacade(String name, String environmentPath,
+    public ReplicatedEnvironmentFacade(String virtualHostName, String environmentPath,
             org.apache.qpid.server.model.ReplicationNode replicationNode,
             RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
-         _name = name;
+         _name = virtualHostName;
         _environmentPath = environmentPath;
         _groupName = (String)replicationNode.getAttribute(GROUP_NAME);
         _nodeName = replicationNode.getName();
@@ -174,15 +176,49 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _coalescingSync = (Boolean)replicationNode.getAttribute(COALESCING_SYNC);
         _environmentParameters = (Map<String, String>)replicationNode.getAttribute(PARAMETERS);
         _replicationEnvironmentParameters = (Map<String, String>)replicationNode.getAttribute(REPLICATION_PARAMETERS);
+        _prettyGroupNodeName = _groupName + ":" + _nodeName;
 
-        _restartEnvironmentExecutor = Executors.newFixedThreadPool(1, new DaemonThreadFactory("Environment-Restarter:" + _groupName));
-        _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _groupName));
+        _restartEnvironmentExecutor = Executors.newFixedThreadPool(1, new DaemonThreadFactory("Environment-Starter:" + _prettyGroupNodeName));
+        _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
 
         _remoteReplicationNodeFactory = remoteReplicationNodeFactory;
         _state.set(State.OPENING);
         _groupChangeExecutor.scheduleWithFixedDelay(new GroupChangeLearner(), 0, GROUP_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
         _groupChangeExecutor.schedule(new RemoteNodeStateLearner(), _remoteReplicationNodeFactory.getRemoteNodeMonitorInterval(), TimeUnit.MILLISECONDS);
-        _environment = createEnvironment();
+
+        // create environment in a separate thread to avoid renaming of the current thread by JE
+        Future<ReplicatedEnvironment> environmentFuture = _restartEnvironmentExecutor.submit(new Callable<ReplicatedEnvironment>(){
+            @Override
+            public ReplicatedEnvironment call() throws Exception
+            {
+                String originalThreadName = Thread.currentThread().getName();
+                try
+                {
+                    return createEnvironment();
+                }
+                finally
+                {
+                    Thread.currentThread().setName(originalThreadName);
+                }
+            }});
+
+        // TODO: evaluate the future timeout from JE ENVIRONMENT_SETUP
+        try
+        {
+            _environment = environmentFuture.get(15 * 2, TimeUnit.MINUTES);
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+        catch (ExecutionException e)
+        {
+            throw new RuntimeException("Unexpected exception on environment creation", e.getCause());
+        }
+        catch (TimeoutException e)
+        {
+            throw new RuntimeException("JE environment has not been created in due time");
+        }
         populateExistingRemoteReplicationNodes();
         _commitThreadWrapper = startCommitThread(_name, _environment);
     }
@@ -221,9 +257,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             try
             {
-                LOGGER.debug("Closing replicated environment facade");
-                _restartEnvironmentExecutor.shutdownNow();
-                _groupChangeExecutor.shutdownNow();
+                LOGGER.debug("Closing replicated environment facade for " + _prettyGroupNodeName);
+                _restartEnvironmentExecutor.shutdown();
+                _groupChangeExecutor.shutdown();
                 stopCommitThread();
                 closeDatabases();
                 closeEnvironment();
@@ -273,23 +309,59 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
     @Override
-    public void openDatabases(String[] databaseNames, DatabaseConfig dbConfig) throws AMQStoreException
+    public void openDatabases(DatabaseConfig dbConfig, String... databaseNames)
     {
+        if (_state.get() != State.OPEN)
+        {
+            throw new IllegalStateException("Environment facade is not in opened state");
+        }
+
+        if (!_environment.isValid())
+        {
+            throw new IllegalStateException("Environment is not valid");
+        }
+
+        if (_environment.getState() != ReplicatedEnvironment.State.MASTER)
+        {
+            throw new IllegalStateException("Databases can only be opened on Master node");
+        }
+
         for (String databaseName : databaseNames)
         {
-            Database database = _environment.openDatabase(null, databaseName, dbConfig);
-            _databases.put(databaseName, database);
+            _databases.put(databaseName, new DatabaseHolder(dbConfig));
         }
+        for (String databaseName : databaseNames)
+        {
+            DatabaseHolder holder = _databases.get(databaseName);
+            openDatabaseInternally(databaseName, holder);
+        }
+    }
+
+    private void openDatabaseInternally(String databaseName, DatabaseHolder holder)
+    {
+        LOGGER.debug("Opening database " + databaseName + " on " + _prettyGroupNodeName);
+        Database database = _environment.openDatabase(null, databaseName, holder.getConfig());
+        holder.setDatabase(database);
     }
 
     @Override
     public Database getOpenDatabase(String name)
     {
+        if (_state.get() != State.OPEN)
+        {
+            throw new IllegalStateException("Environment facade is not in opened state");
+        }
+
         if (!_environment.isValid())
         {
             throw new IllegalStateException("Environment is not valid");
         }
-        Database database = _databases.get(name);
+        DatabaseHolder databaseHolder = _databases.get(name);
+        if (databaseHolder == null)
+        {
+            throw new IllegalArgumentException("Database with name '" + name + "' has never been requested to be opened");
+        }
+        Database database = databaseHolder.getDatabase();
         if (database == null)
         {
             throw new IllegalArgumentException("Database with name '" + name + "' has not been opened");
@@ -298,32 +370,67 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
     @Override
-    public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
+    public void stateChange(final StateChangeEvent stateChangeEvent)
+    {
+        _groupChangeExecutor.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                stateChanged(stateChangeEvent);
+            }
+        });
+    }
+
+    private void stateChanged(StateChangeEvent stateChangeEvent)
     {
         ReplicatedEnvironment.State state = stateChangeEvent.getState();
-        LOGGER.info("The node state is " + state);
+        LOGGER.info("The node '" + _prettyGroupNodeName + "' state is " + state);
         if (state == ReplicatedEnvironment.State.REPLICA || state == ReplicatedEnvironment.State.MASTER)
         {
             if (_state.compareAndSet(State.OPENING, State.OPEN) || _state.compareAndSet(State.RESTARTING, State.OPEN))
             {
-                LOGGER.info("The environment facade is in open state");
+                LOGGER.info("The environment facade is in open state for node " + _prettyGroupNodeName);
                 _joinTime = System.currentTimeMillis();
             }
         }
-        if (_state.get() != State.CLOSING && _state.get() != State.CLOSED)
+
+        if (state == ReplicatedEnvironment.State.MASTER)
         {
-            StateChangeListener listener = _stateChangeListener;
+            reopenDatabases();
+            _commitThreadWrapper = startCommitThread(_name, _environment);
+            StateChangeListener listener = _stateChangeListener.get();
+            LOGGER.debug("Application state change listener " + listener);
             if (listener != null)
             {
                 listener.stateChange(stateChangeEvent);
             }
         }
+        else
+        {
+            if (_state.get() != State.CLOSING && _state.get() != State.CLOSED)
+            {
+                StateChangeListener listener = _stateChangeListener.get();
+                if (listener != null)
+                {
+                    listener.stateChange(stateChangeEvent);
+                }
+            }
+        }
     }
 
-    public void setStateChangeListener(StateChangeListener listener)
+    private void reopenDatabases()
     {
-        _stateChangeListener = listener;
-        _environment.setStateChangeListener(this);
+        DatabaseConfig pingDbConfig = new DatabaseConfig();
+        pingDbConfig.setTransactional(true);
+        pingDbConfig.setAllowCreate(true);
+
+        _databases.putIfAbsent(DatabasePinger.PING_DATABASE_NAME, new DatabaseHolder(pingDbConfig));
+
+        for (Map.Entry<String, DatabaseHolder> entry : _databases.entrySet())
+        {
+            openDatabaseInternally(entry.getKey(), entry.getValue());
+        }
     }
 
     public String getName()
@@ -420,7 +527,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
             if (LOGGER.isInfoEnabled())
             {
-                LOGGER.info("Node " + _nodeName + " successfully set as designated primary for group");
+                LOGGER.info("Node " + _prettyGroupNodeName + " successfully set as designated primary for group");
             }
 
         }
@@ -483,19 +590,27 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return _state.get();
     }
 
-    /**
-     * Sets the replication group listener.  Whenever a new listener is set, the listener
-     * will hear {@link ReplicationGroupListener#onReplicationNodeRecovered(org.apache.qpid.server.model.ReplicationNode)
-     * for every existing remote node.
-     *
-     * @param replicationGroupListener listener
-     */
     public void setReplicationGroupListener(ReplicationGroupListener replicationGroupListener)
     {
-        _replicationGroupListener = replicationGroupListener;
-        if (_replicationGroupListener != null)
+        if (_replicationGroupListener.compareAndSet(null, replicationGroupListener))
         {
-            notifyExistingRemoteReplicationNodes(_replicationGroupListener);
+            notifyExistingRemoteReplicationNodes(replicationGroupListener);
+        }
+        else
+        {
+            throw new IllegalStateException("ReplicationGroupListener is already set on " + _prettyGroupNodeName);
+        }
+    }
+
+    public void setStateChangeListener(StateChangeListener stateChangeListener)
+    {
+        if (_stateChangeListener.compareAndSet(null, stateChangeListener))
+        {
+            _environment.setStateChangeListener(this);
+        }
+        else
+        {
+            throw new IllegalStateException("StateChangeListener is already set on " + _prettyGroupNodeName);
         }
     }
 
@@ -604,22 +719,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         stopCommitThread(dbe);
 
-        Set<String> databaseNames = new HashSet<String>(_databases.keySet());
         closeEnvironmentSafely();
 
         _environment = createEnvironment();
 
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        // TODO Alex and I think this should be removed.
-        openDatabases(databaseNames.toArray(new String[databaseNames.size()]), dbConfig);
-
-        _commitThreadWrapper = startCommitThread(_name, _environment);
-
-        _environment.setStateChangeListener(this);
+        if (_stateChangeListener.get() != null)
+        {
+            _environment.setStateChangeListener(this);
+        }
 
         LOGGER.info("Environment is restarted");
-
     }
 
     private void closeEnvironmentSafely()
@@ -652,21 +761,32 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private void closeDatabases()
     {
         RuntimeException firstThrownException = null;
-        for (Database database : _databases.values())
+        LOGGER.debug("Closing databases " + _databases);
+        for (Map.Entry<String, DatabaseHolder> entry : _databases.entrySet())
         {
-            try
+            DatabaseHolder databaseHolder = entry.getValue();
+            Database database = databaseHolder.getDatabase();
+            if (database != null)
             {
-                database.close();
-            }
-            catch(RuntimeException e)
-            {
-                if (firstThrownException == null)
+                try
                 {
-                    firstThrownException = e;
+                    LOGGER.debug("Closing database " + entry.getKey() + " on " + _prettyGroupNodeName);
+                    database.close();
+                }
+                catch(RuntimeException e)
+                {
+                    LOGGER.error("Failed to close database on " + _prettyGroupNodeName, e);
+                    if (firstThrownException == null)
+                    {
+                        firstThrownException = e;
+                    }
+                }
+                finally
+                {
+                    databaseHolder.setDatabase(null);
                 }
             }
         }
-        _databases.clear();
         if (firstThrownException != null)
         {
             throw firstThrownException;
@@ -756,7 +876,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
 
             ReplicatedEnvironment env = _environment;
-            ReplicationGroupListener replicationGroupListener = _replicationGroupListener;
+            ReplicationGroupListener replicationGroupListener = _replicationGroupListener.get();
             if (env != null && env.isValid())
             {
                 ReplicationGroup group = env.getGroup();
@@ -814,6 +934,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     //TODO: move the class into external class
     private class RemoteNodeStateLearner implements Callable<Void>
     {
+        private Map<String, String> _previousGroupState = Collections.emptyMap();
         @Override
         public Void call()
         {
@@ -821,9 +942,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             try
             {
                 Set<Future<Void>> futures = new HashSet<Future<Void>>();
-                for (Map.Entry<String, RemoteReplicationNode> entry : _remoteReplicationNodes.entrySet())
+                for (final RemoteReplicationNode node : _remoteReplicationNodes.values())
                 {
-                    final RemoteReplicationNode  node = entry.getValue();
                     Future<Void> future = _groupChangeExecutor.submit(new Callable<Void>()
                     {
                         @Override
@@ -856,6 +976,21 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         future.cancel(true);
                     }
                 }
+
+                if (ReplicatedEnvironment.State.MASTER == _environment.getState())
+                {
+                    Map<String, String> currentGroupState = new HashMap<String, String>();
+                    for (final RemoteReplicationNode node : _remoteReplicationNodes.values())
+                    {
+                        currentGroupState.put(node.getName(), (String)node.getAttribute(org.apache.qpid.server.model.ReplicationNode.ROLE));
+                    }
+                    boolean stateChanged = !_previousGroupState.equals(currentGroupState);
+                    _previousGroupState = currentGroupState;
+                    if (stateChanged && State.OPEN == _state.get())
+                    {
+                        new DatabasePinger().pingDb(ReplicatedEnvironmentFacade.this);
+                    }
+                }
             }
             finally
             {
@@ -876,7 +1011,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public static enum State
     {
-        INITIAL,
+        INITIAL,  // TODO unused remove
         OPENING,
         OPEN,
         RESTARTING,
@@ -884,4 +1019,36 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         CLOSED
     }
 
+    private static class DatabaseHolder
+    {
+        private final DatabaseConfig _config;
+        private Database _database;
+
+        public DatabaseHolder(DatabaseConfig config)
+        {
+            _config = config;
+        }
+
+        public Database getDatabase()
+        {
+            return _database;
+        }
+
+        public void setDatabase(Database database)
+        {
+            _database = database;
+        }
+
+        public DatabaseConfig getConfig()
+        {
+            return _config;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "DatabaseHolder [_config=" + _config + ", _database=" + _database + "]";
+        }
+
+    }
 }

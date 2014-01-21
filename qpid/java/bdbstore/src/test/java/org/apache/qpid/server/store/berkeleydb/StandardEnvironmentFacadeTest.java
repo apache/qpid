@@ -20,12 +20,107 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.io.File;
 import java.util.Collections;
 
-public class StandardEnvironmentFacadeTest extends EnvironmentFacadeTestCase
-{
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.util.FileUtils;
 
-    @Override
+import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.Environment;
+
+public class StandardEnvironmentFacadeTest extends QpidTestCase
+{
+    protected File _storePath;
+    protected EnvironmentFacade _environmentFacade;
+
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        _storePath = TestFileUtils.createTestDirectory("bdb", true);
+    }
+
+    protected void tearDown() throws Exception
+    {
+        try
+        {
+            super.tearDown();
+            if (_environmentFacade != null)
+            {
+                _environmentFacade.close();
+            }
+        }
+        finally
+        {
+            if (_storePath != null)
+            {
+                FileUtils.delete(_storePath, true);
+            }
+        }
+    }
+
+    public void testEnvironmentFacade() throws Exception
+    {
+        EnvironmentFacade ef = getEnvironmentFacade();
+        assertNotNull("Environment should not be null", ef);
+        Environment e = ef.getEnvironment();
+        assertTrue("Environment is not valid", e.isValid());
+    }
+
+    public void testClose() throws Exception
+    {
+        EnvironmentFacade ef = getEnvironmentFacade();
+        ef.close();
+        Environment e = ef.getEnvironment();
+
+        assertNull("Environment should be null after facade close", e);
+    }
+
+    public void testOpenDatabases() throws Exception
+    {
+        EnvironmentFacade ef = getEnvironmentFacade();
+        DatabaseConfig dbConfig = new DatabaseConfig();
+        dbConfig.setTransactional(true);
+        dbConfig.setAllowCreate(true);
+        ef.openDatabases(dbConfig, "test1", "test2");
+        Database test1 = ef.getOpenDatabase("test1");
+        Database test2 = ef.getOpenDatabase("test2");
+
+        assertEquals("Unexpected name for open database test1", "test1" , test1.getDatabaseName());
+        assertEquals("Unexpected name for open database test2", "test2" , test2.getDatabaseName());
+    }
+
+    public void testGetOpenDatabaseForNonExistingDatabase() throws Exception
+    {
+        EnvironmentFacade ef = getEnvironmentFacade();
+        DatabaseConfig dbConfig = new DatabaseConfig();
+        dbConfig.setTransactional(true);
+        dbConfig.setAllowCreate(true);
+        ef.openDatabases(dbConfig, "test1");
+        Database test1 = ef.getOpenDatabase("test1");
+        assertEquals("Unexpected name for open database test1", "test1" , test1.getDatabaseName());
+        try
+        {
+            ef.getOpenDatabase("test2");
+            fail("An exception should be thrown for the non existing database");
+        }
+        catch(IllegalArgumentException e)
+        {
+            assertEquals("Unexpected exception message", "Database with name 'test2' has not been opened", e.getMessage());
+        }
+    }
+
+    EnvironmentFacade getEnvironmentFacade() throws Exception
+    {
+        if (_environmentFacade == null)
+        {
+            _environmentFacade = createEnvironmentFacade();
+        }
+        return _environmentFacade;
+    }
+
     EnvironmentFacade createEnvironmentFacade()
     {
         return new StandardEnvironmentFacade(getName(), _storePath.getAbsolutePath(), Collections.<String, String>emptyMap());

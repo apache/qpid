@@ -221,8 +221,6 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
     private class BDBHAMessageStoreStateChangeListener implements StateChangeListener
     {
-        // TODO shutdown the executor
-        private final Executor _executor = Executors.newSingleThreadExecutor();
 
         @Override
         public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
@@ -231,20 +229,21 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
             if (LOGGER.isInfoEnabled())
             {
-                LOGGER.info("Received BDB event indicating transition to state " + state);
+                LOGGER.info("Received BDB event indicating transition to state " + state
+                        + " when current message store state is " + _messageStore._stateManager.getState());
             }
 
             switch (state)
             {
             case MASTER:
-                activateStoreAsync();
+                activate();
                 break;
             case REPLICA:
-                passivateStoreAsync();
+                passivate();
                 break;
             case DETACHED:
                 LOGGER.error("BDB replicated node in detached state, therefore passivating.");
-                passivateStoreAsync();
+                passivate();
                 break;
             case UNKNOWN:
                 LOGGER.warn("BDB replicated node in unknown state (hopefully temporarily)");
@@ -255,102 +254,33 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             }
         }
 
-        /**
-         * Calls {@link MessageStore#activate()}.
-         *
-         * <p/>
-         *
-         * This is done a background thread, in line with
-         * {@link StateChangeListener#stateChange(StateChangeEvent)}'s JavaDoc, because
-         * activate may execute transactions, which can't complete until
-         * {@link StateChangeListener#stateChange(StateChangeEvent)} has returned.
-         */
-        private void activateStoreAsync()
+        private void activate()
         {
-            String threadName = "BDBHANodeActivationThread-" + getName();
-            executeStateChangeAsync(new Callable<Void>()
+            try
             {
-                @Override
-                public Void call() throws Exception
-                {
-                    try
-                    {
-                        _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
-                        _messageStore.activate();
-                    }
-                    catch (Exception e)
-                    {
-                        LOGGER.error("Failed to activate on hearing MASTER change event", e);
-                    }
-                    return null;
-                }
-            }, threadName);
+                _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
+                _messageStore.activate();
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Failed to activate on hearing MASTER change event", e);
+            }
         }
 
-        private void passivateStoreAsync()
+        private void passivate()
         {
-            String threadName = "BDBHANodePassivationThread-" + getName();
-            executeStateChangeAsync(new Callable<Void>()
+            try
             {
-
-                @Override
-                public Void call() throws Exception
+                if (_messageStore._stateManager.isNotInState(org.apache.qpid.server.store.State.INITIALISED))
                 {
-                    try
-                    {
-                        if (_messageStore._stateManager.isNotInState(org.apache.qpid.server.store.State.INITIALISED))
-                        {
-                            LOGGER.debug("Store becoming passive");
-                            _messageStore._stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        LOGGER.error("Failed to passivate on hearing REPLICA or DETACHED change event", e);
-                    }
-                    return null;
+                    _messageStore._stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
                 }
-            }, threadName);
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Failed to passivate on hearing REPLICA or DETACHED change event", e);
+            }
         }
 
-        private void executeStateChangeAsync(final Callable<Void> callable, final String threadName)
-        {
-            final RootMessageLogger _rootLogger = CurrentActor.get().getRootMessageLogger();
-
-            _executor.execute(new Runnable()
-            {
-
-                @Override
-                public void run()
-                {
-                    final String originalThreadName = Thread.currentThread().getName();
-                    Thread.currentThread().setName(threadName);
-                    try
-                    {
-                        CurrentActor.set(new AbstractActor(_rootLogger)
-                        {
-                            @Override
-                            public String getLogMessage()
-                            {
-                                return threadName;
-                            }
-                        });
-
-                        try
-                        {
-                            callable.call();
-                        }
-                        catch (Exception e)
-                        {
-                            LOGGER.error("Exception during state change", e);
-                        }
-                    }
-                    finally
-                    {
-                        Thread.currentThread().setName(originalThreadName);
-                    }
-                }
-            });
-        }
     }
 }

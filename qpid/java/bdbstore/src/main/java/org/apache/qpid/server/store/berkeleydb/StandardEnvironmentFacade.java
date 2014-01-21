@@ -234,7 +234,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     }
 
     @Override
-    public void openDatabases(String[] databaseNames, DatabaseConfig dbConfig)
+    public void openDatabases(DatabaseConfig dbConfig, String... databaseNames)
     {
         for (String databaseName : databaseNames)
         {

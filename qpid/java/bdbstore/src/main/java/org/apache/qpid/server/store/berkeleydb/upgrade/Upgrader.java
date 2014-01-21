@@ -21,9 +21,11 @@
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
 import com.sleepycat.je.Cursor;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 
@@ -38,6 +40,8 @@ import com.sleepycat.je.OperationStatus;
 
 public class Upgrader
 {
+    private static final Logger LOGGER = Logger.getLogger(Upgrader.class);
+
     static final String VERSION_DB_NAME = "DB_VERSION";
 
     private Environment _environment;
@@ -63,6 +67,7 @@ public class Upgrader
 
             if(versionDb.count() == 0L)
             {
+
                 int sourceVersion = isEmpty ? BDBMessageStore.VERSION: identifyOldStoreVersion();
                 DatabaseEntry key = new DatabaseEntry();
                 IntegerBinding.intToEntry(sourceVersion, key);
@@ -73,6 +78,12 @@ public class Upgrader
             }
 
             int version = getSourceVersion(versionDb);
+
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Source message store version is " + version);
+            }
+
             if(version > BDBMessageStore.VERSION)
             {
                 throw new AMQStoreException("Database version " + version
@@ -178,7 +189,7 @@ public class Upgrader
 
     private int identifyOldStoreVersion() throws DatabaseException
     {
-        int version = 0;
+        int version = BDBMessageStore.VERSION;
         for (String databaseName : _environment.getDatabaseNames())
         {
             if (databaseName.contains("_v"))
