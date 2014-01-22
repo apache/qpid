@@ -60,7 +60,7 @@ public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase imp
         if (workdir == null || workdir.equals(""))
         {
             String tempdir = System.getProperty("java.io.tmpdir");
-            System.out.println("QPID_WORK not set using tmp directory: " + tempdir);
+            _logger.info("QPID_WORK not set using tmp directory: " + tempdir);
             System.setProperty("QPID_WORK", tempdir);
         }
     }
@@ -290,14 +290,7 @@ public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase imp
     {
 
         Exception linkedException = null;
-        try
-        {
-            linkedException = jmsException.getLinkedException();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+        linkedException = jmsException.getLinkedException();
         if (linkedException instanceof AMQNoRouteException)
         {
             AMQNoRouteException noRoute = (AMQNoRouteException) linkedException;

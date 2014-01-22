@@ -120,8 +120,7 @@ public class QpidTestClient
             }
             catch(Exception e)
             {
-                e.printStackTrace();
-                _log.error(e.getMessage());
+                _log.error(e.getMessage(),e);
             }
             finally
             {

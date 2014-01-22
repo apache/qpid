@@ -104,7 +104,7 @@ public class ObjectMessageTest extends QpidBrokerTestCase implements MessageList
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("This Test should succeed but failed", e);
             fail("This Test should succeed but failed due to: " + e);
         }
     }
@@ -254,7 +254,7 @@ public class ObjectMessageTest extends QpidBrokerTestCase implements MessageList
         }
         catch (JMSException e)
         {
-            e.printStackTrace();
+            _logger.error("Error getting object from message", e);
             items.add(e);
         }
 

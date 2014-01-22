@@ -197,7 +197,6 @@ public class PropertyValueTest extends QpidBrokerTestCase implements MessageList
         catch (Exception e)
         {
             _logger.error(e.getMessage(), e);
-            e.printStackTrace();
         }
     }
 

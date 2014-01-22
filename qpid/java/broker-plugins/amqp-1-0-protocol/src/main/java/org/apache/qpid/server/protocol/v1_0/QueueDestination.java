@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import org.apache.qpid.server.txn.ServerTransaction;
 
-import java.util.Arrays;
-
 public class QueueDestination implements SendingDestination, ReceivingDestination
 {
+    private static final Logger _logger = Logger.getLogger(QueueDestination.class);
     private static final Accepted ACCEPTED = new Accepted();
     private static final Outcome[] OUTCOMES = new Outcome[] { ACCEPTED };
 
@@ -80,7 +79,7 @@ public class QueueDestination implements SendingDestination, ReceivingDestinatio
         }
         catch(Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Send error", e);
             throw new RuntimeException(e);
         }
         return ACCEPTED;

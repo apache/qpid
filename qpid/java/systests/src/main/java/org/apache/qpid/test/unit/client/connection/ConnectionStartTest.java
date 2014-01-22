@@ -73,7 +73,7 @@ public class ConnectionStartTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Connection to " + _broker + " should succeed.", e);
             fail("Connection to " + _broker + " should succeed. Reason: " + e);
         }
     }

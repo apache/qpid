@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
@@ -76,6 +77,8 @@ import static org.mockito.Mockito.when;
  */
 public class MessageStoreTest extends QpidTestCase
 {
+    private static final Logger _logger = Logger.getLogger(MessageStoreTest.class);
+
     public static final int DEFAULT_PRIORTY_LEVEL = 5;
     public static final String SELECTOR_VALUE = "Test = 'MST'";
     public static final String LVQ_KEY = "MST-LVQ-KEY";
@@ -179,7 +182,7 @@ public class MessageStoreTest extends QpidTestCase
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("Error closing virtual host", e);
                 fail(e.getMessage());
             }
         }
@@ -190,7 +193,7 @@ public class MessageStoreTest extends QpidTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Error creating virtual host", e);
             fail(e.getMessage());
         }
 
@@ -659,7 +662,7 @@ public class MessageStoreTest extends QpidTestCase
                     }
                     catch (AMQException e)
                     {
-                        e.printStackTrace();
+                        _logger.error("Problem enqueing message", e);
                     }
                 }
 

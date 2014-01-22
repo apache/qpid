@@ -108,7 +108,7 @@ public class TransactedTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("setup error",e);
             stopBroker();
             throw e;
         }
@@ -127,7 +127,7 @@ public class TransactedTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("tear down error",e);
         }
         finally
         {

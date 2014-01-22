@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class TopicTest extends AbstractXATestCase
 {
-    /* this clas logger */
+    /* this class logger */
     private static final Logger _logger = LoggerFactory.getLogger(TopicTest.class);
 
     /**
@@ -163,7 +163,7 @@ public class TopicTest extends AbstractXATestCase
             }
             catch (JMSException e)
             {
-                e.printStackTrace();  //To change body of catch statement use Options | File Templates.
+                _logger.error("Error creating topic session", e);
             }
             init(_session, _topic);
         }
@@ -199,7 +199,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (XAException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("cannot start the transaction with xid1", e);
                     fail("cannot start the transaction with xid1: " + e.getMessage());
                 }
                 try
@@ -384,7 +384,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid1", e);
                     fail("Exception when working with xid1: " + e.getMessage());
                 }
                 try
@@ -426,7 +426,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid2", e);
                     fail("Exception when working with xid2: " + e.getMessage());
                 }
                 try
@@ -453,7 +453,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid3", e);
                     fail("Exception when working with xid3: " + e.getMessage());
                 }
                 try
@@ -472,13 +472,13 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid4", e);
                     fail("Exception when working with xid4: " + e.getMessage());
                 }
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("problem when creating dur sub", e);
                 fail("problem when creating dur sub: " + e.getMessage());
             }
             finally
@@ -489,7 +489,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (JMSException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("problem when unsubscribing dur sub", e);
                     fail("problem when unsubscribing dur sub: " + e.getMessage());
                 }
             }
@@ -537,7 +537,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (JMSException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown when producing messages", e);
                     fail("Exception thrown when producing messages: " + e.getMessage());
                 }
 
@@ -595,7 +595,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown when consumming 6 first messages", e);
                     fail("Exception thrown when consumming 6 first messages: " + e.getMessage());
                 }
                 try
@@ -626,7 +626,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown when consumming message: 3, 4 and 7", e);
                     fail("Exception thrown when consumming message: 3, 4 and 7:  " + e.getMessage());
                 }
 
@@ -641,7 +641,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (XAException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("XAException thrown when committing tx3 or aborting tx1", e);
                     fail("XAException thrown when committing tx3 or aborting tx1: " + e.getMessage());
                 }
 
@@ -676,7 +676,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown in last phase", e);
                     fail("Exception thrown in last phase: " + e.getMessage());
                 }
                 // now the topic should be empty!!
@@ -697,13 +697,13 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid6", e);
                     fail("Exception when working with xid6: " + e.getMessage());
                 }
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("problem when creating dur sub", e);
                 fail("problem when creating dur sub: " + e.getMessage());
             }
             finally
@@ -714,7 +714,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (JMSException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("problem when unsubscribing dur sub", e);
                     fail("problem when unsubscribing dur sub: " + e.getMessage());
                 }
             }
@@ -769,7 +769,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (JMSException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown when producing messages", e);
                     fail("Exception thrown when producing messages: " + e.getMessage());
                 }
                 try
@@ -830,7 +830,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown when consumming 6 first messages", e);
                     fail("Exception thrown when consumming 6 first messages: " + e.getMessage());
                 }
                 /////// stop the broker now !!
@@ -862,7 +862,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (XAException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("exception thrown when recovering transactions", e);
                     fail("exception thrown when recovering transactions " + e.getMessage());
                 }
                 try
@@ -929,7 +929,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown when consumming message: 3, 4 and 7", e);
                     fail("Exception thrown when consumming message: 3, 4 and 7:  " + e.getMessage());
                 }
 
@@ -944,7 +944,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (XAException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("XAException thrown when committing tx3 or aborting tx1", e);
                     fail("XAException thrown when committing tx3 or aborting tx1: " + e.getMessage());
                 }
 
@@ -1024,7 +1024,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown in last phase", e);
                     fail("Exception thrown in last phase: " + e.getMessage());
                 }
                 // now the topic should be empty!!
@@ -1045,13 +1045,13 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid6", e);
                     fail("Exception when working with xid6: " + e.getMessage());
                 }
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("problem when creating dur sub", e);
                 fail("problem when creating dur sub: " + e.getMessage());
             }
             finally
@@ -1062,7 +1062,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (JMSException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("problem when unsubscribing dur sub", e);
                     fail("problem when unsubscribing dur sub: " + e.getMessage());
                 }
             }
@@ -1108,7 +1108,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid1", e);
                     fail("Exception when working with xid1: " + e.getMessage());
                 }
                 try
@@ -1134,7 +1134,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid2", e);
                     fail("Exception when working with xid2: " + e.getMessage());
                 }
 
@@ -1171,26 +1171,26 @@ public class TopicTest extends AbstractXATestCase
                     {
                         if (anInDoubt.equals(xid2))
                         {
-                            System.out.println("aborting xid2 ");
+                            _logger.info("aborting xid2 ");
                             try
                             {
                                 _xaResource.rollback(anInDoubt);
                             }
                             catch (Exception e)
                             {
-                                e.printStackTrace();
+                                _logger.error("exception when aborting xid2 ", e);
                                 fail("exception when aborting xid2 ");
                             }
                         }
                         else
                         {
-                            System.out.println("XID2 is not in doubt ");
+                            _logger.info("XID2 is not in doubt ");
                         }
                     }
                 }
                 catch (XAException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("exception thrown when recovering transactions", e);
                     fail("exception thrown when recovering transactions " + e.getMessage());
                 }
 
@@ -1218,7 +1218,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid3", e);
                     fail("Exception when working with xid3: " + e.getMessage());
                 }
                 try
@@ -1238,13 +1238,13 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception when working with xid4", e);
                     fail("Exception when working with xid4: " + e.getMessage());
                 }
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("problem when creating dur sub", e);
                 fail("problem when creating dur sub: " + e.getMessage());
             }
             finally
@@ -1255,7 +1255,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (JMSException e)
                 {
-                    e.printStackTrace();
+                    _logger.error("problem when unsubscribing dur sub", e);
                     fail("problem when unsubscribing dur sub: " + e.getMessage());
                 }
             }
@@ -1356,8 +1356,7 @@ public class TopicTest extends AbstractXATestCase
                                 }
                                 catch (Exception e)
                                 {
-                                    _logger.debug("PB when aborted xid1");
-                                    e.printStackTrace();
+                                    _logger.error("PB when aborted xid1");
                                     fail("exception when committing xid1 ");
                                 }
                             }
@@ -1369,7 +1368,7 @@ public class TopicTest extends AbstractXATestCase
                     }
                     catch (XAException e)
                     {
-                        e.printStackTrace();
+                        _logger.error("exception thrown when recovering transactions ", e);
                         fail("exception thrown when recovering transactions " + e.getMessage());
                     }
                     _logger.debug("the topic should not be empty");
@@ -1381,13 +1380,13 @@ public class TopicTest extends AbstractXATestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error("Exception thrown when testin that queue test is empty", e);
                     fail("Exception thrown when testin that queue test is empty: " + e.getMessage());
                 }
             }
             catch (JMSException e)
             {
-                e.printStackTrace();
+                _logger.error("cannot create dummy durable subscriber", e);
                 fail("cannot create dummy durable subscriber: " + e.getMessage());
             }
             finally
@@ -1469,7 +1468,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 else if (message.getLongProperty(_sequenceNumberPropertyName) != 2)
                 {
-                    System.out.println("wrong sequence number, 2 expected, received: " + message
+                    _logger.info("wrong sequence number, 2 expected, received: " + message
                             .getLongProperty(_sequenceNumberPropertyName));
                 }
                 _xaResource.end(xid1, XAResource.TMSUCCESS);
@@ -1491,7 +1490,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 else if (message.getLongProperty(_sequenceNumberPropertyName) != 2)
                 {
-                    System.out.println("wrong sequence number, 2 expected, received: " + message
+                    _logger.info("wrong sequence number, 2 expected, received: " + message
                             .getLongProperty(_sequenceNumberPropertyName));
                 }
                 // consume the third message with that xa durable subscriber
@@ -1502,7 +1501,7 @@ public class TopicTest extends AbstractXATestCase
                 }
                 else if (message.getLongProperty(_sequenceNumberPropertyName) != 3)
                 {
-                     System.out.println("wrong sequence number, 3 expected, received: " + message
+                    _logger.info("wrong sequence number, 3 expected, received: " + message
                             .getLongProperty(_sequenceNumberPropertyName));
                 }
                 stSession.commit();
@@ -1565,11 +1564,11 @@ public class TopicTest extends AbstractXATestCase
                     message = (TextMessage) durSub.receive(1000);
                     if (message == null)
                     {
-                        System.out.println("no message received ");
+                        _logger.info("no message received ");
                     }
                     else if (message.getLongProperty(_sequenceNumberPropertyName) != i)
                     {
-                        System.out.println("wrong sequence number, " + i + " expected, received: " + message
+                        _logger.info("wrong sequence number, " + i + " expected, received: " + message
                                 .getLongProperty(_sequenceNumberPropertyName));
                     }
                 }
@@ -1639,7 +1638,7 @@ public class TopicTest extends AbstractXATestCase
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("Exception thrown", e);
                 fail("Exception thrown: " + e.getMessage());
             }
             finally
@@ -1710,7 +1709,7 @@ public class TopicTest extends AbstractXATestCase
             }
             catch (JMSException e)
             {
-                e.printStackTrace();
+                _logger.error("Error getting long property: " + TopicTest._sequenceNumberPropertyName , e);
                 TopicTest.failure();
                 _lock.set(false);
                 synchronized (_lock)
@@ -1720,7 +1719,7 @@ public class TopicTest extends AbstractXATestCase
             }
             if (seq != _counter)
             {
-                System.out.println("received message " + seq + " expected " + _counter);
+                _logger.info("received message " + seq + " expected " + _counter);
                 TopicTest.failure();
                 _lock.set(false);
                 synchronized (_lock)

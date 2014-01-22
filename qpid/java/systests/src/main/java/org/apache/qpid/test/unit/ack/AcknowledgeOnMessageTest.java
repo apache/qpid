@@ -125,7 +125,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             Exception cause = _causeOfFailure.get();
             if (cause != null)
             {
-                cause.printStackTrace();
+                _logger.error("Cause of failure is: ", cause);
                 fail(cause.getMessage());
             }
             else
@@ -142,7 +142,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
         Exception cause = _causeOfFailure.get();
         if (cause != null)
         {
-            cause.printStackTrace();
+            _logger.error("Failed due to following exception", cause);
             fail(cause.getMessage());
         }
 

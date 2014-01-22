@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.ra;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
@@ -33,6 +34,8 @@ import org.apache.qpid.ra.QpidResourceAdapter;
 
 public class QpidRAConnectionTest extends QpidBrokerTestCase
 {
+    private static final Logger _logger = Logger.getLogger(QpidRAConnectionTest.class);
+
     private static final String BROKER_PORT = "15672";
 
     private static final String URL = "amqp://guest:guest@client/test?brokerlist='tcp://localhost:" + BROKER_PORT + "?sasl_mechs='PLAIN''";
@@ -55,7 +58,7 @@ public class QpidRAConnectionTest extends QpidBrokerTestCase
         }
         catch(Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Commit threw exception", e);
             assertTrue(e instanceof javax.jms.IllegalStateException);
         }
 

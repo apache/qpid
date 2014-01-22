@@ -21,6 +21,8 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 import java.text.MessageFormat;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
@@ -45,7 +47,6 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -56,6 +57,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_F
 
 public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSubject
 {
+    private static final Logger _logger = Logger.getLogger(Session_1_0.class);
     private static final Symbol LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     private VirtualHost _vhost;
     private AutoCommitTransaction _transaction;
@@ -155,7 +157,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                     }
                     catch(AmqpErrorException e)
                     {
-                        e.printStackTrace();
+                        _logger.error("Error creating sending link", e);
                         destination = null;
                         sendingLinkEndpoint.setSource(null);
                         error = e.getError();
@@ -355,7 +357,8 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                                     }
                                     catch (AMQException e)
                                     {
-                                        e.printStackTrace();  //TODO.
+                                        //TODO
+                                        _logger.error("Error removing queue from vhost", e);
                                     }
                                 }
                             }
@@ -388,10 +391,13 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
         }
         catch (AMQSecurityException e)
         {
-            e.printStackTrace();  //TODO.
-        } catch (AMQException e)
+            //TODO
+            _logger.error("Security error", e);
+        }
+        catch (AMQException e)
         {
-            e.printStackTrace();  //TODO
+            //TODO
+            _logger.error("Error", e);
         }
 
         return queue;

@@ -150,7 +150,7 @@ public class RollbackOrderTest extends QpidBrokerTestCase
                 }
                 catch (JMSException e)
                 {
-                    System.out.println("Error:" + e.getMessage());
+                    _logger.error("Error:" + e.getMessage(), e);
                     exceptions[(int)count.getCount()] = e;
                 }
                 catch (AssertionFailedError cf)
@@ -161,9 +161,7 @@ public class RollbackOrderTest extends QpidBrokerTestCase
                         count.countDown();
                     }
 
-                    System.out.println("Error:" + cf.getMessage());
-                    System.err.println(cf.getMessage());
-                    cf.printStackTrace();
+                    _logger.error("Error:" + cf.getMessage(), cf);
                     failed.set(true);
                 }
             }
@@ -177,8 +175,7 @@ public class RollbackOrderTest extends QpidBrokerTestCase
         {
             if (e != null)
             {
-                System.err.println(e.getMessage());
-                e.printStackTrace();
+                _logger.error("Encountered exception", e);
                 failed.set(true);
             }
         }

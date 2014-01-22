@@ -22,6 +22,8 @@ package org.apache.qpid.server.protocol.v1_0;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
@@ -44,6 +46,7 @@ import org.apache.qpid.server.store.StorableMessageMetaData;
 
 public class MessageMetaData_1_0 implements StorableMessageMetaData
 {
+    private static final Logger _logger = Logger.getLogger(MessageMetaData_1_0.class);
     // TODO move to somewhere more useful
     public static final Symbol JMS_TYPE = Symbol.valueOf("x-opt-jms-type");
     public static final MessageMetaDataType.Factory<MessageMetaData_1_0> FACTORY = new MetaDataFactory();
@@ -275,7 +278,7 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         }
         catch (AmqpErrorException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            _logger.error("Decoding read section error", e);
             throw new IllegalArgumentException(e);
         }
     }

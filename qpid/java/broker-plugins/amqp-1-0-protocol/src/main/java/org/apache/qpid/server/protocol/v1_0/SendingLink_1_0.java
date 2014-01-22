@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
@@ -64,7 +66,6 @@ import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -72,6 +73,8 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryStateHandler
 {
+    private static final Logger _logger = Logger.getLogger(SendingLink_1_0.class);
+
     private VirtualHost _vhost;
     private SendingDestination _destination;
 
@@ -319,7 +322,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                                         }
                                                         catch (AMQException e)
                                                         {
-                                                            e.printStackTrace();  //TODO.
+                                                            //TODO
+                                                            _logger.error("Error removing queue", e);
                                                         }
                                                     }
                                                 }
@@ -342,14 +346,15 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             catch (AMQSecurityException e)
             {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                _logger.error("Security error", e);
             }
             catch (AMQInternalException e)
             {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            } catch (AMQException e)
+                _logger.error("Internal error", e);
+            }
+            catch (AMQException e)
             {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                _logger.error("Error", e);
             }
             _subscription = new Subscription_1_0(this, qd, true);
 
@@ -370,7 +375,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             catch (AMQException e)
             {
-                e.printStackTrace();  //TODO
+                //TODO
+                _logger.error("Error registering subscription", e);
             }
         }
 
@@ -398,7 +404,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             catch (AMQException e)
             {
-                e.printStackTrace();  //TODO
+                //TODO
+                _logger.error("Error unregistering subscription", e);
             }
 
             Modified state = new Modified();
@@ -423,7 +430,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
                 catch(AMQException e)
                 {
-                    e.printStackTrace();  // TODO - Implement
+                    //TODO
+                    _logger.error("Error removing queue", e);
                 }
             }
 

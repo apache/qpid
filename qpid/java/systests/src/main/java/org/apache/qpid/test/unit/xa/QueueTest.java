@@ -39,7 +39,6 @@ import javax.transaction.xa.Xid;
 
 public class QueueTest extends AbstractXATestCase
 {
-    /* this clas logger */
     private static final Logger _logger = LoggerFactory.getLogger(QueueTest.class);
 
     /**
@@ -167,7 +166,7 @@ public class QueueTest extends AbstractXATestCase
             }
             catch (JMSException e)
             {
-                e.printStackTrace();
+                _logger.error("cannot create queue session",e);
                 fail("cannot create queue session: " + e.getMessage());
             }
             init(session, _queue);
@@ -197,7 +196,7 @@ public class QueueTest extends AbstractXATestCase
             }
             catch (XAException e)
             {
-                e.printStackTrace();
+                _logger.error("cannot start the transaction with xid1", e);
                 fail("cannot start the transaction with xid1: " + e.getMessage());
             }
             try
@@ -411,14 +410,14 @@ public class QueueTest extends AbstractXATestCase
                 {
                     if (anInDoubt.equals(xid1))
                     {
-                        System.out.println("commit xid1 ");
+                        _logger.info("commit xid1 ");
                         try
                         {
                             _xaResource.commit(anInDoubt, false);
                         }
                         catch (Exception e)
                         {
-                            System.out.println("PB when aborted xid1");
+                            _logger.error("PB when aborted xid1", e);
                         }
                     }
                     else
@@ -429,7 +428,7 @@ public class QueueTest extends AbstractXATestCase
             }
             catch (XAException e)
             {
-                e.printStackTrace();
+                _logger.error("exception thrown when recovering transactions", e);
                 fail("exception thrown when recovering transactions " + e.getMessage());
             }
             // the queue should contain the first message!
@@ -607,7 +606,7 @@ public class QueueTest extends AbstractXATestCase
                         }
                         catch (Exception e)
                         {
-                            System.out.println("PB when aborted xid1");
+                            _logger.error("PB when aborted xid1", e);
                         }
                     }
                     else if (anInDoubt.equals(xid2))
@@ -619,14 +618,14 @@ public class QueueTest extends AbstractXATestCase
                         }
                         catch (Exception e)
                         {
-                            System.out.println("PB when commiting xid2");
+                            _logger.error("PB when commiting xid2", e);
                         }
                     }
                 }
             }
             catch (XAException e)
             {
-                e.printStackTrace();
+                _logger.error("exception thrown when recovering transactions", e);
                 fail("exception thrown when recovering transactions " + e.getMessage());
             }
             // the queue should be empty

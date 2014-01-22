@@ -382,7 +382,6 @@ public class PortFactoryTest extends QpidTestCase
         }
         catch(IllegalConfigurationException e)
         {
-            e.printStackTrace();
             // pass
         }
     }
