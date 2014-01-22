@@ -69,12 +69,14 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     bool haveOutput;
     Sessions sessions;
     bool closeInitiated;
+    bool closeRequested;
 
     virtual void process();
     std::string getError();
     void close();
     void open();
     void readPeerProperties();
+    void closedByManagement();
 };
 }}} // namespace qpid::broker::amqp
 
