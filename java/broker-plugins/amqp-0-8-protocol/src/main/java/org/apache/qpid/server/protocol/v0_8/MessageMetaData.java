@@ -46,11 +46,10 @@ import java.util.Set;
  */
 public class MessageMetaData implements StorableMessageMetaData
 {
-    private MessagePublishInfo _messagePublishInfo;
+    private final MessagePublishInfo _messagePublishInfo;
 
-    private ContentHeaderBody _contentHeaderBody;
+    private final ContentHeaderBody _contentHeaderBody;
 
-    private int _contentChunkCount;
 
     private long _arrivalTime;
     private static final byte MANDATORY_FLAG = 1;
@@ -58,37 +57,24 @@ public class MessageMetaData implements StorableMessageMetaData
     public static final MessageMetaDataType.Factory<MessageMetaData> FACTORY = new MetaDataFactory();
     private static final MessageMetaDataType_0_8 TYPE = new MessageMetaDataType_0_8();
 
-    public MessageMetaData(MessagePublishInfo publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount)
+    public MessageMetaData(MessagePublishInfo publishBody, ContentHeaderBody contentHeaderBody)
     {
-        this(publishBody,contentHeaderBody, contentChunkCount, System.currentTimeMillis());
+        this(publishBody,contentHeaderBody, System.currentTimeMillis());
     }
 
-    public MessageMetaData(MessagePublishInfo publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount, long arrivalTime)
+    public MessageMetaData(MessagePublishInfo publishBody,
+                           ContentHeaderBody contentHeaderBody,
+                           long arrivalTime)
     {
         _contentHeaderBody = contentHeaderBody;
         _messagePublishInfo = publishBody;
-        _contentChunkCount = contentChunkCount;
         _arrivalTime = arrivalTime;
     }
 
-    public int getContentChunkCount()
-    {
-        return _contentChunkCount;
-    }
-
-    public void setContentChunkCount(int contentChunkCount)
-    {
-        _contentChunkCount = contentChunkCount;
-    }
 
     public ContentHeaderBody getContentHeaderBody()
     {
         return _contentHeaderBody;
-    }
-
-    public void setContentHeaderBody(ContentHeaderBody contentHeaderBody)
-    {
-        _contentHeaderBody = contentHeaderBody;
     }
 
     public MessagePublishInfo getMessagePublishInfo()
@@ -96,19 +82,9 @@ public class MessageMetaData implements StorableMessageMetaData
         return _messagePublishInfo;
     }
 
-    public void setMessagePublishInfo(MessagePublishInfo messagePublishInfo)
-    {
-        _messagePublishInfo = messagePublishInfo;
-    }
-
     public long getArrivalTime()
     {
         return _arrivalTime;
-    }
-
-    public void setArrivalTime(long arrivalTime)
-    {
-        _arrivalTime = arrivalTime;
     }
 
     public MessageMetaDataType getType()
@@ -169,8 +145,7 @@ public class MessageMetaData implements StorableMessageMetaData
 
     public boolean isPersistent()
     {
-        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) (_contentHeaderBody.getProperties());
-        return properties.getDeliveryMode() ==  BasicContentHeaderProperties.PERSISTENT;
+        return _contentHeaderBody.getProperties().getDeliveryMode() ==  BasicContentHeaderProperties.PERSISTENT;
     }
 
     private static class MetaDataFactory implements MessageMetaDataType.Factory
@@ -219,7 +194,7 @@ public class MessageMetaData implements StorableMessageMetaData
                                 return routingKey;
                             }
                         };
-                return new MessageMetaData(publishBody, chb, 0, arrivalTime);
+                return new MessageMetaData(publishBody, chb, arrivalTime);
             }
             catch (AMQException e)
             {
@@ -242,7 +217,7 @@ public class MessageMetaData implements StorableMessageMetaData
     {
         private BasicContentHeaderProperties getProperties()
         {
-            return (BasicContentHeaderProperties) getContentHeaderBody().getProperties();
+            return getContentHeaderBody().getProperties();
         }
 
         public String getUserId()
@@ -298,18 +273,6 @@ public class MessageMetaData implements StorableMessageMetaData
         public String getReplyTo()
         {
             return getProperties().getReplyToAsString();
-        }
-
-        public String getReplyToExchange()
-        {
-            // TODO
-            return getReplyTo();
-        }
-
-        public String getReplyToRoutingKey()
-        {
-            // TODO
-            return getReplyTo();
         }
 
         public Object getHeader(String name)

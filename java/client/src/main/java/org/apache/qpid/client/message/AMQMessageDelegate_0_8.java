@@ -30,7 +30,6 @@ import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.client.JMSAMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 
@@ -73,7 +72,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     private static final boolean STRICT_AMQP_COMPLIANCE =
             Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
 
-    private ContentHeaderProperties _contentHeaderProperties;
+    private BasicContentHeaderProperties _contentHeaderProperties;
 
     // The base set of items that needs to be set. 
     private AMQMessageDelegate_0_8(BasicContentHeaderProperties properties, long deliveryTag)
@@ -81,7 +80,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         super(deliveryTag);
         _contentHeaderProperties = properties;
         _readableProperties = (_contentHeaderProperties != null);
-        _headerAdapter = new JMSHeaderAdapter(_readableProperties ? ((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders()
+        _headerAdapter = new JMSHeaderAdapter(_readableProperties ? _contentHeaderProperties.getHeaders()
                                                                   : (new BasicContentHeaderProperties()).getHeaders() );
     }
 
@@ -90,7 +89,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         this(new BasicContentHeaderProperties(), -1);
         _readableProperties = false;
-        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
+        _headerAdapter = new JMSHeaderAdapter(_contentHeaderProperties.getHeaders());
 
     }
 
@@ -337,7 +336,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
     public BasicContentHeaderProperties getContentHeaderProperties()
     {
-        return (BasicContentHeaderProperties) _contentHeaderProperties;
+        return _contentHeaderProperties;
     }
 
 
@@ -443,7 +442,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         //NOTE: if the JMSX Property is a non AMQP property then we must check _strictAMQP and throw as below.
         if (propertyName.equals(CustomJMSXProperty.JMSXUserID.toString()))
         {
-            return ((BasicContentHeaderProperties) _contentHeaderProperties).getUserIdAsString();
+            return _contentHeaderProperties.getUserIdAsString();
         }
         else
         {

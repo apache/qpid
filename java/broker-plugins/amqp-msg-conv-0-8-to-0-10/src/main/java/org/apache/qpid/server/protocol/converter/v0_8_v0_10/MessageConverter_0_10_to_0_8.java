@@ -225,7 +225,6 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
     {
         return new MessageMetaData(convertPublishBody(message),
                 convertContentHeaderBody(message, vhost),
-                1,
                 message.getArrivalTime());
     }
 

@@ -27,6 +27,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.txn.ServerTransaction;
 
@@ -53,34 +54,48 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
 
     public Outcome send(final Message_1_0 message, ServerTransaction txn)
     {
-        final List<? extends BaseQueue> queues = _exchange.route(message);
+        List<? extends BaseQueue> queues = _exchange.route(message);
 
-        txn.enqueue(queues,message, new ServerTransaction.Action()
+        if(queues == null || queues.isEmpty())
         {
-
-            BaseQueue[] _queues = queues.toArray(new BaseQueue[queues.size()]);
-
-            public void postCommit()
+            Exchange altExchange = _exchange.getAlternateExchange();
+            if(altExchange != null)
             {
-                for(int i = 0; i < _queues.length; i++)
+                queues = altExchange.route(message);
+            }
+        }
+
+        if(queues != null && !queues.isEmpty())
+        {
+            final BaseQueue[] baseQueues = queues.toArray(new BaseQueue[queues.size()]);
+
+            txn.enqueue(queues,message, new ServerTransaction.Action()
+            {
+                MessageReference _reference = message.newReference();
+
+                public void postCommit()
                 {
-                    try
+                    for(int i = 0; i < baseQueues.length; i++)
                     {
-                        _queues[i].enqueue(message);
+                        try
+                        {
+                            baseQueues[i].enqueue(message);
+                        }
+                        catch (AMQException e)
+                        {
+                            // TODO
+                            throw new RuntimeException(e);
+                        }
                     }
-                    catch (AMQException e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
-                    }
+                    _reference.release();
                 }
-            }
 
-            public void onRollback()
-            {
-                // NO-OP
-            }
-        });
+                public void onRollback()
+                {
+                    _reference.release();
+                }
+            });
+        }
 
         return ACCEPTED;
     }

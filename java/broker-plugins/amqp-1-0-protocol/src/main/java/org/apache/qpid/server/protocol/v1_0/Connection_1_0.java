@@ -51,6 +51,8 @@ public class Connection_1_0 implements ConnectionEventListener
     private final ConnectionEndpoint _conn;
     private final long _connectionId;
     private final Collection<Session_1_0> _sessions = Collections.synchronizedCollection(new ArrayList<Session_1_0>());
+    private final Object _reference = new Object();
+
 
 
     public static interface Task
@@ -77,6 +79,11 @@ public class Connection_1_0 implements ConnectionEventListener
         _connectionId = connectionId;
         _vhost.getConnectionRegistry().registerConnection(_model);
 
+    }
+
+    public Object getReference()
+    {
+        return _reference;
     }
 
     public void remoteSessionCreation(SessionEndpoint endpoint)

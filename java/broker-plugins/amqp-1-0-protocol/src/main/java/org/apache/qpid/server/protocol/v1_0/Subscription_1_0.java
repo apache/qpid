@@ -149,7 +149,7 @@ class Subscription_1_0 implements Subscription
     {
         if(entry.getMessage() instanceof Message_1_0)
         {
-            if(_noLocal && ((Message_1_0)entry.getMessage()).getSession() == getSession())
+            if(_noLocal && ((Message_1_0)entry.getMessage()).getConnectionReference() == getSession().getConnection().getReference())
             {
                 return false;
             }

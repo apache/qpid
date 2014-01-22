@@ -130,11 +130,6 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
             return _storedMsg;
         }
 
-        @Override
-        public boolean isImmediate()
-        {
-            return false;
-        }
 
         @Override
         public boolean isPersistent()

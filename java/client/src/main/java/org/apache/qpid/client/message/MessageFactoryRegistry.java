@@ -110,7 +110,7 @@ public class MessageFactoryRegistry
                                             AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
             throws AMQException, JMSException
     {
-        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) contentHeader.getProperties();
+        BasicContentHeaderProperties properties = contentHeader.getProperties();
 
         // Get the message content type. This may be null for pure AMQP messages, but will always be set for JMS over
         // AMQP. When the type is null, it can only be assumed that the message is a byte message.

@@ -67,4 +67,10 @@ public class InboundMessageAdapter implements InboundMessage
     {
         return _entry.getSize();
     }
+
+    @Override
+    public Object getConnectionReference()
+    {
+        return (_entry.getMessage() instanceof InboundMessage) ? ((InboundMessage) _entry.getMessage()).getConnectionReference() : null;
+    }
 }

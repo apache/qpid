@@ -121,7 +121,7 @@ public class MessageConverter_0_8_to_0_10  implements MessageConverter<AMQMessag
         body.flip();
 
         BasicContentHeaderProperties properties =
-                (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().getProperties();
+                  message_0_8.getContentHeaderBody().getProperties();
 
         final AMQShortString exchange = message_0_8.getMessagePublishInfo().getExchange();
         if(exchange != null)

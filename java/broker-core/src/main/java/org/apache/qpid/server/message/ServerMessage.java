@@ -37,8 +37,6 @@ public interface ServerMessage<T extends StorableMessageMetaData> extends Enquea
 
     long getSize();
 
-    boolean isImmediate();
-
     long getExpiration();
 
     MessageReference newReference();
