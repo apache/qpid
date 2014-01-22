@@ -20,27 +20,36 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.qpid.server.store.StoreFuture;
 
-import org.apache.qpid.server.model.VirtualHost;
+import com.sleepycat.je.Transaction;
 
-public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactory
+public interface Committer
 {
+    void start();
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public EnvironmentFacade createEnvironmentFacade(String storePath, VirtualHost virtualHost)
+    StoreFuture commit(Transaction tx, boolean syncCommit);
+
+    void stop();
+
+    Committer IMMEDIATE_FUTURE_COMMITTER = new Committer()
     {
-        Map<String, String> envConfigMap = new HashMap<String, String>();
-        envConfigMap.putAll(EnvironmentFacade.ENVCONFIG_DEFAULTS);
 
-        Object bdbEnvConfigAttr = virtualHost.getAttribute("bdbEnvironmentConfig");
-        if (bdbEnvConfigAttr instanceof Map)
+        @Override
+        public void start()
         {
-            envConfigMap.putAll((Map<String, String>) bdbEnvConfigAttr);
         }
-        return new StandardEnvironmentFacade(storePath, envConfigMap);
-    }
+
+        @Override
+        public StoreFuture commit(Transaction tx, boolean syncCommit)
+        {
+            return StoreFuture.IMMEDIATE_FUTURE;
+        }
+
+        @Override
+        public void stop()
+        {
+        }
+    };
 
 }

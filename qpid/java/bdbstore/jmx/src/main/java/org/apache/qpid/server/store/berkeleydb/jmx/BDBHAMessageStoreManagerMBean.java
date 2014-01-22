@@ -43,12 +43,6 @@ import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
 
 /**
  * Management mbean for BDB HA.
- * <p>
- * At runtime, the classloader loading this clas must have visibility of the other Qpid JMX classes. This is
- * currently arranged through OSGI using the <b>fragment</b> feature so that this bundle shares the
- * same classloader as broker-plugins-management-jmx.  See the <b>Fragment-Host:</b> header within the MANIFEST.MF
- * of this bundle.
- * </p>
  */
 public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements ManagedBDBHAMessageStore
 {
@@ -80,19 +74,21 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     }
 
     private final ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
+    private final String _objectName;
 
-    protected BDBHAMessageStoreManagerMBean(ReplicatedEnvironmentFacade replicatedEnvironmentFacade, ManagedObject parent) throws JMException
+    protected BDBHAMessageStoreManagerMBean(String virtualHostName, ReplicatedEnvironmentFacade replicatedEnvironmentFacade, ManagedObject parent) throws JMException
     {
         super(ManagedBDBHAMessageStore.class, ManagedBDBHAMessageStore.TYPE, ((AMQManagedObject)parent).getRegistry());
-        LOGGER.debug("Creating BDBHAMessageStoreManagerMBean");
+        LOGGER.debug("Creating BDBHAMessageStoreManagerMBean for " + virtualHostName);
         _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
+        _objectName = ObjectName.quote(virtualHostName);
         register();
     }
 
     @Override
     public String getObjectInstanceName()
     {
-        return ObjectName.quote(_replicatedEnvironmentFacade.getName());
+        return _objectName;
     }
 
     @Override

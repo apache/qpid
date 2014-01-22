@@ -110,6 +110,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 
+    private volatile Committer _committer;
+
     public BDBMessageStore()
     {
         this(TYPE, new StandardEnvironmentFacadeFactory());
@@ -150,6 +152,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         _messageRecoveryHandler = messageRecoveryHandler;
         _tlogRecoveryHandler = tlogRecoveryHandler;
         _virtualHost = virtualHost;
+
 
         completeInitialisation();
     }
@@ -263,7 +266,10 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         _storeLocation = storeLocation;
 
         LOGGER.info("Setting up environment");
-        _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(name, storeLocation, virtualHost);
+        _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeLocation, virtualHost);
+
+        _committer = _environmentFacade.createCommitter(null);
+        _committer.start();
     }
 
     @Override
@@ -287,16 +293,23 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         if (_closed.compareAndSet(false, true))
         {
-	    _stateManager.attainState(State.CLOSING);
-	    try
-	    {
-		closeEnvironment();
-	    }
-	    catch(DatabaseException e)
-	    {
-		throw new AMQStoreException("Exception occured on message store close", e);
-	    }
-	    _stateManager.attainState(State.CLOSED);
+            _stateManager.attainState(State.CLOSING);
+            try
+            {
+                try
+                {
+                    _committer.stop();
+                }
+                finally
+                {
+                    closeEnvironment();
+                }
+            }
+            catch(DatabaseException e)
+            {
+                throw new AMQStoreException("Exception occured on message store close", e);
+            }
+            _stateManager.attainState(State.CLOSED);
         }
     }
 
@@ -598,7 +611,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                         LOGGER.debug("Deleted content for message " + messageId);
                     }
 
-                    _environmentFacade.commit(tx, sync);
+                    _environmentFacade.commit(tx);
+                    _committer.commit(tx, sync);
+
                     complete = true;
                     tx = null;
                 }
@@ -980,7 +995,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             throw new AMQStoreException("Fatal internal error: transactional is null at commitTran");
         }
 
-        StoreFuture result = _environmentFacade.commit(tx, syncCommit);
+        _environmentFacade.commit(tx);
+        StoreFuture result =  _committer.commit(tx, syncCommit);
 
         if (LOGGER.isDebugEnabled())
         {
@@ -1485,7 +1501,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                         throw _environmentFacade.handleDatabaseException("failed to begin transaction", e);
                     }
                     store(txn);
-                    _environmentFacade.commit(txn,true);
+                    _environmentFacade.commit(txn);
+                    _committer.commit(txn, true);
+
                     storedSizeChangeOccured(getMetaData().getContentSize());
                 }
                 catch (AMQStoreException e)

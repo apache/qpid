@@ -38,7 +38,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
 {
 
     @Override
-    public EnvironmentFacade createEnvironmentFacade(String name, String storeLocation, VirtualHost virtualHost)
+    public EnvironmentFacade createEnvironmentFacade(String storeLocation, VirtualHost virtualHost)
     {
         Collection<ReplicationNode> replicationNodes = virtualHost.getChildren(ReplicationNode.class);
         if (replicationNodes == null || replicationNodes.size() != 1)
@@ -59,7 +59,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(name, storeLocation, localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
+        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(storeLocation, localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
         ((LocalReplicationNode)localNode).setReplicatedEnvironmentFacade(facade);
         return facade;
     }

@@ -166,11 +166,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         }
     }
 
-    public void testGetName() throws Exception
-    {
-        assertEquals("Unexpected name", getName(), ((ReplicatedEnvironmentFacade) createMaster()).getName());
-    }
-
     public void testGetGroupName() throws Exception
     {
         assertEquals("Unexpected group name", TEST_GROUP_NAME, ((ReplicatedEnvironmentFacade) createMaster()).getGroupName());
@@ -562,7 +557,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     {
         final String nodePath = createNodeWorkingFolder(nodeName);
         ReplicationNode node = createReplicationNodeMock(nodeName, nodeHostPort, designatedPrimary);
-        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(getName(), nodePath, node, _remoteReplicationNodeFactory);
+        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(nodePath, node, _remoteReplicationNodeFactory);
         ref.setReplicationGroupListener(replicationGroupListener);
         ref.setStateChangeListener(stateChangeListener);
         _nodes.put(nodeName, ref);

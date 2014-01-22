@@ -65,7 +65,7 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
         }
 
         ReplicatedEnvironmentFacade replicatedEnvironmentFacade = (ReplicatedEnvironmentFacade)messageStore.getEnvironmentFacade();
-        return new BDBHAMessageStoreManagerMBean(replicatedEnvironmentFacade, (ManagedObject) parent);
+        return new BDBHAMessageStoreManagerMBean(virtualHostChild.getName(), replicatedEnvironmentFacade, (ManagedObject) parent);
     }
 
     @Override

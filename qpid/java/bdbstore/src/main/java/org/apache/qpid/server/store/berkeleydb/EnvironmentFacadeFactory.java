@@ -25,6 +25,6 @@ import org.apache.qpid.server.model.VirtualHost;
 public interface EnvironmentFacadeFactory
 {
 
-    EnvironmentFacade createEnvironmentFacade(String name, String storeLocation, VirtualHost virtualHost);
+    EnvironmentFacade createEnvironmentFacade(String storeLocation, VirtualHost virtualHost);
 
 }

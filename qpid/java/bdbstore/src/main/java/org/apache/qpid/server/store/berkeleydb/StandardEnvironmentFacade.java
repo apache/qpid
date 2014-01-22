@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.store.StoreFuture;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -42,10 +41,9 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     public static final String TYPE = "BDB";
 
     private Environment _environment;
-    private CommitThreadWrapper _commitThreadWrapper;
     private final Map<String, Database> _databases = new HashMap<String, Database>();
 
-    public StandardEnvironmentFacade(String name, String storePath, Map<String, String> attributes)
+    public StandardEnvironmentFacade(String storePath, Map<String, String> attributes)
     {
 
         LOGGER.info("BDB message store using environment path " + storePath);
@@ -79,13 +77,11 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
                 throw de;
             }
         }
-        _commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + name, _environment);
-        _commitThreadWrapper.startCommitThread();
     }
 
 
     @Override
-    public StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit) throws AMQStoreException
+    public void commit(com.sleepycat.je.Transaction tx) throws AMQStoreException
     {
         try
         {
@@ -99,14 +95,11 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
             throw handleDatabaseException("Got DatabaseException on commit", de);
         }
-
-        return _commitThreadWrapper.commit(tx, syncCommit);
     }
 
     @Override
     public void close()
     {
-        stopCommitThread();
         closeDatabases();
         closeEnvironment();
     }
@@ -136,7 +129,6 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
     private void closeEnvironmentSafely()
     {
-        stopCommitThread();
         if (_environment != null)
         {
             if (_environment.isValid())
@@ -194,26 +186,6 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         }
     }
 
-    private void stopCommitThread()
-    {
-        if (_commitThreadWrapper != null)
-        {
-            try
-            {
-                _commitThreadWrapper.stopCommitThread();
-            }
-            catch (InterruptedException e)
-            {
-                LOGGER.warn("Stopping of commit thread is interrupted", e);
-                Thread.interrupted();
-            }
-            finally
-            {
-                _commitThreadWrapper = null;
-            }
-        }
-    }
-
     @Override
     public AMQStoreException handleDatabaseException(String contextMessage, DatabaseException e)
     {
@@ -252,6 +224,12 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
             throw new IllegalArgumentException("Database with name '" + name + "' has not been opened");
         }
         return database;
+    }
+
+    @Override
+    public Committer createCommitter(String name)
+    {
+        return new CoalescingCommiter(name, this);
     }
 
 }

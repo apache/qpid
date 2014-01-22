@@ -53,7 +53,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
-import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.berkeleydb.replication.DatabasePinger;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
@@ -145,7 +144,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final String _environmentPath;
     private final Map<String, String> _environmentParameters;
     private final Map<String, String> _replicationEnvironmentParameters;
-    private final String _name;
     private final ExecutorService _restartEnvironmentExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIAL);
@@ -155,17 +153,14 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private final AtomicReference<ReplicationGroupListener> _replicationGroupListener = new AtomicReference<ReplicationGroupListener>();
     private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
-    private volatile CommitThreadWrapper _commitThreadWrapper;
     private volatile ReplicatedEnvironment _environment;
     private long _joinTime;
     private String _lastKnownReplicationTransactionId;
 
     @SuppressWarnings("unchecked")
-    public ReplicatedEnvironmentFacade(String virtualHostName, String environmentPath,
-            org.apache.qpid.server.model.ReplicationNode replicationNode,
+    public ReplicatedEnvironmentFacade(String environmentPath, org.apache.qpid.server.model.ReplicationNode replicationNode,
             RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
-         _name = virtualHostName;
         _environmentPath = environmentPath;
         _groupName = (String)replicationNode.getAttribute(GROUP_NAME);
         _nodeName = replicationNode.getName();
@@ -220,28 +215,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             throw new RuntimeException("JE environment has not been created in due time");
         }
         populateExistingRemoteReplicationNodes();
-        _commitThreadWrapper = startCommitThread(_name, _environment);
     }
 
     @Override
-    public StoreFuture commit(final Transaction tx, final boolean syncCommit) throws AMQStoreException
+    public void commit(final Transaction tx) throws AMQStoreException
     {
         try
         {
-            // Using commit() instead of commitNoSync() for the HA store
-            // to allow
-            // the HA durability configuration to influence resulting
-            // behaviour.
+            // Using commit() instead of commitNoSync() for the HA store to allow
+            // the HA durability configuration to influence resulting behaviour.
             tx.commit();
-
-            if (_coalescingSync)
-            {
-                return _commitThreadWrapper.commit(tx, syncCommit);
-            }
-            else
-            {
-                return StoreFuture.IMMEDIATE_FUTURE;
-            }
         }
         catch (DatabaseException de)
         {
@@ -260,7 +243,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 LOGGER.debug("Closing replicated environment facade for " + _prettyGroupNodeName);
                 _restartEnvironmentExecutor.shutdown();
                 _groupChangeExecutor.shutdown();
-                stopCommitThread();
                 closeDatabases();
                 closeEnvironment();
             }
@@ -398,7 +380,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         if (state == ReplicatedEnvironment.State.MASTER)
         {
             reopenDatabases();
-            _commitThreadWrapper = startCommitThread(_name, _environment);
             StateChangeListener listener = _stateChangeListener.get();
             LOGGER.debug("Application state change listener " + listener);
             if (listener != null)
@@ -431,11 +412,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             openDatabaseInternally(entry.getKey(), entry.getValue());
         }
-    }
-
-    public String getName()
-    {
-        return _name;
     }
 
     public String getGroupName()
@@ -670,54 +646,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private CommitThreadWrapper startCommitThread(String name, Environment environment)
-    {
-        CommitThreadWrapper commitThreadWrapper = null;
-        if (_coalescingSync)
-        {
-            commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + name, environment);
-            commitThreadWrapper.startCommitThread();
-        }
-        return commitThreadWrapper;
-    }
-
-    private void stopCommitThread(RuntimeException dbe)
-    {
-        if (_coalescingSync)
-        {
-            try
-            {
-                _commitThreadWrapper.stopCommitThread(dbe);
-            }
-            catch (InterruptedException e)
-            {
-                LOGGER.warn("Stopping of commit thread is interrupted", e);
-                Thread.interrupted();
-            }
-        }
-    }
-
-    private void stopCommitThread()
-    {
-        if (_coalescingSync)
-        {
-            try
-            {
-                _commitThreadWrapper.stopCommitThread();
-            }
-            catch (InterruptedException e)
-            {
-                LOGGER.warn("Stopping of commit thread is interrupted", e);
-                Thread.interrupted();
-            }
-        }
-    }
-
     private void restartEnvironment(DatabaseException dbe) throws AMQStoreException
     {
         LOGGER.info("Restarting environment");
-
-        stopCommitThread(dbe);
 
         closeEnvironmentSafely();
 
@@ -863,6 +794,19 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         return environment;
+    }
+
+    @Override
+    public Committer createCommitter(String name)
+    {
+        if (_coalescingSync)
+        {
+            return new CoalescingCommiter(name, this);
+        }
+        else
+        {
+            return Committer.IMMEDIATE_FUTURE_COMMITTER;
+        }
     }
 
     private final class GroupChangeLearner implements Runnable

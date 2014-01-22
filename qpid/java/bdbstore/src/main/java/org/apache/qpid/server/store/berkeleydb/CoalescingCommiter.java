@@ -27,36 +27,40 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.StoreFuture;
 
-import com.sleepycat.je.CheckpointConfig;
 import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
 
-public class CommitThreadWrapper
+public class CoalescingCommiter implements Committer
 {
     private final CommitThread _commitThread;
-    
-    public CommitThreadWrapper(String name, Environment env)
+
+    public CoalescingCommiter(String name, EnvironmentFacade environmentFacade)
     {
-        _commitThread = new CommitThread(name, env);
+        _commitThread = new CommitThread("Commit-Thread-" + name, environmentFacade);
     }
 
-    public void startCommitThread()
+    @Override
+    public void start()
     {
         _commitThread.start();
     }
 
-    public void stopCommitThread(RuntimeException e) throws InterruptedException
+    @Override
+    public void stop()
     {
-        _commitThread.close(e);
-        _commitThread.join();
+        _commitThread.close();
+        try
+        {
+            _commitThread.join();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Commit thread has not shutdown", ie);
+        }
     }
 
-    public void stopCommitThread() throws InterruptedException
-    {
-        stopCommitThread(new RuntimeException("Stopping commit thread"));
-    }
-
+    @Override
     public StoreFuture commit(Transaction tx, boolean syncCommit)
     {
         BDBCommitFuture commitFuture = new BDBCommitFuture(_commitThread, tx, syncCommit);
@@ -70,9 +74,9 @@ public class CommitThreadWrapper
 
         private final CommitThread _commitThread;
         private final Transaction _tx;
+        private final boolean _syncCommit;
         private RuntimeException _databaseException;
         private boolean _complete;
-        private boolean _syncCommit;
 
         public BDBCommitFuture(CommitThread commitThread, Transaction tx, boolean syncCommit)
         {
@@ -170,15 +174,13 @@ public class CommitThreadWrapper
 
         private final AtomicBoolean _stopped = new AtomicBoolean(false);
         private final Queue<BDBCommitFuture> _jobQueue = new ConcurrentLinkedQueue<BDBCommitFuture>();
-        private final CheckpointConfig _config = new CheckpointConfig();
         private final Object _lock = new Object();
-        private Environment _environment;
+        private final EnvironmentFacade _environmentFacade;
 
-        public CommitThread(String name, Environment env)
+        public CommitThread(String name, EnvironmentFacade environmentFacade)
         {
             super(name);
-            _config.setForce(true);
-            _environment = env;
+            _environmentFacade = environmentFacade;
         }
 
         public void explicitNotify()
@@ -199,7 +201,7 @@ public class CommitThreadWrapper
                     {
                         try
                         {
-                            // RHM-7 Periodically wake up and check, just in case we
+                            // Periodically wake up and check, just in case we
                             // missed a notification. Don't want to lock the broker hard.
                             _lock.wait(1000);
                         }
@@ -224,7 +226,7 @@ public class CommitThreadWrapper
                     startTime = System.currentTimeMillis();
                 }
 
-                _environment.flushLog(true);
+                _environmentFacade.getEnvironment().flushLog(true);
 
                 if(LOGGER.isDebugEnabled())
                 {
@@ -257,7 +259,7 @@ public class CommitThreadWrapper
 
                     try
                     {
-                        _environment.close();
+                        _environmentFacade.close();
                     }
                     catch (DatabaseException ex)
                     {
@@ -288,8 +290,9 @@ public class CommitThreadWrapper
             }
         }
 
-        public void close(RuntimeException e)
+        public void close()
         {
+            RuntimeException e = new RuntimeException("Commit thread has been closed, transaction aborted");
             synchronized (_lock)
             {
                 _stopped.set(true);

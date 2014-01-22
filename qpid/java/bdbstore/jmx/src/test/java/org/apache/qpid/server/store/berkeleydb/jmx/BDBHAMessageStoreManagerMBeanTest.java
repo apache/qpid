@@ -71,7 +71,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
         _replicatedEnvironmentFacadee = mock(ReplicatedEnvironmentFacade.class);
         _mBeanParent = mock(AMQManagedObject.class);
         when(_mBeanParent.getRegistry()).thenReturn(mock(ManagedObjectRegistry.class));
-        _mBean = new BDBHAMessageStoreManagerMBean(_replicatedEnvironmentFacadee, _mBeanParent);
+        _mBean = new BDBHAMessageStoreManagerMBean(TEST_STORE_NAME, _replicatedEnvironmentFacadee, _mBeanParent);
     }
 
     @Override
@@ -83,8 +83,6 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testObjectName() throws Exception
     {
-        when(_replicatedEnvironmentFacadee.getName()).thenReturn(TEST_STORE_NAME);
-
         String expectedObjectName = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(TEST_STORE_NAME);
         assertEquals(expectedObjectName, _mBean.getObjectName().toString());
     }

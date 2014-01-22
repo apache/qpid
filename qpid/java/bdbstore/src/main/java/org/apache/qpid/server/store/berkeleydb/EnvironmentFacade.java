@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.store.StoreFuture;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -45,13 +44,16 @@ public interface EnvironmentFacade
 
     Environment getEnvironment();
 
-    StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit) throws AMQStoreException;
-
-    AMQStoreException handleDatabaseException(String contextMessage, DatabaseException e);
+    Committer createCommitter(String name);
 
     void openDatabases(DatabaseConfig dbConfig, String... databaseNames);
 
+    Database getOpenDatabase(String name);
+
+    void commit(com.sleepycat.je.Transaction tx) throws AMQStoreException;
+
+    AMQStoreException handleDatabaseException(String contextMessage, DatabaseException e);
+
     void close();
 
-    Database getOpenDatabase(String name);
 }
