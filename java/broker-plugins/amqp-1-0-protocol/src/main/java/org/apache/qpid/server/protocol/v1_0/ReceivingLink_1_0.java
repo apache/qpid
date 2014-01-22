@@ -41,6 +41,7 @@ import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.ReceiverSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -160,8 +161,8 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
 
             storedMessage.flushToStore();
 
-            Message_1_0 message = new Message_1_0(storedMessage, fragments, getSession());
-
+            Message_1_0 message = new Message_1_0(storedMessage, fragments, getSession().getConnection().getReference());
+            MessageReference<Message_1_0> reference = message.newReference();
 
             Binary transactionId = null;
             org.apache.qpid.amqp_1_0.type.DeliveryState xfrState = xfr.getState();
@@ -231,6 +232,8 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
                     }
                 });
             }
+
+            reference.release();
         }
     }
 

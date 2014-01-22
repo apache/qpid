@@ -488,7 +488,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             {
                 AMQMessage message = (AMQMessage) entry.getMessage();
 
-                final Object publisherReference = message.getConnectionIdentifier();
+                final Object publisherReference = message.getConnectionReference();
 
                 // We don't want local messages so check to see if message is one we sent
                 Object localReference = getProtocolSession().getReference();

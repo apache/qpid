@@ -101,7 +101,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         }
 
         AMQMessageDelegate delegate = new AMQMessageDelegate_0_8(messageNbr,
-                                                                 (BasicContentHeaderProperties) contentHeader.getProperties(),
+                                                                 contentHeader.getProperties(),
                                                                  exchange, routingKey, queueDestinationCache, topicDestinationCache);
 
         return createMessage(delegate, data);

@@ -504,16 +504,6 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
             }
         }
 
-        public String getReplyToExchange()
-        {
-            return null;  //TODO
-        }
-
-        public String getReplyToRoutingKey()
-        {
-            return null;  //TODO
-        }
-
         public String getAppId()
         {
             //TODO

@@ -21,14 +21,10 @@
 
 package org.apache.qpid.framing.abstraction;
 
-import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQMethodBody;
 
-public interface ProtocolVersionMethodConverter extends MessagePublishInfoConverter
+public interface ProtocolVersionMethodConverter
 {
-    AMQBody convertToBody(ContentChunk contentBody);
-    ContentChunk convertToContentChunk(AMQBody body);
-
-    void configure();
-
-    AMQBody convertToBody(byte[] input);
+    public MessagePublishInfo convertToInfo(AMQMethodBody body);
+    public AMQMethodBody convertToBody(MessagePublishInfo info);
 }

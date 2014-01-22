@@ -113,7 +113,6 @@ public class MessageConverter_v0_10 implements MessageConverter<ServerMessage, M
 
 
         deliveryProps.setExpiration(serverMsg.getExpiration());
-        deliveryProps.setImmediate(serverMsg.isImmediate());
         deliveryProps.setPriority(MessageDeliveryPriority.get(serverMsg.getMessageHeader().getPriority()));
         deliveryProps.setRoutingKey(serverMsg.getRoutingKey());
         deliveryProps.setTimestamp(serverMsg.getMessageHeader().getTimestamp());

@@ -541,8 +541,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     @Override
     public boolean onSameConnection(InboundMessage inbound)
     {
-        // TODO
-        return false;
+        return inbound.getConnectionReference() == getConnection().getReference();
     }
 
     @Override

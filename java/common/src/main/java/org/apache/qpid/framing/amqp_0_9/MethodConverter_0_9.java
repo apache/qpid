@@ -21,13 +21,10 @@
 
 package org.apache.qpid.framing.amqp_0_9;
 
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
@@ -35,48 +32,12 @@ import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
 public class MethodConverter_0_9 extends AbstractMethodConverter implements ProtocolVersionMethodConverter
 {
-    private int _basicPublishClassId;
-    private int _basicPublishMethodId;
 
     public MethodConverter_0_9()
     {
         super((byte)0,(byte)9);
-
-
     }
 
-    public AMQBody convertToBody(ContentChunk contentChunk)
-    {
-        if(contentChunk instanceof ContentChunk_0_9)
-        {
-            return ((ContentChunk_0_9)contentChunk).toBody();
-        }
-        else
-        {
-            return new ContentBody(contentChunk.getData());
-        }
-    }
-
-    public ContentChunk convertToContentChunk(AMQBody body)
-    {
-        final ContentBody contentBodyChunk = (ContentBody) body;
-
-        return new ContentChunk_0_9(contentBodyChunk);
-
-    }
-
-    public void configure()
-    {
-
-        _basicPublishClassId = org.apache.qpid.framing.amqp_0_9.BasicPublishBodyImpl.CLASS_ID;
-        _basicPublishMethodId = BasicPublishBodyImpl.METHOD_ID;
-
-    }
-
-    public AMQBody convertToBody(byte[] data)
-    {
-        return new ContentBody(data);
-    }
 
     public MessagePublishInfo convertToInfo(AMQMethodBody methodBody)
     {
@@ -103,33 +64,4 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
 
     }
 
-    private static class ContentChunk_0_9 implements ContentChunk
-    {
-        private final ContentBody _contentBodyChunk;
-
-        public ContentChunk_0_9(final ContentBody contentBodyChunk)
-        {
-            _contentBodyChunk = contentBodyChunk;
-        }
-
-        public int getSize()
-        {
-            return _contentBodyChunk.getSize();
-        }
-
-        public byte[] getData()
-        {
-            return _contentBodyChunk.getPayload();
-        }
-
-        public void reduceToFit()
-        {
-            _contentBodyChunk.reduceBufferToFit();
-        }
-
-        public AMQBody toBody()
-        {
-            return _contentBodyChunk;
-        }
-    }
 }

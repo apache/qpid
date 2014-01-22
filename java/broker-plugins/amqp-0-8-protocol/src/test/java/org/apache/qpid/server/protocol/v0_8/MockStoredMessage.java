@@ -57,9 +57,9 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
         {
             FieldTable headers = new FieldTable();
             headers.setString(headerName, headerValue == null? null :String.valueOf(headerValue));
-            ((BasicContentHeaderProperties)chb.getProperties()).setHeaders(headers);
+            ( chb.getProperties()).setHeaders(headers);
         }
-        _metaData = new MessageMetaData(info, chb, 0);
+        _metaData = new MessageMetaData(info, chb);
         _content = ByteBuffer.allocate(_metaData.getContentSize());
     }
 
