@@ -34,7 +34,10 @@ import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.exchange.topic.TopicNormalizer;
 import org.apache.qpid.server.exchange.topic.TopicParser;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.filter.FilterSupport;
+import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -144,15 +147,16 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-
-    public ArrayList<BaseQueue> doRoute(InboundMessage payload)
+    @Override
+    public ArrayList<BaseQueue> doRoute(ServerMessage payload, final InstanceProperties instanceProperties)
     {
 
         final String routingKey = payload.getRoutingKey() == null
                                           ? ""
                                           : payload.getRoutingKey();
 
-        final Collection<AMQQueue> matchedQueues = getMatchedQueues(payload, routingKey);
+        final Collection<AMQQueue> matchedQueues =
+                getMatchedQueues(Filterable.Factory.newInstance(payload,instanceProperties), routingKey);
 
         ArrayList<BaseQueue> queues;
 
@@ -209,7 +213,7 @@ public class TopicExchange extends AbstractExchange
         }
     }
 
-    private Collection<AMQQueue> getMatchedQueues(InboundMessage message, String routingKey)
+    private Collection<AMQQueue> getMatchedQueues(Filterable message, String routingKey)
     {
 
         Collection<TopicMatcherResult> results = _parser.parse(routingKey);

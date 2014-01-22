@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -174,7 +175,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     private boolean acquire(final EntryState state)
     {
-        boolean acquired = _stateUpdater.compareAndSet(this,AVAILABLE_STATE, state);
+        boolean acquired = _stateUpdater.compareAndSet(this, AVAILABLE_STATE, state);
 
         if(acquired && _stateChangeListeners != null)
         {
@@ -244,18 +245,6 @@ public abstract class QueueEntryImpl implements QueueEntry
     public void setRedelivered()
     {
         _deliveryState |= REDELIVERED;
-    }
-
-    public AMQMessageHeader getMessageHeader()
-    {
-        final ServerMessage message = getMessage();
-        return message == null ? null : message.getMessageHeader();
-    }
-
-    public boolean isPersistent()
-    {
-        final ServerMessage message = getMessage();
-        return message != null && message.isPersistent();
     }
 
     public boolean isRedelivered()
@@ -366,12 +355,12 @@ public abstract class QueueEntryImpl implements QueueEntry
 
         if (alternateExchange != null)
         {
-            InboundMessageAdapter inboundMessageAdapter = new InboundMessageAdapter(this);
-            List<? extends BaseQueue> queues = alternateExchange.route(inboundMessageAdapter);
+            QueueEntryInstanceProperties props = new QueueEntryInstanceProperties(this);
+            List<? extends BaseQueue> queues = alternateExchange.route(getMessage(), props);
             final ServerMessage message = getMessage();
             if ((queues == null || queues.size() == 0) && alternateExchange.getAlternateExchange() != null)
             {
-                queues = alternateExchange.getAlternateExchange().route(inboundMessageAdapter);
+                queues = alternateExchange.getAlternateExchange().route(getMessage(), props);
             }
 
 
@@ -505,6 +494,12 @@ public abstract class QueueEntryImpl implements QueueEntry
     public void decrementDeliveryCount()
     {
         _deliveryCountUpdater.decrementAndGet(this);
+    }
+
+    @Override
+    public Filterable asFilterable()
+    {
+        return Filterable.Factory.newInstance(getMessage(), new QueueEntryInstanceProperties(this));
     }
 
     public String toString()

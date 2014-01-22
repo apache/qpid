@@ -65,7 +65,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
@@ -73,8 +73,8 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.InboundMessageAdapter;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.QueueEntryInstanceProperties;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -331,7 +331,31 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                     }
                     else
                     {
-                        final List<? extends BaseQueue> destinationQueues = _currentMessage.getExchange().route(amqMessage);
+                        final InstanceProperties instanceProperties =
+                                new InstanceProperties()
+                                {
+                                    @Override
+                                    public Object getProperty(final Property prop)
+                                    {
+                                        switch(prop)
+                                        {
+                                            case EXPIRATION:
+                                                return amqMessage.getExpiration();
+                                            case IMMEDIATE:
+                                                return _currentMessage.getMessagePublishInfo().isImmediate();
+                                            case PERSISTENT:
+                                                return amqMessage.isPersistent();
+                                            case MANDATORY:
+                                                return _currentMessage.getMessagePublishInfo().isMandatory();
+                                            case REDELIVERED:
+                                                return false;
+                                        }
+                                        return null;
+                                    }
+                                };
+
+                        final List<? extends BaseQueue> destinationQueues =
+                            _currentMessage.getExchange().route(amqMessage, instanceProperties);
 
                         if(destinationQueues == null || destinationQueues.isEmpty())
                         {
@@ -1472,9 +1496,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         }
     }
 
-    public boolean onSameConnection(InboundMessage inbound)
+    @Override
+    public Object getConnectionReference()
     {
-        return getProtocolSession().getReference() == inbound.getConnectionReference();
+        return getProtocolSession().getReference();
     }
 
     public int getUnacknowledgedMessageCount()
@@ -1550,9 +1575,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 return;
             }
 
-            final InboundMessage m = new InboundMessageAdapter(rejectedQueueEntry);
 
-            final List<? extends BaseQueue> destinationQueues = altExchange.route(m);
+            final List<? extends BaseQueue> destinationQueues =
+                    altExchange.route(rejectedQueueEntry.getMessage(), new QueueEntryInstanceProperties(rejectedQueueEntry));
 
             if (destinationQueues == null || destinationQueues.isEmpty())
             {

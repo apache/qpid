@@ -202,7 +202,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
             {
                 if(_latestValueReference != null && _latestValueReference.compareAndSet(this, _deleteInProgress))
                 {
-                    Object key = getMessageHeader().getHeader(_conflationKey);
+                    Object key = getMessage().getMessageHeader().getHeader(_conflationKey);
                     _latestValuesMap.remove(key,_latestValueReference);
                 }
                 return true;

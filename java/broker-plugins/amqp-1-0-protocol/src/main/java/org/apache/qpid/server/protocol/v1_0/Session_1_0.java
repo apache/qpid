@@ -41,7 +41,6 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -539,9 +538,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     }
 
     @Override
-    public boolean onSameConnection(InboundMessage inbound)
+    public Object getConnectionReference()
     {
-        return inbound.getConnectionReference() == getConnection().getReference();
+        return getConnection().getReference();
     }
 
     @Override

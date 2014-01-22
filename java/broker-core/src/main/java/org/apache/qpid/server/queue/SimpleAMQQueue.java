@@ -1358,14 +1358,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             if(_alternateExchange != null)
             {
 
-                InboundMessageAdapter adapter = new InboundMessageAdapter();
                 for(final QueueEntry entry : entries)
                 {
-                    adapter.setEntry(entry);
-                    List<? extends BaseQueue> queues = _alternateExchange.route(adapter);
+
+                    QueueEntryInstanceProperties props = new QueueEntryInstanceProperties(entry);
+                    List<? extends BaseQueue> queues = _alternateExchange.route(entry.getMessage(), props);
                     if((queues == null || queues.size() == 0) && _alternateExchange.getAlternateExchange() != null)
                     {
-                        queues = _alternateExchange.getAlternateExchange().route(adapter);
+                        queues = _alternateExchange.getAlternateExchange().route(entry.getMessage(),props);
                     }
 
                     final ServerMessage message = entry.getMessage();
