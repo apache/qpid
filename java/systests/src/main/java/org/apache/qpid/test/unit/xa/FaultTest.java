@@ -39,7 +39,6 @@ import javax.transaction.xa.Xid;
 
 public class FaultTest extends AbstractXATestCase
 {
-    /* this clas logger */
     private static final Logger _logger = LoggerFactory.getLogger(FaultTest.class);
 
     /**

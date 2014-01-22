@@ -634,7 +634,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
             }
             catch (JMSException e)
             {
-                e.printStackTrace();
+                _logger.error("OnMessage error",e);
             }
         }
     }

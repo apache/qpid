@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.queue;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
@@ -246,6 +247,8 @@ public class PriorityQueueTest extends QpidBrokerTestCase
 
     private static class ReflectingMessageListener implements MessageListener
     {
+        private static final Logger _logger = Logger.getLogger(PriorityQueueTest.ReflectingMessageListener.class);
+
         private Session _prodSess;
         private Session _consSess;
         private CountDownLatch _latch;
@@ -270,7 +273,7 @@ public class PriorityQueueTest extends QpidBrokerTestCase
             {
                 _latch.countDown();
                 long msgNum = _origCount - _latch.getCount();
-                System.out.println("Received message " + msgNum + " with ID: " + message.getIntProperty("msg"));
+                _logger.info("Received message " + msgNum + " with ID: " + message.getIntProperty("msg"));
 
                 if(_latch.getCount() > 0)
                 {
@@ -287,7 +290,7 @@ public class PriorityQueueTest extends QpidBrokerTestCase
             }
             catch(Throwable t)
             {
-                t.printStackTrace();
+                _logger.error(t.getMessage(), t);
                 _lastThrown = t;
             }
         }

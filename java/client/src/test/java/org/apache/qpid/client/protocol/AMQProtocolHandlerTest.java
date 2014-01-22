@@ -179,7 +179,7 @@ public class AMQProtocolHandlerTest extends TestCase
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    _logger.error(e.getMessage(), e);
                     fail(e.getMessage());
                 }
             }

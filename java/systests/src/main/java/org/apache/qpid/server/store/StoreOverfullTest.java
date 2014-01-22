@@ -346,7 +346,7 @@ public class StoreOverfullTest extends QpidBrokerTestCase
             }
             catch (AMQException e)
             {
-                e.printStackTrace();
+                _logger.error(e);
                 throw new RuntimeException(e);
             }
 

@@ -95,7 +95,7 @@ public class TextMessageTest extends QpidBrokerTestCase implements MessageListen
         }
         catch (Throwable  e)
         {
-            e.printStackTrace();
+            _logger.error("Error creating consumer", e);
         }
         connection.start();
     }
