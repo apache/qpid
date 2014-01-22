@@ -19,6 +19,8 @@
  *
  */
 #include "qpid/broker/amqp/ManagedConnection.h"
+#include "qpid/broker/amqp/Exception.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/log/Statement.h"
@@ -174,6 +176,36 @@ void ManagedConnection::outgoingMessageSent()
 void ManagedConnection::incomingMessageReceived()
 {
     if (connection) connection->inc_msgsFromClient();
+}
+
+void ManagedConnection::closedByManagement()
+{
+    throw Exception(qpid::amqp::error_conditions::NOT_IMPLEMENTED, QPID_MSG(id << "Connection close requested, but not implemented"));
+}
+
+qpid::management::Manageable::status_t ManagedConnection::ManagementMethod(uint32_t methodId, qpid::management::Args&, std::string& error)
+{
+    qpid::management::Manageable::status_t status = qpid::management::Manageable::STATUS_UNKNOWN_METHOD;
+
+    try {
+        switch (methodId)
+        {
+          case _qmf::Connection::METHOD_CLOSE :
+            closedByManagement();
+            if (connection) connection->set_closing(true);
+            status = qpid::management::Manageable::STATUS_OK;
+            break;
+        }
+    } catch (const Exception& e) {
+        if (e.symbol() == qpid::amqp::error_conditions::NOT_IMPLEMENTED) {
+            status = qpid::management::Manageable::STATUS_NOT_IMPLEMENTED;
+        } else {
+            error = e.what();
+            status = qpid::management::Manageable::STATUS_EXCEPTION;
+        }
+    }
+
+    return status;
 }
 
 }}} // namespace qpid::broker::amqp

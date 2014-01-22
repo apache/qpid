@@ -20,6 +20,8 @@
  */
 #include "qpid/broker/amqp/ManagedSession.h"
 #include "qpid/broker/amqp/ManagedConnection.h"
+#include "qpid/broker/amqp/Exception.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/log/Statement.h"
@@ -87,6 +89,43 @@ void ManagedSession::incomingMessageRejected()
 ManagedConnection& ManagedSession::getParent()
 {
     return parent;
+}
+
+void ManagedSession::detachedByManagement()
+{
+    throw Exception(qpid::amqp::error_conditions::NOT_IMPLEMENTED, QPID_MSG(id << "Session detach requested, but not implemented"));
+}
+
+qpid::management::Manageable::status_t ManagedSession::ManagementMethod (uint32_t methodId,
+                                                                         qpid::management::Args& /*args*/,
+                                                                         std::string&  error)
+{
+    qpid::management::Manageable::status_t status = qpid::management::Manageable::STATUS_UNKNOWN_METHOD;
+
+    try {
+        switch (methodId)
+        {
+          case _qmf::Session::METHOD_DETACH :
+            detachedByManagement();
+            status = qpid::management::Manageable::STATUS_OK;
+            break;
+
+          case _qmf::Session::METHOD_CLOSE :
+          case _qmf::Session::METHOD_SOLICITACK :
+          case _qmf::Session::METHOD_RESETLIFESPAN :
+            status = Manageable::STATUS_NOT_IMPLEMENTED;
+            break;
+        }
+    } catch (const Exception& e) {
+        if (e.symbol() == qpid::amqp::error_conditions::NOT_IMPLEMENTED) {
+            status = qpid::management::Manageable::STATUS_NOT_IMPLEMENTED;
+        } else {
+            error = e.what();
+            status = qpid::management::Manageable::STATUS_EXCEPTION;
+        }
+    }
+
+    return status;
 }
 
 }}} // namespace qpid::broker::amqp

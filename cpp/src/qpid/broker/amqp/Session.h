@@ -66,6 +66,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     void readable(pn_link_t*, pn_delivery_t*);
     void writable(pn_link_t*, pn_delivery_t*);
     bool dispatch();
+    bool endedByManagement() const;
     void close();
 
     /**
@@ -79,6 +80,8 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     void wakeup();
 
     Authorise& getAuthorise();
+  protected:
+    void detachedByManagement();
   private:
     typedef std::map<pn_link_t*, boost::shared_ptr<Outgoing> > OutgoingLinks;
     typedef std::map<pn_link_t*, boost::shared_ptr<Incoming> > IncomingLinks;
@@ -92,6 +95,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     qpid::sys::Mutex lock;
     std::set< boost::shared_ptr<Queue> > exclusiveQueues;
     Authorise authorise;
+    bool detachRequested;
 
     struct ResolvedNode
     {

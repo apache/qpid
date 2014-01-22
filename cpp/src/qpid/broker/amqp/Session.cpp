@@ -202,7 +202,8 @@ class IncomingToExchange : public DecodingIncoming
 
 Session::Session(pn_session_t* s, Connection& c, qpid::sys::OutputControl& o)
     : ManagedSession(c.getBroker(), c, (boost::format("%1%") % s).str()), session(s), connection(c), out(o), deleted(false),
-      authorise(connection.getUserId(), connection.getBroker().getAcl()) {}
+      authorise(connection.getUserId(), connection.getBroker().getAcl()),
+      detachRequested() {}
 
 
 Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* terminus, bool incoming)
@@ -687,6 +688,17 @@ void Session::wakeup()
 Authorise& Session::getAuthorise()
 {
     return authorise;
+}
+
+bool Session::endedByManagement() const
+{
+    return detachRequested;
+}
+
+void Session::detachedByManagement()
+{
+    detachRequested = true;
+    wakeup();
 }
 
 void IncomingToQueue::handle(qpid::broker::Message& message)
