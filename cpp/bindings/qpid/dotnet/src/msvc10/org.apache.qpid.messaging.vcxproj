@@ -300,6 +300,7 @@
     <ClCompile Include="$(QPID_BUILD_ROOT)\src\windows\generated_src\AssemblyInfo.cpp" />
     <ClCompile Include="..\Connection.cpp" />
     <ClCompile Include="..\FailoverUpdates.cpp" />
+    <ClCompile Include="..\Logger.cpp" />
     <ClCompile Include="..\Message.cpp" />
     <ClCompile Include="..\Receiver.cpp" />
     <ClCompile Include="..\Sender.cpp" />
@@ -311,6 +312,7 @@
     <ClInclude Include="..\Connection.h" />
     <ClInclude Include="..\Duration.h" />
     <ClInclude Include="..\FailoverUpdates.h" />
+    <ClInclude Include="..\Logger.h" />
     <ClInclude Include="..\Message.h" />
     <ClInclude Include="..\QpidException.h" />
     <ClInclude Include="..\QpidMarshal.h" />
