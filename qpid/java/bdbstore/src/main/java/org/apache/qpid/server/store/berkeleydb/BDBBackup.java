@@ -22,7 +22,6 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.util.DbBackup;
 import org.apache.log4j.Logger;
 
@@ -336,17 +335,4 @@ public class BDBBackup
         return backedUpFileNames.toArray(new String[backedUpFileNames.size()]);
     }
 
-    /*
-     * Creates an environment for the bdb log files in the specified directory. This envrinonment can only be used
-     * to backup these files, if they are not locked by another database instance.
-     *
-     * @param fromdir The path to the directory to create the environment for.
-     *
-     * @throws DatabaseException Any underlying exceptions from BDB are allowed to fall through.
-     */
-    private Environment createSourceDirEnvironment(String fromdir) throws DatabaseException
-    {
-        // Initialize the BDB backup utility on the source directory.
-        return new Environment(new File(fromdir), new EnvironmentConfig());
-    }
 }

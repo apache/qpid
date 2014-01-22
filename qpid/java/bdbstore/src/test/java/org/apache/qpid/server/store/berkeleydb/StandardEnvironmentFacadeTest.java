@@ -24,7 +24,6 @@ import java.io.File;
 import java.util.Collections;
 
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
 
 import com.sleepycat.je.Database;
@@ -39,7 +38,7 @@ public class StandardEnvironmentFacadeTest extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _storePath = TestFileUtils.createTestDirectory("bdb", true);
+        _storePath = new File(TMP_FOLDER + File.separator + "bdb" + File.separator + getTestName());
     }
 
     protected void tearDown() throws Exception

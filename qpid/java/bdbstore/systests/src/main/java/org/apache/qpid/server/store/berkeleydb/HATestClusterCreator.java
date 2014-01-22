@@ -19,6 +19,7 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import javax.jms.Connection;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -69,7 +71,7 @@ public class HATestClusterCreator
     private final String _virtualHostName;
 
     private final String _ipAddressOfBroker;
-    private final String _groupName ;
+    private final String _groupName;
     private final int _numberOfNodes;
     private int _bdbHelperPort;
     private int _primaryBrokerPort;
@@ -350,6 +352,7 @@ public class HATestClusterCreator
         {
             replicationNodeAttributes.put(ReplicationNode.REPLICATION_PARAMETERS, replicationParameters);
         }
+        replicationNodeAttributes.put(ReplicationNode.STORE_PATH, System.getProperty(BrokerProperties.PROPERTY_QPID_WORK) + File.separator + nodeName);
 
         // ha virtual host
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
 import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
@@ -28,6 +28,7 @@ import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.NAME;
 import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,8 +48,11 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
 import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -65,7 +69,6 @@ import com.sleepycat.je.rep.StateChangeListener;
 
 public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 {
-    protected File _storePath;
     private static final int TEST_NODE_PORT = new QpidTestCase().findFreePort();
     private static final int LISTENER_TIMEOUT = 5;
     private static final int WAIT_STATE_CHANGE_TIMEOUT = 30;
@@ -76,6 +79,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private static final String TEST_DURABILITY = Durability.parse("NO_SYNC,NO_SYNC,SIMPLE_MAJORITY").toString();
     private static final boolean TEST_DESIGNATED_PRIMARY = false;
     private static final boolean TEST_COALESCING_SYNC = true;
+
+    private File _storePath;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
     private VirtualHost _virtualHost = mock(VirtualHost.class);
     private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = new ReplicatedEnvironmentFacadeFactory.RemoteReplicationNodeFactoryImpl(_virtualHost);
@@ -540,24 +545,12 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertTrue("Replica " + nodeName + " was not started", testStateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
         return replicaEnvironmentFacade;
     }
-
-    private String createNodeWorkingFolder(String nodeName)
-    {
-        File nodeLocation = new File(_storePath, nodeName);
-        if (!nodeLocation.exists())
-        {
-            nodeLocation.mkdirs();
-        }
-        final String nodePath = nodeLocation.getAbsolutePath();
-        return nodePath;
-    }
-
     private ReplicatedEnvironmentFacade addNode(String nodeName, String nodeHostPort, boolean designatedPrimary,
             State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
-        final String nodePath = createNodeWorkingFolder(nodeName);
+
         ReplicationNode node = createReplicationNodeMock(nodeName, nodeHostPort, designatedPrimary);
-        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(nodePath, node, _remoteReplicationNodeFactory);
+        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(node, _remoteReplicationNodeFactory);
         ref.setReplicationGroupListener(replicationGroupListener);
         ref.setStateChangeListener(stateChangeListener);
         _nodes.put(nodeName, ref);
@@ -594,6 +587,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
         repConfig.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
         when(node.getAttribute(REPLICATION_PARAMETERS)).thenReturn(repConfig);
+
+        when(node.getAttribute(STORE_PATH)).thenReturn(new File(_storePath, nodeName).getAbsolutePath());
         return node;
     }
 }

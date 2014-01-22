@@ -32,7 +32,6 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class LocalReplicationNodeTest extends QpidTestCase
@@ -184,6 +183,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
         attributes.put(ReplicationNode.GROUP_NAME, "testGroup");
         attributes.put(ReplicationNode.HOST_PORT, "localhost:5000");
         attributes.put(ReplicationNode.HELPER_HOST_PORT, "localhost:5001");
+        attributes.put(ReplicationNode.STORE_PATH, TMP_FOLDER + File.separator + getTestName());
         return attributes;
     }
 

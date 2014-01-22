@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.replication.ReplicationGroupListener;

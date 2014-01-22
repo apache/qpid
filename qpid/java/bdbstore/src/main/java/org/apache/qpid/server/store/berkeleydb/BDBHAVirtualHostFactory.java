@@ -83,7 +83,6 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
     {
         LinkedHashMap<String,Object> convertedMap = new LinkedHashMap<String, Object>();
         Configuration storeConfiguration = configuration.subset("store");
-        convertedMap.put(org.apache.qpid.server.model.VirtualHost.STORE_PATH, storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY));
         convertedMap.put(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE, storeConfiguration.getString(MessageStoreConstants.OVERFULL_SIZE_PROPERTY));
         convertedMap.put(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE, storeConfiguration.getString(MessageStoreConstants.UNDERFULL_SIZE_PROPERTY));
         return convertedMap;
@@ -119,6 +118,8 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
         attributes.put(ReplicationNode.GROUP_NAME, groupName);
         attributes.put(ReplicationNode.HOST_PORT, storeConfiguration.getString("highAvailability.nodeHostPort"));
         attributes.put(ReplicationNode.HELPER_HOST_PORT, storeConfiguration.getString("highAvailability.helperHostPort"));
+        attributes.put(org.apache.qpid.server.model.VirtualHost.STORE_PATH,
+                storeConfiguration.getString(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY));
 
         String durability = storeConfiguration.getString("highAvailability.durability");
         if (durability != null)

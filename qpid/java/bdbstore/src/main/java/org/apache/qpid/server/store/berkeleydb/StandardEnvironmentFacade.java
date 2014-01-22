@@ -32,21 +32,35 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.ExceptionEvent;
-import com.sleepycat.je.ExceptionListener;
 
 public class StandardEnvironmentFacade implements EnvironmentFacade
 {
     private static final Logger LOGGER = Logger.getLogger(StandardEnvironmentFacade.class);
     public static final String TYPE = "BDB";
 
-    private Environment _environment;
+    private final String _storePath;
     private final Map<String, Database> _databases = new HashMap<String, Database>();
+
+    private Environment _environment;
 
     public StandardEnvironmentFacade(String storePath, Map<String, String> attributes)
     {
+        _storePath = storePath;
 
-        LOGGER.info("BDB message store using environment path " + storePath);
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Creating environment at environment path " + _storePath);
+        }
+
+        File environmentPath = new File(storePath);
+        if (!environmentPath.exists())
+        {
+            if (!environmentPath.mkdirs())
+            {
+                throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
+                                                   + "Ensure the path is correct and that the permissions are correct.");
+            }
+        }
 
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
@@ -60,25 +74,8 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
 
-        try
-        {
-            _environment = new Environment(new File(storePath), envConfig);
-        }
-        catch (DatabaseException de)
-        {
-            if (de.getMessage().contains("Environment.setAllowCreate is false"))
-            {
-                // Allow the creation this time
-                envConfig.setAllowCreate(true);
-                _environment = new Environment(new File(storePath), envConfig);
-            }
-            else
-            {
-                throw de;
-            }
-        }
+        _environment = new Environment(environmentPath, envConfig);
     }
-
 
     @Override
     public void commit(com.sleepycat.je.Transaction tx) throws AMQStoreException
@@ -196,15 +193,6 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         return new AMQStoreException(contextMessage, e);
     }
 
-    private class LoggingAsyncExceptionListener implements ExceptionListener
-    {
-        @Override
-        public void exceptionThrown(ExceptionEvent event)
-        {
-            LOGGER.error("Asynchronous exception thrown by BDB thread '" + event.getThreadName() + "'", event.getException());
-        }
-    }
-
     @Override
     public void openDatabases(DatabaseConfig dbConfig, String... databaseNames)
     {
@@ -230,6 +218,12 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     public Committer createCommitter(String name)
     {
         return new CoalescingCommiter(name, this);
+    }
+
+    @Override
+    public String getStoreLocation()
+    {
+        return _storePath;
     }
 
 }

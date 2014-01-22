@@ -25,7 +25,6 @@ import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Transaction;
@@ -34,7 +33,6 @@ public class DatabasePinger
 {
     public static final String PING_DATABASE_NAME = "PINGDB";
     private static final int ID = 0;
-
 
     public void pingDb(EnvironmentFacade facade)
     {

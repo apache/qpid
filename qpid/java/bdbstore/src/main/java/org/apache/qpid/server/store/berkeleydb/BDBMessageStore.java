@@ -25,6 +25,7 @@ import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.*;
 import com.sleepycat.je.Transaction;
+
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
@@ -37,6 +38,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
@@ -71,7 +73,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static final Logger LOGGER = Logger.getLogger(BDBMessageStore.class);
 
     public static final int VERSION = 7;
-    public static final String TYPE = "BDB";
+    public static final String ENVIRONMENT_CONFIGURATION = "bdbEnvironmentConfig";
 
     private static final int LOCK_RETRY_ATTEMPTS = 5;
     private static String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";
@@ -104,7 +106,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private long _persistentSizeHighThreshold;
 
     private final EventManager _eventManager = new EventManager();
-    private String _storeLocation;
     private final String _type;
     private VirtualHost _virtualHost;
 
@@ -114,12 +115,12 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     public BDBMessageStore()
     {
-        this(TYPE, new StandardEnvironmentFacadeFactory());
+        this(new StandardEnvironmentFacadeFactory());
     }
 
-    public BDBMessageStore(String type, EnvironmentFacadeFactory environmentFacadeFactory)
+    public BDBMessageStore(EnvironmentFacadeFactory environmentFacadeFactory)
     {
-        _type = type;
+        _type = environmentFacadeFactory.getType();;
         _environmentFacadeFactory = environmentFacadeFactory;
         _stateManager = new StateManager(_eventManager);
     }
@@ -218,27 +219,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private void configure(VirtualHost virtualHost, boolean isMessageStore) throws AMQStoreException
     {
-        String name = virtualHost.getName();
-        final String defaultPath = System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name;
-
-        String storeLocation;
-        if(isMessageStore)
-        {
-            storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
-            if(storeLocation == null)
-            {
-                storeLocation = defaultPath;
-            }
-        }
-        else // we are acting only as the durable config store
-        {
-            storeLocation = (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
-            if(storeLocation == null)
-            {
-                storeLocation = defaultPath;
-            }
-        }
-
         Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
         Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
 
@@ -253,29 +233,20 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;
         }
 
-        File environmentPath = new File(storeLocation);
-        if (!environmentPath.exists())
-        {
-            if (!environmentPath.mkdirs())
-            {
-                throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
-                                                   + "Ensure the path is correct and that the permissions are correct.");
-            }
-        }
+        _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(virtualHost, isMessageStore);
 
-        _storeLocation = storeLocation;
-
-        LOGGER.info("Setting up environment");
-        _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeLocation, virtualHost);
-
-        _committer = _environmentFacade.createCommitter(null);
+        _committer = _environmentFacade.createCommitter(virtualHost.getName());
         _committer.start();
     }
 
     @Override
     public String getStoreLocation()
     {
-        return _storeLocation;
+        if (_environmentFacade == null)
+        {
+            return null;
+        }
+        return _environmentFacade.getStoreLocation();
     }
 
     public EnvironmentFacade getEnvironmentFacade()
@@ -1695,19 +1666,21 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public void onDelete()
     {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("Deleting store " + _storeLocation);
-        }
+        String storeLocation = getStoreLocation();
 
-        if (_storeLocation != null)
+        if (storeLocation != null)
         {
-            File location = new File(_storeLocation);
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Deleting store " + storeLocation);
+            }
+
+            File location = new File(storeLocation);
             if (location.exists())
             {
                 if (!FileUtils.delete(location, true))
                 {
-                    LOGGER.error("Cannot delete " + _storeLocation);
+                    LOGGER.error("Cannot delete " + storeLocation);
                 }
             }
         }

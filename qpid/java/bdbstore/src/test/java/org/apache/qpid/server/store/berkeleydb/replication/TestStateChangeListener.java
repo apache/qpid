@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

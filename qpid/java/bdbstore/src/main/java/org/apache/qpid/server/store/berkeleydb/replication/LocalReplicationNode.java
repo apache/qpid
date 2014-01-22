@@ -37,7 +37,6 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractAdapter;
 import org.apache.qpid.server.model.adapter.NoStatistics;
-import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
 
@@ -109,6 +108,11 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
         if (attributes.get(HELPER_HOST_PORT) == null)
         {
             throw new IllegalConfigurationException("Helper host and port attribute is not specified");
+        }
+        Object storePath = attributes.get(STORE_PATH);
+        if (storePath == null || storePath.equals(""))
+        {
+            throw new IllegalConfigurationException("Store path is not specified for the replication node");
         }
         return attributes;
     }

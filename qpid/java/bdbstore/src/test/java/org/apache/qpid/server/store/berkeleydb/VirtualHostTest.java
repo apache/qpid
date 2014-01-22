@@ -46,6 +46,7 @@ import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -185,7 +186,7 @@ public class VirtualHostTest extends QpidTestCase
         _host.setDesiredState(State.INITIALISING, State.ACTIVE);
         assertEquals("Unexpected host name", hostName, _host.getName());
         assertEquals("Unexpected host type", StandardVirtualHostFactory.TYPE, _host.getType());
-        assertEquals("Unexpected store type", BDBMessageStore.TYPE, _host.getAttribute(VirtualHost.STORE_TYPE));
+        assertEquals("Unexpected store type", new BDBMessageStoreFactory().getType(), _host.getAttribute(VirtualHost.STORE_TYPE));
         assertEquals("Unexpected store path", _bdbStorePath.getAbsolutePath(), _host.getAttribute(VirtualHost.STORE_PATH));
 
         BDBMessageStore messageStore = (BDBMessageStore) _host.getMessageStore();

@@ -20,16 +20,9 @@ package org.apache.qpid.server.store.berkeleydb;
  *
  */
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.AbstractActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
@@ -40,6 +33,8 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.OperationalLoggingListener;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.DefaultUpgraderProvider;
 import org.apache.qpid.server.virtualhost.State;
@@ -71,7 +66,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
     protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
     {
-        _messageStore = new BDBMessageStore(ReplicatedEnvironmentFacade.TYPE, new ReplicatedEnvironmentFacadeFactory());
+        _messageStore = new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
 
         final MessageStoreLogSubject storeLogSubject =
                 new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());

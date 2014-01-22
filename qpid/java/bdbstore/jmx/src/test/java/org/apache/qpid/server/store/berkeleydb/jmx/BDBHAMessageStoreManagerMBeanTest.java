@@ -43,9 +43,9 @@ import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.store.berkeleydb.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.jmx.BDBHAMessageStoreManagerMBean;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {

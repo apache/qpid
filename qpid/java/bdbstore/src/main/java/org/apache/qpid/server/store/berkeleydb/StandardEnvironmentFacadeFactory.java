@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.VirtualHost;
 
 public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactory
@@ -30,17 +32,45 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
 
     @SuppressWarnings("unchecked")
     @Override
-    public EnvironmentFacade createEnvironmentFacade(String storePath, VirtualHost virtualHost)
+    public EnvironmentFacade createEnvironmentFacade(VirtualHost virtualHost, boolean isMessageStore)
     {
         Map<String, String> envConfigMap = new HashMap<String, String>();
         envConfigMap.putAll(EnvironmentFacade.ENVCONFIG_DEFAULTS);
 
-        Object bdbEnvConfigAttr = virtualHost.getAttribute("bdbEnvironmentConfig");
-        if (bdbEnvConfigAttr instanceof Map)
+        Object environmentConfigurationAttributes = virtualHost.getAttribute(BDBMessageStore.ENVIRONMENT_CONFIGURATION);
+        if (environmentConfigurationAttributes instanceof Map)
         {
-            envConfigMap.putAll((Map<String, String>) bdbEnvConfigAttr);
+            envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
         }
-        return new StandardEnvironmentFacade(storePath, envConfigMap);
+
+        String name = virtualHost.getName();
+        final String defaultPath = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK) + File.separator + "bdbstore" + File.separator + name;
+
+        String storeLocation;
+        if(isMessageStore)
+        {
+            storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+            if(storeLocation == null)
+            {
+                storeLocation = defaultPath;
+            }
+        }
+        else // we are acting only as the durable config store
+        {
+            storeLocation = (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
+            if(storeLocation == null)
+            {
+                storeLocation = defaultPath;
+            }
+        }
+
+        return new StandardEnvironmentFacade(storeLocation, envConfigMap);
+    }
+
+    @Override
+    public String getType()
+    {
+        return StandardEnvironmentFacade.TYPE;
     }
 
 }

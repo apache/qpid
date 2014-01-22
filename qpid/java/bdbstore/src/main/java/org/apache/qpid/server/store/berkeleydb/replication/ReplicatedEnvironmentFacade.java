@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
 import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
@@ -28,6 +28,7 @@ import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.PARAMETERS;
 import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -53,9 +54,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
-import org.apache.qpid.server.store.berkeleydb.replication.DatabasePinger;
-import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
-import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
+import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
+import org.apache.qpid.server.store.berkeleydb.Committer;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
 import org.apache.qpid.server.util.DaemonThreadFactory;
 
 import com.sleepycat.je.Database;
@@ -65,8 +67,6 @@ import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
-import com.sleepycat.je.ExceptionEvent;
-import com.sleepycat.je.ExceptionListener;
 import com.sleepycat.je.OperationFailureException;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.rep.InsufficientLogException;
@@ -81,6 +81,7 @@ import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
+import com.sleepycat.je.utilint.PropUtil;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
@@ -141,12 +142,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final Durability _durability;
     private final boolean _designatedPrimary;
     private final boolean _coalescingSync;
-    private final String _environmentPath;
+    private final File _environmentDirectory;
     private final Map<String, String> _environmentParameters;
     private final Map<String, String> _replicationEnvironmentParameters;
     private final ExecutorService _restartEnvironmentExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
-    private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIAL);
+    private final AtomicReference<State> _state = new AtomicReference<State>(State.OPENING);
     private final ConcurrentMap<String, DatabaseHolder> _databases = new ConcurrentHashMap<String, DatabaseHolder>();
     private final ConcurrentMap<String, RemoteReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, RemoteReplicationNode>();
     private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
@@ -158,10 +159,19 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private String _lastKnownReplicationTransactionId;
 
     @SuppressWarnings("unchecked")
-    public ReplicatedEnvironmentFacade(String environmentPath, org.apache.qpid.server.model.ReplicationNode replicationNode,
+    public ReplicatedEnvironmentFacade(org.apache.qpid.server.model.ReplicationNode replicationNode,
             RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
-        _environmentPath = environmentPath;
+        _environmentDirectory = new File((String)replicationNode.getAttribute(STORE_PATH));
+        if (!_environmentDirectory.exists())
+        {
+            if (!_environmentDirectory.mkdirs())
+            {
+                throw new IllegalArgumentException("Environment path " + _environmentDirectory + " could not be read or created. "
+                                                   + "Ensure the path is correct and that the permissions are correct.");
+            }
+        }
+
         _groupName = (String)replicationNode.getAttribute(GROUP_NAME);
         _nodeName = replicationNode.getName();
         _nodeHostPort = (String)replicationNode.getAttribute(HOST_PORT);;
@@ -177,43 +187,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
 
         _remoteReplicationNodeFactory = remoteReplicationNodeFactory;
-        _state.set(State.OPENING);
         _groupChangeExecutor.scheduleWithFixedDelay(new GroupChangeLearner(), 0, GROUP_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
         _groupChangeExecutor.schedule(new RemoteNodeStateLearner(), _remoteReplicationNodeFactory.getRemoteNodeMonitorInterval(), TimeUnit.MILLISECONDS);
 
         // create environment in a separate thread to avoid renaming of the current thread by JE
-        Future<ReplicatedEnvironment> environmentFuture = _restartEnvironmentExecutor.submit(new Callable<ReplicatedEnvironment>(){
-            @Override
-            public ReplicatedEnvironment call() throws Exception
-            {
-                String originalThreadName = Thread.currentThread().getName();
-                try
-                {
-                    return createEnvironment();
-                }
-                finally
-                {
-                    Thread.currentThread().setName(originalThreadName);
-                }
-            }});
-
-        // TODO: evaluate the future timeout from JE ENVIRONMENT_SETUP
-        try
-        {
-            _environment = environmentFuture.get(15 * 2, TimeUnit.MINUTES);
-        }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-        }
-        catch (ExecutionException e)
-        {
-            throw new RuntimeException("Unexpected exception on environment creation", e.getCause());
-        }
-        catch (TimeoutException e)
-        {
-            throw new RuntimeException("JE environment has not been created in due time");
-        }
+        _environment = createEnvironment(true);
         populateExistingRemoteReplicationNodes();
     }
 
@@ -235,12 +213,17 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public void close()
     {
-        if (_state.compareAndSet(State.INITIAL, State.CLOSING) || _state.compareAndSet(State.OPENING, State.CLOSING) ||
-                _state.compareAndSet(State.OPEN, State.CLOSING) || _state.compareAndSet(State.RESTARTING, State.CLOSING) )
+        if (_state.compareAndSet(State.OPENING, State.CLOSING) ||
+                _state.compareAndSet(State.OPEN, State.CLOSING) ||
+                _state.compareAndSet(State.RESTARTING, State.CLOSING) )
         {
             try
             {
-                LOGGER.debug("Closing replicated environment facade for " + _prettyGroupNodeName);
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Closing replicated environment facade for " + _prettyGroupNodeName);
+                }
+
                 _restartEnvironmentExecutor.shutdown();
                 _groupChangeExecutor.shutdown();
                 closeDatabases();
@@ -321,7 +304,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private void openDatabaseInternally(String databaseName, DatabaseHolder holder)
     {
-        LOGGER.debug("Opening database " + databaseName + " on " + _prettyGroupNodeName);
         Database database = _environment.openDatabase(null, databaseName, holder.getConfig());
         holder.setDatabase(database);
     }
@@ -349,6 +331,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             throw new IllegalArgumentException("Database with name '" + name + "' has not been opened");
         }
         return database;
+    }
+
+    @Override
+    public String getStoreLocation()
+    {
+        return _environmentDirectory.getAbsolutePath();
     }
 
     @Override
@@ -381,7 +369,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             reopenDatabases();
             StateChangeListener listener = _stateChangeListener.get();
-            LOGGER.debug("Application state change listener " + listener);
+
             if (listener != null)
             {
                 listener.stateChange(stateChangeEvent);
@@ -652,7 +640,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         closeEnvironmentSafely();
 
-        _environment = createEnvironment();
+        _environment = createEnvironment(false);
 
         if (_stateChangeListener.get() != null)
         {
@@ -692,7 +680,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private void closeDatabases()
     {
         RuntimeException firstThrownException = null;
-        LOGGER.debug("Closing databases " + _databases);
         for (Map.Entry<String, DatabaseHolder> entry : _databases.entrySet())
         {
             DatabaseHolder databaseHolder = entry.getValue();
@@ -701,7 +688,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             {
                 try
                 {
-                    LOGGER.debug("Closing database " + entry.getKey() + " on " + _prettyGroupNodeName);
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Closing database " + entry.getKey() + " on " + _prettyGroupNodeName);
+                    }
+
                     database.close();
                 }
                 catch(RuntimeException e)
@@ -724,12 +715,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private ReplicatedEnvironment createEnvironment()
+    private ReplicatedEnvironment createEnvironment(boolean createEnvironmentInSeparateThread)
     {
         if (LOGGER.isInfoEnabled())
         {
             LOGGER.info("Creating environment");
-            LOGGER.info("Environment path " + _environmentPath);
+            LOGGER.info("Environment path " + _environmentDirectory.getAbsolutePath());
             LOGGER.info("Group name " + _groupName);
             LOGGER.info("Node name " + _nodeName);
             LOGGER.info("Node host port " + _nodeHostPort);
@@ -750,7 +741,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             environmentSettings.putAll(_environmentParameters);
         }
 
-        final ReplicationConfig replicationConfig = new ReplicationConfig(_groupName, _nodeName, _nodeHostPort);
+        ReplicationConfig replicationConfig = new ReplicationConfig(_groupName, _nodeName, _nodeHostPort);
         replicationConfig.setHelperHosts(_helperHostPort);
         replicationConfig.setDesignatedPrimary(_designatedPrimary);
 
@@ -778,8 +769,58 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             envConfig.setConfigParam(configItem.getKey(), configItem.getValue());
         }
 
+        if (createEnvironmentInSeparateThread)
+        {
+            return createEnvironmentInSeparateThread(_environmentDirectory, envConfig, replicationConfig);
+        }
+        else
+        {
+            return createEnvironment(_environmentDirectory, envConfig, replicationConfig);
+        }
+    }
+
+    private ReplicatedEnvironment createEnvironmentInSeparateThread(final File environmentPathFile, final EnvironmentConfig envConfig,
+            final ReplicationConfig replicationConfig)
+    {
+        Future<ReplicatedEnvironment> environmentFuture = _restartEnvironmentExecutor.submit(new Callable<ReplicatedEnvironment>(){
+            @Override
+            public ReplicatedEnvironment call() throws Exception
+            {
+                String originalThreadName = Thread.currentThread().getName();
+                try
+                {
+                    return createEnvironment(environmentPathFile, envConfig, replicationConfig);
+                }
+                finally
+                {
+                    Thread.currentThread().setName(originalThreadName);
+                }
+            }});
+
+        long setUpTimeOutMillis = PropUtil.parseDuration(replicationConfig.getConfigParam(ReplicationConfig.ENV_SETUP_TIMEOUT));
+        try
+        {
+            return environmentFuture.get(setUpTimeOutMillis, TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Environment creation was interrupted", e);
+        }
+        catch (ExecutionException e)
+        {
+            throw new RuntimeException("Unexpected exception on environment creation", e.getCause());
+        }
+        catch (TimeoutException e)
+        {
+            throw new RuntimeException("JE environment has not been created in due time");
+        }
+    }
+
+    private ReplicatedEnvironment createEnvironment(File environmentPathFile, EnvironmentConfig envConfig,
+            final ReplicationConfig replicationConfig)
+    {
         ReplicatedEnvironment environment = null;
-        File environmentPathFile = new File(_environmentPath);
         try
         {
             environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
@@ -875,7 +916,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    //TODO: move the class into external class
     private class RemoteNodeStateLearner implements Callable<Void>
     {
         private Map<String, String> _previousGroupState = Collections.emptyMap();
@@ -944,18 +984,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private class LoggingAsyncExceptionListener implements ExceptionListener
-    {
-        @Override
-        public void exceptionThrown(ExceptionEvent event)
-        {
-            LOGGER.error("Asynchronous exception thrown by BDB thread '" + event.getThreadName() + "'", event.getException());
-        }
-    }
-
     public static enum State
     {
-        INITIAL,  // TODO unused remove
         OPENING,
         OPEN,
         RESTARTING,
@@ -995,4 +1025,5 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
     }
+
 }

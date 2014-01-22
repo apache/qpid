@@ -56,4 +56,6 @@ public interface EnvironmentFacade
 
     void close();
 
+    String getStoreLocation();
+
 }

@@ -65,7 +65,7 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
         _logger.debug("Applying store specific config. overfull-sze=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
 
         Map<String,String> envMap = Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
-        when(virtualHost.getAttribute(eq("bdbEnvironmentConfig"))).thenReturn(envMap);
+        when(virtualHost.getAttribute(eq(BDBMessageStore.ENVIRONMENT_CONFIGURATION))).thenReturn(envMap);
         when(virtualHost.getAttribute(eq(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE))).thenReturn(OVERFULL_SIZE);
         when(virtualHost.getAttribute(eq(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE))).thenReturn(UNDERFULL_SIZE);
 

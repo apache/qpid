@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,9 +27,8 @@ import java.util.Map;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.berkeleydb.replication.LocalReplicationNode;
-import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
-import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
 
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.SyncPolicy;
@@ -38,7 +37,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
 {
 
     @Override
-    public EnvironmentFacade createEnvironmentFacade(String storeLocation, VirtualHost virtualHost)
+    public EnvironmentFacade createEnvironmentFacade(VirtualHost virtualHost, boolean isMessageStore)
     {
         Collection<ReplicationNode> replicationNodes = virtualHost.getChildren(ReplicationNode.class);
         if (replicationNodes == null || replicationNodes.size() != 1)
@@ -59,7 +58,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(storeLocation, localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
+        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
         ((LocalReplicationNode)localNode).setReplicatedEnvironmentFacade(facade);
         return facade;
     }
@@ -88,5 +87,11 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         {
             return (Long)_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_INTERVAL);
         }
+    }
+
+    @Override
+    public String getType()
+    {
+        return ReplicatedEnvironmentFacade.TYPE;
     }
 }
