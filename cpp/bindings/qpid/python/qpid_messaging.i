@@ -146,6 +146,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 %rename(_acknowledge_all) qpid::messaging::Session::acknowledge(bool);
 %rename(_acknowledge_msg) qpid::messaging::Session::acknowledge(
     Message &, bool);
+%rename(_next_receiver) qpid::messaging::Session::nextReceiver;
 
 %rename(_fetch) qpid::messaging::Receiver::fetch;
 %rename(unsettled) qpid::messaging::Receiver::getUnsettled;
@@ -245,6 +246,14 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
             s = self._sender(target)
             s._setDurable(options.get("durable"))
             return s
+
+         def next_receiver(self, timeout=None) :
+             if timeout is None :
+                 return self._next_receiver()
+             else :
+                 # Python API uses timeouts in seconds,
+                 # but C++ API uses milliseconds
+                 return self._next_receiver(Duration(int(1000*timeout)))
     %}
 }
 
