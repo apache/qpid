@@ -163,7 +163,7 @@ bool TopicRegistry::add(boost::shared_ptr<Topic> topic)
         topics.insert(Topics::value_type(topic->getName(), topic));
         return true;
     } else {
-        return false;
+        throw qpid::types::Exception(QPID_MSG("A topic named " << topic->getName() << " already exists"));
     }
 
 }
