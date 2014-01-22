@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.FilterSupport;
+import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;

@@ -40,6 +40,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
@@ -623,7 +624,7 @@ public class MessageStoreTest extends QpidTestCase
         storedMessage.flushToStore();
         final AMQMessage currentMessage = new AMQMessage(storedMessage);
 
-        final List<? extends BaseQueue> destinationQueues = exchange.route(currentMessage);
+        final List<? extends BaseQueue> destinationQueues = exchange.route(currentMessage, InstanceProperties.EMPTY);
 
 
         ServerTransaction trans = new AutoCommitTransaction(getVirtualHost().getMessageStore());

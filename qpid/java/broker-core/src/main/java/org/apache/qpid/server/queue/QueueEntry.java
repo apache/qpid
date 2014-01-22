@@ -21,10 +21,11 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 
-public interface QueueEntry extends Comparable<QueueEntry>, Filterable
+public interface QueueEntry extends Comparable<QueueEntry>
 {
 
 
@@ -249,5 +250,7 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
     void incrementDeliveryCount();
 
     void decrementDeliveryCount();
+
+    Filterable asFilterable();
 
 }

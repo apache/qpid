@@ -22,8 +22,6 @@ package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.queue.Filterable;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SimpleFilterManager implements FilterManager

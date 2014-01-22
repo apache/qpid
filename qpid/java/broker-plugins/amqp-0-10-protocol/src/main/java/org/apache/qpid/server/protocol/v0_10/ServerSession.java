@@ -53,9 +53,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -766,11 +764,11 @@ public class ServerSession extends Session
         }
     }
 
-    public boolean onSameConnection(InboundMessage inbound)
+    @Override
+    public Object getConnectionReference()
     {
-        return inbound.getConnectionReference() == getConnection().getReference();
+        return getConnection().getReference();
     }
-
 
     public String toLogString()
     {

@@ -35,7 +35,8 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -71,9 +72,9 @@ public class HeadersExchangeTest extends TestCase
 
     }
 
-    protected void routeAndTest(InboundMessage msg, AMQQueue... expected) throws Exception
+    protected void routeAndTest(ServerMessage msg, AMQQueue... expected) throws Exception
     {
-        List<? extends BaseQueue> results = _exchange.route(msg);
+        List<? extends BaseQueue> results = _exchange.route(msg, InstanceProperties.EMPTY);
         List<? extends BaseQueue> unexpected = new ArrayList<BaseQueue>(results);
         unexpected.removeAll(Arrays.asList(expected));
         assertTrue("Message delivered to unexpected queues: " + unexpected, unexpected.isEmpty());
@@ -209,7 +210,7 @@ public class HeadersExchangeTest extends TestCase
 
     }
 
-    private InboundMessage mockMessage(final Map<String, Object> headerValues)
+    private ServerMessage mockMessage(final Map<String, Object> headerValues)
     {
         final AMQMessageHeader header = mock(AMQMessageHeader.class);
         when(header.containsHeader(anyString())).then(new Answer<Boolean>()
@@ -239,9 +240,9 @@ public class HeadersExchangeTest extends TestCase
 
             }
         });
-        final InboundMessage inboundMessage = mock(InboundMessage.class);
-        when(inboundMessage.getMessageHeader()).thenReturn(header);
-        return inboundMessage;
+        final ServerMessage serverMessage = mock(ServerMessage.class);
+        when(serverMessage.getMessageHeader()).thenReturn(header);
+        return serverMessage;
     }
 
     public static junit.framework.Test suite()

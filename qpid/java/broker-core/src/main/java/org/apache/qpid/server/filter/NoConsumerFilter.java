@@ -23,7 +23,6 @@ package org.apache.qpid.server.filter;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.Filterable;
 
 public class NoConsumerFilter implements MessageFilter
 {

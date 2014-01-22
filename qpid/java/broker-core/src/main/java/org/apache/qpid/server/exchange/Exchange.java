@@ -24,7 +24,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -98,7 +99,7 @@ public interface Exchange extends ExchangeReferrer
      *
      * @return list of queues to which to route the message.
      */
-    List<? extends BaseQueue> route(InboundMessage message);
+    List<? extends BaseQueue> route(ServerMessage message, final InstanceProperties instanceProperties);
 
 
     /**

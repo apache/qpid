@@ -19,7 +19,7 @@
  *
  */
 
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.server.filter;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -30,12 +30,8 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.TokenMgrError;
-import org.apache.qpid.server.filter.JMSSelectorFilter;
-import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.Filterable;
 
 public class FilterSupport
 {
@@ -104,7 +100,7 @@ public class FilterSupport
                        && ((String)args.get(AMQPFilterTypes.JMS_SELECTOR.toString())).trim().length() != 0;
     }
 
-    static MessageFilter createMessageFilter(final Map<String,Object> args, AMQQueue queue) throws AMQInvalidArgumentException
+    public static MessageFilter createMessageFilter(final Map<String,Object> args, AMQQueue queue) throws AMQInvalidArgumentException
     {
         if(argumentsContainNoLocal(args))
         {
@@ -133,9 +129,9 @@ public class FilterSupport
 
         public boolean matches(Filterable message)
         {
-            InboundMessage inbound = (InboundMessage) message;
             final AMQSessionModel exclusiveOwningSession = _queue.getExclusiveOwningSession();
-            return exclusiveOwningSession == null || !exclusiveOwningSession.onSameConnection(inbound);
+            return exclusiveOwningSession == null ||
+                    exclusiveOwningSession.getConnectionReference() != message.getConnectionReference();
 
         }
 

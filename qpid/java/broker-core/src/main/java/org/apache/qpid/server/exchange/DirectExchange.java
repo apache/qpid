@@ -27,8 +27,11 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.filter.FilterSupport;
+import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -130,7 +133,8 @@ public class DirectExchange extends AbstractExchange
         super(TYPE);
     }
 
-    public List<? extends BaseQueue> doRoute(InboundMessage payload)
+    @Override
+    public List<? extends BaseQueue> doRoute(ServerMessage payload, final InstanceProperties instanceProperties)
     {
 
         final String routingKey = payload.getRoutingKey();
@@ -151,7 +155,7 @@ public class DirectExchange extends AbstractExchange
                     if(!queuesSet.contains(entry.getKey()))
                     {
                         MessageFilter filter = entry.getValue();
-                        if(filter.matches(payload))
+                        if(filter.matches(Filterable.Factory.newInstance(payload, instanceProperties)))
                         {
                             queuesSet.add(entry.getKey());
                         }

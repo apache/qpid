@@ -29,8 +29,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.filter.FilterSupport;
+import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -66,7 +69,8 @@ public class FanoutExchange extends AbstractExchange
         super(TYPE);
     }
 
-    public ArrayList<BaseQueue> doRoute(InboundMessage payload)
+    @Override
+    public ArrayList<BaseQueue> doRoute(ServerMessage payload, final InstanceProperties instanceProperties)
     {
 
         for(Binding b : getBindings())
@@ -87,7 +91,7 @@ public class FanoutExchange extends AbstractExchange
                 {
                     for(MessageFilter filter : bindingMessageFilterMap.values())
                     {
-                        if(filter.matches(payload))
+                        if(filter.matches(Filterable.Factory.newInstance(payload,instanceProperties)))
                         {
                             result.add(q);
                             break;
