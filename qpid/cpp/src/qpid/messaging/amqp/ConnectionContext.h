@@ -85,6 +85,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void acknowledge(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message* message, bool cumulative);
     void nack(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message& message, bool reject);
     void sync(boost::shared_ptr<SessionContext> ssn);
+    boost::shared_ptr<ReceiverContext> nextReceiver(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Duration timeout);
 
     void setOption(const std::string& name, const qpid::types::Variant& value);
     std::string getAuthenticatedUsername();

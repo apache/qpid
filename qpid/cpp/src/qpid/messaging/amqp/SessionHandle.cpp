@@ -108,7 +108,7 @@ qpid::messaging::Receiver SessionHandle::createReceiver(const qpid::messaging::A
 
 bool SessionHandle::nextReceiver(Receiver& receiver, Duration timeout)
 {
-    boost::shared_ptr<ReceiverContext> r = session->nextReceiver(timeout);
+    boost::shared_ptr<ReceiverContext> r = connection->nextReceiver(session, timeout);
     if (r) {
         //TODO: cache handles in this case to avoid frequent allocation
         receiver = qpid::messaging::Receiver(new ReceiverHandle(connection, session, r));

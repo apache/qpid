@@ -280,6 +280,23 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
     return false;
 }
 
+boost::shared_ptr<ReceiverContext> ConnectionContext::nextReceiver(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Duration timeout)
+{
+    qpid::sys::AbsTime until(convert(timeout));
+    while (true) {
+        qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+        checkClosed(ssn);
+        boost::shared_ptr<ReceiverContext> r = ssn->nextReceiver();
+        if (r) {
+            return r;
+        } else if (until > qpid::sys::now()) {
+            waitUntil(ssn, until);
+        } else {
+            return boost::shared_ptr<ReceiverContext>();
+        }
+    }
+}
+
 void ConnectionContext::acknowledge(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message* message, bool cumulative)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
