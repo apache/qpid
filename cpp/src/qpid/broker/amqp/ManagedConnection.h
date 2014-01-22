@@ -61,6 +61,11 @@ class ManagedConnection : public qpid::management::Manageable, public OwnershipT
     const std::map<std::string, types::Variant>& getClientProperties() const;
     virtual bool isLink() const;
     void opened();
+
+    qpid::management::Manageable::status_t ManagementMethod(uint32_t methodId, qpid::management::Args&, std::string&);
+
+  protected:
+    virtual void closedByManagement();
   private:
     const std::string id;
     std::string userid;
