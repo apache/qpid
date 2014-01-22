@@ -191,6 +191,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         Map data = _objectMapper.readValue(new File(_directoryName,_configFileName),Map.class);
         Collection<Class<? extends ConfiguredObject>> childClasses =
                 MODEL.getChildTypes(VirtualHost.class);
+        data.remove("modelVersion");
         Object configVersion;
         if((configVersion = data.remove("configVersion")) instanceof Integer)
         {
