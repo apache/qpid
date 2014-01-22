@@ -163,7 +163,8 @@ warning is logged.
 
 If the node is an exchange, then an outgoing link (i.e. messages to
 travel out from broker) will cause a temporary, link-scoped queue to
-be created on the broker and bound to the exchange.
+be created on the broker and bound to the exchange. [See section on
+'Topics' below]
 
 Outgoing links may have a filter set on their source. The filters
 currently supported by the broker are 'legacy-amqp-direct-binding',
@@ -281,5 +282,28 @@ exchange. If the source or target references a queue or a direct
 exchange the 'legacy-amqp-direct-binding' will be added. If it
 references a queue or a topic exchange, 'legacy-amqp-topic-binding'
 will be added.
+
+* Topics: a mechanism for controlling subscription queues
+
+As there is no standard or obvious mechanism through which to
+configure subscription queues in AMQP 1.0, a new broker entity of type
+'topic' has been added.
+
+A topic references an existing exchange and additionally specifies the
+queue options to use when creating the subscription queue for any
+receiver link attached to that topic. There can be topics with
+different names all referencing the same exchange where different
+policies should be applied to queues.
+
+Topics can be created and deleted using the qpid-config tool, e.g.
+
+  qpid-config add topic my-topic --argument exchange=amq.topic\
+      --argument qpid.max_count=500 --argument qpid.policy_type=self-destruct
+
+If a receiver is established for address 'my-topic/my-key' over 1.0
+now, it will result in a subscription queue being created with a limit
+of 500 messages, that deletes itself (thus ending the subscription) if
+that limit is exceeded and is bound to 'amq.topic' with the key
+'my-key'.
 
 [1] https://issues.apache.org/jira/browse/QPID-4710
