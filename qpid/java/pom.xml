@@ -31,8 +31,8 @@
   <!-- ###### TODO ######
     - Add the Excludes files, log4j config, etc test resources to a module (qpid-test-utils?) which can be
       used (extracted?) by the others to prevent them having to reference outside their directly for the files.
-      - Fix what the systests/perftests do to copy the test-profiles dir to the necessary location.
-      - Fix the log4j configuration property to work with all the modules, resolve the currently generated log4j exceptions during test runs.
+        - Fix what the systests/perftests do to copy the test-profiles dir to the necessary location.
+        - Fix the log4j configuration property to work with all the modules.
     - Fix the version numbers in all the modules.
     - Decide on a final name for this parent module, qpid-project isnt necessarily appropriate given it doesnt encompass the whole project.
     - Test deploying the modules to a local Nexus instance (by overriding the repo properties locally).
@@ -68,6 +68,8 @@
     <!-- test dependency version numbers -->
     <junit-version>3.8.1</junit-version>
     <mockito-version>1.9.0</mockito-version>
+    <log4j-version>1.2.16</log4j-version>
+    <slf4j-version>1.6.4</slf4j-version>
 
     <!-- plugin version numbers -->
     <maven-antrun-plugin-version>1.7</maven-antrun-plugin-version>
@@ -130,6 +132,27 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>${mockito-version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>${log4j-version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j-version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -409,7 +432,7 @@
             <java.naming.factory.initial>org.apache.qpid.jndi.PropertiesFileInitialContextFactory</java.naming.factory.initial>
             <java.naming.provider.url>test-profiles${file.separator}test-provider.properties</java.naming.provider.url>
 
-            <broker.config>${qpid.home}/etc/config-systests.json</broker.config>
+            <broker.config>${qpid.home}${file.separator}etc${file.separator}config-systests.json</broker.config>
             <messagestore.class.name>org.apache.qpid.server.store.MemoryMessageStore</messagestore.class.name>
             <broker.protocol.excludes></broker.protocol.excludes>
             <broker.persistent>false</broker.persistent>
@@ -422,8 +445,8 @@
             <amqj.protocol.logging.level>debug</amqj.protocol.logging.level>
             <root.logging.level>warn</root.logging.level>
 
-            <log4j.configuration.file>test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
-            <log4j.configuration>file://${basedir}${file.separator}..${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration>
+            <log4j.configuration.file>${project.basedir}${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
+            <log4j.configuration>log4j-test.xml</log4j.configuration>
 
             <log4j.debug>false</log4j.debug>
 
@@ -456,8 +479,7 @@
             <broker.ready>BRK-1004</broker.ready>
             <profile>${profile}</profile>
 
-            <!-- This must be a child of qpid home currently
-                 due to the horrible mechanics of QBTC  -->
+            <!-- This must be a child of qpid home currently due to the horrible mechanics of QBTC  -->
             <test.output>${qpid.home.qbtc.output}</test.output>
           </systemPropertyVariables>
         </configuration>
@@ -502,6 +524,11 @@
 
   <url>http://qpid.apache.org</url>
 
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/QPID</url>
+  </issueManagement>
+
   <mailingLists>
     <mailingList>
       <name>Apache Qpid Users</name>
@@ -524,19 +551,6 @@
     <developerConnection>scm:svn:https://svn.apache.org/repos/asf/qpid/trunk/qpid</developerConnection>
     <url>http://svn.apache.org/viewvc/qpid/</url>
   </scm>
-
-  <distributionManagement>
-    <repository>
-      <id>qpid.releases.https</id>
-      <name>Qpid Release Distribution Repository</name>
-      <url>https://repository.apache.org/content/repositories/releases/org/apache/qpid</url>
-    </repository>
-    <snapshotRepository>
-      <id>qpid.snapshots.https</id>
-      <name>Qpid Development Snapshot Repository</name>
-      <url>https://repository.apache.org/content/repositories/snapshots/org/apache/qpid</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <reporting>
     <plugins>

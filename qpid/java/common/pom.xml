@@ -34,12 +34,12 @@
   </properties>
 
   <dependencies>
-	<dependency>
-	  <groupId>org.slf4j</groupId>
-	  <artifactId>slf4j-api</artifactId>
-	  <version>1.6.4</version>
-	  <scope>compile</scope>
-	</dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-version}</version>
+      <scope>compile</scope>
+    </dependency>
 
     <!-- test dependencies -->
     <dependency>
@@ -49,12 +49,6 @@
       <scope>test</scope>
     </dependency>
 
-	<dependency>
-	  <groupId>log4j</groupId>
-	  <artifactId>log4j</artifactId>
-	  <version>1.2.16</version>
-	  <scope>test</scope>
-	</dependency>
   </dependencies>
    
   <build>

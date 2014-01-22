@@ -55,6 +55,20 @@
       <scope>compile</scope>
     </dependency>
 
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>${log4j-version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-version}</version>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- client deps -->
     <dependency>
       <groupId>org.apache.qpid</groupId>
@@ -242,6 +256,9 @@
           <!-- Skip the default test phase, bind to the
                integration-test phase below instead -->
           <skip>true</skip>
+          <systemPropertyVariables>
+            <log4j.configuration.file>${project.basedir}${file.separator}..${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
+          </systemPropertyVariables>
         </configuration>
         <executions>
           <execution>
