@@ -34,6 +34,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-j2ee-connector_1.5_spec</artifactId>
       <version>2.0.0</version>
@@ -103,6 +110,14 @@
           <artifactId>geronimo-crypto</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+
+    <!-- test dependencies -->
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-test-utils</artifactId>
+      <version>0.26-SNAPSHOT</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
    
