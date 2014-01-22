@@ -248,9 +248,10 @@ class Journal(object):
         self.directory = directory
         self.queue_name = os.path.basename(directory)
         self.files = {}
+        self.file_num_list = None
+        self.file_num_itr = None
         self.enq_map = EnqueueMap(self)
         self.txn_map = TransactionMap(self.enq_map)
-        self.file_itr = None
         self.current_file_header = None
         self.first_rec_flag = None
         self.statistics = Journal.JournalStatistics()
@@ -288,7 +289,8 @@ class Journal(object):
         print self.txn_map.report_str(True, True)
         print 'file_num p_no   efp journal_file'
         print '-------- ---- ----- ------------'
-        for file_num, file_hdr in self.files.iteritems():
+        for file_num in sorted(self.files.keys()):
+            file_hdr = self.files[file_num]
             comment = '<uninitialized>' if file_hdr.file_num == 0 else ''
             print '%8d %4d %4dk %s %s' % (file_num, file_hdr.partition_num, file_hdr.efp_data_size_kb,
                                           os.path.basename(file_hdr.file_handle.name), comment)
@@ -308,7 +310,8 @@ class Journal(object):
                 file_hdr.load(file_handle)
                 Utils.skip(file_handle, file_hdr.file_header_size_sblks * Utils.SBLK_SIZE)
                 self.files[file_hdr.file_num] = file_hdr
-        self.file_itr = iter(self.files)
+        self.file_num_list = sorted(self.files.keys())
+        self.file_num_itr = iter(self.file_num_list)
     def _check_file(self):
         if not self.current_file_header is None and not self.current_file_header.is_end_of_file():
             return
@@ -321,7 +324,7 @@ class Journal(object):
         file_num = 0
         try:
             while file_num == 0:
-                file_num = self.file_itr.next()
+                file_num = self.file_num_itr.next()
         except StopIteration:
             pass
         if file_num == 0:
@@ -355,6 +358,7 @@ class Journal(object):
         Utils.skip(self.current_file_header.file_handle, Utils.DBLK_SIZE)
         return True
     def _handle_enqueue_record(self, enqueue_record):
+        start_file_header = self.current_file_header
         while enqueue_record.load(self.current_file_header.file_handle):
             self._get_next_file()
         if enqueue_record.is_external() and enqueue_record.data != None:
@@ -363,12 +367,12 @@ class Journal(object):
             self.statistics.transient_record_count += 1
             return
         if enqueue_record.xid_size > 0:
-            self.txn_map.add(self.current_file_header, enqueue_record)
+            self.txn_map.add(start_file_header, enqueue_record)
             self.statistics.transaction_operation_count += 1
             self.statistics.transaction_record_count += 1
             self.statistics.transaction_enqueue_count += 1
         else:
-            self.enq_map.add(self.current_file_header, enqueue_record, False)
+            self.enq_map.add(start_file_header, enqueue_record, False)
         self.statistics.enqueue_count += 1
         #print enqueue_record, # DEBUG
     def _handle_dequeue_record(self, dequeue_record):
