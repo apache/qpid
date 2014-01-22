@@ -129,4 +129,9 @@ void ReceiverContext::reset(pn_session_t* session)
     configure();
 }
 
+bool ReceiverContext::hasCurrent()
+{
+    return pn_link_current(receiver);
+}
+
 }}} // namespace qpid::messaging::amqp
