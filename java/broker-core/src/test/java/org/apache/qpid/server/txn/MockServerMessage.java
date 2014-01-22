@@ -98,6 +98,12 @@ class MockServerMessage implements ServerMessage
         throw new NotImplementedException();
     }
 
+    @Override
+    public Object getConnectionReference()
+    {
+        return null;
+    }
+
     public long getArrivalTime()
     {
         throw new NotImplementedException();

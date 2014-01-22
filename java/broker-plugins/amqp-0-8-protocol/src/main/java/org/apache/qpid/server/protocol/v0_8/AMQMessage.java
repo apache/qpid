@@ -22,15 +22,11 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
-import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoredMessage;
 
 import java.nio.ByteBuffer;
@@ -38,7 +34,7 @@ import java.nio.ByteBuffer;
 /**
  * A deliverable message.
  */
-public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMetaData> implements InboundMessage
+public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMetaData>
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -92,12 +88,6 @@ public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMet
     public AMQMessageHeader getMessageHeader()
     {
         return getMessageMetaData().getMessageHeader();
-    }
-
-    @Override
-    public boolean isRedelivered()
-    {
-        return false;
     }
 
     public MessagePublishInfo getMessagePublishInfo()

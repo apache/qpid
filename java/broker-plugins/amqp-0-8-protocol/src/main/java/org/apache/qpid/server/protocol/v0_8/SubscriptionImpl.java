@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -519,7 +520,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     private boolean checkFilters(QueueEntry msg)
     {
-        return (_filters == null) || _filters.allAllow(msg);
+        return (_filters == null) || _filters.allAllow(msg.asFilterable());
     }
 
     public boolean isAutoClose()

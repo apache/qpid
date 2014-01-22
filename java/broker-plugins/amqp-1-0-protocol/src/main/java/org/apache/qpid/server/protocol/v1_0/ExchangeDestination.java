@@ -27,6 +27,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -54,14 +55,37 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
 
     public Outcome send(final Message_1_0 message, ServerTransaction txn)
     {
-        List<? extends BaseQueue> queues = _exchange.route(message);
+        final InstanceProperties instanceProperties =
+            new InstanceProperties()
+            {
+
+                @Override
+                public Object getProperty(final Property prop)
+                {
+                    switch(prop)
+                    {
+                        case MANDATORY:
+                            return false;
+                        case REDELIVERED:
+                            return false;
+                        case PERSISTENT:
+                            return message.isPersistent();
+                        case IMMEDIATE:
+                            return false;
+                        case EXPIRATION:
+                            return message.getExpiration();
+                    }
+                    return null;
+                }};
+
+        List<? extends BaseQueue> queues = _exchange.route(message, instanceProperties);
 
         if(queues == null || queues.isEmpty())
         {
             Exchange altExchange = _exchange.getAlternateExchange();
             if(altExchange != null)
             {
-                queues = altExchange.route(message);
+                queues = altExchange.route(message, instanceProperties);
             }
         }
 

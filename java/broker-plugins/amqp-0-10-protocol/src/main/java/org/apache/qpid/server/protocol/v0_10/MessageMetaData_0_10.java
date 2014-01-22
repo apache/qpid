@@ -21,7 +21,6 @@
 package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.transport.DeliveryProperties;

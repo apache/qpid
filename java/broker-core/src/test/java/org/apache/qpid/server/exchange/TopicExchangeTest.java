@@ -25,7 +25,7 @@ import junit.framework.Assert;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -312,9 +312,9 @@ public class TopicExchangeTest extends QpidTestCase
 
     private int routeMessage(String routingKey, long messageNumber) throws AMQException
     {
-        InboundMessage inboundMessage = mock(InboundMessage.class);
-        when(inboundMessage.getRoutingKey()).thenReturn(routingKey);
-        List<? extends BaseQueue> queues = _exchange.route(inboundMessage);
+        ServerMessage serverMessage = mock(ServerMessage.class);
+        when(serverMessage.getRoutingKey()).thenReturn(routingKey);
+        List<? extends BaseQueue> queues = _exchange.route(serverMessage, InstanceProperties.EMPTY);
         ServerMessage message = mock(ServerMessage.class);
         MessageReference ref = mock(MessageReference.class);
         when(ref.getMessage()).thenReturn(message);

@@ -21,8 +21,8 @@
 package org.apache.qpid.server.exchange.topic;
 
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ public final class TopicExchangeResult implements TopicMatcherResult
         _filteredQueues.put(queue,newFilters);
     }
 
-    public Collection<AMQQueue> processMessage(InboundMessage msg, Collection<AMQQueue> queues)
+    public Collection<AMQQueue> processMessage(Filterable msg, Collection<AMQQueue> queues)
     {
         if(queues == null)
         {

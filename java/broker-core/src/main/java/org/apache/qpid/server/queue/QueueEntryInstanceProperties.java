@@ -18,22 +18,35 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.message;
+package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.message.InstanceProperties;
 
-import org.apache.qpid.server.queue.Filterable;
-
-public interface InboundMessage extends Filterable
+public class QueueEntryInstanceProperties implements InstanceProperties
 {
-    String getRoutingKey();
+    private final QueueEntry _entry;
 
-    AMQMessageHeader getMessageHeader();
+    public QueueEntryInstanceProperties(final QueueEntry entry)
+    {
+        _entry = entry;
+    }
 
-    boolean isPersistent();
-
-    boolean isRedelivered();
-
-    long getSize();
-
-    Object getConnectionReference();
+    @Override
+    public Object getProperty(final Property prop)
+    {
+        switch(prop)
+        {
+            case REDELIVERED:
+                return _entry.isRedelivered();
+            case MANDATORY:
+                return false;
+            case PERSISTENT:
+                return _entry.getMessage().isPersistent();
+            case IMMEDIATE:
+                return false;
+            case EXPIRATION:
+                return _entry.getMessage().getExpiration();
+        }
+        return null;
+    }
 }

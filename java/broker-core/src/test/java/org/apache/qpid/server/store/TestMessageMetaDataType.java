@@ -95,6 +95,12 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
         }
 
         @Override
+        public Object getConnectionReference()
+        {
+            return null;
+        }
+
+        @Override
         public long getExpiration()
         {
             return 0;

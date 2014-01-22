@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.filter;
 
-import org.apache.qpid.server.queue.Filterable;
-
 public interface MessageFilter
 {
     boolean matches(Filterable message);

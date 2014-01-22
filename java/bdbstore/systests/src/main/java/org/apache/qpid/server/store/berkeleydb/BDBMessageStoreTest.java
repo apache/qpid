@@ -608,5 +608,11 @@ public class BDBMessageStoreTest extends MessageStoreTest
         {
             return null;
         }
+
+        @Override
+        public Object getConnectionReference()
+        {
+            return null;
+        }
     }
 }

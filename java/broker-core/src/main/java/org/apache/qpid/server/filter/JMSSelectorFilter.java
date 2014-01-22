@@ -31,7 +31,6 @@ import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.SelectorParser;
 import org.apache.qpid.filter.selector.TokenMgrError;
-import org.apache.qpid.server.queue.Filterable;
 
 
 public class JMSSelectorFilter implements MessageFilter

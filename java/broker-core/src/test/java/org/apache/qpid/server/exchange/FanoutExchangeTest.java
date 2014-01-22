@@ -40,7 +40,8 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -128,7 +129,7 @@ public class FanoutExchangeTest extends TestCase
         _exchange.addBinding("key",queue2, null);
 
 
-        List<? extends BaseQueue> result = _exchange.route(mockMessage(true));
+        List<? extends BaseQueue> result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
@@ -137,7 +138,7 @@ public class FanoutExchangeTest extends TestCase
         _exchange.addBinding("key2",queue2, Collections.singletonMap(AMQPFilterTypes.JMS_SELECTOR.toString(),(Object)"select = True"));
 
 
-        result = _exchange.route(mockMessage(true));
+        result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
@@ -145,14 +146,14 @@ public class FanoutExchangeTest extends TestCase
 
         _exchange.removeBinding("key",queue2,null);
 
-        result = _exchange.route(mockMessage(true));
+        result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
         assertTrue("Expected queue2 to be routed to", result.contains(queue2));
 
 
-        result = _exchange.route(mockMessage(false));
+        result = _exchange.route(mockMessage(false),InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to queue1 only", 1, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
@@ -161,7 +162,7 @@ public class FanoutExchangeTest extends TestCase
         _exchange.addBinding("key",queue2, Collections.singletonMap(AMQPFilterTypes.JMS_SELECTOR.toString(),(Object)"select = False"));
 
 
-        result = _exchange.route(mockMessage(false));
+        result = _exchange.route(mockMessage(false),InstanceProperties.EMPTY);
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
         assertTrue("Expected queue2 to be routed to", result.contains(queue2));
@@ -169,7 +170,7 @@ public class FanoutExchangeTest extends TestCase
 
     }
 
-    private InboundMessage mockMessage(boolean val)
+    private ServerMessage mockMessage(boolean val)
     {
         final AMQMessageHeader header = mock(AMQMessageHeader.class);
         when(header.containsHeader("select")).thenReturn(true);
@@ -185,8 +186,8 @@ public class FanoutExchangeTest extends TestCase
 
             }
         });
-        final InboundMessage inboundMessage = mock(InboundMessage.class);
-        when(inboundMessage.getMessageHeader()).thenReturn(header);
-        return inboundMessage;
+        final ServerMessage serverMessage = mock(ServerMessage.class);
+        when(serverMessage.getMessageHeader()).thenReturn(header);
+        return serverMessage;
     }
 }

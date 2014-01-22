@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.AMQMessageHeader;
 
@@ -31,8 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.queue.Filterable;
+import org.apache.qpid.server.filter.Filterable;
 
 /**
  * Defines binding and matching based on a set of headers.
@@ -135,7 +135,7 @@ class HeadersBinding
         }
     }
 
-    public boolean matches(InboundMessage message)
+    public boolean matches(Filterable message)
     {
         return matches(message.getMessageHeader()) && (_filter == null || _filter.matches(message));
     }

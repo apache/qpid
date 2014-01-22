@@ -33,13 +33,11 @@ import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.InboundMessageAdapter;
-import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.QueueEntryInstanceProperties;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -230,7 +228,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private boolean checkFilters(QueueEntry entry)
     {
-        return (_filters == null) || _filters.allAllow(entry);
+        return (_filters == null) || _filters.allAllow(entry.asFilterable());
     }
 
     public boolean isClosed()
@@ -583,9 +581,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         final ServerMessage msg = entry.getMessage();
         if (alternateExchange != null)
         {
-            final InboundMessage m = new InboundMessageAdapter(entry);
-
-            final List<? extends BaseQueue> destinationQueues = alternateExchange.route(m);
+            final List<? extends BaseQueue> destinationQueues = alternateExchange.route(entry.getMessage(), new QueueEntryInstanceProperties(entry));
 
             if (destinationQueues == null || destinationQueues.isEmpty())
             {
