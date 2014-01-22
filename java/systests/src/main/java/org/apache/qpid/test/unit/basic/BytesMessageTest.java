@@ -271,8 +271,8 @@ public class BytesMessageTest extends QpidBrokerTestCase implements MessageListe
             count = Integer.parseInt(argv[1]);
         }
 
-        System.out.println("connectionString = " + connectionString);
-        System.out.println("count = " + count);
+        _logger.info("connectionString = " + connectionString);
+        _logger.info("count = " + count);
 
         BytesMessageTest test = new BytesMessageTest();
         test._connectionString = connectionString;

@@ -155,8 +155,8 @@ public class LargeMessageTest extends QpidBrokerTestCase
         }
         catch (JMSException e)
         {
-            e.printStackTrace();
-            fail("Excpetion occured:" + e.getCause());
+            _logger.error("Exception occured", e);
+            fail("Exception occured:" + e.getCause());
         }
     }
 

@@ -443,17 +443,17 @@ public class BindingURLParser
 
             for (String url: urls)
             {
-                System.out.println("URL " + url);
+                _logger.info("URL " + url);
                 AMQBindingURL bindingURL = new AMQBindingURL(url);
                 parser.parse(url,bindingURL);
-                System.out.println("\nX " + bindingURL.toString() + " \n");
+                _logger.info("\nX " + bindingURL.toString() + " \n");
 
             }
 
         }
         catch(Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Error with binding urls", e);
         }
     }
 

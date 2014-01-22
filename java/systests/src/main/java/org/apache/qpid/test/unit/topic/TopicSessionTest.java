@@ -297,7 +297,7 @@ public class TopicSessionTest extends QpidBrokerTestCase
         m = (TextMessage) noLocal.receive(1000);
         if (m != null)
         {
-            System.out.println("Message:" + m.getText());
+            _logger.info("Message:" + m.getText());
         }
         assertNull(m);
 

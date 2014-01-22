@@ -284,7 +284,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
     {
         if(!isBrokerStorePersistent())
         {
-            System.out.println("The broker store is not persistent, skipping this test.");
+            _logger.warn("The broker store is not persistent, skipping this test");
             return;
         }
         
@@ -784,7 +784,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Receive error",e);
         }
 
         conn.stop();
@@ -852,7 +852,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Receive error",e);
         }
 
         conn.stop();
@@ -914,7 +914,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Error creating durable subscriber",e);
         }
     }
 

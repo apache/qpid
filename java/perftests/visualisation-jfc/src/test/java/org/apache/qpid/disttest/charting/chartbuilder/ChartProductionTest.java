@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.disttest.charting.ChartType;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
@@ -49,6 +50,7 @@ import org.jfree.data.general.Dataset;
  */
 public class ChartProductionTest extends QpidTestCase
 {
+    private static final Logger _logger = Logger.getLogger(ChartProductionTest.class);
     private static final String TEST_CHARTTITLE = "TEST_CHARTTITLE";
     private static final String TEST_CHARTSUBTITLE = "TEST_CHARTSUBTITLE";
     private static final String TEST_XAXIS = "TEST_XAXIS";
@@ -95,7 +97,7 @@ public class ChartProductionTest extends QpidTestCase
         }
         else
         {
-            System.out.println("Charting directory for manual observation " + chartDir);
+            _logger.info("Charting directory for manual observation " + chartDir);
         }
 
         _writer.setOutputDirectory(chartDir);

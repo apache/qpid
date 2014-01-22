@@ -30,6 +30,8 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
@@ -55,6 +57,7 @@ import java.util.concurrent.TimeUnit;
 
 public class SimpleAMQQueueTest extends QpidTestCase
 {
+    private static final Logger _logger = Logger.getLogger(SimpleAMQQueueTest.class);
 
     private SimpleAMQQueue _queue;
     private VirtualHost _virtualHost;
@@ -1146,7 +1149,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         }
         catch (InterruptedException e)
         {
-            e.printStackTrace();
+            _logger.error("Thread interrupted", e);
         }
     }
 

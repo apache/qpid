@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoderImpl;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkListener;
 import org.apache.qpid.amqp_1_0.type.*;
-import org.apache.qpid.amqp_1_0.type.DeliveryState;
 import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.transaction.Declare;
 import org.apache.qpid.amqp_1_0.type.transaction.Declared;
@@ -42,6 +42,7 @@ import java.util.*;
 
 public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
 {
+    private static final Logger _logger = Logger.getLogger(TxnCoordinatorLink_1_0.class);
     private VirtualHost _vhost;
     private ReceivingLinkEndpoint _endpoint;
 
@@ -149,7 +150,8 @@ public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
         }
         catch (AmqpErrorException e)
         {
-            e.printStackTrace();  //TODO.
+            //TODO
+            _logger.error("AMQP error", e);
         }
 
     }

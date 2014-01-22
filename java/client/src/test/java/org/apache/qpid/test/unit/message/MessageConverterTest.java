@@ -22,6 +22,7 @@ package org.apache.qpid.test.unit.message;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -42,7 +43,7 @@ import javax.jms.TextMessage;
 
 public class MessageConverterTest extends TestCase
 {
-
+    private static final Logger _logger = Logger.getLogger(MessageConverterTest.class);
     public static final String JMS_CORR_ID = "QPIDID_01";
     public static final int JMS_DELIV_MODE = 1;
     public static final String JMS_TYPE = "test.jms.type";
@@ -134,8 +135,8 @@ public class MessageConverterTest extends TestCase
         }
         catch (JMSException e)
         {
+            _logger.error("An error occured testing the property values", e);
             fail("An error occured testing the property values" + e.getCause());
-            e.printStackTrace();
         }
     }
 

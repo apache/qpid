@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.transport.network.io;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.TransportException;
 
@@ -38,7 +39,9 @@ import java.nio.ByteBuffer;
 
 public class IoAcceptor<E> extends Thread
 {
+    private static final Logger _logger = Logger.getLogger(IoAcceptor.class);
 
+    private volatile boolean _closed = false;
 
     private ServerSocket socket;
     private Binding<E,ByteBuffer> binding;
@@ -59,6 +62,8 @@ public class IoAcceptor<E> extends Thread
      */
     public void close() throws IOException
     {
+        _closed = true;
+
         if (!socket.isClosed())
         {
             socket.close();
@@ -73,7 +78,7 @@ public class IoAcceptor<E> extends Thread
 
     public void run()
     {
-        while (true)
+        while (!_closed)
         {
             try
             {
@@ -82,9 +87,36 @@ public class IoAcceptor<E> extends Thread
             }
             catch (IOException e)
             {
-                throw new TransportException(e);
+                if (!_closed)
+                {
+                    _logger.error("Error in IoAcceptor thread", e);
+                    closeSocketIfNecessary(socket);
+                    try
+                    {
+                        Thread.sleep(1000);
+                    }
+                    catch (InterruptedException ie)
+                    {
+                        _logger.debug("Stopping io acceptor due to interrupt request");
+                        _closed = true;
+                    }
+                }
             }
         }
     }
 
+    private void closeSocketIfNecessary(final ServerSocket socket)
+    {
+        if(socket != null)
+        {
+            try
+            {
+                socket.close();
+            }
+            catch (IOException e)
+            {
+                _logger.debug("Exception while closing socket", e);
+            }
+        }
+    }
 }

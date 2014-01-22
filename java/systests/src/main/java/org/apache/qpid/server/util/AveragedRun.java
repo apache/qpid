@@ -23,8 +23,12 @@ package org.apache.qpid.server.util;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
+import org.apache.log4j.Logger;
+
 public class AveragedRun implements Callable<RunStats>
 {
+    private static final Logger _logger = Logger.getLogger(AveragedRun.class);
+
     private final RunStats stats = new RunStats();
     private final TimedRun test;
     private final int iterations;
@@ -46,7 +50,7 @@ public class AveragedRun implements Callable<RunStats>
 
     public void run() throws Exception
     {
-        System.out.println(test + ": " + call());
+        _logger.info(test + ": " + call());
     }
 
     public String toString()

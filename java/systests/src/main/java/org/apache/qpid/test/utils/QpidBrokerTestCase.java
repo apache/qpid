@@ -255,8 +255,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     private void initialiseLogConfigFile()
     {
-        _logger.info("About to initialise log config file from system property: " + LOG4J_CONFIG_FILE_PATH);
-
         _logConfigFile = new File(LOG4J_CONFIG_FILE_PATH);
         if(!_logConfigFile.exists())
         {
