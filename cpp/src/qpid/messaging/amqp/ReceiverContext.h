@@ -59,6 +59,7 @@ class ReceiverContext
     void configure();
     void verify();
     Address getAddress() const;
+    bool hasCurrent();
   private:
     friend class ConnectionContext;
     const std::string name;
