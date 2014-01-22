@@ -23,9 +23,11 @@ package org.apache.qpid.server.message;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-public abstract class AbstractServerMessageImpl<T extends StorableMessageMetaData> implements ServerMessage<T>
+public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageImpl<X,T>, T extends StorableMessageMetaData> implements ServerMessage<T>
 {
 
     private static final AtomicIntegerFieldUpdater<AbstractServerMessageImpl> _refCountUpdater =
@@ -33,10 +35,13 @@ public abstract class AbstractServerMessageImpl<T extends StorableMessageMetaDat
 
     private volatile int _referenceCount = 0;
     private final StoredMessage<T> _handle;
+    private final Object _connectionReference;
 
-    public AbstractServerMessageImpl(StoredMessage<T> handle)
+
+    public AbstractServerMessageImpl(StoredMessage<T> handle, Object connectionReference)
     {
         _handle = handle;
+        _connectionReference = connectionReference;
     }
 
     public StoredMessage<T> getStoredMessage()
@@ -44,16 +49,11 @@ public abstract class AbstractServerMessageImpl<T extends StorableMessageMetaDat
         return _handle;
     }
 
-    public boolean incrementReference()
+    private boolean incrementReference()
     {
-        return incrementReference(1);
-    }
-
-    public boolean incrementReference(int count)
-    {
-        if(_refCountUpdater.addAndGet(this, count) <= 0)
+        if(_refCountUpdater.incrementAndGet(this) <= 0)
         {
-            _refCountUpdater.addAndGet(this, -count);
+            _refCountUpdater.decrementAndGet(this);
             return false;
         }
         else
@@ -67,7 +67,7 @@ public abstract class AbstractServerMessageImpl<T extends StorableMessageMetaDat
      * message store.
      *
      */
-    public void decrementReference()
+    private void decrementReference()
     {
         int count = _refCountUpdater.decrementAndGet(this);
 
@@ -104,8 +104,72 @@ public abstract class AbstractServerMessageImpl<T extends StorableMessageMetaDat
         return "(HC:" + System.identityHashCode(this) + " ID:" + getMessageNumber() + " Ref:" + getReferenceCount() + ")";
     }
 
-    protected int getReferenceCount()
+    private int getReferenceCount()
     {
         return _referenceCount;
     }
+
+    @Override
+    final public MessageReference<X> newReference()
+    {
+        return new Reference();
+    }
+
+    @Override
+    final public boolean isPersistent()
+    {
+        return _handle.getMetaData().isPersistent();
+    }
+
+    @Override
+    final public long getMessageNumber()
+    {
+        return getStoredMessage().getMessageNumber();
+    }
+
+    @Override
+    final public int getContent(ByteBuffer buf, int offset)
+    {
+        return getStoredMessage().getContent(offset, buf);
+    }
+
+    @Override
+    final public ByteBuffer getContent(int offset, int size)
+    {
+        return getStoredMessage().getContent(offset, size);
+    }
+
+    final public Object getConnectionReference()
+    {
+        return _connectionReference;
+    }public String toString()
+    {
+        return "Message[" + debugIdentity() + "]";
+    }
+
+    private final class Reference implements MessageReference<X>
+    {
+
+        private final AtomicBoolean _released = new AtomicBoolean(false);
+
+        private Reference()
+        {
+            incrementReference();
+        }
+
+        public X getMessage()
+        {
+            return (X) AbstractServerMessageImpl.this;
+        }
+
+        public void release()
+        {
+            if(!_released.getAndSet(true))
+            {
+                decrementReference();
+            }
+        }
+
+    }
+
 }

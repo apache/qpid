@@ -49,7 +49,6 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
@@ -271,7 +270,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         {
             throw new AMQSecurityException("Permission denied: " + e.getName());
         }
-        _currentMessage = new IncomingMessage(info, getProtocolSession().getReference());
+        _currentMessage = new IncomingMessage(info);
         _currentMessage.setExchange(e);
     }
 
@@ -291,12 +290,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             _currentMessage.setContentHeaderBody(contentHeaderBody);
 
-            _currentMessage.setExpiration();
-
-            _currentMessage.headersReceived(getProtocolSession().getLastReceivedTime());
-
-            _currentMessage.route();
-
             deliverCurrentMessageIfComplete();
         }
     }
@@ -309,56 +302,62 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         {
             try
             {
-                final List<? extends BaseQueue> destinationQueues = _currentMessage.getDestinationQueues();
 
-                if(!checkMessageUserId(_currentMessage.getContentHeader()))
+                final MessageMetaData messageMetaData =
+                        new MessageMetaData(_currentMessage.getMessagePublishInfo(),
+                                            _currentMessage.getContentHeader(),
+                                            getProtocolSession().getLastReceivedTime());
+
+                final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(messageMetaData);
+                final AMQMessage amqMessage = createAMQMessage(_currentMessage, handle);
+                MessageReference reference = amqMessage.newReference();
+                try
                 {
-                    _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.ACCESS_REFUSED, "Access Refused", _currentMessage));
-                }
-                else
-                {
-                    if(destinationQueues == null || destinationQueues.isEmpty())
+                    int bodyCount = _currentMessage.getBodyCount();
+                    if(bodyCount > 0)
                     {
-                        handleUnroutableMessage();
+                        long bodyLengthReceived = 0;
+                        for(int i = 0 ; i < bodyCount ; i++)
+                        {
+                            ContentBody contentChunk = _currentMessage.getContentChunk(i);
+                            handle.addContent((int)bodyLengthReceived, ByteBuffer.wrap(contentChunk.getPayload()));
+                            bodyLengthReceived += contentChunk.getSize();
+                        }
+                    }
+
+                    if(!checkMessageUserId(_currentMessage.getContentHeader()))
+                    {
+                        _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.ACCESS_REFUSED, "Access Refused", amqMessage));
                     }
                     else
                     {
-                        final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(_currentMessage.getMessageMetaData());
-                        _currentMessage.setStoredMessage(handle);
-                        int bodyCount = _currentMessage.getBodyCount();
-                        if(bodyCount > 0)
+                        final List<? extends BaseQueue> destinationQueues = _currentMessage.getExchange().route(amqMessage);
+
+                        if(destinationQueues == null || destinationQueues.isEmpty())
                         {
-                            long bodyLengthReceived = 0;
-                            for(int i = 0 ; i < bodyCount ; i++)
-                            {
-                                ContentChunk contentChunk = _currentMessage.getContentChunk(i);
-                                handle.addContent((int)bodyLengthReceived, ByteBuffer.wrap(contentChunk.getData()));
-                                bodyLengthReceived += contentChunk.getSize();
-                            }
+                            handleUnroutableMessage(amqMessage);
                         }
-
-                        _transaction.addPostTransactionAction(new ServerTransaction.Action()
+                        else
                         {
-                            public void postCommit()
-                            {
-                            }
+                            _transaction.enqueue(destinationQueues,
+                                                 amqMessage,
+                                                 new MessageDeliveryAction(amqMessage, destinationQueues));
+                            incrementOutstandingTxnsIfNecessary();
+                            handle.flushToStore();
 
-                            public void onRollback()
-                            {
-                                handle.remove();
-                            }
-                        });
-
-                        _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues));
-                        incrementOutstandingTxnsIfNecessary();
-                        _currentMessage.getStoredMessage().flushToStore();
+                        }
                     }
                 }
+                finally
+                {
+                    reference.release();
+                }
+
             }
             finally
             {
                 long bodySize = _currentMessage.getSize();
-                long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeader().getProperties()).getTimestamp();
+                long timestamp = _currentMessage.getContentHeader().getProperties().getTimestamp();
                 _session.registerMessageReceived(bodySize, timestamp);
                 _currentMessage = null;
             }
@@ -374,9 +373,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      * @throws AMQConnectionException if the message is mandatoryclose-on-no-route
      * @see AMQProtocolSession#isCloseWhenNoRoute()
      */
-    private void handleUnroutableMessage() throws AMQConnectionException
+    private void handleUnroutableMessage(AMQMessage message) throws AMQConnectionException
     {
-        boolean mandatory = _currentMessage.isMandatory();
+        boolean mandatory = message.isMandatory();
         String description = currentMessageDescription();
         boolean closeOnNoRoute = _session.isCloseWhenNoRoute();
 
@@ -398,13 +397,18 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                     (Throwable) null);
         }
 
-        if (mandatory || _currentMessage.isImmediate())
+        if (mandatory || message.isImmediate())
         {
-            _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message " + currentMessageDescription(), _currentMessage));
+            _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message " + currentMessageDescription(), message));
         }
         else
         {
-            _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchange().asString(), _currentMessage.getRoutingKey()));
+            _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchangeName().asString(),
+                                                       _currentMessage.getMessagePublishInfo().getRoutingKey() == null
+                                                               ? null
+                                                               : _currentMessage.getMessagePublishInfo()
+                                                                       .getRoutingKey()
+                                                                       .toString()));
         }
     }
 
@@ -417,15 +421,17 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         return String.format(
                 "[Exchange: %s, Routing key: %s]",
-                _currentMessage.getExchange(),
-                _currentMessage.getRoutingKey());
+                _currentMessage.getExchangeName(),
+                _currentMessage.getMessagePublishInfo().getRoutingKey() == null
+                        ? null
+                        : _currentMessage.getMessagePublishInfo().getRoutingKey().toString());
     }
 
     public void publishContentBody(ContentBody contentBody) throws AMQException
     {
         if (_currentMessage == null)
         {
-            throw new AMQException("Received content body without previously receiving a JmsPublishBody");
+            throw new AMQException("Received content body without previously receiving a Content Header");
         }
 
         if (_logger.isDebugEnabled())
@@ -435,10 +441,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         try
         {
-            final ContentChunk contentChunk =
-                    _session.getMethodRegistry().getProtocolVersionMethodConverter().convertToContentChunk(contentBody);
-
-            _currentMessage.addContentBodyFrame(contentChunk);
+            _currentMessage.addContentBodyFrame(contentBody);
 
             deliverCurrentMessageIfComplete();
         }
@@ -1157,24 +1160,23 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     }
 
 
-    private AMQMessage createAMQMessage(IncomingMessage incomingMessage)
+    private AMQMessage createAMQMessage(IncomingMessage incomingMessage, StoredMessage<MessageMetaData> handle)
             throws AMQException
     {
 
-        AMQMessage message = new AMQMessage(incomingMessage.getStoredMessage());
+        AMQMessage message = new AMQMessage(handle, _session.getReference());
 
-        message.setExpiration(incomingMessage.getExpiration());
-        message.setConnectionIdentifier(_session.getReference());
+        final BasicContentHeaderProperties properties =
+                  incomingMessage.getContentHeader().getProperties();
+
+        long expiration = properties.getExpiration();
+        message.setExpiration(expiration);
         return message;
     }
 
     private boolean checkMessageUserId(ContentHeaderBody header)
     {
-        AMQShortString userID =
-                header.getProperties() instanceof BasicContentHeaderProperties
-                    ? ((BasicContentHeaderProperties) header.getProperties()).getUserId()
-                    : null;
-
+        AMQShortString userID = header.getProperties().getUserId();
         return (!_messageAuthorizationRequired || _session.getAuthorizedPrincipal().getName().equals(userID == null? "" : userID.toString()));
 
     }
@@ -1208,13 +1210,13 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     private class MessageDeliveryAction implements ServerTransaction.Action
     {
-        private IncomingMessage _incommingMessage;
+        private final MessageReference<AMQMessage> _reference;
         private List<? extends BaseQueue> _destinationQueues;
 
-        public MessageDeliveryAction(IncomingMessage currentMessage,
+        public MessageDeliveryAction(AMQMessage currentMessage,
                                      List<? extends BaseQueue> destinationQueues)
         {
-            _incommingMessage = currentMessage;
+            _reference = currentMessage.newReference();
             _destinationQueues = destinationQueues;
         }
 
@@ -1222,10 +1224,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         {
             try
             {
-                final boolean immediate = _incommingMessage.isImmediate();
-
-                final AMQMessage amqMessage = createAMQMessage(_incommingMessage);
-                MessageReference ref = amqMessage.newReference();
+                AMQMessage message = _reference.getMessage();
+                final boolean immediate = message.isImmediate();
 
                 for(int i = 0; i < _destinationQueues.size(); i++)
                 {
@@ -1242,7 +1242,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                         action = null;
                     }
 
-                    queue.enqueue(amqMessage, isTransactional(), action);
+                    queue.enqueue(message, isTransactional(), action);
 
                     if(queue instanceof AMQQueue)
                     {
@@ -1251,8 +1251,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
                 }
 
-                _incommingMessage.getStoredMessage().flushToStore();
-                ref.release();
+                message.getStoredMessage().flushToStore();
+                _reference.release();
             }
             catch (AMQException e)
             {
@@ -1265,6 +1265,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         {
             // Maybe keep track of entries that were created and then delete them here in case of failure
             // to in memory enqueue
+            _reference.release();
         }
 
         private class ImmediateAction implements BaseQueue.PostEnqueueAction
@@ -1375,28 +1376,30 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     private class WriteReturnAction implements ServerTransaction.Action
     {
         private final AMQConstant _errorCode;
-        private final IncomingMessage _message;
         private final String _description;
+        private final MessageReference<AMQMessage> _reference;
 
         public WriteReturnAction(AMQConstant errorCode,
                                  String description,
-                                 IncomingMessage message)
+                                 AMQMessage message)
         {
             _errorCode = errorCode;
-            _message = message;
             _description = description;
+            _reference = message.newReference();
         }
 
         public void postCommit()
         {
             try
             {
-                _session.getProtocolOutputConverter().writeReturn(_message.getMessagePublishInfo(),
-                                                              _message.getContentHeader(),
-                                                              _message,
+                AMQMessage message = _reference.getMessage();
+                _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
+                                                              message.getContentHeaderBody(),
+                                                              message,
                                                               _channelId,
                                                               _errorCode.getCode(),
                                                               AMQShortString.validValueOf(_description));
+                _reference.release();
             }
             catch (AMQException e)
             {
@@ -1408,6 +1411,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         public void onRollback()
         {
+            _reference.release();
         }
     }
 
@@ -1470,12 +1474,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     public boolean onSameConnection(InboundMessage inbound)
     {
-        if(inbound instanceof IncomingMessage)
-        {
-            IncomingMessage incoming = (IncomingMessage) inbound;
-            return getProtocolSession().getReference() == incoming.getConnectionReference();
-        }
-        return false;
+        return getProtocolSession().getReference() == inbound.getConnectionReference();
     }
 
     public int getUnacknowledgedMessageCount()

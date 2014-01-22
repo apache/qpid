@@ -21,71 +21,21 @@
 
 package org.apache.qpid.framing.amqp_8_0;
 
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
 public class MethodConverter_8_0 extends AbstractMethodConverter implements ProtocolVersionMethodConverter
 {
-    private int _basicPublishClassId;
-    private int _basicPublishMethodId;
-
     public MethodConverter_8_0()
     {
         super((byte)8,(byte)0);
-
-
     }
 
-    public AMQBody convertToBody(ContentChunk contentChunk)
-    {
-        return new ContentBody(contentChunk.getData());
-    }
-
-    public ContentChunk convertToContentChunk(AMQBody body)
-    {
-        final ContentBody contentBodyChunk = (ContentBody) body;
-
-        return new ContentChunk()
-        {
-
-            public int getSize()
-            {
-                return contentBodyChunk.getSize();
-            }
-
-            public byte[] getData()
-            {
-                return contentBodyChunk.getPayload();
-            }
-
-            public void reduceToFit()
-            {
-                contentBodyChunk.reduceBufferToFit();
-            }
-        };
-
-    }
-
-    public void configure()
-    {
-
-        _basicPublishClassId = BasicPublishBodyImpl.CLASS_ID;
-        _basicPublishMethodId = BasicPublishBodyImpl.METHOD_ID;
-
-    }
-
-    public AMQBody convertToBody(byte[] data)
-    {
-        return new ContentBody(data);
-    }
 
     public MessagePublishInfo convertToInfo(AMQMethodBody methodBody)
     {

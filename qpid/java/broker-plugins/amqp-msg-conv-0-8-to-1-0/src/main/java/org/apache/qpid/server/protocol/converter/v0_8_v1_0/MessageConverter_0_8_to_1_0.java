@@ -56,7 +56,7 @@ public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMess
         header.setDurable(serverMessage.isPersistent());
 
         BasicContentHeaderProperties contentHeader =
-                (BasicContentHeaderProperties) serverMessage.getContentHeaderBody().getProperties();
+                  serverMessage.getContentHeaderBody().getProperties();
 
         header.setPriority(UnsignedByte.valueOf(contentHeader.getPriority()));
         final long expiration = serverMessage.getExpiration();

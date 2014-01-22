@@ -39,7 +39,7 @@ public class ContentHeaderBody implements AMQBody
     private long bodySize;
 
     /** must never be null */
-    private ContentHeaderProperties properties;
+    private BasicContentHeaderProperties properties;
 
     public ContentHeaderBody()
     {
@@ -57,13 +57,13 @@ public class ContentHeaderBody implements AMQBody
     }
 
 
-    public ContentHeaderBody(ContentHeaderProperties props, int classId)
+    public ContentHeaderBody(BasicContentHeaderProperties props, int classId)
     {
         properties = props;
         this.classId = classId;
     }
 
-    public ContentHeaderBody(int classId, int weight, ContentHeaderProperties props, long bodySize)
+    public ContentHeaderBody(int classId, int weight, BasicContentHeaderProperties props, long bodySize)
     {
         this(props, classId);
         this.weight = weight;
@@ -121,12 +121,12 @@ public class ContentHeaderBody implements AMQBody
         return new AMQFrame(channelId, body);
     }
 
-    public ContentHeaderProperties getProperties()
+    public BasicContentHeaderProperties getProperties()
     {
         return properties;
     }
 
-    public void setProperties(ContentHeaderProperties props)
+    public void setProperties(BasicContentHeaderProperties props)
     {
         properties = props;
     }

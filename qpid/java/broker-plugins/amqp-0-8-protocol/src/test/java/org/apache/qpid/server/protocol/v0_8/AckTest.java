@@ -119,8 +119,6 @@ public class AckTest extends QpidTestCase
                     return new AMQShortString("rk");
                 }
             };
-            final IncomingMessage msg = new IncomingMessage(publishBody);
-            //IncomingMessage msg2 = null;
             BasicContentHeaderProperties b = new BasicContentHeaderProperties();
             ContentHeaderBody cb = new ContentHeaderBody();
             cb.setProperties(b);
@@ -131,42 +129,35 @@ public class AckTest extends QpidTestCase
                 b.setDeliveryMode((byte) 2);
             }
 
-            msg.setContentHeaderBody(cb);
-
             // we increment the reference here since we are not delivering the messaging to any queues, which is where
             // the reference is normally incremented. The test is easier to construct if we have direct access to the
             // subscription
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
-            msg.enqueue(qs);
-            MessageMetaData mmd = msg.headersReceived(System.currentTimeMillis());
+            MessageMetaData mmd = new MessageMetaData(publishBody,cb, System.currentTimeMillis());
             final StoredMessage storedMessage = _messageStore.addMessage(mmd);
-            msg.setStoredMessage(storedMessage);
             final AMQMessage message = new AMQMessage(storedMessage);
-            if(msg.allContentReceived())
-            {
-                ServerTransaction txn = new AutoCommitTransaction(_messageStore);
-                txn.enqueue(_queue, message, new ServerTransaction.Action() {
-                    public void postCommit()
+            ServerTransaction txn = new AutoCommitTransaction(_messageStore);
+            txn.enqueue(_queue, message, new ServerTransaction.Action() {
+                public void postCommit()
+                {
+                    try
                     {
-                        try
-                        {
 
-                            _queue.enqueue(message);
-                        }
-                        catch (AMQException e)
-                        {
-                             throw new RuntimeException(e);
-                        }
+                        _queue.enqueue(message);
                     }
-
-                    public void onRollback()
+                    catch (AMQException e)
                     {
-                        //To change body of implemented methods use File | Settings | File Templates.
+                         throw new RuntimeException(e);
                     }
-                });
+                }
 
-            }
+                public void onRollback()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+            });
+
             // we manually send the message to the subscription
             //_subscription.send(new QueueEntry(_queue,msg), _queue);
         }
