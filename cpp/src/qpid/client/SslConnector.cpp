@@ -359,8 +359,10 @@ size_t SslConnector::decode(const char* buffer, size_t size)
                 throw Exception(QPID_MSG("Unsupported version: " << protocolInit
                                          << " supported version " << version));
             }
+            initiated = true;
+        } else {
+            return size - in.available();
         }
-        initiated = true;
     }
     AMQFrame frame;
     while(frame.decode(in)){
