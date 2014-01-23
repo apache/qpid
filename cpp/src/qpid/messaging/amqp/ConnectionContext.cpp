@@ -333,6 +333,21 @@ void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::sha
 void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    pn_link_drain(lnk->receiver, 0);
+    wakeupDriver();
+    //Not all implementations handle drain correctly, so limit the
+    //time spent waiting for it
+    qpid::sys::AbsTime until(qpid::sys::now(), qpid::sys::TIME_SEC*2);
+    while (pn_link_credit(lnk->receiver) > pn_link_queued(lnk->receiver) && until > qpid::sys::now()) {
+        QPID_LOG(debug, "Waiting for credit to be drained: credit=" << pn_link_credit(lnk->receiver) << ", queued=" << pn_link_queued(lnk->receiver));
+        waitUntil(ssn, lnk, until);
+    }
+    //release as yet unfetched messages:
+    for (pn_delivery_t* d = pn_link_current(lnk->receiver); d; d = pn_link_current(lnk->receiver)) {
+        pn_link_advance(lnk->receiver);
+        pn_delivery_update(d, PN_RELEASED);
+        pn_delivery_settle(d);
+    }
     if (pn_link_state(lnk->receiver) & PN_LOCAL_ACTIVE) {
         lnk->close();
     }

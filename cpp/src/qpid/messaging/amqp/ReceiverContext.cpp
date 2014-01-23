@@ -58,21 +58,12 @@ uint32_t ReceiverContext::getCapacity()
 
 uint32_t ReceiverContext::getAvailable()
 {
-    uint32_t count(0);
-    for (pn_delivery_t* d = pn_unsettled_head(receiver); d; d = pn_unsettled_next(d)) {
-        ++count;
-        if (d == pn_link_current(receiver)) break;
-    }
-    return count;
+    return pn_link_queued(receiver);
 }
 
 uint32_t ReceiverContext::getUnsettled()
 {
-    uint32_t count(0);
-    for (pn_delivery_t* d = pn_unsettled_head(receiver); d; d = pn_unsettled_next(d)) {
-        ++count;
-    }
-    return count;
+    return pn_link_unsettled(receiver) - pn_link_queued(receiver);
 }
 
 void ReceiverContext::close()
