@@ -24,6 +24,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.List;
@@ -34,6 +35,8 @@ import java.util.List;
  */
 public class AbstractConfigurationTest extends QpidTestCase
 {
+    private static final Logger _logger = Logger.getLogger(AbstractConfigurationTest.class);
+
     private static final double DOUBLE = 3.14;
     private static final long POSITIVE_LONG = 1000;
     private static final long NEGATIVE_LONG = -1000;
@@ -101,7 +104,7 @@ public class AbstractConfigurationTest extends QpidTestCase
         }
         catch (ConfigurationException e)
         {
-            e.printStackTrace();
+            _logger.error("Error setting up plugin configuration", e);
             fail(e.toString());
         }
 

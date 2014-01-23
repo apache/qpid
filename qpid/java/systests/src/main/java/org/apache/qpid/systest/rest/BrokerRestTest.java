@@ -42,6 +42,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.test.client.UnroutableMessageTestExceptionListener;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.util.SystemUtils;
 
 public class BrokerRestTest extends QpidRestTestCase
 {
@@ -237,8 +238,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
                 brokerDetails.get(Broker.BUILD_VERSION));
-        assertEquals("Unexpected value of attribute " + Broker.OPERATING_SYSTEM, OS_NAME + " "
-                + System.getProperty("os.version") + " " + System.getProperty("os.arch"),
+        assertEquals("Unexpected value of attribute " + Broker.OPERATING_SYSTEM, SystemUtils.getOSString(),
                 brokerDetails.get(Broker.OPERATING_SYSTEM));
         assertEquals(
                 "Unexpected value of attribute " + Broker.PLATFORM,

@@ -47,10 +47,6 @@ public interface AMQMessageHeader
 
     String getReplyTo();
 
-    String getReplyToExchange();
-    String getReplyToRoutingKey();
-
-
     Object getHeader(String name);
 
     boolean containsHeaders(Set<String> names);

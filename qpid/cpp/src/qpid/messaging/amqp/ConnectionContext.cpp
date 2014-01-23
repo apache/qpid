@@ -125,6 +125,17 @@ bool ConnectionContext::isOpen() const
     return state == CONNECTED && pn_connection_state(connection) & (PN_LOCAL_ACTIVE | PN_REMOTE_ACTIVE);
 }
 
+void ConnectionContext::sync(boost::shared_ptr<SessionContext> ssn)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    //wait for outstanding sends to settle
+    while (!ssn->settled()) {
+        QPID_LOG(debug, "Waiting for sends to settle on sync()");
+        wait(ssn);//wait until message has been confirmed
+    }
+    checkClosed(ssn);
+}
+
 void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
@@ -267,6 +278,23 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
         }
     }
     return false;
+}
+
+boost::shared_ptr<ReceiverContext> ConnectionContext::nextReceiver(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Duration timeout)
+{
+    qpid::sys::AbsTime until(convert(timeout));
+    while (true) {
+        qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+        checkClosed(ssn);
+        boost::shared_ptr<ReceiverContext> r = ssn->nextReceiver();
+        if (r) {
+            return r;
+        } else if (until > qpid::sys::now()) {
+            waitUntil(ssn, until);
+        } else {
+            return boost::shared_ptr<ReceiverContext>();
+        }
+    }
 }
 
 void ConnectionContext::acknowledge(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message* message, bool cumulative)

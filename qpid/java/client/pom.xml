@@ -43,7 +43,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.6.4</version>
+      <version>${slf4j-version}</version>
       <scope>compile</scope>
     </dependency>
 
@@ -54,13 +54,6 @@
       <version>0.26-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
-
-	<dependency>
-	  <groupId>log4j</groupId>
-	  <artifactId>log4j</artifactId>
-	  <version>1.2.16</version>
-	  <scope>test</scope>
-	</dependency>
   </dependencies>
 
   <build>

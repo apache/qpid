@@ -100,7 +100,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
 
         ContentHeaderBody chb_0_8 = createContentHeaderBody_0_8(props_0_8, bodySize);
 
-        MessageMetaData messageMetaData_0_8 = new MessageMetaData(pubInfoBody_0_8, chb_0_8, 0);
+        MessageMetaData messageMetaData_0_8 = new MessageMetaData(pubInfoBody_0_8, chb_0_8);
         StoredMessage<MessageMetaData> storedMessage_0_8 = bdbStore.addMessage(messageMetaData_0_8);
 
         long origArrivalTime_0_8 = messageMetaData_0_8.getArrivalTime();
@@ -156,7 +156,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         assertEquals("ContentHeader weight has changed", chb_0_8.getWeight(), returnedHeaderBody_0_8.getWeight());
         assertEquals("ContentHeader bodySize has changed", chb_0_8.getBodySize(), returnedHeaderBody_0_8.getBodySize());
 
-        BasicContentHeaderProperties returnedProperties_0_8 = (BasicContentHeaderProperties) returnedHeaderBody_0_8.getProperties();
+        BasicContentHeaderProperties returnedProperties_0_8 =   returnedHeaderBody_0_8.getProperties();
         assertEquals("Property ContentType has changed", props_0_8.getContentTypeAsString(), returnedProperties_0_8.getContentTypeAsString());
         assertEquals("Property MessageID has changed", props_0_8.getMessageIdAsString(), returnedProperties_0_8.getMessageIdAsString());
 
@@ -401,7 +401,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
 
         ContentHeaderBody chb_0_8 = createContentHeaderBody_0_8(props_0_8, bodySize);
 
-        MessageMetaData messageMetaData_0_8 = new MessageMetaData(pubInfoBody_0_8, chb_0_8, 0);
+        MessageMetaData messageMetaData_0_8 = new MessageMetaData(pubInfoBody_0_8, chb_0_8);
         StoredMessage<MessageMetaData> storedMessage_0_8 = store.addMessage(messageMetaData_0_8);
 
         storedMessage_0_8.addContent(0, chunk1);
@@ -614,6 +614,12 @@ public class BDBMessageStoreTest extends MessageStoreTest
         }
 
         public ByteBuffer getContent(int offset, int length)
+        {
+            return null;
+        }
+
+        @Override
+        public Object getConnectionReference()
         {
             return null;
         }

@@ -146,7 +146,7 @@ bool checkTransition(BrokerStatus from, BrokerStatus to) {
 
 void Membership::update(Mutex::ScopedLock& l) {
     QPID_LOG(info, "Membership: " <<  brokers);
-// Update managment and send update event.
+    // Update managment and send update event.
     BrokerStatus newStatus = getStatus(l);
     Variant::List brokerList = asList(l);
     if (mgmtObject) {

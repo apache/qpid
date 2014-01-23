@@ -22,23 +22,18 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
-import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.transport.Header;
 
 import java.nio.ByteBuffer;
 
 
-public class MessageTransferMessage extends AbstractServerMessageImpl<MessageMetaData_0_10> implements InboundMessage
+public class MessageTransferMessage extends AbstractServerMessageImpl<MessageTransferMessage, MessageMetaData_0_10>
 {
-
-    private Object _connectionRef;
 
     public MessageTransferMessage(StoredMessage<MessageMetaData_0_10> storeMessage, Object connectionRef)
     {
-        super(storeMessage);
-        _connectionRef = connectionRef;
+        super(storeMessage, connectionRef);
     }
 
     private MessageMetaData_0_10 getMetaData()
@@ -56,12 +51,6 @@ public class MessageTransferMessage extends AbstractServerMessageImpl<MessageMet
         return getMetaData().getMessageHeader();
     }
 
-    public boolean isPersistent()
-    {
-        return getMetaData().isPersistent();
-    }
-
-
     public boolean isRedelivered()
     {
         // The *Message* is never redelivered, only queue entries are... this is here so that filters
@@ -71,7 +60,6 @@ public class MessageTransferMessage extends AbstractServerMessageImpl<MessageMet
 
     public long getSize()
     {
-
         return getMetaData().getSize();
     }
 
@@ -85,30 +73,9 @@ public class MessageTransferMessage extends AbstractServerMessageImpl<MessageMet
         return getMetaData().getExpiration();
     }
 
-    public MessageReference newReference()
-    {
-        return new TransferMessageReference(this);
-    }
-
-    public long getMessageNumber()
-    {
-        return getStoredMessage().getMessageNumber();
-    }
-
     public long getArrivalTime()
     {
         return getMetaData().getArrivalTime();
-    }
-
-    public int getContent(ByteBuffer buf, int offset)
-    {
-        return getStoredMessage().getContent(offset, buf);
-    }
-
-
-    public ByteBuffer getContent(int offset, int size)
-    {
-        return getStoredMessage().getContent(offset,size);
     }
 
     public Header getHeader()
@@ -118,13 +85,6 @@ public class MessageTransferMessage extends AbstractServerMessageImpl<MessageMet
 
     public ByteBuffer getBody()
     {
-
         return  getContent(0, (int)getSize());
     }
-
-    public Object getConnectionReference()
-    {
-        return _connectionRef;
-    }
-
 }

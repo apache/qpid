@@ -112,7 +112,7 @@ public abstract  class AbstractXATestCase extends QpidBrokerTestCase
             }
             catch (JMSException e)
             {
-                e.printStackTrace();
+                _logger.error("Producer error",e);
                 fail("cannot create message producer: " + e.getMessage());
             }
             // create standard consumer

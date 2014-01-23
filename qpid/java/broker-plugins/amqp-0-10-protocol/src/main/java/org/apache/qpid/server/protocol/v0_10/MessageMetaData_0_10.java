@@ -21,7 +21,6 @@
 package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.transport.DeliveryProperties;
@@ -37,7 +36,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMessage
+public class MessageMetaData_0_10 implements StorableMessageMetaData
 {
     private Header _header;
     private DeliveryProperties _deliveryProps;
@@ -53,8 +52,6 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
     private static final MessageMetaDataType_0_10 TYPE = new MessageMetaDataType_0_10();
 
     private volatile ByteBuffer _encoded;
-    private Object _connectionReference;
-
 
     public MessageMetaData_0_10(MessageTransfer xfr)
     {
@@ -202,12 +199,6 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
         return _deliveryProps == null ? 0L : _deliveryProps.getExpiration();
     }
 
-    public boolean isRedelivered()
-    {
-        // The *Message* is never redelivered, only queue entries are...
-        return false;
-    }
-
     public long getArrivalTime()
     {
         return _arrivalTime;
@@ -216,16 +207,6 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
     public Header getHeader()
     {
         return _header;
-    }
-
-    public void setConnectionReference(Object connectionReference)
-    {
-        _connectionReference = connectionReference;
-    }
-
-    public Object getConnectionReference()
-    {
-        return _connectionReference;
     }
 
     private static class MetaDataFactory implements MessageMetaDataType.Factory<MessageMetaData_0_10>

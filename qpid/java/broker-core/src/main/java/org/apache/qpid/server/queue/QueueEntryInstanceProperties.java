@@ -18,15 +18,35 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.queue;
 
-package org.apache.qpid.framing.abstraction;
+import org.apache.qpid.server.message.InstanceProperties;
 
-import org.apache.qpid.framing.AMQMethodBody;
-
-
-public interface MessagePublishInfoConverter
+public class QueueEntryInstanceProperties implements InstanceProperties
 {
-    public MessagePublishInfo convertToInfo(AMQMethodBody body);
-    public AMQMethodBody convertToBody(MessagePublishInfo info);
+    private final QueueEntry _entry;
 
+    public QueueEntryInstanceProperties(final QueueEntry entry)
+    {
+        _entry = entry;
+    }
+
+    @Override
+    public Object getProperty(final Property prop)
+    {
+        switch(prop)
+        {
+            case REDELIVERED:
+                return _entry.isRedelivered();
+            case MANDATORY:
+                return false;
+            case PERSISTENT:
+                return _entry.getMessage().isPersistent();
+            case IMMEDIATE:
+                return false;
+            case EXPIRATION:
+                return _entry.getMessage().getExpiration();
+        }
+        return null;
+    }
 }

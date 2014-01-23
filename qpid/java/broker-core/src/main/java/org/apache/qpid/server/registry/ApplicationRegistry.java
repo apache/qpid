@@ -54,6 +54,7 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.util.SystemUtils;
 
 
 /**
@@ -339,9 +340,9 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         logActor.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
                                                  System.getProperty("java.runtime.version", System.getProperty("java.version")),
-                                                 System.getProperty("os.name"),
-                                                 System.getProperty("os.version"),
-                                                 System.getProperty("os.arch")));
+                                                 SystemUtils.getOSName(),
+                                                 SystemUtils.getOSVersion(),
+                                                 SystemUtils.getOSArch()));
 
         logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
     }

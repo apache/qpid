@@ -73,7 +73,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private Port _port;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
-    private NetworkConnection _networkConnection;
     private Transport _transport;
     private volatile boolean _stopped;
 
@@ -528,7 +527,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
     public Principal getPeerPrincipal()
     {
-        return _networkConnection.getPeerPrincipal();
+        return getNetworkConnection().getPeerPrincipal();
     }
 
     @Override
@@ -541,16 +540,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setLocalAddress(SocketAddress localAddress)
     {
         super.setLocalAddress(localAddress);
-    }
-
-    public void setNetworkConnection(NetworkConnection network)
-    {
-        _networkConnection = network;
-    }
-
-    public NetworkConnection getNetworkConnection()
-    {
-        return _networkConnection;
     }
 
     public void doHeartbeat()

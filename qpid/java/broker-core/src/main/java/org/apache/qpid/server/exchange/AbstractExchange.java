@@ -32,7 +32,8 @@ import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -373,11 +374,13 @@ public abstract class AbstractExchange implements Exchange
         return getBindings().size();
     }
 
-    public final List<? extends BaseQueue> route(final InboundMessage message)
+    @Override
+    public final List<? extends BaseQueue> route(final ServerMessage message,
+                                                 final InstanceProperties instanceProperties)
     {
         _receivedMessageCount.incrementAndGet();
         _receivedMessageSize.addAndGet(message.getSize());
-        List<? extends BaseQueue> queues = doRoute(message);
+        List<? extends BaseQueue> queues = doRoute(message, instanceProperties);
         List<? extends BaseQueue> allQueues = queues;
 
         boolean deletedQueues = false;
@@ -413,7 +416,8 @@ public abstract class AbstractExchange implements Exchange
         return queues;
     }
 
-    protected abstract List<? extends BaseQueue> doRoute(final InboundMessage message);
+    protected abstract List<? extends BaseQueue> doRoute(final ServerMessage message,
+                                                         final InstanceProperties instanceProperties);
 
     public long getMsgReceives()
     {

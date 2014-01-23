@@ -53,9 +53,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -184,7 +182,7 @@ public class ServerSession extends Session
         return isCommandsFull(id);
     }
 
-    public void enqueue(final ServerMessage message, final List<? extends BaseQueue> queues)
+    public void enqueue(final MessageTransferMessage message, final List<? extends BaseQueue> queues)
     {
         if(_outstandingCredit.get() != UNLIMITED_CREDIT
                 && _outstandingCredit.decrementAndGet() == (Integer.MAX_VALUE - PRODUCER_CREDIT_TOPUP_THRESHOLD))
@@ -766,14 +764,11 @@ public class ServerSession extends Session
         }
     }
 
-    public boolean onSameConnection(InboundMessage inbound)
+    @Override
+    public Object getConnectionReference()
     {
-        return ((inbound instanceof MessageTransferMessage)
-                && ((MessageTransferMessage)inbound).getConnectionReference() == getConnection().getReference())
-                || ((inbound instanceof MessageMetaData_0_10)
-                    && (((MessageMetaData_0_10)inbound).getConnectionReference())== getConnection().getReference());
+        return getConnection().getReference();
     }
-
 
     public String toLogString()
     {
@@ -852,31 +847,25 @@ public class ServerSession extends Session
     private class PostEnqueueAction implements ServerTransaction.Action
     {
 
-        private List<? extends BaseQueue> _queues;
-        private ServerMessage _message;
+        private final MessageReference<MessageTransferMessage> _reference;
+        private final List<? extends BaseQueue> _queues;
         private final boolean _transactional;
 
-        public PostEnqueueAction(List<? extends BaseQueue> queues, ServerMessage message, final boolean transactional)
+        public PostEnqueueAction(List<? extends BaseQueue> queues, MessageTransferMessage message, final boolean transactional)
         {
+            _reference = message.newReference();
             _transactional = transactional;
-            setState(queues, message);
-        }
-
-        public void setState(List<? extends BaseQueue> queues, ServerMessage message)
-        {
-            _message = message;
             _queues = queues;
         }
 
         public void postCommit()
         {
-            MessageReference<?> ref = _message.newReference();
             for(int i = 0; i < _queues.size(); i++)
             {
                 try
                 {
                     BaseQueue queue = _queues.get(i);
-                    queue.enqueue(_message, _transactional, null);
+                    queue.enqueue(_reference.getMessage(), _transactional, null);
                     if(queue instanceof AMQQueue)
                     {
                         ((AMQQueue)queue).checkCapacity(ServerSession.this);
@@ -889,12 +878,13 @@ public class ServerSession extends Session
                     throw new RuntimeException(e);
                 }
             }
-            ref.release();
+            _reference.release();
         }
 
         public void onRollback()
         {
             // NO-OP
+            _reference.release();
         }
     }
 

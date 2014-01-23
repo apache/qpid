@@ -29,6 +29,7 @@
 #include "qpid/messaging/exceptions.h"
 
 #include "Receiver.h"
+#include "Address.h"
 #include "Session.h"
 #include "Message.h"
 #include "Duration.h"
@@ -53,8 +54,8 @@ namespace Messaging {
 
     // unmanaged clone
     Receiver::Receiver(const ::qpid::messaging::Receiver & r,
-        Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-    parentSession(sessRef)
+        Org::Apache::Qpid::Messaging::Session ^ sessRef)
+        : parentSession(sessRef)
     {
         System::Exception ^ newException = nullptr;
 
@@ -102,8 +103,8 @@ namespace Messaging {
 
 
     // Copy constructor look-alike (C#)
-    Receiver::Receiver(const Receiver ^ receiver) :
-    parentSession(receiver->parentSession)
+    Receiver::Receiver(const Receiver ^ receiver)
+        : parentSession(receiver->parentSession)
     {
         System::Exception ^ newException = nullptr;
 
@@ -126,8 +127,8 @@ namespace Messaging {
     }
 
     // Copy constructor implicitly dereferenced (C++)
-    Receiver::Receiver(const Receiver % receiver) :
-    parentSession(receiver.parentSession)
+    Receiver::Receiver(const Receiver % receiver)
+        : parentSession(receiver.parentSession)
     {
         System::Exception ^ newException = nullptr;
 
@@ -349,10 +350,10 @@ namespace Messaging {
 
         try
         {
-			msclr::lock lk(privateLock);
-			ThrowIfDisposed();
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
 
-			nativeObjPtr->close();
+            nativeObjPtr->close();
         }
         catch (const ::qpid::types::Exception & error)
         {
@@ -373,5 +374,45 @@ namespace Messaging {
         {
             throw newException;
         }
+    }
+
+    Org::Apache::Qpid::Messaging::Address ^ Receiver::GetAddress()
+    {
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
+        System::Exception           ^ newException = nullptr;
+        Messaging::Address          ^ newAddress   = nullptr;
+
+        try
+        {
+            // fetch unmanaged Address
+            ::qpid::messaging::Address addr =
+                nativeObjPtr->getAddress();
+
+            // create a managed Address
+            newAddress = gcnew Address(addr);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        finally
+        {
+            if (newException != nullptr)
+            {
+                if (newAddress != nullptr)
+                {
+                    delete newAddress;
+                }
+            }
+        }
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+
+        return newAddress;
     }
 }}}}

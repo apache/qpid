@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
@@ -40,6 +41,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
@@ -50,8 +52,6 @@ import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
-import org.apache.qpid.server.protocol.v0_8.IncomingMessage;
-import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -77,6 +77,8 @@ import static org.mockito.Mockito.when;
  */
 public class MessageStoreTest extends QpidTestCase
 {
+    private static final Logger _logger = Logger.getLogger(MessageStoreTest.class);
+
     public static final int DEFAULT_PRIORTY_LEVEL = 5;
     public static final String SELECTOR_VALUE = "Test = 'MST'";
     public static final String LVQ_KEY = "MST-LVQ-KEY";
@@ -180,7 +182,7 @@ public class MessageStoreTest extends QpidTestCase
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("Error closing virtual host", e);
                 fail(e.getMessage());
             }
         }
@@ -191,7 +193,7 @@ public class MessageStoreTest extends QpidTestCase
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Error creating virtual host", e);
             fail(e.getMessage());
         }
 
@@ -615,61 +617,41 @@ public class MessageStoreTest extends QpidTestCase
 
         MessagePublishInfo messageInfo = new TestMessagePublishInfo(exchange, false, false, routingKey);
 
-        final IncomingMessage currentMessage;
-
-
-        currentMessage = new IncomingMessage(messageInfo);
-
-        currentMessage.setExchange(exchange);
-
         ContentHeaderBody headerBody = new ContentHeaderBody(BasicConsumeBodyImpl.CLASS_ID,0,properties,0l);
 
-        try
-        {
-            currentMessage.setContentHeaderBody(headerBody);
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        MessageMetaData mmd = new MessageMetaData(messageInfo, headerBody, System.currentTimeMillis());
 
-        currentMessage.setExpiration();
+        final StoredMessage<MessageMetaData> storedMessage = getVirtualHost().getMessageStore().addMessage(mmd);
+        storedMessage.flushToStore();
+        final AMQMessage currentMessage = new AMQMessage(storedMessage);
 
-        MessageMetaData mmd = currentMessage.headersReceived(System.currentTimeMillis());
-        currentMessage.setStoredMessage(getVirtualHost().getMessageStore().addMessage(mmd));
-        currentMessage.getStoredMessage().flushToStore();
-        currentMessage.route();
+        final List<? extends BaseQueue> destinationQueues = exchange.route(currentMessage, InstanceProperties.EMPTY);
 
 
-        // check and deliver if header says body length is zero
-        if (currentMessage.allContentReceived())
-        {
-            ServerTransaction trans = new AutoCommitTransaction(getVirtualHost().getMessageStore());
-            final List<? extends BaseQueue> destinationQueues = currentMessage.getDestinationQueues();
-            trans.enqueue(currentMessage.getDestinationQueues(), currentMessage, new ServerTransaction.Action() {
-                public void postCommit()
+        ServerTransaction trans = new AutoCommitTransaction(getVirtualHost().getMessageStore());
+
+        trans.enqueue(destinationQueues, currentMessage, new ServerTransaction.Action() {
+            public void postCommit()
+            {
+                try
                 {
-                    try
+                    for(BaseQueue queue : destinationQueues)
                     {
-                        AMQMessage message = new AMQMessage(currentMessage.getStoredMessage());
-
-                        for(BaseQueue queue : destinationQueues)
-                        {
-                            queue.enqueue(message);
-                        }
-                    }
-                    catch (AMQException e)
-                    {
-                        e.printStackTrace();
+                        queue.enqueue(currentMessage);
                     }
                 }
-
-                public void onRollback()
+                catch (AMQException e)
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                    _logger.error("Problem enqueing message", e);
                 }
-            });
-        }
+            }
+
+            public void onRollback()
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        });
+
     }
 
     private void createAllQueues()

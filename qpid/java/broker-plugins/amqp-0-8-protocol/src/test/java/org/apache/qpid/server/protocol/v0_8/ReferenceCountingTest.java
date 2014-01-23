@@ -81,7 +81,7 @@ public class ReferenceCountingTest extends QpidTestCase
 
 
 
-        MessageMetaData mmd = new MessageMetaData(info, chb, 0);
+        MessageMetaData mmd = new MessageMetaData(info, chb);
         StoredMessage storedMessage = _store.addMessage(mmd);
 
 
@@ -139,7 +139,7 @@ public class ReferenceCountingTest extends QpidTestCase
 
         final ContentHeaderBody chb = createPersistentContentHeader();
 
-        MessageMetaData mmd = new MessageMetaData(info, chb, 0);
+        MessageMetaData mmd = new MessageMetaData(info, chb);
         StoredMessage storedMessage = _store.addMessage(mmd);
 
         AMQMessage message = new AMQMessage(storedMessage);

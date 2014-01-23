@@ -66,7 +66,13 @@ MessageStoreImpl::MessageStoreImpl(qpid::broker::Broker* broker_, const char* en
                                    jrnlLog(qpid::linearstore::journal::JournalLog::LOG_NOTICE),
                                    mgmtObject(),
                                    agent(0)
-{}
+{
+    // Test of values for QLS_RAND_SHIFT1, QLS_RAND_SHIFT2 and QLS_RAND_MASK
+    if((((uint64_t)RAND_MAX << QLS_RAND_SHIFT1) ^ ((uint64_t)RAND_MAX << QLS_RAND_SHIFT2) ^ (RAND_MAX & QLS_RAND_MASK)) != 0xffffffffffffffffULL) {
+        THROW_STORE_EXCEPTION("[linearstore] 64-bit random number generation alignment error");
+    }
+    ::srand(::time(NULL));
+}
 
 uint32_t MessageStoreImpl::chkJrnlWrPageCacheSize(const uint32_t param_, const std::string& paramName_)
 {

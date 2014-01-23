@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -48,6 +47,7 @@ import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
@@ -72,6 +72,7 @@ import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.util.SystemUtils;
 
 /**
  * Qpid base class for system testing test cases.
@@ -131,6 +132,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_LANGUAGE = "broker.language";
     protected static final String BROKER_TYPE = "broker.type";
     private static final String BROKER_COMMAND = "broker.command";
+    private static final String BROKER_COMMAND_PLATFORM = "broker.command." + SystemUtils.getOSConfigSuffix();
     private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
     private static final String BROKER_VERSION = "broker.version";
     protected static final String BROKER_READY = "broker.ready";
@@ -158,13 +160,13 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", DEFAULT_JMXPORT_REGISTRYSERVER);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", DEFAULT_SSL_PORT_VALUE);
-    public static final String OS_NAME = System.getProperty("os.name");
-    public static final boolean IS_OS_WINDOWS = String.valueOf(OS_NAME).toLowerCase().contains("windows");
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
 
-    protected BrokerCommandHelper _brokerCommandHelper = new BrokerCommandHelper(System.getProperty(BROKER_COMMAND));
+    private static final String BROKER_COMMAND_TEMPLATE = System.getProperty(BROKER_COMMAND_PLATFORM, System.getProperty(BROKER_COMMAND));
+    protected BrokerCommandHelper _brokerCommandHelper = new BrokerCommandHelper(BROKER_COMMAND_TEMPLATE);
+
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private final AmqpProtocolVersion _brokerVersion = AmqpProtocolVersion.valueOf(System.getProperty(BROKER_VERSION, ""));
     protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
@@ -253,8 +255,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     private void initialiseLogConfigFile()
     {
-        _logger.info("About to initialise log config file from system property: " + LOG4J_CONFIG_FILE_PATH);
-
         _logConfigFile = new File(LOG4J_CONFIG_FILE_PATH);
         if(!_logConfigFile.exists())
         {
@@ -499,8 +499,21 @@ public class QpidBrokerTestCase extends QpidTestCase
             String qpidHome = System.getProperty(QPID_HOME);
             processEnv.put(QPID_HOME, qpidHome);
             //Augment Path with bin directory in QPID_HOME.
-            processEnv.put("PATH", processEnv.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
+            boolean foundPath = false;
+            final String pathEntry = qpidHome + File.separator + "bin";
+            for(Map.Entry<String,String> entry : processEnv.entrySet())
+            {
+                if(entry.getKey().equalsIgnoreCase("path"))
+                {
+                    entry.setValue(entry.getValue().concat(File.pathSeparator + pathEntry));
+                    foundPath = true;
+                }
+            }
+            if(!foundPath)
+            {
+                processEnv.put("PATH", pathEntry);
 
+            }
             //Add the test name to the broker run.
             // DON'T change PNAME, qpid.stop needs this value.
             processEnv.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + getTestName() + "\"");
@@ -565,8 +578,14 @@ public class QpidBrokerTestCase extends QpidTestCase
                                 _interleaveBrokerLog ? _brokerLogPrefix : null);
 
             p.start();
+            StringBuilder cmdLine = new StringBuilder(cmd[0]);
+            for(int i = 1; i< cmd.length; i++)
+            {
+                cmdLine.append(' ');
+                cmdLine.append(cmd[i]);
+            }
 
-            SpawnedBrokerHolder holder = new SpawnedBrokerHolder(process, qpidWork, portsUsedByBroker);
+            SpawnedBrokerHolder holder = new SpawnedBrokerHolder(process, qpidWork, portsUsedByBroker, cmdLine.toString());
             if (!p.await(30, TimeUnit.SECONDS))
             {
                 _logger.info("broker failed to become ready (" + p.getReady() + "):" + p.getStopLine());
@@ -639,7 +658,16 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     private String relativeToQpidHome(String file)
     {
-        return file.replace(System.getProperty(QPID_HOME,"QPID_HOME") + File.separator,"");
+        _logger.debug("Converting path to be relative to QPID_HOME: " + file);
+
+        final String qpidHome = System.getProperty(QPID_HOME,"QPID_HOME");
+        _logger.debug("QPID_HOME is: " + qpidHome);
+
+        if(!file.startsWith(qpidHome)) {
+            throw new RuntimeException("Provided path is not a child of the QPID_HOME directory: " + qpidHome);
+        }
+
+        return file.replace(qpidHome + File.separator,"");
     }
 
     protected String getPathRelativeToWorkingDirectory(String file)
@@ -653,7 +681,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         {
             String configPath = configLocation.getAbsolutePath();
             String workingDirectoryPath = workingDirectory.getCanonicalPath();
-            if (IS_OS_WINDOWS)
+            if (SystemUtils.isWindows())
             {
                 configPath = configPath.toLowerCase();
                 workingDirectoryPath = workingDirectoryPath.toLowerCase();

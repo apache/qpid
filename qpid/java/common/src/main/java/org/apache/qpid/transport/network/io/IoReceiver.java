@@ -26,6 +26,7 @@ import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.util.SystemUtils;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
@@ -57,8 +58,7 @@ final class IoReceiver implements Runnable, Closeable
     private Ticker _ticker;
     static
     {
-        String osName = System.getProperty("os.name");
-        shutdownBroken = osName == null ? false : osName.matches("(?i).*windows.*");
+        shutdownBroken = SystemUtils.isWindows();
     }
 
     public IoReceiver(Socket socket, Receiver<ByteBuffer> receiver, int bufferSize, long timeout)

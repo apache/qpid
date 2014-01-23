@@ -284,7 +284,7 @@ void Primary::exchangeCreate(const ExchangePtr& ex) {
         QPID_LOG(debug, logPrefix << "Created exchange " << ex->getName()
                  << " replication: " << printable(level));
          // Give each exchange a unique id to avoid confusion of same-named exchanges.
-        args.set(QPID_HA_UUID, FieldTable::ValuePtr(new UuidValue(&Uuid(true)[0])));
+        args.set(QPID_HA_UUID, FieldTable::ValuePtr(new UuidValue(Uuid(true).data())));
     }
     ex->setArgs(args);
 }

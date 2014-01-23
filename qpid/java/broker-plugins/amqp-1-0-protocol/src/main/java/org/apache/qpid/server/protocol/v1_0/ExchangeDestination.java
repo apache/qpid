@@ -27,6 +27,8 @@ import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.txn.ServerTransaction;
 
@@ -53,34 +55,71 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
 
     public Outcome send(final Message_1_0 message, ServerTransaction txn)
     {
-        final List<? extends BaseQueue> queues = _exchange.route(message);
-
-        txn.enqueue(queues,message, new ServerTransaction.Action()
-        {
-
-            BaseQueue[] _queues = queues.toArray(new BaseQueue[queues.size()]);
-
-            public void postCommit()
+        final InstanceProperties instanceProperties =
+            new InstanceProperties()
             {
-                for(int i = 0; i < _queues.length; i++)
+
+                @Override
+                public Object getProperty(final Property prop)
                 {
-                    try
+                    switch(prop)
                     {
-                        _queues[i].enqueue(message);
+                        case MANDATORY:
+                            return false;
+                        case REDELIVERED:
+                            return false;
+                        case PERSISTENT:
+                            return message.isPersistent();
+                        case IMMEDIATE:
+                            return false;
+                        case EXPIRATION:
+                            return message.getExpiration();
                     }
-                    catch (AMQException e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
+                    return null;
+                }};
 
-            public void onRollback()
+        List<? extends BaseQueue> queues = _exchange.route(message, instanceProperties);
+
+        if(queues == null || queues.isEmpty())
+        {
+            Exchange altExchange = _exchange.getAlternateExchange();
+            if(altExchange != null)
             {
-                // NO-OP
+                queues = altExchange.route(message, instanceProperties);
             }
-        });
+        }
+
+        if(queues != null && !queues.isEmpty())
+        {
+            final BaseQueue[] baseQueues = queues.toArray(new BaseQueue[queues.size()]);
+
+            txn.enqueue(queues,message, new ServerTransaction.Action()
+            {
+                MessageReference _reference = message.newReference();
+
+                public void postCommit()
+                {
+                    for(int i = 0; i < baseQueues.length; i++)
+                    {
+                        try
+                        {
+                            baseQueues[i].enqueue(message);
+                        }
+                        catch (AMQException e)
+                        {
+                            // TODO
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    _reference.release();
+                }
+
+                public void onRollback()
+                {
+                    _reference.release();
+                }
+            });
+        }
 
         return ACCEPTED;
     }

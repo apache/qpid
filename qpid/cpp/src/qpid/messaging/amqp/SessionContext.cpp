@@ -89,8 +89,14 @@ void SessionContext::removeSender(const std::string& n)
     senders.erase(n);
 }
 
-boost::shared_ptr<ReceiverContext> SessionContext::nextReceiver(qpid::messaging::Duration /*timeout*/)
+boost::shared_ptr<ReceiverContext> SessionContext::nextReceiver()
 {
+    for (SessionContext::ReceiverMap::iterator i = receivers.begin(); i != receivers.end(); ++i) {
+        if (i->second->hasCurrent()) {
+            return i->second;
+        }
+    }
+
     return boost::shared_ptr<ReceiverContext>();
 }
 

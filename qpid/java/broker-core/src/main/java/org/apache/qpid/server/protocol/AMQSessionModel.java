@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 
@@ -76,7 +75,7 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
 
     boolean getBlocking();
 
-    boolean onSameConnection(InboundMessage inbound);
+    Object getConnectionReference();
 
     int getUnacknowledgedMessageCount();
 

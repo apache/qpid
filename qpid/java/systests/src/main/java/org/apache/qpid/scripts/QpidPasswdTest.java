@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.test.utils.Piper;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.util.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,10 @@ public class QpidPasswdTest extends QpidTestCase
 
     public void testRunScript() throws Exception
     {
+        if(SystemUtils.isWindows())
+        {
+            return;
+        }
         Process process = null;
         try
         {

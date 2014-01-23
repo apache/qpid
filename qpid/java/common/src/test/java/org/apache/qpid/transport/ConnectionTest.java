@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.transport;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoAcceptor;
@@ -41,6 +42,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ConnectionTest extends QpidTestCase implements SessionListener
 {
+    private static final Logger _logger = Logger.getLogger(ConnectionTest.class);
     private int port;
     private volatile boolean queue = false;
     private List<MessageTransfer> messages = new ArrayList<MessageTransfer>();
@@ -155,7 +157,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
     {
         final Connection conn = new Connection();
         conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
-
         conn.addConnectionListener(new ConnectionListener()
         {
             public void opened(Connection conn) {}
@@ -240,7 +241,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         }
         catch (IOException e)
         {
-            e.printStackTrace();
             fail("Unable to start Server for test due to:" + e.getMessage());
         }
 
@@ -349,7 +349,10 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         Thread.sleep(6000);
         send(ssn, "SINK 3");
         ssn.sync();
-        System.out.println(messages);
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(messages);
+        }
         assertEquals(1, messages.size());
         assertEquals("SINK 3", messages.get(0).getBodyString());
     }

@@ -20,39 +20,8 @@
  */
 package org.apache.qpid.server.message;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-public abstract class MessageReference<M extends ServerMessage>
+public interface MessageReference<M extends ServerMessage>
 {
-
-    private final AtomicBoolean _released = new AtomicBoolean(false);
-
-    private volatile M _message;
-
-    public MessageReference(M message)
-    {
-        _message = message;
-        onReference(message);
-    }
-
-    abstract protected void onReference(M message);
-
-    abstract protected void onRelease(M message);
-
-    public M getMessage()
-    {
-        return _message;
-    }
-
-    public void release()
-    {
-        if(!_released.getAndSet(true))
-        {
-            if(_message != null)
-            {
-                onRelease(_message);
-            }
-        }
-    }
-
+    public M getMessage();
+    public void release();
 }

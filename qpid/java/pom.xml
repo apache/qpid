@@ -29,12 +29,10 @@
   <packaging>pom</packaging>
 
   <!-- ###### TODO ######
-    - Fix the jca/rar pom module name, it should be qpid-ra not qpid-rar.
     - Add the Excludes files, log4j config, etc test resources to a module (qpid-test-utils?) which can be
       used (extracted?) by the others to prevent them having to reference outside their directly for the files.
-      - Fix what the systests/perftests do to copy the test-profiles dir to the necessary location.
-      - Fix the log4j configuration property to work with all the modules, resolve the currently generated log4j exceptions during test runs.
-    - Add project details such as Website, Mailing List, SCM.
+        - Fix what the systests/perftests do to copy the test-profiles dir to the necessary location.
+        - Fix the log4j configuration property to work with all the modules.
     - Fix the version numbers in all the modules.
     - Decide on a final name for this parent module, qpid-project isnt necessarily appropriate given it doesnt encompass the whole project.
     - Test deploying the modules to a local Nexus instance (by overriding the repo properties locally).
@@ -59,6 +57,9 @@
       - Remove the QBTC output file mechanics, rely on Surefire to do it?
     - JUnit test profiles instead of Exludes files?
   -->
+  <prerequisites>
+    <maven>3.0.0</maven>
+  </prerequisites>
 
   <properties>
     <!-- dependency version numbers -->
@@ -67,6 +68,8 @@
     <!-- test dependency version numbers -->
     <junit-version>3.8.1</junit-version>
     <mockito-version>1.9.0</mockito-version>
+    <log4j-version>1.2.16</log4j-version>
+    <slf4j-version>1.6.4</slf4j-version>
 
     <!-- plugin version numbers -->
     <maven-antrun-plugin-version>1.7</maven-antrun-plugin-version>
@@ -102,13 +105,12 @@
     <java.target>1.6</java.target>
 
     <!-- enforcer plugin config properties -->
-    <supported-maven-version-range>[3.0.0,)</supported-maven-version-range>
     <supported-test-profiles-regex>(java-mms.0-9-1|java-mms.0-10)</supported-test-profiles-regex>
 
     <!-- test properties -->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
-    <qpid.home.qbtc.output>${qpid.home}/target/qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
-    <qpid.work>${project.build.directory}/QPID_WORK</qpid.work>
+    <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
+    <qpid.work>${project.build.directory}${file.separator}QPID_WORK</qpid.work>
 
     <profile.excludes.java-mms.0-10>JavaTransientExcludes Java010Excludes</profile.excludes.java-mms.0-10>
     <broker.version.java-mms.0-10>v0_10</broker.version.java-mms.0-10>
@@ -130,6 +132,27 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>${mockito-version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>${log4j-version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j-version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -409,7 +432,7 @@
             <java.naming.factory.initial>org.apache.qpid.jndi.PropertiesFileInitialContextFactory</java.naming.factory.initial>
             <java.naming.provider.url>test-profiles${file.separator}test-provider.properties</java.naming.provider.url>
 
-            <broker.config>${qpid.home}/etc/config-systests.json</broker.config>
+            <broker.config>${qpid.home}${file.separator}etc${file.separator}config-systests.json</broker.config>
             <messagestore.class.name>org.apache.qpid.server.store.MemoryMessageStore</messagestore.class.name>
             <broker.protocol.excludes></broker.protocol.excludes>
             <broker.persistent>false</broker.persistent>
@@ -422,8 +445,8 @@
             <amqj.protocol.logging.level>debug</amqj.protocol.logging.level>
             <root.logging.level>warn</root.logging.level>
 
-            <log4j.configuration.file>test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
-            <log4j.configuration>file://${basedir}${file.separator}..${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration>
+            <log4j.configuration.file>${project.basedir}${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
+            <log4j.configuration>log4j-test.xml</log4j.configuration>
 
             <log4j.debug>false</log4j.debug>
 
@@ -450,13 +473,13 @@
             <broker.version>${broker.version.java-mms.0-10}</broker.version>
             <qpid.broker_default_amqp_protocol_excludes>${qpid.broker_default_amqp_protocol_excludes.java-mms.0-10}</qpid.broker_default_amqp_protocol_excludes>
             <broker.stopped>Exception</broker.stopped>
-            <broker.command>${qpid.home}/bin/qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</broker.command>
+            <broker.command>${qpid.home}${file.separator}bin${file.separator}qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</broker.command>
+            <broker.command.windows>${qpid.home}${file.separator}bin${file.separator}qpid-server.bat -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</broker.command.windows>
 
             <broker.ready>BRK-1004</broker.ready>
             <profile>${profile}</profile>
 
-            <!-- This must be a child of qpid home currently
-                 due to the horrible mechanics of QBTC  -->
+            <!-- This must be a child of qpid home currently due to the horrible mechanics of QBTC  -->
             <test.output>${qpid.home.qbtc.output}</test.output>
           </systemPropertyVariables>
         </configuration>
@@ -474,9 +497,6 @@
             </goals>
             <configuration>
               <rules>
-                <requireMavenVersion>
-                  <version>${supported-maven-version-range}</version>
-                </requireMavenVersion>
                 <requireProperty>
                   <property>profile</property>
                   <message>You must set a test profile!</message>
@@ -496,6 +516,41 @@
       </plugin>
     </plugins>
   </build>
+
+  <description>
+    Apache Qpid™ makes messaging tools that speak AMQP and support many languages and platforms.
+    AMQP is an open internet protocol for reliably sending and receiving messages. It makes it possible for everyone to build a diverse, coherent messaging ecosystem.
+  </description>
+
+  <url>http://qpid.apache.org</url>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/QPID</url>
+  </issueManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>Apache Qpid Users</name>
+      <subscribe>users-subscribe@qpid.apache.org</subscribe>
+      <unsubscribe>users-unsubscribe@qpid.apache.org</unsubscribe>
+      <post>users@qpid.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/qpid-users/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Apache Qpid Developers</name>
+      <subscribe>dev-subscribe@qpid.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@qpid.apache.org</unsubscribe>
+      <post>dev@qpid.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/qpid-dev/</archive>
+    </mailingList>
+  </mailingLists>
+
+  <scm>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/qpid/trunk/qpid</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/qpid/trunk/qpid</developerConnection>
+    <url>http://svn.apache.org/viewvc/qpid/</url>
+  </scm>
 
   <reporting>
     <plugins>

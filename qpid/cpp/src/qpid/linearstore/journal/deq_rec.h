@@ -39,7 +39,7 @@ class deq_rec : public jrec
 private:
     ::deq_hdr_t _deq_hdr;   ///< Local instance of dequeue header struct
     const void* _xidp;      ///< xid pointer for encoding (writing to disk)
-    void* _buff;            ///< Pointer to buffer to receive data read from disk
+    void* _xid_buff;        ///< Pointer to buffer to receive xid read from disk
     ::rec_tail_t _deq_tail; ///< Local instance of enqueue tail struct, only encoded if XID is present
 
 public:
@@ -59,6 +59,7 @@ public:
     inline std::size_t data_size() const { return 0; } // This record never carries data
     std::size_t xid_size() const;
     std::size_t rec_size() const;
+    void check_rec_tail() const;
 
 private:
     virtual void clean();

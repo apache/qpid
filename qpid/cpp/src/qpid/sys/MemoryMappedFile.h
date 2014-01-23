@@ -40,6 +40,10 @@ class MemoryMappedFile {
      */
     QPID_COMMON_EXTERN std::string open(const std::string& name, const std::string& directory);
     /**
+     * Closes and removes the file that can be mapped by region into memory
+     */
+    QPID_COMMON_EXTERN void close(const std::string& path);
+    /**
      * Returns the page size
      */
     QPID_COMMON_EXTERN size_t getPageSize();

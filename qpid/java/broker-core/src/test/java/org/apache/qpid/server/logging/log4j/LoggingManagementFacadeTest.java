@@ -19,14 +19,11 @@
  */
 package org.apache.qpid.server.logging.log4j;
 
-import java.io.File;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Level;
 import org.apache.qpid.test.utils.TestFileUtils;
-import org.apache.qpid.util.FileUtils;
 
 import junit.framework.TestCase;
 

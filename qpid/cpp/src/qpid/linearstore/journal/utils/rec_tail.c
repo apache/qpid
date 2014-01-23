@@ -36,10 +36,11 @@ void rec_tail_copy(rec_tail_t* dest, const rec_hdr_t* src, const uint32_t checks
     dest->_rid = src->_rid;
 }
 
-int rec_tail_check(const rec_tail_t* tail, const rec_hdr_t* header, const uint32_t checksum) {
-    if (tail->_xmagic != ~header->_magic) return 1;
-    if (tail->_serial != header->_serial) return 2;
-    if (tail->_rid != header->_rid) return 3;
-    if (tail->_checksum != checksum) return 4;
-    return 0;
+uint16_t rec_tail_check(const rec_tail_t* tail, const rec_hdr_t* header, const uint32_t checksum) {
+    uint16_t err = 0;
+    if (tail->_xmagic != ~header->_magic) err |= REC_TAIL_MAGIC_ERR_MASK;
+    if (tail->_serial != header->_serial) err |= REC_TAIL_SERIAL_ERR_MASK;
+    if (tail->_rid != header->_rid) err |= REC_TAIL_RID_ERR_MASK;
+    if (tail->_checksum != checksum) err |= REC_TAIL_CHECKSUM_ERR_MASK;
+    return err;
 }

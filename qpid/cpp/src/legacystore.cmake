@@ -37,24 +37,10 @@ else (DEFINED legacystore_force)
             CHECK_INCLUDE_FILES (libaio.h HAVE_AIO_H)
             if (HAVE_AIO AND HAVE_AIO_H)
                 #
-                # find libuuid
+                # allow legacystore to be built
                 #
-                CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
-                CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
-                if (HAVE_UUID AND HAVE_UUID_H)
-                    #
-                    # allow legacystore to be built
-                    #
-                    message(STATUS "BerkeleyDB for C++, libaio and uuid found, Legacystore support enabled")
-                    set (legacystore_default ON)
-                else (HAVE_UUID AND HAVE_UUID_H)
-                    if (NOT HAVE_UUID)
-                        message(STATUS "Legacystore requires uuid which is absent.")
-                    endif (NOT HAVE_UUID)
-                    if (NOT HAVE_UUID_H)
-                        message(STATUS "Legacystore requires uuid.h which is absent.")
-                    endif (NOT HAVE_UUID_H)
-                endif (HAVE_UUID AND HAVE_UUID_H)
+                message(STATUS "BerkeleyDB for C++ and libaio found, Legacystore support enabled")
+                set (legacystore_default ON)
             else (HAVE_AIO AND HAVE_AIO_H)
                 if (NOT HAVE_AIO)
                     message(STATUS "Legacystore requires libaio which is absent.")
@@ -84,12 +70,6 @@ if (BUILD_LEGACYSTORE)
     if (NOT HAVE_AIO_H)
         message(FATAL_ERROR "Legacystore requires libaio.h which is absent.")
     endif (NOT HAVE_AIO_H)
-    if (NOT HAVE_UUID)
-        message(FATAL_ERROR "Legacystore requires uuid which is absent.")
-    endif (NOT HAVE_UUID)
-    if (NOT HAVE_UUID_H)
-        message(FATAL_ERROR "Legacystore requires uuid.h which is absent.")
-    endif (NOT HAVE_UUID_H)
 
     # Journal source files
     set (legacy_jrnl_SOURCES

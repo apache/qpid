@@ -57,7 +57,8 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
 
-class Subscription_1_0 implements Subscription
+class
+        Subscription_1_0 implements Subscription
 {
     private SendingLink_1_0 _link;
 
@@ -149,7 +150,7 @@ class Subscription_1_0 implements Subscription
     {
         if(entry.getMessage() instanceof Message_1_0)
         {
-            if(_noLocal && ((Message_1_0)entry.getMessage()).getSession() == getSession())
+            if(_noLocal && ((Message_1_0)entry.getMessage()).getConnectionReference() == getSession().getConnection().getReference())
             {
                 return false;
             }
@@ -164,7 +165,7 @@ class Subscription_1_0 implements Subscription
 
     private boolean checkFilters(final QueueEntry entry)
     {
-        return (_filters == null) || _filters.allAllow(entry);
+        return (_filters == null) || _filters.allAllow(entry.asFilterable());
     }
 
     public boolean isClosed()

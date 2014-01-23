@@ -126,7 +126,7 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
             }
             else
             {
-                System.out.println("SUCCESS!!");
+                _logger.debug("SUCCESS!!");
             }
         }
         catch (InterruptedException e)

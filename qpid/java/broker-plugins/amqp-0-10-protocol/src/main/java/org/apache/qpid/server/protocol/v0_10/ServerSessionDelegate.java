@@ -33,6 +33,8 @@ import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -289,15 +291,13 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         final Exchange exchange = getExchangeForMessage(ssn, xfr);
 
-        DeliveryProperties delvProps = null;
-        if(xfr.getHeader() != null && (delvProps = xfr.getHeader().getDeliveryProperties()) != null && delvProps.hasTtl() && !delvProps
-                .hasExpiration())
+        final DeliveryProperties delvProps = xfr.getHeader() == null ? null : xfr.getHeader().getDeliveryProperties();
+        if(delvProps != null && delvProps.hasTtl() && !delvProps.hasExpiration())
         {
             delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
         }
 
         final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
-        messageMetaData.setConnectionReference(((ServerSession)ssn).getReference());
 
         if (!getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName()))
         {
@@ -309,11 +309,39 @@ public class ServerSessionDelegate extends SessionDelegate
         }
 
         final Exchange exchangeInUse;
-        List<? extends BaseQueue> queues = exchange.route(messageMetaData);
+        final MessageStore store = getVirtualHost(ssn).getMessageStore();
+        final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
+        final ServerSession serverSession = (ServerSession) ssn;
+        final MessageTransferMessage message = new MessageTransferMessage(storeMessage, serverSession.getReference());
+        MessageReference<MessageTransferMessage> reference = message.newReference();
+
+        final InstanceProperties instanceProperties = new InstanceProperties()
+        {
+            @Override
+            public Object getProperty(final Property prop)
+            {
+                switch(prop)
+                {
+                    case EXPIRATION:
+                        return message.getExpiration();
+                    case IMMEDIATE:
+                        return message.isImmediate();
+                    case MANDATORY:
+                        return (delvProps == null || !delvProps.getDiscardUnroutable()) && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT;
+                    case PERSISTENT:
+                        return message.isPersistent();
+                    case REDELIVERED:
+                        return delvProps.getRedelivered();
+                }
+                return null;
+            }
+        };
+
+        List<? extends BaseQueue> queues = exchange.route(message, instanceProperties);
         if(queues.isEmpty() && exchange.getAlternateExchange() != null)
         {
             final Exchange alternateExchange = exchange.getAlternateExchange();
-            queues = alternateExchange.route(messageMetaData);
+            queues = alternateExchange.route(message, instanceProperties);
             if (!queues.isEmpty())
             {
                 exchangeInUse = alternateExchange;
@@ -328,12 +356,8 @@ public class ServerSessionDelegate extends SessionDelegate
             exchangeInUse = exchange;
         }
 
-        final ServerSession serverSession = (ServerSession) ssn;
         if(!queues.isEmpty())
         {
-            final MessageStore store = getVirtualHost(ssn).getMessageStore();
-            final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
-            MessageTransferMessage message = new MessageTransferMessage(storeMessage, serverSession.getReference());
             serverSession.enqueue(message, queues);
             storeMessage.flushToStore();
         }
@@ -352,7 +376,6 @@ public class ServerSessionDelegate extends SessionDelegate
             }
         }
 
-
         if(serverSession.isTransactional())
         {
             serverSession.processed(xfr);
@@ -361,6 +384,7 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             serverSession.recordFuture(StoreFuture.IMMEDIATE_FUTURE, new CommandProcessedAction(serverSession, xfr));
         }
+        reference.release();
     }
 
     private StoredMessage<MessageMetaData_0_10> createStoreMessage(final MessageTransfer xfr,

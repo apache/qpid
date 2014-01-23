@@ -155,7 +155,12 @@ if (VALGRIND_FOUND)
 endif (VALGRIND_FOUND)
 
 # Do not keep on linking against transitive library dependencies
+# TODO Need to rework CMake files to use INTERFACE_LINK_LIBRARIES target property
+# When that is done we can remove the next 4 lines completely
 set (CMAKE_LINK_INTERFACE_LIBRARIES "")
+if (DEFINED CMAKE_VERSION AND NOT CMAKE_VERSION VERSION_LESS "2.8.12")
+  cmake_policy(SET CMP0022 OLD)
+endif (DEFINED CMAKE_VERSION AND NOT CMAKE_VERSION VERSION_LESS "2.8.12")
 
 if (CMAKE_COMPILER_IS_GNUCXX)
    # Warnings: Enable as many as possible, keep the code clean. Please
@@ -378,7 +383,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   endif (NOT CLOCK_GETTIME_IN_LIBC)
 
   # Ensure we have uuid library
-  CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
+  CHECK_LIBRARY_EXISTS (uuid uuid_generate "" HAVE_UUID)
   CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
   if (NOT HAVE_UUID AND NOT HAVE_UUID_H)
     message(FATAL_ERROR "Uuid library and/or header file not found")
@@ -1001,7 +1006,7 @@ add_msvc_version (qpidclient library dll)
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
 
-target_link_libraries (qpidclient qpidcommon
+target_link_libraries (qpidclient qpidcommon qpidtypes
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        ${ssl_LIBS})
 

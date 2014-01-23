@@ -19,12 +19,14 @@
 # under the License.
 #
 
+MKTEMP="mktemp /tmp/tmp.XXXXXXXXXX"
+
 # Ask the compiler the implementation specific type for a standard typedeffed type
 # (int64_t, size_t etc.). Operates by test compiling and using the demangling ABI call.
 #
 # This works for gcc and clang on Unix.
 full_type_of () {
-    prog=$(mktemp)
+    prog=$($MKTEMP)
     trap "rm $prog" EXIT
 
     ${CXX:-g++} -x c++ -o $prog - <<END-FILE
@@ -50,21 +52,24 @@ $prog
 }
 
 rc=0
-syms_desired=$(mktemp)
-syms_library=$(mktemp)
-syms_missing=$(mktemp)
-syms_extra=$(mktemp)
+syms_desired=$($MKTEMP)
+syms_library=$($MKTEMP)
+syms_missing=$($MKTEMP)
+syms_extra=$($MKTEMP)
 
 trap 'rm $syms_desired $syms_library $syms_missing $syms_extra' EXIT
 
 CXX=$1
 export CXX
 
+LC_ALL=C
+export LC_ALL
+
 # Extract exported symbols from library
 nm -DC --defined-only -f s $2 | cut -f1 -d'|' -s | sort -u > $syms_library
 
 # Process API syms (substitute in some typedefs etc.)
-sed $3 -e "
+sed -e "
     s/uint64_t/$(full_type_of uint64_t)/
     s/uint32_t/unsigned int/
     s/uint16_t/unsigned short/
@@ -78,7 +83,7 @@ sed $3 -e "
     s/qpid::types::Variant::List/std::list<qpid::types::Variant, std::allocator<qpid::types::Variant> >/
     /^\$/d
     /^#.*\$/d
-" | sort -u > $syms_desired
+" $3 | sort -u > $syms_desired
 
 comm -23 $syms_desired $syms_library > $syms_missing
 comm -13 $syms_desired $syms_library > $syms_extra

@@ -60,6 +60,18 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # Some generally useful utilities that just happen to be built in the test area
+add_executable (qpid-receive qpid-receive.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (qpid-receive qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-receive)
+
+add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (qpid-send qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+remember_location(qpid-send)
+
+install (TARGETS
+         qpid-receive qpid-send
+         RUNTIME DESTINATION ${QPID_INSTALL_BINDIR})
+
 add_executable (qpid-perftest qpid-perftest.cpp ${platform_test_additions})
 target_link_libraries (qpid-perftest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(qpid-perftest)
@@ -73,16 +85,8 @@ target_link_libraries (qpid-client-test qpidclient qpidcommon "${Boost_PROGRAM_O
 remember_location(qpid-client-test)
 
 add_executable (qpid-ping qpid-ping.cpp ${platform_test_additions})
-target_link_libraries (qpid-ping qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+target_link_libraries (qpid-ping qpidclient qpidcommon qpidtypes "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(qpid-ping)
-
-add_executable (qpid-receive qpid-receive.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid-receive qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-remember_location(qpid-receive)
-
-add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid-send qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
-remember_location(qpid-send)
 
 add_executable (qpid-topic-listener qpid-topic-listener.cpp ${platform_test_additions})
 target_link_libraries (qpid-topic-listener qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
@@ -102,14 +106,14 @@ target_link_libraries (sender qpidmessaging qpidtypes qpidclient qpidcommon "${B
 remember_location(sender)
 
 add_executable (qpid-txtest qpid-txtest.cpp ${platform_test_additions})
-target_link_libraries (qpid-txtest qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+target_link_libraries (qpid-txtest qpidclient qpidcommon qpidtypes "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
 remember_location(qpid-txtest)
 
 install (TARGETS
          qpid-perftest qpid-latency-test qpid-client-test
          qpid-ping
-         qpid-receive qpid-send qpid-topic-listener qpid-topic-publisher receiver sender
+         qpid-topic-listener qpid-topic-publisher receiver sender
          qpid-txtest
          RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
 

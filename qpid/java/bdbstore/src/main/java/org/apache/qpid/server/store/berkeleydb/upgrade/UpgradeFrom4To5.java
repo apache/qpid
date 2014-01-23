@@ -663,9 +663,8 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
             {
                 final MessagePublishInfo publishBody = readMessagePublishInfo(input);
                 final ContentHeaderBody contentHeaderBody = readContentHeaderBody(input);
-                final int contentChunkCount = input.readInt();
 
-                return new MessageMetaData(publishBody, contentHeaderBody, contentChunkCount);
+                return new MessageMetaData(publishBody, contentHeaderBody);
             }
             catch (Exception e)
             {

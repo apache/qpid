@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -488,7 +489,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             {
                 AMQMessage message = (AMQMessage) entry.getMessage();
 
-                final Object publisherReference = message.getConnectionIdentifier();
+                final Object publisherReference = message.getConnectionReference();
 
                 // We don't want local messages so check to see if message is one we sent
                 Object localReference = getProtocolSession().getReference();
@@ -519,7 +520,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     private boolean checkFilters(QueueEntry msg)
     {
-        return (_filters == null) || _filters.allAllow(msg);
+        return (_filters == null) || _filters.allAllow(msg.asFilterable());
     }
 
     public boolean isAutoClose()

@@ -22,72 +22,43 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoredMessage;
 
-import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
 /**
  * A deliverable message.
  */
-public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
+public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMetaData>
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
     /** Flag to indicate that this message requires 'immediate' delivery. */
 
-    private static final byte IMMEDIATE = 0x01;
-
-    /**
-     * Flag to indicate whether this message has been delivered to a consumer. Used in implementing return functionality
-     * for messages published with the 'immediate' flag.
-     */
-
-    private static final byte DELIVERED_TO_CONSUMER = 0x02;
-
-    private byte _flags = 0;
-
     private long _expiration;
 
     private final long _size;
-
-    private Object _connectionIdentifier;
-    private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
 
     public AMQMessage(StoredMessage<MessageMetaData> handle)
     {
         this(handle, null);
     }
 
-    public AMQMessage(StoredMessage<MessageMetaData> handle, WeakReference<AMQChannel> channelRef)
+    public AMQMessage(StoredMessage<MessageMetaData> handle, Object connectionReference)
     {
-        super(handle);
-
-
-        final MessageMetaData metaData = handle.getMetaData();
-        _size = metaData.getContentSize();
-        final MessagePublishInfo messagePublishInfo = metaData.getMessagePublishInfo();
-
-        if(messagePublishInfo.isImmediate())
-        {
-            _flags |= IMMEDIATE;
-        }
+        super(handle, connectionReference);
+        _size = handle.getMetaData().getContentSize();
     }
 
     public void setExpiration(final long expiration)
     {
-
         _expiration = expiration;
-
     }
 
     public MessageMetaData getMessageMetaData()
@@ -98,21 +69,6 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
     public ContentHeaderBody getContentHeaderBody()
     {
         return getMessageMetaData().getContentHeaderBody();
-    }
-
-    public Long getMessageId()
-    {
-        return getStoredMessage().getMessageNumber();
-    }
-
-    /**
-     * Called selectors to determin if the message has already been sent
-     *
-     * @return _deliveredToConsumer
-     */
-    public boolean getDeliveredToConsumer()
-    {
-        return (_flags & DELIVERED_TO_CONSUMER) != 0;
     }
 
     public String getRoutingKey()
@@ -134,24 +90,6 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
         return getMessageMetaData().getMessageHeader();
     }
 
-    public boolean isPersistent()
-    {
-        return getMessageMetaData().isPersistent();
-    }
-
-    /**
-     * Called to enforce the 'immediate' flag.
-     *
-     * @returns  true if the message is marked for immediate delivery but has not been marked as delivered
-     *                              to a consumer
-     */
-    public boolean immediateAndNotDelivered()
-    {
-
-        return (_flags & IMMEDIATE_AND_DELIVERED) == IMMEDIATE;
-
-    }
-
     public MessagePublishInfo getMessagePublishInfo()
     {
         return getMessageMetaData().getMessagePublishInfo();
@@ -162,90 +100,27 @@ public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
         return getMessageMetaData().getArrivalTime();
     }
 
-    /**
-     * Checks to see if the message has expired. If it has the message is dequeued.
-     *
-     * @param queue The queue to check the expiration against. (Currently not used)
-     *
-     * @return true if the message has expire
-     *
-     * @throws AMQException
-     */
-    public boolean expired(AMQQueue queue) throws AMQException
-    {
-
-        if (_expiration != 0L)
-        {
-            long now = System.currentTimeMillis();
-
-            return (now > _expiration);
-        }
-
-        return false;
-    }
-
-    /**
-     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
-     * And for selector efficiency.
-     */
-    public void setDeliveredToConsumer()
-    {
-        _flags |= DELIVERED_TO_CONSUMER;
-    }
-
     public long getSize()
     {
         return _size;
-
     }
 
     public boolean isImmediate()
     {
-        return (_flags & IMMEDIATE) == IMMEDIATE;
+        return getMessagePublishInfo().isImmediate();
     }
+
+
+    public boolean isMandatory()
+    {
+        return getMessagePublishInfo().isMandatory();
+    }
+
 
     public long getExpiration()
     {
         return _expiration;
     }
 
-    public MessageReference newReference()
-    {
-        return new AMQMessageReference(this);
-    }
-
-    public long getMessageNumber()
-    {
-        return getStoredMessage().getMessageNumber();
-    }
-
-
-    public Object getConnectionIdentifier()
-    {
-        return _connectionIdentifier;
-
-    }
-
-    public void setConnectionIdentifier(final Object connectionIdentifier)
-    {
-        _connectionIdentifier = connectionIdentifier;
-    }
-
-
-    public String toString()
-    {
-        return "Message[" + debugIdentity() + "]: " + getMessageId() + "; ref count: " + getReferenceCount();
-    }
-
-    public int getContent(ByteBuffer buf, int offset)
-    {
-        return getStoredMessage().getContent(offset, buf);
-    }
-
-
-    public ByteBuffer getContent(int offset, int size)
-    {
-        return getStoredMessage().getContent(offset, size);
-    }
 
 }

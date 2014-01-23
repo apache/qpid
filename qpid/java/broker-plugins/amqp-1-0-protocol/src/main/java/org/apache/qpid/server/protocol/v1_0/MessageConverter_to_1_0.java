@@ -272,7 +272,7 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
                 @Override
                 public void remove()
                 {
-                    serverMessage.getStoredMessage().remove();
+                    throw new UnsupportedOperationException();
                 }
             };
         }

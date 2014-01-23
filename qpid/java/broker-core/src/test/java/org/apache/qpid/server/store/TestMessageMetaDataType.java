@@ -95,6 +95,12 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
         }
 
         @Override
+        public Object getConnectionReference()
+        {
+            return null;
+        }
+
+        @Override
         public long getExpiration()
         {
             return 0;
@@ -130,11 +136,6 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
             return _storedMsg;
         }
 
-        @Override
-        public boolean isImmediate()
-        {
-            return false;
-        }
 
         @Override
         public boolean isPersistent()

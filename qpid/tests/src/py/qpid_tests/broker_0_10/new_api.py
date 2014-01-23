@@ -123,6 +123,25 @@ class GeneralTests(Base):
 
         sess4.close()
 
+    def test_next_receiver(self):
+        keys = ["a", "b", "c"]
+        receivers = [self.ssn.receiver("amq.direct/%s" % k) for k in keys]
+        for r in receivers:
+            r.capacity = 10
+
+        snd = self.ssn.sender("amq.direct")
+
+        for k in keys:
+            snd.send(Message(subject=k, content=k))
+
+        expected = keys
+        while len(expected):
+            rcv = self.ssn.next_receiver(timeout=self.delay())
+            c = rcv.fetch().content
+            assert c in expected
+            expected.remove(c)
+        self.ssn.acknowledge()
+
 class SequenceNumberTests(Base):
     """
     Tests of ring queue sequence number

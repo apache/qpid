@@ -267,6 +267,56 @@ namespace Messaging {
         }
     }
 
+
+    void Connection::Reconnect(System::String ^ url)
+    {
+        System::Exception ^ newException = nullptr;
+
+        try
+        {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
+            std::string nativeUrl = QpidMarshal::ToNative(url);
+            nativeObjPtr->reconnect(nativeUrl);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+    }
+
+
+    void Connection::Reconnect()
+    {
+        System::Exception ^ newException = nullptr;
+
+        try
+        {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
+            nativeObjPtr->reconnect();
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+    }
+
+
     //
     // CreateTransactionalSession()
     //

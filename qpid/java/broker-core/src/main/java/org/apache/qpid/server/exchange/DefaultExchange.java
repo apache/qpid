@@ -35,7 +35,8 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
-import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -203,7 +204,7 @@ public class DefaultExchange implements Exchange
     }
 
     @Override
-    public List<AMQQueue> route(InboundMessage message)
+    public List<AMQQueue> route(ServerMessage message, final InstanceProperties instanceProperties)
     {
         AMQQueue q = _virtualHost.getQueue(message.getRoutingKey());
         if(q == null)

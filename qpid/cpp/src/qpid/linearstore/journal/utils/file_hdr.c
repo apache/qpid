@@ -94,23 +94,6 @@ int is_file_hdr_reset(file_hdr_t* target) {
            target->_queue_name_len == 0;
 }
 
-/*
-uint64_t random_64() {
-    int randomData = open("/dev/random", O_RDONLY);
-    if (randomData < 0) {
-        return 0ULL;
-    }
-    uint64_t randomNumber;
-    size_t size = sizeof(randomNumber);
-    ssize_t result = read(randomData, (char*)&randomNumber, size);
-    if (result != size) {
-        randomNumber = 0ULL;
-    }
-    close(randomData);
-    return randomNumber;
-}
-*/
-
 int set_time_now(file_hdr_t *fh)
 {
     struct timespec ts;

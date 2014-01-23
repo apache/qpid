@@ -312,7 +312,7 @@ public class MessageRequeueTest extends QpidBrokerTestCase
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                _logger.error("Consumer run error",e);
             }
         }
 

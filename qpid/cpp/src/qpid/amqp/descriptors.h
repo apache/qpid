@@ -109,6 +109,7 @@ const std::string NOT_FOUND("amqp:not-found");
 const std::string UNAUTHORIZED_ACCESS("amqp:unauthorized-access");
 const std::string DECODE_ERROR("amqp:decode-error");
 const std::string NOT_ALLOWED("amqp:not-allowed");
+const std::string NOT_IMPLEMENTED("amqp:not-implemented");
 const std::string RESOURCE_LIMIT_EXCEEDED("amqp:resource-limit-exceeded");
 const std::string RESOURCE_DELETED("amqp:resource-deleted");
 const std::string PRECONDITION_FAILED("amqp:precondition-failed");
