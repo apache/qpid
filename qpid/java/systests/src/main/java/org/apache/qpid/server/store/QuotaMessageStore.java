@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.VirtualHost;
 
@@ -111,13 +111,13 @@ public class
             }
 
             @Override
-            public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+            public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
             {
                 _storeSizeIncrease.addAndGet(((MessageContentSource)message).getSize());
             }
 
             @Override
-            public void dequeueMessage(TransactionLogResource  queue, EnqueableMessage message) throws AMQStoreException
+            public void dequeueMessage(TransactionLogResource  queue, EnqueueableMessage message) throws AMQStoreException
             {
                 _storeSizeIncrease.addAndGet(-((MessageContentSource)message).getSize());
             }

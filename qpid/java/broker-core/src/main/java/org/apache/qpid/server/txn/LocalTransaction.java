@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.txn;
 
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.store.StoreFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -91,7 +91,7 @@ public class LocalTransaction implements ServerTransaction
         _postTransactionActions.add(postTransactionAction);
     }
 
-    public void dequeue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
+    public void dequeue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
@@ -195,7 +195,7 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
+    public void enqueue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
@@ -222,7 +222,7 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);

@@ -25,7 +25,7 @@ import org.apache.qpid.server.store.StoredMessage;
 
 import java.nio.ByteBuffer;
 
-public interface ServerMessage<T extends StorableMessageMetaData> extends EnqueableMessage, MessageContentSource
+public interface ServerMessage<T extends StorableMessageMetaData> extends EnqueueableMessage, MessageContentSource
 {
     String getRoutingKey();
 

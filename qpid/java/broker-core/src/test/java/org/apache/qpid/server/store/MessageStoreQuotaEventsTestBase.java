@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -99,10 +99,10 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     {
         Transaction transaction = _store.newTransaction();
 
-        List<EnqueableMessage> messages = new ArrayList<EnqueableMessage>();
+        List<EnqueueableMessage> messages = new ArrayList<EnqueueableMessage>();
         for (int i = 0; i < getNumberOfMessagesToFillStore(); i++)
         {
-            EnqueableMessage m = addMessage(i);
+            EnqueueableMessage m = addMessage(i);
             messages.add(m);
             transaction.enqueueMessage(this, m);
         }
@@ -110,7 +110,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
         assertEvent(1, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
 
-        for (EnqueableMessage m : messages)
+        for (EnqueueableMessage m : messages)
         {
             m.getStoredMessage().remove();
         }
@@ -118,7 +118,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         assertEvent(2, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
 
-    protected EnqueableMessage addMessage(long id)
+    protected EnqueueableMessage addMessage(long id)
     {
         StorableMessageMetaData metaData = createMetaData(id, MESSAGE_DATA.length);
         StoredMessage<?> handle = _store.addMessage(metaData);
@@ -154,7 +154,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         return _transactionResource;
     }
 
-    private static class TestMessage implements EnqueableMessage
+    private static class TestMessage implements EnqueueableMessage
     {
         private final StoredMessage<?> _handle;
         private final long _messageId;
