@@ -1,3 +1,22 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
 LinearStore issues:
 
 Store:
@@ -27,12 +46,23 @@ Store:
    * Store analysis and status
    * Recovery/reading of message content
 
+8. One journal file lost when queue deleted. All files except for one are recycled back to the EFP.
+
+9. Complete exceptions - several exceptions thrown using jexception have no exception numbers
+
 Current bugs and performance issues:
 ------------------------------------
-1. RH Bugzilla 1035843 - Slow performance for producers
+1. BZ 1035843 - Slow performance for producers
 2. (FIXED) QPID-5387 (BZ 1036071) - Crash when deleting queue
 3. (FIXED) QPID-5388 (BZ 1035802) - Segmentation fault when recovering empty queue
-4. RH Bugzilla 1036026 - Unable to create durable queue - framing error
+4. (UNABLE TO REPRODUCE) BZ 1036026 - Unable to create durable queue - framing error - possibly caused by running both stores at the same time
+5. (UNABLE TO REPRODUCE) BZ 1038599 - Abort when deleting used queue after restart - may be dup of QPID-5387 (BZ 1036071)
+6. BZ 1039522 - Crash during recovery - JournalFile::getFqFileName() -JERR_JREC_BADRECTAIL
+7. BZ 1039525 - Crash during recovery - journal::jexception - JERR_JREC_BADRECTAIL
+8. (FIXED) QPID-5442 (BZ 1039949) - DTX test failure - missing XIDs
+9. (FIXED) QPID-5460 (BZ 1051097) - Transactional messages lost during recovery
+10. QPID-5464 - Incompletely created journal files accumulate in EFP
+11. QPID-5473 (BZ 1051924) - Recovery where last record in file is truncated (ie spans files), but following file is uninitialized causes crash
 
 Code tidy-up
 ------------

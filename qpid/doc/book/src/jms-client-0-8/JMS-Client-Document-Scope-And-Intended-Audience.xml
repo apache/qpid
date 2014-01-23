@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<chapter id="JMS-Client-0-8-Document-Scope-And-Intended-Audience">
+  <title>Document Scope And Intended Audience</title>
+
+  <para> The intended audience of this document is Java developers who are familiar with the JMS
+    specification. Readers are not required to know all the details of AMQP protocols. However, some
+    knowledge of AMQP basic concepts would be advantageous for reading of this document. </para>
+
+  <para> This document only covers the usage of 0-8, 0-9 and 0-9-1 AMQP protocols with Qpid JMS
+    client. The specifications for these protocols are available from the <ulink
+      url="&amqpSrc;">AMQP web site</ulink>. </para>
+
+  <para> The document covers some specific implementation details of JMS connections, sessions,
+    consumers and producers in <xref linkend="JMS-Client-0-8-Client-Understanding"/>. It also
+    demonstrates how to write a simple point to point and simple publish/subscribe application using
+    Qpid JMS Client in <xref linkend="JMS-Client-0-8-Examples"/>. </para>
+
+  <para>The Qpid JMS Client supports various configuration options which can be set via JVM system
+    properties, connection URLs and JNDI configuration file. The setting of system properties is
+    described in <xref linkend="JMS-Client-0-8-System-Properties"/>. The details of supported
+    options within the connection URLs are given in <xref linkend="JMS-Client-0-8-Connection-URL"/>.
+    The details of Qpid JMS client JNDI properties format is provided in <xref
+      linkend="JMS-Client-0-8-JNDI-Properties-Format"/>. The Qpid destination URL format is covered
+    in <xref linkend="JMS-Client-0-8-Binding-URL"/>. </para>
+
+  <para>The Qpid JMS Client can be used for writing of JMS vendor neutral messaging applications.
+    However, in some cases it might be required to use specific AMQP features. Thus, the Qpid client
+    provides the extended operation set to invoke those features. </para>
+
+  <para>
+    <xref linkend="JMS-Client-0-8-Logging"/> provides the details about turning on client logging
+    which can help in debugging of various issues while developing the messaging applications. </para>
+
+  <para>The details about Qpid JMS Client Exceptions are provided in <xref
+      linkend="JMS-Client-0-8-Appendix-Exceptions"/></para>
+
+</chapter>

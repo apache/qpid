@@ -110,6 +110,7 @@ namespace journal {
         static const uint32_t JERR_RCVM_READ;           ///< Read error: no or insufficient data to read
         static const uint32_t JERR_RCVM_WRITE;          ///< Write error
         static const uint32_t JERR_RCVM_NULLXID;        ///< Null XID when XID length non-null in header
+        static const uint32_t JERR_RCVM_NOTDBLKALIGNED; ///< Offset is not data block (dblk)-aligned
 
         // class data_tok
         static const uint32_t JERR_DTOK_ILLEGALSTATE;   ///< Attempted to change to illegal state

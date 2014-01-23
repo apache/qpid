@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<!-- TODO add dependencies + getting the client -->
+
+<chapter id="JMS-Client-0-8-Introduction">
+  <title>Introduction</title>
+  <para>Qpid JMS client is an implementation of <ulink url="&oracleJmsSpec;">JMS specification
+      1.1</ulink>. It utilises an <ulink url="&amqpSrc;">AMQP</ulink> transport layer for the performing of messaging operations.
+    The client is intended to be used for the writing of JMS compatible messaging applications. Such
+    applications can send and receive messages via any AMQP-compatible brokers like RabbitMQ, Qpid
+    Java Broker which support the AMQP protocols 0-8, 0-9, or 0-9-1.</para>
+  <para>The Qpid JMS client hides the details of AMQP transport implementation behind the JMS API.
+    Thus, the developers need only to be familiar with JMS API in order to use the client. However,
+    the knowledge of the basic concepts of AMQP protocols can help developers in writing reliable
+    and high-performant messaging application. </para>
+  <important>
+    <title>Using the Qpid JMS client with 0-10</title>
+    <para>This book documents the behaviour of the Qpid JMS client when used with the AMQP
+      protocols <emphasis>0-8, 0-9, and 0-9-1</emphasis> only. For behaviour when using the client
+      with AMQP 0-10 protocol, please refer to <ulink url="&qpidProgrammingBook;">Programming in Apache Qpid</ulink>.</para>
+  </important>
+
+</chapter>

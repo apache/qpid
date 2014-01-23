@@ -17,7 +17,7 @@
 # under the License.
 #
 
-DIRS = src/java-broker src/java-perftests src/cpp-broker src/programming
+DIRS = src/java-broker src/java-perftests src/cpp-broker src/programming src/jms-client-0-8
 
 
 .PHONY: all $(DIRS)

@@ -49,6 +49,18 @@ namespace qpid {
 namespace linearstore {
 namespace journal {
 
+RecoveredRecordData_t::RecoveredRecordData_t(const uint64_t rid, const uint64_t fid, const std::streampos foffs, bool ptxn) :
+                    recordId_(rid),
+                    fileId_(fid),
+                    fileOffset_(foffs),
+                    pendingTransaction_(ptxn)
+{}
+
+
+bool recordIdListCompare(RecoveredRecordData_t a, RecoveredRecordData_t b) {
+    return a.recordId_ < b.recordId_;
+}
+
 RecoveryManager::RecoveryManager(const std::string& journalDirectory,
                                  const std::string& queuename,
                                  enq_map& enqueueMapRef,
@@ -86,6 +98,9 @@ void RecoveryManager::analyzeJournals(const std::vector<std::string>* preparedTr
     if (!journalEmptyFlag_) {
 
         // Read all records, establish remaining enqueued records
+        if (inFileStream_.is_open()) {
+            inFileStream_.close();
+        }
         while (getNextRecordHeader()) {}
         if (inFileStream_.is_open()) {
             inFileStream_.close();
@@ -102,14 +117,13 @@ void RecoveryManager::analyzeJournals(const std::vector<std::string>* preparedTr
                 std::vector<std::string>::const_iterator pitr =
                         std::find(preparedTransactionListPtr->begin(), preparedTransactionListPtr->end(), *itr);
                 if (pitr == preparedTransactionListPtr->end()) { // not found in prepared list
-                    txn_data_list tdl = transactionMapRef_.get_remove_tdata_list(*itr); // tdl will be empty if xid not found
+                    txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(*itr); // tdl will be empty if xid not found
                     // Unlock any affected enqueues in emap
-                    for (tdl_itr i=tdl.begin(); i<tdl.end(); i++) {
+                    for (tdl_itr_t i=tdl.begin(); i<tdl.end(); i++) {
                         if (i->enq_flag_) { // enq op - decrement enqueue count
                             fileNumberMap_[i->pfid_]->decrEnqueuedRecordCount();
                         } else if (enqueueMapRef_.is_enqueued(i->drid_, true)) { // deq op - unlock enq record
-                            int16_t ret = enqueueMapRef_.unlock(i->drid_);
-                            if (ret < enq_map::EMAP_OK) { // fail
+                            if (enqueueMapRef_.unlock(i->drid_) < enq_map::EMAP_OK) { // fail
                                 // enq_map::unlock()'s only error is enq_map::EMAP_RID_NOT_FOUND
                                 std::ostringstream oss;
                                 oss << std::hex << "_emap.unlock(): drid=0x\"" << i->drid_;
@@ -120,11 +134,7 @@ void RecoveryManager::analyzeJournals(const std::vector<std::string>* preparedTr
                 }
             }
         }
-
-        // Set up recordIdList_ from enqueue map
-        enqueueMapRef_.rid_list(recordIdList_);
-
-        recordIdListConstItr_ = recordIdList_.begin();
+        prepareRecordList();
     }
 }
 
@@ -151,37 +161,44 @@ bool RecoveryManager::readNextRemainingRecord(void** const dataPtrPtr,
                                               bool& transient,
                                               bool& external,
                                               data_tok* const dtokp,
-                                              bool /*ignore_pending_txns*/) {
-    if (recordIdListConstItr_ == recordIdList_.end()) {
-        return false;
-    }
-    enq_map::emap_data_struct_t eds;
-    enqueueMapRef_.get_data(*recordIdListConstItr_, eds);
-    if (!inFileStream_.is_open() || currentJournalFileConstItr_->first != eds._pfid) {
-        getFile(eds._pfid, false);
-    }
-//std::cout << " " << eds._pfid << std::hex << ",0x" << eds._file_posn << std::flush; // DEBUG
+                                              bool ignore_pending_txns) {
+    bool foundRecord = false;
+    do {
+        if (recordIdListConstItr_ == recordIdList_.end()) {
+            return false;
+        }
+        if (recordIdListConstItr_->pendingTransaction_ && ignore_pending_txns) { // Pending transaction
+            ++recordIdListConstItr_; // ignore, go to next record
+        } else {
+            foundRecord = true;
+        }
+    } while (!foundRecord);
 
-    inFileStream_.seekg(eds._file_posn, std::ifstream::beg);
+    if (!inFileStream_.is_open() || currentJournalFileConstItr_->first != recordIdListConstItr_->fileId_) {
+        if (!getFile(recordIdListConstItr_->fileId_, false)) {
+            std::ostringstream oss;
+            oss << "Failed to open file with file-id=" << recordIdListConstItr_->fileId_;
+            throw jexception(jerrno::JERR__FILEIO, oss.str(), "RecoveryManager", "readNextRemainingRecord");
+        }
+    }
+    inFileStream_.seekg(recordIdListConstItr_->fileOffset_, std::ifstream::beg);
     if (!inFileStream_.good()) {
         std::ostringstream oss;
-        oss << "Could not find offset 0x" << std::hex << eds._file_posn << " in file " << getCurrentFileName();
+        oss << "Could not find offset 0x" << std::hex << recordIdListConstItr_->fileOffset_ << " in file " << getCurrentFileName();
         throw jexception(jerrno::JERR__FILEIO, oss.str(), "RecoveryManager", "readNextRemainingRecord");
     }
+
     ::enq_hdr_t enqueueHeader;
     inFileStream_.read((char*)&enqueueHeader, sizeof(::enq_hdr_t));
     if (inFileStream_.gcount() != sizeof(::enq_hdr_t)) {
         std::ostringstream oss;
-        oss << "Could not read enqueue header from file " << getCurrentFileName() << " at offset 0x" << std::hex << eds._file_posn;
+        oss << "Could not read enqueue header from file " << getCurrentFileName() << " at offset 0x" << std::hex << recordIdListConstItr_->fileOffset_;
         throw jexception(jerrno::JERR__FILEIO, oss.str(), "RecoveryManager", "readNextRemainingRecord");
     }
     // check flags
     transient = ::is_enq_transient(&enqueueHeader);
     external = ::is_enq_external(&enqueueHeader);
-//char magicBuff[5]; // DEBUG
-//::memcpy(magicBuff, &enqueueHeader, 4); // DEBUG
-//magicBuff[4] = 0; // DEBUG
-//std::cout << std::hex << ":" << (char*)magicBuff << ",rid=0x" << enqueueHeader._rhdr._rid << ",xs=0x" << enqueueHeader._xidsize << ",ds=0x" << enqueueHeader._dsize << std::dec << std::flush; // DEBUG
+
     // read xid
     xidSize = enqueueHeader._xidsize;
     *xidPtrPtr = ::malloc(xidSize);
@@ -386,6 +403,12 @@ void RecoveryManager::checkFileStreamOk(bool checkEof) {
 }
 
 void RecoveryManager::checkJournalAlignment(const std::streampos recordPosition) {
+    if (recordPosition % QLS_DBLK_SIZE_BYTES != 0) {
+        std::ostringstream oss;
+        oss << "Current read pointer not dblk aligned: recordPosition=0x" << std::hex << recordPosition;
+        oss << " (dblk alignment offset = 0x" << (recordPosition % QLS_DBLK_SIZE_BYTES);
+        throw jexception(jerrno::JERR_RCVM_NOTDBLKALIGNED, oss.str(), "RecoveryManager", "checkJournalAlignment");
+    }
     std::streampos currentPosn = recordPosition;
     unsigned sblkOffset = currentPosn % QLS_SBLK_SIZE_BYTES;
     if (sblkOffset)
@@ -433,7 +456,7 @@ void RecoveryManager::checkJournalAlignment(const std::streampos recordPosition)
 bool RecoveryManager::decodeRecord(jrec& record,
                                    std::size_t& cumulativeSizeRead,
                                    ::rec_hdr_t& headerRecord,
-                                    std::streampos& fileOffset)
+                                   std::streampos& fileOffset)
 {
     std::streampos start_file_offs = fileOffset;
 
@@ -455,7 +478,6 @@ bool RecoveryManager::decodeRecord(jrec& record,
         }
         if (!done && needNextFile()) {
             if (!getNextFile(false)) {
-                checkJournalAlignment(start_file_offs);
                 return false;
             }
         }
@@ -574,7 +596,7 @@ bool RecoveryManager::getNextRecordHeader()
                             throw jexception(jerrno::JERR_RCVM_NULLXID, "ENQ", "RecoveryManager", "getNextRecordHeader");
                         }
                         std::string xid((char*)xidp, er.xid_size());
-                        transactionMapRef_.insert_txn_data(xid, txn_data_t(h._rid, 0, start_fid, file_pos, true));
+                        transactionMapRef_.insert_txn_data(xid, txn_data_t(h._rid, 0, start_fid, file_pos, true, false, false));
                         if (transactionMapRef_.set_aio_compl(xid, h._rid) < txn_map::TMAP_OK) { // fail - xid or rid not found
                             std::ostringstream oss;
                             oss << std::hex << "_tmap.set_aio_compl: txn_enq xid=\"" << xid << "\" rid=0x" << h._rid;
@@ -613,7 +635,7 @@ bool RecoveryManager::getNextRecordHeader()
                     }
                     std::string xid((char*)xidp, dr.xid_size());
                     transactionMapRef_.insert_txn_data(xid, txn_data_t(dr.rid(), dr.deq_rid(), start_fid, file_pos,
-                                                       false, dr.is_txn_coml_commit()));
+                                                       false, false, dr.is_txn_coml_commit()));
                     if (transactionMapRef_.set_aio_compl(xid, dr.rid()) < txn_map::TMAP_OK) { // fail - xid or rid not found
                         std::ostringstream oss;
                         oss << std::hex << "_tmap.set_aio_compl: txn_deq xid=\"" << xid << "\" rid=0x" << dr.rid();
@@ -645,8 +667,8 @@ bool RecoveryManager::getNextRecordHeader()
                     throw jexception(jerrno::JERR_RCVM_NULLXID, "ABT", "RecoveryManager", "getNextRecordHeader");
                 }
                 std::string xid((char*)xidp, ar.xid_size());
-                txn_data_list tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-                for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++) {
+                txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+                for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++) {
                     if (itr->enq_flag_) {
                         fileNumberMap_[itr->pfid_]->decrEnqueuedRecordCount();
                     } else {
@@ -673,8 +695,8 @@ bool RecoveryManager::getNextRecordHeader()
                     throw jexception(jerrno::JERR_RCVM_NULLXID, "CMT", "RecoveryManager", "getNextRecordHeader");
                 }
                 std::string xid((char*)xidp, cr.xid_size());
-                txn_data_list tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-                for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++) {
+                txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+                for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++) {
                     if (itr->enq_flag_) { // txn enqueue
 //std::cout << "[rid=0x" << std::hex << itr->rid_ << std::dec << " fid=" << itr->pfid_ << " fpos=0x" << std::hex << itr->foffs_ << "]" << std::dec << std::flush; // DEBUG
                         if (enqueueMapRef_.insert_pfid(itr->rid_, itr->pfid_, itr->foffs_) < enq_map::EMAP_OK) { // fail
@@ -723,6 +745,35 @@ bool RecoveryManager::needNextFile() {
         return inFileStream_.eof() || inFileStream_.tellg() >= std::streampos(efpFileSize_kib_ * 1024);
     }
     return true;
+}
+
+void RecoveryManager::prepareRecordList() {
+    // Set up recordIdList_ from enqueue map and transaction map
+    recordIdList_.clear();
+
+    // Extract records from enqueue list
+    std::vector<uint64_t> ridList;
+    enqueueMapRef_.rid_list(ridList);
+    qpid::linearstore::journal::enq_map::emap_data_struct_t eds;
+    for (std::vector<uint64_t>::const_iterator i=ridList.begin(); i!=ridList.end(); ++i) {
+        enqueueMapRef_.get_data(*i, eds);
+        recordIdList_.push_back(RecoveredRecordData_t(*i, eds._pfid, eds._file_posn, false));
+    }
+
+    // Extract records from pending transaction enqueues
+    std::vector<std::string> xidList;
+    transactionMapRef_.xid_list(xidList);
+    for (std::vector<std::string>::const_iterator j=xidList.begin(); j!=xidList.end(); ++j) {
+        qpid::linearstore::journal::txn_data_list_t tdsl = transactionMapRef_.get_tdata_list(*j);
+        for (qpid::linearstore::journal::tdl_itr_t k=tdsl.begin(); k!=tdsl.end(); ++k) {
+            if (k->enq_flag_) {
+                recordIdList_.push_back(RecoveredRecordData_t(k->rid_, k->pfid_, k->foffs_, true));
+            }
+        }
+    }
+
+    std::sort(recordIdList_.begin(), recordIdList_.end(), recordIdListCompare);
+    recordIdListConstItr_ = recordIdList_.begin();
 }
 
 void RecoveryManager::readJournalData(char* target,

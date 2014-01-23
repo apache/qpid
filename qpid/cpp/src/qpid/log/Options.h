@@ -46,6 +46,12 @@ struct Options : public qpid::Options {
     std::auto_ptr<SinkOptions> sinkOptions;
 };
 
+/** Get a string list of the allowed levels */
+QPID_COMMON_EXTERN std::string getLevels();
+
+/** Get a string list of the allowed categories */
+QPID_COMMON_EXTERN std::string getCategories();
+
 }} // namespace qpid::log
 
 #endif  /*!QPID_LOG_OPTIONS_H*/

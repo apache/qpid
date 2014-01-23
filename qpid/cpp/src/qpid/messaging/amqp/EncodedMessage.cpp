@@ -145,7 +145,7 @@ void EncodedMessage::populate(qpid::types::Variant::Map& map) const
             map["x-amqp-group-id"] = groupId.str();
         }
         if (!!groupSequence) {
-            map["x-amqp-qroup-sequence"] = groupSequence.get();
+            map["x-amqp-group-sequence"] = groupSequence.get();
         }
         if (replyToGroupId) {
             map["x-amqp-reply-to-group-id"] = replyToGroupId.str();

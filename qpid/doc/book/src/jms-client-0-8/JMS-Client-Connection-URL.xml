@@ -1,0 +1,324 @@
+<?xml version="1.0"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<chapter id="JMS-Client-0-8-Connection-URL">
+	<title>Connection URLs</title>
+	<para> In JNDI properties, a Connection URL specifies options for a connection. The format for a
+		Connection URL is: </para>
+
+	<programlisting><![CDATA[amqp://[<user>:<pass>@][<clientid>]<virtualhost>[?<option>='<value>'[&<option>=&'<value>']]]]></programlisting>
+	<para> For instance, the following Connection URL specifies a user name, a password, a client
+		ID, a virtual host ("test"), a broker list with a single broker: a TCP host with the host
+		name <quote>localhost</quote> using port 5672: </para>
+
+	<programlisting><![CDATA[amqp://username:password@clientid/test?brokerlist='tcp://localhost:5672']]></programlisting>
+
+	<important>
+		<title>Connection option quoting</title>
+		<para>Take care with the quoting surrounding option values. Each option value
+				<emphasis>must</emphasis> be surrounded with single quotes ('). </para>
+	</important>
+
+	<para>The Connection URL supports the following options:</para>
+	<table pgwide="1" id="JMS-Client-0-8-Connection-URL-Options">
+		<title>Connection URL Options</title>
+		<tgroup cols="3">
+			<thead>
+				<row>
+					<entry> Option </entry>
+					<entry> Type </entry>
+					<entry> Description </entry>
+				</row>
+			</thead>
+			<tbody>
+				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-Brokerlist">
+					<entry> brokerlist </entry>
+					<entry> see below </entry>
+					<entry> List of one or more broker addresses. </entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-Maxprefetch">
+					<entry> maxprefetch </entry>
+					<entry> integer </entry>
+					<entry>
+						<para> The maximum number of pre-fetched messages per Session. If not
+							specified, default value of 500 is used. </para>
+						<para> Note: You can also set the default per-session prefetch value on a
+							client-wide basis by configuring the client using <link
+								linkend="JMS-Client-0-8-System-Properties">Java system
+								properties.</link>
+						</para>
+					</entry>
+				</row>
+				<!-- 0-10 only
+				<row>
+					<entry> sync_publish </entry>
+					<entry> {'persistent' | 'all'} </entry>
+					<entry> A sync command is sent after every persistent message to guarantee that
+						it has been received; if the value is 'persistent', this is done only for
+						persistent messages. </entry>
+				</row>
+				-->
+				<!-- 0-10 only
+				<row>
+					<entry> sync_ack </entry>
+					<entry> Boolean </entry>
+					<entry> A sync command is sent after every acknowledgement to guarantee that it
+						has been received. </entry>
+				</row>
+				-->
+				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-UseLegacyMap">
+					<entry> use_legacy_map_msg_format </entry>
+					<entry> Boolean </entry>
+					<entry> If you are using JMS Map messages and deploying a new client with any
+						JMS client older than 0.8 release, you must set this to true to ensure the
+						older clients can understand the map message encoding. </entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-Failover">
+					<entry> failover </entry>
+					<entry> {'singlebroker' | 'roundrobin'
+						,<!-- Cpp/0-10 only | 'failover_exchange' --> | 'nofailover' |
+						'&lt;class&gt;'} </entry>
+					<entry>
+						<para> This option controls failover behaviour. The method
+								<literal>singlebroker</literal> uses only the first broker in the
+							list, <literal>roundrobin</literal> will try each broker given in the
+							broker list until a connection is established,
+								<!--<literal>failover_exchange</literal> connects to the initial broker
+							given in the broker URL and will receive membership updates via the
+							failover exchange. --><literal>nofailover</literal>
+							disables all retry and failover logic. Any other value is interpreted as
+							a classname which must implement the
+								<literal>org.apache.qpid.jms.failover.FailoverMethod</literal>
+							interface. </para>
+						<para> The broker list options <literal>retries</literal> and
+								<literal>connectdelay</literal> (described below) determine the
+							number of times a connection to a broker will be retried and the
+							length of time to wait between successive connection attempts before
+							moving on to the next broker in the list. The failover option
+								<literal>cyclecount</literal> controls the number of times to loop
+							through the list of available brokers before finally giving up. </para>
+						<para> Defaults to <literal>roundrobin</literal> if the brokerlist contains
+							multiple brokers, or <literal>singlebroker</literal> otherwise. </para>
+					</entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-CloseWhenNoRoute">
+					<entry> closeWhenNoRoute </entry>
+					<entry> boolean </entry>
+					<entry>
+						<para>See <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageProducer-CloseWhenNoRoute"
+							/>.</para>
+					</entry>
+				</row>
+				<row>
+					<entry> ssl </entry>
+					<entry> boolean </entry>
+					<entry>
+						<para> If <literal>ssl='true'</literal>, use SSL for all broker connections.
+							Overrides any per-broker settings in the brokerlist (see below) entries.
+							If not specified, the brokerlist entry for each given broker is used to
+							determine whether SSL is used. </para>
+						<para> Introduced in version 0.22. </para>
+					</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+	<para> Broker lists are specified using a URL in this format: </para>
+
+	<programlisting><![CDATA[brokerlist=<transport>://<host>[:<;port>](?<param>='<value>')(&<param>='<value>')*]]></programlisting>
+	<para> For instance, this is a typical broker list: </para>
+
+	<programlisting><![CDATA[brokerlist='tcp://localhost:5672']]></programlisting>
+
+	<para> A broker list can contain more than one broker address; if so, the connection is made to
+		the first broker in the list that is available.
+		<!--In general, it is better to use the failover
+		exchange when using multiple brokers, since it allows applications to fail over if a broker
+		goes down.--></para>
+
+	<example>
+		<title>Broker Lists</title>
+		<para>A broker list can specify properties to be used when connecting to the broker. This
+			broker list specifies options for configuring heartbeating</para>
+		<programlisting><![CDATA[amqp://guest:guest@test/test?brokerlist='tcp://ip1:5672?heartbeat='5'']]></programlisting>
+
+		<para>This broker list specifies some SSL options</para>
+
+		<programlisting><![CDATA[amqp://guest:guest@test/test?brokerlist='tcp://ip1:5672?ssl='true'&ssl_cert_alias='cert1'']]></programlisting>
+
+		<para> This broker list specifies two brokers using the connectdelay and retries broker
+			options. It also illustrates the failover connection URL property. </para>
+
+		<programlisting><![CDATA[amqp://guest:guest@/test?failover='roundrobin?cyclecount='2''
+	  &brokerlist='tcp://ip1:5672?retries='5'&connectdelay='2000';tcp://ip2:5672?retries='5'&connectdelay='2000''
+	  ]]></programlisting>
+	</example>
+
+	<important>
+		<title>Broker option quoting</title>
+		<para>Take care with the quoting surrounding broker option values. Each broker option value
+				<emphasis>must</emphasis> be surrounded with their own single quotes ('). This is in
+			addition to the quotes surround the connection option value.</para>
+	</important>
+
+	<para>The following broker list options are supported.</para>
+
+	<table pgwide="1">
+		<title>Broker List Options</title>
+		<tgroup cols="3">
+			<thead>
+				<row>
+					<entry> Option </entry>
+					<entry> Type </entry>
+					<entry> Description </entry>
+				</row>
+			</thead>
+			<tbody>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-Heartbeat">
+					<entry> heartbeat </entry>
+					<entry> Long </entry>
+					<entry> Frequency of heartbeat messages (in seconds). A value of 0 disables
+						heartbeating. <para>For compatibility with old client configuration, option
+								<varname>idle_timeout</varname> (in milliseconds) is also
+							supported.</para>
+					</entry>
+				</row>
+				<!-- 0-10 only
+				<row>
+					<entry> sasl_mechs </entry>
+					<entry> - </entry>
+					<entry> For secure applications, we suggest CRAM-MD5, DIGEST-MD5, or GSSAPI. The
+						ANONYMOUS method is not secure. The PLAIN method is secure only when used
+						together with SSL. For Kerberos, sasl_mechs must be set to GSSAPI,
+						sasl_protocol must be set to the principal for the qpidd broker, e.g.
+						qpidd/, and sasl_server must be set to the host for the SASL server, e.g.
+						sasl.com. SASL External is supported using SSL certification, e.g.
+							<literal>ssl='true'&amp;sasl_mechs='EXTERNAL'</literal>
+					</entry>
+				</row>
+				<row>
+					<entry> sasl_encryption </entry>
+					<entry> Boolean </entry>
+					<entry> If <literal>sasl_encryption='true'</literal>, the JMS client attempts to
+						negotiate a security layer with the broker using GSSAPI to encrypt the
+						connection. Note that for this to happen, GSSAPI must be selected as the
+						sasl_mech. </entry>
+				</row>
+				<row>
+					<entry> sasl_protocol </entry>
+					<entry> - </entry>
+					<entry> Used only for Kerberos. <literal>sasl_protocol</literal> must be set to
+						the principal for the qpidd broker, e.g. <literal>qpidd/</literal>
+					</entry>
+				</row>
+				<row>
+					<entry> sasl_server </entry>
+					<entry> - </entry>
+					<entry> For Kerberos, sasl_mechs must be set to GSSAPI, sasl_server must be set
+						to the host for the SASL server, e.g. <literal>sasl.com</literal>. </entry>
+				</row>
+				-->
+				<row>
+					<entry> ssl </entry>
+					<entry> Boolean </entry>
+					<entry>
+						<para>If <literal>ssl='true'</literal>, the JMS client will encrypt the
+							connection to this broker using SSL.</para>
+						<para>This can also be set/overridden for all brokers using the Connection
+							URL option <literal>ssl</literal>.</para>
+					</entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-TrustStore">
+					<entry> trust_store </entry>
+					<entry> String </entry>
+					<entry> Path to trust store. Used when using SSL and the Broker's certificate is
+						signed by a private-CA (or a self-signed certificate),</entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-TrustStorePassword">
+					<entry> trust_store_password </entry>
+					<entry> String </entry>
+					<entry> Trust store password. Password used to open the trust store. </entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-KeyStore">
+					<entry> key_store </entry>
+					<entry> String </entry>
+					<entry> Path to key store . Used when using SSL and the client must authenticate
+						using client-auth. If the store contains more than one certificate,
+							<literal>ssl_cert_alias</literal> must be used to identify the
+						certificate that the client must present to the Broker.</entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-KeyStorePassword">
+					<entry> key_store_password </entry>
+					<entry> String </entry>
+					<entry> Key store password. Password used to open the key store. </entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-SslCertAlias">
+					<entry> ssl_cert_alias </entry>
+					<entry> String </entry>
+					<entry> If multiple certificates are present in the keystore, the alias will be
+						used to extract the correct certificate. </entry>
+				</row>
+				<row>
+					<entry> ssl_verify_hostname </entry>
+					<entry> Boolean </entry>
+					<entry> When using SSL you can enable hostname verification by using
+							<literal>ssl_verify_hostname='true'</literal> in the broker URL.
+					</entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-Retries">
+					<entry> retries </entry>
+					<entry> Integer </entry>
+					<entry> The number of times to retry connection to each broker in the broker
+						list. Defaults to 1. </entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-ConnectDelay">
+					<entry> connectdelay </entry>
+					<entry> integer </entry>
+					<entry> Length of time (in milliseconds) to wait before attempting to reconnect.
+						Defaults to 0. </entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-ConnectTimeout">
+					<entry> connecttimeout </entry>
+					<entry> integer </entry>
+					<entry> Length of time (in milliseconds) to wait for the socket connection to
+						succeed. A value of 0 represents an infinite timeout, i.e. the connection
+						attempt will block until established or an error occurs. Defaults to 30000.
+					</entry>
+				</row>
+				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-TcpNoDelay">
+					<entry> tcp_nodelay </entry>
+					<entry> Boolean </entry>
+					<entry> If <literal>tcp_nodelay='true'</literal>, TCP packet batching is
+						disabled. Defaults to true since Qpid 0.14. </entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+</chapter>

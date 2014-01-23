@@ -108,6 +108,7 @@ wmgr::enqueue(const void* const data_buff,
               data_tok* dtokp,
               const void* const xid_ptr,
               const std::size_t xid_len,
+              const bool tpc_flag,
               const bool transient,
               const bool external)
 {
@@ -196,7 +197,7 @@ wmgr::enqueue(const void* const data_buff,
             if (xid_len) // If part of transaction, add to transaction map
             {
                 std::string xid((const char*)xid_ptr, xid_len);
-                _tmap.insert_txn_data(xid, txn_data_t(rid, 0, dtokp->fid(), 0, true));
+                _tmap.insert_txn_data(xid, txn_data_t(rid, 0, dtokp->fid(), 0, true, tpc_flag, false));
             }
             else
             {
@@ -228,6 +229,7 @@ iores
 wmgr::dequeue(data_tok* dtokp,
               const void* const xid_ptr,
               const std::size_t xid_len,
+              const bool tpc_flag,
               const bool txn_coml_commit)
 {
     if (xid_len)
@@ -312,7 +314,7 @@ wmgr::dequeue(data_tok* dtokp,
                 // If the enqueue is part of a pending txn, it will not yet be in emap
                 _emap.lock(dequeue_rid); // ignore rid not found error
                 std::string xid((const char*)xid_ptr, xid_len);
-                _tmap.insert_txn_data(xid, txn_data_t(rid, dequeue_rid, dtokp->fid(), 0, false));
+                _tmap.insert_txn_data(xid, txn_data_t(rid, dequeue_rid, dtokp->fid(), 0, false, tpc_flag, false));
             }
             else
             {
@@ -424,8 +426,8 @@ wmgr::abort(data_tok* dtokp,
 
             // Delete this txn from tmap, unlock any locked records in emap
             std::string xid((const char*)xid_ptr, xid_len);
-            txn_data_list tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-            for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++)
+            txn_data_list_t tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+            for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++)
             {
 				if (!itr->enq_flag_)
 				    _emap.unlock(itr->drid_); // ignore rid not found error
@@ -523,8 +525,8 @@ wmgr::commit(data_tok* dtokp,
 
             // Delete this txn from tmap, process records into emap
             std::string xid((const char*)xid_ptr, xid_len);
-            txn_data_list tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
-            for (tdl_itr itr = tdl.begin(); itr != tdl.end(); itr++)
+            txn_data_list_t tdl = _tmap.get_remove_tdata_list(xid); // tdl will be empty if xid not found
+            for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++)
             {
                 if (itr->enq_flag_) // txn enqueue
                 {
@@ -621,8 +623,8 @@ wmgr::flush_check(iores& res,
         }
 
         // If file is full, rotate to next file
-        uint32_t fileSize_pgs = _lfc.fileSize_sblks() / _cache_pgsize_sblks;
-        if (_pg_cntr >= fileSize_pgs)
+        uint32_t dataSize_pgs = _lfc.dataSize_sblks() / _cache_pgsize_sblks;
+        if (_pg_cntr >= dataSize_pgs)
         {
 //std::cout << _pg_cntr << ">=" << fileSize_pgs << std::flush;
             get_next_file();
@@ -638,8 +640,8 @@ iores
 wmgr::flush()
 {
     iores res = write_flush();
-    uint32_t fileSize_pgs = _lfc.fileSize_sblks() / _cache_pgsize_sblks;
-    if (res == RHM_IORES_SUCCESS && _pg_cntr >= fileSize_pgs) {
+    uint32_t dataSize_pgs = _lfc.dataSize_sblks() / _cache_pgsize_sblks;
+    if (res == RHM_IORES_SUCCESS && _pg_cntr >= dataSize_pgs) {
         get_next_file();
     }
     return res;

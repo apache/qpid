@@ -35,7 +35,7 @@ import java.util.Map;
  * time. However, once the Schema is made public, it must be considered immutable, as the hash value
  * must be constant once the Schema is in use.
  * <p>
- * Note that <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API</a> suggests that the
+ * Note that <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that the
  * properties are represented by an unordered map of SchemaProperty entries indexed by property name, however
  * these are actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe the
  * schema event's properties.
@@ -141,7 +141,7 @@ public final class SchemaEventClass extends SchemaClass
     /**
      * Return Schema Object's properties.
      * <p>
-     * Note that <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API</a> suggests that
+     * Note that <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that
      * the properties are represented by an unordered map of SchemaProperty indexed by property name however it
      * is actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe the
      * schema objects's properties. In this implementation getProperties() returns a List<SchemaProperty> 

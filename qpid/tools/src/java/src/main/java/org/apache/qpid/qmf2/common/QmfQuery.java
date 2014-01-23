@@ -42,7 +42,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  * instances accepted by the filter will be returned in response to the query.
  * <p>
  * N.B. There appear to be a number of differences in the description of the map encoding of a Query between the
- * QMF2 API specified at <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> and the
+ * QMF2 API specified at <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> and the
  * QMF2 protocol that is specified at <a href=https://cwiki.apache.org/qpid/qmf-map-message-protocol.html>QMF Map
  * Message Protocol</a> in particular the use of the underscore to specify key names e.g. "_what", "_where",
  * "_object_id", "_schema_id".
@@ -211,7 +211,7 @@ public final class QmfQuery extends QmfData
     /**
      * Undefined by QMF2 API.
      * <p>
-     * According to <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Specification</a>
+     * According to <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Specification</a>
      * "The value of the <target name string> map entry is ignored for now, its use is TBD."
      * so this method returns a null Map.
      */

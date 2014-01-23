@@ -89,19 +89,6 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     typedef LockedMappings::map txn_lock_map;
     typedef boost::ptr_list<PreparedTransaction> txn_list;
 
-    // Structs for Transaction Recover List (TPL) recover state
-    struct TplRecoverStruct {
-        uint64_t rid; // rid of TPL record
-        bool deq_flag;
-        bool commit_flag;
-        bool tpc_flag;
-        TplRecoverStruct(const uint64_t _rid, const bool _deq_flag, const bool _commit_flag, const bool _tpc_flag);
-    };
-    typedef TplRecoverStruct TplRecover;
-    typedef std::pair<std::string, TplRecover> TplRecoverMapPair;
-    typedef std::map<std::string, TplRecover> TplRecoverMap;
-    typedef TplRecoverMap::const_iterator TplRecoverMapCitr;
-
     typedef std::map<std::string, JournalImpl*> JournalListMap;
     typedef JournalListMap::iterator JournalListMapItr;
 
@@ -127,7 +114,6 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
 
     // Pointer to Transaction Prepared List (TPL) journal instance
     boost::shared_ptr<TplJournalImpl> tplStorePtr;
-    TplRecoverMap tplRecoverMap;
     qpid::sys::Mutex tplInitLock;
     JournalListMap journalList;
     qpid::sys::Mutex journalListLock;
@@ -202,7 +188,6 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
                        queue_index& index,
                        txn_list& locked,
                        message_index& prepared);
-    void readTplStore();
     void recoverTplStore();
     void recoverLockedMappings(txn_list& txns);
     TxnCtxt* check(qpid::broker::TransactionContext* ctxt);
@@ -250,18 +235,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     }
     void chkTplStoreInit();
 
-    // debug aid for printing XIDs that may contain non-printable chars
-    static std::string xid2str(const std::string xid) {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0');
-        for (unsigned i=0; i<xid.size(); i++) {
-            if (isprint(xid[i]))
-                oss << xid[i];
-            else
-                oss << "/" << std::setw(2) << (int)((char)xid[i]);
-        }
-        return oss.str();
-    }
+    static std::string str2hexnum(const std::string& str);
 
   public:
     typedef boost::shared_ptr<MessageStoreImpl> shared_ptr;

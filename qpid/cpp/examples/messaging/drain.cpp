@@ -21,6 +21,7 @@
 
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Message.h>
+#include <qpid/messaging/Message_io.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
 
@@ -81,8 +82,9 @@ int main(int argc, char** argv)
 {
     Options options;
     if (options.parse(argc, argv) && options.checkAddress()) {
-        Connection connection(options.url, options.connectionOptions);
+        Connection connection;
         try {
+            connection = Connection(options.url, options.connectionOptions);
             connection.open();
             Session session = connection.createSession();
             Receiver receiver = session.createReceiver(options.address);
@@ -92,17 +94,7 @@ int main(int argc, char** argv)
             int i = 0;
 
             while (receiver.fetch(message, timeout)) {
-                std::cout << "Message(properties=" << message.getProperties();
-                if (!message.getSubject().empty()) {
-                    std::cout << ", subject='" << message.getSubject() << "'";
-                }
-                std::cout << ", content='";
-                if (message.getContentType() == "amqp/map") {
-                    std::cout << message.getContentObject().asMap();
-                } else {
-                    std::cout << message.getContentObject();
-                }
-                std::cout  << "')" << std::endl;
+                std::cout << message << std::endl;
                 session.acknowledge();
                 if (count && (++i == count))
                     break;
@@ -112,7 +104,7 @@ int main(int argc, char** argv)
             connection.close();
             return 0;
         } catch(const std::exception& error) {
-            std::cout << error.what() << std::endl;
+            std::cout << "Error: " << error.what() << std::endl;
             connection.close();
         }
     }

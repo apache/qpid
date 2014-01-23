@@ -92,6 +92,8 @@ const uint32_t jerrno::JERR_RCVM_STREAMBAD       = 0x0901;      ///< Read/write 
 const uint32_t jerrno::JERR_RCVM_READ            = 0x0902;           ///< Read error: no or insufficient data to read
 const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0903;          ///< Write error
 const uint32_t jerrno::JERR_RCVM_NULLXID         = 0x0904;        ///< Null XID when XID length non-null in header
+const uint32_t jerrno::JERR_RCVM_NOTDBLKALIGNED  = 0x0905; ///< Offset is not data block (dblk)-aligned
+
 
 // class data_tok
 const uint32_t jerrno::JERR_DTOK_ILLEGALSTATE    = 0x0a00;
@@ -182,6 +184,7 @@ jerrno::__init()
     _err_map[JERR_RCVM_READ] = "JERR_RCVM_READ: Read error: no or insufficient data to read";
     _err_map[JERR_RCVM_WRITE] = "JERR_RCVM_WRITE: Write error";
     _err_map[JERR_RCVM_NULLXID] = "JERR_RCVM_NULLXID: Null XID when XID length non-null in header";
+    _err_map[JERR_RCVM_NOTDBLKALIGNED] = "JERR_RCVM_NOTDBLKALIGNED: Offset is not data block (dblk)-aligned";
 
     // class data_tok
     _err_map[JERR_DTOK_ILLEGALSTATE] = "JERR_MTOK_ILLEGALSTATE: Attempted to change to illegal state.";

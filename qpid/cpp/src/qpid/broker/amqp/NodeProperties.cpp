@@ -54,6 +54,7 @@ const std::string EXCLUSIVE("exclusive");
 const std::string AUTO_DELETE("auto-delete");
 const std::string ALTERNATE_EXCHANGE("alternate-exchange");
 const std::string EXCHANGE_TYPE("exchange-type");
+const std::string EMPTY;
 
 pn_bytes_t convert(const std::string& s)
 {
@@ -104,7 +105,8 @@ bool getLifetimeDescriptorSymbol(QueueSettings::LifetimePolicy policy, pn_bytes_
 
 }
 
-NodeProperties::NodeProperties() : received(false), queue(true), durable(false), autoDelete(false), exclusive(false), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
+NodeProperties::NodeProperties(bool isDynamic) : received(false), queue(true), durable(false), autoDelete(false), exclusive(false),
+                                                 dynamic(isDynamic), exchangeType("topic"), lifetime(QueueSettings::DELETE_IF_UNUSED) {}
 
 void NodeProperties::read(pn_data_t* data)
 {
@@ -113,7 +115,7 @@ void NodeProperties::read(pn_data_t* data)
 
 }
 
-bool NodeProperties::wasSpecified(const std::string& key)
+bool NodeProperties::wasSpecified(const std::string& key) const
 {
     return specified.find(key) != specified.end();
 }
@@ -334,7 +336,9 @@ void NodeProperties::onSymbolValue(const CharSequence& key, const CharSequence& 
 
 QueueSettings NodeProperties::getQueueSettings()
 {
-    QueueSettings settings(durable, autoDelete);
+    //assume autodelete for dynamic nodes unless explicitly requested
+    //otherwise or unless durability is requested
+    QueueSettings settings(durable, autoDelete || (dynamic && !wasSpecified(AUTO_DELETE) && !durable));
     qpid::types::Variant::Map unused;
     settings.populate(properties, unused);
     settings.lifetime = lifetime;
@@ -361,6 +365,10 @@ bool NodeProperties::isAutodelete() const
 std::string NodeProperties::getExchangeType() const
 {
     return exchangeType;
+}
+std::string NodeProperties::getSpecifiedExchangeType() const
+{
+    return wasSpecified(EXCHANGE_TYPE) ? exchangeType : EMPTY;
 }
 std::string NodeProperties::getAlternateExchange() const
 {

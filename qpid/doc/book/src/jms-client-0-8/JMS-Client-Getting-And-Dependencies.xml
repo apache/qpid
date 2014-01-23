@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<chapter id="JMS-Client-0-8-JMS-Getting-And-Dependencies">
+  <title>Getting the Client And Dependencies</title>
+  <section id="JMS-Client-0-8-JMS-Getting-And-Dependencies-Getting">
+    <title>Getting the Client</title>
+    <para>The Qpid JMS client is available as a bundle or from &qpidMavenRepoDesc;.</para>
+    <para>The bundle (a .tar.gz) includes the Qpid JMS client itself (formed by two JAR: qpid-client
+      and qpid-common) together with slf4j-api, and geronimo-jms_1.1_spec. There is also a qpid-all
+      JAR artifact that, for convenience, includes a manifest classpath that references the other
+      JARs. The bundle is available from <ulink url="&qpidDownloadUrl;"
+        >&qpidDownloadUrlDesc;</ulink>.</para>
+    <para>The Qpid JMS client is also available from &qpidMavenRepoDesc;. Add the following
+      dependency:</para>
+    <screen><![CDATA[
+    <dependency>
+      <groupId>]]>&qpidClientGroupId;<![CDATA[</groupId>
+      <artifactId>]]>&qpidClientArtefactId;<![CDATA[</artifactId>
+      <version>]]>&qpidVersion;<![CDATA[</version>
+    </dependency>
+    ]]></screen>
+    <para><xref linkend="JMS-Client-0-8-Appendix-Maven"/> illustrates a minimal Maven POM required to use the Qpid Client.</para>
+  </section>
+  <section id="JMS-Client-0-8-JMS-Getting-And-Dependencies-Dependencies">
+    <title>Dependencies</title>
+    <para>The Qpid JMS client has minimal set of external dependencies. </para>
+    <para> It requires: <itemizedlist>
+        <listitem>
+          <para>JDK 1.6 or higher. (An up to date JDK 1.7 is recommended)</para>
+        </listitem>
+        <listitem>
+          <para>JMS 1.1 specification (such as geronimo-jms_1.1_spec JAR)</para>
+        </listitem>
+        <listitem>
+          <para><ulink url="http://www.slf4j.org">Apache SLF4J</ulink> (slf4j-api-x.y.z JAR)</para>
+        </listitem>
+      </itemizedlist>
+    </para>
+    <para>The use of SLF4J means that application authors are free to plug in any logging framework
+      for which an SLF4J binding exists. </para>
+  </section>
+</chapter>

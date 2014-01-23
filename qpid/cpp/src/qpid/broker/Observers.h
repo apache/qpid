@@ -24,7 +24,7 @@
 
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
-#include <vector>
+#include <set>
 #include <algorithm>
 
 namespace qpid {
@@ -37,19 +37,21 @@ template <class Observer>
 class Observers
 {
   public:
-    void add(boost::shared_ptr<Observer> observer) {
+    typedef boost::shared_ptr<Observer> ObserverPtr;
+
+    void add(const ObserverPtr& observer) {
         sys::Mutex::ScopedLock l(lock);
-        observers.push_back(observer);
+        observers.insert(observer);
     }
 
-    void remove(boost::shared_ptr<Observer> observer) {
+    void remove(const ObserverPtr& observer) {
         sys::Mutex::ScopedLock l(lock);
-        typename List::iterator i = std::find(observers.begin(), observers.end(), observer);
-        observers.erase(i);
+        observers.erase(observer) ;
     }
 
+    /** Iterate over the observers. */
     template <class F> void each(F f) {
-        List copy;
+        Set copy;               // Make a copy and iterate outside the lock.
         {
             sys::Mutex::ScopedLock l(lock);
             copy = observers;
@@ -57,11 +59,33 @@ class Observers
         std::for_each(copy.begin(), copy.end(), f);
     }
 
-  protected:
-    typedef std::vector<boost::shared_ptr<Observer> > List;
+    template <class T> boost::shared_ptr<T> findType() const {
+        sys::Mutex::ScopedLock l(lock);
+        typename Set::const_iterator i =
+            std::find_if(observers.begin(), observers.end(), &isA<T>);
+        return i == observers.end() ?
+            boost::shared_ptr<T>() : boost::dynamic_pointer_cast<T>(*i);
+    }
 
-    sys::Mutex lock;
-    List observers;
+  protected:
+    typedef std::set<ObserverPtr> Set;
+    Observers() : lock(myLock) {}
+
+    /** Specify a lock for the Observers to use */
+    Observers(sys::Mutex& l) : lock(l) {}
+
+    /** Iterate over the observers without taking the lock, caller must hold the lock */
+    template <class F> void each(F f, const sys::Mutex::ScopedLock&) {
+        std::for_each(observers.begin(), observers.end(), f);
+    }
+
+    template <class T> static bool isA(const ObserverPtr&o) {
+        return boost::dynamic_pointer_cast<T>(o);
+    }
+
+    mutable sys::Mutex myLock;
+    sys::Mutex& lock;
+    Set observers;
 };
 
 }} // namespace qpid::broker

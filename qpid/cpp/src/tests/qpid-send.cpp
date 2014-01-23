@@ -242,7 +242,7 @@ class GetlineContentGenerator : public ContentGenerator {
     virtual bool setContent(Message& msg) {
         string content;
         bool got = getline(std::cin, content);
-        if (got) msg.setContent(content);
+        if (got) msg.setContentObject(content);
         return got;
     }
 };
@@ -251,7 +251,7 @@ class FixedContentGenerator   : public ContentGenerator {
   public:
     FixedContentGenerator(const string& s) : content(s) {}
     virtual bool setContent(Message& msg) {
-        msg.setContent(content);
+        msg.setContentObject(content);
         return true;
     }
   private:

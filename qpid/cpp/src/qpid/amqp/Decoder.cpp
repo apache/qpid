@@ -301,7 +301,7 @@ Descriptor Decoder::readDescriptor()
 
 void Decoder::advance(size_t n)
 {
-    if (n > available()) throw qpid::Exception(QPID_MSG("Out of Bounds"));
+    if (n > available()) throw qpid::Exception(QPID_MSG("Out of Bounds: requested advance of " << n << " at " << position << " but only " << available() << " available"));
     position += n;
 }
 

@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * The SchemaMethod class describes a method call's parameter list.
  * <p>
- * Note that <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API</a> suggests that
+ * Note that <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that
  * the parameter list is represented by an unordered map of SchemaProperty entries indexed by parameter name,
  * however is is actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe
  * the method's arguments". 
@@ -95,7 +95,7 @@ public final class SchemaMethod extends QmfData
      * Construct a SchemaMethod from a map of "name":<SchemaProperty> entries and description.
      *
      * Note this Constructor is the one given in the QMF2 API specification at
-     * <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API</a>Note too that this method does not
+     * <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a>Note too that this method does not
      * set a name so setName() needs to be called explicitly by clients after construction.
      *
      * @param args a Map of "name":<SchemaProperty> entries.
@@ -153,7 +153,7 @@ public final class SchemaMethod extends QmfData
     /**
      * Return the Method's arguments.
      *<p>
-     * <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API</a> suggests that
+     * <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that
      * the parameter list is represented by an unordered map of SchemaProperty entries indexed by parameter name,
      * however is is actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe
      * the method's arguments". In this implementation getArguments() returns a List<SchemaProperty> reflecting the

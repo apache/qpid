@@ -21,7 +21,7 @@
 package org.apache.qpid.qmf2.console;
 
 /**
- * Descriptions below are taken from <a href=https://cwiki.apache.org/qpid/qmfv2-api-proposal.html>QMF2 API Proposal</a> 
+ * Descriptions below are taken from <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Proposal</a> 
  * <pre>
  * AGENT_RESTARTED: Sent when the QMF Console detects an Agent was restarted, an AGENT_RESTARTED WorkItem
  *                  is pushed onto the work-queue. The WorkItem's getParam() call returns a map which contains

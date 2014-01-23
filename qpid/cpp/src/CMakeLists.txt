@@ -183,13 +183,10 @@ if (CMAKE_COMPILER_IS_GNUCXX)
      set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden")
    else (GCC_VERSION VERSION_EQUAL 4.1.2)
      set (HIDE_SYMBOL_FLAGS "-fno-visibility-inlines-hidden -fvisibility=hidden")
+     set (QPID_LINKMAP ${CMAKE_CURRENT_SOURCE_DIR}/qpid.linkmap)
+     set (LINK_VERSION_SCRIPT_FLAG "-Wl,--version-script=${QPID_LINKMAP}")
    endif (GCC_VERSION VERSION_EQUAL 4.1.2)
 endif (CMAKE_COMPILER_IS_GNUCXX)
-
-if (CMAKE_SYSTEM_NAME STREQUAL Linux)
-  set (QPID_LINKMAP ${CMAKE_CURRENT_SOURCE_DIR}/qpid.linkmap)
-  set (LINK_VERSION_SCRIPT_FLAG "-Wl,--version-script=${QPID_LINKMAP}")
-endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (COMPILER_FLAGS "-library=stlport4 -mt")
@@ -584,7 +581,6 @@ option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
 if (BUILD_HA)
     set (ha_SOURCES
 	qpid/ha/QueueSnapshot.h
-	qpid/ha/QueueSnapshots.h
         qpid/ha/AlternateExchangeSetter.h
         qpid/ha/Backup.cpp
         qpid/ha/Backup.h
@@ -1056,6 +1052,7 @@ set (qpidmessaging_SOURCES
      qpid/messaging/Duration.cpp
      qpid/messaging/exceptions.cpp
      qpid/messaging/FailoverUpdates.cpp
+     qpid/messaging/Logger.cpp
      qpid/messaging/Message.cpp
      qpid/messaging/Receiver.cpp
      qpid/messaging/Session.cpp
@@ -1065,6 +1062,7 @@ set (qpidmessaging_SOURCES
      qpid/messaging/ConnectionOptions.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
+     qpid/messaging/Message_io.cpp
      qpid/messaging/ProtocolRegistry.cpp
      qpid/messaging/amqp/EncodedMessage.h
      qpid/messaging/amqp/EncodedMessage.cpp
@@ -1073,7 +1071,7 @@ set (qpidmessaging_SOURCES
 add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
-target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon ${PROTON_LIBRARIES})
+target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}" ${PROTON_LIBRARIES})
 set_target_properties (qpidmessaging PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}"
