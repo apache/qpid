@@ -74,7 +74,6 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.QueueEntryInstanceProperties;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -736,7 +735,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             }
             else
             {
-                unacked.discard();
+                unacked.delete();
             }
         }
 
@@ -771,7 +770,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 _logger.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked
                           + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
 
-                unacked.discard();
+                unacked.delete();
             }
         }
         else
@@ -1362,7 +1361,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             {
                 for(QueueEntry entry : _ackedMessages)
                 {
-                    entry.discard();
+                    entry.delete();
                 }
             }
             finally
@@ -1571,19 +1570,19 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             {
                 _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
                 _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getRoutingKey()));
-                rejectedQueueEntry.discard();
+                rejectedQueueEntry.delete();
                 return;
             }
 
 
             final List<? extends BaseQueue> destinationQueues =
-                    altExchange.route(rejectedQueueEntry.getMessage(), new QueueEntryInstanceProperties(rejectedQueueEntry));
+                    altExchange.route(rejectedQueueEntry.getMessage(), rejectedQueueEntry.getInstanceProperties());
 
             if (destinationQueues == null || destinationQueues.isEmpty())
             {
                 _logger.debug("Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: " + deliveryTag);
                 _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
-                rejectedQueueEntry.discard();
+                rejectedQueueEntry.delete();
                 return;
             }
 

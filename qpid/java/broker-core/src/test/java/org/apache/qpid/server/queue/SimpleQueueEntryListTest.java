@@ -132,36 +132,44 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         //requiring a scavenge once the requested threshold of 9 deletes is passed
 
         //Delete the 2nd message only
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(2).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,2));
         verifyDeletedButPresentBeforeScavenge(head, 2);
 
         //Delete messages 12 to 14
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(12).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,12));
         verifyDeletedButPresentBeforeScavenge(head, 12);
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(13).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,13));
         verifyDeletedButPresentBeforeScavenge(head, 13);
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(14).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,14));
         verifyDeletedButPresentBeforeScavenge(head, 14);
 
         //Delete message 20 only
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(20).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,20));
         verifyDeletedButPresentBeforeScavenge(head, 20);
 
         //Delete messages 81 to 84
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(81).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,81));
         verifyDeletedButPresentBeforeScavenge(head, 81);
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(82).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,82));
         verifyDeletedButPresentBeforeScavenge(head, 82);
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(83).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,83));
         verifyDeletedButPresentBeforeScavenge(head, 83);
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(84).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,84));
         verifyDeletedButPresentBeforeScavenge(head, 84);
 
         //Delete message 99 - this is the 10th message deleted that is after the queue head
         //and so will invoke the scavenge() which is set to go after 9 previous deletions
-        assertTrue("Failed to delete QueueEntry", entriesMap.remove(99).delete());
+        assertTrue("Failed to delete QueueEntry", remove(entriesMap,99));
 
         verifyAllDeletedMessagedNotPresent(head, entriesMap);
+    }
+    
+    private boolean remove(Map<Integer,QueueEntry> entriesMap, int pos)
+    {
+        QueueEntry entry = entriesMap.remove(pos);
+        boolean wasDeleted = entry.isDeleted();
+        entry.delete();
+        return entry.isDeleted() && !wasDeleted;
     }
 
     private void verifyDeletedButPresentBeforeScavenge(SimpleQueueEntryImpl head, long messageId)
@@ -211,6 +219,9 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         {
             ServerMessage message =  mock(ServerMessage.class);
             when(message.getMessageNumber()).thenReturn((long)i);
+            final MessageReference reference = mock(MessageReference.class);
+            when(reference.getMessage()).thenReturn(message);
+            when(message.newReference()).thenReturn(reference);
             entries[i] = queueEntryList.add(message);
         }
 
@@ -235,7 +246,7 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
 
         // dequeue third
         entries[2].acquire();
-        entries[2].dequeue();
+        entries[2].delete();
 
         SimpleQueueEntryImpl next = entries[2].getNextValidEntry();
         assertEquals("expected forth entry", entries[3], next);

@@ -41,7 +41,9 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
@@ -133,11 +135,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
     }
 
-    // *** ProtocolOutputConverter Implementation
-    public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
-    {
-    }
-
     public ClientDeliveryMethod createDeliveryMethod(int channelId)
     {
         return new InternalWriteDeliverMethod(channelId);
@@ -147,7 +144,10 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     {
     }
 
-    public void writeDeliver(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag) throws AMQException
+    public void writeDeliver(final ServerMessage msg,
+                             final InstanceProperties props, int channelId,
+                             long deliveryTag,
+                             AMQShortString consumerTag) throws AMQException
     {
         _deliveryCount.incrementAndGet();
 
@@ -169,11 +169,15 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
                 consumers.put(consumerTag, consumerDelivers);
             }
 
-            consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)entry.getMessage()));
+            consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)msg));
         }
     }
 
-    public void writeGetOk(QueueEntry message, int channelId, long deliveryTag, int queueSize) throws AMQException
+    public void writeGetOk(final ServerMessage msg,
+                           final InstanceProperties props,
+                           int channelId,
+                           long deliveryTag,
+                           int queueSize) throws AMQException
     {
     }
 
@@ -195,15 +199,15 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     public class DeliveryPair
     {
         private long _deliveryTag;
-        private AMQMessage _message;
+        private ServerMessage _message;
 
-        public DeliveryPair(long deliveryTag, AMQMessage message)
+        public DeliveryPair(long deliveryTag, ServerMessage message)
         {
             _deliveryTag = deliveryTag;
             _message = message;
         }
 
-        public AMQMessage getMessage()
+        public ServerMessage getMessage()
         {
             return _message;
         }
@@ -242,7 +246,9 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
 
 
-        public void deliverToClient(Subscription sub, QueueEntry entry, long deliveryTag) throws AMQException
+        @Override
+        public void deliverToClient(Subscription sub, ServerMessage message,
+                                    InstanceProperties props, long deliveryTag) throws AMQException
         {
             _deliveryCount.incrementAndGet();
 
@@ -264,7 +270,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
                     consumers.put(((SubscriptionImpl)sub).getConsumerTag(), consumerDelivers);
                 }
 
-                consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)entry.getMessage()));
+                consumerDelivers.add(new DeliveryPair(deliveryTag, message));
             }
         }
     }

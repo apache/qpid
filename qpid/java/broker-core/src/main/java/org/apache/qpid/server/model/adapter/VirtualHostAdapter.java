@@ -767,7 +767,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                     {
                         public void postCommit()
                         {
-                            entry.discard();
+                            entry.delete();
                         }
 
                         public void onRollback()
@@ -836,7 +836,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
                                     public void postCommit()
                                     {
-                                        entry.discard();
+                                        entry.delete();
                                     }
 
                                     public void onRollback()

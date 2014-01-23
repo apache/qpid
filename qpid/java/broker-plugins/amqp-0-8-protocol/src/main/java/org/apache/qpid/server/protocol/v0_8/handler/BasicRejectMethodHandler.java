@@ -79,7 +79,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
                 message = channel.getUnacknowledgedMessageMap().remove(deliveryTag);
                 if(message != null)
                 {
-                    message.discard();
+                    message.delete();
                 }
                 return;
             }

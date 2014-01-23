@@ -33,13 +33,13 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueEntry;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -64,24 +64,27 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return _protocolSession;
     }
 
-    public void writeDeliver(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag)
+    public void writeDeliver(final ServerMessage m,
+                             final InstanceProperties props, int channelId,
+                             long deliveryTag,
+                             AMQShortString consumerTag)
             throws AMQException
     {
-        AMQMessage msg = convertToAMQMessage(entry);
-        AMQBody deliverBody = createEncodedDeliverBody(msg, entry.isRedelivered(), deliveryTag, consumerTag);
+        final AMQMessage msg = convertToAMQMessage(m);
+        final boolean isRedelivered = Boolean.TRUE.equals(props.getProperty(InstanceProperties.Property.REDELIVERED));
+        AMQBody deliverBody = createEncodedDeliverBody(msg, isRedelivered, deliveryTag, consumerTag);
         writeMessageDelivery(msg, channelId, deliverBody);
     }
 
-    private AMQMessage convertToAMQMessage(QueueEntry entry)
+    private AMQMessage convertToAMQMessage(ServerMessage serverMessage)
     {
-        ServerMessage serverMessage = entry.getMessage();
         if(serverMessage instanceof AMQMessage)
         {
             return (AMQMessage) serverMessage;
         }
         else
         {
-            return getMessageConverter(serverMessage).convert(serverMessage, entry.getQueue().getVirtualHost());
+            return getMessageConverter(serverMessage).convert(serverMessage, _protocolSession.getVirtualHost());
         }
     }
 
@@ -186,10 +189,14 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         }
     }
 
-    public void writeGetOk(QueueEntry entry, int channelId, long deliveryTag, int queueSize) throws AMQException
+    public void writeGetOk(final ServerMessage msg,
+                           final InstanceProperties props,
+                           int channelId,
+                           long deliveryTag,
+                           int queueSize) throws AMQException
     {
-        AMQBody deliver = createEncodedGetOkBody(entry, deliveryTag, queueSize);
-        writeMessageDelivery(convertToAMQMessage(entry), channelId, deliver);
+        AMQBody deliver = createEncodedGetOkBody(msg, props, deliveryTag, queueSize);
+        writeMessageDelivery(convertToAMQMessage(msg), channelId, deliver);
     }
 
 
@@ -274,18 +281,18 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         }
     }
 
-    private AMQBody createEncodedGetOkBody(QueueEntry entry, long deliveryTag, int queueSize)
+    private AMQBody createEncodedGetOkBody(ServerMessage msg, InstanceProperties props, long deliveryTag, int queueSize)
             throws AMQException
     {
         final AMQShortString exchangeName;
         final AMQShortString routingKey;
 
-        final AMQMessage message = convertToAMQMessage(entry);
+        final AMQMessage message = convertToAMQMessage(msg);
         final MessagePublishInfo pb = message.getMessagePublishInfo();
         exchangeName = pb.getExchange();
         routingKey = pb.getRoutingKey();
 
-        final boolean isRedelivered = entry.isRedelivered();
+        final boolean isRedelivered = Boolean.TRUE.equals(props.getProperty(InstanceProperties.Property.REDELIVERED));
 
         BasicGetOkBody getOkBody =
                 _methodRegistry.createBasicGetOkBody(deliveryTag,

@@ -21,9 +21,11 @@
 package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 
 public interface ClientDeliveryMethod
 {
-    void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag) throws AMQException;
+    void deliverToClient(final Subscription sub, final ServerMessage message, final InstanceProperties props,
+                         final long deliveryTag) throws AMQException;
 }
