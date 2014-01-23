@@ -78,7 +78,7 @@ public class Base64MD5PasswordFilePrincipalDatabase extends AbstractPasswordFile
         
         if (pwd == null)
         {
-            throw new AccountNotFoundException("Unable to lookup the specfied users password");
+            throw new AccountNotFoundException("Unable to lookup the specified users password");
         }
         
         byte[] byteArray = new byte[password.length];

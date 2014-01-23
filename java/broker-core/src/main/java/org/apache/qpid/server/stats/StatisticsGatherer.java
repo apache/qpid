@@ -28,7 +28,7 @@ package org.apache.qpid.server.stats;
  * parts of the broker to set up and configure statistics generation.
  * <p>
  * When creating these objects, there should be a parent/child relationship
- * between them, such that the lowest level gatherer can record staticics if
+ * between them, such that the lowest level gatherer can record statistics if
  * enabled, and pass on the notification to the parent object to allow higher
  * level aggregation. When resetting statistics, this works in the opposite
  * direction, with higher level gatherers also resetting all of their children.

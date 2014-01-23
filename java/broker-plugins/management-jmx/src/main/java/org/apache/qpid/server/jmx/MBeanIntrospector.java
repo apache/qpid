@@ -47,7 +47,7 @@ class MBeanIntrospector
 {
 
     private static final String _defaultAttributeDescription = "Management attribute";
-    private static final String _defaultOerationDescription = "Management operation";
+    private static final String _defaultOperationDescription = "Management operation";
     private static final String _defaultConstructorDescription = "MBean constructor";
     private static final String _defaultMbeanDescription = "Management interface of the MBean";
 
@@ -221,7 +221,7 @@ class MBeanIntrospector
      * Helper method to retrieve the attribute index from the list of attributes.
      * @param attribute
      * @param list
-     * @return attribute index no. -1 if attribtue doesn't exist
+     * @return attribute index no. -1 if attribute doesn't exist
      * @throws javax.management.NotCompliantMBeanException
      */
     private static int getIndexIfAlreadyExists(MBeanAttributeInfo attribute,
@@ -281,7 +281,7 @@ class MBeanIntrospector
         MBeanParameterInfo[] paramsInfo = getParametersInfo(operation.getParameterAnnotations(),
                                                             operation.getParameterTypes());
 
-        String operationDesc = _defaultOerationDescription;
+        String operationDesc = _defaultOperationDescription;
         int impact = MBeanOperationInfo.UNKNOWN;
 
         if (operation.getAnnotation(MBeanOperation.class) != null)

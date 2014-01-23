@@ -79,7 +79,7 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     }
 
     @Override
-    public void attributeSet(ConfiguredObject object, String attrinuteName, Object oldAttributeValue, Object newAttributeValue)
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
         _store.save(toConfigurationEntry(object));
     }
@@ -87,13 +87,13 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     private ConfigurationEntry toConfigurationEntry(ConfiguredObject object)
     {
         Class<? extends ConfiguredObject> objectType = getConfiguredObjectType(object);
-        Set<UUID> childrenIds = getChildernIds(object, objectType);
+        Set<UUID> childrenIds = getChildrenIds(object, objectType);
         ConfigurationEntry entry = new ConfigurationEntry(object.getId(), objectType.getSimpleName(),
                 object.getActualAttributes(), childrenIds, _store);
         return entry;
     }
 
-    private Set<UUID> getChildernIds(ConfiguredObject object, Class<? extends ConfiguredObject> objectType)
+    private Set<UUID> getChildrenIds(ConfiguredObject object, Class<? extends ConfiguredObject> objectType)
     {
         // Virtual Host children's IDs should not be stored in broker store
         if (object instanceof VirtualHost)

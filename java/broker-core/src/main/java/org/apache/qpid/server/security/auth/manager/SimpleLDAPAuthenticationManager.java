@@ -225,7 +225,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
     private InitialDirContext createInitialDirContext(Hashtable<String, Object> env) throws NamingException
     {
-        ClassLoader existingContextClassloader = null;
+        ClassLoader existingContextClassLoader = null;
 
         boolean isLdaps = String.valueOf(env.get(Context.PROVIDER_URL)).trim().toLowerCase().startsWith("ldaps:");
 
@@ -234,7 +234,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         {
             if (isLdaps && _sslSocketFactoryOverrideClass != null)
             {
-                existingContextClassloader = Thread.currentThread().getContextClassLoader();
+                existingContextClassLoader = Thread.currentThread().getContextClassLoader();
                 env.put(JAVA_NAMING_LDAP_FACTORY_SOCKET, _sslSocketFactoryOverrideClass.getName());
                 Thread.currentThread().setContextClassLoader(_sslSocketFactoryOverrideClass.getClassLoader());
                 revertContentClassLoader = true;
@@ -245,7 +245,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         {
             if (revertContentClassLoader)
             {
-                Thread.currentThread().setContextClassLoader(existingContextClassloader);
+                Thread.currentThread().setContextClassLoader(existingContextClassLoader);
             }
         }
     }

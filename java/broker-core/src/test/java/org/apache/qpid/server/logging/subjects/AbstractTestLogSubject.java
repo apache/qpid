@@ -115,7 +115,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
         assertNotNull("Unable to find connection 'con:" + connectionID + "' in '"+message+"'",
                       connectionSlice);
 
-        // Exract the userName
+        // Extract the userName
         String[] userNameParts = connectionSlice.split("@");
 
         assertEquals("Unable to split Username from rest of Connection:"
@@ -180,11 +180,11 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
      */
     protected void verifyExchange(String message, Exchange exchange)
     {
-        String exchangeSilce = getSlice("ex", message);
+        String exchangeSlice = getSlice("ex", message);
 
-        assertNotNull("Exchange not found:" + message, exchangeSilce);
+        assertNotNull("Exchange not found:" + message, exchangeSlice);
 
-        String[] exchangeParts = exchangeSilce.split("/");
+        String[] exchangeParts = exchangeSlice.split("/");
 
         assertEquals("Exchange should be in two parts ex(type/name)", 2,
                      exchangeParts.length);
@@ -265,10 +265,10 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
     }
 
     /**
-     * Call to the individiual tests to validate the message is formatted as
+     * Call to the individual tests to validate the message is formatted as
      * expected
      *
-     * @param message the message whos format needs validation
+     * @param message the message whose format needs validation
      */
     protected abstract void validateLogStatement(String message);
 

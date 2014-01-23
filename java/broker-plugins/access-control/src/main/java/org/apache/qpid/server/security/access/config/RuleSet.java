@@ -242,7 +242,7 @@ public class RuleSet
     /** Returns true if a username has the name[@domain][/realm] format  */
     protected boolean isvalidUserName(String name)
     {
-        // check for '@' and '/' in namne
+        // check for '@' and '/' in name
         int atPos = name.indexOf(AT);
         int slashPos = name.indexOf(SLASH);
         boolean atFound = atPos != StringUtils.INDEX_NOT_FOUND && atPos == name.lastIndexOf(AT);

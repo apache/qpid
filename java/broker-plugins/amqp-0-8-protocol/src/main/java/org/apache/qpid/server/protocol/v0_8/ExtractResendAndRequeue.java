@@ -37,20 +37,20 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 
     private final Map<Long, QueueEntry> _msgToRequeue;
     private final Map<Long, QueueEntry> _msgToResend;
-    private final boolean _requeueIfUnabletoResend;
+    private final boolean _requeueIfUnableToResend;
     private final UnacknowledgedMessageMap _unacknowledgedMessageMap;
     private final MessageStore _transactionLog;
 
     public ExtractResendAndRequeue(UnacknowledgedMessageMap unacknowledgedMessageMap,
                                    Map<Long, QueueEntry> msgToRequeue,
                                    Map<Long, QueueEntry> msgToResend,
-                                   boolean requeueIfUnabletoResend,
+                                   boolean requeueIfUnableToResend,
                                    MessageStore txnLog)
     {
         _unacknowledgedMessageMap = unacknowledgedMessageMap;
         _msgToRequeue = msgToRequeue;
         _msgToResend = msgToResend;
-        _requeueIfUnabletoResend = requeueIfUnabletoResend;
+        _requeueIfUnableToResend = requeueIfUnableToResend;
         _transactionLog = txnLog;
     }
 
@@ -78,7 +78,7 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
             // cannot resend, so re-queue.
             if (!message.isQueueDeleted())
             {
-                if (_requeueIfUnabletoResend)
+                if (_requeueIfUnableToResend)
                 {
                     _msgToRequeue.put(deliveryTag, message);
                 }

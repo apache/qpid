@@ -88,9 +88,9 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         this(fragments, decoder, new ArrayList<ByteBuffer>(3));
     }
 
-    public MessageMetaData_1_0(ByteBuffer[] fragments, SectionDecoder decoder, List<ByteBuffer> immuatableSections)
+    public MessageMetaData_1_0(ByteBuffer[] fragments, SectionDecoder decoder, List<ByteBuffer> immutableSections)
     {
-        this(constructSections(fragments, decoder,immuatableSections), immuatableSections);
+        this(constructSections(fragments, decoder,immutableSections), immutableSections);
     }
 
     private MessageMetaData_1_0(List<Section> sections, List<ByteBuffer> encodedSections)

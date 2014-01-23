@@ -38,7 +38,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
-import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.SecurityManager;
 
@@ -58,7 +57,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
 
     private JMXPasswordAuthenticator _rmipa;
 
-    private SubjectCreator _usernamePasswordOkaySuvjectCreator = createMockSubjectCreator(true, null);
+    private SubjectCreator _usernamePasswordOkaySubjectCreator = createMockSubjectCreator(true, null);
     private SubjectCreator _badPasswordSubjectCreator = createMockSubjectCreator(false, null);
 
     protected void setUp() throws Exception
@@ -72,7 +71,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
      */
     public void testAuthenticationSuccess()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySubjectCreator);
         when(_securityManager.accessManagement()).thenReturn(true);
 
         Subject newSubject = _rmipa.authenticate(_credentials);
@@ -100,7 +99,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
 
     public void testAuthorisationFailure()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySuvjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySubjectCreator);
         when(_securityManager.accessManagement()).thenReturn(false);
 
         try

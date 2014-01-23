@@ -64,7 +64,7 @@ public class VirtualHostRecovererTest extends TestCase
         assertEquals("Unexpected name", getName(), host.getName());
     }
 
-    public void testCreateVirtualHostFromStoreConfigAtrributes()
+    public void testCreateVirtualHostFromStoreConfigAttributes()
     {
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         SecurityManager securityManager = mock(SecurityManager.class);
@@ -121,7 +121,7 @@ public class VirtualHostRecovererTest extends TestCase
             try
             {
                 recoverer.create(null, entry, parent);
-                fail("Cannot create a virtual host without a manadatory attribute " + name);
+                fail("Cannot create a virtual host without a mandatory attribute " + name);
             }
             catch(IllegalConfigurationException e)
             {

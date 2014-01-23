@@ -63,7 +63,7 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
     }
 
     /**
-     * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
+     * Thread-safe. This will decrement the reference count and when it reaches zero will remove the message from the
      * message store.
      *
      */

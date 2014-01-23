@@ -72,7 +72,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         verifyZeroInteractions(_postTransactionAction);
     }
 
-    public void testEnqueuePersistentMessageOnMultiplQueuesPostCommitNotCalled() throws Exception
+    public void testEnqueuePersistentMessageOnMultipleQueuesPostCommitNotCalled() throws Exception
     {
         setTestSystemProperty(STRICT_ORDER_SYSTEM_PROPERTY, "false");
 

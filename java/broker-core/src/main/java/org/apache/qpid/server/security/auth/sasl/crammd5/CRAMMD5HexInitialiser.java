@@ -48,11 +48,11 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
 
     private static class HexifyPrincipalDatabase implements PrincipalDatabase
     {
-        private PrincipalDatabase _realPricipalDatabase;
+        private PrincipalDatabase _realPrincipalDatabase;
 
         HexifyPrincipalDatabase(PrincipalDatabase db)
         {
-            _realPricipalDatabase = db;
+            _realPrincipalDatabase = db;
         }
 
         private char[] toHex(char[] password)
@@ -80,7 +80,7 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
         public void setPassword(Principal principal, PasswordCallback callback) throws IOException, AccountNotFoundException
         {
             //Let the read DB set the password
-            _realPricipalDatabase.setPassword(principal, callback);
+            _realPrincipalDatabase.setPassword(principal, callback);
 
             //Retrieve the setpassword
             char[] plainPassword = callback.getPassword();
@@ -93,37 +93,37 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
         // Simply delegate to the real PrincipalDB
         public boolean verifyPassword(String principal, char[] password) throws AccountNotFoundException
         {
-            return _realPricipalDatabase.verifyPassword(principal, password);
+            return _realPrincipalDatabase.verifyPassword(principal, password);
         }
 
         public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
         {
-            return _realPricipalDatabase.updatePassword(principal, password);
+            return _realPrincipalDatabase.updatePassword(principal, password);
         }
 
         public boolean createPrincipal(Principal principal, char[] password)
         {
-            return _realPricipalDatabase.createPrincipal(principal, password);
+            return _realPrincipalDatabase.createPrincipal(principal, password);
         }
 
         public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
         {
-            return _realPricipalDatabase.deletePrincipal(principal);
+            return _realPrincipalDatabase.deletePrincipal(principal);
         }
 
         public Principal getUser(String username)
         {
-            return _realPricipalDatabase.getUser(username);
+            return _realPrincipalDatabase.getUser(username);
         }
 
         public List<Principal> getUsers()
         {
-            return _realPricipalDatabase.getUsers();
+            return _realPrincipalDatabase.getUsers();
         }
 	
         public void reload() throws IOException
         {
-            _realPricipalDatabase.reload();
+            _realPrincipalDatabase.reload();
         }
 
         @Override
@@ -135,14 +135,14 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
         @Override
         public String getMechanisms()
         {
-            return _realPricipalDatabase.getMechanisms();
+            return _realPrincipalDatabase.getMechanisms();
         }
 
         @Override
         public SaslServer createSaslServer(String mechanism, String localFQDN,
                 Principal externalPrincipal) throws SaslException
         {
-            return _realPricipalDatabase.createSaslServer(mechanism, localFQDN, externalPrincipal);
+            return _realPrincipalDatabase.createSaslServer(mechanism, localFQDN, externalPrincipal);
         }
     }
 

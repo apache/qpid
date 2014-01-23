@@ -59,7 +59,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         ConfigurationEntry storeRoot = store.getRootEntry();
         _store = store;
         _rootId = storeRoot.getId();
-        _cliEntries = createPortsFromCommadLineOptions(options);
+        _cliEntries = createPortsFromCommandLineOptions(options);
         _quiescedEntries = quiesceEntries(storeRoot, options);
     }
 
@@ -183,7 +183,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         return _store.getType();
     }
 
-    private Map<UUID, ConfigurationEntry> createPortsFromCommadLineOptions(BrokerOptions options)
+    private Map<UUID, ConfigurationEntry> createPortsFromCommandLineOptions(BrokerOptions options)
     {
         int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();
         if (managementModeRmiPortOverride < 0)

@@ -42,7 +42,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
     protected QueueEntryImpl _queueEntry2;
     protected QueueEntryImpl _queueEntry3;
 
-    public abstract QueueEntryImpl getQueueEntryImpl(int msgid) throws AMQException;
+    public abstract QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException;
 
     public abstract void testCompareTo();
 
@@ -57,7 +57,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
         _queueEntry3 = getQueueEntryImpl(3);
     }
 
-    public void testAquire()
+    public void testAcquire()
     {
         assertTrue("Queue entry should be in AVAILABLE state before invoking of acquire method",
                 _queueEntry.isAvailable());
@@ -173,7 +173,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
     }
 
     /**
-     * Tests if entries in DEQUQUED or DELETED state are not returned by getNext method.
+     * Tests if entries in DEQUEUED or DELETED state are not returned by getNext method.
      */
     public void testGetNext()
     {

@@ -44,7 +44,7 @@ public class TopicMatcherDFAState
 
     private final Collection<TopicMatcherResult> _results;
     private final Map<TopicWord, TopicMatcherDFAState> _nextStateMap;
-    private static final String TOPIC_DELIMITTER = "\\.";
+    private static final String TOPIC_DELIMITER = "\\.";
 
 
     public TopicMatcherDFAState(Map<TopicWord, TopicMatcherDFAState> nextStateMap,
@@ -69,7 +69,7 @@ public class TopicMatcherDFAState
 
     public Collection<TopicMatcherResult> parse(TopicWordDictionary dictionary, String routingKey)
     {
-        return parse(dictionary, Arrays.asList(routingKey.split(TOPIC_DELIMITTER)).iterator());
+        return parse(dictionary, Arrays.asList(routingKey.split(TOPIC_DELIMITER)).iterator());
     }
 
     private Collection<TopicMatcherResult> parse(final TopicWordDictionary dictionary,

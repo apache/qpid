@@ -104,8 +104,8 @@ public class RestServlet extends AbstractServlet
                 Class<? extends ConfiguredObject> clazz = (Class<? extends ConfiguredObject>)itemClass;
                 classes.add(clazz);
             }
-            Class<? extends ConfiguredObject>[] hierachyClasses = (Class<? extends ConfiguredObject>[])new Class[classes.size()];
-            _hierarchy = classes.toArray(hierachyClasses);
+            Class<? extends ConfiguredObject>[] hierarchyClasses = (Class<? extends ConfiguredObject>[])new Class[classes.size()];
+            _hierarchy = classes.toArray(hierarchyClasses);
         }
         else
         {

@@ -1100,7 +1100,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                     }
                     catch(Exception e)
                     {
-                        LOGGER.warn("Exception occured on store deletion", e);
+                        LOGGER.warn("Exception occurred on store deletion", e);
                     }
                 }
 

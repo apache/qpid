@@ -117,7 +117,7 @@ public class AMQQueueFactory implements QueueFactory
         abstract void setPropertyValue(AMQQueue queue, int value);
     }
 
-    private static final QueueProperty[] DECLAREABLE_PROPERTIES = {
+    private static final QueueProperty[] DECLARABLE_PROPERTIES = {
             new QueueLongProperty(Queue.ALERT_THRESHOLD_MESSAGE_AGE)
             {
                 public void setPropertyValue(AMQQueue queue, long value)
@@ -304,7 +304,7 @@ public class AMQQueueFactory implements QueueFactory
 
         if(arguments != null)
         {
-            for(QueueProperty p : DECLAREABLE_PROPERTIES)
+            for(QueueProperty p : DECLARABLE_PROPERTIES)
             {
                 if(arguments.containsKey(p.getArgumentName()))
                 {
@@ -348,7 +348,7 @@ public class AMQQueueFactory implements QueueFactory
 
                 if(dlQueue == null)
                 {
-                    //set args to disable DLQ'ing/MDC from the DLQ itself, preventing loops etc
+                    //set args to disable DLQ-ing/MDC from the DLQ itself, preventing loops etc
                     final Map<String, Object> args = new HashMap<String, Object>();
                     args.put(Queue.CREATE_DLQ_ON_CREATION, false);
                     args.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0);

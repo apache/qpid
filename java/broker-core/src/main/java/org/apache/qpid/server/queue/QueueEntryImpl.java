@@ -305,7 +305,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         {
             return _rejectedBy.contains(subscriptionId);
         }
-        else // This messasge hasn't been rejected yet.
+        else // This message hasn't been rejected yet.
         {
             return false;
         }

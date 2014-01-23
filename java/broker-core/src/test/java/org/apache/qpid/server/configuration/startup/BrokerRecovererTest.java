@@ -367,7 +367,7 @@ public class BrokerRecovererTest extends TestCase
             public ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(String type)
             {
                 @SuppressWarnings({ "unchecked", "rawtypes" })
-                final ConfiguredObjectRecoverer<?  extends ConfiguredObject> recovever = new ConfiguredObjectRecoverer()
+                final ConfiguredObjectRecoverer<?  extends ConfiguredObject> recoverer = new ConfiguredObjectRecoverer()
                 {
                     @Override
                     public ConfiguredObject create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
@@ -384,7 +384,7 @@ public class BrokerRecovererTest extends TestCase
                     }
                 };
 
-                return recovever;
+                return recoverer;
             }
         };
         return recovererProvider;

@@ -186,9 +186,9 @@ public class BrokerOptions
      *
      * Passing null clears previously set values and returns to the default.
      */
-    public void setConfigurationStoreType(String cofigurationStoreType)
+    public void setConfigurationStoreType(String configurationStoreType)
     {
-        _configurationStoreType = cofigurationStoreType;
+        _configurationStoreType = configurationStoreType;
     }
 
     /**
@@ -217,9 +217,9 @@ public class BrokerOptions
      *
      * Passing null clears any previously set value and returns to the default.
      */
-    public void setConfigurationStoreLocation(String cofigurationStore)
+    public void setConfigurationStoreLocation(String configurationStore)
     {
-        _configurationStoreLocation = cofigurationStore;
+        _configurationStoreLocation = configurationStore;
     }
 
     /**

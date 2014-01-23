@@ -46,11 +46,11 @@ public class ChannelLogSubjectTest extends ConnectionLogSubjectTest
     /**
      * MESSAGE [Blank][con:0(MockProtocolSessionUser@null/test)/ch:1] <Log Message>
      *
-     * @param message the message whos format needs validation
+     * @param message the message whose format needs validation
      */
     protected void validateLogStatement(String message)
     {
-        // Use the ConnectionLogSubjectTest to vaildate that the connection
+        // Use the ConnectionLogSubjectTest to validate that the connection
         // section is ok
         super.validateLogStatement(message);
 

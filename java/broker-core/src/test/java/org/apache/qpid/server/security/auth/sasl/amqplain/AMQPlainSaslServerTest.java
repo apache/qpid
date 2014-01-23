@@ -36,8 +36,8 @@ public class AMQPlainSaslServerTest extends SaslServerTestCase
         FieldTable table = FieldTableFactory.newFieldTable();
         table.setString("LOGIN", username);
         table.setString("PASSWORD", password);
-        correctresponse = table.getDataAsBytes(); 
-        table.setString("PASSWORD", notpassword);
-        wrongresponse = table.getDataAsBytes(); 
+        correctResponse = table.getDataAsBytes();
+        table.setString("PASSWORD", notPassword);
+        wrongResponse = table.getDataAsBytes();
     }
 }

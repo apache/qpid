@@ -29,12 +29,12 @@ import java.io.IOException;
 /**
  * Handles the registration (and unregistration and so on) of managed objects.
  *
- * Managed objects are responsible for exposting attributes, operations and notifications. They will expose
+ * Managed objects are responsible for exporting attributes, operations and notifications. They will expose
  * these outside the JVM therefore it is important not to use implementation objects directly as managed objects.
  * Instead, creating inner classes and exposing those is an effective way of exposing internal state in a
  * controlled way.
  *
- * Although we do not explictly use them while targetting Java 5, the enhanced MXBean approach in Java 6 will
+ * Although we do not explicitly use them while targeting Java 5, the enhanced MXBean approach in Java 6 will
  * be the obvious choice for managed objects.
  *
  */

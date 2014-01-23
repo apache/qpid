@@ -23,7 +23,7 @@ package org.apache.qpid.server.txn;
 import org.apache.qpid.server.txn.ServerTransaction.Action;
 
 /** 
- * Mock implementation of a ServerTranaction Action
+ * Mock implementation of a ServerTransaction Action
  * allowing its state to be observed.
  * 
  */

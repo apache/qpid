@@ -123,7 +123,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     void closeChannel(int channelId, AMQConstant cause, String message) throws AMQException;
 
     /**
-     * Markes the specific channel as closed. This will release the lock for that channel id so a new channel can be
+     * Marks the specific channel as closed. This will release the lock for that channel id so a new channel can be
      * created on that id.
      *
      * @param channelId id of the channel to close

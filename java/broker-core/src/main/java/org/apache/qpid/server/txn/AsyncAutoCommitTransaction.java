@@ -51,7 +51,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
     private final MessageStore _messageStore;
     private final FutureRecorder _futureRecorder;
 
-    //Set true to ensure strict ordering when enqueing messages with mixed delivery mode, i.e. disable async persistence
+    //Set true to ensure strict ordering when enqueuing messages with mixed delivery mode, i.e. disable async persistence
     private boolean _strictOrderWithMixedDeliveryMode = Boolean.getBoolean(QPID_STRICT_ORDER_WITH_MIXED_DELIVERY_MODE);
 
     public static interface FutureRecorder

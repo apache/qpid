@@ -26,7 +26,7 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 
 
 /**
- * An AMQPConnectionActor represtents a connectionthrough the AMQP port.
+ * An AMQPConnectionActor represents a connection through the AMQP port.
  * <p/>
  * This is responsible for correctly formatting the LogActor String in the log
  * <p/>
