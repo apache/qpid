@@ -350,7 +350,7 @@ public class DtxBranch
     }
 
 
-    public void addPostTransactionAcion(ServerTransaction.Action postTransactionAction)
+    public void addPostTransactionAction(ServerTransaction.Action postTransactionAction)
     {
         _postTransactionActions.add(postTransactionAction);
     }

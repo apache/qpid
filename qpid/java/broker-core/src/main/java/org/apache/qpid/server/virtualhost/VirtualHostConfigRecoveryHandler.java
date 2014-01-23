@@ -133,7 +133,7 @@ public class VirtualHostConfigRecoveryHandler implements
 
                     branch.enqueue(queue,message);
 
-                    branch.addPostTransactionAcion(new ServerTransaction.Action()
+                    branch.addPostTransactionAction(new ServerTransaction.Action()
                     {
 
                         public void postCommit()
@@ -194,7 +194,7 @@ public class VirtualHostConfigRecoveryHandler implements
 
                     branch.dequeue(queue, message);
 
-                    branch.addPostTransactionAcion(new ServerTransaction.Action()
+                    branch.addPostTransactionAction(new ServerTransaction.Action()
                     {
 
                         public void postCommit()
