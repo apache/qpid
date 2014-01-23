@@ -50,14 +50,7 @@ public interface InstanceProperties
         public static InstanceProperties fromMap(Map<Property, Object> map)
         {
             final Map<Property,Object> props = new EnumMap<Property,Object>(map);
-            return new InstanceProperties()
-            {
-                @Override
-                public Object getProperty(final Property prop)
-                {
-                    return props.get(prop);
-                }
-            };
+            return new MapInstanceProperties(props);
         }
 
         public static Map<Property, Object> asMap(InstanceProperties props)
@@ -74,6 +67,30 @@ public interface InstanceProperties
             }
 
             return map;
+        }
+
+        public static InstanceProperties copy(InstanceProperties from)
+        {
+            final Map<Property,Object> props = asMap(from);
+
+            return new MapInstanceProperties(props);
+
+        }
+
+        private static class MapInstanceProperties implements InstanceProperties
+        {
+            private final Map<Property, Object> _props;
+
+            private MapInstanceProperties(final Map<Property, Object> props)
+            {
+                _props = props;
+            }
+
+            @Override
+            public Object getProperty(final Property prop)
+            {
+                return _props.get(prop);
+            }
         }
     }
 }

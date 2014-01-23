@@ -165,7 +165,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
                                     @Override
                                     public void postCommit()
                                     {
-                                        entry.discard();
+                                        entry.delete();
                                     }
 
                                     @Override
@@ -196,21 +196,14 @@ public class ConflationQueueList extends SimpleQueueEntryList
         }
 
         @Override
-        public boolean delete()
+        protected void onDelete()
         {
-            if(super.delete())
+            if(_latestValueReference != null && _latestValueReference.compareAndSet(this, _deleteInProgress))
             {
-                if(_latestValueReference != null && _latestValueReference.compareAndSet(this, _deleteInProgress))
-                {
-                    Object key = getMessage().getMessageHeader().getHeader(_conflationKey);
-                    _latestValuesMap.remove(key,_latestValueReference);
-                }
-                return true;
+                Object key = getMessage().getMessageHeader().getHeader(_conflationKey);
+                _latestValuesMap.remove(key,_latestValueReference);
             }
-            else
-            {
-                return false;
-            }
+
         }
 
         public void setLatestValueReference(final AtomicReference<QueueEntry> latestValueReference)

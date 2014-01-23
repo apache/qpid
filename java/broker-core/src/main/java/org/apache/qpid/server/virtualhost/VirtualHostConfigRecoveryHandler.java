@@ -199,7 +199,7 @@ public class VirtualHostConfigRecoveryHandler implements
 
                         public void postCommit()
                         {
-                            entry.discard();
+                            entry.delete();
                         }
 
                         public void onRollback()

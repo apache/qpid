@@ -115,7 +115,7 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 
                         public void postCommit()
                         {
-                            node.discard();
+                            node.delete();
                         }
 
                         public void onRollback()

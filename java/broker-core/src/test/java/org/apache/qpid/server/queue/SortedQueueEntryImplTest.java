@@ -22,19 +22,22 @@ package org.apache.qpid.server.queue;
 import java.util.Collections;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SortedQueueEntryImplTest extends QueueEntryImplTestBase {
+public class SortedQueueEntryImplTest extends QueueEntryImplTestBase
+{
 
     public final static String keys[] = { "CCC", "AAA", "BBB" };
 
     private SelfValidatingSortedQueueEntryList queueEntryList = new SelfValidatingSortedQueueEntryList(new MockAMQQueue("test"),"KEY");
 
-    public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException {
+    public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException
+    {
         final ServerMessage message = mock(ServerMessage.class);
         AMQMessageHeader hdr = mock(AMQMessageHeader.class);
         when(message.getMessageHeader()).thenReturn(hdr);
@@ -42,6 +45,9 @@ public class SortedQueueEntryImplTest extends QueueEntryImplTestBase {
         when(hdr.containsHeader(eq("KEY"))).thenReturn(true);
         when(hdr.getHeaderNames()).thenReturn(Collections.singleton("KEY"));
 
+        final MessageReference reference = mock(MessageReference.class);
+        when(reference.getMessage()).thenReturn(message);
+        when(message.newReference()).thenReturn(reference);
         return queueEntryList.add(message);
     }
 

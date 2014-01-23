@@ -936,12 +936,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
                             {
                                 return new SimpleQueueEntryImpl(this, message)
                                 {
-                                    public boolean isDequeued()
-                                    {
-                                        return (message.getMessageNumber() % 2 == 0);
-                                    }
 
-                                    public boolean isDispensed()
+                                    public boolean isDeleted()
                                     {
                                         return (message.getMessageNumber() % 2 == 0);
                                     }
@@ -1166,8 +1162,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         List<QueueEntry> entries = queue.getMessagesOnTheQueue();
         QueueEntry entry = entries.get(dequeueMessageIndex);
         entry.acquire();
-        entry.dequeue();
-        assertTrue(entry.isDequeued());
+        entry.delete();
+        assertTrue(entry.isDeleted());
         return entry;
     }
 
