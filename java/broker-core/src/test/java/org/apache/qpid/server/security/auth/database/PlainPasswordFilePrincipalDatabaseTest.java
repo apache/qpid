@@ -141,7 +141,7 @@ public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
         }
         catch (IOException e)
         {
-            fail("Unable to valdate file contents due to:" + e.getMessage());
+            fail("Unable to validate file contents due to:" + e.getMessage());
         }
         testFile.delete();
     }
@@ -275,7 +275,7 @@ public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
         }
         catch (IOException e)
         {
-            fail("Unable to valdate file contents due to:" + e.getMessage());
+            fail("Unable to validate file contents due to:" + e.getMessage());
         }
         testFile.delete();
     }

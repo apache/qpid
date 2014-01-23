@@ -51,9 +51,9 @@ public class KeyStoreRecovererTest extends TestCase
         when(entry.getAttributes()).thenReturn(attributes);
         when(entry.getId()).thenReturn(id);
 
-        KeyStoreRecoverer recovever = new KeyStoreRecoverer();
+        KeyStoreRecoverer recoverer = new KeyStoreRecoverer();
 
-        KeyStore keyStore = recovever.create(null, entry, broker);
+        KeyStore keyStore = recoverer.create(null, entry, broker);
         assertNotNull("Key store configured object is not created", keyStore);
         assertEquals(id, keyStore.getId());
 
@@ -61,7 +61,7 @@ public class KeyStoreRecovererTest extends TestCase
         assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, keyStore.getPassword());
         assertNotNull(keyStore.getPassword());
 
-        //verify that we havent configured the key store with the actual dummy password value
+        //verify that we haven't configured the key store with the actual dummy password value
         assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(keyStore.getPassword()));
 
         // Verify the remaining attributes, including that the password value returned
@@ -83,7 +83,7 @@ public class KeyStoreRecovererTest extends TestCase
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         when(entry.getId()).thenReturn(id);
 
-        KeyStoreRecoverer recovever = new KeyStoreRecoverer();
+        KeyStoreRecoverer recoverer = new KeyStoreRecoverer();
 
         String[] mandatoryProperties = {KeyStore.NAME, KeyStore.PATH, KeyStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)
@@ -93,7 +93,7 @@ public class KeyStoreRecovererTest extends TestCase
             when(entry.getAttributes()).thenReturn(properties);
             try
             {
-                recovever.create(null, entry, broker);
+                recoverer.create(null, entry, broker);
                 fail("Cannot create key store without a " + mandatoryProperties[i]);
             }
             catch(IllegalArgumentException e)

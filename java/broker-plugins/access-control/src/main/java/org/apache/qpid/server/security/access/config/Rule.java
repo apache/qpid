@@ -35,7 +35,7 @@ import org.apache.qpid.server.security.access.Permission;
  */
 public class Rule implements Comparable<Rule>
 {
-	/** String indicating all identitied. */
+	/** String indicating all identified. */
 	public static final String ALL = "all";
 
     private Integer _number;

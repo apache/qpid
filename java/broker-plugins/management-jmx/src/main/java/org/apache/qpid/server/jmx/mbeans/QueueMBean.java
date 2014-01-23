@@ -69,7 +69,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     private static final CompositeType MSG_DATA_TYPE;
     private static final TabularType MSG_LIST_DATA_TYPE;
     private static final CompositeType MSG_CONTENT_TYPE;
-    private static final String[] VIEW_MSG_COMPOSIT_ITEM_NAMES_ARRAY = VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(
+    private static final String[] VIEW_MSG_COMPOSITE_ITEM_NAMES_ARRAY = VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(
             new String[VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.size()]);
 
     static
@@ -396,7 +396,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
         Object[] itemValues = { messageId, mimeType, encoding, msgContent };
 
-        return new CompositeDataSupport(MSG_CONTENT_TYPE, VIEW_MSG_COMPOSIT_ITEM_NAMES_ARRAY, itemValues);
+        return new CompositeDataSupport(MSG_CONTENT_TYPE, VIEW_MSG_COMPOSITE_ITEM_NAMES_ARRAY, itemValues);
 
 
     }

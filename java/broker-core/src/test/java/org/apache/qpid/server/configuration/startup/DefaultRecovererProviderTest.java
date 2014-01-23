@@ -61,8 +61,8 @@ public class DefaultRecovererProviderTest extends TestCase
                 mock(StoreConfigurationChangeListener.class));
         for (String configuredObjectType : supportedTypes)
         {
-            ConfiguredObjectRecoverer<?> recovever = provider.getRecoverer(configuredObjectType);
-            assertNotNull("Null recoverer for type: " + configuredObjectType, recovever);
+            ConfiguredObjectRecoverer<?> recoverer = provider.getRecoverer(configuredObjectType);
+            assertNotNull("Null recoverer for type: " + configuredObjectType, recoverer);
         }
     }
 

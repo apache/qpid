@@ -33,7 +33,7 @@ import org.apache.qpid.AMQException;
  * @todo Not an AMQP exception as no status code.
  *
  * @todo This exception is not used. However, it is part of the ExchangeRegistry interface, and looks like code is
- *       going to need to be added to throw/deal with this. Alternatively ExchangeResitries may be able to handle the
+ *       going to need to be added to throw/deal with this. Alternatively ExchangeRegistries may be able to handle the
  *       issue internally.
  */
 public class ExchangeInUseException extends AMQException

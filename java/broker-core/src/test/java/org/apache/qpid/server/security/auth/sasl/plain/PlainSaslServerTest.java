@@ -32,8 +32,8 @@ public class PlainSaslServerTest extends SaslServerTestCase
         UsernamePasswordInitialiser handler = new PlainInitialiser();
         handler.initialise(db);
         this.server = new PlainSaslServer(handler.getCallbackHandler());
-        correctresponse = new byte[]{0x0, (byte) username.charAt(0), 0x0, (byte) password.charAt(0)};
-        wrongresponse = new byte[]{0x0,(byte) username.charAt(0), 0x0, (byte) notpassword.charAt(0)};
+        correctResponse = new byte[]{0x0, (byte) username.charAt(0), 0x0, (byte) password.charAt(0)};
+        wrongResponse = new byte[]{0x0,(byte) username.charAt(0), 0x0, (byte) notPassword.charAt(0)};
     }
     
 }

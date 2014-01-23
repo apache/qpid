@@ -39,9 +39,9 @@ public interface IConnectionRegistry
 
     public List<AMQConnectionModel> getConnections();
 
-    public void registerConnection(AMQConnectionModel connnection);
+    public void registerConnection(AMQConnectionModel connection);
 
-    public void deregisterConnection(AMQConnectionModel connnection);
+    public void deregisterConnection(AMQConnectionModel connection);
 
     void addRegistryChangeListener(RegistryChangeListener listener);
 

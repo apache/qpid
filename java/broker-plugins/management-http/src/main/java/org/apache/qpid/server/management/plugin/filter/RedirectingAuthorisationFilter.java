@@ -53,10 +53,10 @@ public class RedirectingAuthorisationFilter implements Filter
     @Override
     public void init(FilterConfig config) throws ServletException
     {
-        String loginlUrl = config.getInitParameter(INIT_PARAM_LOGIN_URL);
-        if (loginlUrl != null)
+        String loginUrl = config.getInitParameter(INIT_PARAM_LOGIN_URL);
+        if (loginUrl != null)
         {
-            _loginUrl = loginlUrl;
+            _loginUrl = loginUrl;
         }
         ServletContext servletContext = config.getServletContext();
         _broker = HttpManagementUtil.getBroker(servletContext);

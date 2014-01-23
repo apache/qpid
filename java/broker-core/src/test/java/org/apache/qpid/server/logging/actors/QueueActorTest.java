@@ -39,7 +39,7 @@ public class QueueActorTest extends BaseConnectionActorTestCase
      *
      * The test logs a message then verifies that it entered the logs correctly
      *
-     * The log message should be fully repalaced (no '{n}' values) and should
+     * The log message should be fully replaced (no '{n}' values) and should
      * contain the correct queue identification.
      */
     public void testQueueActor()
@@ -67,7 +67,7 @@ public class QueueActorTest extends BaseConnectionActorTestCase
 
         // Verify that the logged message contains the 'qu(' marker
         String expected = "qu(" + getName() + ")";
-        assertTrue("Message was not logged with a queue identifer '"+expected+"' actual:" + log,
+        assertTrue("Message was not logged with a queue identifier '"+expected+"' actual:" + log,
                     log.contains(expected));
     }
 

@@ -191,7 +191,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
             }
             catch (InterruptedException e)
             {
-                _logger.error("Thread interupted", e);
+                _logger.error("Thread interrupted", e);
             }
         }
     }

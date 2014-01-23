@@ -51,7 +51,7 @@ public class HostnameFirewallRuleTest extends TestCase
         assertTrue(_HostnameFirewallRule.matches(addressWithMatchingHostname));
     }
 
-    public void testSingleHostnameWilcard() throws Exception
+    public void testSingleHostnameWildcard() throws Exception
     {
         String hostnameInRule = ".*FOO.*";
         InetAddress addressWithMatchingHostname = mock(InetAddress.class);

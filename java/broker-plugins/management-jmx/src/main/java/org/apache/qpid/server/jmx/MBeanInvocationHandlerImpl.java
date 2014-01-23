@@ -198,7 +198,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         }
         else
         {
-            _logger.error("Unexpected error occured on invoking of " + method + " with arguments " + Arrays.toString(args), targetException);
+            _logger.error("Unexpected error occurred on invoking of " + method + " with arguments " + Arrays.toString(args), targetException);
         }
     }
 

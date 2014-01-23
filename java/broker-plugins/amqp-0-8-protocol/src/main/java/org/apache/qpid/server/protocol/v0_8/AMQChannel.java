@@ -393,7 +393,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      *
      * Pre-requisite: the current message is judged to have no destination queues.
      *
-     * @throws AMQConnectionException if the message is mandatoryclose-on-no-route
+     * @throws AMQConnectionException if the message is mandatory close-on-no-route
      * @see AMQProtocolSession#isCloseWhenNoRoute()
      */
     private void handleUnroutableMessage(AMQMessage message) throws AMQConnectionException
@@ -969,7 +969,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             // perform an Async delivery for each of the subscriptions in this
             // Channel. The alternative would be to ensure that the subscription
             // had received the change in suspension state. That way the logic
-            // behind decieding to start an async delivery was located with the
+            // behind deciding to start an async delivery was located with the
             // Subscription.
             if (wasSuspended)
             {

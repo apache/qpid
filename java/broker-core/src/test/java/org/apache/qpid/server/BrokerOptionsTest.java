@@ -94,7 +94,7 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(expectedPath, _options.getLogConfigFileLocation());
     }
 
-    public void testDefaultLogConfigFileWithoutQpiddHome()
+    public void testDefaultLogConfigFileWithoutQpidHome()
     {
         setTestSystemProperty(BrokerProperties.PROPERTY_QPID_HOME, null);
 
@@ -271,7 +271,7 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals("unexpected number of entries", 6, _options.getConfigProperties().keySet().size());
     }
 
-    public void testDefaultomeDirWithoutQpidHome()
+    public void testDefaultHomeDirWithoutQpidHome()
     {
         setTestSystemProperty("QPID_HOME", null);
 

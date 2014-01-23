@@ -329,7 +329,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that granting of access method rights with mask allows matching operations to be performed on the specified component
      */
-    public void testAuthoriseAccessMethodWhenMatchingAcessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
+    public void testAuthoriseAccessMethodWhenMatchingAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
     {
         final RuleSet rs = new RuleSet();
 

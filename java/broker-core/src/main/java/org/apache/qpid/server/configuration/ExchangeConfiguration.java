@@ -29,9 +29,9 @@ public class ExchangeConfiguration
     private Configuration _config;
     private String _name;
 
-    public ExchangeConfiguration(String exchName, Configuration subset)
+    public ExchangeConfiguration(String name, Configuration subset)
     {
-        _name = exchName;
+        _name = name;
         _config = subset;
     }
 

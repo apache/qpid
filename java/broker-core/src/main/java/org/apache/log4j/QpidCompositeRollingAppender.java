@@ -56,7 +56,7 @@ import java.util.zip.GZIPOutputStream;
  * without clearing the directory could have nasty side effects.  If Date/Time based rolling is enabled,
  * CompositeRollingAppender will attempt to roll existing files in the directory without a date/time tag based on the
  * last modified date of the base log files last modification.<br> <br> <p>A maximum number of backups based on
- * date/time boundries would be nice but is not yet implemented.<br>
+ * date/time boundaries would be nice but is not yet implemented.<br>
  *
  * @author Kevin Steppe
  * @author Heinz Richter
@@ -223,7 +223,7 @@ public class QpidCompositeRollingAppender extends FileAppender
      * made.  Note that this could result in very slow performance as a large number of files are rolled over unless
      * {@link #setCountDirection} up is used.
      *
-     * <p>The maximum applys to -each- time based group of files and -not- the total. Using a daily roll the maximum
+     * <p>The maximum applies to -each- time based group of files and -not- the total. Using a daily roll the maximum
      * total files would be (#days run) * (maxSizeRollBackups)
      */
     public void setMaxSizeRollBackups(int maxBackups)
@@ -276,7 +276,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         qw = new CountingQuietWriter(writer, errorHandler);
     }
 
-    // Taken verbatum from DailyRollingFileAppender
+    // Taken verbatim from DailyRollingFileAppender
     int computeCheckPeriod()
     {
         RollingCalendar c = new RollingCalendar();
@@ -473,7 +473,7 @@ public class QpidCompositeRollingAppender extends FileAppender
     }
 
     /**
-     * Initializes based on exisiting conditions at time of <code> activateOptions</code>.  The following is done:<br>
+     * Initializes based on existing conditions at time of <code> activateOptions</code>.  The following is done:<br>
      * <br> A) determine curSizeRollBackups<br> B) determine curTimeRollBackups (not implemented)<br> C) initiates a
      * roll over if needed for crossing a date boundary since the last run.
      */
@@ -700,7 +700,7 @@ public class QpidCompositeRollingAppender extends FileAppender
      * <p>If <code>maxSizeRollBackups</code> < 0, then <code>File</code> is renamed if needed and no files are deleted.
      */
 
-    // synchronization not necessary since doAppend is alreasy synched
+    // synchronization not necessary since doAppend is already synched
     protected void rollOverSize()
     {
         File file;

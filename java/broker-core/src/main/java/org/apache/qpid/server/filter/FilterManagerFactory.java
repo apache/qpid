@@ -41,7 +41,7 @@ public class FilterManagerFactory
     {
     }
 
-    //fixme move to a common class so it can be refered to from client code.
+    //TODO move to a common class so it can be referred to from client code.
 
     public static FilterManager createManager(Map<String,Object> filters) throws AMQException
     {

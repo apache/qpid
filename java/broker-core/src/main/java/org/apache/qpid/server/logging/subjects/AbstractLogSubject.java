@@ -25,11 +25,11 @@ import org.apache.qpid.server.logging.LogSubject;
 import java.text.MessageFormat;
 
 /**
- * The LogSubjects all have a similar requriement to format their output and
+ * The LogSubjects all have a similar requirement to format their output and
  * provide the String value.
  *
  * This Abstract LogSubject provides this basic functionality, allowing the
- * actual LogSubjects to provide their formating and data.
+ * actual LogSubjects to provide their formatting and data.
  */
 public abstract class AbstractLogSubject implements LogSubject
 {

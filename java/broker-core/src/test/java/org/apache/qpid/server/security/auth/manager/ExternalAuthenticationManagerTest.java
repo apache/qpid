@@ -96,7 +96,7 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         assertEquals("person", saslServer.getAuthorizationID());
     }
 
-    public void testAuthenticatePrinicpalCnAndDc() throws Exception
+    public void testAuthenticatePrincipalCnAndDc() throws Exception
     {
         X500Principal principal = new X500Principal("CN=person, DC=example, DC=com");
         UsernamePrincipal expectedPrincipal = new UsernamePrincipal("person@example.com");
@@ -111,7 +111,7 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         assertEquals("person@example.com", saslServer.getAuthorizationID());
     }
 
-    public void testAuthenticatePrinicpalCnDc_OtherComponentsIgnored() throws Exception
+    public void testAuthenticatePrincipalCnDc_OtherComponentsIgnored() throws Exception
     {
         X500Principal principal = new X500Principal("CN=person, DC=example, DC=com, O=My Company Ltd, L=Newbury, ST=Berkshire, C=GB");
         UsernamePrincipal expectedPrincipal = new UsernamePrincipal("person@example.com");

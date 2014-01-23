@@ -59,7 +59,7 @@ public class TrustStoreRecovererTest extends QpidTestCase
         assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, trustStore.getPassword());
         assertNotNull(trustStore.getPassword());
 
-        //verify that we havent configured the trust store with the actual dummy password value
+        //verify that we haven't configured the trust store with the actual dummy password value
         assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(trustStore.getPassword()));
 
         // Verify the remaining attributes, including that the password value returned
@@ -82,7 +82,7 @@ public class TrustStoreRecovererTest extends QpidTestCase
         when(entry.getAttributes()).thenReturn(attributes);
         when(entry.getId()).thenReturn(id);
 
-        TrustStoreRecoverer recovever = new TrustStoreRecoverer();
+        TrustStoreRecoverer recoverer = new TrustStoreRecoverer();
 
         String[] mandatoryProperties = {TrustStore.NAME, TrustStore.PATH, TrustStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)
@@ -92,7 +92,7 @@ public class TrustStoreRecovererTest extends QpidTestCase
             when(entry.getAttributes()).thenReturn(properties);
             try
             {
-                recovever.create(null, entry, broker);
+                recoverer.create(null, entry, broker);
                 fail("Cannot create key store without a " + mandatoryProperties[i]);
             }
             catch(IllegalArgumentException e)

@@ -279,7 +279,7 @@ public class StandardVirtualHostTest extends QpidTestCase
      * @param vhostName name of the virtualhost
      * @param queueName name of the queue
      * @param exchangeName name of a direct exchange to declare (unless dontDeclare = true) and bind the queue to (null = none)
-     * @param dontDeclare if true then dont declare the exchange, even if its name is non-null
+     * @param dontDeclare if true then don't declare the exchange, even if its name is non-null
      * @param routingKeys routingKeys to bind the queue with (empty array = none)
      * @return
      */

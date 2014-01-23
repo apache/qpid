@@ -136,7 +136,7 @@ public class AuthenticatedPrincipalTest extends TestCase
         assertFalse(user1principal2.equals(user1principal1));
     }
 
-    public void testEqualsWithDisimilarObjects()
+    public void testEqualsWithDissimilarObjects()
     {
         UsernamePrincipal wrappedPrincipal = new UsernamePrincipal("user1");
         AuthenticatedPrincipal authenticatedPrincipal = new AuthenticatedPrincipal(wrappedPrincipal);

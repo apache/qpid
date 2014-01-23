@@ -253,7 +253,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         }
         catch (IOException e)
         {
-            fail("Unable to valdate file contents due to:" + e.getMessage());
+            fail("Unable to validate file contents due to:" + e.getMessage());
         }
     }
     
@@ -384,7 +384,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         }
         catch (IOException e)
         {
-            fail("Unable to valdate file contents due to:" + e.getMessage());
+            fail("Unable to validate file contents due to:" + e.getMessage());
         }
     }
 
@@ -445,7 +445,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         try
         {
             _database.verifyPassword("made.up.username", PASSWORD.toCharArray());
-            fail("Should not have been able to verify this non-existant users password.");
+            fail("Should not have been able to verify this nonexistent users password.");
         }
         catch (AccountNotFoundException e)
         {

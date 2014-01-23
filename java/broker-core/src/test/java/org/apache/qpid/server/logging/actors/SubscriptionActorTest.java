@@ -54,7 +54,7 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
      *
      * The test sends a message then verifies that it entered the logs.
      *
-     * The log message should be fully repalaced (no '{n}' values) and should
+     * The log message should be fully replaced (no '{n}' values) and should
      * contain subscription identification.
      */
     public void testSubscription()

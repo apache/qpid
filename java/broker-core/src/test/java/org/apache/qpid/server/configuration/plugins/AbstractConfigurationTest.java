@@ -55,7 +55,7 @@ public class AbstractConfigurationTest extends QpidTestCase
         @Override
         public void validateConfiguration() throws ConfigurationException
         {
-            // no validation requried
+            // no validation required
         }
 
         public String getName()
@@ -79,22 +79,22 @@ public class AbstractConfigurationTest extends QpidTestCase
         // Test does not directly use the AppRegistry but the configured broker
         // is required for the correct ConfigurationPlugin processing
         super.setUp();
-        XMLConfiguration xmlconfig = new XMLConfiguration();
-        xmlconfig.addProperty("base.element[@property]", "property");
-        xmlconfig.addProperty("base.element.name", "name");
+        XMLConfiguration xmlConfig = new XMLConfiguration();
+        xmlConfig.addProperty("base.element[@property]", "property");
+        xmlConfig.addProperty("base.element.name", "name");
         // We make these strings as that is how they will be read from the file.
-        xmlconfig.addProperty("base.element.positiveLong", String.valueOf(POSITIVE_LONG));
-        xmlconfig.addProperty("base.element.negativeLong", String.valueOf(NEGATIVE_LONG));
-        xmlconfig.addProperty("base.element.boolean", String.valueOf(true));
-        xmlconfig.addProperty("base.element.double", String.valueOf(DOUBLE));
+        xmlConfig.addProperty("base.element.positiveLong", String.valueOf(POSITIVE_LONG));
+        xmlConfig.addProperty("base.element.negativeLong", String.valueOf(NEGATIVE_LONG));
+        xmlConfig.addProperty("base.element.boolean", String.valueOf(true));
+        xmlConfig.addProperty("base.element.double", String.valueOf(DOUBLE));
         for (int i = 0; i < LIST_SIZE; i++)
         {
-            xmlconfig.addProperty("base.element.list", i);
+            xmlConfig.addProperty("base.element.list", i);
         }
 
         //Use a composite configuration as this is what our broker code uses.
         CompositeConfiguration composite = new CompositeConfiguration();
-        composite.addConfiguration(xmlconfig);
+        composite.addConfiguration(xmlConfig);
 
         _plugin = new TestConfigPlugin();
 
@@ -117,7 +117,7 @@ public class AbstractConfigurationTest extends QpidTestCase
         assertFalse("Plugins has configuration", _plugin.hasConfiguration());
     }
 
-    public void testValuesRetreived()
+    public void testValuesRetrieved()
     {
         assertEquals("Name not correct", "name", _plugin.getName());
         assertEquals("Property not correct", "property", _plugin.getProperty());

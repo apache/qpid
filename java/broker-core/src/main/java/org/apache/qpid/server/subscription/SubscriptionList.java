@@ -173,7 +173,7 @@ public class SubscriptionList
                     insert(new SubscriptionNode(), false);
                 }
 
-                //advance the next node reference in the 'prevNode' to scavange
+                //advance the next node reference in the 'prevNode' to scavenge
                 //the newly 'deleted' node for the Subscription.
                 prevNode.findNext();
 

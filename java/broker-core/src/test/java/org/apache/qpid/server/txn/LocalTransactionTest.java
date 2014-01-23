@@ -347,7 +347,7 @@ public class LocalTransactionTest extends QpidTestCase
     }
     
     /** 
-     * Tests the add of a post-commit action.  Unlike AutoCommitTranctions, the post transaction actions 
+     * Tests the add of a post-commit action.  Unlike AutoCommitTransactions, the post transaction actions
      * is added to a list to be fired on commit or rollback.
      */
     public void testAddingPostCommitActionNotFiredImmediately() throws Exception

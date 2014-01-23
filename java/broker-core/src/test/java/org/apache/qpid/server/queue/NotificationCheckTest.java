@@ -85,7 +85,7 @@ public class NotificationCheckTest extends TestCase
         verifyZeroInteractions(_listener);
 
         MESSAGE_AGE_ALERT.notifyIfNecessary(_message, _queue, _listener);
-        // Uses contains as first part of message is nondeterministic
+        // Uses contains as first part of message is non-deterministic
         verify(_listener).notifyClients(eq(MESSAGE_AGE_ALERT), eq(_queue), contains("s : Maximum age on queue threshold (1s) breached."));
     }
 

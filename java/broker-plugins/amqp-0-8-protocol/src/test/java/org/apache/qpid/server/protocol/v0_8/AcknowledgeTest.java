@@ -117,12 +117,12 @@ public class AcknowledgeTest extends QpidTestCase
         runMessageAck(10, 1, 0, true, 0);
     }
 
-    protected void runMessageAck(int sendMessageCount, long firstDeliveryTag, long acknowledgeDeliveryTag, boolean acknowldegeMultiple, int remainingUnackedMessages) throws AMQException
+    protected void runMessageAck(int sendMessageCount, long firstDeliveryTag, long acknowledgeDeliveryTag, boolean acknowledgeMultiple, int remainingUnackedMessages) throws AMQException
     {
         //Check store is empty
         checkStoreContents(0);
 
-        //Send required messsages to the queue
+        //Send required messages to the queue
         BrokerTestHelper_0_8.publishMessages(getChannel(),
                 sendMessageCount,
                 _queueName,
@@ -147,7 +147,7 @@ public class AcknowledgeTest extends QpidTestCase
         //Wait for the messages to be delivered
         getSession().awaitDelivery(sendMessageCount);
 
-        //Check that they are all waiting to be acknoledged
+        //Check that they are all waiting to be acknowledged
         assertEquals("Channel should have unacked msgs", sendMessageCount, getChannel().getUnacknowledgedMessageMap().size());
 
         List<InternalTestProtocolSession.DeliveryPair> messages = getSession().getDelivers(getChannel().getChannelId(), subscriber, sendMessageCount);
@@ -159,7 +159,7 @@ public class AcknowledgeTest extends QpidTestCase
         assertEquals("First message does not have expected deliveryTag", firstDeliveryTag, messages.get(0).getDeliveryTag());
 
         //Send required Acknowledgement
-        getChannel().acknowledgeMessage(acknowledgeDeliveryTag, acknowldegeMultiple);
+        getChannel().acknowledgeMessage(acknowledgeDeliveryTag, acknowledgeMultiple);
 
         if (getChannel().isTransactional())
         {

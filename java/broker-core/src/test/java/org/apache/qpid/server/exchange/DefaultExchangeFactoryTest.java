@@ -81,7 +81,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         }
     }
 
-    public void testCreateDefaultExchangeFactoryWithoutDireactExchangeType()
+    public void testCreateDefaultExchangeFactoryWithoutDirectExchangeType()
     {
         _stubbedExchangeTypes.add(_topicExchangeType);
         _stubbedExchangeTypes.add(_fanoutExchangeType);
