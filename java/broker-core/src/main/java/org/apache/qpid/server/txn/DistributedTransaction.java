@@ -66,7 +66,7 @@ public class DistributedTransaction implements ServerTransaction
     {
         if(_branch != null)
         {
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
@@ -79,7 +79,7 @@ public class DistributedTransaction implements ServerTransaction
         if(_branch != null)
         {
             _branch.dequeue(queue, message);
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
@@ -95,7 +95,7 @@ public class DistributedTransaction implements ServerTransaction
             {
                 _branch.dequeue(entry.getQueue(), entry.getMessage());
             }
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
@@ -108,7 +108,7 @@ public class DistributedTransaction implements ServerTransaction
         if(_branch != null)
         {
             _branch.enqueue(queue, message);
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
             enqueue(Collections.singletonList(queue), message, postTransactionAction);
         }
         else
@@ -126,7 +126,7 @@ public class DistributedTransaction implements ServerTransaction
             {
                 _branch.enqueue(queue, message);
             }
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
