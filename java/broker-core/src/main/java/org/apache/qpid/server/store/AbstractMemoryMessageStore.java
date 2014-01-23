@@ -23,7 +23,7 @@ package org.apache.qpid.server.store;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
@@ -41,12 +41,12 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
         }
 
         @Override
-        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
         {
         }
 
         @Override
-        public void dequeueMessage(TransactionLogResource  queue, EnqueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource  queue, EnqueueableMessage message) throws AMQStoreException
         {
         }
 

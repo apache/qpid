@@ -21,7 +21,7 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 
 public interface Transaction
 {
@@ -34,7 +34,7 @@ public interface Transaction
      * @param message
      * @throws org.apache.qpid.AMQStoreException If the operation fails for any reason.
      */
-    void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException;
+    void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException;
 
     /**
      * Extracts a message from a specified queue, in a given transactional context.
@@ -43,7 +43,7 @@ public interface Transaction
      * @param message The message to dequeue.
      * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException;
+    void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException;
 
 
     /**
@@ -71,7 +71,7 @@ public interface Transaction
     public static interface Record
     {
         TransactionLogResource getQueue();
-        EnqueableMessage getMessage();
+        EnqueueableMessage getMessage();
     }
 
     void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException;

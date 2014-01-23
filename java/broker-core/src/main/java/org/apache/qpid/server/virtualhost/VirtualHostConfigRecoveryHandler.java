@@ -33,7 +33,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -343,7 +343,7 @@ public class VirtualHostConfigRecoveryHandler implements
         return this;
     }
 
-    private static class DummyMessage implements EnqueableMessage
+    private static class DummyMessage implements EnqueueableMessage
     {
 
 

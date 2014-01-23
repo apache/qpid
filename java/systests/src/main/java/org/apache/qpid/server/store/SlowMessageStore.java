@@ -26,7 +26,7 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.VirtualHost;
 
@@ -257,7 +257,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             _underlying = underlying;
         }
 
-        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message)
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
                 throws AMQStoreException
         {
             doPreDelay("enqueueMessage");
@@ -265,7 +265,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             doPostDelay("enqueueMessage");
         }
 
-        public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message)
+        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
                 throws AMQStoreException
         {
             doPreDelay("dequeueMessage");

@@ -22,7 +22,7 @@ package org.apache.qpid.server.message;
 
 import org.apache.qpid.server.store.StoredMessage;
 
-public interface EnqueableMessage
+public interface EnqueueableMessage
 {
     long getMessageNumber();
     boolean isPersistent();
