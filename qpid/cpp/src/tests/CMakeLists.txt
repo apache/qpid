@@ -304,12 +304,24 @@ if (BUILD_SASL)
     remember_location(sasl_version)
 endif (BUILD_SASL)
 
-# Always run the python install, setup.py is smart enough to do only what is needed.
 set (python_bld ${CMAKE_CURRENT_BINARY_DIR}/python)
 set (python_src ${CMAKE_SOURCE_DIR}/../python)
-add_custom_target(python_bld ALL
-  COMMAND ${PYTHON_EXECUTABLE} setup.py install --prefix=${python_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
-  WORKING_DIRECTORY ${python_src})
+
+# If we want this to automatically run when we change the python library we will need to
+# add some explicit dependencies on the source python files
+add_custom_command(
+    OUTPUT ${python_bld}
+    COMMAND ${PYTHON_EXECUTABLE}
+        setup.py
+        build --build-base=${python_bld}/build
+        install --prefix=${python_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
+    WORKING_DIRECTORY ${python_src}
+)
+
+add_custom_target(
+    python_bld ALL
+    DEPENDS ${python_bld}
+)
 
 if (BUILD_SASL)
     add_test (sasl_fed ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/sasl_fed${test_script_suffix})
