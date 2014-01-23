@@ -21,6 +21,7 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.QueueEntry.EntryState;
 import org.apache.qpid.server.subscription.MockSubscription;
@@ -63,11 +64,6 @@ public abstract class QueueEntryImplTestBase extends TestCase
         acquire();
     }
 
-    public void testDequeue()
-    {
-        dequeue();
-    }
-
     public void testDelete()
     {
         delete();
@@ -79,27 +75,12 @@ public abstract class QueueEntryImplTestBase extends TestCase
      * Entry in state ACQUIRED should be released and its status should be
      * changed to AVAILABLE.
      */
-    public void testReleaseAquired()
+    public void testReleaseAcquired()
     {
         acquire();
         _queueEntry.release();
         assertTrue("Queue entry should be in AVAILABLE state after invoking of release method",
-                _queueEntry.isAvailable());
-    }
-
-    /**
-     * Tests release method for entry in dequeued state.
-     * <p>
-     * Invoking release on dequeued entry should not have any effect on its
-     * state.
-     */
-    public void testReleaseDequeued()
-    {
-        dequeue();
-        _queueEntry.release();
-        EntryState state = getState();
-        assertEquals("Invoking of release on entry in DEQUEUED state should not have any effect",
-                QueueEntry.DEQUEUED_STATE, state);
+                   _queueEntry.isAvailable());
     }
 
     /**
@@ -126,17 +107,6 @@ public abstract class QueueEntryImplTestBase extends TestCase
                 _queueEntry.isDeleted());
     }
 
-    /**
-     * A helper method to put tested entry into dequeue state and assert the sate
-     */
-    private void dequeue()
-    {
-        acquire();
-        _queueEntry.dequeue();
-        EntryState state = getState();
-        assertEquals("Queue entry should be in DEQUEUED state after invoking of dequeue method",
-                QueueEntry.DEQUEUED_STATE, state);
-    }
 
     /**
      * A helper method to put tested entry into acquired state and assert the sate
@@ -216,6 +186,9 @@ public abstract class QueueEntryImplTestBase extends TestCase
         {
             ServerMessage message = mock(ServerMessage.class);
             when(message.getMessageNumber()).thenReturn((long)i);
+            final MessageReference reference = mock(MessageReference.class);
+            when(reference.getMessage()).thenReturn(message);
+            when(message.newReference()).thenReturn(reference);
             QueueEntryImpl entry = queueEntryList.add(message);
             entries[i] = entry;
         }
@@ -235,13 +208,13 @@ public abstract class QueueEntryImplTestBase extends TestCase
             }
         }
 
-        // delete second
+        // discard second
         entries[1].acquire();
         entries[1].delete();
 
-        // dequeue third
+        // discard third
         entries[2].acquire();
-        entries[2].dequeue();
+        entries[2].delete();
 
         QueueEntry next = entries[0].getNextValidEntry();
         assertEquals("expected forth entry",entries[3], next);

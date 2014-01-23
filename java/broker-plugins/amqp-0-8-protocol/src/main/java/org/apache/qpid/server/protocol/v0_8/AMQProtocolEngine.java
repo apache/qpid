@@ -73,6 +73,8 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.protocol.v0_8.handler.ServerMethodDispatcherImpl;
@@ -88,7 +90,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverterRegistry;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -348,7 +349,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      * Process the data block.
      * If the message is for a channel it is added to {@link #_channelsForCurrentMessage}.
      *
-     * @throws an AMQConnectionException if unable to process the data block. In this case,
+     * @throws AMQConnectionException if unable to process the data block. In this case,
      * the connection is already closed by the time the exception is thrown. If any other
      * type of exception is thrown, the connection is not already closed.
      */
@@ -376,7 +377,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      * Handle the supplied frame.
      * Adds this frame's channel to {@link #_channelsForCurrentMessage}.
      *
-     * @throws an AMQConnectionException if unable to process the data block. In this case,
+     * @throws AMQConnectionException if unable to process the data block. In this case,
      * the connection is already closed by the time the exception is thrown. If any other
      * type of exception is thrown, the connection is not already closed.
      */
@@ -1667,12 +1668,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             _channelId = channelId;
         }
 
-        public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+        @Override
+        public void deliverToClient(final Subscription sub, final ServerMessage message,
+                                    final InstanceProperties props, final long deliveryTag)
                 throws AMQException
         {
-            registerMessageDelivered(entry.getMessage().getSize());
-            _protocolOutputConverter.writeDeliver(entry, _channelId, deliveryTag, ((SubscriptionImpl)sub).getConsumerTag());
-            entry.incrementDeliveryCount();
+            registerMessageDelivered(message.getSize());
+            _protocolOutputConverter.writeDeliver(message,
+                                                  props,
+                                                  _channelId,
+                                                  deliveryTag,
+                                                  ((SubscriptionImpl)sub).getConsumerTag());
         }
 
     }

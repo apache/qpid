@@ -28,7 +28,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
-import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -36,6 +35,9 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.SubscriptionActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -132,7 +134,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             synchronized (getChannel())
             {
                 long deliveryTag = getChannel().getNextDeliveryTag();
-                sendToClient(entry, deliveryTag);
+                sendToClient(entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
             }
 
         }
@@ -147,7 +149,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public static class NoAckSubscription extends SubscriptionImpl
     {
-        private volatile AutoCommitTransaction _txn;
+        private final AutoCommitTransaction _txn;
 
         public NoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                  AMQShortString consumerTag, FieldTable filters,
@@ -157,6 +159,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             throws AMQException
         {
             super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
+            _txn = new AutoCommitTransaction(protocolSession.getVirtualHost().getMessageStore());
         }
 
 
@@ -192,23 +195,22 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             // The send may of course still fail, in which case, as
             // the message is unacked, it will be lost.
-            if(_txn == null)
-            {
-                _txn = new AutoCommitTransaction(getQueue().getVirtualHost().getMessageStore());
-            }
             _txn.dequeue(getQueue(), entry.getMessage(), NOOP);
 
-            entry.dequeue();
+            ServerMessage message = entry.getMessage();
+            MessageReference ref = message.newReference();
+            InstanceProperties props = entry.getInstanceProperties();
+            entry.delete();
 
             synchronized (getChannel())
             {
                 getChannel().getProtocolSession().setDeferFlush(batch);
                 long deliveryTag = getChannel().getNextDeliveryTag();
 
-                sendToClient(entry, deliveryTag);
+                sendToClient(message, props, deliveryTag);
 
             }
-            entry.dispose();
+            ref.release();
 
 
         }
@@ -301,8 +303,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
                 addUnacknowledgedMessage(entry);
                 recordMessageDelivery(entry, deliveryTag);
-                sendToClient(entry, deliveryTag);
-
+                sendToClient(entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
+                entry.incrementDeliveryCount();
 
             }
         }
@@ -688,12 +690,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     }
 
 
-    protected void sendToClient(final QueueEntry entry, final long deliveryTag)
+    protected void sendToClient(final ServerMessage message, final InstanceProperties props, final long deliveryTag)
             throws AMQException
     {
-        _deliveryMethod.deliverToClient(this,entry,deliveryTag);
+        _deliveryMethod.deliverToClient(this, message, props, deliveryTag);
         _deliveredCount.incrementAndGet();
-        _deliveredBytes.addAndGet(entry.getSize());
+        _deliveredBytes.addAndGet(message.getSize());
     }
 
 

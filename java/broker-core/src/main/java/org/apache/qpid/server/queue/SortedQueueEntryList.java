@@ -283,14 +283,14 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
     {
         synchronized(_lock)
         {
-            if(node.isDispensed() && _head != node)
+            if(node.isDeleted() && _head != node)
             {
                 SortedQueueEntryImpl current = _head;
                 SortedQueueEntryImpl next;
                 while(current != null)
                 {
                     next = current.getNextValidEntry();
-                    if(current.compareTo(node)>0 && !current.isDispensed())
+                    if(current.compareTo(node)>0 && !current.isDeleted())
                     {
                         break;
                     }
@@ -642,7 +642,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
             if(!atTail())
             {
                 SortedQueueEntryImpl nextNode = next(_lastNode);
-                while(nextNode.isDispensed() && next(nextNode) != null)
+                while(nextNode.isDeleted() && next(nextNode) != null)
                 {
                     nextNode = next(nextNode);
                 }

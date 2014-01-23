@@ -28,10 +28,11 @@ import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.MessageOnlyCreditManager;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -126,21 +127,18 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         final ClientDeliveryMethod getDeliveryMethod = new ClientDeliveryMethod()
         {
 
-            public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+            @Override
+            public void deliverToClient(final Subscription sub, final ServerMessage message, final
+                                        InstanceProperties props, final long deliveryTag)
             throws AMQException
             {
-                singleMessageCredit.useCreditForMessage(entry.getMessage().getSize());
-                if(entry.getMessage() instanceof AMQMessage)
-                {
-                    session.getProtocolOutputConverter().writeGetOk(entry, channel.getChannelId(),
-                                                                            deliveryTag, queue.getMessageCount());
-                    entry.incrementDeliveryCount();
-                }
-                else
-                {
-                    //TODO Convert AMQP 0-10 message
-                    throw new AMQException(AMQConstant.NOT_IMPLEMENTED, "Not implemented conversion of 0-10 message", null);
-                }
+                singleMessageCredit.useCreditForMessage(message.getSize());
+                session.getProtocolOutputConverter().writeGetOk(message,
+                                                                props,
+                                                                channel.getChannelId(),
+                                                                deliveryTag,
+                                                                queue.getMessageCount());
+
 
             }
         };

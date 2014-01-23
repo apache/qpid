@@ -57,7 +57,7 @@ public class SimpleQueueEntryImpl extends QueueEntryImpl
     {
 
         SimpleQueueEntryImpl next = getNextNode();
-        while(next != null && next.isDispensed())
+        while(next != null && next.isDeleted())
         {
 
             final SimpleQueueEntryImpl newNext = next.getNextNode();
