@@ -130,7 +130,7 @@ public class Broker
             }
             catch(Exception ce)
             {
-                LOGGER.debug("An error occured when closing the registry following initialization failure", ce);
+                LOGGER.debug("An error occurred when closing the registry following initialization failure", ce);
             }
             throw e;
         }
@@ -253,7 +253,7 @@ public class Broker
         }
         else
         {
-            LOGGER.debug("Skipping shutdown hook removal as there either isnt one, or we are it.");
+            LOGGER.debug("Skipping shutdown hook removal as there either isn't one, or we are it.");
         }
     }
 

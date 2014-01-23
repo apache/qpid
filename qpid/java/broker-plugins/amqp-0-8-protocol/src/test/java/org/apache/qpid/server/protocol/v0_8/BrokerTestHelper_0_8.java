@@ -66,11 +66,11 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
 
     public static void publishMessages(AMQChannel channel, int numberOfMessages, String queueName, String exchangeName) throws AMQException
     {
-        AMQShortString rouningKey = new AMQShortString(queueName);
+        AMQShortString routingKey = new AMQShortString(queueName);
         AMQShortString exchangeNameAsShortString = new AMQShortString(exchangeName);
         MessagePublishInfo info = mock(MessagePublishInfo.class);
         when(info.getExchange()).thenReturn(exchangeNameAsShortString);
-        when(info.getRoutingKey()).thenReturn(rouningKey);
+        when(info.getRoutingKey()).thenReturn(routingKey);
 
         Exchange exchange = channel.getVirtualHost().getExchange(exchangeName);
         for (int count = 0; count < numberOfMessages; count++)

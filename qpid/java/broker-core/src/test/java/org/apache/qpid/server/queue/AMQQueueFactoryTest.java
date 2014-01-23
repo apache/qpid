@@ -231,7 +231,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
                 false,
                 attributes);
 
-        assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());
+        assertEquals("Queue not a priority queue", AMQPriorityQueue.class, queue.getClass());
         verifyQueueRegistered("testPriorityQueue");
         verifyRegisteredQueueCount(1);
     }
@@ -251,7 +251,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         //verify that no alternate exchange or DLQ were produced
 
-        assertNull("Queue should not have an alternate exchange as DLQ wasnt enabled", queue.getAlternateExchange());
+        assertNull("Queue should not have an alternate exchange as DLQ wasn't enabled", queue.getAlternateExchange());
         assertNull("The DLQ should not exist", _virtualHost.getQueue(dlQueueName));
 
         verifyRegisteredQueueCount(1);

@@ -82,32 +82,32 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
         }
     }
 
-    public void registerConnection(AMQConnectionModel connnection)
+    public void registerConnection(AMQConnectionModel connection)
     {
         synchronized (this)
         {
-            _registry.add(connnection);
+            _registry.add(connection);
             synchronized (_listeners)
             {
                 for(RegistryChangeListener listener : _listeners)
                 {
-                    listener.connectionRegistered(connnection);
+                    listener.connectionRegistered(connection);
                 }
             }
         }
     }
 
-    public void deregisterConnection(AMQConnectionModel connnection)
+    public void deregisterConnection(AMQConnectionModel connection)
     {
         synchronized (this)
         {
-            _registry.remove(connnection);
+            _registry.remove(connection);
 
             synchronized (_listeners)
             {
                 for(RegistryChangeListener listener : _listeners)
                 {
-                    listener.connectionUnregistered(connnection);
+                    listener.connectionUnregistered(connection);
                 }
             }
         }

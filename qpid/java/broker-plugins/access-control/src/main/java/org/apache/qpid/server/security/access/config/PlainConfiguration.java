@@ -182,7 +182,7 @@ public class PlainConfiguration extends AbstractConfiguration
 	                            break; // continue reading next line
                             }
 
-                            // invalid location for continuation character (add one to line beacuse we ate the EOL)
+                            // invalid location for continuation character (add one to line because we ate the EOL)
                             throw new IllegalConfigurationException(String.format(PREMATURE_CONTINUATION_MSG, getLine() + 1));
                         }
                         else if (_st.ttype == '\'' || _st.ttype == '"')

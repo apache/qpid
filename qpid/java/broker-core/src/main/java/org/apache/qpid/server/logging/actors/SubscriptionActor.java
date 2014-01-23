@@ -26,7 +26,7 @@ import org.apache.qpid.server.subscription.Subscription;
 
 /**
  * The subscription actor provides formatted logging for actions that are
- * performed by the subsciption. Such as STATE changes.
+ * performed by the subscription. Such as STATE changes.
  */
 public class SubscriptionActor extends AbstractActor
 {

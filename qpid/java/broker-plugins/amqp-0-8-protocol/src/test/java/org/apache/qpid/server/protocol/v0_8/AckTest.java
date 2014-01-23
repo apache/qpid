@@ -182,7 +182,7 @@ public class AckTest extends QpidTestCase
         final int msgCount = 10;
         publishMessages(msgCount, true);
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
-        assertEquals("Unextpected size for unacknowledge message map",msgCount,map.size());
+        assertEquals("Unexpected size for unacknowledged message map",msgCount,map.size());
 
         Set<Long> deliveryTagSet = map.getDeliveryTags();
         int i = 1;
@@ -333,93 +333,6 @@ public class AckTest extends QpidTestCase
 
     }
 
-
-/*
-    public void testPrefetchHighLow() throws AMQException
-    {
-        int lowMark = 5;
-        int highMark = 10;
-
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
-        _channel.setPrefetchLowMarkCount(lowMark);
-        _channel.setPrefetchHighMarkCount(highMark);
-
-        assertTrue(_channel.getPrefetchLowMarkCount() == lowMark);
-        assertTrue(_channel.getPrefetchHighMarkCount() == highMark);
-
-        publishMessages(highMark);
-
-        // at this point we should have sent out only highMark messages
-        // which have not bee received so will be queued up in the channel
-        // which should be suspended
-        assertTrue(_subscription.isSuspended());
-        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
-        assertTrue(map.size() == highMark);
-
-        //acknowledge messages so we are just above lowMark
-        _channel.acknowledgeMessage(lowMark - 1, true);
-
-        //we should still be suspended
-        assertTrue(_subscription.isSuspended());
-        assertTrue(map.size() == lowMark + 1);
-
-        //acknowledge one more message
-        _channel.acknowledgeMessage(lowMark, true);
-
-        //and suspension should be lifted
-        assertTrue(!_subscription.isSuspended());
-
-        //pubilsh more msgs so we are just below the limit
-        publishMessages(lowMark - 1);
-
-        //we should not be suspended
-        assertTrue(!_subscription.isSuspended());
-
-        //acknowledge all messages
-        _channel.acknowledgeMessage(0, true);
-        try
-        {
-            Thread.sleep(3000);
-        }
-        catch (InterruptedException e)
-        {
-            _log.error("Error: " + e, e);
-        }
-        //map will be empty
-        assertTrue(map.size() == 0);
-    }
-
-*/
-/*
-    public void testPrefetch() throws AMQException
-    {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
-        _channel.setMessageCredit(5);
-
-        assertTrue(_channel.getPrefetchCount() == 5);
-
-        final int msgCount = 5;
-        publishMessages(msgCount);
-
-        // at this point we should have sent out only 5 messages with a further 5 queued
-        // up in the channel which should now be suspended
-        assertTrue(_subscription.isSuspended());
-        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
-        assertTrue(map.size() == 5);
-        _channel.acknowledgeMessage(5, true);
-        assertTrue(!_subscription.isSuspended());
-        try
-        {
-            Thread.sleep(3000);
-        }
-        catch (InterruptedException e)
-        {
-            _log.error("Error: " + e, e);
-        }
-        assertTrue(map.size() == 0);
-    }
-
-*/
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(AckTest.class);

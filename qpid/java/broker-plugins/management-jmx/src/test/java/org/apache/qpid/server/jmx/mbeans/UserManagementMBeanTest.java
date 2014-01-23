@@ -120,7 +120,7 @@ public class UserManagementMBeanTest extends TestCase
     {
         boolean reloadSuccess = _userManagement.reloadData();
 
-        assertTrue("Reload should return true to flag succesful update", reloadSuccess);
+        assertTrue("Reload should return true to flag successful update", reloadSuccess);
 
         verify(_mockProvider).reload();
     }

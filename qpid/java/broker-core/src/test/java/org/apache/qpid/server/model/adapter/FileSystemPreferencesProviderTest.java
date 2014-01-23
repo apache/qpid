@@ -59,9 +59,9 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         _preferencesFile = TestFileUtils.createTempFile(this, ".prefs.json", TEST_PREFERENCES);
 
         _broker = BrokerTestHelper.createBrokerMock();
-        TaskExecutor taslExecutor = mock(TaskExecutor.class);
-        when(taslExecutor.isTaskExecutorThread()).thenReturn(true);
-        when(_broker.getTaskExecutor()).thenReturn(taslExecutor);
+        TaskExecutor taskExecutor = mock(TaskExecutor.class);
+        when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
+        when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
         when(_authenticationProvider.getParent(Broker.class)).thenReturn(_broker);
     }
 
@@ -111,7 +111,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
     {
         File emptyPrefsFile = new File(TMP_FOLDER, "preferences-" + getTestName() + ".json");
         emptyPrefsFile.createNewFile();
-        assertTrue("Preferences file does notexists", emptyPrefsFile.exists());
+        assertTrue("Preferences file does not exist", emptyPrefsFile.exists());
         try
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
@@ -130,7 +130,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         _preferencesProvider = createPreferencesProvider();
         _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
 
-        assertEquals("Unexpexpected state", State.ACTIVE, _preferencesProvider.getActualState());
+        assertEquals("Unexpected state", State.ACTIVE, _preferencesProvider.getActualState());
     }
 
     public void testChangeAttributes()
@@ -178,7 +178,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         assertTrue("No preference found for user3", preferences3.isEmpty());
     }
 
-    public void testSetPrefernces()
+    public void testSetPreferences()
     {
         _preferencesProvider = createPreferencesProvider();
         _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
@@ -213,7 +213,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         assertTrue("Unexpected preferences found for user3", preferences3.isEmpty());
     }
 
-    public void testDeletePrefernces()
+    public void testDeletePreferences()
     {
         _preferencesProvider = createPreferencesProvider();
         _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
@@ -237,7 +237,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         assertTrue("Unexpected preferences found for user3", preferences3.isEmpty());
     }
 
-    public void testDeleteMultipleUsersPrefernces()
+    public void testDeleteMultipleUsersPreferences()
     {
         _preferencesProvider = createPreferencesProvider();
         _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);

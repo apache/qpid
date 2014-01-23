@@ -255,7 +255,7 @@ public class Log4jMessageLoggerTest extends TestCase
         }
 
         /**
-         * @return the list of LoggingEvents that have occured in this Appender
+         * @return the list of LoggingEvents that have occurred in this Appender
          */
         public List<LoggingEvent> getLog()
         {

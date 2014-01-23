@@ -36,7 +36,7 @@ public class SubscriptionLogSubject extends AbstractLogSubject
      */
     public SubscriptionLogSubject(Subscription subscription)
     {
-        // Delegate the formating of the Queue to the QueueLogSubject. So final
+        // Delegate the formatting of the Queue to the QueueLogSubject. So final
         // log string format is:
         // [ sub:<id>(vh(<vhost>)/qu(<queue>)) ]
 

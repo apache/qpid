@@ -117,7 +117,7 @@ public abstract class QueueEntryListTestBase extends TestCase
             entry = entryList.next(entry);
             count++;
         }
-        assertEquals("Get next didnt get all the list entries", getExpectedListLength(), count);
+        assertEquals("Get next didn't get all the list entries", getExpectedListLength(), count);
     }
 
     /**
@@ -142,7 +142,7 @@ public abstract class QueueEntryListTestBase extends TestCase
      * @see QueueEntryListTestBase#getTestList()
      * @see QueueEntryListTestBase#getExpectedListLength()
      */
-    public void testDequedMessagedNotPresentInIterator() throws Exception
+    public void testDequeuedMessagedNotPresentInIterator() throws Exception
     {
         final int numberOfMessages = getExpectedListLength();
         final QueueEntryList<QueueEntry> entryList = getTestList();

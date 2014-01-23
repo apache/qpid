@@ -31,6 +31,6 @@ public class UnexpectedMethodException extends AMQException
 
     public UnexpectedMethodException(AMQMethodBody body)
     {
-        super("Unexpected method recevied: " + body.getClass().getName());
+        super("Unexpected method received: " + body.getClass().getName());
     }
 }

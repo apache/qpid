@@ -354,7 +354,7 @@ public class PortFactoryTest extends QpidTestCase
         try
         {
             _portFactory.createPort(_portId, _broker, attributes);
-            fail("RMI port creation should fail as another one olready exist");
+            fail("RMI port creation should fail as another one already exist");
         }
         catch(IllegalConfigurationException e)
         {

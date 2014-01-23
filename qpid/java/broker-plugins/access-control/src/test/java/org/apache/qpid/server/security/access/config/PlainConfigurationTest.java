@@ -323,7 +323,7 @@ public class PlainConfigurationTest extends TestCase
      * be introduced anywhere in the ACL, whereas the C++ supports only whitespace at the beginning of
      * of line.
      */
-    public void testCommentsSuppported() throws Exception
+    public void testCommentsSupported() throws Exception
     {
         final PlainConfiguration config = writeACLConfig("#Comment",
                                                          "ACL DENY-LOG user1 ACCESS VIRTUALHOST # another comment",
@@ -362,7 +362,7 @@ public class PlainConfigurationTest extends TestCase
     /**
      * Tests interpretation of an acl utilising line continuation.
      */
-    public void testLineContination() throws Exception
+    public void testLineContinuation() throws Exception
     {
         final PlainConfiguration config = writeACLConfig("ACL DENY-LOG user1 \\",
                                                          "ACCESS VIRTUALHOST");

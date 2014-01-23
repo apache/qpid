@@ -206,7 +206,7 @@ public class ApplicationRegistry implements IApplicationRegistry
             }
             catch(Exception e)
             {
-                ApplicationRegistry._logger.warn("Unexpected exception occured while reporting the statistics", e);
+                ApplicationRegistry._logger.warn("Unexpected exception occurred while reporting the statistics", e);
             }
             finally
             {

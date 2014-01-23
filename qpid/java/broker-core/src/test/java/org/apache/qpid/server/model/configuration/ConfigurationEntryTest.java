@@ -112,18 +112,18 @@ public class ConfigurationEntryTest extends TestCase
                 VirtualHost.class.getSimpleName(), attributes1, childrenIds, store);
 
         assertTrue(entry1.equals(entry2));
-        assertFalse("Entries should be diferrent because of diferrent IDs", entry1.equals(entryWithDifferentId));
+        assertFalse("Entries should be different because of different IDs", entry1.equals(entryWithDifferentId));
 
         ConfigurationEntry entryWithDifferentChildId = new ConfigurationEntry(id,
                 VirtualHost.class.getSimpleName(), attributes1, Collections.singleton(UUID.randomUUID()), store);
-        assertFalse("Entries should be diferrent because of diferrent children", entry1.equals(entryWithDifferentChildId));
+        assertFalse("Entries should be different because of different children", entry1.equals(entryWithDifferentChildId));
 
         ConfigurationEntry entryWithDifferentName = new ConfigurationEntry(id,
                 VirtualHost.class.getSimpleName(), attributes2, childrenIds, store);
-        assertFalse("Entries should be diferrent because of diferrent attributes", entry1.equals(entryWithDifferentName));
+        assertFalse("Entries should be different because of different attributes", entry1.equals(entryWithDifferentName));
 
         ConfigurationEntry entryWithDifferentType = new ConfigurationEntry(id,
                 Broker.class.getSimpleName(), attributes1, childrenIds, store);
-        assertFalse("Entries should be diferrent because of diferrent types", entry1.equals(entryWithDifferentType));
+        assertFalse("Entries should be different because of different types", entry1.equals(entryWithDifferentType));
     }
 }

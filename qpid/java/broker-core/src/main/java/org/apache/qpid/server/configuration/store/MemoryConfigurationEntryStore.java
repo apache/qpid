@@ -150,9 +150,9 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                     {
                         Set<UUID> children = new HashSet<UUID>(entry.getChildrenIds());
                         children.remove(uuid);
-                        ConfigurationEntry referal = new ConfigurationEntry(entry.getId(), entry.getType(),
+                        ConfigurationEntry referral = new ConfigurationEntry(entry.getId(), entry.getType(),
                                 entry.getAttributes(), children, this);
-                        _entries.put(entry.getId(), referal);
+                        _entries.put(entry.getId(), referral);
                     }
                 }
                 removedIds.add(uuid);

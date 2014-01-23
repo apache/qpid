@@ -346,7 +346,7 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public List<Long> getMessagesOnTheQueue(int num, int offest)
+    public List<Long> getMessagesOnTheQueue(int num, int offset)
     {
         return null;
     }

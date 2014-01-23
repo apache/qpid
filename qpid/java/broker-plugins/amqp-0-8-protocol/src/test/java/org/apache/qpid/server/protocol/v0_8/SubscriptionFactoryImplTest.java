@@ -81,9 +81,9 @@ public class SubscriptionFactoryImplTest extends QpidTestCase
         //create a browser subscription
         FieldTable filters = new FieldTable();
         filters.put(AMQPFilterTypes.NO_CONSUME.getValue(), true);
-        Subscription browerSub = SubscriptionFactoryImpl.INSTANCE.createSubscription(1, _session, new AMQShortString("1"), true, null, false, _channel.getCreditManager());
-        assertEquals("Unexpected Subscription ID allocated", previousId + 1, browerSub.getSubscriptionID());
-        previousId = browerSub.getSubscriptionID();
+        Subscription browserSub = SubscriptionFactoryImpl.INSTANCE.createSubscription(1, _session, new AMQShortString("1"), true, null, false, _channel.getCreditManager());
+        assertEquals("Unexpected Subscription ID allocated", previousId + 1, browserSub.getSubscriptionID());
+        previousId = browserSub.getSubscriptionID();
 
         //create an BasicGet NoAck subscription
         Subscription getNoAckSub = SubscriptionFactoryImpl.INSTANCE.createBasicGetNoAckSubscription(_channel, _session, new AMQShortString("1"), null, false,

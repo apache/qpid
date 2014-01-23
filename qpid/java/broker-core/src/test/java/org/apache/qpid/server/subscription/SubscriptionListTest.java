@@ -251,7 +251,7 @@ public class SubscriptionListTest extends QpidTestCase
      * Test that if the subscription not contained in the list is requested to be removed
      * that the removal fails
      */
-    public void testRemoveNonExistantNode()
+    public void testRemoveNonexistentNode()
     {
         Subscription sub4 = new MockSubscription();
         assertNull("Should not have been a node present for the subscription", getNodeForSubscription(_subList, sub4));
@@ -360,7 +360,7 @@ public class SubscriptionListTest extends QpidTestCase
      */
     public void testIteratorSkipsFirstDeletedNode()
     {
-        //'delete' but dont remove the node for the 1st subscription
+        //'delete' but don't remove the node for the 1st subscription
         assertTrue("Deleting subscription node should have succeeded",
                 getNodeForSubscription(_subList, _sub1).delete());
         assertNotNull("Should still have been a node present for the deleted subscription",
@@ -383,7 +383,7 @@ public class SubscriptionListTest extends QpidTestCase
      */
     public void testIteratorSkipsCentralDeletedNode()
     {
-        //'delete' but dont remove the node for the 2nd subscription
+        //'delete' but don't remove the node for the 2nd subscription
         assertTrue("Deleting subscription node should have succeeded",
                 getNodeForSubscription(_subList, _sub2).delete());
         assertNotNull("Should still have been a node present for the deleted subscription",
@@ -406,7 +406,7 @@ public class SubscriptionListTest extends QpidTestCase
      */
     public void testIteratorSkipsDeletedFinalNode()
     {
-        //'delete' but dont remove the node for the 3rd subscription
+        //'delete' but don't remove the node for the 3rd subscription
         assertTrue("Deleting subscription node should have succeeded",
                 getNodeForSubscription(_subList, _sub3).delete());
         assertNotNull("Should still have been a node present for the deleted 3rd subscription",

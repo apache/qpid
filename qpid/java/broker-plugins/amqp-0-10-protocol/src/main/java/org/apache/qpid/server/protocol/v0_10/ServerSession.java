@@ -89,7 +89,7 @@ public class ServerSession extends Session
 {
     private static final Logger _logger = LoggerFactory.getLogger(ServerSession.class);
 
-    private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
+    private static final String NULL_DESTINATION = UUID.randomUUID().toString();
     private static final int PRODUCER_CREDIT_TOPUP_THRESHOLD = 1 << 30;
     private static final int UNFINISHED_COMMAND_QUEUE_THRESHOLD = 500;
 
@@ -421,12 +421,12 @@ public class ServerSession extends Session
 
     public void register(String destination, Subscription_0_10 sub)
     {
-        _subscriptions.put(destination == null ? NULL_DESTINTATION : destination, sub);
+        _subscriptions.put(destination == null ? NULL_DESTINATION : destination, sub);
     }
 
     public Subscription_0_10 getSubscription(String destination)
     {
-        return _subscriptions.get(destination == null ? NULL_DESTINTATION : destination);
+        return _subscriptions.get(destination == null ? NULL_DESTINATION : destination);
     }
 
     public void unregister(Subscription_0_10 sub)

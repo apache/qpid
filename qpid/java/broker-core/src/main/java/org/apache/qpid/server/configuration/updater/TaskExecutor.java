@@ -267,7 +267,7 @@ public class TaskExecutor
                 }
                 catch (Exception e)
                 {
-                    LOGGER.warn("Unxpected exception on current actor removal", e);
+                    LOGGER.warn("Unexpected exception on current actor removal", e);
                 }
                 try
                 {
@@ -275,7 +275,7 @@ public class TaskExecutor
                 }
                 catch (Exception e)
                 {
-                    LOGGER.warn("Unxpected exception on nullifying of subject for a security manager", e);
+                    LOGGER.warn("Unexpected exception on nullifying of subject for a security manager", e);
                 }
             }
         }

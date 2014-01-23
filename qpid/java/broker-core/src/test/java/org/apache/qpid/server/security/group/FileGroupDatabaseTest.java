@@ -187,7 +187,7 @@ public class FileGroupDatabaseTest extends TestCase
         assertTrue(groups.contains(MY_GROUP1));
     }
 
-    public void testGetGroupPrincipalsForUserWhenUserAdddedToGroupTheyAreAlreadyIn() throws Exception
+    public void testGetGroupPrincipalsForUserWhenUserAddedToGroupTheyAreAlreadyIn() throws Exception
     {
         writeAndSetGroupFile("myGroup.users", USER1);
         _groupDatabase.addUserToGroup(USER1, MY_GROUP);

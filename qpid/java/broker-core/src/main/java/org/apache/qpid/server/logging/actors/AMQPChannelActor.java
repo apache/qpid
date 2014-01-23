@@ -25,7 +25,7 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 
 /**
- * An AMQPChannelActor represtents a connection through the AMQP port with an
+ * An AMQPChannelActor represents a connection through the AMQP port with an
  * associated Channel.
  *
  * <p/>

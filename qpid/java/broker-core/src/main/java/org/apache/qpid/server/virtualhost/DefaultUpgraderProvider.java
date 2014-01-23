@@ -173,7 +173,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
     /*
      * Change the type string from org.apache.qpid.server.model.Foo to Foo (in line with the practice in the broker
-     * configuration store).  Also remove bindings which reference non-existant queues or exchanges.
+     * configuration store).  Also remove bindings which reference nonexistent queues or exchanges.
      */
     private class Version1Upgrader extends NonNullUpgrader
     {

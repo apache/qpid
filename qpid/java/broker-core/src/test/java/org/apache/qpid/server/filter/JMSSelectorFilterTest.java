@@ -31,20 +31,20 @@ public class JMSSelectorFilterTest extends TestCase
 
         assertEquals(filter1 + " should equal itself", filter1, filter1);
         assertFalse(filter1 + " should not equal null", filter1.equals(null));
-        assertEqualsAndHashcodeMatch(filter1, filter2);
+        assertEqualsAndHashCodeMatch(filter1, filter2);
 
         JMSSelectorFilter differentFilter = new JMSSelectorFilter("2 = 2");
         assertNotEqual(filter1, differentFilter);
     }
 
-    private void assertEqualsAndHashcodeMatch(JMSSelectorFilter filter1, JMSSelectorFilter filter2)
+    private void assertEqualsAndHashCodeMatch(JMSSelectorFilter filter1, JMSSelectorFilter filter2)
     {
         String message = filter1 + " and " + filter2 + " should be equal";
 
         assertEquals(message, filter1, filter2);
         assertEquals(message, filter2, filter1);
 
-        assertEquals("Hashcodes of " + filter1 + " and " + filter2 + " should be equal",
+        assertEquals("HashCodes of " + filter1 + " and " + filter2 + " should be equal",
                 filter1.hashCode(), filter2.hashCode());
     }
 

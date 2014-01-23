@@ -36,7 +36,7 @@ import org.apache.qpid.server.security.AccessControl;
 public class AccessControlProviderFactory
 {
     private final Iterable<AccessControlFactory> _factories;
-    private Collection<String> _supportedAcessControlProviders;
+    private Collection<String> _supportedAccessControlProviders;
 
     public AccessControlProviderFactory(QpidServiceLoader<AccessControlFactory> accessControlFactoryServiceLoader)
     {
@@ -46,7 +46,7 @@ public class AccessControlProviderFactory
         {
             supportedAccessControlProviders.add(factory.getType());
         }
-        _supportedAcessControlProviders = Collections.unmodifiableCollection(supportedAccessControlProviders);
+        _supportedAccessControlProviders = Collections.unmodifiableCollection(supportedAccessControlProviders);
     }
 
     /**
@@ -85,6 +85,6 @@ public class AccessControlProviderFactory
 
     public Collection<String> getSupportedAuthenticationProviders()
     {
-        return _supportedAcessControlProviders;
+        return _supportedAccessControlProviders;
     }
 }

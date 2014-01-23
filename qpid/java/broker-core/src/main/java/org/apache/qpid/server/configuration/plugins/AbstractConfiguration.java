@@ -46,7 +46,7 @@ public abstract class AbstractConfiguration
      * <li>queue - the queue entries
      * <li>the alerting values for defaults
      * <li>exchange - the default exchange
-     * <li>durable - set the default durablity
+     * <li>durable - set the default durability
      * </ul>
      */
     abstract public String[] getElementsProcessed();
@@ -224,7 +224,7 @@ public abstract class AbstractConfiguration
     }
 
     /**
-     * Provide mechanism to validate Configuration contains a Postiive Long Value
+     * Provide mechanism to validate Configuration contains a Positive Long Value
      *
      * @param property
      *

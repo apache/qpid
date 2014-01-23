@@ -67,13 +67,13 @@ public class TaskExecutorTest extends TestCase
 
     public void testGetState()
     {
-        assertEquals("Unxpected initial state", State.INITIALISING, _executor.getState());
+        assertEquals("Unexpected initial state", State.INITIALISING, _executor.getState());
     }
 
     public void testStart()
     {
         _executor.start();
-        assertEquals("Unxpected started state", State.ACTIVE, _executor.getState());
+        assertEquals("Unexpected started state", State.ACTIVE, _executor.getState());
     }
 
     public void testStopImmediately() throws Exception
@@ -110,7 +110,7 @@ public class TaskExecutorTest extends TestCase
         assertTrue("The first task has not been triggered", waitForCallLatch.await(1000, TimeUnit.MILLISECONDS));
 
         _executor.stopImmediately();
-        assertEquals("Unxpected stopped state", State.STOPPED, _executor.getState());
+        assertEquals("Unexpected stopped state", State.STOPPED, _executor.getState());
 
         Exception e = submitExceptions.poll(1000l, TimeUnit.MILLISECONDS);
         assertNotNull("The task execution was not interrupted or cancelled", e);
@@ -127,7 +127,7 @@ public class TaskExecutorTest extends TestCase
     {
         _executor.start();
         _executor.stop();
-        assertEquals("Unxpected stopped state", State.STOPPED, _executor.getState());
+        assertEquals("Unexpected stopped state", State.STOPPED, _executor.getState());
     }
 
     public void testSubmitAndWait() throws Exception

@@ -95,9 +95,9 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
     public void testIdleTransactionProducesWarningOnly() throws Exception
     {
         final long sixtyOneSecondsAgo = _now - SECONDS.toMillis(61);
-        final long thrityOneSecondsAgo = _now - SECONDS.toMillis(31);
+        final long thirtyOneSecondsAgo = _now - SECONDS.toMillis(31);
 
-        configureMockTransaction(sixtyOneSecondsAgo, thrityOneSecondsAgo);
+        configureMockTransaction(sixtyOneSecondsAgo, thirtyOneSecondsAgo);
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 0, 0, SECONDS.toMillis(30), 0);
 
@@ -108,9 +108,9 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
     public void testIdleTransactionProducesTimeoutActionOnly() throws Exception
     {
         final long sixtyOneSecondsAgo = _now - SECONDS.toMillis(61);
-        final long thrityOneSecondsAgo = _now - SECONDS.toMillis(31);
+        final long thirtyOneSecondsAgo = _now - SECONDS.toMillis(31);
 
-        configureMockTransaction(sixtyOneSecondsAgo, thrityOneSecondsAgo);
+        configureMockTransaction(sixtyOneSecondsAgo, thirtyOneSecondsAgo);
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 0, 0, 0, SECONDS.toMillis(30));
 
@@ -121,9 +121,9 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
     public void testIdleTransactionProducesWarningAndTimeoutAction() throws Exception
     {
         final long sixtyOneSecondsAgo = _now - SECONDS.toMillis(61);
-        final long thrityOneSecondsAgo = _now - SECONDS.toMillis(31);
+        final long thirtyOneSecondsAgo = _now - SECONDS.toMillis(31);
 
-        configureMockTransaction(sixtyOneSecondsAgo, thrityOneSecondsAgo);
+        configureMockTransaction(sixtyOneSecondsAgo, thirtyOneSecondsAgo);
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 0, 0, SECONDS.toMillis(15), SECONDS.toMillis(30));
 
@@ -176,9 +176,9 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
         when(_transaction.getTransactionUpdateTime()).thenReturn(updateTime);
     }
 
-    private LogMessage isLogMessage(String expectedlogHierarchy, String expectedText)
+    private LogMessage isLogMessage(String expectedLogHierarchy, String expectedText)
     {
-        return argThat(new IsLogMessage(expectedlogHierarchy, expectedText));
+        return argThat(new IsLogMessage(expectedLogHierarchy, expectedText));
     }
 
     class IsLogMessage extends ArgumentMatcher<LogMessage>
@@ -188,9 +188,9 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
         private String _hierarchyMatchesFailure;
         private String _logMessageMatchesFailure;
 
-        public IsLogMessage(String expectedlogHierarchy, String expectedLogMessageMatches)
+        public IsLogMessage(String expectedLogHierarchy, String expectedLogMessageMatches)
         {
-            _expectedLogHierarchy = expectedlogHierarchy;
+            _expectedLogHierarchy = expectedLogHierarchy;
             _expectedLogMessageMatches = expectedLogMessageMatches;
         }
 

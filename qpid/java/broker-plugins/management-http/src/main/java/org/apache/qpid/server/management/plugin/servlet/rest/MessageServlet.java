@@ -445,7 +445,7 @@ public class MessageServlet extends AbstractServlet
         }
         catch(RuntimeException e)
         {
-            LOGGER.error("Failure to perform message opertion", e);
+            LOGGER.error("Failure to perform message operation", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
