@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -73,7 +73,7 @@ public class AutoCommitTransaction implements ServerTransaction
         immediateAction.postCommit();
     }
 
-    public void dequeue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
+    public void dequeue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
     {
         Transaction txn = null;
         try
@@ -152,7 +152,7 @@ public class AutoCommitTransaction implements ServerTransaction
     }
 
 
-    public void enqueue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
+    public void enqueue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
     {
         Transaction txn = null;
         try
@@ -185,7 +185,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, Action postTransactionAction)
     {
         Transaction txn = null;
         try

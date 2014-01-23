@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.Collections;
 
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -37,7 +37,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
     private static final String STRICT_ORDER_SYSTEM_PROPERTY = AsyncAutoCommitTransaction.QPID_STRICT_ORDER_WITH_MIXED_DELIVERY_MODE;
 
     private FutureRecorder _futureRecorder = mock(FutureRecorder.class);
-    private EnqueableMessage _message = mock(EnqueableMessage.class);
+    private EnqueueableMessage _message = mock(EnqueueableMessage.class);
     private BaseQueue _queue = mock(BaseQueue.class);
     private MessageStore _messageStore = mock(MessageStore.class);
     private Transaction _storeTransaction = mock(Transaction.class);
