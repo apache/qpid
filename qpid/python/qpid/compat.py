@@ -54,7 +54,8 @@ class BaseWaiter:
   def wait(self, timeout=None):
     start = time.time()
     if timeout is not None:
-      while True:
+      ready = False
+      while timeout > 0:
         try:
           ready, _, _ = select([self], [], [], timeout)
           break
