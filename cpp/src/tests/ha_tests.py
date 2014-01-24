@@ -22,6 +22,7 @@ import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil
 import traceback
 from qpid.messaging import Message, SessionError, NotFound, ConnectionError, ReceiverError, Connection, Timeout, Disposition, REJECTED, Empty, ServerError
 from qpid.datatypes import uuid4, UUID
+from qpid.harness import Skipped
 from brokertest import *
 from ha_test import *
 from threading import Thread, Lock, Condition
@@ -1077,6 +1078,18 @@ class LongTests(HaBrokerTest):
                 queue.qmf_event(r.fetch())
         finally:
             for t in threads: t.stopped = True; t.join()
+
+    def test_max_queues(self):
+        """Verify that we behave properly if we try to exceed the max number
+        of replicated queues - currently limited by the max number of channels
+        in the replication link"""
+        # This test is very slow (3 mins), skip it unless duration() > 1 minute.
+        if self.duration() < 60: return
+        # This test is written in C++ for speed, it takes a long time
+        # to create 64k queues in python. See ha_test_max_queues.cpp.
+        cluster = HaCluster(self, 2)
+        test = self.popen(["ha_test_max_queues", cluster[0].host_port()])
+        self.assertEqual(test.wait(), 0)
 
 class RecoveryTests(HaBrokerTest):
     """Tests for recovery after a failure."""

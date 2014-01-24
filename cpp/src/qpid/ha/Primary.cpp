@@ -92,7 +92,8 @@ class ExpectedBackupTimerTask : public sys::TimerTask {
 Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     haBroker(hb), membership(hb.getMembership()),
     logPrefix("Primary: "), active(false),
-    replicationTest(hb.getSettings().replicateDefault.get())
+    replicationTest(hb.getSettings().replicateDefault.get()),
+    queueLimits(logPrefix)
 {
     // Note that at this point, we are still rejecting client connections.
     // So we are safe from client interference while we set up the primary.
@@ -248,16 +249,17 @@ void Primary::queueCreate(const QueuePtr& q) {
     ReplicateLevel level = replicationTest.useLevel(*q);
     q->addArgument(QPID_REPLICATE, printable(level).str());
     if (level) {
-        QPID_LOG(debug, logPrefix << "Created queue " << q->getName()
-                 << " replication: " << printable(level));
         // Give each queue a unique id. Used by backups to avoid confusion of
         // same-named queues.
         q->addArgument(QPID_HA_UUID, types::Variant(Uuid(true)));
         {
             Mutex::ScopedLock l(lock);
+            queueLimits.addQueue(q); // Throws if limit exceeded
             for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
                 i->second->queueCreate(q);
         }
+        QPID_LOG(debug, logPrefix << "Created queue " << q->getName()
+                 << " replication: " << printable(level));
         checkReady();           // Outside lock
     }
 }
@@ -268,6 +270,7 @@ void Primary::queueDestroy(const QueuePtr& q) {
         QPID_LOG(debug, logPrefix << "Destroyed queue " << q->getName());
         {
             Mutex::ScopedLock l(lock);
+            queueLimits.removeQueue(q);
             for (BackupMap::iterator i = backups.begin(); i != backups.end(); ++i)
                 i->second->queueDestroy(q);
         }
@@ -302,6 +305,7 @@ shared_ptr<RemoteBackup> Primary::backupConnect(
     const BrokerInfo& info, broker::Connection& connection, Mutex::ScopedLock&)
 {
     shared_ptr<RemoteBackup> backup(new RemoteBackup(info, &connection));
+    queueLimits.addBackup(backup);
     backups[info.getSystemId()] = backup;
     return backup;
 }
@@ -309,6 +313,7 @@ shared_ptr<RemoteBackup> Primary::backupConnect(
 // Remove a backup. Caller should not release the shared pointer returend till
 // outside the lock.
 void Primary::backupDisconnect(shared_ptr<RemoteBackup> backup, Mutex::ScopedLock&) {
+    queueLimits.addBackup(backup);
     types::Uuid id = backup->getBrokerInfo().getSystemId();
     backup->cancel();
     expectedBackups.erase(backup);
