@@ -307,10 +307,13 @@ endif (BUILD_SASL)
 set (python_bld ${CMAKE_CURRENT_BINARY_DIR}/python)
 set (python_src ${CMAKE_SOURCE_DIR}/../python)
 
-# If we want this to automatically run when we change the python library we will need to
-# add some explicit dependencies on the source python files
+# This will not pick up added or deleted python files
+# In that case you need to rerun CMake
+file(GLOB_RECURSE python_files ${python_src}/*.py)
+
 add_custom_command(
     OUTPUT ${python_bld}
+    DEPENDS ${python_files}
     COMMAND ${PYTHON_EXECUTABLE}
         setup.py
         build --build-base=${python_bld}/build
