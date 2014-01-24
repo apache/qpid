@@ -105,7 +105,6 @@ class QPID_CLIENT_CLASS_EXTERN Connection
               const std::string& uid = "",
               const std::string& pwd = "",
               const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
-
     /**
      * Opens a connection to a broker using a URL.
      * If the URL contains multiple addresses, try each in turn

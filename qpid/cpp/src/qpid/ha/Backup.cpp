@@ -30,7 +30,6 @@
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/SessionHandler.h"
 #include "qpid/broker/Link.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/AMQFrame.h"

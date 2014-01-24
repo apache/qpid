@@ -46,9 +46,8 @@ struct Uuid;
 
 // Useful constants
 
-/** Maximum channel ID used by broker. Reserve high bit for internal use.*/
-const ChannelId CHANNEL_MAX=(ChannelId(~1))>>1;
-const ChannelId CHANNEL_HIGH_BIT= ChannelId(~CHANNEL_MAX);
+/** Maximum channel ID used by broker. */
+const ChannelId CHANNEL_MAX=(ChannelId(~1));
 
 // Forward declare class types
 class FramingContent;
