@@ -247,7 +247,7 @@ class Broker(Popen):
     def get_log(self):
         return os.path.abspath(self.log)
 
-    def __init__(self, test, args=[], test_store=False, name=None, expect=EXPECT_RUNNING, port=0, log_level=None, wait=None, show_cmd=False):
+    def __init__(self, test, args=[], test_store=False, name=None, expect=EXPECT_RUNNING, port=0, wait=None, show_cmd=False):
         """Start a broker daemon. name determines the data-dir and log
         file names."""
 
@@ -276,7 +276,10 @@ class Broker(Popen):
 
         cmd += ["--log-to-file", self.log]
         cmd += ["--log-to-stderr=no"]
-        cmd += ["--log-enable=%s"%(log_level or "info+") ]
+
+        # Add default --log-enable arguments unless args already has --log arguments.
+        if not next((l for l in args if l.startswith("--log")), None):
+            args += ["--log-enable=info+"]
 
         if test_store: cmd += ["--load-module", BrokerTest.test_store_lib,
                                "--test-store-events", self.store_log]
@@ -474,9 +477,9 @@ class BrokerTest(TestCase):
         self.cleanup_stop(p)
         return p
 
-    def broker(self, args=[], name=None, expect=EXPECT_RUNNING, wait=True, port=0, log_level=None, show_cmd=False):
+    def broker(self, args=[], name=None, expect=EXPECT_RUNNING, wait=True, port=0, show_cmd=False):
         """Create and return a broker ready for use"""
-        b = Broker(self, args=args, name=name, expect=expect, port=port, log_level=log_level, show_cmd=show_cmd)
+        b = Broker(self, args=args, name=name, expect=expect, port=port, show_cmd=show_cmd)
         if (wait):
             try: b.ready()
             except Exception, e:

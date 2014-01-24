@@ -25,6 +25,7 @@
 #include "types.h"
 #include "hash.h"
 #include "BrokerInfo.h"
+#include "PrimaryQueueLimits.h"
 #include "ReplicationTest.h"
 #include "Role.h"
 #include "qpid/sys/Mutex.h"
@@ -154,6 +155,7 @@ class Primary : public Role
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     ReplicaMap replicas;
     TxMap txMap;
+    PrimaryQueueLimits queueLimits;
 };
 }} // namespace qpid::ha
 
