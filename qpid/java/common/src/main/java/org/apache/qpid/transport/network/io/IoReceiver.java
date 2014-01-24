@@ -243,7 +243,12 @@ final class IoReceiver implements Runnable, Closeable
                                   t instanceof SocketException &&
                                   "Socket is closed".equalsIgnoreCase(t.getMessage());
 
-        return !brokenClose && !sslSocketClosed;
+        boolean recvFailed = closed.get() &&
+                             shutdownBroken &&
+                             t instanceof SocketException &&
+                             "Socket operation on nonsocket: recv failed".equalsIgnoreCase(t.getMessage());
+
+        return !brokenClose && !sslSocketClosed && !recvFailed;
     }
 
     public Ticker getTicker()
