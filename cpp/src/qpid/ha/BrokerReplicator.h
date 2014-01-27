@@ -75,10 +75,11 @@ class BrokerReplicator : public broker::Exchange,
   public:
     typedef boost::shared_ptr<QueueReplicator> QueueReplicatorPtr;
 
-    BrokerReplicator(HaBroker&, const boost::shared_ptr<broker::Link>&);
+    static boost::shared_ptr<BrokerReplicator> create(
+        HaBroker&, const boost::shared_ptr<broker::Link>&);
+
     ~BrokerReplicator();
 
-    void initialize();          // Must be called  immediately after constructor.
     void shutdown();
 
     // Exchange methods
@@ -98,6 +99,9 @@ class BrokerReplicator : public broker::Exchange,
     QueueReplicatorPtr findQueueReplicator(const std::string& qname);
 
   private:
+    BrokerReplicator(HaBroker&, const boost::shared_ptr<broker::Link>&);
+    void initialize();          // Called in create()
+
     typedef std::pair<boost::shared_ptr<broker::Queue>, bool> CreateQueueResult;
     typedef std::pair<boost::shared_ptr<broker::Exchange>, bool> CreateExchangeResult;
 

@@ -274,6 +274,12 @@ template <class EventType> std::string key() {
 }
 }
 
+boost::shared_ptr<BrokerReplicator> BrokerReplicator::create(
+    HaBroker& hb, const boost::shared_ptr<broker::Link>& l) {
+    boost::shared_ptr<BrokerReplicator> br(new BrokerReplicator(hb, l));
+    br->initialize();
+    return br;
+}
 
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
@@ -763,15 +769,10 @@ boost::shared_ptr<QueueReplicator> BrokerReplicator::startQueueReplicator(
     const boost::shared_ptr<Queue>& queue)
 {
     if (replicationTest.getLevel(*queue) == ALL) {
-        boost::shared_ptr<QueueReplicator> qr;
-        if (TxReplicator::isTxQueue(queue->getName())){
-            qr.reset(new TxReplicator(haBroker, queue, link));
-        }
-        else {
-            qr.reset(new QueueReplicator(haBroker, queue, link));
-        }
-        qr->activate();
-        return qr;
+        if (TxReplicator::isTxQueue(queue->getName())) 
+            return TxReplicator::create(haBroker, queue, link);
+        else
+            return QueueReplicator::create(haBroker, queue, link);
     }
     return boost::shared_ptr<QueueReplicator>();
 }
