@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -287,5 +288,39 @@ public class PortRestTest extends QpidRestTestCase
 
         Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
         assertEquals("Unexpected auth provider", ANONYMOUS_AUTHENTICATION_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
+    }
+
+    public void testDefaultAmqpPortIsQuiescedWhenInManagementMode() throws Exception
+    {
+        // restart Broker in management port
+        stopBroker();
+        startBroker(0, true);
+        getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
+
+        String ampqPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + URLDecoder.decode(ampqPortName, "UTF-8"));
+        Asserts.assertPortAttributes(portData, State.QUIESCED);
+    }
+
+    public void testNewPortQuiescedIfPortNumberWasUsed() throws Exception
+    {
+        String ampqPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
+        Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + URLDecoder.decode(ampqPortName, "UTF-8"));
+        int amqpPort = (Integer)portData.get(Port.PORT);
+
+        int deleteResponseCode = getRestTestHelper().submitRequest("/rest/port/" + ampqPortName, "DELETE", null);
+        assertEquals("Port deletion should be allowed", 200, deleteResponseCode);
+
+        String newPortName = "reused-port";
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, newPortName);
+        attributes.put(Port.PORT, amqpPort);  // reuses port that was previously in use
+        attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+
+        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + newPortName, "PUT", attributes);
+        assertEquals("Unexpected response code for port creation", 201, responseCode);
+
+        portData = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + URLDecoder.decode(newPortName, "UTF-8"));
+        Asserts.assertPortAttributes(portData, State.QUIESCED);
     }
 }
