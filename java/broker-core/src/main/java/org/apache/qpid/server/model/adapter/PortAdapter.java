@@ -311,7 +311,11 @@ public class PortAdapter extends AbstractAdapter implements Port
         {
             if (state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED  || state == State.ERRORED)
             {
-                return _state.compareAndSet(state, State.DELETED);
+                if( _state.compareAndSet(state, State.DELETED))
+                {
+                    onStop();
+                    return true;
+                }
             }
             else
             {
