@@ -256,7 +256,7 @@ class BrokerReplicator::UpdateTracker {
 
   private:
     void clean(const std::string& name) {
-        QPID_LOG(info, "Backup: Deleted " << type << " " << name <<
+        QPID_LOG(debug, "Backup: Deleted " << type << " " << name <<
                  ": no longer exists on primary");
         try { cleanFn(name); }
         catch (const framing::NotFoundException&) {}
@@ -369,7 +369,7 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
     link->getRemoteAddress(primary);
     string queueName = bridge.getQueueName();
 
-    QPID_LOG(info, logPrefix << (initialized ? "Failing over" : "Connecting")
+    QPID_LOG(notice, logPrefix << (initialized ? "Failing over" : "Connecting")
              << " to primary " << primary
              << " status:" << printable(haBroker.getStatus()));
     initialized = true;

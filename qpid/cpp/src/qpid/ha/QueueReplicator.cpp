@@ -240,7 +240,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     }
     qpid::Address primary;
     link->getRemoteAddress(primary);
-    QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
+    QPID_LOG(debug, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
     QPID_LOG(trace, logPrefix << "Subscription arguments: " << arguments);
 }
 

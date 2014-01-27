@@ -105,14 +105,12 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     QueueReplicator::copy(hb.getBroker().getExchanges(), qrs);
     std::for_each(qrs.begin(), qrs.end(), boost::bind(&QueueReplicator::promoted, _1));
 
-    if (expect.empty()) {
-        QPID_LOG(notice, logPrefix << "Promoted to primary. No expected backups.");
-    }
-    else {
+    if (!expect.empty()) {
         // NOTE: RemoteBackups must be created before we set the BrokerObserver
         // or ConnectionObserver so that there is no client activity while
         // the QueueGuards are created.
-        QPID_LOG(notice, logPrefix << "Promoted to primary. Expected backups: " << expect);
+        QPID_LOG(notice, logPrefix << "Promoted and recovering, waiting for backups: "
+                 << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
             boost::shared_ptr<RemoteBackup> backup(new RemoteBackup(*i, 0));
             backups[i->getSystemId()] = backup;
@@ -147,7 +145,7 @@ void Primary::checkReady() {
             activate = active = true;
     }
     if (activate) {
-        QPID_LOG(notice, logPrefix << "Finished waiting for backups, primary is active.");
+        QPID_LOG(notice, logPrefix << "Promoted and active.");
         membership.setStatus(ACTIVE); // Outside of lock.
     }
 }
@@ -419,7 +417,7 @@ void Primary::startTx(const boost::intrusive_ptr<broker::TxBuffer>& txBuffer) {
 }
 
 void Primary::startDtx(const boost::intrusive_ptr<broker::DtxBuffer>& ) {
-    QPID_LOG(notice, "DTX transactions in a HA cluster are not yet atomic");
+    QPID_LOG(warning, "DTX transactions in a HA cluster are not yet atomic");
 }
 
 }} // namespace qpid::ha
