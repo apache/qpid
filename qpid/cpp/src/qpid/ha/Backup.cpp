@@ -71,8 +71,7 @@ void Backup::setBrokerUrl(const Url& brokers) {
             settings.mechanism, settings.username, settings.password,
             false);               // no amq.failover - don't want to use client URL.
         link = result.first;
-        replicator.reset(new BrokerReplicator(haBroker, link));
-        replicator->initialize();
+        replicator = BrokerReplicator::create(haBroker, link);
         broker.getExchanges().registerExchange(replicator);
     }
     link->setUrl(brokers);          // Outside the lock, once set link doesn't change.

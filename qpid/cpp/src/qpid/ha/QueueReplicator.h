@@ -67,13 +67,11 @@ class QueueReplicator : public broker::Exchange,
     /*** Copy QueueReplicators from the registry */
     static void copy(broker::ExchangeRegistry&, Vector& result);
 
-    QueueReplicator(HaBroker&,
-                    boost::shared_ptr<broker::Queue> q,
-                    boost::shared_ptr<broker::Link> l);
+    static boost::shared_ptr<QueueReplicator> create(
+        HaBroker&, boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
 
     ~QueueReplicator();
 
-    void activate();        // Must be called immediately after constructor.
     void disconnect();      // Called when we are disconnected from the primary.
 
     std::string getType() const;
@@ -96,6 +94,11 @@ class QueueReplicator : public broker::Exchange,
   protected:
     typedef boost::function<void(const std::string&, sys::Mutex::ScopedLock&)> DispatchFn;
     typedef qpid::sys::unordered_map<std::string, DispatchFn> DispatchMap;
+
+    QueueReplicator(
+        HaBroker&, boost::shared_ptr<broker::Queue>, boost::shared_ptr<broker::Link>);
+
+    void initialize();          // Called as part of create()
 
     virtual void deliver(const broker::Message&);
     virtual void destroy();             // Called when the queue is destroyed.

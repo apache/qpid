@@ -82,6 +82,14 @@ class PrimaryTxObserver::Exchange : public broker::Exchange {
 
 const string PrimaryTxObserver::Exchange::TYPE_NAME(string(QPID_HA_PREFIX)+"primary-tx-observer");
 
+boost::shared_ptr<PrimaryTxObserver> PrimaryTxObserver::create(
+    Primary& p, HaBroker& hb, const boost::intrusive_ptr<broker::TxBuffer>& tx) {
+    boost::shared_ptr<PrimaryTxObserver> pto(new PrimaryTxObserver(p, hb, tx));
+    pto->initialize();
+    return pto;
+}
+
+
 PrimaryTxObserver::PrimaryTxObserver(
     Primary& p, HaBroker& hb, const boost::intrusive_ptr<broker::TxBuffer>& tx
 ) :

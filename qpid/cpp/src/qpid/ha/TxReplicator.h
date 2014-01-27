@@ -58,7 +58,9 @@ class TxReplicator : public QueueReplicator {
     static bool isTxQueue(const std::string& queue);
     static std::string getTxId(const std::string& queue);
 
-    TxReplicator(HaBroker&, const QueuePtr& txQueue, const LinkPtr& link);
+    static boost::shared_ptr<TxReplicator> create(
+        HaBroker&, const QueuePtr& txQueue, const LinkPtr& link);
+
     ~TxReplicator();
 
     std::string getType() const;
@@ -78,6 +80,7 @@ class TxReplicator : public QueueReplicator {
     typedef qpid::sys::unordered_map<std::string, DispatchFunction> DispatchMap;
     typedef qpid::sys::unordered_map<std::string, ReplicationIdSet> DequeueMap;
 
+    TxReplicator(HaBroker&, const QueuePtr& txQueue, const LinkPtr& link);
     void sendMessage(const broker::Message&, sys::Mutex::ScopedLock&);
     void enqueue(const std::string& data, sys::Mutex::ScopedLock&);
     void dequeue(const std::string& data, sys::Mutex::ScopedLock&);
