@@ -391,14 +391,19 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (uuid_LIB "uuid")
 
   # Check for header file for dtrace static probes
-  check_include_files(sys/sdt.h HAVE_SYS_SDT_H)
-  if (HAVE_SYS_SDT_H)
-  set(probes_default ON)
-  endif (HAVE_SYS_SDT_H)
-  option(BUILD_PROBES "Build with DTrace/systemtap static probes" ${probes_default})
-  if (NOT BUILD_PROBES)
-  set (HAVE_SYS_SDT_H 0)
-  endif (NOT BUILD_PROBES)
+  check_include_files(sys/sdt.h HAVE_SDT)
+  if (HAVE_SDT)
+    # Only enable by default on Linux
+    if (CMAKE_SYSTEM_NAME STREQUAL Linux)
+    set(probes_default ON)
+    endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
+    option(BUILD_PROBES "Build with DTrace/systemtap static probes" "${probes_default}")
+  endif (HAVE_SDT)
+  if (BUILD_PROBES)
+    set (HAVE_SYS_SDT_H 1)
+  else (HAVE_SDT)
+    set (HAVE_SYS_SDT_H 0)
+  endif (BUILD_PROBES)
 
   # Check for poll/epoll header files
   check_include_files(sys/poll.h HAVE_POLL)
