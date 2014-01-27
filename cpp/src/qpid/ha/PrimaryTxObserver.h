@@ -66,11 +66,10 @@ class PrimaryTxObserver : public broker::TransactionObserver,
                           public boost::enable_shared_from_this<PrimaryTxObserver>
 {
   public:
-    PrimaryTxObserver(Primary&, HaBroker&, const boost::intrusive_ptr<broker::TxBuffer>&);
-    ~PrimaryTxObserver();
+    static boost::shared_ptr<PrimaryTxObserver> create(
+        Primary&, HaBroker&, const boost::intrusive_ptr<broker::TxBuffer>&);
 
-    /** Call immediately after constructor, uses shared_from_this. */
-    void initialize();
+    ~PrimaryTxObserver();
 
     void enqueue(const QueuePtr&, const broker::Message&);
     void dequeue(const QueuePtr& queue, QueuePosition, ReplicationId);
@@ -95,6 +94,9 @@ class PrimaryTxObserver : public broker::TransactionObserver,
         PREPARING,              ///< Prepare sent, waiting for response
         ENDED                   ///< Commit or rollback sent, local transaction ended.
     };
+
+    PrimaryTxObserver(Primary&, HaBroker&, const boost::intrusive_ptr<broker::TxBuffer>&);
+    void initialize();
 
     void checkState(State expect, const std::string& msg);
     void end(sys::Mutex::ScopedLock&);

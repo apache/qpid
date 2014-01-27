@@ -70,6 +70,16 @@ string TxReplicator::getTxId(const string& q) {
 
 string TxReplicator::getType() const { return ReplicatingSubscription::QPID_TX_REPLICATOR; }
 
+boost::shared_ptr<TxReplicator> TxReplicator::create(
+    HaBroker& hb,
+    const boost::shared_ptr<broker::Queue>& txQueue,
+    const boost::shared_ptr<broker::Link>& link)
+{
+    boost::shared_ptr<TxReplicator> tr(new TxReplicator(hb, txQueue, link));
+    tr->initialize();
+    return tr;
+}
+
 TxReplicator::TxReplicator(
     HaBroker& hb,
     const boost::shared_ptr<broker::Queue>& txQueue,

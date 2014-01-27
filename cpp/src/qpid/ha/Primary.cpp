@@ -408,9 +408,8 @@ void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards)
 shared_ptr<PrimaryTxObserver> Primary::makeTxObserver(
     const boost::intrusive_ptr<broker::TxBuffer>& txBuffer)
 {
-    shared_ptr<PrimaryTxObserver> observer(
-        new PrimaryTxObserver(*this, haBroker, txBuffer));
-    observer->initialize();
+    shared_ptr<PrimaryTxObserver> observer =
+        PrimaryTxObserver::create(*this, haBroker, txBuffer);
     txMap[observer->getTxQueue()->getName()] = observer;
     return observer;
 }
