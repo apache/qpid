@@ -108,7 +108,7 @@ bool isNone(const std::string& x) { return x.empty() || x == NONE; }
 void HaBroker::initialize() {
     if (settings.cluster) {
         membership.setStatus(JOINING);
-        QPID_LOG(notice, "Initializing HA broker: " << membership.getSelf());
+        QPID_LOG(info, "Initializing HA broker: " << membership.getSelf());
     }
 
     // Set up the management object.

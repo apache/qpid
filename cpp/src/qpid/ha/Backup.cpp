@@ -94,7 +94,6 @@ Role* Backup::recover(Mutex::ScopedLock&) {
         Mutex::ScopedLock l(lock);
         if (stopped) return 0;
         stop(l);                 // Stop backup activity before starting primary.
-        QPID_LOG(notice, "Promoting to primary: " << haBroker.getBrokerInfo());
         // Reset membership before allowing backups to connect.
         backups = membership.otherBackups();
         membership.clear();
