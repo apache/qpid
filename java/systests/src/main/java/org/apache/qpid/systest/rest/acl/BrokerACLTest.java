@@ -281,8 +281,7 @@ public class BrokerACLTest extends QpidRestTestCase
         assertPortExists(portName);
     }
 
-    // TODO:  test disabled until allowing the deletion of active ports outside management mode
-    public void DISABLED_testDeletePortAllowed() throws Exception
+    public void testDeletePortAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
