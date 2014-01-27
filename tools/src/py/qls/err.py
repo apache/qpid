@@ -43,7 +43,7 @@ class AlreadyLockedError(QlsRecordError):
     def __str__(self):
         return 'Transactional operation already locked in TransactionMap: ' + QlsRecordError.__str__(self)
 
-class DatqaSizeError(QlsError):
+class DataSizeError(QlsError):
     """Error class for Data size mismatch"""
     def __init__(self, expected_size, actual_size, data_str):
         QlsError.__init__(self)
@@ -61,6 +61,13 @@ class DuplicateRecordIdError(QlsRecordError):
     def __str__(self):
         return 'Duplicate Record Id in enqueue map: ' + QlsRecordError.__str__(self)
 
+class EnqueueCountUnderflowError(QlsRecordError):
+    """Attempted to decrement enqueue count past 0"""
+    def __init__(self, file_header, record):
+        QlsRecordError.__init__(self, file_header, record)
+    def __str__(self):
+        return 'Enqueue record count underflow: ' + QlsRecordError.__str__(self)
+
 class ExternalDataError(QlsRecordError):
     """Data present in Enqueue record when external data flag is set"""
     def __init__(self, file_header, record):
@@ -75,6 +82,13 @@ class FirstRecordOffsetMismatchError(QlsRecordError):
     def __str__(self):
         return 'First record offset mismatch: ' + QlsRecordError.__str__(self) + ' expected_offset=0x%x' % \
             self.file_header.first_record_offset
+            
+class InvalidClassError(QlsError):
+    """Invalid class name or type"""
+    def __init__(self, class_name):
+        self.class_name = class_name
+    def __str__(self):
+        return 'Invalid class name "%s"' % self.class_name
 
 class InvalidEfpDirectoryNameError(QlsError):
     """Invalid EFP directory name - should be NNNNk, where NNNN is a number (of any length)"""
