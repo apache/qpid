@@ -300,7 +300,7 @@ target_link_libraries (msg_group_test qpidmessaging qpidtypes qpidcommon "${Boos
 remember_location(msg_group_test)
 
 add_executable (ha_test_max_queues ha_test_max_queues.cpp ${platform_test_additions})
-target_link_libraries (ha_test_max_queues qpidmessaging qpidtypes qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+target_link_libraries (ha_test_max_queues qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 remember_location(ha_test_max_queues)
 
 if (BUILD_SASL)
