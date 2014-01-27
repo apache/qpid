@@ -36,8 +36,9 @@ class QqpdLinearStoreAnalyzer(object):
     def __init__(self):
         self.args = None
         self._process_args()
-        self.efp_manager = efp.EfpManager(self.args.qls_dir)
-        self.jrnl_recovery_mgr = jrnl.JournalRecoveryManager(self.args.qls_dir)
+        self.qls_dir = os.path.abspath(self.args.qls_dir)
+        self.efp_manager = efp.EfpManager(self.qls_dir)
+        self.jrnl_recovery_mgr = jrnl.JournalRecoveryManager(self.qls_dir)
     def _analyze_efp(self):
         self.efp_manager.run(self.args)
     def _analyze_journals(self):

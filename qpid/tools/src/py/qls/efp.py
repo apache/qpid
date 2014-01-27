@@ -40,7 +40,7 @@ class EfpManager(object):
             print
             for ptn in self.partitions:
                 ptn.report()
-    def run(self, args):
+    def run(self, _):
         for dir_entry in os.listdir(self.directory):
             try:
                 efpp = EfpPartition(os.path.join(self.directory, dir_entry))
