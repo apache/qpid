@@ -633,7 +633,7 @@ if not list_only:
 if xmlr:
    xmlr.end()
 
-if failed or skipped:
+if failed:
   sys.exit(1)
 else:
   sys.exit(0)
