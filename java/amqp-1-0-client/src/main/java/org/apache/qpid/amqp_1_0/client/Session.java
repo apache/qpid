@@ -345,7 +345,7 @@ public class Session
     }
 
 
-    public Transaction createSessionLocalTransaction()
+    public Transaction createSessionLocalTransaction() throws LinkDetachedException
     {
         TransactionController localController = getSessionLocalTransactionController();
         return localController.beginTransaction();
