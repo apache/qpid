@@ -66,7 +66,7 @@ public class ConflationQueueListTest extends TestCase
         ServerMessage message = createTestServerMessage(null);
 
         QueueEntry addedEntry = _list.add(message);
-        addedEntry.discard();
+        addedEntry.delete();
 
         int numberOfEntries = countEntries(_list);
         assertEquals(0, numberOfEntries);
@@ -86,7 +86,7 @@ public class ConflationQueueListTest extends TestCase
         ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
         QueueEntry addedEntry = _list.add(message);
-        addedEntry.discard();
+        addedEntry.delete();
 
         int numberOfEntries = countEntries(_list);
         assertEquals(0, numberOfEntries);
@@ -146,7 +146,7 @@ public class ConflationQueueListTest extends TestCase
         assertEquals(1, countEntries(_list));
         assertEquals(1, _list.getLatestValuesMap().size());
 
-        addedEntry.discard();
+        addedEntry.delete();
 
         assertEquals(0, countEntries(_list));
         assertEquals(0, _list.getLatestValuesMap().size());
@@ -166,8 +166,8 @@ public class ConflationQueueListTest extends TestCase
         assertEquals(2, countEntries(_list));
         assertEquals(2, _list.getLatestValuesMap().size());
 
-        addedEntry1.discard();
-        addedEntry2.discard();
+        addedEntry1.delete();
+        addedEntry2.delete();
 
         assertEquals(0, countEntries(_list));
         assertEquals(0, _list.getLatestValuesMap().size());

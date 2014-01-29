@@ -375,7 +375,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         }
         catch(IllegalConfigurationException e)
         {
-            assertEquals("Unkown type for configured object: Wibble", e.getMessage());
+            assertEquals("Unknown type for configured object: Wibble", e.getMessage());
         }
 
 

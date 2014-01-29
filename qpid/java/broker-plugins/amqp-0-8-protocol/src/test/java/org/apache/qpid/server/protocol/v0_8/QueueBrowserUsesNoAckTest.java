@@ -95,7 +95,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         //Check store is empty
         checkStoreContents(0);
 
-        //Send required messsages to the queue
+        //Send required messages to the queue
         BrokerTestHelper_0_8.publishMessages(getChannel(),
                 sendMessageCount,
                 _queueName,
@@ -124,7 +124,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
                 getSession().getDelivers(getChannel().getChannelId(), browser,
                                      prefetch);
 
-        //Ensure we recevied the prefetched messages
+        //Ensure we received the prefetched messages
         assertEquals(prefetch, messages.size());
 
         //Check the process didn't suspend the subscription as this would

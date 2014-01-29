@@ -203,14 +203,14 @@ public abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
-    protected void attributeSet(String attrinuteName, Object oldAttributeValue, Object newAttributeValue)
+    protected void attributeSet(String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
         synchronized (_changeListeners)
         {
             List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
             for(ConfigurationChangeListener listener : copy)
             {
-                listener.attributeSet(this, attrinuteName, oldAttributeValue, newAttributeValue);
+                listener.attributeSet(this, attributeName, oldAttributeValue, newAttributeValue);
             }
         }
     }
@@ -278,7 +278,7 @@ public abstract class AbstractAdapter implements ConfiguredObject
             if((currentValue == null && expected == null)
                || (currentValue != null && currentValue.equals(expected)))
             {
-                //TODO: dont put nulls
+                //TODO: don't put nulls
                 _attributes.put(name, desired);
                 return true;
             }

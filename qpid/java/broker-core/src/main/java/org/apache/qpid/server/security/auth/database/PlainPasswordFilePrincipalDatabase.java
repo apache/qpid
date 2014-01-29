@@ -86,7 +86,7 @@ public class PlainPasswordFilePrincipalDatabase extends AbstractPasswordFilePrin
         
         if (pwd == null)
         {
-            throw new AccountNotFoundException("Unable to lookup the specfied users password");
+            throw new AccountNotFoundException("Unable to lookup the specified users password");
         }
 
         return compareCharArray(pwd, password);

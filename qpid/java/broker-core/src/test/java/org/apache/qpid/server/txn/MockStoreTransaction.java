@@ -22,7 +22,7 @@ package org.apache.qpid.server.txn;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.NullMessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -60,7 +60,7 @@ class MockStoreTransaction implements Transaction
         return _state;
     }
 
-    public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+    public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
     {
         if (_throwExceptionOnQueueOp)
         {
@@ -81,7 +81,7 @@ class MockStoreTransaction implements Transaction
         return _numberOfEnqueuedMessages;
     }
 
-    public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+    public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
     {
         if (_throwExceptionOnQueueOp)
         {

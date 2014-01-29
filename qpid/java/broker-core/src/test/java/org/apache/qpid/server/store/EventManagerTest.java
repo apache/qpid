@@ -45,7 +45,7 @@ public class EventManagerTest extends TestCase
         verifyZeroInteractions(_mockListener);
     }
 
-    public void testEventListenerFiresMulitpleTimes()
+    public void testEventListenerFiresMultipleTimes()
     {
         _eventManager.addEventListener(_mockListener, BEFORE_ACTIVATE);
         _eventManager.addEventListener(_mockListener, AFTER_ACTIVATE);

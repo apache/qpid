@@ -37,7 +37,7 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
@@ -549,7 +549,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     }
 
     @SuppressWarnings("rawtypes")
-    private static class MockMessage implements ServerMessage, EnqueableMessage
+    private static class MockMessage implements ServerMessage, EnqueueableMessage
     {
         private long _messageId;
 

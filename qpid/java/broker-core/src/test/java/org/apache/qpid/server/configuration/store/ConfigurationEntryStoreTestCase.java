@@ -203,9 +203,9 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         assertNotNull("Root entry does not exist", newBrokerConfigEntry);
         assertEquals("Unexpected id", _brokerId, newBrokerConfigEntry.getId());
         assertEquals("Unexpected type ", Broker.class.getSimpleName(), newBrokerConfigEntry.getType());
-        Map<String, Object> newBrokerattributes = newBrokerConfigEntry.getAttributes();
-        assertNotNull("Attributes cannot be null", newBrokerattributes);
-        assertEquals("Unexpected attributes", attributes, newBrokerattributes);
+        Map<String, Object> newBrokerAttributes = newBrokerConfigEntry.getAttributes();
+        assertNotNull("Attributes cannot be null", newBrokerAttributes);
+        assertEquals("Unexpected attributes", attributes, newBrokerAttributes);
     }
 
     public void testSaveNewVirtualHost()
@@ -411,8 +411,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         assertEquals("Unexpected preference provider ID in authentication provider children set", preferencesProviderId, _store
                 .getEntry(_authenticationProviderId).getChildrenIds().iterator().next());
         ConfigurationEntry preferencesProviderEntry = _store.getEntry(preferencesProviderId);
-        assertNotNull("Preferences providert is not found", preferencesProviderEntry);
-        assertEquals("Unexpected preferences providert id", preferencesProviderId, preferencesProviderEntry.getId());
+        assertNotNull("Preferences provider is not found", preferencesProviderEntry);
+        assertEquals("Unexpected preferences provider id", preferencesProviderId, preferencesProviderEntry.getId());
         Map<String, Object> attributes = preferencesProviderEntry.getAttributes();
         assertEquals("Unexpected preferences provider name", name, attributes.get(PreferencesProvider.NAME));
         assertEquals("Unexpected preferences provider path", path, attributes.get(FileSystemPreferencesProvider.PATH));

@@ -143,7 +143,7 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     List<Long> getMessagesOnTheQueue(int num);
 
-    List<Long> getMessagesOnTheQueue(int num, int offest);
+    List<Long> getMessagesOnTheQueue(int num, int offset);
 
     QueueEntry getMessageOnTheQueue(long messageId);
 

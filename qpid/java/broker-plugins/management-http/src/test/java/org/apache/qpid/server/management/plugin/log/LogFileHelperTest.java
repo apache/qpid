@@ -214,9 +214,9 @@ public class LogFileHelperTest extends QpidTestCase
             {
                 assertEquals("Unexpected mime type", LogFileHelper.TEXT_MIME_TYPE, d.getMimeType());
             }
-            assertEquals("Unexpecte file location", files[j], d.getLocation());
-            assertEquals("Unexpecte file size", files[j].length(), d.getSize());
-            assertEquals("Unexpecte file last modified date", files[j].lastModified(), d.getLastModified());
+            assertEquals("Unexpected file location", files[j], d.getLocation());
+            assertEquals("Unexpected file size", files[j].length(), d.getSize());
+            assertEquals("Unexpected file last modified date", files[j].lastModified(), d.getLastModified());
         }
         assertTrue("Gzip log file is not found", gzipFileFound);
     }
@@ -235,13 +235,13 @@ public class LogFileHelperTest extends QpidTestCase
         assertTrue("No details should be created for non-existing file", details.isEmpty());
     }
 
-    public void testFindLogFileDetailsForIncorectlySpecifiedLogFilePath()
+    public void testFindLogFileDetailsForIncorrectlySpecifiedLogFilePath()
     {
         String[] logFileDisplayedPaths = { "FileAppender\\" + _appendersFiles.get("FileAppender").get(0).getName() };
         try
         {
             _helper.findLogFileDetails(logFileDisplayedPaths);
-            fail("Exception is expected for incorectly set path to log file");
+            fail("Exception is expected for incorrectly set path to log file");
         }
         catch (IllegalArgumentException e)
         {

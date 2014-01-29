@@ -55,7 +55,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * Test that when logging on behalf of the channel
      * The test sends a message then verifies that it entered the logs.
      *
-     * The log message should be fully repalaced (no '{n}' values) and should
+     * The log message should be fully replaced (no '{n}' values) and should
      * contain the channel id ('/ch:1') identification.
      */
     public void testChannel() throws Exception

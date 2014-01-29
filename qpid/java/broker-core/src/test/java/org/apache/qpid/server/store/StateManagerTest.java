@@ -99,7 +99,7 @@ public class StateManagerTest extends TestCase implements EventListener
     {
         assertEquals(State.INITIAL, _manager.getState());
         performValidTransition(StateManager.INITIALISE);
-        performValidTransition(StateManager.INITALISE_COMPLETE);
+        performValidTransition(StateManager.INITIALISE_COMPLETE);
         performValidTransition(StateManager.ACTIVATE);
         performValidTransition(StateManager.ACTIVATE_COMPLETE);
         performValidTransition(StateManager.QUIESCE);
@@ -112,13 +112,13 @@ public class StateManagerTest extends TestCase implements EventListener
         _manager = new StateManager(this);
         assertEquals(State.INITIAL, _manager.getState());
         performValidTransition(StateManager.INITIALISE);
-        performValidTransition(StateManager.INITALISE_COMPLETE);
+        performValidTransition(StateManager.INITIALISE_COMPLETE);
         performValidTransition(StateManager.CLOSE_INITIALISED);
         performValidTransition(StateManager.CLOSE_COMPLETE);
         
         _manager  = new StateManager(this);
         performValidTransition(StateManager.INITIALISE);
-        performValidTransition(StateManager.INITALISE_COMPLETE);
+        performValidTransition(StateManager.INITIALISE_COMPLETE);
         performValidTransition(StateManager.ACTIVATE);
         performValidTransition(StateManager.ACTIVATE_COMPLETE);
         performValidTransition(StateManager.QUIESCE);
@@ -140,7 +140,7 @@ public class StateManagerTest extends TestCase implements EventListener
         assertEquals(State.INITIAL, _manager.getState());
 
         performInvalidTransitions(StateManager.INITIALISE, State.INITIALISED);
-        performInvalidTransitions(StateManager.INITALISE_COMPLETE, State.ACTIVATING, State.CLOSING);
+        performInvalidTransitions(StateManager.INITIALISE_COMPLETE, State.ACTIVATING, State.CLOSING);
         performInvalidTransitions(StateManager.ACTIVATE, State.ACTIVE, State.CLOSING);
         performInvalidTransitions(StateManager.ACTIVATE_COMPLETE, State.QUIESCING, State.CLOSING, State.INITIALISED);
         performInvalidTransitions(StateManager.QUIESCE, State.QUIESCED);

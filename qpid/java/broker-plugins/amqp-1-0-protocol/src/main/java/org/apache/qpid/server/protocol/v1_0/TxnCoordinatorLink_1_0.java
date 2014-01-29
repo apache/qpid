@@ -104,7 +104,7 @@ public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
         }
 
 
-        // Only interested int he amqp-value section that holds the message to the co-ordinator
+        // Only interested int he amqp-value section that holds the message to the coordinator
         try
         {
             List<Section> sections = _sectionDecoder.parseAll(payload);
@@ -182,7 +182,7 @@ public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
         {
             error = new Error();
             error.setCondition(AmqpError.NOT_FOUND);
-            error.setDescription("Unkown transactionId" + transactionId);
+            error.setDescription("Unknown transactionId" + transactionId);
         }
         return error;
     }

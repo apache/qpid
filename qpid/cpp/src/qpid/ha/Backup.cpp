@@ -30,7 +30,6 @@
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/SessionHandler.h"
 #include "qpid/broker/Link.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/AMQFrame.h"
@@ -72,8 +71,7 @@ void Backup::setBrokerUrl(const Url& brokers) {
             settings.mechanism, settings.username, settings.password,
             false);               // no amq.failover - don't want to use client URL.
         link = result.first;
-        replicator.reset(new BrokerReplicator(haBroker, link));
-        replicator->initialize();
+        replicator = BrokerReplicator::create(haBroker, link);
         broker.getExchanges().registerExchange(replicator);
     }
     link->setUrl(brokers);          // Outside the lock, once set link doesn't change.
@@ -96,7 +94,6 @@ Role* Backup::recover(Mutex::ScopedLock&) {
         Mutex::ScopedLock l(lock);
         if (stopped) return 0;
         stop(l);                 // Stop backup activity before starting primary.
-        QPID_LOG(notice, "Promoting to primary: " << haBroker.getBrokerInfo());
         // Reset membership before allowing backups to connect.
         backups = membership.otherBackups();
         membership.clear();

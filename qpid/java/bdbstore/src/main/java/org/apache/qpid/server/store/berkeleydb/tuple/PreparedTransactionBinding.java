@@ -26,7 +26,7 @@ import java.util.UUID;
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -81,7 +81,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
         }
     }
 
-    private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueableMessage
+    private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueueableMessage
     {
 
         private long _messageNumber;
@@ -98,7 +98,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
             return this;
         }
 
-        public EnqueableMessage getMessage()
+        public EnqueueableMessage getMessage()
         {
             return this;
         }

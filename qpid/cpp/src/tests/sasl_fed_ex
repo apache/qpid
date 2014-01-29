@@ -75,7 +75,7 @@ create_certs() {
     #create certificate and key databases with single, simple, self-signed certificate in it
     mkdir ${CERT_DIR}
     certutil -N -d ${CERT_DIR} -f ${CERT_PW_FILE}
-    certutil -S -d ${CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil 2> /dev/null
+    certutil -S -d ${CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /bin/sh 2> /dev/null
 }
 
 delete_certs() {

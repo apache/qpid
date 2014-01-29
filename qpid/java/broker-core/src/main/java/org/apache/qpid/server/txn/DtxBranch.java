@@ -29,7 +29,7 @@ import java.util.concurrent.ScheduledFuture;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageStore;
@@ -350,19 +350,19 @@ public class DtxBranch
     }
 
 
-    public void addPostTransactionAcion(ServerTransaction.Action postTransactionAction)
+    public void addPostTransactionAction(ServerTransaction.Action postTransactionAction)
     {
         _postTransactionActions.add(postTransactionAction);
     }
 
 
-    public void dequeue(BaseQueue queue, EnqueableMessage message)
+    public void dequeue(BaseQueue queue, EnqueueableMessage message)
     {
         _dequeueRecords.add(new Record(queue, message));
     }
 
 
-    public void enqueue(BaseQueue queue, EnqueableMessage message)
+    public void enqueue(BaseQueue queue, EnqueueableMessage message)
     {
         _enqueueRecords.add(new Record(queue, message));
     }
@@ -370,9 +370,9 @@ public class DtxBranch
     private static final class Record implements Transaction.Record
     {
         private final BaseQueue _queue;
-        private final EnqueableMessage _message;
+        private final EnqueueableMessage _message;
 
-        public Record(BaseQueue queue, EnqueableMessage message)
+        public Record(BaseQueue queue, EnqueueableMessage message)
         {
             _queue = queue;
             _message = message;
@@ -383,7 +383,7 @@ public class DtxBranch
             return _queue;
         }
 
-        public EnqueableMessage getMessage()
+        public EnqueueableMessage getMessage()
         {
             return _message;
         }

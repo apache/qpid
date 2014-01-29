@@ -45,7 +45,7 @@ import org.apache.qpid.server.util.BrokerTestHelper;
  * successfully removed.
  *
  * By having a higher number of threads than would normally be used in the
- * Poolling filter we aim to catch the race condition where a ThreadLocal remove
+ * Pooling filter we aim to catch the race condition where a ThreadLocal remove
  * is called before one or more threads call get(). This way we can ensure that
  * the remove does not affect more than the Thread it was called in.
  */
@@ -188,7 +188,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
             if (threads[count].getException() != null)
             {
                 threads[count].getException().printStackTrace();
-                fail("Error occured in thread:" + count + "("+threads[count].getException()+")");
+                fail("Error occurred in thread:" + count + "("+threads[count].getException()+")");
             }
         }
     }
@@ -210,7 +210,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
 
             // Create a new actor using retrieving the rootMessageLogger from
             // the default ApplicationRegistry.
-            //fixme reminder that we need a better approach for broker testing.
+            //TODO reminder that we need a better approach for broker testing.
             try
             {
                 LogActor defaultActor = CurrentActor.get();

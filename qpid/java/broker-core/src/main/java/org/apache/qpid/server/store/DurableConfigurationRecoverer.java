@@ -86,7 +86,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         DurableConfiguredObjectRecoverer recoverer = getRecoverer(type);
         if(recoverer == null)
         {
-            throw new IllegalConfigurationException("Unkown type for configured object: " + type);
+            throw new IllegalConfigurationException("Unknown type for configured object: " + type);
         }
         recoverer.load(this, id, attributes);
     }

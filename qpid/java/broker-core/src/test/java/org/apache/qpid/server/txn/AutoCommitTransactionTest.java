@@ -361,7 +361,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
     }
     
     /** 
-     * Tests the add of a post-commit action.  Since AutoCommitTranctions
+     * Tests the add of a post-commit action.  Since AutoCommitTransactions
      * have no long lived transactions, the post commit action is fired immediately.
      */
     public void testPostCommitActionFiredImmediately() throws Exception

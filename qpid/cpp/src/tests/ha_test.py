@@ -121,7 +121,7 @@ class HaBroker(Broker):
     @param client_cred: (user, password, mechanism) for admin clients started by the HaBroker.
     """
 
-    heartbeat=2
+    heartbeat=5
 
     def __init__(self, test, ha_port=None, args=[], brokers_url=None, ha_cluster=True,
                  ha_replicate="all", client_credentials=None, **kwargs):
@@ -129,8 +129,6 @@ class HaBroker(Broker):
         ha_port = ha_port or HaPort(test)
         args = copy(args)
         args += ["--load-module", BrokerTest.ha_lib,
-                 "--log-enable=info+",
-                 "--log-enable=debug+:ha::",
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
@@ -138,6 +136,9 @@ class HaBroker(Broker):
                  "--link-heartbeat-interval=%s"%(HaBroker.heartbeat),
                  "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
+        # Add default --log-enable arguments unless args already has --log arguments.
+        if not next((l for l in args if l.startswith("--log")), None):
+            args += ["--log-enable=info+", "--log-enable=debug+:ha::"]
         if ha_replicate is not None:
             args += [ "--ha-replicate=%s"%ha_replicate ]
         if brokers_url: args += [ "--ha-brokers-url", brokers_url ]

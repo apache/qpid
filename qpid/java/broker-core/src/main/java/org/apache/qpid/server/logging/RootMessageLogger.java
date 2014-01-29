@@ -65,10 +65,10 @@ public interface RootMessageLogger
 
     /**
      * Log the raw message to the configured logger.
-     * Along with a formated stack trace from the Throwable.
+     * Along with a formatted stack trace from the Throwable.
      *
      * @param message   The message to log
-     * @param throwable Optional Throwable that should provide stact trace
+     * @param throwable Optional Throwable that should provide stack trace
      * @param logHierarchy The log hierarchy for this request
      */
     void rawMessage(String message, Throwable throwable, String logHierarchy);

@@ -202,12 +202,12 @@ public class LogFileHelper
             String name = file.getName();
             if (name.startsWith(baseFileName))
             {
-                String diplayPath = name;
+                String displayPath = name;
                 if (!relativePath.equals(""))
                 {
-                    diplayPath = relativePath + name;
+                    displayPath = relativePath + name;
                 }
-                files.add(new LogFileDetails(diplayPath, appenderName, includeLogFileLocation ? file : null, getMimeType(name), file.length(),
+                files.add(new LogFileDetails(displayPath, appenderName, includeLogFileLocation ? file : null, getMimeType(name), file.length(),
                         file.lastModified()));
             }
         }

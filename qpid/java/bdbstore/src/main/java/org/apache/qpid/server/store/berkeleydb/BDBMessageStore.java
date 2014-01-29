@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.*;
@@ -1523,7 +1523,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
 
-        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
         {
             if(message.getStoredMessage() instanceof StoredBDBMessage)
             {
@@ -1535,7 +1535,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             BDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
         }
 
-        public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
         {
             BDBMessageStore.this.dequeueMessage(_txn, queue, message.getMessageNumber());
         }

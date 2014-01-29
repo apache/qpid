@@ -73,6 +73,8 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.protocol.v0_8.handler.ServerMethodDispatcherImpl;
@@ -88,7 +90,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverterRegistry;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -348,7 +349,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      * Process the data block.
      * If the message is for a channel it is added to {@link #_channelsForCurrentMessage}.
      *
-     * @throws an AMQConnectionException if unable to process the data block. In this case,
+     * @throws AMQConnectionException if unable to process the data block. In this case,
      * the connection is already closed by the time the exception is thrown. If any other
      * type of exception is thrown, the connection is not already closed.
      */
@@ -376,7 +377,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      * Handle the supplied frame.
      * Adds this frame's channel to {@link #_channelsForCurrentMessage}.
      *
-     * @throws an AMQConnectionException if unable to process the data block. In this case,
+     * @throws AMQConnectionException if unable to process the data block. In this case,
      * the connection is already closed by the time the exception is thrown. If any other
      * type of exception is thrown, the connection is not already closed.
      */
@@ -386,7 +387,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         AMQChannel amqChannel = _channelMap.get(channelId);
         if(amqChannel != null)
         {
-            // The _receivedLock is already aquired in the caller
+            // The _receivedLock is already acquired in the caller
             // It is safe to add channel
             _channelsForCurrentMessage.add(amqChannel);
         }
@@ -476,7 +477,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         (_codecFactory.getDecoder()).setExpectProtocolInitiation(false);
         try
         {
-            // Log incomming protocol negotiation request
+            // Log incoming protocol negotiation request
             _actor.message(ConnectionMessages.OPEN(null, pi.getProtocolMajor() + "-" + pi.getProtocolMinor(), null, null, false, true, false, false));
 
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
@@ -607,7 +608,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 {
                     if (_logger.isDebugEnabled())
                     {
-                        _logger.debug("ChannelException occured on non-existent channel:" + e.getMessage());
+                        _logger.debug("ChannelException occurred on non-existent channel:" + e.getMessage());
                     }
 
                     if (_logger.isInfoEnabled())
@@ -850,14 +851,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public void closeChannelOk(int channelId)
     {
-        // todo QPID-847 - This is called from two lcoations ChannelCloseHandler and ChannelCloseOkHandler.
-        // When it is the CC_OK_Handler then it makes sence to remove the channel else we will leak memory.
+        // todo QPID-847 - This is called from two locations ChannelCloseHandler and ChannelCloseOkHandler.
+        // When it is the CC_OK_Handler then it makes sense to remove the channel else we will leak memory.
         // We do it from the Close Handler as we are sending the OK back to the client.
         // While this is AMQP spec compliant. The Java client in the event of an IllegalArgumentException
         // will send a close-ok.. Where we should call removeChannel.
         // However, due to the poor exception handling on the client. The client-user will be notified of the
         // InvalidArgument and if they then decide to close the session/connection then the there will be time
-        // for that to occur i.e. a new close method be sent before the exeption handling can mark the session closed.
+        // for that to occur i.e. a new close method be sent before the exception handling can mark the session closed.
 
         _closingChannelsList.remove(channelId);
     }
@@ -1667,12 +1668,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             _channelId = channelId;
         }
 
-        public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+        @Override
+        public void deliverToClient(final Subscription sub, final ServerMessage message,
+                                    final InstanceProperties props, final long deliveryTag)
                 throws AMQException
         {
-            registerMessageDelivered(entry.getMessage().getSize());
-            _protocolOutputConverter.writeDeliver(entry, _channelId, deliveryTag, ((SubscriptionImpl)sub).getConsumerTag());
-            entry.incrementDeliveryCount();
+            registerMessageDelivered(message.getSize());
+            _protocolOutputConverter.writeDeliver(message,
+                                                  props,
+                                                  _channelId,
+                                                  deliveryTag,
+                                                  ((SubscriptionImpl)sub).getConsumerTag());
         }
 
     }

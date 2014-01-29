@@ -58,9 +58,9 @@ public class VirtualHostTest extends QpidTestCase
         CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
 
         _broker = BrokerTestHelper.createBrokerMock();
-        TaskExecutor taslExecutor = mock(TaskExecutor.class);
-        when(taslExecutor.isTaskExecutorThread()).thenReturn(true);
-        when(_broker.getTaskExecutor()).thenReturn(taslExecutor);
+        TaskExecutor taskExecutor = mock(TaskExecutor.class);
+        when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
+        when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
 
         _recovererProvider = mock(RecovererProvider.class);
         _statisticsGatherer = mock(StatisticsGatherer.class);
@@ -131,7 +131,7 @@ public class VirtualHostTest extends QpidTestCase
         assertEquals("Unexpected state", State.DELETED, host.getAttribute(VirtualHost.STATE));
     }
 
-    public void testCreateQueueChildHavingMessageGrouppingAttributes()
+    public void testCreateQueueChildHavingMessageGroupingAttributes()
     {
         VirtualHost host = createHost();
         host.setDesiredState(State.INITIALISING, State.ACTIVE);

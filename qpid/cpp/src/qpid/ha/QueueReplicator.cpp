@@ -34,7 +34,6 @@
 #include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/SessionHandler.h"
-#include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Msg.h"
@@ -109,6 +108,14 @@ class QueueReplicator::QueueObserver : public broker::QueueObserver {
     boost::shared_ptr<QueueReplicator> queueReplicator;
 };
 
+boost::shared_ptr<QueueReplicator> QueueReplicator::create(
+    HaBroker& hb, boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l)
+{
+    boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(hb, q, l));
+    qr->initialize();
+    return qr;
+}
+
 QueueReplicator::QueueReplicator(HaBroker& hb,
                                  boost::shared_ptr<Queue> q,
                                  boost::shared_ptr<Link> l)
@@ -145,9 +152,7 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
 
 QueueReplicator::~QueueReplicator() {}
 
-// This must be called immediately after the constructor.
-// It has to be separate so we can call shared_from_this().
-void QueueReplicator::activate() {
+void QueueReplicator::initialize() {
     Mutex::ScopedLock l(lock);
     QPID_LOG(debug, logPrefix << "Created");
     if (!queue) return;         // Already destroyed
@@ -235,7 +240,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     }
     qpid::Address primary;
     link->getRemoteAddress(primary);
-    QPID_LOG(info, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
+    QPID_LOG(debug, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
     QPID_LOG(trace, logPrefix << "Subscription arguments: " << arguments);
 }
 

@@ -100,7 +100,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         assertEquals("Unexpected root entry", brokerId, root.getId());
         Map<String, Object> attributes = root.getAttributes();
         assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 1, attributes.size());
+        assertEquals("Unexpected number of attributes", 1, attributes.size());
         assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
     }
 

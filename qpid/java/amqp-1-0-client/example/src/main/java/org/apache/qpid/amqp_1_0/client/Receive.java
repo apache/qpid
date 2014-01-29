@@ -230,6 +230,10 @@ public class Receive extends Util
         {
             e.printStackTrace();  //TODO.
         }
+        catch (LinkDetachedException e)
+        {
+            e.printStackTrace();
+        }
 
     }
 

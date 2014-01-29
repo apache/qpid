@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 
@@ -56,27 +57,12 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public boolean delete()
-    {
-        return false;
-    }
-
-    public void dequeue()
-    {
-
-    }
-
-    public void discard()
+    public void delete()
     {
 
     }
 
     public void routeToAlternate()
-    {
-
-    }
-
-    public void dispose()
     {
 
     }
@@ -121,11 +107,6 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public boolean isDeleted()
-    {
-        return false;
-    }
-
 
     public boolean isQueueDeleted()
     {
@@ -161,26 +142,6 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-
-    public void requeue()
-    {
-
-
-    }
-
-    public void requeue(Subscription subscription)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-
-    public void setDeliveredToSubscription()
-    {
-
-
-    }
-
-
     public void setRedelivered()
     {
 
@@ -213,12 +174,7 @@ public class MockQueueEntry implements QueueEntry
         _message = msg;
     }
 
-    public boolean isDequeued()
-    {
-        return false;
-    }
-
-    public boolean isDispensed()
+    public boolean isDeleted()
     {
         return false;
     }
@@ -252,6 +208,12 @@ public class MockQueueEntry implements QueueEntry
     @Override
     public Filterable asFilterable()
     {
-        return Filterable.Factory.newInstance(_message, new QueueEntryInstanceProperties(this));
+        return Filterable.Factory.newInstance(_message, getInstanceProperties());
+    }
+
+    @Override
+    public InstanceProperties getInstanceProperties()
+    {
+        return InstanceProperties.EMPTY;
     }
 }

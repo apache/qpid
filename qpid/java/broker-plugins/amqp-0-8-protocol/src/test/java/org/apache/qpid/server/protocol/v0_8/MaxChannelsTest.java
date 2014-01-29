@@ -60,7 +60,7 @@ public class MaxChannelsTest extends QpidTestCase
         }
         catch (AMQException e)
         {
-            assertEquals("Wrong exception recevied.", e.getErrorCode(), AMQConstant.NOT_ALLOWED);
+            assertEquals("Wrong exception received.", e.getErrorCode(), AMQConstant.NOT_ALLOWED);
         }
         assertEquals("Maximum number of channels not set.", new Long(maxChannels), new Long(_session.getChannels().size()));
     }

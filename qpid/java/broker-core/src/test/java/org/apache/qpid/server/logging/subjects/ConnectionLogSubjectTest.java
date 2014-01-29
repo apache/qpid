@@ -54,7 +54,7 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
     /**
      * MESSAGE [Blank][con:0(MockProtocolSessionUser@null/test)] <Log Message>
      *
-     * @param message the message whos format needs validation
+     * @param message the message whose format needs validation
      */
     protected void validateLogStatement(String message)
     {

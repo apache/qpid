@@ -148,14 +148,12 @@ class
 
     public boolean hasInterest(final QueueEntry entry)
     {
-        if(entry.getMessage() instanceof Message_1_0)
+        if(_noLocal && entry.getMessage().getConnectionReference() == getSession().getConnection().getReference())
         {
-            if(_noLocal && ((Message_1_0)entry.getMessage()).getConnectionReference() == getSession().getConnection().getReference())
-            {
-                return false;
-            }
+            return false;
         }
-        else if(MessageConverterRegistry.getConverter(entry.getMessage().getClass(), Message_1_0.class)==null)
+        else if(!(entry.getMessage() instanceof Message_1_0)
+                && MessageConverterRegistry.getConverter(entry.getMessage().getClass(), Message_1_0.class)==null)
         {
             return false;
         }
@@ -537,7 +535,7 @@ class
                             {
                                 if(_queueEntry.isAcquiredBy(Subscription_1_0.this))
                                 {
-                                    _queueEntry.discard();
+                                    _queueEntry.delete();
                                 }
                             }
 

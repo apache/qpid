@@ -79,12 +79,12 @@ public interface ConfiguredObject
      * Change the desired state of the object
      *
      * Request a change to the current state. The caller must pass in the state it believe the object to be in, if
-     * this differs from the current desired state when the object evalues the request, then no state change will occur.
+     * this differs from the current desired state when the object evaluates the request, then no state change will occur.
      *
      * @param currentState the state the caller believes the object to be in
      * @param desiredState the state the caller wishes the object to attain
      * @return the new current state
-     * @throws IllegalStateTransitionException  the requested state tranisition is invalid
+     * @throws IllegalStateTransitionException  the requested state transition is invalid
      * @throws AccessControlException the current context does not have sufficient permissions to change the state
      */
     State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,

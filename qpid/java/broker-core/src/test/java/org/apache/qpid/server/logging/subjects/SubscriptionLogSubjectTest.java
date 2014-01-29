@@ -71,7 +71,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
      * Validate that the logged Subject  message is as expected:
      * MESSAGE [Blank][sub:0(vh(/test)/qu(SubscriptionLogSubjectTest))] <Log Message>
      *
-     * @param message the message whos format needs validation
+     * @param message the message whose format needs validation
      */
     @Override
     protected void validateLogStatement(String message)

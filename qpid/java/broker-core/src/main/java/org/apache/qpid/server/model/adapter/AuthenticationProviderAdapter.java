@@ -549,8 +549,8 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 if(createUser(username, password,null))
                 {
                     @SuppressWarnings("unchecked")
-                    C pricipalAdapter = (C) new PrincipalAdapter(p);
-                    return pricipalAdapter;
+                    C principalAdapter = (C) new PrincipalAdapter(p);
+                    return principalAdapter;
                 }
                 else
                 {

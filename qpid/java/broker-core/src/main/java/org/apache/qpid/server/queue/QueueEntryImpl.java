@@ -25,13 +25,14 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -77,16 +78,13 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     private volatile long _entryId;
 
-    private static final int DELIVERED_TO_CONSUMER = 1;
-    private static final int REDELIVERED = 2;
-
-    private volatile int _deliveryState;
+    private final EntryInstanceProperties _instanceProperties = new EntryInstanceProperties();
 
     /** Number of times this message has been delivered */
     private volatile int _deliveryCount = 0;
     private static final AtomicIntegerFieldUpdater<QueueEntryImpl> _deliveryCountUpdater = AtomicIntegerFieldUpdater
                     .newUpdater(QueueEntryImpl.class, "_deliveryCount");
-
+    private boolean _deliveredToConsumer;
 
 
     public QueueEntryImpl(QueueEntryList<?> queueEntryList)
@@ -103,12 +101,28 @@ public abstract class QueueEntryImpl implements QueueEntry
         _message = message == null ? null : message.newReference();
 
         _entryIdUpdater.set(this, entryId);
+        populateInstanceProperties();
     }
 
     public QueueEntryImpl(QueueEntryList<?> queueEntryList, ServerMessage message)
     {
         _queueEntryList = queueEntryList;
         _message = message == null ? null :  message.newReference();
+        populateInstanceProperties();
+    }
+
+    private void populateInstanceProperties()
+    {
+        if(_message != null)
+        {
+            _instanceProperties.setProperty(InstanceProperties.Property.PERSISTENT, _message.getMessage().isPersistent());
+            _instanceProperties.setProperty(InstanceProperties.Property.EXPIRATION, _message.getMessage().getExpiration());
+        }
+    }
+
+    public InstanceProperties getInstanceProperties()
+    {
+        return _instanceProperties;
     }
 
     protected void setEntryId(long entryId)
@@ -138,7 +152,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public boolean getDeliveredToConsumer()
     {
-        return (_deliveryState & DELIVERED_TO_CONSUMER) != 0;
+        return _deliveredToConsumer;
     }
 
     public boolean expired() throws AMQException
@@ -190,7 +204,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         final boolean acquired = acquire(sub.getOwningState());
         if(acquired)
         {
-            _deliveryState |= DELIVERED_TO_CONSUMER;
+            _deliveredToConsumer = true;
         }
         return acquired;
     }
@@ -244,12 +258,12 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public void setRedelivered()
     {
-        _deliveryState |= REDELIVERED;
+        _instanceProperties.setProperty(InstanceProperties.Property.REDELIVERED, Boolean.TRUE);
     }
 
     public boolean isRedelivered()
     {
-        return (_deliveryState & REDELIVERED) != 0;
+        return Boolean.TRUE.equals(_instanceProperties.getProperty(InstanceProperties.Property.REDELIVERED));
     }
 
     public Subscription getDeliveredSubscription()
@@ -291,13 +305,13 @@ public abstract class QueueEntryImpl implements QueueEntry
         {
             return _rejectedBy.contains(subscriptionId);
         }
-        else // This messasge hasn't been rejected yet.
+        else // This message hasn't been rejected yet.
         {
             return false;
         }
     }
 
-    public void dequeue()
+    private void dequeue()
     {
         EntryState state = _state;
 
@@ -329,21 +343,27 @@ public abstract class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void dispose()
+    private boolean dispose()
     {
-        if(delete())
+        EntryState state = _state;
+
+        if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
+            _queueEntryList.entryDeleted(this);
+            onDelete();
             _message.release();
+
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
-    public void discard()
+    public void delete()
     {
-        //if the queue is null then the message is waiting to be acked, but has been removed.
-        if (getQueue() != null)
-        {
-            dequeue();
-        }
+        dequeue();
 
         dispose();
     }
@@ -355,12 +375,11 @@ public abstract class QueueEntryImpl implements QueueEntry
 
         if (alternateExchange != null)
         {
-            QueueEntryInstanceProperties props = new QueueEntryInstanceProperties(this);
-            List<? extends BaseQueue> queues = alternateExchange.route(getMessage(), props);
+            List<? extends BaseQueue> queues = alternateExchange.route(getMessage(), getInstanceProperties());
             final ServerMessage message = getMessage();
             if ((queues == null || queues.size() == 0) && alternateExchange.getAlternateExchange() != null)
             {
-                queues = alternateExchange.getAlternateExchange().route(getMessage(), props);
+                queues = alternateExchange.getAlternateExchange().route(getMessage(), getInstanceProperties());
             }
 
 
@@ -397,7 +416,7 @@ public abstract class QueueEntryImpl implements QueueEntry
                 {
                     public void postCommit()
                     {
-                        discard();
+                        delete();
                     }
 
                     public void onRollback()
@@ -446,24 +465,8 @@ public abstract class QueueEntryImpl implements QueueEntry
         return getEntryId() > other.getEntryId() ? 1 : getEntryId() < other.getEntryId() ? -1 : 0;
     }
 
-    public boolean isDeleted()
+    protected void onDelete()
     {
-        return _state == DELETED_STATE;
-    }
-
-    public boolean delete()
-    {
-        EntryState state = _state;
-
-        if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
-        {
-            _queueEntryList.entryDeleted(this);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
     }
 
     public QueueEntryList getQueueEntryList()
@@ -471,12 +474,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return _queueEntryList;
     }
 
-    public boolean isDequeued()
-    {
-        return _state == DEQUEUED_STATE;
-    }
-
-    public boolean isDispensed()
+    public boolean isDeleted()
     {
         return _state.isDispensed();
     }
@@ -499,7 +497,7 @@ public abstract class QueueEntryImpl implements QueueEntry
     @Override
     public Filterable asFilterable()
     {
-        return Filterable.Factory.newInstance(getMessage(), new QueueEntryInstanceProperties(this));
+        return Filterable.Factory.newInstance(getMessage(), getInstanceProperties());
     }
 
     public String toString()
@@ -509,4 +507,21 @@ public abstract class QueueEntryImpl implements QueueEntry
                 ", _state=" + _state +
                 '}';
     }
+
+    private static class EntryInstanceProperties implements InstanceProperties
+    {
+        private final EnumMap<Property, Object> _properties = new EnumMap<Property, Object>(Property.class);
+
+        @Override
+        public Object getProperty(final Property prop)
+        {
+            return _properties.get(prop);
+        }
+
+        private void setProperty(Property prop, Object value)
+        {
+            _properties.put(prop, value);
+        }
+    }
+
 }

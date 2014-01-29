@@ -674,15 +674,15 @@ public class SimpleAMQQueueTest extends QpidTestCase
             @Override
             public void run()
             {
-                // we dont actually want/need this runner to do any work
+                // we don't actually want/need this runner to do any work
                 // because we we are already doing it!
             }
         });
 
         // check expected messages delivered to correct consumers
-        verifyRecievedMessages(msgListSub1, sub1.getMessages());
-        verifyRecievedMessages(msgListSub2, sub2.getMessages());
-        verifyRecievedMessages(msgListSub3, sub3.getMessages());
+        verifyReceivedMessages(msgListSub1, sub1.getMessages());
+        verifyReceivedMessages(msgListSub2, sub2.getMessages());
+        verifyReceivedMessages(msgListSub3, sub3.getMessages());
     }
 
     /**
@@ -791,7 +791,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         //delete message from top
         _queue.deleteMessageFromTop();
 
-        //get queue netries
+        //get queue entries
         List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
 
         // assert queue entries
@@ -908,7 +908,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
             Thread.currentThread().interrupt();
         }
         List<QueueEntry> expected = createEntriesList(entries.get(0), entries.get(2), entries.get(3));
-        verifyRecievedMessages(expected, subscription.getMessages());
+        verifyReceivedMessages(expected, subscription.getMessages());
     }
 
     /**
@@ -936,12 +936,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
                             {
                                 return new SimpleQueueEntryImpl(this, message)
                                 {
-                                    public boolean isDequeued()
-                                    {
-                                        return (message.getMessageNumber() % 2 == 0);
-                                    }
 
-                                    public boolean isDispensed()
+                                    public boolean isDeleted()
                                     {
                                         return (message.getMessageNumber() % 2 == 0);
                                     }
@@ -1166,8 +1162,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         List<QueueEntry> entries = queue.getMessagesOnTheQueue();
         QueueEntry entry = entries.get(dequeueMessageIndex);
         entry.acquire();
-        entry.dequeue();
-        assertTrue(entry.isDequeued());
+        entry.delete();
+        assertTrue(entry.isDeleted());
         return entry;
     }
 
@@ -1181,15 +1177,15 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return entriesList;
     }
 
-    private void verifyRecievedMessages(List<QueueEntry> expected,
-            List<QueueEntry> delivered)
+    private void verifyReceivedMessages(List<QueueEntry> expected,
+                                        List<QueueEntry> delivered)
     {
         assertEquals("Consumer did not receive the expected number of messages",
                     expected.size(), delivered.size());
 
         for (QueueEntry msg : expected)
         {
-            assertTrue("Consumer did not recieve msg: "
+            assertTrue("Consumer did not receive msg: "
                     + msg.getMessage().getMessageNumber(), delivered.contains(msg));
         }
     }

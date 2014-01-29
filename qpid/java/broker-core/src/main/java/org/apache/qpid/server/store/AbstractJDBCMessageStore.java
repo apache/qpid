@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -1371,7 +1371,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueableMessage
+    private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueueableMessage
     {
 
         private long _messageNumber;
@@ -1390,7 +1390,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
 
         @Override
-        public EnqueableMessage getMessage()
+        public EnqueueableMessage getMessage()
         {
             return this;
         }
@@ -1668,7 +1668,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
 
         @Override
-        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
         {
             final StoredMessage storedMessage = message.getStoredMessage();
             if(storedMessage instanceof StoredJDBCMessage)
@@ -1687,7 +1687,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
 
         @Override
-        public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
         {
             AbstractJDBCMessageStore.this.dequeueMessage(_connWrapper, queue, message.getMessageNumber());
 

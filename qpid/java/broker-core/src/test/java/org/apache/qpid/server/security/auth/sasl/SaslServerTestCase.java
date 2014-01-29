@@ -33,15 +33,15 @@ public abstract class SaslServerTestCase extends TestCase
     protected SaslServer server;
     protected String username = "u";
     protected String password = "p";
-    protected String notpassword = "a";
+    protected String notPassword = "a";
     protected PrincipalDatabase db = new TestPrincipalDatabase();
     
-    protected byte[] correctresponse;
-    protected byte[] wrongresponse;
+    protected byte[] correctResponse;
+    protected byte[] wrongResponse;
     
-    public void testSucessfulAuth() throws SaslException
+    public void testSuccessfulAuth() throws SaslException
     {
-        byte[] resp = this.server.evaluateResponse(correctresponse);
+        byte[] resp = this.server.evaluateResponse(correctResponse);
         assertNull(resp);
     }
     
@@ -50,7 +50,7 @@ public abstract class SaslServerTestCase extends TestCase
         boolean exceptionCaught  = false;
         try
         {
-            byte[] resp = this.server.evaluateResponse(wrongresponse);
+            byte[] resp = this.server.evaluateResponse(wrongResponse);
         }
         catch (SaslException e)
         {

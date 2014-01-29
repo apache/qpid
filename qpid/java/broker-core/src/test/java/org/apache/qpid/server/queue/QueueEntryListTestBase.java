@@ -117,7 +117,7 @@ public abstract class QueueEntryListTestBase extends TestCase
             entry = entryList.next(entry);
             count++;
         }
-        assertEquals("Get next didnt get all the list entries", getExpectedListLength(), count);
+        assertEquals("Get next didn't get all the list entries", getExpectedListLength(), count);
     }
 
     /**
@@ -142,7 +142,7 @@ public abstract class QueueEntryListTestBase extends TestCase
      * @see QueueEntryListTestBase#getTestList()
      * @see QueueEntryListTestBase#getExpectedListLength()
      */
-    public void testDequedMessagedNotPresentInIterator() throws Exception
+    public void testDequeuedMessagedNotPresentInIterator() throws Exception
     {
         final int numberOfMessages = getExpectedListLength();
         final QueueEntryList<QueueEntry> entryList = getTestList();
@@ -156,7 +156,7 @@ public abstract class QueueEntryListTestBase extends TestCase
             if(counter++ % 2 == 0)
             {
                 queueEntry.acquire();
-                queueEntry.dequeue();
+                queueEntry.delete();
             }
         }
 
@@ -225,7 +225,8 @@ public abstract class QueueEntryListTestBase extends TestCase
         assertNull(list.next(queueEntry2));
 
         //'delete' the 2nd QueueEntry
-        assertTrue("Deleting node should have succeeded", queueEntry2.delete());
+        queueEntry2.delete();
+        assertTrue("Deleting node should have succeeded", queueEntry2.isDeleted());
 
         QueueEntryIterator<QueueEntry> iter = list.iterator();
 

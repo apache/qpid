@@ -96,7 +96,7 @@ public class UnitTestMessageLoggerTest extends TestCase
 
         logger.clearLogMessages();
 
-        assertEquals("Expected to have no messagse after a clear",
+        assertEquals("Expected to have no messages after a clear",
                      0, logger.getLogMessages().size());
 
     }

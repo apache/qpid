@@ -120,7 +120,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private final AtomicLong _persistentMessageDequeueSize = new AtomicLong();
     private final AtomicLong _persistentMessageEnqueueCount = new AtomicLong();
     private final AtomicLong _persistentMessageDequeueCount = new AtomicLong();
-    private final AtomicInteger _counsumerCountHigh = new AtomicInteger(0);
+    private final AtomicInteger _consumerCountHigh = new AtomicInteger(0);
     private final AtomicLong _msgTxnEnqueues = new AtomicLong(0);
     private final AtomicLong _byteTxnEnqueues = new AtomicLong(0);
     private final AtomicLong _msgTxnDequeues = new AtomicLong(0);
@@ -444,9 +444,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
             //Increment consumerCountHigh if necessary. (un)registerSubscription are both
             //synchronized methods so we don't need additional synchronization here
-            if(_counsumerCountHigh.get() < getConsumerCount())
+            if(_consumerCountHigh.get() < getConsumerCount())
             {
-                _counsumerCountHigh.incrementAndGet();
+                _consumerCountHigh.incrementAndGet();
             }
 
             if (isDeleted())
@@ -498,7 +498,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
             {
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Auto-deleteing queue:" + this);
+                    _logger.info("Auto-deleting queue:" + this);
                 }
 
                 getVirtualHost().removeQueue(this);
@@ -961,7 +961,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
     public int getConsumerCountHigh()
     {
-        return _counsumerCountHigh.get();
+        return _consumerCountHigh.get();
     }
 
     public int getActiveConsumerCount()
@@ -1030,7 +1030,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (node != null && !node.isDispensed())
+            if (node != null && !node.isDeleted())
             {
                 entryList.add(node);
             }
@@ -1153,7 +1153,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         while (queueListIterator.advance() && !filter.filterComplete())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDispensed() && filter.accept(node))
+            if (!node.isDeleted() && filter.accept(node))
             {
                 entryList.add(node);
             }
@@ -1170,7 +1170,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             QueueEntry node = queueListIterator.getNode();
 
-            if(!node.isDispensed())
+            if(!node.isDeleted())
             {
                 if(visitor.visit(node))
                 {
@@ -1290,7 +1290,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
                         public void postCommit()
                         {
-                            node.discard();
+                            node.delete();
                         }
 
                         public void onRollback()
@@ -1361,11 +1361,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                 for(final QueueEntry entry : entries)
                 {
 
-                    QueueEntryInstanceProperties props = new QueueEntryInstanceProperties(entry);
-                    List<? extends BaseQueue> queues = _alternateExchange.route(entry.getMessage(), props);
+                    List<? extends BaseQueue> queues = _alternateExchange.route(entry.getMessage(), entry.getInstanceProperties());
                     if((queues == null || queues.size() == 0) && _alternateExchange.getAlternateExchange() != null)
                     {
-                        queues = _alternateExchange.getAlternateExchange().route(entry.getMessage(),props);
+                        queues = _alternateExchange.getAlternateExchange().route(entry.getMessage(), entry.getInstanceProperties());
                     }
 
                     final ServerMessage message = entry.getMessage();
@@ -1403,7 +1402,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
                                         public void postCommit()
                                         {
-                                            entry.discard();
+                                            entry.delete();
                                         }
 
                                         public void onRollback()
@@ -1431,7 +1430,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
                                         public void postCommit()
                                         {
-                                            entry.discard();
+                                            entry.delete();
                                         }
 
                                         public void onRollback()
@@ -1908,9 +1907,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             QueueEntry node = queueListIterator.getNode();
             // Only process nodes that are not currently deleted and not dequeued
-            if (!node.isDispensed())
+            if (!node.isDeleted())
             {
-                // If the node has exired then acquire it
+                // If the node has expired then acquire it
                 if (node.expired() && node.acquire())
                 {
                     if (_logger.isDebugEnabled())

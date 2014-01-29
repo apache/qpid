@@ -37,7 +37,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.QueueEntryInstanceProperties;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -532,7 +531,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                                    {
                                        restoreCredit(entry);
                                    }
-                                   entry.discard();
+                                   entry.delete();
                                }
 
                                public void onRollback()
@@ -548,7 +547,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         entry.routeToAlternate();
         if(entry.isAcquiredBy(this))
         {
-            entry.discard();
+            entry.delete();
         }
     }
 
@@ -581,11 +580,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         final ServerMessage msg = entry.getMessage();
         if (alternateExchange != null)
         {
-            final List<? extends BaseQueue> destinationQueues = alternateExchange.route(entry.getMessage(), new QueueEntryInstanceProperties(entry));
+            final List<? extends BaseQueue> destinationQueues = alternateExchange.route(entry.getMessage(), entry.getInstanceProperties());
 
             if (destinationQueues == null || destinationQueues.isEmpty())
             {
-                entry.discard();
+                entry.delete();
 
                 logActor.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), alternateExchange.getName()));
             }
@@ -602,7 +601,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         }
         else
         {
-            entry.discard();
+            entry.delete();
             logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), entry.getQueue().getName(), msg.getRoutingKey()));
         }
     }
@@ -787,7 +786,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         {
             _unacknowledgedBytes.addAndGet(-entry.getSize());
             _unacknowledgedCount.decrementAndGet();
-            entry.discard();
+            entry.delete();
         }
     }
 

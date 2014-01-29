@@ -21,7 +21,7 @@
 
 package org.apache.qpid.server.txn;
 
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -66,7 +66,7 @@ public class DistributedTransaction implements ServerTransaction
     {
         if(_branch != null)
         {
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
@@ -74,12 +74,12 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void dequeue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
+    public void dequeue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
     {
         if(_branch != null)
         {
             _branch.dequeue(queue, message);
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
@@ -95,7 +95,7 @@ public class DistributedTransaction implements ServerTransaction
             {
                 _branch.dequeue(entry.getQueue(), entry.getMessage());
             }
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
@@ -103,12 +103,12 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
+    public void enqueue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
     {
         if(_branch != null)
         {
             _branch.enqueue(queue, message);
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
             enqueue(Collections.singletonList(queue), message, postTransactionAction);
         }
         else
@@ -117,7 +117,7 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message,
+    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message,
                         Action postTransactionAction)
     {
         if(_branch != null)
@@ -126,7 +126,7 @@ public class DistributedTransaction implements ServerTransaction
             {
                 _branch.enqueue(queue, message);
             }
-            _branch.addPostTransactionAcion(postTransactionAction);
+            _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {

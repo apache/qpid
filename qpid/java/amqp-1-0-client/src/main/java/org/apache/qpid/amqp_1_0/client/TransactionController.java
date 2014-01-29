@@ -21,14 +21,17 @@ package org.apache.qpid.amqp_1_0.client;
 
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
+import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
+import org.apache.qpid.amqp_1_0.transport.SendingLinkListener;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.DeliveryState;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.transaction.Declare;
 import org.apache.qpid.amqp_1_0.type.transaction.Declared;
 import org.apache.qpid.amqp_1_0.type.transaction.Discharge;
-import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 
 public class TransactionController implements DeliveryStateHandler
@@ -38,15 +41,30 @@ public class TransactionController implements DeliveryStateHandler
     private Session _session;
     private volatile DeliveryState _state;
     private boolean _received;
+    private Error _error;
 
     public TransactionController(Session session, SendingLinkEndpoint tcLinkEndpoint)
     {
         _session = session;
         _endpoint = tcLinkEndpoint;
         _endpoint.setDeliveryStateHandler(this);
+        _endpoint.setLinkEventListener(new SendingLinkListener()
+        {
+            @Override
+            public void flowStateChanged()
+            {
+                // ignore
+            }
+
+            @Override
+            public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
+            {
+                TransactionController.this.remoteDetached(detach);
+            }
+        });
     }
 
-    public Transaction beginTransaction()
+    public Transaction beginTransaction() throws LinkDetachedException
     {
 
 
@@ -54,7 +72,7 @@ public class TransactionController implements DeliveryStateHandler
         return new Transaction(this, txnId);
     }
 
-    private Binary declare()
+    private Binary declare() throws LinkDetachedException
     {
         SectionEncoder encoder = _session.getSectionEncoder();
 
@@ -87,9 +105,17 @@ public class TransactionController implements DeliveryStateHandler
             //TODO - rationalise sending of flows
             // _endpoint.sendFlow();
         }
+        waitForResponse();
+
+
+        return ((Declared) _state).getTxnId();
+    }
+
+    private void waitForResponse() throws LinkDetachedException
+    {
         synchronized (this)
         {
-            while(!_received)
+            while(!_received && !_endpoint.isDetached())
             {
                 try
                 {
@@ -101,23 +127,33 @@ public class TransactionController implements DeliveryStateHandler
                 }
             }
         }
+        if(!_received && _endpoint.isDetached())
+        {
+            throw new LinkDetachedException(_error);
+        }
+    }
 
-
-        return ((Declared) _state).getTxnId();
+    private synchronized void remoteDetached(Detach detach)
+    {
+        if(detach != null && detach.getError() != null)
+        {
+            _error = detach.getError();
+            notifyAll();
+        }
     }
 
 
-    public void commit(final Transaction transaction)
+    public void commit(final Transaction transaction) throws LinkDetachedException
     {
         discharge(transaction.getTxnId(), false);
     }
 
-    public void rollback(final Transaction transaction)
+    public void rollback(final Transaction transaction) throws LinkDetachedException
     {
         discharge(transaction.getTxnId(), true);
     }
 
-    private void discharge(final Binary txnId, final boolean fail)
+    private void discharge(final Binary txnId, final boolean fail) throws LinkDetachedException
     {
         Discharge discharge = new Discharge();
         discharge.setTxnId(txnId);
@@ -135,7 +171,7 @@ public class TransactionController implements DeliveryStateHandler
         final Object lock = _endpoint.getLock();
         synchronized(lock)
         {
-            while(!_endpoint.hasCreditToSend())
+            while(!_endpoint.hasCreditToSend() && !_endpoint.isDetached())
             {
                 try
                 {
@@ -146,6 +182,10 @@ public class TransactionController implements DeliveryStateHandler
 
                 }
             }
+            if(_endpoint.isDetached())
+            {
+                throw new LinkDetachedException(_error);
+            }
             _state = null;
             _received = false;
             _endpoint.transfer(transfer);
@@ -153,20 +193,7 @@ public class TransactionController implements DeliveryStateHandler
             //TODO - rationalise sending of flows
             // _endpoint.sendFlow();
         }
-        synchronized (this)
-        {
-            while(!_received)
-            {
-                try
-                {
-                    wait();
-                }
-                catch (InterruptedException e)
-                {
-
-                }
-            }
-        }
+        waitForResponse();
 
 
     }

@@ -631,7 +631,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                 {
                                     public void postCommit()
                                     {
-                                        queueEntry.discard();
+                                        queueEntry.delete();
                                     }
 
                                     public void onRollback()

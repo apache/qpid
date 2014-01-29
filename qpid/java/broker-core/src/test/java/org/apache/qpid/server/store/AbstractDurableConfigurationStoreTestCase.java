@@ -40,7 +40,7 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -441,7 +441,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         UUID queueId1 = UUIDGenerator.generateRandomUUID();
         TransactionLogResource queue1 = mock(TransactionLogResource.class);
         when(queue1.getId()).thenReturn(queueId1);
-        EnqueableMessage message1 = mock(EnqueableMessage.class);
+        EnqueueableMessage message1 = mock(EnqueueableMessage.class);
         when(message1.isPersistent()).thenReturn(true);
         when(message1.getMessageNumber()).thenReturn(messageNumber);
         final StoredMessage storedMessage = mock(StoredMessage.class);
@@ -454,9 +454,9 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private static class TestRecord implements Record
     {
         private TransactionLogResource _queue;
-        private EnqueableMessage _message;
+        private EnqueueableMessage _message;
 
-        public TestRecord(TransactionLogResource queue, EnqueableMessage message)
+        public TestRecord(TransactionLogResource queue, EnqueueableMessage message)
         {
             super();
             _queue = queue;
@@ -470,7 +470,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         }
 
         @Override
-        public EnqueableMessage getMessage()
+        public EnqueueableMessage getMessage()
         {
             return _message;
         }

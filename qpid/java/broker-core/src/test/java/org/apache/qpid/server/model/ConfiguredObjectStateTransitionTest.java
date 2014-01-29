@@ -180,7 +180,7 @@ public class ConfiguredObjectStateTransitionTest extends QpidTestCase
 
     private void assertInvalidStateTransition(ConfiguredObject object, State initialState, State... invalidStates)
     {
-        assertEquals("Unepxceted state", initialState, object.getActualState());
+        assertEquals("Unexpected state", initialState, object.getActualState());
         for (State state : invalidStates)
         {
             try

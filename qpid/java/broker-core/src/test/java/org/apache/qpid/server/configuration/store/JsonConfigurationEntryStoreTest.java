@@ -159,7 +159,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected root entry", brokerId, root.getId());
         Map<String, Object> attributes = root.getAttributes();
         assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 2, attributes.size());
+        assertEquals("Unexpected number of attributes", 2, attributes.size());
         assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
         assertEquals("Unexpected version attribute", 1, attributes.get(Broker.STORE_VERSION));
     }
@@ -180,7 +180,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected root entry", brokerId, root.getId());
         Map<String, Object> attributes = root.getAttributes();
         assertNotNull("Attributes not found", attributes);
-        assertEquals("Unexpected number of attriburtes", 2, attributes.size());
+        assertEquals("Unexpected number of attributes", 2, attributes.size());
         assertEquals("Unexpected name attribute", getTestName(), attributes.get(Broker.NAME));
         assertEquals("Unexpected version attribute", 1, attributes.get(Broker.STORE_VERSION));
     }
@@ -263,8 +263,8 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         ConfigurationEntry authenticationProviderEntry = newStore.getEntry(_authenticationProviderId);
         assertEquals("Unexpected preference provider ID in authentication provider children set", preferencesProviderId, authenticationProviderEntry.getChildrenIds().iterator().next());
         ConfigurationEntry preferencesProviderEntry = newStore.getEntry(preferencesProviderId);
-        assertNotNull("Preferences providert is not found", preferencesProviderEntry);
-        assertEquals("Unexpected preferences providert id", preferencesProviderId, preferencesProviderEntry.getId());
+        assertNotNull("Preferences provider is not found", preferencesProviderEntry);
+        assertEquals("Unexpected preferences provider id", preferencesProviderId, preferencesProviderEntry.getId());
         Map<String, Object> attributes = preferencesProviderEntry.getAttributes();
         assertEquals("Unexpected preferences provider name", name, attributes.get(PreferencesProvider.NAME));
         assertEquals("Unexpected preferences provider path", path, attributes.get(FileSystemPreferencesProvider.PATH));

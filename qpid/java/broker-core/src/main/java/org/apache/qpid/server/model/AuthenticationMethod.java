@@ -24,7 +24,7 @@ import java.util.Collection;
 
 public interface AuthenticationMethod extends ConfiguredObject
 {
-    // name is the SASL mech where this is a SASL authentication
+    // name is the SASL mechanism where this is a SASL authentication
 
     // parents
     VirtualHostAlias getVirtualHostAlias();

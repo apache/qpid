@@ -168,7 +168,7 @@ public class FanoutExchange extends AbstractExchange
             }
             catch (AMQInvalidArgumentException e)
             {
-                _logger.warn("Cannoy bind queue " + queue + " to exchange this " + this + " beacuse selector cannot be parsed.", e);
+                _logger.warn("Cannot bind queue " + queue + " to exchange this " + this + " because selector cannot be parsed.", e);
                 return;
             }
         }

@@ -108,7 +108,7 @@ bool isNone(const std::string& x) { return x.empty() || x == NONE; }
 void HaBroker::initialize() {
     if (settings.cluster) {
         membership.setStatus(JOINING);
-        QPID_LOG(notice, "Initializing HA broker: " << membership.getSelf());
+        QPID_LOG(info, "Initializing HA broker: " << membership.getSelf());
     }
 
     // Set up the management object.
@@ -176,9 +176,7 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
           shared_ptr<broker::Link> link = result.first;
           link->setUrl(url);
           // Create a queue replicator
-          shared_ptr<QueueReplicator> qr(
-              new QueueReplicator(*this, queue, link));
-          qr->activate();
+          shared_ptr<QueueReplicator> qr(QueueReplicator::create(*this, queue, link));
           broker.getExchanges().registerExchange(qr);
           break;
       }

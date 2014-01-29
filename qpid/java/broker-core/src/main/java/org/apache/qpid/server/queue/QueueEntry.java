@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 
@@ -191,9 +192,6 @@ public interface QueueEntry extends Comparable<QueueEntry>
     boolean acquire();
     boolean acquire(Subscription sub);
 
-    boolean delete();
-    boolean isDeleted();
-
     boolean acquiredBySubscription();
     boolean isAcquiredBy(Subscription subscription);
 
@@ -209,11 +207,14 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     boolean isRejectedBy(long subscriptionId);
 
-    void dequeue();
+    void delete();
 
-    void dispose();
-
-    void discard();
+    /**
+     * Returns true if entry is either DEQUED or DELETED state.
+     *
+     * @return true if entry is either DEQUED or DELETED state
+     */
+    boolean isDeleted();
 
     void routeToAlternate();
 
@@ -226,19 +227,6 @@ public interface QueueEntry extends Comparable<QueueEntry>
     void addStateChangeListener(StateChangeListener listener);
     boolean removeStateChangeListener(StateChangeListener listener);
 
-    /**
-     * Returns true if entry is in DEQUEUED state, otherwise returns false.
-     *
-     * @return true if entry is in DEQUEUED state, otherwise returns false
-     */
-    boolean isDequeued();
-
-    /**
-     * Returns true if entry is either DEQUED or DELETED state.
-     *
-     * @return true if entry is either DEQUED or DELETED state
-     */
-    boolean isDispensed();
 
     /**
      * Number of times this queue entry has been delivered.
@@ -253,4 +241,5 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     Filterable asFilterable();
 
+    InstanceProperties getInstanceProperties();
 }

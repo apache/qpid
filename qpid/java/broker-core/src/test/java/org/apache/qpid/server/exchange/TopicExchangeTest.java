@@ -214,7 +214,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     }
 
-    public void testMatchafterHash() throws AMQException
+    public void testMatchAfterHash() throws AMQException
     {
         AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
                 false, null);

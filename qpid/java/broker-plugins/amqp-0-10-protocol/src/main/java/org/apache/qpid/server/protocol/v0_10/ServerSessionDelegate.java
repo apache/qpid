@@ -976,7 +976,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
-            //TODO - here because of non-compiant python tests
+            //TODO - here because of non-compliant python tests
             // should raise exception ILLEGAL_ARGUMENT "binding-key not set"
             if (!method.hasBindingKey())
             {
