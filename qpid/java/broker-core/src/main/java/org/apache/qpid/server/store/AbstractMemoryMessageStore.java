@@ -133,9 +133,11 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     @Override
     public void close() throws Exception
     {
-        _stateManager.attainState(State.CLOSING);
-        _closed.getAndSet(true);
-        _stateManager.attainState(State.CLOSED);
+        if (_closed.compareAndSet(false, true))
+        {
+            _stateManager.attainState(State.CLOSING);
+            _stateManager.attainState(State.CLOSED);
+        }
     }
 
     @Override
