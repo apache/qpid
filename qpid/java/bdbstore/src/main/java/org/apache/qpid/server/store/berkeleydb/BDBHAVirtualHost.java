@@ -68,8 +68,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
     {
         _messageStore = new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
 
-        final MessageStoreLogSubject storeLogSubject =
-                new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
+        MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
         OperationalLoggingListener.listen(_messageStore, storeLogSubject);
 
         _messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);

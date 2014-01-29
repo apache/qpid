@@ -29,9 +29,9 @@ import java.util.UUID;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
-
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -199,5 +199,23 @@ public class AmqpPortAdapter extends PortAdapter
             return AmqpProtocolVersion.valueOf(defaultAmqpSupportedReply);
         }
         return null;
+    }
+
+    @Override
+    protected boolean shouldQuiesce()
+    {
+        //TODO: it seems unnecessary to quiesce previously used AMQP ports as they should be closed properly
+        if ( _broker.isPreviouslyUsedPortNumber(getPort()))
+        {
+            // always quiesce port with port number which was previously used
+            return true;
+        }
+
+        if (_broker.isManagementMode())
+        {
+            return true;
+        }
+
+        return false;
     }
 }

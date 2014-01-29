@@ -44,9 +44,10 @@ import org.apache.qpid.server.util.MapValueConverter;
 
 public class AccessControlProviderAdapter extends AbstractAdapter implements AccessControlProvider
 {
+
     private static final Logger LOGGER = Logger.getLogger(AccessControlProviderAdapter.class);
 
-    protected AccessControl _accessControl;
+    protected final AccessControl _accessControl;
     protected final Broker _broker;
 
     protected Collection<String> _supportedAttributes;
@@ -210,6 +211,7 @@ public class AccessControlProviderAdapter extends AbstractAdapter implements Acc
 
         if(desiredState == State.DELETED)
         {
+            _accessControl.close();
             return _state.compareAndSet(state, State.DELETED);
         }
         else if (desiredState == State.QUIESCED)
@@ -296,5 +298,17 @@ public class AccessControlProviderAdapter extends AbstractAdapter implements Acc
     public AccessControl getAccessControl()
     {
         return _accessControl;
+    }
+
+    @Override
+    public void close()
+    {
+        _accessControl.close();
+    }
+
+    @Override
+    public void attainDesiredState()
+    {
+        setDesiredState(State.INITIALISING, _broker.isManagementMode() ? State.QUIESCED : getDesiredState());
     }
 }

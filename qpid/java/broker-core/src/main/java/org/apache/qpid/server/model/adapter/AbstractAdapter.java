@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.ChangeStateTask;
@@ -91,6 +92,8 @@ public abstract class AbstractAdapter implements ConfiguredObject
                 }
             }
         }
+
+        _defaultAttributes.put(DESIRED_STATE, State.ACTIVE);
         if (defaults != null)
         {
             _defaultAttributes.putAll(defaults);
@@ -109,7 +112,7 @@ public abstract class AbstractAdapter implements ConfiguredObject
 
     public State getDesiredState()
     {
-        return null;  //TODO
+        return MapValueConverter.toEnum(DESIRED_STATE, getAttribute(DESIRED_STATE), State.class);
     }
 
     @Override
@@ -473,5 +476,16 @@ public abstract class AbstractAdapter implements ConfiguredObject
         }
 
         return merged;
+    }
+
+    @Override
+    public void attainDesiredState()
+    {
+        setDesiredState(getActualState(), getDesiredState());
+    }
+
+    @Override
+    public void close()
+    {
     }
 }

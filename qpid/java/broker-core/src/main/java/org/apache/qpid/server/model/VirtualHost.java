@@ -102,6 +102,7 @@ public interface VirtualHost extends ConfiguredObject
                             NAME,
                             TYPE,
                             STATE,
+                            DESIRED_STATE,
                             DURABLE,
                             LIFETIME_POLICY,
                             TIME_TO_LIVE,

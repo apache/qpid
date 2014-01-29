@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.util.StringUtil;
 
@@ -68,6 +69,7 @@ public class BrokerOptions
     private static final int MANAGEMENT_MODE_PASSWORD_LENGTH = 10;
 
     private static final File FALLBACK_WORK_DIR = new File(System.getProperty("user.dir"), "work");
+    private static final int MAX_PORT_NUMBER = 65535;
 
     private String _logConfigFile;
     private Integer _logWatchFrequency = 0;
@@ -143,6 +145,10 @@ public class BrokerOptions
 
     public void setManagementModeRmiPortOverride(int managementModeRmiPortOverride)
     {
+        if (checkLegalPortNumber(managementModeRmiPortOverride))
+        {
+            throw new IllegalConfigurationException("Invalid rmi port is specified: " + managementModeRmiPortOverride);
+        }
         _managementModeRmiPortOverride = managementModeRmiPortOverride;
     }
 
@@ -153,6 +159,10 @@ public class BrokerOptions
 
     public void setManagementModeJmxPortOverride(int managementModeJmxPortOverride)
     {
+        if (checkLegalPortNumber(managementModeJmxPortOverride))
+        {
+            throw new IllegalConfigurationException("Invalid jmx port is specified: " + managementModeJmxPortOverride);
+        }
         _managementModeJmxPortOverride = managementModeJmxPortOverride;
     }
 
@@ -163,6 +173,10 @@ public class BrokerOptions
 
     public void setManagementModeHttpPortOverride(int managementModeHttpPortOverride)
     {
+        if (checkLegalPortNumber(managementModeHttpPortOverride))
+        {
+            throw new IllegalConfigurationException("Invalid http port is specified: " + managementModeHttpPortOverride);
+        }
         _managementModeHttpPortOverride = managementModeHttpPortOverride;
     }
 
@@ -373,4 +387,11 @@ public class BrokerOptions
 
         return _configProperties.get(QPID_HOME_DIR);
     }
+
+    private boolean checkLegalPortNumber(int portNumber)
+    {
+        return portNumber < 1 || portNumber > MAX_PORT_NUMBER;
+    }
+
+
 }

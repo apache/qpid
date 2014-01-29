@@ -130,7 +130,12 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         Collection<Port> ports = broker.getPorts();
         for (Port port : ports)
         {
-            if (State.QUIESCED.equals(port.getActualState()))
+            if(LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Port " + port);
+            }
+
+            if (State.ACTIVE != port.getActualState())
             {
                 continue;
             }
@@ -151,6 +156,11 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
         if(registryPort == null)
         {
             throw new IllegalStateException("No JMX RMI port found supporting protocol " + Protocol.RMI);
+        }
+
+        if(LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Found connector port " + connectorPort + " found registry port " + registryPort);
         }
 
         _objectRegistry = new JMXManagedObjectRegistry(broker, connectorPort, registryPort, this);
@@ -372,5 +382,11 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                 _objectRegistry = null;
             }
         }
+    }
+
+    @Override
+    public void close()
+    {
+        stop();
     }
 }

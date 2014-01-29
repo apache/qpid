@@ -224,7 +224,12 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         int lastPort = -1;
         for (Port port : ports)
         {
-            if (State.QUIESCED.equals(port.getActualState()))
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Http port " + port);
+            }
+
+            if (State.ACTIVE != port.getActualState())
             {
                 continue;
             }
@@ -327,6 +332,12 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
                 connector.setHost(bindingAddress.trim());
             }
             connector.setPort(port.getPort());
+
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Added Jetty connector " + connector + " for port " + port);
+            }
+
             server.addConnector(connector);
         }
 
@@ -523,6 +534,12 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
                 throw new IllegalConfigurationException("Only positive integer value can be specified for the session time out attribute");
             }
         }
+    }
+
+    @Override
+    public void close()
+    {
+        stop();
     }
 
 }

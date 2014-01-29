@@ -187,4 +187,9 @@ public interface Broker extends ConfiguredObject
     boolean isManagementMode();
 
     AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
+
+    /**
+     * TODO: Remove this
+     */
+    boolean isPreviouslyUsedPortNumber(int port);
 }

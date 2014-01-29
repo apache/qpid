@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -96,7 +97,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         put(STORE_PATH, String.class);
         put(STORE_TYPE, String.class);
         put(CONFIG_PATH, String.class);
-        put(STATE, State.class);
+        put(DESIRED_STATE, State.class);
         put(REMOTE_REPLICATION_NODE_MONITOR_INTERVAL, Long.class);
         put(REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT, Long.class);
         put(QUIESCE_ON_MASTER_CHANGE, Boolean.class);
@@ -113,7 +114,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         put(QUIESCE_ON_MASTER_CHANGE, false);
     }};
 
-    private org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
+    private volatile org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
 
     private final Map<AMQConnectionModel, ConnectionAdapter> _connectionAdapters =
             new HashMap<AMQConnectionModel, ConnectionAdapter>();
@@ -131,6 +132,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     private final List<ReplicationNode> _replicationNodes = new ArrayList<ReplicationNode>();
 
     private final TaskExecutor _taskExecutor;
+    private final AtomicReference<State> _state;
 
     public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
@@ -140,6 +142,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
         addParent(Broker.class, broker);
         validateAttributes();
+        _state = new AtomicReference<State>(State.INITIALISING);
     }
 
     private void validateAttributes()
@@ -527,18 +530,14 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @Override
     public State getActualState()
     {
-        if (_virtualHost == null)
+        org.apache.qpid.server.virtualhost.VirtualHost virtualHost = _virtualHost;
+        if (virtualHost == null)
         {
-            State state = (State)super.getAttribute(STATE);
-            if (state == null)
-            {
-                return State.INITIALISING;
-            }
-            return state;
+            return _state.get();
         }
         else
         {
-            org.apache.qpid.server.virtualhost.State implementationState = _virtualHost.getState();
+            org.apache.qpid.server.virtualhost.State implementationState = virtualHost.getState();
             switch(implementationState)
             {
             case INITIALISING:
@@ -1083,42 +1082,48 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @Override
     protected boolean setState(State currentState, State desiredState)
     {
+        State actualState = getActualState();
         if (desiredState == State.ACTIVE)
         {
-            try
+            if( _state.compareAndSet(State.INITIALISING, State.ACTIVE) || _state.compareAndSet(State.STOPPED, State.ACTIVE)
+                    || _state.compareAndSet(State.QUIESCED, State.ACTIVE) || _state.compareAndSet(State.ERRORED, State.ACTIVE))
+             {
+                 try
+                 {
+                     activate();
+                 }
+                 catch(RuntimeException e)
+                 {
+                     _state.set(State.ERRORED);
+                     if (_broker.isManagementMode())
+                     {
+                         LOGGER.warn("Failed to activate virtual host: " + getName(), e);
+                     }
+                     else
+                     {
+                         throw e;
+                     }
+                 }
+                 return true;
+             }
+            else
             {
-                activate();
+                throw new IllegalStateException("Cannot activate host with state " + actualState);
             }
-            catch(RuntimeException e)
-            {
-                changeAttribute(STATE, getActualState(), State.ERRORED);
-                if (_broker.isManagementMode())
-                {
-                    LOGGER.warn("Failed to activate virtual host: " + getName(), e);
-                }
-                else
-                {
-                    throw e;
-                }
-            }
-            return true;
         }
         else if (desiredState == State.STOPPED)
         {
-            if (_virtualHost != null)
+            if( _state.compareAndSet(State.ACTIVE, State.STOPPED))
             {
-                try
-                {
-                    _virtualHost.close();
-                }
-                finally
-                {
-                    _broker.getVirtualHostRegistry().unregisterVirtualHost(_virtualHost);
-                }
+                close();
+                return true;
             }
-            return true;
+            else
+            {
+                throw new IllegalStateException("Cannot stope host with state " + actualState);
+            }
         }
-        else if (desiredState == State.DELETED)
+        else if (desiredState == State.DELETED && actualState != State.DELETED)
         {
             String hostName = getName();
 
@@ -1126,13 +1131,14 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             {
                 throw new IntegrityViolationException("Cannot delete default virtual host '" + hostName + "'");
             }
+
+            if (actualState == State.ACTIVE)
+            {
+                setDesiredState(actualState, State.STOPPED);
+            }
+
             if (_virtualHost != null)
             {
-                if (_virtualHost.getState() == org.apache.qpid.server.virtualhost.State.ACTIVE)
-                {
-                    setDesiredState(currentState, State.STOPPED);
-                }
-
                 MessageStore ms = _virtualHost.getMessageStore();
                 if (ms != null)
                 {
@@ -1148,12 +1154,25 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
                 _virtualHost = null;
             }
-            setAttribute(VirtualHost.STATE, getActualState(), State.DELETED);
+            _state.set(State.DELETED);
+
             return true;
         }
         else if (desiredState == State.QUIESCED)
         {
-            return true;
+            if( _state.compareAndSet(State.INITIALISING, State.QUIESCED) || _state.compareAndSet(State.STOPPED, State.QUIESCED)
+                    || _state.compareAndSet(State.ACTIVE, State.QUIESCED) || _state.compareAndSet(State.ERRORED, State.QUIESCED))
+             {
+                if (actualState == State.ACTIVE)
+                {
+                    close();
+                }
+                return true;
+             }
+            else
+            {
+                throw new IllegalStateException("Cannot quiesce host with state " + actualState);
+            }
         }
         return false;
     }
@@ -1285,27 +1304,40 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        // TODO: a hack to change a virtual host state only
-        if (attributes.size() == 2 && attributes.containsKey(STATE) && getName().equals(attributes.get(NAME)))
+        if (attributes.size() == 2 && attributes.containsKey(DESIRED_STATE) && getName().equals(attributes.get(NAME)))
         {
-            State desiredState = MapValueConverter.getEnumAttribute(State.class, STATE, attributes);
+            Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+            State desiredState = (State)convertedAttributes.get(DESIRED_STATE);
             State actualState = getActualState();
 
             if (LOGGER.isDebugEnabled())
             {
                 LOGGER.debug(String.format("Change state of virtual host '%s' from '%s' to '%s'", getName(),
-                        actualState.toString(), desiredState.toString()));
+                        actualState, desiredState));
             }
 
             if (actualState != desiredState)
             {
-                setDesiredState(actualState, desiredState);
+                super.changeAttributes(convertedAttributes);
             }
         }
         else
         {
             throw new UnsupportedOperationException("Changing attributes on virtualhosts is not supported.");
         }
+    }
+
+    @Override
+    protected boolean changeAttribute(final String name, final Object expected, final Object desired)
+    {
+        boolean attributeChanged = super.changeAttribute(name, expected, desired);
+        LOGGER.debug(name + " changeAttribute result: "  + attributeChanged + " expected " + expected + " desired " +desired);
+        if (attributeChanged && name.equals(DESIRED_STATE))
+        {
+            State state = setDesiredState(getActualState(), (State)desired);
+            LOGGER.debug("Actual state after calling setDesiredState " + state);
+        }
+        return attributeChanged;
     }
 
     @Override
@@ -1395,12 +1427,28 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 throw new IllegalStateException("Replication node cannot be created because virtual host already contains replication node");
             }
             node = factory.createInstance(UUIDGenerator.generateReplicationNodeId(groupName, nodeName), attributes, this);
-            node.setDesiredState(State.INITIALISING, State.ACTIVE);
+            node.attainDesiredState();
 
             _replicationNodes.add(node);
         }
         //TODO: make VirtualHost a ConfigurationChangeListener and add it to node to listen for delete events
         return node;
+    }
+
+    @Override
+    public void close()
+    {
+        if (_virtualHost != null)
+        {
+            try
+            {
+                _virtualHost.close();
+            }
+            finally
+            {
+                _broker.getVirtualHostRegistry().unregisterVirtualHost(_virtualHost);
+            }
+        }
     }
 
 }

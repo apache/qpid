@@ -81,15 +81,17 @@ public class VirtualHostTest extends QpidTestCase
     {
         VirtualHost host = createHost();
 
-        assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
+        assertEquals("Unexpected state", State.INITIALISING, host.getActualState());
+        assertEquals("Unexpected desired state", State.ACTIVE, host.getDesiredState());
     }
 
     public void testActiveState()
     {
         VirtualHost host = createHost();
 
-        host.setDesiredState(State.INITIALISING, State.ACTIVE);
-        assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
+        host.attainDesiredState();
+        assertEquals("Unexpected state", State.ACTIVE, host.getActualState());
+        assertEquals("Unexpected desired state", State.ACTIVE, host.getDesiredState());
     }
 
     public void testQuiescedState()
@@ -98,37 +100,64 @@ public class VirtualHostTest extends QpidTestCase
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
         attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
-        attributes.put(VirtualHost.STATE, State.QUIESCED);
+        attributes.put(VirtualHost.DESIRED_STATE, State.QUIESCED);
 
         VirtualHost host = createHost(attributes);
+        host.attainDesiredState();
 
-        assertEquals("Unexpected state", State.QUIESCED, host.getAttribute(VirtualHost.STATE));
-
-        host.setDesiredState(State.QUIESCED, State.ACTIVE);
-        assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
+        assertEquals("Unexpected state", State.QUIESCED, host.getActualState());
+        assertEquals("Unexpected desired state", State.QUIESCED, host.getDesiredState());
     }
 
-    public void testStoppedState()
+    public void testChangeStateFromQuiescedToActiveViaAttributes()
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.DESIRED_STATE, State.QUIESCED);
+
+        VirtualHost host = createHost(attributes);
+        host.attainDesiredState();
+
+        assertEquals("Unexpected state", State.QUIESCED, host.getActualState());
+        assertEquals("Unexpected desired state", State.QUIESCED, host.getDesiredState());
+
+        attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.DESIRED_STATE, State.ACTIVE);
+        host.setAttributes(attributes);
+        assertEquals("Unexpected state", State.ACTIVE, host.getActualState());
+        assertEquals("Unexpected desired state", State.ACTIVE, host.getDesiredState());
+    }
+
+    public void testChangeStateFromActiveToStoppedViaAttributes()
     {
         VirtualHost host = createHost();
+        assertEquals("Unexpected state", State.INITIALISING, host.getActualState());
+        assertEquals("Unexpected desired state", State.ACTIVE, host.getDesiredState());
 
-        assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
+        host.attainDesiredState();
+        assertEquals("Unexpected state", State.ACTIVE, host.getActualState());
+        assertEquals("Unexpected desired state", State.ACTIVE, host.getDesiredState());
 
-        host.setDesiredState(State.INITIALISING, State.ACTIVE);
-        assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(VirtualHost.NAME, getName());
+        attributes.put(VirtualHost.DESIRED_STATE, State.STOPPED);
+        host.setAttributes(attributes);
 
-        host.setDesiredState(State.ACTIVE, State.STOPPED);
-        assertEquals("Unexpected state", State.STOPPED, host.getAttribute(VirtualHost.STATE));
+        assertEquals("Unexpected state", State.STOPPED, host.getActualState());
+        assertEquals("Unexpected desired state", State.STOPPED, host.getDesiredState());
     }
 
     public void testDeletedState()
     {
         VirtualHost host = createHost();
 
-        assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
+        assertEquals("Unexpected state", State.INITIALISING, host.getActualState());
 
         host.setDesiredState(State.INITIALISING, State.DELETED);
-        assertEquals("Unexpected state", State.DELETED, host.getAttribute(VirtualHost.STATE));
+        assertEquals("Unexpected state", State.DELETED, host.getActualState());
     }
 
     public void testCreateQueueChildHavingMessageGroupingAttributes()

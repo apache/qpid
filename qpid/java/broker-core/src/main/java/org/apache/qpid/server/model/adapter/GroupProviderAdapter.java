@@ -378,6 +378,19 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         throw new UnsupportedOperationException("Changing attributes on group providers is not supported.");
     }
 
+
+    @Override
+    public State getDesiredState()
+    {
+        return State.ACTIVE;
+    }
+
+    @Override
+    public void close()
+    {
+        _groupManager.close();
+    }
+
     private class GroupAdapter extends AbstractAdapter implements Group
     {
         private final String _group;
@@ -705,6 +718,5 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             }
         }
     }
-
 
 }

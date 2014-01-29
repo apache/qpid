@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +43,12 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String hostName = getTestName();
         hostData.put(VirtualHost.NAME, hostName);
         hostData.put(VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
-        hostData.put(VirtualHost.STATE, State.QUIESCED);
+        hostData.put(VirtualHost.DESIRED_STATE, State.QUIESCED);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
         assertEquals("Unexpected response code for virtual host creation request", 201, responseCode);
+
+        // TODO should observe vh state
 
         String storeLocation = new File(TMP_FOLDER, "store-" + hostName + "-" + System.currentTimeMillis()).getAbsolutePath();
         String nodeName = "node1";
@@ -67,7 +68,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code for node creation request", 201, responseCode);
 
         hostData.clear();
-        hostData.put(VirtualHost.STATE, State.ACTIVE);
+        hostData.put(VirtualHost.DESIRED_STATE, State.ACTIVE);
         responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
         assertEquals("Unexpected response code for virtual host update status", 200, responseCode);
 
@@ -112,7 +113,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         }
     }
 
-    private Map<String, Object> waitForVirtualHostActivation(String hostName, long timeout) throws IOException
+    private Map<String, Object> waitForVirtualHostActivation(String hostName, long timeout) throws Exception
     {
         Map<String, Object> hostDetails = null;
         long startTime = System.currentTimeMillis();
@@ -121,6 +122,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         {
             hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostName);
             isActive = hostDetails.get(VirtualHost.STATE).equals(State.ACTIVE.name());
+            Thread.sleep(100l);
         }
         while(!isActive && System.currentTimeMillis() - startTime < timeout );
         assertTrue("Unexpected virtual host state:" + hostDetails.get(VirtualHost.STATE), isActive);

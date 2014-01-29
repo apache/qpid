@@ -266,10 +266,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 try
                 {
                     _authManager.initialise();
-                    if (_preferencesProvider != null)
-                    {
-                        _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.ACTIVE);
-                    }
                     return true;
                 }
                 catch(RuntimeException e)
@@ -302,10 +298,6 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             if (_state.compareAndSet(state, State.STOPPED))
             {
                 _authManager.close();
-                if (_preferencesProvider != null)
-                {
-                    _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.STOPPED);
-                }
                 return true;
             }
             else
@@ -442,11 +434,36 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORIES.get(type);
             UUID id = UUIDGenerator.generatePreferencesProviderUUID(name, getName());
             PreferencesProvider pp = factory.createInstance(id, attributes, this);
-            pp.setDesiredState(State.INITIALISING, State.ACTIVE);
+            pp.attainDesiredState();
+            // TODO if preferencesProvider already exists, it should be closed.
             _preferencesProvider = pp;
             return (C)pp;
         }
         throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
+    }
+
+    @Override
+    public void attainDesiredState()
+    {
+        if (_preferencesProvider != null)
+        {
+            _preferencesProvider.attainDesiredState();
+        }
+
+        super.attainDesiredState();
+    }
+
+    @Override
+    public void close()
+    {
+        if (_preferencesProvider != null)
+        {
+            _preferencesProvider.close();
+        }
+        if (_authManager != null)
+        {
+            _authManager.close();
+        }
     }
 
     public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>

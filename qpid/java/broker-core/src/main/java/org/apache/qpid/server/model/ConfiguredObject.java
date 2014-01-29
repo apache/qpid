@@ -30,6 +30,7 @@ import java.util.UUID;
  */
 public interface ConfiguredObject
 {
+    final String DESIRED_STATE = "desiredState";
 
     /**
      * Get the universally unique identifier for the object
@@ -259,4 +260,19 @@ public interface ConfiguredObject
                                                ConfiguredObject... otherParents);
 
     void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
+
+    /**
+     * Tells the object (and all its children) to attain its desired state.  The desired state will come from the store (if available)
+     * or default to {@link State#ACTIVE} otherwise.
+     * <p>
+     * This method is called exactly once immediately after recovery on broker startup or object creation to initialize the object and its children.
+     */
+    void attainDesiredState();
+
+    /**
+     * Close the object.
+     * <p>
+     * The method is used to deinitialize the configured objects on broker shutdown or object is deleted.
+     */
+    void close();
 }

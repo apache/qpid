@@ -342,20 +342,28 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public void stateChange(final StateChangeEvent stateChangeEvent)
     {
-        _groupChangeExecutor.submit(new Runnable()
+        if (LOGGER.isInfoEnabled())
         {
-            @Override
-            public void run()
+            LOGGER.info("The node '" + _prettyGroupNodeName + "' state is " + stateChangeEvent.getState());
+        }
+
+        if (_state.get() != State.CLOSING && _state.get() != State.CLOSED)
+        {
+            _groupChangeExecutor.submit(new Runnable()
             {
-                stateChanged(stateChangeEvent);
-            }
-        });
+                @Override
+                public void run()
+                {
+                    stateChanged(stateChangeEvent);
+                }
+            });
+        }
     }
 
     private void stateChanged(StateChangeEvent stateChangeEvent)
     {
         ReplicatedEnvironment.State state = stateChangeEvent.getState();
-        LOGGER.info("The node '" + _prettyGroupNodeName + "' state is " + state);
+
         if (state == ReplicatedEnvironment.State.REPLICA || state == ReplicatedEnvironment.State.MASTER)
         {
             if (_state.compareAndSet(State.OPENING, State.OPEN) || _state.compareAndSet(State.RESTARTING, State.OPEN))
@@ -365,26 +373,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
         }
 
+        StateChangeListener listener = _stateChangeListener.get();
+
         if (state == ReplicatedEnvironment.State.MASTER)
         {
             reopenDatabases();
-            StateChangeListener listener = _stateChangeListener.get();
-
-            if (listener != null)
-            {
-                listener.stateChange(stateChangeEvent);
-            }
         }
-        else
+
+        if (listener != null)
         {
-            if (_state.get() != State.CLOSING && _state.get() != State.CLOSED)
-            {
-                StateChangeListener listener = _stateChangeListener.get();
-                if (listener != null)
-                {
-                    listener.stateChange(stateChangeEvent);
-                }
-            }
+            listener.stateChange(stateChangeEvent);
         }
     }
 

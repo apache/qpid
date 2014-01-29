@@ -227,6 +227,8 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
                 finally
                 {
                     _store.delete();
+                    // TODO this should change to that the authentication provider listens for the delete and
+                    // responds accordingly.
                     _authenticationProvider.setPreferencesProvider(null);
                 }
                 return true;
@@ -388,6 +390,13 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     {
         _store.createIfNotExist();
     }
+
+    @Override
+    public void close()
+    {
+        _store.close();
+    }
+
 
     public static class FileSystemPreferencesStore
     {

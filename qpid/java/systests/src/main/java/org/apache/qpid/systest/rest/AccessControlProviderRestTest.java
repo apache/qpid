@@ -233,7 +233,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         assertCanAccessManagementInterface(accessControlProviderName2, true);
     }
 
-    public void testRemovalOfAccessControlProviderInErrorStateUsingManagementMode() throws Exception
+    public void testRemovalOfAccessControlProviderInQuiescedStateUsingManagementMode() throws Exception
     {
         stopBroker();
 
@@ -245,14 +245,14 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         assertFalse("ACL file should not exist", file.exists());
         UUID id = getBrokerConfiguration().addAclFileConfiguration(file.getAbsolutePath());
         getBrokerConfiguration().setSaved(false);
-        startBroker(0, true);
 
+        startBroker(0, true);
         getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
 
         Map<String, Object> acl = getRestTestHelper().getJsonAsSingletonList("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
         assertEquals("Unexpected id", id.toString(), acl.get(AccessControlProvider.ID));
         assertEquals("Unexpected path", file.getAbsolutePath() , acl.get(FileAccessControlProviderConstants.PATH));
-        assertEquals("Unexpected state", State.ERRORED.name() , acl.get(AccessControlProvider.STATE));
+        assertEquals("Unexpected state", State.QUIESCED.name() , acl.get(AccessControlProvider.STATE));
 
         int status = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE, "DELETE", null);
         assertEquals("ACL was not deleted", 200, status);

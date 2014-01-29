@@ -23,6 +23,7 @@ package org.apache.qpid.server.registry;
 import java.util.Collection;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
@@ -106,7 +107,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         BrokerActor actor = new BrokerActor(startupMessageLogger);
         CurrentActor.set(actor);
-        CurrentActor.setDefault(actor);
+        CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
         GenericActor.setDefaultMessageLogger(_rootMessageLogger);
         try
         {
@@ -125,7 +126,7 @@ public class ApplicationRegistry implements IApplicationRegistry
             initialiseStatisticsReporting();
 
             // starting the broker
-            _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
+            _broker.attainDesiredState();
 
             CurrentActor.get().message(BrokerMessages.READY());
         }
@@ -133,8 +134,6 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             CurrentActor.remove();
         }
-
-        CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
     }
 
     private void initialiseStatisticsReporting()
@@ -253,7 +252,14 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             if (_broker != null)
             {
-                _broker.setDesiredState(_broker.getActualState(), State.STOPPED);
+                _taskExecutor.submitAndWait(new Callable<Void>(){
+
+                    @Override
+                    public Void call() throws Exception
+                    {
+                        _broker.close();
+                        return null;
+                    }});
             }
 
             //Shutdown virtualhosts

@@ -26,6 +26,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +34,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -55,6 +58,8 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 public class PortAdapter extends AbstractAdapter implements Port
 {
+    private static final Logger LOGGER = Logger.getLogger(PortAdapter.class);
+
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
@@ -73,6 +78,8 @@ public class PortAdapter extends AbstractAdapter implements Port
         put(AUTHENTICATION_PROVIDER, String.class);
     }});
 
+    static final String MANAGEMENT_MODE_PORT_PREFIX = "MANAGEMENT-MODE-PORT-";
+
     private final Broker _broker;
     private AuthenticationProvider _authenticationProvider;
     private AtomicReference<State> _state;
@@ -81,7 +88,6 @@ public class PortAdapter extends AbstractAdapter implements Port
     {
         super(id, defaults, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _broker = broker;
-        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
 
         Collection<Protocol> protocols = getProtocols();
         boolean rmiRegistry = protocols != null && protocols.contains(Protocol.RMI);
@@ -100,8 +106,9 @@ public class PortAdapter extends AbstractAdapter implements Port
             }
         }
 
-        _state = new AtomicReference<State>(state);
+        _state = new AtomicReference<State>(State.INITIALISING);
         addParent(Broker.class, broker);
+
     }
 
     @Override
@@ -564,7 +571,61 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", port=" + getPort() + "]";
+        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", port=" + getPort() +  ", state=" + getActualState() + "]";
     }
 
+    @Override
+    public void close()
+    {
+        onStop();
+    }
+
+    @Override
+    public void attainDesiredState()
+    {
+        State desiredState = shouldQuiesce() ? State.QUIESCED : getDesiredState();
+        setDesiredState(getActualState(), desiredState);
+    }
+
+    protected boolean shouldQuiesce()
+    {
+        if (getName().startsWith(MANAGEMENT_MODE_PORT_PREFIX))
+        {
+            // port is CLI port therefore it should be active
+            return false;
+        }
+
+        if ( _broker.isPreviouslyUsedPortNumber(getPort()))
+        {
+            // always quiesce port with port number which was previously used
+            return true;
+        }
+
+        if (_broker.isManagementMode())
+        {
+            EnumSet<Protocol> managementProtocols = EnumSet.of(Protocol.HTTP, Protocol.JMX_RMI, Protocol.RMI);
+            Collection<Port> ports = _broker.getPorts();
+            Collection<Protocol> protocols = getProtocols();
+            for (Protocol protocol : protocols)
+            {
+                Port managementModePort = ConfiguredObjectFinder.findConfiguredObjectByName(ports, MANAGEMENT_MODE_PORT_PREFIX + protocol.name());
+                if (managementProtocols.contains(protocol) && managementModePort != null)
+                {
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Port " + this + " is overridden by management port " + managementModePort);
+                    }
+
+                    // quiesce the port if exists overridden CLI port for the protocol
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            // quiesce non-amqp ports created after broker start-up
+            return _broker.getActualState() == State.ACTIVE;
+        }
+        return false;
+    }
 }

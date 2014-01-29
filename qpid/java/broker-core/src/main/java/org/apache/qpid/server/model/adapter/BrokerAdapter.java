@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
@@ -54,6 +55,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
@@ -182,6 +184,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final AccessControlProviderFactory _accessControlProviderFactory;
     private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
+    private final AtomicReference<State> _state;
 
     private final Collection<String> _supportedVirtualHostStoreTypes;
     private Collection<String> _supportedBrokerStoreTypes;
@@ -210,13 +213,55 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         _supportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
         _supportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
+
+        _state = new AtomicReference<State>(State.INITIALISING);
         if (_brokerOptions.isManagementMode())
         {
-            AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
-            AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
-                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
-            _managementAuthenticationProvider = authenticationProvider;
+            createManagementModeConfiguredObjects();
         }
+    }
+
+    private void createManagementModeConfiguredObjects()
+    {
+        AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
+        AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
+                authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
+        _managementAuthenticationProvider = authenticationProvider;
+
+        int httpPortOverride = _brokerOptions.getManagementModeHttpPortOverride();
+        if (httpPortOverride != 0)
+        {
+            createPort(createCLIPortAttributes(httpPortOverride, Protocol.HTTP));
+        }
+
+        int managementModeRmiPortOverride = _brokerOptions.getManagementModeRmiPortOverride();
+        int managementModeJmxPortOverride = _brokerOptions.getManagementModeJmxPortOverride();
+        if (managementModeRmiPortOverride != 0)
+        {
+            createPort(createCLIPortAttributes(managementModeRmiPortOverride, Protocol.RMI));
+            if (managementModeJmxPortOverride == 0)
+            {
+                createPort(createCLIPortAttributes(managementModeRmiPortOverride + 100, Protocol.JMX_RMI));
+            }
+        }
+        if (managementModeJmxPortOverride != 0)
+        {
+            createPort(createCLIPortAttributes(managementModeJmxPortOverride, Protocol.JMX_RMI));
+        }
+    }
+
+    private Map<String, Object> createCLIPortAttributes(int port, Protocol protocol)
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.PORT, port);
+        attributes.put(Port.PROTOCOLS, Collections.singleton(protocol));
+        attributes.put(Port.NAME, PortAdapter.MANAGEMENT_MODE_PORT_PREFIX + protocol.name());
+        if (protocol != Protocol.RMI)
+        {
+            //TODO: analyze whether setting of auth provider is still needed
+            //attributes.put(Port.AUTHENTICATION_PROVIDER, MANAGEMENT_MODE_AUTH_PROVIDER);
+        }
+        return attributes;
     }
 
     public Collection<VirtualHost> getVirtualHosts()
@@ -291,10 +336,6 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        State desiredState = MapValueConverter.getEnumAttribute(State.class, VirtualHost.STATE, attributes, State.ACTIVE);
-
-        //TODO: do no save state attribute if it is present
-        attributes.remove(VirtualHost.STATE);
 
         final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), attributes, this,
                 _statisticsGatherer, getTaskExecutor());
@@ -305,7 +346,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         SecurityManager.setAccessChecksDisabled(true);
         try
         {
-            virtualHostAdapter.setDesiredState(State.INITIALISING, desiredState);
+            virtualHostAdapter.attainDesiredState();
         }
         finally
         {
@@ -338,7 +379,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     public State getActualState()
     {
-        return null;  //TODO
+        return _state.get();
     }
 
 
@@ -465,16 +506,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     {
         Port port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
         addPort(port);
-
-        //1. AMQP ports are disabled during ManagementMode.
-        //2. The management plugins can currently only start ports at broker startup and
-        //   not when they are newly created via the management interfaces.
-        //3. When active ports are deleted, or their port numbers updated, the broker must be
-        //   restarted for it to take effect so we can't reuse port numbers until it is.
-        boolean quiesce = isManagementMode() || !(port instanceof AmqpPortAdapter) || isPreviouslyUsedPortNumber(port);
-
-        port.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
-
+        port.attainDesiredState();
         return port;
     }
 
@@ -518,9 +550,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             addAccessControlProvider(accessControlProvider);
         }
 
-        boolean quiesce = isManagementMode() ;
-        accessControlProvider.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
-
+        accessControlProvider.attainDesiredState();
         return accessControlProvider;
     }
 
@@ -570,7 +600,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
         AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
-        authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        authenticationProvider.attainDesiredState();
         addAuthenticationProvider(authenticationProvider);
         return authenticationProvider;
     }
@@ -602,7 +632,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private GroupProvider createGroupProvider(Map<String, Object> attributes)
     {
         GroupProvider groupProvider = _groupProviderFactory.create(UUID.randomUUID(), this, attributes);
-        groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+        groupProvider.attainDesiredState();
         addGroupProvider(groupProvider);
         return groupProvider;
     }
@@ -866,75 +896,17 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public boolean setState(State currentState, State desiredState)
     {
-        if (desiredState == State.ACTIVE)
+        if ((desiredState == State.ACTIVE || desiredState == State.STOPPED) && _state.compareAndSet(getActualState(), desiredState))
         {
-            changeState(_groupProviders, currentState, State.ACTIVE, false);
-            changeState(_authenticationProviders, currentState, State.ACTIVE, false);
-            changeState(_accessControlProviders, currentState, State.ACTIVE, false);
-
-            CurrentActor.set(new BrokerActor(getRootMessageLogger()));
-            try
-            {
-                changeState(_vhostAdapters, currentState, State.ACTIVE, false);
-            }
-            finally
-            {
-                CurrentActor.remove();
-            }
-
-            changeState(_portAdapters, currentState,State.ACTIVE, false);
-            changeState(_plugins, currentState,State.ACTIVE, false);
-
-            if (isManagementMode())
-            {
-                CurrentActor.get().message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword()));
-            }
-            return true;
-        }
-        else if (desiredState == State.STOPPED)
-        {
-            changeState(_plugins, currentState,State.STOPPED, true);
-            changeState(_portAdapters, currentState, State.STOPPED, true);
-            changeState(_vhostAdapters,currentState, State.STOPPED, true);
-            changeState(_authenticationProviders, currentState, State.STOPPED, true);
-            changeState(_groupProviders, currentState, State.STOPPED, true);
             return true;
         }
         return false;
     }
 
-    private void changeState(Map<?, ? extends ConfiguredObject> configuredObjectMap, State currentState, State desiredState, boolean swallowException)
+    @Override
+    public State getDesiredState()
     {
-        synchronized(configuredObjectMap)
-        {
-            Collection<? extends ConfiguredObject> adapters = configuredObjectMap.values();
-            for (ConfiguredObject configuredObject : adapters)
-            {
-                if (State.ACTIVE.equals(desiredState) && State.QUIESCED.equals(configuredObject.getActualState()))
-                {
-                    if (LOGGER.isDebugEnabled())
-                    {
-                        LOGGER.debug(configuredObject + " cannot be activated as it is " +State.QUIESCED);
-                    }
-                    continue;
-                }
-                try
-                {
-                    configuredObject.setDesiredState(currentState, desiredState);
-                }
-                catch(RuntimeException e)
-                {
-                    if (swallowException)
-                    {
-                        LOGGER.error("Failed to stop " + configuredObject, e);
-                    }
-                    else
-                    {
-                        throw e;
-                    }
-                }
-            }
-        }
+        return State.ACTIVE;
     }
 
     @Override
@@ -1263,8 +1235,70 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    private boolean isPreviouslyUsedPortNumber(Port port)
+    @Override
+    public boolean isPreviouslyUsedPortNumber(int port)
     {
-        return _stillInUsePortNumbers.containsValue(port.getPort());
+        return _stillInUsePortNumbers.containsValue(port);
     }
+
+    @Override
+    public void attainDesiredState()
+    {
+        attainDesiredState(_groupProviders.values());
+        attainDesiredState(_authenticationProviders.values());
+        attainDesiredState(_accessControlProviders.values());
+        CurrentActor.set(new BrokerActor(getRootMessageLogger()));
+        try
+        {
+            attainDesiredState(_vhostAdapters.values());
+        }
+        finally
+        {
+            CurrentActor.remove();
+        }
+        attainDesiredState(_portAdapters.values());
+        attainDesiredState(_plugins.values());
+
+        if (isManagementMode())
+        {
+            CurrentActor.get().message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword()));
+        }
+
+        super.attainDesiredState();
+    }
+
+    private <T extends ConfiguredObject> void attainDesiredState(Collection<T> children)
+    {
+        for (T child : children)
+        {
+            child.attainDesiredState();
+        }
+    }
+
+    @Override
+    public void close()
+    {
+        closeAll(_plugins.values());
+        closeAll(_portAdapters.values());
+        closeAll(_vhostAdapters.values());
+        closeAll(_authenticationProviders.values());
+        closeAll(_groupProviders.values());
+        closeAll(_accessControlProviders.values());
+    }
+
+    private <T extends ConfiguredObject> void closeAll(Collection<T> children)
+    {
+        for (T child : children)
+        {
+            try
+            {
+                child.close();
+            }
+            catch(Exception e)
+            {
+                LOGGER.warn("Failed to close " + child, e);
+            }
+        }
+    }
+
 }

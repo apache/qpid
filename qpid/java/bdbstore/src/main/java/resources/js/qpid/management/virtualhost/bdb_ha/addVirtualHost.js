@@ -75,7 +75,7 @@ define(["dojo/_base/xhr",
               // create virtual host in QUIESCED state
               var hostData =
               {
-                  state: "QUIESCED",
+                  desiredState: "QUIESCED",
                   name: virtualHostName,
                   type: registry.byId("addVirtualHost.type").get("value"),
               };
@@ -156,7 +156,7 @@ define(["dojo/_base/xhr",
                   xhr.put({url: "rest/virtualhost/" + virtualHostNameEncoded,
                     sync: true, handleAs: "json",
                     headers: { "Content-Type": "application/json"},
-                    putData: json.stringify({state: "ACTIVE"}),
+                    putData: json.stringify({desiredState: "ACTIVE"}),
                     load: function(x) { that.success = true; },
                     error: function(error) {that.success = false; that.failureReason = error;}});
                 }
