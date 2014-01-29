@@ -32,12 +32,12 @@ public class Transaction
         _txnId = txnId;
     }
 
-    public void commit()
+    public void commit() throws LinkDetachedException
     {
         _transactionController.commit(this);
     }
 
-    public void rollback()
+    public void rollback() throws LinkDetachedException
     {
         _transactionController.rollback(this);
     }
