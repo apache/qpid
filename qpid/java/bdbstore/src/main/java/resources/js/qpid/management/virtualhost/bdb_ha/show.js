@@ -103,8 +103,10 @@ define(["dojo/_base/xhr",
         this.priorityContainer.style.display="block";
         this.quorumOverrideContainer.style.display="block";
       }
-      this.membersGrid.update(nodes);
-      this.membersGrid.grid._refresh();
+      if (this.membersGrid.update(nodes))
+      {
+        this.membersGrid.grid._refresh();
+      }
     }
   };
 
@@ -154,7 +156,7 @@ define(["dojo/_base/xhr",
             indirectSelection: true
           }
         },
-        EnhancedGrid, false );
+        EnhancedGrid, true );
 
     this.parametersGrid = new UpdatableStore([],
         findNode("parameters", containerNode),
@@ -162,7 +164,7 @@ define(["dojo/_base/xhr",
          { name: 'Name', field: 'name', width: '50%' },
          { name: 'Value', field: 'value', width: '50%' }
         ],
-        null, null, null, false );
+        null, null, null, true );
 
     this.replicationParametersGrid = new UpdatableStore([],
         findNode("replicationParameters", containerNode),
@@ -170,7 +172,7 @@ define(["dojo/_base/xhr",
          { name: 'Name', field: 'name', width: '50%' },
          { name: 'Value', field: 'value', width: '50%' }
         ],
-        null, null, null, false );
+        null, null, null, true );
   }
 
   BDBHA.prototype._initFields = function(nodeFields, containerNode)
