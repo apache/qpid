@@ -38,11 +38,11 @@ class MemoryMappedFile {
     /**
      * Opens a file that can be mapped by region into memory
      */
-    QPID_COMMON_EXTERN std::string open(const std::string& name, const std::string& directory);
+    QPID_COMMON_EXTERN void open(const std::string& name, const std::string& directory);
     /**
      * Closes and removes the file that can be mapped by region into memory
      */
-    QPID_COMMON_EXTERN void close(const std::string& path);
+    QPID_COMMON_EXTERN void close();
     /**
      * Returns the page size
      */
