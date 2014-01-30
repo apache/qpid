@@ -27,6 +27,7 @@ namespace broker {
 
 const std::string Broker::Options::DEFAULT_DATA_DIR_LOCATION("\\TEMP");
 const std::string Broker::Options::DEFAULT_DATA_DIR_NAME("\\QPIDD.DATA");
+const std::string Broker::Options::DEFAULT_PAGED_QUEUE_DIR("\\PQ");
 
 std::string
 Broker::Options::getHome() {

@@ -86,6 +86,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     struct Options : public qpid::Options {
         static const std::string DEFAULT_DATA_DIR_LOCATION;
         static const std::string DEFAULT_DATA_DIR_NAME;
+        static const std::string DEFAULT_PAGED_QUEUE_DIR;
 
         QPID_BROKER_EXTERN Options(const std::string& name="Broker Options");
 
