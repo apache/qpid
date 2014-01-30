@@ -17,20 +17,12 @@
 -->
 <dep>
   <groupId>org.eclipse.jetty</groupId>
-  <artifactId>jetty-server</artifactId>
-  <version>7.6.10.v20130312</version>
+  <artifactId>jetty-io</artifactId>
+  <version>8.1.14.v20131031</version>
   <exclusions>
     <exclusion>
-      <groupId>org.eclipse.jetty.orbit</groupId>
-      <artifactId>javax.servlet</artifactId>
-    </exclusion>
-    <exclusion>
       <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-continuation</artifactId>
-    </exclusion>
-     <exclusion>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-http</artifactId>
+      <artifactId>jetty-util</artifactId>
     </exclusion>
   </exclusions>
 </dep>
