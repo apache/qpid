@@ -27,11 +27,10 @@ class MemoryMappedFilePrivate {};
 MemoryMappedFile::MemoryMappedFile() : state(0) {}
 MemoryMappedFile::~MemoryMappedFile() {}
 
-std::string MemoryMappedFile::open(const std::string& /*name*/, const std::string& /*directory*/)
+void MemoryMappedFile::open(const std::string& /*name*/, const std::string& /*directory*/)
 {
-    return std::string();
 }
-void MemoryMappedFile::close(const std::string& /*path*/)
+void MemoryMappedFile::close()
 {
 }
 size_t MemoryMappedFile::getPageSize()

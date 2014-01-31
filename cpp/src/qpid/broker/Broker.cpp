@@ -217,7 +217,9 @@ Broker::Broker(const Broker::Options& conf) :
     store(new NullMessageStore),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
-    pagingDir(!conf.pagingDir.empty() ? conf.pagingDir : !conf.noDataDir ? dataDir.getPath() + Options::DEFAULT_PAGED_QUEUE_DIR : std::string() ),
+    pagingDir(!conf.pagingDir.empty() ? conf.pagingDir :
+              dataDir.isEnabled() ? dataDir.getPath() + Options::DEFAULT_PAGED_QUEUE_DIR :
+              std::string() ),
     queues(this),
     exchanges(this),
     links(this),
