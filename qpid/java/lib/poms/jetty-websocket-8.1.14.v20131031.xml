@@ -18,7 +18,7 @@
 <dep>
   <groupId>org.eclipse.jetty</groupId>
   <artifactId>jetty-websocket</artifactId>
-  <version>7.6.10.v20130312</version>
+  <version>8.1.14.v20131031</version>
   <exclusions>
     <exclusion>
       <groupId>org.eclipse.jetty</groupId>

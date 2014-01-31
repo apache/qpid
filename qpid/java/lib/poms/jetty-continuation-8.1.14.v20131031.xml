@@ -17,12 +17,6 @@
 -->
 <dep>
   <groupId>org.eclipse.jetty</groupId>
-  <artifactId>jetty-servlet</artifactId>
-  <version>7.6.10.v20130312</version>
-  <exclusions>
-    <exclusion>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-security</artifactId>
-    </exclusion>
-  </exclusions>
+  <artifactId>jetty-continuation</artifactId>
+  <version>8.1.14.v20131031</version>
 </dep>
