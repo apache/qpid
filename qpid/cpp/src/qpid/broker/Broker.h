@@ -238,11 +238,11 @@ class Broker : public sys::Runnable, public Plugin::Target,
     ExchangeRegistry& getExchanges() { return exchanges; }
     LinkRegistry& getLinks() { return links; }
     DtxManager& getDtxManager() { return dtxManager; }
-    DataDir& getDataDir() { return dataDir; }
+    const DataDir& getDataDir() { return dataDir; }
+    const DataDir& getPagingDir() { return pagingDir; }
     Options& getOptions() { return config; }
     ProtocolRegistry& getProtocolRegistry() { return protocolRegistry; }
     ObjectFactoryRegistry& getObjectFactoryRegistry() { return objectFactory; }
-    std::string getPagingDirectoryPath();
 
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
     boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }

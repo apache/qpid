@@ -26,7 +26,7 @@
 
 namespace qpid {
 
-DataDir::DataDir (std::string path) :
+DataDir::DataDir (const std::string& path) :
     enabled (!path.empty ()),
     dirPath (path)
 {

@@ -387,11 +387,6 @@ Broker::Broker(const Broker::Options& conf) :
     }
 }
 
-std::string Broker::getPagingDirectoryPath()
-{
-    return pagingDir.getPath();
-}
-
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)
 {
     bool storeEnabled = store.get() != NULL;

@@ -46,7 +46,7 @@ struct StorePlugin : public Plugin {
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
         store.reset(new MessageStoreImpl(broker));
-        DataDir& dataDir = broker->getDataDir ();
+        const DataDir& dataDir = broker->getDataDir ();
         if (options.storeDir.empty ())
         {
             if (!dataDir.isEnabled ())
