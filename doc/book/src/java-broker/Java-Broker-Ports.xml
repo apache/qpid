@@ -63,7 +63,7 @@
     </para>
 
     <para>
-        SSL can be enabled forPorts with protocols that support it by selecting the 'SSL' transport, at which
+        SSL can be enabled for Ports with protocols that support it by selecting the 'SSL' transport, at which
         point a configured <link linkend="Java-Broker-SSL-Keystore">KeyStore</link> must also be selected for the Port.
     </para>
 
@@ -83,7 +83,7 @@
     </important>
 
     <important>
-        Following deletion of an active Port, the port remains bound until the Broker is restarted. You should restart the broker
+        Following deletion of an active HTTP or JMX Port, the port remains bound until the Broker is restarted. You should restart the broker
         immediately if you require preventing new connections on the port or disconnecting existing clients.
     </important>
 
