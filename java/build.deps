@@ -35,7 +35,7 @@ geronimo-j2ee=lib/required/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
 geronimo-jta=lib/required/geronimo-jta_1.1_spec-1.1.1.jar
 geronimo-kernel=lib/required/geronimo-kernel-2.2.1.jar
 geronimo-openejb=lib/required/geronimo-ejb_3.0_spec-1.0.1.jar
-geronimo-servlet=lib/required/geronimo-servlet_2.5_spec-1.2.jar
+geronimo-servlet=lib/required/geronimo-servlet_3.0_spec-1.0.jar
 
 junit=lib/required/junit-3.8.1.jar
 mockito-all=lib/required/mockito-all-1.9.0.jar
@@ -49,14 +49,14 @@ slf4j-log4j=lib/required/slf4j-log4j12-1.6.4.jar
 
 xalan=lib/required/xalan-2.7.0.jar
 
-jetty=lib/required/jetty-server-7.6.10.v20130312.jar
-jetty-continuation=lib/required/jetty-continuation-7.6.10.v20130312.jar
-jetty-security=lib/required/jetty-security-7.6.10.v20130312.jar
-jetty-util=lib/required/jetty-util-7.6.10.v20130312.jar
-jetty-io=lib/required/jetty-io-7.6.10.v20130312.jar
-jetty-http=lib/required/jetty-http-7.6.10.v20130312.jar
-jetty-servlet=lib/required/jetty-servlet-7.6.10.v20130312.jar
-jetty-websocket=lib/required/jetty-websocket-7.6.10.v20130312.jar
+jetty=lib/required/jetty-server-8.1.14.v20131031.jar
+jetty-continuation=lib/required/jetty-continuation-8.1.14.v20131031.jar
+jetty-security=lib/required/jetty-security-8.1.14.v20131031.jar
+jetty-util=lib/required/jetty-util-8.1.14.v20131031.jar
+jetty-io=lib/required/jetty-io-8.1.14.v20131031.jar
+jetty-http=lib/required/jetty-http-8.1.14.v20131031.jar
+jetty-servlet=lib/required/jetty-servlet-8.1.14.v20131031.jar
+jetty-websocket=lib/required/jetty-websocket-8.1.14.v20131031.jar
 servlet-api=${geronimo-servlet}
 
 dojo-version=1.9.1

@@ -49,7 +49,7 @@
     <dependency org="org.apache.geronimo.specs" name="geronimo-j2ee-connector_1.5_spec" rev="2.0.0" transitive="false"/>
     <dependency org="org.apache.geronimo.specs" name="geronimo-jms_1.1_spec" rev="1.0" transitive="false"/>
     <dependency org="org.apache.geronimo.specs" name="geronimo-jta_1.1_spec" rev="1.1.1" transitive="false"/>
-    <dependency org="org.apache.geronimo.specs" name="geronimo-servlet_2.5_spec" rev="1.2" transitive="false"/>
+    <dependency org="org.apache.geronimo.specs" name="geronimo-servlet_3.0_spec" rev="1.0" transitive="false"/>
     <dependency org="com.google.code.gson" name="gson" rev="2.0" transitive="false"/>
     <dependency org="org.codehaus.jackson" name="jackson-core-asl" rev="1.9.0" transitive="false"/>
     <dependency org="org.codehaus.jackson" name="jackson-mapper-asl" rev="1.9.0" transitive="false"/>
@@ -61,14 +61,14 @@
     <dependency org="org.mockito" name="mockito-all" rev="1.9.0" transitive="false"/>
     <dependency org="org.slf4j" name="slf4j-api" rev="1.6.4" transitive="false"/>
     <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.4" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-server" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-websocket" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-continuation" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-io" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-http" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-security" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-servlet" rev="7.6.10.v20130312" transitive="false"/>
-    <dependency org="org.eclipse.jetty" name="jetty-util" rev="7.6.10.v20130312" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-server" rev="8.1.14.v20131031" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-websocket" rev="8.1.14.v20131031" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-continuation" rev="8.1.14.v20131031" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-io" rev="8.1.14.v20131031" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-http" rev="8.1.14.v20131031" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-security" rev="8.1.14.v20131031" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-servlet" rev="8.1.14.v20131031" transitive="false"/>
+    <dependency org="org.eclipse.jetty" name="jetty-util" rev="8.1.14.v20131031" transitive="false"/>
     <dependency org="xalan" name="xalan" rev="2.7.0" transitive="false"/>
     <dependency org="velocity" name="velocity" rev="1.4" transitive="false"/>
     <dependency org="velocity" name="velocity-dep" rev="1.4" transitive="false"/>
