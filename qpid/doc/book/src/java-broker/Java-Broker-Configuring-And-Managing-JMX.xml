@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -25,29 +29,293 @@
 
     <section id="Java-Broker-Configuring-And-Managing-JMX-Management-Introduction">
         <title>Introduction</title>
-        <para>
-            The brokers JMX Management Plugin provides the support for creating JMX MBeans for broker objects such as Queues, Exchanges, Connections etc.
-        </para>
-        <para>
-            It is included into the brokers Initial Configuration by default, and is responsible for servicing the RMI and JMX_RMI ports configured on the broker, with the former serving as the RMI Registry used to advertise the actual JMX Connector Server started on the latter.
-        </para>
+        <para>The JMX management plugin provides a series of managed beans (MBeans) allowing you to
+            control and monitor the Broker via an industry compliant interface. This provides a
+            convenient intergration point for a variety of Infrastructure Monitoring Solutions,
+            tools such as Jconsole and VisualVM, as well as custom Java programs and scripts.</para>
+        <para>The following sections describe how to connect to JMX, the configuration of the JMX
+            plugin covering topis including securing with SSL, programmatically interacting with
+            Qpid MBeans and finally a summary of all the MBeans made available from by the
+            plugin.</para>
+        <important>
+            <para>For new development work, the reader is directed towards the strategic <link
+                    linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management
+                    Console</link> and the <link
+                    linkend="Java-Broker-Configuring-And-Managing-REST-API">REST API</link>. Use the
+                Web/REST interfaces in preference to JMX whenever possible. The JMX interface may be
+                withdrawn in a future release.</para>
+        </important>
     </section>
 
+    <section id="Java-Broker-Configuring-And-Managing-JMX-Management-Plugin-DefaultConfiguration">
+        <title>Default Configuration</title>
+        <para>By default, the Broker is shipped with JMX enabled.</para>
+        <para>The RMI registry port runs on port <literal>8999</literal> and the JMX connector on
+            port <literal>9099</literal>. The connector is not SSL protected. Qpid will use the
+                <ulink
+                url="&oracleJdkDocUrl;java/lang/management/ManagementFactory.html#getPlatformMBeanServer()"
+                >Platform MBeanServer</ulink>.</para>
+        <para>To change these settings, use the <link
+                linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management
+                interface</link>.</para>
+    </section>
 
-    <section id="Java-Broker-Configuring-And-Managing-JMX-Management-Plugin-Configuration">
-        <title>JMX Management Plugin Configuration</title>
+    <section id="Java-Broker-Configuring-And-Managing-JMX-Management-Plugin-ConnectingToJMX">
+        <title>Connecting to JMX</title>
+        <para>The following example uses Jconsole to illustrates how to connect to JMX and assume
+            the defaults described above. Jconsole is a management tool that comes with the JDK. It
+            provides a very simple view of the MBeans, but requires no special configuration to be
+            used with Qpid.</para>
+        <para>For full details of Jconsole itself refer to Oracle's <ulink url="&oracleJconsole;"
+                >JConsole Guide</ulink>.</para>
+        <para>Jconsole can be used to connect to local or remote Java processes. On startup, it
+            presents a list of all the Java processes running on the local host and also allows you
+            to specify a service url to connect to a Java process running on a remote host.</para>
+        <para>To start Jconsole on the command line, type:</para>
+        <programlisting><![CDATA[jconsole]]></programlisting>
+        <section
+            id="Java-Broker-Configuring-And-Managing-JMX-Management-Plugin-ConnectingToJMX-Local">
+            <title>Local</title>
+            <para>To connect to a Broker running locally, simply select the process from the list.
+                You can identify the Broker by looking for its classname
+                    <literal>org.apache.qpid.server.Main</literal>.</para>
+        </section>
+        <section
+            id="Java-Broker-Configuring-And-Managing-JMX-Management-Plugin-ConnectingToJMX-Remote">
+            <title>Remote</title>
+            <para>To connect to a broker running remotely, provide the hostname and port number of
+                the <emphasis>RMI registry port</emphasis> (e.g. <literal>hostname:8999</literal>)
+                and a valid username and password.</para>
+            <para>You can also provide a service url in the form
+                    <literal>service:jmx:rmi:///jndi/rmi://hostname:8999/jmxrmi</literal></para>
+            <figure>
+                <title>Making a remote JMX connection to a Broker using jconsole</title>
+                <graphic fileref="images/JMX-Connect-Remote.png"/>
+            </figure>
+        </section>
+        <para>Once you are connected expand the tree of nodes marked
+                <literal>org.apache.qpid</literal> to begin to interact with the Qpid MBeans.</para>
+        <figure>
+            <title>Qpid MBean hierarchy</title>
+            <graphic fileref="images/JMX-Connect-MBeans.png"/>
+        </figure>
+        <section id="Java-Broker-Configuring-And-Managing-JMX-Management-Plugin-ConnectingToJMX-SSL">
+            <title>Connecting to a remote Broker protected by SSL</title>
+            <para>If you are connecting to a remote Broker whose JMX connector port has been secured
+                with SSL certificate signed by a private CA (or a self-signed certificate), you will
+                need to pass a trust store and trust store password to Jconsole. If this is
+                required, start jconsole with the following options:</para>
+            <programlisting><![CDATA[jconsole -J-Djavax.net.ssl.trustStore=jmxtruststore.jks -J-Djavax.net.ssl.trustStorePassword=password]]></programlisting>
+        </section>
+    </section>
 
-        <para>
-            The JMX Management Plugin can be configured through the <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>
-            and underlying REST management interface. By double-clicking on the JMX Management Plugin name in the object tree a tab for the plugin
-            is displayed with its current settings, which can be changed by clicking on the "Edit" button.
+    <section id="Java-Broker-Configuring-And-Managing-JMX-Example-Client">
+        <title>Example JMX Client</title>
+        <para>The following java snippet illustrates a JMX client that connects to Qpid over JMX
+            passing a userid and password, looks up the <ulink
+                url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/ManagedBroker&qpidSrcSuffix;"
+                >ManagedBroker</ulink> object corresponding to the <literal>myvhost</literal>
+            virtualhost, then invokes a method on the virtualhost to create a new queue.</para>
+        <para>A full introduction to custom JMX clients is beyond the scope of this book. For this
+            the reader is directed toward Oracle's <ulink url="&oracleJmxTutorial;">JMX
+                tutorial.</ulink></para>
+        <example id="Java-Broker-Configuring-And-Managing-JMX-Example-Client-Code">
+            <title>JMX Client illustrating the creation of a new queue</title>
+            <programlisting language="java">
+Map&lt;String, Object&lt; environment = new HashMap&lt;String, Object&gt;();
+environment.put(JMXConnector.CREDENTIALS, new String[] {"admin","password"});
+// Connect to service
+JMXServiceURL url =  new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:8999/jmxrmi");
+JMXConnector jmxConnector = JMXConnectorFactory.connect(url, environment);
+MBeanServerConnection mbsc =  jmxConnector.getMBeanServerConnection();
+// Object name for ManagedBroker mbean for virtualhost myvhost
+ObjectName objectName = new ObjectName("org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost=\"myvhost\"");
+// Get the ManagedBroker object
+ManagedBroker managedBroker = JMX.newMBeanProxy(mbsc, objectName, ManagedBroker.class);;
 
-            The following attributes can be set on the JMX Management Plugin:
-            <itemizedlist>
-                <listitem><para><emphasis>Use Platform MBean Server</emphasis>. The JMX Management Plugin can start its own MBean Server or it can use the JVMs 'Platform MBean Server'.
-                By default this is true, and the Platform MBean Server is used.</para></listitem>
-            </itemizedlist>
-            NOTE: Changes to the "Use Platform MBean Server" attribute only take effect at broker restart.
-        </para>
+// Create the queue named "myqueue"
+managedBroker.createNewQueue("myqueue", null, true);</programlisting>
+        </example>
+        <para>The Qpid classes required for a custom JMX client are included in the
+                <literal>qpid-management-common</literal> artefact.</para>
+    </section>
+
+    <section id="Java-Broker-Configuring-And-Managing-JMX-Management-MBeans">
+        <title>The MBeans</title>
+        <para>The following table summarises the available MBeans. The MBeans are self-describing:
+            each attribute and operation carry a description describing their purpose. This
+            description is visible when using tools such Jconsole. They are also available on
+            Management interfaces themselves (linked below).</para>
+        <table>
+            <title>Qpid Broker MBeans</title>
+            <tgroup cols="2">
+                <thead>
+                    <row>
+                        <entry>Management Interface</entry>
+                        <entry>Object Name</entry>
+                    </row>
+                </thead>
+                <tbody>
+                    <row>
+                        <entry morerows="1">
+                            <para>
+                                <ulink
+                                    url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/ManagedBroker&qpidSrcSuffix;"
+                                    >ManagedBroker</ulink>
+                            </para>
+                        </entry>
+                        <entry>
+                            <para>
+                                <literal>org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost="<replaceable>virtualhostname</replaceable>"</literal>
+                            </para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <para>MBean corresponding to the named virtualhost. Allows operations
+                                such as the creation/deletion of queues and exchanges on that
+                                virtualhost and virtualhost levell statistics.</para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry morerows="1">
+                            <para>
+                                <ulink
+                                    url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/ManagedQueue&qpidSrcSuffix;"
+                                    >ManagedQueue</ulink>
+                            </para>
+                        </entry>
+                        <entry>
+                            <para>
+                                <literal>org.apache.qpid:type=VirtualHost.Queue,VirtualHost="<replaceable>virtualhostname</replaceable>",name="<replaceable>queuename</replaceable>"</literal>
+                            </para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <para>MBean corresponding to the named queue on the given virtualhost.
+                                Allows queue management operations such as view message, move
+                                message and clear queue. Exposes attributes such as queue depth and
+                                durability.</para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry morerows="1">
+                            <para>
+                                <ulink
+                                    url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/ManagedExchange&qpidSrcSuffix;"
+                                    >ManagedExchange</ulink>
+                            </para>
+                        </entry>
+                        <entry>
+                            <para>
+                                <literal>org.apache.qpid:type=VirtualHost.Exchange,VirtualHost="<replaceable>virtualhostname</replaceable>",name="<replaceable>amq.direct</replaceable>",ExchangeType=<replaceable>type</replaceable></literal>
+                            </para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <para>MBean corresponding to the named exchange on the given
+                                virtualhost. Allows exchange management operations such as the
+                                creation and removal of bindings. The supported exchange types are
+                                exposed by the <literal>exchangeTypes</literal> attribute of the
+                                virtualhost.</para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry morerows="1">
+                            <para>
+                                <ulink
+                                    url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/ManagedConnection&qpidSrcSuffix;"
+                                    >ManagedConnection</ulink>
+                            </para>
+                        </entry>
+                        <entry>
+                            <para>
+                                <literal>org.apache.qpid:type=VirtualHost.Connection,VirtualHost="<replaceable>virtualhostname</replaceable>",name="<replaceable>/peerid:ephemeralport</replaceable>"</literal>
+                            </para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <para>MBean representing a active AMQP connection to the named virtual
+                                host. Name is formed from the IP and ephemeral port of the peer.
+                                Attributes include the client version and connection level
+                                statistics.</para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry morerows="1">
+                            <para>
+                                <ulink
+                                    url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/UserManagement&qpidSrcSuffix;"
+                                    >UserManagement</ulink>
+                            </para>
+                        </entry>
+                        <entry>
+                            <para>
+                                <literal>org.apache.qpid:type=UserManagement,name="UserManagement-<replaceable>authentication
+                                        manager name</replaceable>"</literal>
+                            </para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <para>When using <link
+                                    linkend="Java-Broker-Security-PlainPasswordFile-Provider">Plain
+                                    password provider</link> or <link
+                                    linkend="Java-Broker-Security-Base64MD5PasswordFile-Provider"
+                                    >Base 64 MD5 password provider</link>, permits user operations
+                                such creation and deletion of users. and password changes.</para>
+                        </entry>
+
+                    </row>
+                    <row>
+                        <entry morerows="1">
+                            <para>
+                                <ulink
+                                    url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/ServerInformation&qpidSrcSuffix;"
+                                    >ServerInformation</ulink>
+                            </para>
+                        </entry>
+                        <entry>
+                            <para>
+                                <literal>org.apache.qpid:type=ServerInformation,name=ServerInformation</literal>
+                            </para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <para>Exposes broker wide statistics, product version number and JMX
+                                management API version number.</para>
+                        </entry>
+
+                    </row>
+                    <row>
+                        <entry morerows="1">
+                            <para>
+                                <ulink
+                                    url="&qpidManagementCommonSrc;org/apache/qpid/management/common/mbeans/LoggingManagement&qpidSrcSuffix;"
+                                    >LoggingManagement</ulink>
+                            </para>
+                        </entry>
+                        <entry>
+                            <para>
+                                <literal>org.apache.qpid:type=LoggingManagement,name=LoggingManagement</literal>
+                            </para>
+                        </entry>
+                    </row>
+                    <row>
+                        <entry>
+                            <para>MBean permitting control of the Broker's logging. Exposes
+                                operations allow the logging level to be controlled at runtime
+                                (without restarting the Broker) and others that allow changes to be
+                                written back to the log4j.xml logging configuration file, or the
+                                contents of the log4.xml file to be re-read at runtime.</para>
+                        </entry>
+                    </row>
+                </tbody>
+            </tgroup>
+        </table>
     </section>
 </section>
