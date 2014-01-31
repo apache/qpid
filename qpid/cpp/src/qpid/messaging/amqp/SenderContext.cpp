@@ -95,11 +95,17 @@ bool SenderContext::send(const qpid::messaging::Message& message, SenderContext:
             return true;
         } else {
             deliveries.push_back(Delivery(nextId++));
-            Delivery& delivery = deliveries.back();
-            delivery.encode(MessageImplAccess::get(message), address, setToOnSend);
-            delivery.send(sender, unreliable);
-            *out = &delivery;
-            return true;
+            try {
+                Delivery& delivery = deliveries.back();
+                delivery.encode(MessageImplAccess::get(message), address, setToOnSend);
+                delivery.send(sender, unreliable);
+                *out = &delivery;
+                return true;
+            } catch (const std::exception& e) {
+                deliveries.pop_back();
+                --nextId;
+                throw SendError(e.what());
+            }
         }
     } else {
         return false;
