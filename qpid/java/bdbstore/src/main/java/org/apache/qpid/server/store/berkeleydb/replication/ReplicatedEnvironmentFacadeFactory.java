@@ -33,6 +33,7 @@ import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.SyncPolicy;
 
+//TODO: Should LocalReplicationNode implement EnvironmentFacadeFactory instead of having this class?
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
 
@@ -49,6 +50,8 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         {
             throw new IllegalStateException("Cannot find local replication node among virtual host nodes");
         }
+        LocalReplicationNode localReplicationNode = (LocalReplicationNode)localNode;
+
         String durability = (String)localNode.getAttribute(ReplicationNode.DURABILITY);
         Boolean coalescingSync = (Boolean)localNode.getAttribute(ReplicationNode.COALESCING_SYNC);
 
@@ -58,8 +61,8 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(localNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
-        ((LocalReplicationNode)localNode).setReplicatedEnvironmentFacade(facade);
+        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(localReplicationNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
+        localReplicationNode.setReplicatedEnvironmentFacade(facade);
         return facade;
     }
 

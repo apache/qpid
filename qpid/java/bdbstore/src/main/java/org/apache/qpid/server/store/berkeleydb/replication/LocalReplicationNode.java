@@ -43,19 +43,25 @@ import org.apache.qpid.server.util.ParameterizedTypeImpl;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.ReplicaAckPolicy;
 import com.sleepycat.je.Durability.SyncPolicy;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
 
 public class LocalReplicationNode extends AbstractAdapter implements ReplicationNode
 {
 
     private static final Durability DEFAULT_DURABILITY = new Durability(SyncPolicy.NO_SYNC, SyncPolicy.NO_SYNC,
             ReplicaAckPolicy.SIMPLE_MAJORITY);
+    static final boolean DEFAULT_DESIGNATED_PRIMARY = false;
+    static final int DEFAULT_PRIORITY = 1;
+    static final int DEFAULT_QUORUM_OVERRIDE = 0;
 
     @SuppressWarnings("serial")
     static final Map<String, Object> DEFAULTS = new HashMap<String, Object>()
     {{
         put(DURABILITY, DEFAULT_DURABILITY.toString());
         put(COALESCING_SYNC, true);
-        put(DESIGNATED_PRIMARY, false);
+        put(DESIGNATED_PRIMARY, DEFAULT_DESIGNATED_PRIMARY);
+        put(PRIORITY, DEFAULT_PRIORITY);
+        put(QUORUM_OVERRIDE, DEFAULT_QUORUM_OVERRIDE);
         //TODO: add defaults for parameters and replicatedParameters
     }};
 
@@ -77,10 +83,16 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
         put(PARAMETERS, new ParameterizedTypeImpl(Map.class, String.class, String.class));
         put(REPLICATION_PARAMETERS, new ParameterizedTypeImpl(Map.class, String.class, String.class));
         put(STORE_PATH, String.class);
+        put(LAST_KNOWN_REPLICATION_TRANSACTION_ID, Long.class);
     }};
 
+    static final String[] IMMUTABLE_ATTRIBUTES = {ReplicationNode.GROUP_NAME, ReplicationNode.HELPER_HOST_PORT,
+        ReplicationNode.HOST_PORT, ReplicationNode.COALESCING_SYNC, ReplicationNode.DURABILITY,
+        ReplicationNode.JOIN_TIME, ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID, ReplicationNode.NAME,
+        ReplicationNode.STORE_PATH, ReplicationNode.PARAMETERS, ReplicationNode.REPLICATION_PARAMETERS};
+
     private final VirtualHost _virtualHost;
-    private ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
+    private volatile ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
 
     //TODO: add state management
     public LocalReplicationNode(UUID id, Map<String, Object> attributes, VirtualHost virtualHost, TaskExecutor taskExecutor)
@@ -128,13 +140,6 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             throws IllegalStateException, AccessControlException
     {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public State getDesiredState()
-    {
-        // TODO
-        return getActualState();
     }
 
     @Override
@@ -220,42 +225,6 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             {
                 return _replicatedEnvironmentFacade.getNodeState();
             }
-            else if(DURABILITY.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getDurability();
-            }
-            else if(PRIORITY.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getPriority();
-            }
-            else if(GROUP_NAME.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getGroupName();
-            }
-            else if(NAME.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getNodeName();
-            }
-            else if(HOST_PORT.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getHostPort();
-            }
-            else if(HELPER_HOST_PORT.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getHelperHostPort();
-            }
-            else if(COALESCING_SYNC.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.isCoalescingSync();
-            }
-            else if(DESIGNATED_PRIMARY.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.isDesignatedPrimary();
-            }
-            else if(QUORUM_OVERRIDE.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getQuorumOverride();
-            }
             else if(JOIN_TIME.equals(attributeName))
             {
                 return _replicatedEnvironmentFacade.getJoinTime();
@@ -263,6 +232,18 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             else if(LAST_KNOWN_REPLICATION_TRANSACTION_ID.equals(attributeName))
             {
                 return _replicatedEnvironmentFacade.getLastKnownReplicationTransactionId();
+            }
+            else if(QUORUM_OVERRIDE.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getElectableGroupSizeOverride();
+            }
+            else if(DESIGNATED_PRIMARY.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.isDesignatedPrimary();
+            }
+            else if(PRIORITY.equals(attributeName))
+            {
+                return _replicatedEnvironmentFacade.getPriority();
             }
         }
         return super.getAttribute(attributeName);
@@ -300,7 +281,113 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             throws IllegalStateException, AccessControlException,
             IllegalArgumentException
     {
-        throw new UnsupportedOperationException();
+        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+
+        checkWhetherImmutableAttributeChanged(convertedAttributes);
+
+        updateReplicatedEnvironmentFacade(convertedAttributes);
+
+        super.changeAttributes(convertedAttributes);
+    }
+
+    private void updateReplicatedEnvironmentFacade(Map<String, Object> convertedAttributes)
+    {
+        if (_replicatedEnvironmentFacade != null)
+        {
+            if (convertedAttributes.get(PRIORITY) != null)
+            {
+                int priority = (Integer)convertedAttributes.get(PRIORITY);
+                try
+                {
+                    _replicatedEnvironmentFacade.setPriority(priority);
+                }
+                catch(Exception e)
+                {
+                    throw new IllegalConfigurationException("Cannot set attribute " + PRIORITY + " to " + priority, e);
+                }
+            }
+
+            if (convertedAttributes.get(DESIGNATED_PRIMARY) != null)
+            {
+                boolean designatedPrimary = (Boolean)convertedAttributes.get(DESIGNATED_PRIMARY);
+                try
+                {
+                    _replicatedEnvironmentFacade.setDesignatedPrimary(designatedPrimary);
+                }
+                catch(Exception e)
+                {
+                    throw new IllegalConfigurationException("Cannot set attribute '" + DESIGNATED_PRIMARY + "' to " + designatedPrimary, e);
+                }
+            }
+
+            if (convertedAttributes.get(QUORUM_OVERRIDE) != null)
+            {
+                int quorumOverride = (Integer)convertedAttributes.get(QUORUM_OVERRIDE);
+                try
+                {
+                    _replicatedEnvironmentFacade.setElectableGroupSizeOverride(quorumOverride);
+                }
+                catch(Exception e)
+                {
+                    throw new IllegalConfigurationException("Cannot set attribute '" + QUORUM_OVERRIDE + "' to " + quorumOverride, e);
+                }
+            }
+        }
+
+        if (convertedAttributes.containsKey(ROLE))
+        {
+            String currentRole = (String)getAttribute(ROLE);
+            if (!ReplicatedEnvironment.State.REPLICA.name().equals(currentRole))
+            {
+                throw new IllegalConfigurationException("Cannot transfer mastership when not a replica");
+            }
+
+            // we do not want to write role into the store
+            String role  = (String)convertedAttributes.remove(ROLE);
+
+            if (ReplicatedEnvironment.State.MASTER.name().equals(role) )
+            {
+                try
+                {
+                    _replicatedEnvironmentFacade.transferMasterToSelfAsynchronously();
+                }
+                catch(Exception e)
+                {
+                    throw new IllegalConfigurationException("Cannot transfer mastership", e);
+                }
+            }
+            else
+            {
+                throw new IllegalConfigurationException("Changing role to other value then " + ReplicatedEnvironment.State.MASTER.name() + " is unsupported");
+            }
+        }
+    }
+
+    private void checkWhetherImmutableAttributeChanged(Map<String, Object> convertedAttributes)
+    {
+        for (int i = 0; i < IMMUTABLE_ATTRIBUTES.length; i++)
+        {
+            String attributeName = IMMUTABLE_ATTRIBUTES[i];
+            if (convertedAttributes.containsKey(attributeName))
+            {
+                Object newValue = convertedAttributes.get(attributeName);
+                Object currentValue = getAttribute(attributeName);
+                if (currentValue == null)
+                {
+                    if (newValue != null)
+                    {
+                        throw new IllegalConfigurationException("Cannot change value of immutable attribute " + attributeName);
+                    }
+                }
+                else
+                {
+                    if (!currentValue.equals(newValue))
+                    {
+                        throw new IllegalConfigurationException("Cannot change value of immutable attribute " + attributeName);
+                    }
+                }
+            }
+        }
     }
 
     protected VirtualHost getVirtualHost()
@@ -327,6 +414,11 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     public void setReplicatedEnvironmentFacade(ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
         _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
+    }
+
+    public Object getActualAttribute(String attributeName)
+    {
+        return super.getAttribute(attributeName);
     }
 
 }

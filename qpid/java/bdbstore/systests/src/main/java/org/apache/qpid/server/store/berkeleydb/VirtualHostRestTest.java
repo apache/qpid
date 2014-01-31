@@ -36,21 +36,49 @@ public class VirtualHostRestTest extends QpidRestTestCase
 {
 
     private static final String VIRTUALHOST_NODES_ATTRIBUTE = "replicationnodes";
+    private File _storeFile;
+    private String _hostName;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _hostName = getTestName();
+
+        _storeFile = new File(TMP_FOLDER, "store-" + _hostName + "-" + System.currentTimeMillis());
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            if (_storeFile != null)
+            {
+                FileUtils.delete(_storeFile, true);
+            }
+        }
+    }
 
     public void testPutCreateHAVirtualHost() throws Exception
     {
         Map<String, Object> hostData = new HashMap<String, Object>();
-        String hostName = getTestName();
-        hostData.put(VirtualHost.NAME, hostName);
+        hostData.put(VirtualHost.NAME, _hostName);
         hostData.put(VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
         hostData.put(VirtualHost.DESIRED_STATE, State.QUIESCED);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
+        int responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + _hostName, "PUT", hostData);
         assertEquals("Unexpected response code for virtual host creation request", 201, responseCode);
 
-        // TODO should observe vh state
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + _hostName);
+        assertEquals("Virtual host in unexpected desired state ", State.QUIESCED.name(), hostDetails.get(VirtualHost.DESIRED_STATE));
+        assertEquals("Virtual host in unexpected actual state ", State.QUIESCED.name(), hostDetails.get(VirtualHost.STATE));
 
-        String storeLocation = new File(TMP_FOLDER, "store-" + hostName + "-" + System.currentTimeMillis()).getAbsolutePath();
+        String storeLocation = _storeFile.getAbsolutePath();
         String nodeName = "node1";
         String groupName = "replication-group";
         int port = findFreePort();
@@ -63,44 +91,35 @@ public class VirtualHostRestTest extends QpidRestTestCase
         nodeData.put(ReplicationNode.HELPER_HOST_PORT, hostPort);
         nodeData.put(ReplicationNode.STORE_PATH, storeLocation);
 
-        String createNodeUrl = "/rest/replicationnode/" + hostName + "/" + nodeName;
+        String createNodeUrl = "/rest/replicationnode/" + _hostName + "/" + nodeName;
         responseCode = getRestTestHelper().submitRequest(createNodeUrl, "PUT", nodeData);
         assertEquals("Unexpected response code for node creation request", 201, responseCode);
 
         hostData.clear();
         hostData.put(VirtualHost.DESIRED_STATE, State.ACTIVE);
-        responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
+        responseCode = getRestTestHelper().submitRequest("/rest/virtualhost/" + _hostName, "PUT", hostData);
         assertEquals("Unexpected response code for virtual host update status", 200, responseCode);
 
-        waitForVirtualHostActivation(hostName, 10000l);
+        waitForVirtualHostActivation(_hostName, 10000l);
 
-        Map<String, Object> replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + hostName + "/" + nodeName);
+        Map<String, Object> replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + _hostName + "/" + nodeName);
         assertLocalNode(nodeData, replicationNodeDetails);
-        try
-        {
-            // make sure that the host is saved in the broker store
-            restartBroker();
 
-            Map<String, Object> hostDetails = waitForVirtualHostActivation(hostName, 10000l);
-            Asserts.assertVirtualHost(hostName, hostDetails);
-            assertEquals("Unexpected virtual host type", BDBHAVirtualHostFactory.TYPE.toString(), hostDetails.get(VirtualHost.TYPE));
+        // make sure that the host is saved in the broker store
+        restartBroker();
 
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> nodes = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_NODES_ATTRIBUTE);
-            assertEquals("Unexpected number of nodes", 1, nodes.size());
-            assertLocalNode(nodeData, nodes.get(0));
+        hostDetails = waitForVirtualHostActivation(_hostName, 10000l);
+        Asserts.assertVirtualHost(_hostName, hostDetails);
+        assertEquals("Unexpected virtual host type", BDBHAVirtualHostFactory.TYPE.toString(), hostDetails.get(VirtualHost.TYPE));
 
-            // verify that that node rest interface returns the same node attributes
-            replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + hostName + "/" + nodeName);
-            assertLocalNode(nodeData, replicationNodeDetails);
-        }
-        finally
-        {
-            if (storeLocation != null)
-            {
-                FileUtils.delete(new File(storeLocation), true);
-            }
-        }
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_NODES_ATTRIBUTE);
+        assertEquals("Unexpected number of nodes", 1, nodes.size());
+        assertLocalNode(nodeData, nodes.get(0));
+
+        // verify that that node rest interface returns the same node attributes
+        replicationNodeDetails = getRestTestHelper().getJsonAsSingletonList("/rest/replicationnode/" + _hostName + "/" + nodeName);
+        assertLocalNode(nodeData, replicationNodeDetails);
     }
 
     private void assertLocalNode(Map<String, Object> expectedNodeAttributes, Map<String, Object> actualNodesAttributes)

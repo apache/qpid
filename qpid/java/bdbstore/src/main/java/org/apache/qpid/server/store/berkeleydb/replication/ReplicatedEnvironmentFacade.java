@@ -28,6 +28,7 @@ import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.PARAMETERS;
 import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.*;
 import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
 
 import java.io.File;
@@ -86,10 +87,15 @@ import com.sleepycat.je.utilint.PropUtil;
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
     public static final String GROUP_CHECK_INTERVAL_PROPERTY_NAME = "qpid.bdb.ha.group_check_interval";
+    public static final String MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.master_transfer_interval";
 
     private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
     private static final long DEFAULT_GROUP_CHECK_INTERVAL = 1000l;
     private static final long GROUP_CHECK_INTERVAL = Long.getLong(GROUP_CHECK_INTERVAL_PROPERTY_NAME, DEFAULT_GROUP_CHECK_INTERVAL);
+
+    private static final int DEFAULT_MASTER_TRANSFER_TIMEOUT = 1000 * 60;
+
+    public static final int MASTER_TRANSFER_TIMEOUT = Integer.getInteger(MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME, DEFAULT_MASTER_TRANSFER_TIMEOUT);
 
     @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
@@ -134,33 +140,26 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
     public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
 
-    private final String _prettyGroupNodeName;
-    private final String _groupName;
-    private final String _nodeName;
-    private final String _nodeHostPort;
-    private final String _helperHostPort;
+    private final LocalReplicationNode _replicationNode;
     private final Durability _durability;
-    private final boolean _designatedPrimary;
-    private final boolean _coalescingSync;
+    private final Boolean _coalescingSync;
+    private final String _prettyGroupNodeName;
     private final File _environmentDirectory;
-    private final Map<String, String> _environmentParameters;
-    private final Map<String, String> _replicationEnvironmentParameters;
+
     private final ExecutorService _restartEnvironmentExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.OPENING);
     private final ConcurrentMap<String, DatabaseHolder> _databases = new ConcurrentHashMap<String, DatabaseHolder>();
     private final ConcurrentMap<String, RemoteReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, RemoteReplicationNode>();
     private final RemoteReplicationNodeFactory _remoteReplicationNodeFactory;
-
     private final AtomicReference<ReplicationGroupListener> _replicationGroupListener = new AtomicReference<ReplicationGroupListener>();
     private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
+
     private volatile ReplicatedEnvironment _environment;
     private long _joinTime;
-    private String _lastKnownReplicationTransactionId;
+    private long _lastKnownReplicationTransactionId;
 
-    @SuppressWarnings("unchecked")
-    public ReplicatedEnvironmentFacade(org.apache.qpid.server.model.ReplicationNode replicationNode,
-            RemoteReplicationNodeFactory remoteReplicationNodeFactory)
+    public ReplicatedEnvironmentFacade(LocalReplicationNode replicationNode, RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
         _environmentDirectory = new File((String)replicationNode.getAttribute(STORE_PATH));
         if (!_environmentDirectory.exists())
@@ -172,16 +171,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
         }
 
-        _groupName = (String)replicationNode.getAttribute(GROUP_NAME);
-        _nodeName = replicationNode.getName();
-        _nodeHostPort = (String)replicationNode.getAttribute(HOST_PORT);;
-        _helperHostPort = (String)replicationNode.getAttribute(HELPER_HOST_PORT);
-        _durability = Durability.parse((String)replicationNode.getAttribute(DURABILITY));
-        _designatedPrimary = (Boolean)replicationNode.getAttribute(DESIGNATED_PRIMARY);
-        _coalescingSync = (Boolean)replicationNode.getAttribute(COALESCING_SYNC);
-        _environmentParameters = (Map<String, String>)replicationNode.getAttribute(PARAMETERS);
-        _replicationEnvironmentParameters = (Map<String, String>)replicationNode.getAttribute(REPLICATION_PARAMETERS);
-        _prettyGroupNodeName = _groupName + ":" + _nodeName;
+        _replicationNode = replicationNode;
+
+        _durability = Durability.parse((String)_replicationNode.getAttribute(DURABILITY));
+        _coalescingSync = (Boolean)_replicationNode.getAttribute(COALESCING_SYNC);
+        _prettyGroupNodeName = (String)_replicationNode.getAttribute(GROUP_NAME) + ":" + _replicationNode.getName();
 
         _restartEnvironmentExecutor = Executors.newFixedThreadPool(1, new DaemonThreadFactory("Environment-Starter:" + _prettyGroupNodeName));
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
@@ -239,6 +233,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public AMQStoreException handleDatabaseException(String contextMessage, final DatabaseException dbe)
     {
+        //TODO: restart environment if dbe  instanceof MasterReplicaTransitionException
         boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientReplicasException);
         if (restart)
         {
@@ -402,22 +397,22 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public String getGroupName()
     {
-        return _groupName;
+        return (String)_replicationNode.getAttribute(GROUP_NAME);
     }
 
     public String getNodeName()
     {
-        return _nodeName;
+        return _replicationNode.getName();
     }
 
     public String getHostPort()
     {
-        return _nodeHostPort;
+        return (String)_replicationNode.getAttribute(HOST_PORT);
     }
 
     public String getHelperHostPort()
     {
-        return _helperHostPort;
+        return (String)_replicationNode.getAttribute(HELPER_HOST_PORT);
     }
 
     public String getDurability()
@@ -432,18 +427,21 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public String getNodeState()
     {
-        ReplicatedEnvironment.State state = _environment.getState();
-        return state.toString();
+        try
+        {
+            ReplicatedEnvironment.State state = _environment.getState();
+            return state.toString();
+        }
+        catch (IllegalStateException ise)
+        {
+            // Environment must be being recreated
+            return ReplicatedEnvironment.State.UNKNOWN.name();
+        }
     }
 
     public boolean isDesignatedPrimary()
     {
         return _environment.getRepMutableConfig().getDesignatedPrimary();
-    }
-
-    public int getQuorumOverride()
-    {
-        return _environment.getRepMutableConfig().getElectableGroupSizeOverride();
     }
 
     public List<Map<String, String>> getGroupMembers()
@@ -520,26 +518,111 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    public int getPriority()
+    int getPriority()
     {
         ReplicationMutableConfig repConfig = _environment.getRepMutableConfig();
         return repConfig.getNodePriority();
     }
 
-    public int getElectableGroupSizeOverride()
+    public void setPriority(int priority) throws AMQStoreException
+    {
+        checkNotOpeningAndEnvironmentIsValid();
+
+        try
+        {
+            final ReplicationMutableConfig oldConfig = _environment.getRepMutableConfig();
+            final ReplicationMutableConfig newConfig = oldConfig.setNodePriority(priority);
+            _environment.setRepMutableConfig(newConfig);
+
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Node " + _prettyGroupNodeName + " priority has been changed to " + priority);
+            }
+        }
+        catch (DatabaseException e)
+        {
+            // TODO: I am not sure about the exception handing here
+            throw handleDatabaseException("Cannot set priority on " + _prettyGroupNodeName, e);
+        }
+    }
+
+    private void checkNotOpeningAndEnvironmentIsValid()
+    {
+        if (_state.get() == State.OPENING)
+        {
+            throw new IllegalStateException("Environment facade is in opening state");
+        }
+
+        if (!_environment.isValid())
+        {
+            throw new IllegalStateException("Environment is not valid");
+        }
+    }
+
+    int getElectableGroupSizeOverride()
     {
         ReplicationMutableConfig repConfig = _environment.getRepMutableConfig();
         return repConfig.getElectableGroupSizeOverride();
     }
+
+    public void setElectableGroupSizeOverride(int electableGroupOverride) throws AMQStoreException
+    {
+        checkNotOpeningAndEnvironmentIsValid();
+
+        try
+        {
+            final ReplicationMutableConfig oldConfig = _environment.getRepMutableConfig();
+            final ReplicationMutableConfig newConfig = oldConfig.setElectableGroupSizeOverride(electableGroupOverride);
+            _environment.setRepMutableConfig(newConfig);
+
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Node " + _prettyGroupNodeName + " electable group size override has been changed to " + electableGroupOverride);
+            }
+        }
+        catch (DatabaseException e)
+        {
+            // TODO: I am not sure about the exception handing here
+            throw handleDatabaseException("Cannot set electable group size override on " + _prettyGroupNodeName, e);
+        }
+    }
+
 
     public long getJoinTime()
     {
         return _joinTime ;
     }
 
-    public String getLastKnownReplicationTransactionId()
+    public long getLastKnownReplicationTransactionId()
     {
         return _lastKnownReplicationTransactionId;
+    }
+
+    public void transferMasterToSelfAsynchronously() throws AMQStoreException
+    {
+        checkNotOpeningAndEnvironmentIsValid();
+
+        _groupChangeExecutor.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    ReplicationGroupAdmin admin = createReplicationGroupAdmin();
+                    String newMaster = admin.transferMaster(Collections.singleton(getNodeName()), MASTER_TRANSFER_TIMEOUT, TimeUnit.MILLISECONDS, true);
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("The mastership has been transfered to " + newMaster);
+                    }
+                }
+                catch (DatabaseException e)
+                {
+                    LOGGER.warn("Exception on transfering the mastership to " + _prettyGroupNodeName
+                            + " Master transfer timeout : " + MASTER_TRANSFER_TIMEOUT, e);
+                }
+            }
+        });
     }
 
     public ReplicatedEnvironment getEnvironment()
@@ -610,7 +693,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         final ReplicationConfig repConfig = _environment.getRepConfig();
         helpers.add(InetSocketAddress.createUnresolved(repConfig.getNodeHostname(), repConfig.getNodePort()));
 
-        return new ReplicationGroupAdmin(_groupName, helpers);
+        return new ReplicationGroupAdmin((String)_replicationNode.getAttribute(GROUP_NAME), helpers);
     }
 
     private void closeEnvironment()
@@ -713,35 +796,49 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
+    @SuppressWarnings("unchecked")
     private ReplicatedEnvironment createEnvironment(boolean createEnvironmentInSeparateThread)
     {
+        String groupName = (String)_replicationNode.getActualAttribute(GROUP_NAME);
+        String helperHostPort = (String)_replicationNode.getActualAttribute(HELPER_HOST_PORT);
+        String hostPort = (String)_replicationNode.getActualAttribute(HOST_PORT);
+        Map<String, String> environmentParameters = (Map<String, String>)_replicationNode.getActualAttribute(PARAMETERS);
+        Map<String, String> replicationEnvironmentParameters = (Map<String, String>)_replicationNode.getActualAttribute(REPLICATION_PARAMETERS);
+        Boolean designatedPrimary = (Boolean)_replicationNode.getActualAttribute(DESIGNATED_PRIMARY);
+        Integer priority = (Integer)_replicationNode.getActualAttribute(PRIORITY);
+        Integer quorumOverride = (Integer)_replicationNode.getActualAttribute(QUORUM_OVERRIDE);
+
         if (LOGGER.isInfoEnabled())
         {
             LOGGER.info("Creating environment");
             LOGGER.info("Environment path " + _environmentDirectory.getAbsolutePath());
-            LOGGER.info("Group name " + _groupName);
-            LOGGER.info("Node name " + _nodeName);
-            LOGGER.info("Node host port " + _nodeHostPort);
-            LOGGER.info("Helper host port " + _helperHostPort);
+            LOGGER.info("Group name " + groupName);
+            LOGGER.info("Node name " + _replicationNode.getName());
+            LOGGER.info("Node host port " + hostPort);
+            LOGGER.info("Helper host port " + helperHostPort);
             LOGGER.info("Durability " + _durability);
             LOGGER.info("Coalescing sync " + _coalescingSync);
-            LOGGER.info("Designated primary (applicable to 2 node case only) " + _designatedPrimary);
+            LOGGER.info("Designated primary (applicable to 2 node case only) " + designatedPrimary);
+            LOGGER.info("Node priority " + priority);
+            LOGGER.info("Quorum override " + quorumOverride);
         }
 
         Map<String, String> replicationEnvironmentSettings = new HashMap<String, String>(REPCONFIG_DEFAULTS);
-        if (_replicationEnvironmentParameters != null && !_replicationEnvironmentParameters.isEmpty())
+        if (replicationEnvironmentParameters != null && !replicationEnvironmentParameters.isEmpty())
         {
-            replicationEnvironmentSettings.putAll(_replicationEnvironmentParameters);
+            replicationEnvironmentSettings.putAll(replicationEnvironmentParameters);
         }
         Map<String, String> environmentSettings = new HashMap<String, String>(EnvironmentFacade.ENVCONFIG_DEFAULTS);
-        if (_environmentParameters != null && !_environmentParameters.isEmpty())
+        if (environmentParameters != null && !environmentParameters.isEmpty())
         {
-            environmentSettings.putAll(_environmentParameters);
+            environmentSettings.putAll(environmentParameters);
         }
 
-        ReplicationConfig replicationConfig = new ReplicationConfig(_groupName, _nodeName, _nodeHostPort);
-        replicationConfig.setHelperHosts(_helperHostPort);
-        replicationConfig.setDesignatedPrimary(_designatedPrimary);
+        ReplicationConfig replicationConfig = new ReplicationConfig(groupName, _replicationNode.getName(), hostPort);
+        replicationConfig.setHelperHosts(helperHostPort);
+        replicationConfig.setDesignatedPrimary(designatedPrimary);
+        replicationConfig.setNodePriority(priority);
+        replicationConfig.setElectableGroupSizeOverride(quorumOverride);
 
         for (Map.Entry<String, String> configItem : replicationEnvironmentSettings.entrySet())
         {
@@ -853,9 +950,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         @Override
         public void run()
         {
+            String groupName = (String)_replicationNode.getAttribute(GROUP_NAME);
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Checking for changes in the group " + _groupName);
+                LOGGER.debug("Checking for changes in the group " + groupName);
             }
 
             ReplicatedEnvironment env = _environment;
@@ -876,7 +974,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         {
                             if (LOGGER.isDebugEnabled())
                             {
-                                LOGGER.debug("Remote replication node added '" + replicationNode + "' to '" + _groupName + "'");
+                                LOGGER.debug("Remote replication node added '" + replicationNode + "' to '" + groupName + "'");
                             }
 
                             RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, group.getName());
@@ -901,7 +999,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         String replicationNodeName = replicationNodeEntry.getKey();
                         if (LOGGER.isDebugEnabled())
                         {
-                            LOGGER.debug("Remote replication node removed '" + replicationNodeName + "' from '" + _groupName + "'");
+                            LOGGER.debug("Remote replication node removed '" + replicationNodeName + "' from '" + groupName + "'");
                         }
                         _remoteReplicationNodes.remove(replicationNodeName);
                         if (replicationGroupListener != null)
@@ -950,11 +1048,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     }
                     catch (ExecutionException e)
                     {
-                        LOGGER.warn("Cannot update node state for group " + _groupName, e.getCause());
+                        LOGGER.warn("Cannot update node state for group " + (String)_replicationNode.getAttribute(GROUP_NAME), e.getCause());
                     }
                     catch (TimeoutException e)
                     {
-                        LOGGER.warn("Timeout whilst updating node state for group " + _groupName);
+                        LOGGER.warn("Timeout whilst updating node state for group " + (String)_replicationNode.getAttribute(GROUP_NAME));
                         future.cancel(true);
                     }
                 }
@@ -1023,5 +1121,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
     }
+
 
 }

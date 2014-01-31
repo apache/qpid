@@ -21,11 +21,14 @@
 package org.apache.qpid.server.store.berkeleydb.replication;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -34,6 +37,8 @@ import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+
 public class LocalReplicationNodeTest extends QpidTestCase
 {
 
@@ -41,6 +46,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
     private UUID _id;
     private VirtualHost _virtualHost;
     private TaskExecutor _taskExecutor;
+    private ReplicatedEnvironmentFacade _facade;
 
     @Override
     public void setUp() throws Exception
@@ -48,6 +54,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
         super.setUp();
         _taskExecutor = mock(TaskExecutor.class);
         _virtualHost = mock(VirtualHost.class);
+        _facade = mock(ReplicatedEnvironmentFacade.class);
     }
 
     @Override
@@ -129,51 +136,153 @@ public class LocalReplicationNodeTest extends QpidTestCase
         assertNodeAttributes(attributes, node);
     }
 
-    public void testSetReplicatedEnvironmentFacade()
+    public void testGetValuesFromReplicatedEnvironmentFacade()
     {
-        long joinTime = System.currentTimeMillis();
-        int priority = 1;
-        String masterState = "MASTER";
-        int quorumOverride  = 2;
-        int port = 9999;
-        String hostPort = "localhost:" + port;
-        String groupName = getTestName();
-        String storePath = TMP_FOLDER + File.separator + groupName;
-        boolean designatedPrimary = true;
-        String nodeName = "nodeName";
-
-        Map<String, Object> attributes = createValidAttributes();
-        attributes.put(ReplicationNode.HOST_PORT, hostPort);
-        attributes.put(ReplicationNode.HELPER_HOST_PORT, hostPort);
-        attributes.put(ReplicationNode.STORE_PATH, storePath);
-        attributes.put(ReplicationNode.DESIGNATED_PRIMARY, designatedPrimary);
-        attributes.put(ReplicationNode.GROUP_NAME, groupName);
-        attributes.put(ReplicationNode.NAME, nodeName);
-        LocalReplicationNode node = new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
 
         assertNull("Unexpected role attribute", node.getAttribute(ReplicationNode.ROLE));
-        assertNull("Unexpected quorum override attribute", node.getAttribute(ReplicationNode.QUORUM_OVERRIDE));
-        assertNull("Unexpected priority attribute", node.getAttribute(ReplicationNode.PRIORITY));
         assertNull("Unexpected join time attribute", node.getAttribute(ReplicationNode.JOIN_TIME));
+        assertNull("Unexpected last transaction id", node.getAttribute(ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID));
+        assertEquals("Unexpected priority attribute", LocalReplicationNode.DEFAULT_PRIORITY, node.getAttribute(ReplicationNode.PRIORITY));
+        assertEquals("Unexpected quorum override attribute", LocalReplicationNode.DEFAULT_QUORUM_OVERRIDE, node.getAttribute(ReplicationNode.QUORUM_OVERRIDE));
+        assertEquals("Unexpected designated primary attribute", LocalReplicationNode.DEFAULT_DESIGNATED_PRIMARY, node.getAttribute(ReplicationNode.DESIGNATED_PRIMARY));
 
-        ReplicatedEnvironmentFacade facade  = mock(ReplicatedEnvironmentFacade.class);
-        when(facade.getNodeState()).thenReturn(masterState);
-        when(facade.getPriority()).thenReturn(priority);
-        when(facade.getJoinTime()).thenReturn(joinTime);
-        when(facade.getQuorumOverride()).thenReturn(quorumOverride);
-        when(facade.getGroupName()).thenReturn(groupName);
-        when(facade.getHelperHostPort()).thenReturn(hostPort);
-        when(facade.getHostPort()).thenReturn(hostPort);
-        when(facade.isDesignatedPrimary()).thenReturn(designatedPrimary);
-        when(facade.getNodeName()).thenReturn(nodeName);
+        String masterState = "MASTER";
+        long joinTime = System.currentTimeMillis();
+        long lastKnowTransactionId = 1000l;
+        boolean designatedPrimary = true;
+        int priority = 2;
+        int quorumOverride = 3;
 
-        node.setReplicatedEnvironmentFacade(facade);
+        when(_facade.getNodeState()).thenReturn(masterState);
+        when(_facade.getJoinTime()).thenReturn(joinTime);
+        when(_facade.getLastKnownReplicationTransactionId()).thenReturn(lastKnowTransactionId);
+        when(_facade.isDesignatedPrimary()).thenReturn(designatedPrimary);
+        when(_facade.getPriority()).thenReturn(priority);
+        when(_facade.getElectableGroupSizeOverride()).thenReturn(quorumOverride);
+
+        node.setReplicatedEnvironmentFacade(_facade);
         assertEquals("Unexpected role attribute", masterState, node.getAttribute(ReplicationNode.ROLE));
-        assertEquals("Unexpected quorum override attribute", quorumOverride, node.getAttribute(ReplicationNode.QUORUM_OVERRIDE));
-        assertEquals("Unexpected priority attribute", priority, node.getAttribute(ReplicationNode.PRIORITY));
         assertEquals("Unexpected join time attribute", joinTime, node.getAttribute(ReplicationNode.JOIN_TIME));
+        assertEquals("Unexpected last transaction id attribute", lastKnowTransactionId, node.getAttribute(ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID));
+        assertEquals("Unexpected priority attribute", priority, node.getAttribute(ReplicationNode.PRIORITY));
+        assertEquals("Unexpected quorum override attribute", quorumOverride, node.getAttribute(ReplicationNode.QUORUM_OVERRIDE));
+    }
 
-        assertNodeAttributes(attributes, node);
+    public void testSetDesignatedPrimary() throws Exception
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        node.setReplicatedEnvironmentFacade(_facade);
+
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.DESIGNATED_PRIMARY, true));
+
+        verify(_facade).setDesignatedPrimary(true);
+
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.DESIGNATED_PRIMARY, false));
+        verify(_facade).setDesignatedPrimary(false);
+    }
+
+    public void testSetPriority() throws Exception
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        node.setReplicatedEnvironmentFacade(_facade);
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.PRIORITY, 100));
+
+        verify(_facade).setPriority(100);
+    }
+
+    public void testSetQuorumOverride() throws Exception
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        node.setReplicatedEnvironmentFacade(_facade);
+
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.QUORUM_OVERRIDE, 10));
+
+        verify(_facade).setElectableGroupSizeOverride(10);
+    }
+
+    public void testSetRole() throws Exception
+    {
+        when(_facade.getNodeState()).thenReturn(ReplicatedEnvironment.State.REPLICA.name());
+
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        node.setReplicatedEnvironmentFacade(_facade);
+
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.ROLE, ReplicatedEnvironment.State.MASTER.name()));
+
+        verify(_facade).transferMasterToSelfAsynchronously();
+    }
+
+    public void testSetRoleToReplicaUnsupported() throws Exception
+    {
+        when(_facade.getNodeState()).thenReturn(ReplicatedEnvironment.State.REPLICA.name());
+
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        node.setReplicatedEnvironmentFacade(_facade);
+
+        try
+        {
+            node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.ROLE, ReplicatedEnvironment.State.REPLICA.name()));
+            fail("Exception not thrown");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            // PASS
+        }
+    }
+
+    public void testSetRoleWhenCurrentRoleNotRepliaIsUnsupported() throws Exception
+    {
+        when(_facade.getNodeState()).thenReturn(ReplicatedEnvironment.State.MASTER.name());
+
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        node.setReplicatedEnvironmentFacade(_facade);
+
+        try
+        {
+            node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.ROLE, ReplicatedEnvironment.State.MASTER.name()));
+            fail("Exception not thrown");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            // PASS
+        }
+    }
+
+    public void testSetImmutableAttributesThrowException() throws Exception
+    {
+        Map<String, Object> changeAttributeMap = new HashMap<String, Object>();
+        changeAttributeMap.put(ReplicationNode.GROUP_NAME, "newGroupName");
+        changeAttributeMap.put(ReplicationNode.HELPER_HOST_PORT, "newhost:1234");
+        changeAttributeMap.put(ReplicationNode.HOST_PORT, "newhost:1234");
+        changeAttributeMap.put(ReplicationNode.COALESCING_SYNC, Boolean.FALSE);
+        changeAttributeMap.put(ReplicationNode.DURABILITY, "durability");
+        changeAttributeMap.put(ReplicationNode.JOIN_TIME, 1000l);
+        changeAttributeMap.put(ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID, 10001l);
+        changeAttributeMap.put(ReplicationNode.NAME, "newName");
+        changeAttributeMap.put(ReplicationNode.STORE_PATH, "/not/used");
+        changeAttributeMap.put(ReplicationNode.PARAMETERS, Collections.emptyMap());
+        changeAttributeMap.put(ReplicationNode.REPLICATION_PARAMETERS, Collections.emptyMap());
+
+        for (Entry<String, Object> entry : changeAttributeMap.entrySet())
+        {
+            assertSetAttributesThrowsException(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void assertSetAttributesThrowsException(String attributeName, Object attributeValue)
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+
+        try
+        {
+            node.setAttributes(Collections.<String, Object>singletonMap(attributeName, attributeValue));
+            fail("Operation to change attribute '" + attributeName + "' should fail");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            // pass
+        }
     }
 
     private Map<String, Object> createValidAttributes()

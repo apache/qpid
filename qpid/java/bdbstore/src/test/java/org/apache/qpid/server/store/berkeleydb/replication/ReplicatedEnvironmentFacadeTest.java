@@ -28,7 +28,7 @@ import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
 import static org.apache.qpid.server.model.ReplicationNode.NAME;
 import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
-import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
+import static org.apache.qpid.server.model.ReplicationNode.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -79,6 +79,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private static final String TEST_DURABILITY = Durability.parse("NO_SYNC,NO_SYNC,SIMPLE_MAJORITY").toString();
     private static final boolean TEST_DESIGNATED_PRIMARY = false;
     private static final boolean TEST_COALESCING_SYNC = true;
+    private static final int TEST_PRIORITY = 10;
+    private static final int TEST_ELECTABLE_GROUP_OVERRIDE = 0;
 
     private File _storePath;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
@@ -122,7 +124,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     }
     public void testEnvironmentFacade() throws Exception
     {
-        EnvironmentFacade ef = (ReplicatedEnvironmentFacade) createMaster();
+        EnvironmentFacade ef = createMaster();
         assertNotNull("Environment should not be null", ef);
         Environment e = ef.getEnvironment();
         assertTrue("Environment is not valid", e.isValid());
@@ -130,7 +132,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testClose() throws Exception
     {
-        EnvironmentFacade ef = (ReplicatedEnvironmentFacade) createMaster();
+        EnvironmentFacade ef = createMaster();
         ef.close();
         Environment e = ef.getEnvironment();
 
@@ -139,7 +141,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testOpenDatabases() throws Exception
     {
-        EnvironmentFacade ef = (ReplicatedEnvironmentFacade) createMaster();
+        EnvironmentFacade ef = createMaster();
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
         dbConfig.setAllowCreate(true);
@@ -153,7 +155,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testGetOpenDatabaseForNonExistingDatabase() throws Exception
     {
-        EnvironmentFacade ef = (ReplicatedEnvironmentFacade) createMaster();
+        EnvironmentFacade ef = createMaster();
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
         dbConfig.setAllowCreate(true);
@@ -173,50 +175,42 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testGetGroupName() throws Exception
     {
-        assertEquals("Unexpected group name", TEST_GROUP_NAME, ((ReplicatedEnvironmentFacade) createMaster()).getGroupName());
+        assertEquals("Unexpected group name", TEST_GROUP_NAME, createMaster().getGroupName());
     }
 
     public void testGetNodeName() throws Exception
     {
-        assertEquals("Unexpected group name", TEST_NODE_NAME, ((ReplicatedEnvironmentFacade) createMaster()).getNodeName());
+        assertEquals("Unexpected group name", TEST_NODE_NAME, createMaster().getNodeName());
     }
 
     public void testGetNodeHostPort() throws Exception
     {
-        assertEquals("Unexpected node host port", TEST_NODE_HOST_PORT, ((ReplicatedEnvironmentFacade) createMaster()).getHostPort());
+        assertEquals("Unexpected node host port", TEST_NODE_HOST_PORT, createMaster().getHostPort());
     }
 
     public void testGetHelperHostPort() throws Exception
     {
-        assertEquals("Unexpected node helper host port", TEST_NODE_HELPER_HOST_PORT, ((ReplicatedEnvironmentFacade) createMaster()).getHelperHostPort());
+        assertEquals("Unexpected node helper host port", TEST_NODE_HELPER_HOST_PORT, createMaster().getHelperHostPort());
     }
 
     public void testGetDurability() throws Exception
     {
-        assertEquals("Unexpected durability", TEST_DURABILITY.toString(), ((ReplicatedEnvironmentFacade) createMaster()).getDurability());
+        assertEquals("Unexpected durability", TEST_DURABILITY.toString(), createMaster().getDurability());
     }
 
     public void testIsCoalescingSync() throws Exception
     {
-        assertEquals("Unexpected coalescing sync", TEST_COALESCING_SYNC, ((ReplicatedEnvironmentFacade) createMaster()).isCoalescingSync());
+        assertEquals("Unexpected coalescing sync", TEST_COALESCING_SYNC, createMaster().isCoalescingSync());
     }
 
     public void testGetNodeState() throws Exception
     {
-        assertEquals("Unexpected state", State.MASTER.name(), ((ReplicatedEnvironmentFacade) createMaster()).getNodeState());
-    }
-
-    public void testIsDesignatedPrimary()  throws Exception
-    {
-        ReplicatedEnvironmentFacade master = (ReplicatedEnvironmentFacade) createMaster();
-        assertEquals("Unexpected designated primary", TEST_DESIGNATED_PRIMARY, master.isDesignatedPrimary());
-        master.setDesignatedPrimary(!TEST_DESIGNATED_PRIMARY);
-        assertEquals("Unexpected designated primary after change", !TEST_DESIGNATED_PRIMARY, master.isDesignatedPrimary());
+        assertEquals("Unexpected state", State.MASTER.name(), createMaster().getNodeState());
     }
 
     public void testGetGroupMembers()  throws Exception
     {
-        List<Map<String, String>> groupMembers = ((ReplicatedEnvironmentFacade) createMaster()).getGroupMembers();
+        List<Map<String, String>> groupMembers = createMaster().getGroupMembers();
         Map<String, String> expectedMember = new HashMap<String, String>();
         expectedMember.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, TEST_NODE_NAME);
         expectedMember.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT, TEST_NODE_HOST_PORT);
@@ -224,9 +218,35 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected group members", expectedGroupMembers, new HashSet<Map<String, String>>(groupMembers));
     }
 
+    public void testPriority() throws Exception
+    {
+        ReplicatedEnvironmentFacade facade = createMaster();
+        assertEquals("Unexpected priority", TEST_PRIORITY, facade.getPriority());
+
+        facade.setPriority(TEST_PRIORITY + 1);
+        assertEquals("Unexpected priority after change", TEST_PRIORITY + 1, facade.getPriority());
+    }
+
+    public void testDesignatedPrimary()  throws Exception
+    {
+        ReplicatedEnvironmentFacade master = createMaster();
+        assertEquals("Unexpected designated primary", TEST_DESIGNATED_PRIMARY, master.isDesignatedPrimary());
+        master.setDesignatedPrimary(!TEST_DESIGNATED_PRIMARY);
+        assertEquals("Unexpected designated primary after change", !TEST_DESIGNATED_PRIMARY, master.isDesignatedPrimary());
+    }
+
+
+    public void testElectableGroupSizeOverride() throws Exception
+    {
+        ReplicatedEnvironmentFacade facade = createMaster();
+        assertEquals("Unexpected Electable Group Size Override", TEST_ELECTABLE_GROUP_OVERRIDE, facade.getElectableGroupSizeOverride());
+        facade.setElectableGroupSizeOverride(TEST_ELECTABLE_GROUP_OVERRIDE + 1);
+        assertEquals("Unexpected Electable Group Size Override after change", TEST_ELECTABLE_GROUP_OVERRIDE + 1, facade.getElectableGroupSizeOverride());
+    }
+
     public void testReplicationGroupListenerHearsAboutExistingRemoteReplicationNodes() throws Exception
     {
-        ReplicatedEnvironmentFacade master = (ReplicatedEnvironmentFacade) createMaster();
+        ReplicatedEnvironmentFacade master = createMaster();
         String nodeName2 = TEST_NODE_NAME + "_2";
         String host = "localhost";
         int port = getNextAvailable(TEST_NODE_PORT + 1);
@@ -383,7 +403,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testRemoveNodeFromGroup() throws Exception
     {
-        ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) createMaster();
+        ReplicatedEnvironmentFacade environmentFacade = createMaster();
 
         String node2Name = TEST_NODE_NAME + "_2";
         String node2NodeHostPort = "localhost:" + getNextAvailable(TEST_NODE_PORT + 1);
@@ -398,26 +418,9 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected group members count", 1, groupMembers.size());
     }
 
-    public void testSetDesignatedPrimary() throws Exception
-    {
-        ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) createMaster();
-        environmentFacade.setDesignatedPrimary(false);
-        assertFalse("Unexpected designated primary", environmentFacade.isDesignatedPrimary());
-    }
-
-    public void testGetNodePriority() throws Exception
-    {
-        assertEquals("Unexpected node priority", 1, ((ReplicatedEnvironmentFacade) createMaster()).getPriority());
-    }
-
-    public void testGetElectableGroupSizeOverride() throws Exception
-    {
-        assertEquals("Unexpected Electable Group Size Override", 0, ((ReplicatedEnvironmentFacade) createMaster()).getElectableGroupSizeOverride());
-    }
-
     public void testEnvironmentRestartOnInsufficientReplicas() throws Exception
     {
-        ReplicatedEnvironmentFacade master = (ReplicatedEnvironmentFacade) createMaster();
+        ReplicatedEnvironmentFacade master = createMaster();
 
         int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
         String replica1NodeName = TEST_NODE_NAME + "_1";
@@ -545,11 +548,12 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertTrue("Replica " + nodeName + " was not started", testStateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
         return replicaEnvironmentFacade;
     }
+
     private ReplicatedEnvironmentFacade addNode(String nodeName, String nodeHostPort, boolean designatedPrimary,
             State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
 
-        ReplicationNode node = createReplicationNodeMock(nodeName, nodeHostPort, designatedPrimary);
+        LocalReplicationNode node = createReplicationNodeMock(nodeName, nodeHostPort, designatedPrimary);
         ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(node, _remoteReplicationNodeFactory);
         ref.setReplicationGroupListener(replicationGroupListener);
         ref.setStateChangeListener(stateChangeListener);
@@ -571,17 +575,30 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         return dbConfig;
     }
 
-    private ReplicationNode createReplicationNodeMock(String nodeName, String nodeHostPort, boolean designatedPrimary)
+    private LocalReplicationNode createReplicationNodeMock(String nodeName, String nodeHostPort, boolean designatedPrimary)
     {
-        ReplicationNode node =  mock(ReplicationNode.class);
+        LocalReplicationNode node =  mock(LocalReplicationNode.class);
         when(node.getAttribute(NAME)).thenReturn(nodeName);
         when(node.getName()).thenReturn(nodeName);
         when(node.getAttribute(HOST_PORT)).thenReturn(nodeHostPort);
         when(node.getAttribute(DESIGNATED_PRIMARY)).thenReturn(designatedPrimary);
+        when(node.getAttribute(QUORUM_OVERRIDE)).thenReturn(TEST_ELECTABLE_GROUP_OVERRIDE);
+        when(node.getAttribute(PRIORITY)).thenReturn(TEST_PRIORITY);
         when(node.getAttribute(GROUP_NAME)).thenReturn(TEST_GROUP_NAME);
         when(node.getAttribute(HELPER_HOST_PORT)).thenReturn(TEST_NODE_HELPER_HOST_PORT);
         when(node.getAttribute(DURABILITY)).thenReturn(TEST_DURABILITY);
         when(node.getAttribute(COALESCING_SYNC)).thenReturn(TEST_COALESCING_SYNC);
+
+        
+        // TMP REF contract with LRN is too complicated.
+        when(node.getActualAttribute(HOST_PORT)).thenReturn(nodeHostPort);
+        when(node.getActualAttribute(DESIGNATED_PRIMARY)).thenReturn(designatedPrimary);
+        when(node.getActualAttribute(QUORUM_OVERRIDE)).thenReturn(TEST_ELECTABLE_GROUP_OVERRIDE);
+        when(node.getActualAttribute(PRIORITY)).thenReturn(TEST_PRIORITY);
+        when(node.getActualAttribute(GROUP_NAME)).thenReturn(TEST_GROUP_NAME);
+        when(node.getActualAttribute(HELPER_HOST_PORT)).thenReturn(TEST_NODE_HELPER_HOST_PORT);
+        when(node.getActualAttribute(DURABILITY)).thenReturn(TEST_DURABILITY);
+        when(node.getActualAttribute(COALESCING_SYNC)).thenReturn(TEST_COALESCING_SYNC);
 
         Map<String, String> repConfig = new HashMap<String, String>();
         repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");

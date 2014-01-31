@@ -54,7 +54,7 @@ public interface ReplicationNode extends ConfiguredObject
     /** A designated primary setting for 2-nodes group*/
     String DESIGNATED_PRIMARY                   = "designatedPrimary";
 
-    /** Node priority*/
+    /** Node priority. 1 signifies normal priority; 0 signifies node will never be elected. */
     String PRIORITY                             = "priority";
 
     /** The overridden minimum number of group nodes required to commit transaction on this node instead of simple majority*/
