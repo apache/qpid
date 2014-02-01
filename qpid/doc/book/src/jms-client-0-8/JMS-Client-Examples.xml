@@ -226,7 +226,7 @@ public class StocksExample {
 
       Message message = session.createMessage();
       message.setStringProperty("instrument", "IBM");
-      message.setStringProperty("price", "100");
+      message.setIntProperty("price", 100);
       messageProducer.send(message);
       session.commit();
 
