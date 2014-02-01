@@ -46,6 +46,7 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -53,6 +54,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -102,6 +104,14 @@ public class ServerSession extends Session
     private final AtomicBoolean _blocking = new AtomicBoolean(false);
     private ChannelLogSubject _logSubject;
     private final AtomicInteger _outstandingCredit = new AtomicInteger(UNLIMITED_CREDIT);
+    private final BaseQueue.PostEnqueueAction _checkCapacityAction = new BaseQueue.PostEnqueueAction()
+    {
+        @Override
+        public void onEnqueue(final QueueEntry entry)
+        {
+            entry.getQueue().checkCapacity(ServerSession.this);
+        }
+    };
 
     public static interface MessageDispositionChangeListener
     {
@@ -182,7 +192,9 @@ public class ServerSession extends Session
         return isCommandsFull(id);
     }
 
-    public void enqueue(final MessageTransferMessage message, final List<? extends BaseQueue> queues)
+    public int enqueue(final MessageTransferMessage message,
+                       final InstanceProperties instanceProperties,
+                       final Exchange exchange)
     {
         if(_outstandingCredit.get() != UNLIMITED_CREDIT
                 && _outstandingCredit.decrementAndGet() == (Integer.MAX_VALUE - PRODUCER_CREDIT_TOPUP_THRESHOLD))
@@ -190,10 +202,10 @@ public class ServerSession extends Session
             _outstandingCredit.addAndGet(PRODUCER_CREDIT_TOPUP_THRESHOLD);
             invoke(new MessageFlow("",MessageCreditUnit.MESSAGE, PRODUCER_CREDIT_TOPUP_THRESHOLD));
         }
+        int enqueues = exchange.send(message, instanceProperties, _transaction, _checkCapacityAction);
         getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
-        PostEnqueueAction postTransactionAction = new PostEnqueueAction(queues, message, isTransactional()) ;
-        _transaction.enqueue(queues,message, postTransactionAction);
         incrementOutstandingTxnsIfNecessary();
+        return enqueues;
     }
 
 
