@@ -29,6 +29,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -94,13 +95,17 @@ public interface Exchange extends ExchangeReferrer
     void close() throws AMQException;
 
     /**
-     * Returns a list of queues to which to route this message.   If there are
-     * no queues the empty list must be returned.
-     *
-     * @return list of queues to which to route the message.
+     * Routes a message
+     * @param message the message to be routed
+     * @param instanceProperties the instance properties
+     * @param txn the transaction to enqueue within
+     * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
+     * @return the number of queues in which the message was enqueued performed
      */
-    List<? extends BaseQueue> route(ServerMessage message, final InstanceProperties instanceProperties);
-
+    int send(ServerMessage message,
+             InstanceProperties instanceProperties,
+             ServerTransaction txn,
+             BaseQueue.PostEnqueueAction postEnqueueAction);
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments

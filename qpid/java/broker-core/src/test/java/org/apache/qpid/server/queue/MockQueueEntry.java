@@ -26,6 +26,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.txn.ServerTransaction;
 
 public class MockQueueEntry implements QueueEntry
 {
@@ -62,9 +63,9 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public void routeToAlternate()
+    public int routeToAlternate(final BaseQueue.PostEnqueueAction action, final ServerTransaction txn)
     {
-
+        return 0;
     }
 
     public boolean expired() throws AMQException

@@ -33,12 +33,14 @@ import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -374,9 +376,9 @@ public abstract class AbstractExchange implements Exchange
         return getBindings().size();
     }
 
-    @Override
-    public final List<? extends BaseQueue> route(final ServerMessage message,
-                                                 final InstanceProperties instanceProperties)
+
+    final List<? extends BaseQueue> route(final ServerMessage message,
+                                          final InstanceProperties instanceProperties)
     {
         _receivedMessageCount.incrementAndGet();
         _receivedMessageSize.addAndGet(message.getSize());
@@ -414,6 +416,59 @@ public abstract class AbstractExchange implements Exchange
             _droppedMessageSize.addAndGet(message.getSize());
         }
         return queues;
+    }
+
+    public final int send(final ServerMessage message,
+                          final InstanceProperties instanceProperties,
+                          final ServerTransaction txn,
+                          final BaseQueue.PostEnqueueAction postEnqueueAction)
+    {
+        List<? extends BaseQueue> queues = route(message, instanceProperties);
+
+        if(queues == null || queues.isEmpty())
+        {
+            Exchange altExchange = getAlternateExchange();
+            if(altExchange != null)
+            {
+                return altExchange.send(message, instanceProperties, txn, postEnqueueAction);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        else
+        {
+            final BaseQueue[] baseQueues = queues.toArray(new BaseQueue[queues.size()]);
+
+            txn.enqueue(queues,message, new ServerTransaction.Action()
+            {
+                MessageReference _reference = message.newReference();
+
+                public void postCommit()
+                {
+                    for(int i = 0; i < baseQueues.length; i++)
+                    {
+                        try
+                        {
+                            baseQueues[i].enqueue(message, postEnqueueAction);
+                        }
+                        catch (AMQException e)
+                        {
+                            // TODO
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    _reference.release();
+                }
+
+                public void onRollback()
+                {
+                    _reference.release();
+                }
+            });
+            return queues.size();
+        }
     }
 
     protected abstract List<? extends BaseQueue> doRoute(final ServerMessage message,
@@ -678,5 +733,7 @@ public abstract class AbstractExchange implements Exchange
     {
         public void onClose(Exchange exchange) throws AMQSecurityException, AMQInternalException;
     }
+
+
 
 }
