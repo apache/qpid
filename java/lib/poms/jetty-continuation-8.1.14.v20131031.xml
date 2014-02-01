@@ -16,7 +16,7 @@
    limitations under the License.
 -->
 <dep>
-  <groupId>org.apache.geronimo.specs</groupId>
-  <artifactId>geronimo-servlet_2.5_spec</artifactId>
-  <version>1.2</version>
+  <groupId>org.eclipse.jetty</groupId>
+  <artifactId>jetty-continuation</artifactId>
+  <version>8.1.14.v20131031</version>
 </dep>

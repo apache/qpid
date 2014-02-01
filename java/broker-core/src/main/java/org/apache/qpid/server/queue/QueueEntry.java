@@ -22,11 +22,11 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.txn.ServerTransaction;
 
-public interface QueueEntry extends Comparable<QueueEntry>
+public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>
 {
 
 
@@ -177,25 +177,16 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     AMQQueue getQueue();
 
-    ServerMessage getMessage();
-
     long getSize();
 
     boolean getDeliveredToConsumer();
 
     boolean expired() throws AMQException;
 
-    boolean isAvailable();
-
-    boolean isAcquired();
-
-    boolean acquire();
     boolean acquire(Subscription sub);
 
     boolean acquiredBySubscription();
     boolean isAcquiredBy(Subscription subscription);
-
-    void release();
 
     void setRedelivered();
 
@@ -207,16 +198,7 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     boolean isRejectedBy(long subscriptionId);
 
-    void delete();
-
-    /**
-     * Returns true if entry is either DEQUED or DELETED state.
-     *
-     * @return true if entry is either DEQUED or DELETED state
-     */
-    boolean isDeleted();
-
-    void routeToAlternate();
+    int routeToAlternate(final BaseQueue.PostEnqueueAction action, ServerTransaction txn);
 
     boolean isQueueDeleted();
 
@@ -241,5 +223,4 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     Filterable asFilterable();
 
-    InstanceProperties getInstanceProperties();
 }

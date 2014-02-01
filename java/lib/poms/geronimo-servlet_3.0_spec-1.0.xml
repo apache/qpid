@@ -16,13 +16,7 @@
    limitations under the License.
 -->
 <dep>
-  <groupId>org.eclipse.jetty</groupId>
-  <artifactId>jetty-http</artifactId>
-  <version>7.6.10.v20130312</version>
-  <exclusions>
-    <exclusion>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-io</artifactId>
-    </exclusion>
-  </exclusions>
+  <groupId>org.apache.geronimo.specs</groupId>
+  <artifactId>geronimo-servlet_3.0_spec</artifactId>
+  <version>1.0</version>
 </dep>
