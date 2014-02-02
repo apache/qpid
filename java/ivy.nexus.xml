@@ -39,6 +39,12 @@
     <artifact name="qpid-broker" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-broker" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-broker" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-core" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-core" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-core" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-core" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-core" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-core" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-access-control" type="pom" ext="pom"/>
     <artifact name="qpid-broker-plugins-access-control" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-broker-plugins-access-control" type="jar" ext="jar"/>
