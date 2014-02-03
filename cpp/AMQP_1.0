@@ -164,7 +164,8 @@ warning is logged.
 If the node is an exchange, then an outgoing link (i.e. messages to
 travel out from broker) will cause a temporary, link-scoped queue to
 be created on the broker and bound to the exchange. [See section on
-'Topics' below]
+'Topics' below]. The name of the queue will be of the form
+<container-id>_<link-name>.
 
 Outgoing links may have a filter set on their source. The filters
 currently supported by the broker are 'legacy-amqp-direct-binding',
@@ -272,7 +273,9 @@ trigger the establishment of the link. This gives the peer some means
 of ensuring their expectations will be met.
 
 The 'shared' capability allows subscriptions from an exchange to be
-shared by multiple receivers.
+shared by multiple receivers. Where this is specified the subscription
+queue created takes the name of the link (and does not include the
+container id).
 
 The 'durable' capability will be added if the queue or exchange
 refered to by the source or target is durable. The 'queue' capability
