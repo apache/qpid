@@ -67,6 +67,8 @@ import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.subscription.DelegatingSubscription;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -79,7 +81,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     private VirtualHost _vhost;
     private SendingDestination _destination;
 
-    private Subscription_1_0 _subscription;
+    private Subscription _subscription;
+    private SubscriptionTarget_1_0 _target;
+
     private boolean _draining;
     private final Map<Binary, QueueEntry> _unsettledMap =
             new HashMap<Binary, QueueEntry>();
@@ -168,7 +172,16 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-            _subscription = new Subscription_1_0(this, qd, source.getDistributionMode() != StdDistMode.COPY, messageFilter == null ? null : new SimpleFilterManager(messageFilter));
+            _target = new SubscriptionTarget_1_0(this, source.getDistributionMode() != StdDistMode.COPY);
+            _subscription = new DelegatingSubscription<SubscriptionTarget_1_0>(messageFilter == null ? null : new SimpleFilterManager(messageFilter),
+                                                                               Message_1_0.class,
+                                                                               source.getDistributionMode() != StdDistMode.COPY,
+                                                                               source.getDistributionMode() != StdDistMode.COPY,
+                                                                               getEndpoint().getName(),
+                                                                               false,
+                                                                               _target);
+            _target.setSubscription(_subscription);
+
         }
         else if(destination instanceof ExchangeDestination)
         {
@@ -357,7 +370,17 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             {
                 _logger.error("Error", e);
             }
-            _subscription = new Subscription_1_0(this, qd, true, messageFilter == null ? null : new SimpleFilterManager(messageFilter));
+
+
+            _target = new SubscriptionTarget_1_0(this, true);
+            _subscription = new DelegatingSubscription<SubscriptionTarget_1_0>(messageFilter == null ? null : new SimpleFilterManager(messageFilter),
+                                                                               Message_1_0.class,
+                                                                               true,
+                                                                               true,
+                                                                               getEndpoint().getName(),
+                                                                               false,
+                                                                               _target);
+            _target.setSubscription(_subscription);
 
         }
 
@@ -441,7 +464,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         else if(detach == null || detach.getError() != null)
         {
             _linkAttachment = null;
-            _subscription.flowStateChanged();
+            _target.flowStateChanged();
         }
         else
         {
@@ -489,7 +512,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         }
         if(_resumeAcceptedTransfers.isEmpty())
         {
-            _subscription.flowStateChanged();
+            _target.flowStateChanged();
         }
 
     }
@@ -593,7 +616,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
         if(_subscription.isActive())
         {
-            _subscription.suspend();
+            _target.suspend();
         }
 
         _linkAttachment = linkAttachment;
