@@ -143,6 +143,7 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
     public void close()
     {
         _target.close();
+        _target.subscriptionRemoved(this);
     }
 
     @Override

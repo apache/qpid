@@ -18,15 +18,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
@@ -43,6 +35,7 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -55,9 +48,11 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.AssignedSubscriptionMessageGroupManager;
 import org.apache.qpid.server.subscription.DefinedGroupMessageGroupManager;
+import org.apache.qpid.server.subscription.DelegatingSubscription;
 import org.apache.qpid.server.subscription.MessageGroupManager;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
+import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -390,7 +385,25 @@ public class SimpleAMQQueue implements AMQQueue,
 
     // ------ Manage Subscriptions
 
-    public synchronized void registerSubscription(final Subscription subscription, final boolean exclusive)
+
+    @Override
+    public Subscription registerSubscription(final SubscriptionTarget target,
+                                             final FilterManager filters,
+                                             final Class<? extends ServerMessage> messageClass,
+                                             final String consumerName,
+                                             EnumSet<Subscription.Option> optionSet) throws AMQException
+    {
+
+        DelegatingSubscription sub = new DelegatingSubscription(filters, messageClass,
+                                                                optionSet.contains(Subscription.Option.ACQUIRES),
+                                                                optionSet.contains(Subscription.Option.SEES_REQUEUES),
+                                                                consumerName, optionSet.contains(Subscription.Option.TRANSIENT), target);
+        target.subscriptionRegistered(sub);
+        registerSubscription(sub, optionSet.contains(Subscription.Option.EXCLUSIVE));
+        return sub;
+    }
+
+    private synchronized void registerSubscription(final Subscription subscription, final boolean exclusive)
             throws AMQSecurityException, ExistingExclusiveSubscription, ExistingSubscriptionPreventsExclusive
     {
         // Access control
@@ -478,6 +491,7 @@ public class SimpleAMQQueue implements AMQQueue,
             // No longer can the queue have an exclusive consumer
             setExclusiveSubscriber(null);
             subscription.setQueueContext(null);
+
 
             if(_messageGroupManager != null)
             {

@@ -29,6 +29,8 @@ import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -44,6 +46,7 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -65,7 +68,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
     private String _owner = "owner";
     private String _routingKey = "routing key";
     private DirectExchange _exchange;
-    private MockSubscription _subscription = new MockSubscription();
+    private MockSubscription _subscriptionTarget = new MockSubscription();
+    private Subscription _subscription;
     private Map<String,Object> _arguments = null;
 
     @Override
@@ -159,17 +163,17 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public void testRegisterSubscriptionThenEnqueueMessage() throws AMQException
     {
+        ServerMessage messageA = createMessage(new Long(24));
+
         // Check adding a subscription adds it to the queue
-        _queue.registerSubscription(_subscription, false);
-        assertEquals("Subscription did not get queue", _queue,
-                      _subscription.getQueue());
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.noneOf(Subscription.Option.class));
         assertEquals("Queue does not have consumer", 1,
                      _queue.getConsumerCount());
         assertEquals("Queue does not have active consumer", 1,
-                _queue.getActiveConsumerCount());
+                     _queue.getActiveConsumerCount());
 
         // Check sending a message ends up with the subscriber
-        ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
         try
         {
@@ -179,14 +183,14 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
         }
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull(((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
+        assertNull(((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
 
         // Check removing the subscription removes it's information from the queue
         _queue.unregisterSubscription(_subscription);
-        assertTrue("Subscription still had queue", _subscription.isClosed());
+        assertTrue("Subscription still had queue", _subscriptionTarget.isClosed());
         assertFalse("Queue still has consumer", 1 == _queue.getConsumerCount());
         assertFalse("Queue still has active consumer",
-                1 == _queue.getActiveConsumerCount());
+                    1 == _queue.getActiveConsumerCount());
 
         ServerMessage messageB = createMessage(new Long (25));
         _queue.enqueue(messageB);
@@ -198,10 +202,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
     {
         ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
-        _queue.registerSubscription(_subscription, false);
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after an enqueue", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
+        assertNull("There should be no releasedEntry after an enqueue", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
     }
 
     /**
@@ -213,10 +218,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
         ServerMessage messageB = createMessage(new Long(25));
         _queue.enqueue(messageA);
         _queue.enqueue(messageB);
-        _queue.registerSubscription(_subscription, false);
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
         assertEquals(messageB, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after enqueues", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
+        assertNull("There should be no releasedEntry after enqueues", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
     }
 
     /**
@@ -225,7 +231,15 @@ public class SimpleAMQQueueTest extends QpidTestCase
      */
     public void testReleasedMessageIsResentToSubscriber() throws Exception
     {
-        _queue.registerSubscription(_subscription, false);
+
+        ServerMessage messageA = createMessage(new Long(24));
+        ServerMessage messageB = createMessage(new Long(25));
+        ServerMessage messageC = createMessage(new Long(26));
+
+
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.of(Subscription.Option.ACQUIRES,
+                                                               Subscription.Option.SEES_REQUEUES));
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
         Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
@@ -236,10 +250,6 @@ public class SimpleAMQQueueTest extends QpidTestCase
             }
         };
 
-        ServerMessage messageA = createMessage(new Long(24));
-        ServerMessage messageB = createMessage(new Long(25));
-        ServerMessage messageC = createMessage(new Long(26));
-
         /* Enqueue three messages */
 
         _queue.enqueue(messageA, postEnqueueAction);
@@ -248,7 +258,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         Thread.sleep(150);  // Work done by SubFlushRunner/QueueRunner Threads
 
-        assertEquals("Unexpected total number of messages sent to subscription", 3, _subscription.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription", 3, _subscriptionTarget.getMessages().size());
         assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should not be set", queueEntries.get(1).isRedelivered());
         assertFalse("Redelivery flag should not be set", queueEntries.get(2).isRedelivered());
@@ -259,11 +269,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
 
-        assertEquals("Unexpected total number of messages sent to subscription", 4, _subscription.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription", 4, _subscriptionTarget.getMessages().size());
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertFalse("Redelivery flag should remain be unset",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
     }
 
     /**
@@ -273,7 +283,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
      */
     public void testReleaseMessageThatBecomesExpiredIsNotRedelivered() throws Exception
     {
-        _queue.registerSubscription(_subscription, false);
+        ServerMessage messageA = createMessage(new Long(24));
+
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES,
+                                                               Subscription.Option.ACQUIRES));
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
         Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
@@ -286,7 +300,6 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         /* Enqueue one message with expiration set for a short time in the future */
 
-        ServerMessage messageA = createMessage(new Long(24));
         int messageExpirationOffset = 200;
         final long expiration = System.currentTimeMillis() + messageExpirationOffset;
         when(messageA.getExpiration()).thenReturn(expiration);
@@ -296,7 +309,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         int subFlushWaitTime = 150;
         Thread.sleep(subFlushWaitTime); // Work done by SubFlushRunner/QueueRunner Threads
 
-        assertEquals("Unexpected total number of messages sent to subscription", 1, _subscription.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription", 1, _subscriptionTarget.getMessages().size());
         assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
 
         /* Wait a little more to be sure that message will have expired, then release the first message only, causing it to be requeued */
@@ -306,9 +319,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         Thread.sleep(subFlushWaitTime); // Work done by SubFlushRunner/QueueRunner Threads
 
         assertTrue("Expecting the queue entry to be now expired", queueEntries.get(0).expired());
-        assertEquals("Total number of messages sent should not have changed", 1, _subscription.getMessages().size());
+        assertEquals("Total number of messages sent should not have changed", 1, _subscriptionTarget.getMessages().size());
         assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
 
     }
 
@@ -320,7 +333,14 @@ public class SimpleAMQQueueTest extends QpidTestCase
      */
     public void testReleasedOutOfComparableOrderAreRedelivered() throws Exception
     {
-        _queue.registerSubscription(_subscription, false);
+
+        ServerMessage messageA = createMessage(new Long(24));
+        ServerMessage messageB = createMessage(new Long(25));
+        ServerMessage messageC = createMessage(new Long(26));
+
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.of(Subscription.Option.ACQUIRES,
+                                                               Subscription.Option.SEES_REQUEUES));
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
         Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
@@ -331,10 +351,6 @@ public class SimpleAMQQueueTest extends QpidTestCase
             }
         };
 
-        ServerMessage messageA = createMessage(new Long(24));
-        ServerMessage messageB = createMessage(new Long(25));
-        ServerMessage messageC = createMessage(new Long(26));
-
         /* Enqueue three messages */
 
         _queue.enqueue(messageA, postEnqueueAction);
@@ -343,7 +359,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         Thread.sleep(150);  // Work done by SubFlushRunner/QueueRunner Threads
 
-        assertEquals("Unexpected total number of messages sent to subscription", 3, _subscription.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription", 3, _subscriptionTarget.getMessages().size());
         assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should not be set", queueEntries.get(1).isRedelivered());
         assertFalse("Redelivery flag should not be set", queueEntries.get(2).isRedelivered());
@@ -355,11 +371,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
 
-        assertEquals("Unexpected total number of messages sent to subscription", 5, _subscription.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription", 5, _subscriptionTarget.getMessages().size());
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertTrue("Redelivery flag should now be set",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
     }
 
 
@@ -369,11 +385,21 @@ public class SimpleAMQQueueTest extends QpidTestCase
      */
     public void testReleaseForQueueWithMultipleSubscriptions() throws Exception
     {
-        MockSubscription subscription1 = new MockSubscription();
-        MockSubscription subscription2 = new MockSubscription();
+        ServerMessage messageA = createMessage(new Long(24));
+        ServerMessage messageB = createMessage(new Long(25));
 
-        _queue.registerSubscription(subscription1, false);
-        _queue.registerSubscription(subscription2, false);
+        MockSubscription target1 = new MockSubscription();
+        MockSubscription target2 = new MockSubscription();
+
+
+        Subscription subscription1 = _queue.registerSubscription(target1, null, messageA.getClass(), "test",
+                                                                 EnumSet.of(Subscription.Option.ACQUIRES,
+                                                                            Subscription.Option.SEES_REQUEUES));
+
+        Subscription subscription2 = _queue.registerSubscription(target2, null, messageA.getClass(), "test",
+                                                                 EnumSet.of(Subscription.Option.ACQUIRES,
+                                                                            Subscription.Option.SEES_REQUEUES));
+
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
         Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
@@ -384,8 +410,6 @@ public class SimpleAMQQueueTest extends QpidTestCase
             }
         };
 
-        ServerMessage messageA = createMessage(new Long(24));
-        ServerMessage messageB = createMessage(new Long(25));
 
         /* Enqueue two messages */
 
@@ -394,31 +418,36 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         Thread.sleep(150);  // Work done by SubFlushRunner/QueueRunner Threads
 
-        assertEquals("Unexpected total number of messages sent to both after enqueue", 2, subscription1.getMessages().size() + subscription2.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to both after enqueue",
+                     2,
+                     target1.getMessages().size() + target2.getMessages().size());
 
         /* Now release the first message only, causing it to be requeued */
         queueEntries.get(0).release();
 
         Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
 
-        assertEquals("Unexpected total number of messages sent to both subscriptions after release", 3, subscription1.getMessages().size() + subscription2.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to both subscriptions after release",
+                     3,
+                     target1.getMessages().size() + target2.getMessages().size());
         assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription1.getQueueContext()).getReleasedEntry());
         assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription2.getQueueContext()).getReleasedEntry());
     }
 
     public void testExclusiveConsumer() throws AMQException
     {
+        ServerMessage messageA = createMessage(new Long(24));
         // Check adding an exclusive subscription adds it to the queue
-        _queue.registerSubscription(_subscription, true);
-        assertEquals("Subscription did not get queue", _queue,
-                _subscription.getQueue());
+
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.of(Subscription.Option.EXCLUSIVE));
+
         assertEquals("Queue does not have consumer", 1,
-                _queue.getConsumerCount());
+                     _queue.getConsumerCount());
         assertEquals("Queue does not have active consumer", 1,
-                _queue.getActiveConsumerCount());
+                     _queue.getActiveConsumerCount());
 
         // Check sending a message ends up with the subscriber
-        ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
         try
         {
@@ -430,11 +459,14 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
 
         // Check we cannot add a second subscriber to the queue
-        Subscription subB = new MockSubscription();
+        MockSubscription subB = new MockSubscription();
         Exception ex = null;
         try
         {
-            _queue.registerSubscription(subB, false);
+
+            _queue.registerSubscription(subB, null, messageA.getClass(), "test",
+                                        EnumSet.noneOf(Subscription.Option.class));
+
         }
         catch (AMQException e)
         {
@@ -445,10 +477,15 @@ public class SimpleAMQQueueTest extends QpidTestCase
         // Check we cannot add an exclusive subscriber to a queue with an
         // existing subscription
         _queue.unregisterSubscription(_subscription);
-        _queue.registerSubscription(_subscription, false);
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
+                                                    EnumSet.noneOf(Subscription.Option.class));
+
         try
         {
-            _queue.registerSubscription(subB, true);
+
+            _subscription = _queue.registerSubscription(subB, null, messageA.getClass(), "test",
+                                                        EnumSet.of(Subscription.Option.EXCLUSIVE));
+
         }
         catch (AMQException e)
         {
@@ -462,8 +499,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
        _queue.stop();
        _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
-       _queue.registerSubscription(_subscription, false);
-       ServerMessage message = createMessage(new Long(25));
+
+        ServerMessage message = createMessage(new Long(25));
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, message.getClass(), "test",
+                                                    EnumSet.noneOf(Subscription.Option.class));
+
        _queue.enqueue(message);
        _queue.unregisterSubscription(_subscription);
        assertTrue("Queue was not deleted when subscription was removed",
@@ -472,9 +512,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public void testResend() throws Exception
     {
-        _queue.registerSubscription(_subscription, false);
         Long id = new Long(26);
         ServerMessage message = createMessage(id);
+
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, message.getClass(), "test",
+                                                    EnumSet.noneOf(Subscription.Option.class));
+
         _queue.enqueue(message);
         QueueEntry entry = _subscription.getQueueContext().getLastSeenEntry();
         entry.setRedelivered();
@@ -649,18 +692,21 @@ public class SimpleAMQQueueTest extends QpidTestCase
         // in.Bias over 50% of the messages to the first subscription so that
         // the later subscriptions reject them and report being done before
         // the first subscription as the processQueue method proceeds.
-        List<QueueEntry> msgListSub1 = createEntriesList(msg1, msg2, msg3);
-        List<QueueEntry> msgListSub2 = createEntriesList(msg4);
-        List<QueueEntry> msgListSub3 = createEntriesList(msg5);
+        List<String> msgListSub1 = createEntriesList(msg1, msg2, msg3);
+        List<String> msgListSub2 = createEntriesList(msg4);
+        List<String> msgListSub3 = createEntriesList(msg5);
 
         MockSubscription sub1 = new MockSubscription(msgListSub1);
         MockSubscription sub2 = new MockSubscription(msgListSub2);
         MockSubscription sub3 = new MockSubscription(msgListSub3);
 
         // register the subscriptions
-        testQueue.registerSubscription(sub1, false);
-        testQueue.registerSubscription(sub2, false);
-        testQueue.registerSubscription(sub3, false);
+        testQueue.registerSubscription(sub1, sub1.getFilters(), msg1.getMessage().getClass(), "test",
+                                       EnumSet.of(Subscription.Option.ACQUIRES, Subscription.Option.SEES_REQUEUES));
+        testQueue.registerSubscription(sub2, sub2.getFilters(), msg1.getMessage().getClass(), "test",
+                                       EnumSet.of(Subscription.Option.ACQUIRES, Subscription.Option.SEES_REQUEUES));
+        testQueue.registerSubscription(sub3, sub3.getFilters(), msg1.getMessage().getClass(), "test",
+                                       EnumSet.of(Subscription.Option.ACQUIRES, Subscription.Option.SEES_REQUEUES));
 
         //check that no messages have been delivered to the
         //subscriptions during registration
@@ -680,9 +726,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         });
 
         // check expected messages delivered to correct consumers
-        verifyReceivedMessages(msgListSub1, sub1.getMessages());
-        verifyReceivedMessages(msgListSub2, sub2.getMessages());
-        verifyReceivedMessages(msgListSub3, sub3.getMessages());
+        verifyReceivedMessages(Arrays.asList(msg1,msg2,msg3), sub1.getMessages());
+        verifyReceivedMessages(Collections.singletonList(msg4), sub2.getMessages());
+        verifyReceivedMessages(Collections.singletonList(msg5), sub3.getMessages());
     }
 
     /**
@@ -883,7 +929,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         try
         {
             // subscribe
-            testQueue.registerSubscription(subscription, false);
+            testQueue.registerSubscription(subscription, null, entries.get(0).getMessage().getClass(), "test", EnumSet.noneOf(Subscription.Option.class));
 
             // process queue
             testQueue.processQueue(new QueueRunner(testQueue)
@@ -907,7 +953,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
             Thread.currentThread().interrupt();
         }
-        List<QueueEntry> expected = createEntriesList(entries.get(0), entries.get(2), entries.get(3));
+        List<QueueEntry> expected = Arrays.asList(entries.get(0), entries.get(2), entries.get(3));
         verifyReceivedMessages(expected, subscription.getMessages());
     }
 
@@ -970,7 +1016,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         // register subscription
         try
         {
-            queue.registerSubscription(subscription, false);
+            queue.registerSubscription(subscription, null, createMessage(-1l).getClass(), "test", EnumSet.noneOf(Subscription.Option.class));
         }
         catch (AMQException e)
         {
@@ -997,52 +1043,51 @@ public class SimpleAMQQueueTest extends QpidTestCase
         //verify adding an active subscription increases the count
         final MockSubscription subscription1 = new MockSubscription();
         subscription1.setActive(true);
+        subscription1.setState(SubscriptionTarget.State.ACTIVE);
         assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
-        queue.registerSubscription(subscription1, false);
+        queue.registerSubscription(subscription1, null, createMessage(-1l).getClass(), "test", EnumSet.noneOf(Subscription.Option.class));
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify adding an inactive subscription doesn't increase the count
         final MockSubscription subscription2 = new MockSubscription();
         subscription2.setActive(false);
+        subscription2.setState(SubscriptionTarget.State.SUSPENDED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-        queue.registerSubscription(subscription2, false);
+        queue.registerSubscription(subscription2, null, createMessage(-1l).getClass(), "test", EnumSet.noneOf(Subscription.Option.class));
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify behaviour in face of expected state changes:
 
         //verify a subscription going suspended->active increases the count
-        queue.stateChanged(subscription2, Subscription.State.SUSPENDED, Subscription.State.ACTIVE);
+        subscription2.setState(SubscriptionTarget.State.ACTIVE);
         assertEquals("Unexpected active consumer count", 2, queue.getActiveConsumerCount());
 
         //verify a subscription going active->suspended decreases the count
-        queue.stateChanged(subscription2, Subscription.State.ACTIVE, Subscription.State.SUSPENDED);
+        subscription2.setState(SubscriptionTarget.State.SUSPENDED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify a subscription going suspended->closed doesn't change the count
-        queue.stateChanged(subscription2, Subscription.State.SUSPENDED, Subscription.State.CLOSED);
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-
-        //verify a subscription going active->closed  decreases the count
-        queue.stateChanged(subscription2, Subscription.State.ACTIVE, Subscription.State.CLOSED);
-        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
-
-        //verify behaviour in face of unexpected state changes:
-
-        //verify a subscription going closed->active increases the count
-        queue.stateChanged(subscription2, Subscription.State.CLOSED, Subscription.State.ACTIVE);
+        subscription2.setState(SubscriptionTarget.State.CLOSED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify a subscription going active->active doesn't change the count
-        queue.stateChanged(subscription2, Subscription.State.ACTIVE, Subscription.State.ACTIVE);
+        subscription1.setState(SubscriptionTarget.State.ACTIVE);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
-        //verify a subscription going closed->suspended doesn't change the count
-        queue.stateChanged(subscription2, Subscription.State.CLOSED, Subscription.State.SUSPENDED);
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+        subscription1.setState(SubscriptionTarget.State.SUSPENDED);
+        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
 
         //verify a subscription going suspended->suspended doesn't change the count
-        queue.stateChanged(subscription2, Subscription.State.SUSPENDED, Subscription.State.SUSPENDED);
+        subscription1.setState(SubscriptionTarget.State.SUSPENDED);
+        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
+
+        subscription1.setState(SubscriptionTarget.State.ACTIVE);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
+
+        //verify a subscription going active->closed  decreases the count
+        subscription1.setState(SubscriptionTarget.State.CLOSED);
+        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
+
     }
 
     public void testNotificationFiredOnEnqueue() throws Exception
@@ -1167,12 +1212,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return entry;
     }
 
-    private List<QueueEntry> createEntriesList(QueueEntry... entries)
+    private List<String> createEntriesList(QueueEntry... entries)
     {
-        ArrayList<QueueEntry> entriesList = new ArrayList<QueueEntry>();
+        ArrayList<String> entriesList = new ArrayList<String>();
         for (QueueEntry entry : entries)
         {
-            entriesList.add(entry);
+            entriesList.add(entry.getMessage().getMessageHeader().getMessageId());
         }
         return entriesList;
     }
@@ -1197,7 +1242,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     public MockSubscription getSubscription()
     {
-        return _subscription;
+        return _subscriptionTarget;
     }
 
     public Map<String,Object> getArguments()
@@ -1213,14 +1258,15 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
     protected ServerMessage createMessage(Long id) throws AMQException
     {
+        AMQMessageHeader header = mock(AMQMessageHeader.class);
+        when(header.getMessageId()).thenReturn(String.valueOf(id));
         ServerMessage message = mock(ServerMessage.class);
         when(message.getMessageNumber()).thenReturn(id);
+        when(message.getMessageHeader()).thenReturn(header);
 
         MessageReference ref = mock(MessageReference.class);
         when(ref.getMessage()).thenReturn(message);
 
-        AMQMessageHeader hdr = mock(AMQMessageHeader.class);
-        when(message.getMessageHeader()).thenReturn(hdr);
 
         when(message.newReference()).thenReturn(ref);
 

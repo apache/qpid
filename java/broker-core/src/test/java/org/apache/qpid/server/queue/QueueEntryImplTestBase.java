@@ -113,9 +113,17 @@ public abstract class QueueEntryImplTestBase extends TestCase
      */
     private void acquire()
     {
-        _queueEntry.acquire(new MockSubscription());
+        _queueEntry.acquire(newMockSubscription());
         assertTrue("Queue entry should be in ACQUIRED state after invoking of acquire method",
                 _queueEntry.isAcquired());
+    }
+
+    private Subscription newMockSubscription()
+    {
+        final Subscription subscription = mock(Subscription.class);
+        when(subscription.getOwningState()).thenReturn(new QueueEntry.SubscriptionAcquiredState(subscription));
+        when(subscription.getSubscriptionID()).thenReturn(Subscription.SUB_ID_GENERATOR.getAndIncrement());
+        return subscription;
     }
 
     /**
@@ -145,7 +153,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
      */
     public void testRejectAndRejectedBy()
     {
-        Subscription sub = new MockSubscription();
+        Subscription sub = newMockSubscription();
         long subId = sub.getSubscriptionID();
 
         assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(subId));
@@ -160,7 +168,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
         assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(subId));
 
         //repeat rejection using a second subscription
-        Subscription sub2 = new MockSubscription();
+        Subscription sub2 = newMockSubscription();
         long sub2Id = sub2.getSubscriptionID();
 
         assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(sub2Id));

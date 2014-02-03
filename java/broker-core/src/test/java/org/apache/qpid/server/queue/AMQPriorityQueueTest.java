@@ -28,7 +28,10 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
+
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.subscription.Subscription;
 
 import static org.mockito.Mockito.when;
 
@@ -62,7 +65,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         queue.enqueue(createMessage(9L, (byte) 0));
 
         // Register subscriber
-        queue.registerSubscription(getSubscription(), false);
+        queue.registerSubscription(getSubscription(), null, null, "test", EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
 
         ArrayList<QueueEntry> msgs = getSubscription().getMessages();

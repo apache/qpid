@@ -93,11 +93,6 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     }
 
 
-    public void setSubscription(Subscription subscription)
-    {
-        _subscription = subscription;
-    }
-
     public Subscription getSubscription()
     {
         return _subscription;
@@ -569,6 +564,17 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         _session.getConnection().flush();
     }
 
+
+    @Override
+    public void subscriptionRegistered(final Subscription sub)
+    {
+        _subscription = sub;
+    }
+
+    @Override
+    public void subscriptionRemoved(final Subscription sub)
+    {
+    }
 
     public long getUnacknowledgedBytes()
     {

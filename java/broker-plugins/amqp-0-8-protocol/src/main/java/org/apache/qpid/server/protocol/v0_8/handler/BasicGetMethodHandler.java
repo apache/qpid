@@ -24,6 +24,7 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
@@ -33,8 +34,10 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.MessageOnlyCreditManager;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.v0_8.SubscriptionTarget_0_8;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -42,8 +45,9 @@ import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.protocol.v0_8.SubscriptionFactoryImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.EnumSet;
 
 public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetBody>
 {
@@ -151,17 +155,24 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             }
         };
 
-        Subscription sub;
+        SubscriptionTarget_0_8 target;
+        EnumSet<Subscription.Option> options = EnumSet.of(Subscription.Option.TRANSIENT, Subscription.Option.ACQUIRES,
+                                                          Subscription.Option.SEES_REQUEUES);
         if(acks)
         {
-            sub = SubscriptionFactoryImpl.INSTANCE.createSubscription(channel, session, null, acks, null, false, singleMessageCredit, getDeliveryMethod, getRecordMethod);
+
+            target = SubscriptionTarget_0_8.createAckTarget(channel,
+                                                            AMQShortString.EMPTY_STRING, null,
+                                                            singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
         else
         {
-            sub = SubscriptionFactoryImpl.INSTANCE.createBasicGetNoAckSubscription(channel, session, null, null, false, singleMessageCredit, getDeliveryMethod, getRecordMethod);
+            target = SubscriptionTarget_0_8.createNoAckTarget(channel,
+                                                              AMQShortString.EMPTY_STRING, null,
+                                                              singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
 
-        queue.registerSubscription(sub,false);
+        Subscription sub = queue.registerSubscription(target, null, AMQMessage.class, "", options);
         sub.flush();
         queue.unregisterSubscription(sub);
         return(!singleMessageCredit.hasCredit());

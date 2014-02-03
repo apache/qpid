@@ -40,6 +40,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -47,6 +48,7 @@ import java.util.Set;
  */
 public class AckTest extends QpidTestCase
 {
+    private SubscriptionTarget_0_8 _subscriptionTarget;
     private Subscription _subscription;
 
     private AMQProtocolSession _protocolSession;
@@ -86,7 +88,6 @@ public class AckTest extends QpidTestCase
 
     private void publishMessages(int count, boolean persistent) throws AMQException
     {
-        _queue.registerSubscription(_subscription,false);
         for (int i = 1; i <= count; i++)
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -178,7 +179,10 @@ public class AckTest extends QpidTestCase
      */
     public void testAckChannelAssociationTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true, null, false, new LimitlessCreditManager());
+        _subscriptionTarget = SubscriptionTarget_0_8.createAckTarget(_channel, DEFAULT_CONSUMER_TAG, null, new LimitlessCreditManager());
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES,
+                                                               Subscription.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount, true);
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
@@ -202,7 +206,16 @@ public class AckTest extends QpidTestCase
     public void testNoAckMode() throws AMQException
     {
         // false arg means no acks expected
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, false, null, false, new LimitlessCreditManager());
+        _subscriptionTarget = SubscriptionTarget_0_8.createNoAckTarget(_channel,
+                                                                       DEFAULT_CONSUMER_TAG,
+                                                                       null,
+                                                                       new LimitlessCreditManager());
+        _subscription = _queue.registerSubscription(_subscriptionTarget,
+                                                    null,
+                                                    AMQMessage.class,
+                                                    DEFAULT_CONSUMER_TAG.toString(),
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES,
+                                                               Subscription.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount);
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
@@ -218,7 +231,13 @@ public class AckTest extends QpidTestCase
     public void testPersistentNoAckMode() throws AMQException
     {
         // false arg means no acks expected
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, false,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = SubscriptionTarget_0_8.createNoAckTarget(_channel,
+                                                                       DEFAULT_CONSUMER_TAG,
+                                                                       null,
+                                                                       new LimitlessCreditManager());
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES, Subscription.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount, true);
 
@@ -235,7 +254,15 @@ public class AckTest extends QpidTestCase
      */
     public void testSingleAckReceivedTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = SubscriptionTarget_0_8.createAckTarget(_channel,
+                                                                     DEFAULT_CONSUMER_TAG,
+                                                                     null,
+                                                                     new LimitlessCreditManager());
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES,
+                                                               Subscription.Option.ACQUIRES));
+
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -264,7 +291,15 @@ public class AckTest extends QpidTestCase
      */
     public void testMultiAckReceivedTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = SubscriptionTarget_0_8.createAckTarget(_channel,
+                                                                     DEFAULT_CONSUMER_TAG,
+                                                                     null,
+                                                                     new LimitlessCreditManager());
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES,
+                                                               Subscription.Option.ACQUIRES));
+
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -290,7 +325,15 @@ public class AckTest extends QpidTestCase
      */
     public void testMultiAckAllReceivedTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = SubscriptionTarget_0_8.createAckTarget(_channel,
+                                                                     DEFAULT_CONSUMER_TAG,
+                                                                     null,
+                                                                     new LimitlessCreditManager());
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES,
+                                                               Subscription.Option.ACQUIRES));
+
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -319,8 +362,12 @@ public class AckTest extends QpidTestCase
         // Send 10 messages
         Pre0_10CreditManager creditManager = new Pre0_10CreditManager(0l, 1);
 
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession,
-                                                                            DEFAULT_CONSUMER_TAG, true, null, false, creditManager);
+
+        _subscriptionTarget = SubscriptionTarget_0_8.createAckTarget(_channel, DEFAULT_CONSUMER_TAG, null, creditManager);
+        _subscription = _queue.registerSubscription(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                                    EnumSet.of(Subscription.Option.SEES_REQUEUES,
+                                                               Subscription.Option.ACQUIRES));
+
         final int msgCount = 1;
         publishMessages(msgCount);
 

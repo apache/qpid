@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
@@ -265,16 +266,28 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                                  filterManager,
                                                                                  method.getArguments());
 
-                    Subscription sub = new DelegatingSubscription<SubscriptionTarget_0_10>(filterManager, MessageTransferMessage.class,
-                                                                                           method.getAcquireMode() == MessageAcquireMode.PRE_ACQUIRED,
-                                                                                           method.getAcquireMode() != MessageAcquireMode.NOT_ACQUIRED || method.getAcceptMode() == MessageAcceptMode.EXPLICIT,destination,false,target);
-
-                    target.setSubscription(sub);
-
                     ((ServerSession)session).register(destination, target);
                     try
                     {
-                        queue.registerSubscription(sub, method.getExclusive());
+                        EnumSet<Subscription.Option> options = EnumSet.noneOf(Subscription.Option.class);
+                        if(method.getAcquireMode() == MessageAcquireMode.PRE_ACQUIRED)
+                        {
+                            options.add(Subscription.Option.ACQUIRES);
+                        }
+                        if(method.getAcquireMode() != MessageAcquireMode.NOT_ACQUIRED || method.getAcceptMode() == MessageAcceptMode.EXPLICIT)
+                        {
+                            options.add(Subscription.Option.SEES_REQUEUES);
+                        }
+                        if(method.getExclusive())
+                        {
+                            options.add(Subscription.Option.EXCLUSIVE);
+                        }
+                        Subscription sub =
+                                queue.registerSubscription(target,
+                                                           filterManager,
+                                                           MessageTransferMessage.class,
+                                                           destination,
+                                                           options);
                     }
                     catch (AMQQueue.ExistingExclusiveSubscription existing)
                     {

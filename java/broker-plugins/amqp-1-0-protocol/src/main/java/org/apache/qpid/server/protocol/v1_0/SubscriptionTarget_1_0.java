@@ -74,11 +74,6 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         _acquires = acquires;
     }
 
-    public void setSubscription(Subscription sub)
-    {
-        _subscription = sub;
-    }
-
     public Subscription getSubscription()
     {
         return _subscription;
@@ -502,6 +497,18 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
     public AMQSessionModel getSessionModel()
     {
         return getSession();
+    }
+
+    @Override
+    public void subscriptionRegistered(final Subscription sub)
+    {
+        _subscription = sub;
+    }
+
+    @Override
+    public void subscriptionRemoved(final Subscription sub)
+    {
+
     }
 
     @Override

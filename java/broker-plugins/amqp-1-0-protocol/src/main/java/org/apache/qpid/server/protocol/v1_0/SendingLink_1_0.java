@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v1_0;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +111,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         QueueDestination qd = null;
         AMQQueue queue = null;
 
+        EnumSet<Subscription.Option> options = EnumSet.noneOf(Subscription.Option.class);
 
 
         boolean noLocal = false;
@@ -173,14 +175,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
             _target = new SubscriptionTarget_1_0(this, source.getDistributionMode() != StdDistMode.COPY);
-            _subscription = new DelegatingSubscription<SubscriptionTarget_1_0>(messageFilter == null ? null : new SimpleFilterManager(messageFilter),
-                                                                               Message_1_0.class,
-                                                                               source.getDistributionMode() != StdDistMode.COPY,
-                                                                               source.getDistributionMode() != StdDistMode.COPY,
-                                                                               getEndpoint().getName(),
-                                                                               false,
-                                                                               _target);
-            _target.setSubscription(_subscription);
+            if(source.getDistributionMode() != StdDistMode.COPY)
+            {
+                options.add(Subscription.Option.ACQUIRES);
+                options.add(Subscription.Option.SEES_REQUEUES);
+            }
 
         }
         else if(destination instanceof ExchangeDestination)
@@ -373,26 +372,27 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
 
             _target = new SubscriptionTarget_1_0(this, true);
-            _subscription = new DelegatingSubscription<SubscriptionTarget_1_0>(messageFilter == null ? null : new SimpleFilterManager(messageFilter),
-                                                                               Message_1_0.class,
-                                                                               true,
-                                                                               true,
-                                                                               getEndpoint().getName(),
-                                                                               false,
-                                                                               _target);
-            _target.setSubscription(_subscription);
+            options.add(Subscription.Option.ACQUIRES);
+            options.add(Subscription.Option.SEES_REQUEUES);
 
         }
 
-        if(_subscription != null)
+        if(_target != null)
         {
+            if(noLocal)
+            {
+                options.add(Subscription.Option.NO_LOCAL);
+            }
+
+
             _subscription.setNoLocal(noLocal);
 
 
             try
             {
-
-                queue.registerSubscription(_subscription, false);
+                _subscription = queue.registerSubscription(_target,
+                                                           messageFilter == null ? null : new SimpleFilterManager(messageFilter),
+                                                           Message_1_0.class, getEndpoint().getName(), options);
             }
             catch (AMQException e)
             {

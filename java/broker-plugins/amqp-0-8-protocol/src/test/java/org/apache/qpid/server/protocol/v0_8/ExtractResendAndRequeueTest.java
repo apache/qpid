@@ -37,6 +37,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * QPID-1385 : Race condition between added to unacked map and resending due to a rollback.
  *
@@ -105,9 +108,11 @@ public class ExtractResendAndRequeueTest extends TestCase
      */
     private Subscription createSubscriptionAndAcquireMessages(LinkedList<QueueEntry> messageList)
     {
-        Subscription subscription = new MockSubscription();
+        Subscription subscription = mock(Subscription.class);
+        when(subscription.getOwningState()).thenReturn(new QueueEntry.SubscriptionAcquiredState(subscription));
+        when(subscription.getSubscriptionID()).thenReturn(Subscription.SUB_ID_GENERATOR.getAndIncrement());
 
-        // Aquire messages in subscription
+        // Acquire messages in subscription
         for (QueueEntry entry : messageList)
         {
             entry.acquire(subscription);
@@ -157,7 +162,7 @@ public class ExtractResendAndRequeueTest extends TestCase
         Subscription subscription = createSubscriptionAndAcquireMessages(_referenceList);
 
         // Close subscription
-        subscription.close();
+        when(subscription.isClosed()).thenReturn(true);
 
         final Map<Long, QueueEntry> msgToRequeue = new LinkedHashMap<Long, QueueEntry>();
         final Map<Long, QueueEntry> msgToResend = new LinkedHashMap<Long, QueueEntry>();

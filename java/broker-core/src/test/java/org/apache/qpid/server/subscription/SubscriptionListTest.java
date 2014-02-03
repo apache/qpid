@@ -20,31 +20,44 @@
  */
 package org.apache.qpid.server.subscription;
 
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.subscription.SubscriptionList.SubscriptionNode;
 import org.apache.qpid.server.subscription.SubscriptionList.SubscriptionNodeIterator;
 import org.apache.qpid.test.utils.QpidTestCase;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class SubscriptionListTest extends QpidTestCase
 {
     private SubscriptionList _subList;
-    private MockSubscription _sub1;
-    private MockSubscription _sub2;
-    private MockSubscription _sub3;
+    private Subscription _sub1;
+    private Subscription _sub2;
+    private Subscription _sub3;
     private SubscriptionNode _node;
 
     protected void setUp()
     {
         _subList = new SubscriptionList();
 
-        _sub1 = new MockSubscription();
-        _sub2 = new MockSubscription();
-        _sub3 = new MockSubscription();
+        _sub1 = newMockSubscription();
+        _sub2 = newMockSubscription();
+        _sub3 = newMockSubscription();
 
         _subList.add(_sub1);
         _subList.add(_sub2);
         _subList.add(_sub3);
 
         _node = _subList.getHead();
+    }
+
+
+    private Subscription newMockSubscription()
+    {
+        final Subscription subscription = mock(Subscription.class);
+        when(subscription.getOwningState()).thenReturn(new QueueEntry.SubscriptionAcquiredState(subscription));
+        when(subscription.getSubscriptionID()).thenReturn(Subscription.SUB_ID_GENERATOR.getAndIncrement());
+        return subscription;
     }
 
     /**
@@ -177,9 +190,9 @@ public class SubscriptionListTest extends QpidTestCase
 
         assertEquals("Unexpected size result", 0, subList.size());
 
-        Subscription sub1 = new MockSubscription();
-        Subscription sub2 = new MockSubscription();
-        Subscription sub3 = new MockSubscription();
+        Subscription sub1 = newMockSubscription();
+        Subscription sub2 = newMockSubscription();
+        Subscription sub3 = newMockSubscription();
 
         subList.add(sub1);
         assertEquals("Unexpected size result", 1, subList.size());
@@ -253,7 +266,7 @@ public class SubscriptionListTest extends QpidTestCase
      */
     public void testRemoveNonexistentNode()
     {
-        Subscription sub4 = new MockSubscription();
+        Subscription sub4 = newMockSubscription();
         assertNull("Should not have been a node present for the subscription", getNodeForSubscription(_subList, sub4));
         assertFalse("Removing subscription node should not have succeeded", _subList.remove(sub4));
         assertEquals("Unexpected number of nodes", 3, countNodes(_subList));
@@ -324,7 +337,7 @@ public class SubscriptionListTest extends QpidTestCase
         assertTrue("Removing subscription node should have succeeded", _subList.remove(_sub3));
 
         //add a new 4th subscription to the list
-        Subscription sub4 = new MockSubscription();
+        Subscription sub4 = newMockSubscription();
         _subList.add(sub4);
 
         //get the node out the list for the 4th subscription

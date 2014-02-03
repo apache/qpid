@@ -24,16 +24,20 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
+import org.apache.qpid.server.subscription.DelegatingSubscription;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -203,15 +207,23 @@ public class MockAMQQueue implements AMQQueue
         return _virtualhost;
     }
 
+    @Override
+    public Subscription registerSubscription(final SubscriptionTarget target,
+                                             final FilterManager filters,
+                                             final Class<? extends ServerMessage> messageClass,
+                                             final String consumerName,
+                                             final EnumSet<Subscription.Option> options) throws AMQException
+    {
+        return new DelegatingSubscription(filters, messageClass, options.contains(Subscription.Option.ACQUIRES),
+                                          options.contains(Subscription.Option.SEES_REQUEUES), consumerName,
+                                          options.contains(Subscription.Option.TRANSIENT), target );
+    }
+
     public String getName()
     {
         return _name;
     }
 
-    public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
-    {
-
-    }
 
     public void unregisterSubscription(Subscription subscription) throws AMQException
     {

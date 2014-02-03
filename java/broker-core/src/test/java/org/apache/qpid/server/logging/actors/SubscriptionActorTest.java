@@ -20,10 +20,16 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.subscription.MockSubscription;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test : AMQPConnectionActorTest
@@ -42,9 +48,11 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
     {
         super.setUp();
 
-        MockSubscription mockSubscription = new MockSubscription();
+        Subscription mockSubscription = mock(Subscription.class);
+        final AMQQueue queue = BrokerTestHelper.createQueue(getName(), getVirtualHost());
+        when(mockSubscription.getQueue()).thenReturn(queue);
+        when(mockSubscription.getSubscriptionID()).thenReturn(0l);
 
-        mockSubscription.setQueue(BrokerTestHelper.createQueue(getName(), getVirtualHost()), false);
 
         setAmqpActor(new SubscriptionActor(getRootLogger(), mockSubscription));
     }

@@ -36,6 +36,10 @@ public interface SubscriptionTarget
 
     State getState();
 
+    void subscriptionRegistered(Subscription sub);
+
+    void subscriptionRemoved(Subscription sub);
+
     void setStateListener(StateChangeListener<SubscriptionTarget, State> listener);
 
     long getUnacknowledgedBytes();

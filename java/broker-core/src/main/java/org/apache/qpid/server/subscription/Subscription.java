@@ -32,6 +32,15 @@ public interface Subscription
 {
     AtomicLong SUB_ID_GENERATOR = new AtomicLong(0);
 
+    enum Option
+    {
+        ACQUIRES,
+        SEES_REQUEUES,
+        TRANSIENT,
+        EXCLUSIVE,
+        NO_LOCAL
+    }
+
     LogActor getLogActor();
 
     boolean isTransient();

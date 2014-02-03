@@ -178,7 +178,7 @@ public abstract class AbstractSubscription implements Subscription
         else
         {
             // no interest in messages we can't convert
-            if(MessageConverterRegistry.getConverter(entry.getMessage().getClass(), _messageClass)==null)
+            if(_messageClass != null && MessageConverterRegistry.getConverter(entry.getMessage().getClass(), _messageClass)==null)
             {
                 return false;
             }

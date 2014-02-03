@@ -76,6 +76,13 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
     private Subscription _subscription;
 
 
+    public static SubscriptionTarget_0_8 createBrowserTarget(AMQChannel channel,
+                                                             AMQShortString consumerTag, FieldTable filters,
+                                                             FlowCreditManager creditManager) throws AMQException
+    {
+        return new BrowserSubscription(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
+    }
+
     static final class BrowserSubscription extends SubscriptionTarget_0_8
     {
         public BrowserSubscription(AMQChannel channel,
@@ -118,6 +125,22 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
             return true;
         }
 
+    }
+
+    public static SubscriptionTarget_0_8 createNoAckTarget(AMQChannel channel,
+                                                           AMQShortString consumerTag, FieldTable filters,
+                                                           FlowCreditManager creditManager) throws AMQException
+    {
+        return new NoAckSubscription(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
+    }
+
+    public static SubscriptionTarget_0_8 createNoAckTarget(AMQChannel channel,
+                                                           AMQShortString consumerTag, FieldTable filters,
+                                                           FlowCreditManager creditManager,
+                                                           ClientDeliveryMethod deliveryMethod,
+                                                           RecordDeliveryMethod recordMethod) throws AMQException
+    {
+        return new NoAckSubscription(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
     }
 
     public static class NoAckSubscription extends SubscriptionTarget_0_8
@@ -220,6 +243,26 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
 
     }
 
+
+    public static SubscriptionTarget_0_8 createAckTarget(AMQChannel channel,
+                                                         AMQShortString consumerTag, FieldTable filters,
+                                                         FlowCreditManager creditManager)
+            throws AMQException
+    {
+        return new AckSubscription(channel,consumerTag,filters,creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
+    }
+
+
+    public static SubscriptionTarget_0_8 createAckTarget(AMQChannel channel,
+                                                         AMQShortString consumerTag, FieldTable filters,
+                                                         FlowCreditManager creditManager,
+                                                         ClientDeliveryMethod deliveryMethod,
+                                                         RecordDeliveryMethod recordMethod)
+            throws AMQException
+    {
+        return new AckSubscription(channel,consumerTag,filters,creditManager, deliveryMethod, recordMethod);
+    }
+
     static final class AckSubscription extends SubscriptionTarget_0_8
     {
         public AckSubscription(AMQChannel channel,
@@ -317,14 +360,20 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         }
     }
 
-    public void setSubscription(Subscription subscription)
-    {
-        _subscription = subscription;
-    }
-
     public Subscription getSubscription()
     {
         return _subscription;
+    }
+
+    @Override
+    public void subscriptionRemoved(final Subscription sub)
+    {
+    }
+
+    @Override
+    public void subscriptionRegistered(final Subscription sub)
+    {
+        _subscription = sub;
     }
 
     public AMQSessionModel getSessionModel()
