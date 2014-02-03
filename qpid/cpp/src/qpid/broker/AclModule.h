@@ -326,9 +326,9 @@ namespace acl {
                 case SPECPROP_MAXFILECOUNTLOWERLIMIT:  return "filemaxcountlowerlimit";
                 case SPECPROP_MAXFILECOUNTUPPERLIMIT:  return "filemaxcountupperlimit";
                 case SPECPROP_MAXPAGESLOWERLIMIT:      return "pageslowerlimit";
-                case SPECPROP_MAXPAGESUPPERLIMIT:      return "pageslowerlimit";
+                case SPECPROP_MAXPAGESUPPERLIMIT:      return "pagesupperlimit";
                 case SPECPROP_MAXPAGEFACTORLOWERLIMIT: return "pagefactorlowerlimit";
-                case SPECPROP_MAXPAGEFACTORUPPERLIMIT: return "pagefactorlowerlimit";
+                case SPECPROP_MAXPAGEFACTORUPPERLIMIT: return "pagefactorupperlimit";
                 default: assert(false); // should never get here
             }
             return "";
