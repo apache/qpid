@@ -28,16 +28,20 @@ in memory and on disk.
 
 * Add property limit settings to CREATE QUEUE Acl rules.
 
-User Option     Acl Limit Property      Units
---------------- ----------------------  ---------------
-qpid.max_size   queuemaxsizelowerlimit  bytes
-                queuemaxsizeupperlimit  bytes
-qpid.max_count  queuemaxcountlowerlimit messages
-                queuemaxcountupperlimit messages
-qpid.file_size  filemaxsizelowerlimit   pages (64Kb per page)
-                filemaxsizeupperlimit   pages (64Kb per page)
-qpid.file_count filemaxcountlowerlimit  files
-                filemaxcountupperlimit  files
+User Option     	Acl Limit Property      Units
+--------------- 	----------------------  ---------------
+qpid.max_size   	queuemaxsizelowerlimit  bytes
+                	queuemaxsizeupperlimit  bytes
+qpid.max_count  	queuemaxcountlowerlimit messages
+                	queuemaxcountupperlimit messages
+qpid.file_size  	filemaxsizelowerlimit   pages (64Kb per page)
+                	filemaxsizeupperlimit   pages (64Kb per page)
+qpid.file_count 	filemaxcountlowerlimit  files
+                	filemaxcountupperlimit  files
+qpid.max_pages_loaded	pageslowerlimit		pages
+			pagesupperlimit		pages
+qpid.page_factor	pagefactorlowerlimit	integer (multiple of the platform-defined page size)
+			pagefactorlowerlimit	integer (multiple of the platform-defined page size)
 
 
 * Change rule match behavior to accomodate limit settings
