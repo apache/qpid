@@ -42,6 +42,7 @@ class Queue;
 class Connection;
 class ConnectionObserver;
 class BrokerObserver;
+class SessionHandlerObserver;
 class TxBuffer;
 class DtxBuffer;
 }
@@ -152,6 +153,7 @@ class Primary : public Role
     BackupMap backups;
     boost::shared_ptr<broker::ConnectionObserver> connectionObserver;
     boost::shared_ptr<broker::BrokerObserver> brokerObserver;
+    boost::shared_ptr<broker::SessionHandlerObserver> sessionHandlerObserver;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     ReplicaMap replicas;
     TxMap txMap;

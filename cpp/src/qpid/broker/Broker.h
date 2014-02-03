@@ -38,6 +38,7 @@
 #include "qpid/broker/System.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/ConnectionObservers.h"
+#include "qpid/broker/SessionHandlerObserver.h"
 #include "qpid/broker/BrokerObservers.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/sys/ConnectionCodec.h"
@@ -179,6 +180,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DataDir dataDir;
     DataDir pagingDir;
     ConnectionObservers connectionObservers;
+    SessionHandlerObservers sessionHandlerObservers;
     BrokerObservers brokerObservers;
 
     QueueRegistry queues;
@@ -361,6 +363,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
+    SessionHandlerObservers& getSessionHandlerObservers() { return sessionHandlerObservers; }
     BrokerObservers& getBrokerObservers() { return brokerObservers; }
 
     /** Properties to be set on outgoing link connections */

@@ -55,8 +55,9 @@ class Primary;
  * A TxReplicator on the backup replicates the tx-queue and creates
  * a TxBuffer on the backup equivalent to the one on the primary.
  *
- * Also observes the tx-queue for prepare-complete messages and
- * subscription cancellations.
+ * Creates an exchange to receive prepare-ok/prepare-fail messages from backups.
+ *
+ * Monitors for tx-queue subscription cancellations.
  *
  * THREAD SAFE: called in user connection thread for TX events,
  * and in backup connection threads for prepare-completed events
@@ -122,6 +123,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     QueueIdsMap enqueues;
     UuidSet backups;            // All backups of transaction.
     UuidSet incomplete;         // Incomplete backups (not yet responded to prepare)
+    bool empty;                 // True if the transaction is empty - no enqueues/dequeues.
 };
 
 }} // namespace qpid::ha
