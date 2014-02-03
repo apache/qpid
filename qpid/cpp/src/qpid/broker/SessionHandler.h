@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/amqp_0_10/SessionHandler.h"
 #include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
@@ -76,8 +76,8 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
     SessionState* getSession() { return session.get(); }
     const SessionState* getSession() const { return session.get(); }
 
-    amqp_0_10::Connection& getConnection();
-    const amqp_0_10::Connection& getConnection() const;
+    QPID_BROKER_EXTERN amqp_0_10::Connection& getConnection();
+    QPID_BROKER_EXTERN const amqp_0_10::Connection& getConnection() const;
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
@@ -86,7 +86,7 @@ class SessionHandler : public qpid::amqp_0_10::SessionHandler {
     void attached(const std::string& name);//used by 'pushing' inter-broker bridges
     void attachAs(const std::string& name);//used by 'pulling' inter-broker bridges
 
-    void setErrorListener(boost::shared_ptr<ErrorListener> e) { errorListener = e; }
+    QPID_BROKER_EXTERN void setErrorListener(boost::shared_ptr<ErrorListener> e) { errorListener = e; }
 
     // Called by SessionAdapter
     void incomingExecutionException(framing::execution::ErrorCode, const std::string& msg);
