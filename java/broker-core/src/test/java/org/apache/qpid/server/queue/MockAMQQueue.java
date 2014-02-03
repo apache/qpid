@@ -29,6 +29,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -297,20 +298,12 @@ public class MockAMQQueue implements AMQQueue
     {
     }
 
-    public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
+    public void enqueue(ServerMessage message, Action<QueueEntry> action) throws AMQException
     {
     }
 
-
-    public void enqueue(ServerMessage message, boolean sync, PostEnqueueAction action) throws AMQException
-    {
-    }
 
     public void requeue(QueueEntry entry)
-    {
-    }
-
-    public void requeue(QueueEntryImpl storeContext, Subscription subscription)
     {
     }
 
@@ -323,11 +316,11 @@ public class MockAMQQueue implements AMQQueue
         return false;
     }
 
-    public void addQueueDeleteTask(Task task)
+    public void addQueueDeleteTask(Action<AMQQueue> task)
     {
     }
 
-    public void removeQueueDeleteTask(final Task task)
+    public void removeQueueDeleteTask(final Action<AMQQueue> task)
     {
     }
 

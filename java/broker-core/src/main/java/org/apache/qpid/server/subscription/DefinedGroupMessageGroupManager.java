@@ -21,6 +21,7 @@
 package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.util.StateChangeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,7 +241,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         return groupVal;
     }
 
-    private class GroupStateChangeListener implements QueueEntry.StateChangeListener
+    private class GroupStateChangeListener implements StateChangeListener<QueueEntry, QueueEntry.State>
     {
         private final Group _group;
 

@@ -69,6 +69,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryStateHandler
@@ -167,7 +168,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-            _subscription = new Subscription_1_0(this, qd, source.getDistributionMode() != StdDistMode.COPY);
+            _subscription = new Subscription_1_0(this, qd, source.getDistributionMode() != StdDistMode.COPY, messageFilter == null ? null : new SimpleFilterManager(messageFilter));
         }
         else if(destination instanceof ExchangeDestination)
         {
@@ -309,10 +310,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     final String queueName = name;
                     final AMQQueue tempQueue = queue;
 
-                    final Connection_1_0.Task deleteQueueTask =
-                                            new Connection_1_0.Task()
+                    final Action<Connection_1_0> deleteQueueTask =
+                                            new Action<Connection_1_0>()
                                             {
-                                                public void doTask(Connection_1_0 session)
+                                                public void performAction(Connection_1_0 session)
                                                 {
                                                     if (_vhost.getQueue(queueName) == tempQueue)
                                                     {
@@ -331,9 +332,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                                     getSession().getConnection().addConnectionCloseTask(deleteQueueTask);
 
-                                    queue.addQueueDeleteTask(new AMQQueue.Task()
+                                    queue.addQueueDeleteTask(new Action<AMQQueue>()
                                     {
-                                        public void doTask(AMQQueue queue)
+                                        public void performAction(AMQQueue queue)
                                         {
                                             getSession().getConnection().removeConnectionCloseTask(deleteQueueTask);
                                         }
@@ -356,17 +357,14 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             {
                 _logger.error("Error", e);
             }
-            _subscription = new Subscription_1_0(this, qd, true);
+            _subscription = new Subscription_1_0(this, qd, true, messageFilter == null ? null : new SimpleFilterManager(messageFilter));
 
         }
 
         if(_subscription != null)
         {
             _subscription.setNoLocal(noLocal);
-            if(messageFilter!=null)
-            {
-                _subscription.setFilters(new SimpleFilterManager(messageFilter));
-            }
+
 
             try
             {

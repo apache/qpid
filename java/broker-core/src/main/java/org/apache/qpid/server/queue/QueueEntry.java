@@ -25,6 +25,8 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
 
 public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>
 {
@@ -40,11 +42,6 @@ public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>
         DELETED;
 
 
-    }
-
-    public static interface StateChangeListener
-    {
-        public void stateChanged(QueueEntry entry, State oldSate, State newState);
     }
 
     public abstract class EntryState
@@ -198,7 +195,7 @@ public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>
 
     boolean isRejectedBy(long subscriptionId);
 
-    int routeToAlternate(final BaseQueue.PostEnqueueAction action, ServerTransaction txn);
+    int routeToAlternate(final Action<QueueEntry> action, ServerTransaction txn);
 
     boolean isQueueDeleted();
 
@@ -206,8 +203,8 @@ public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>
 
     QueueEntry getNextValidEntry();
 
-    void addStateChangeListener(StateChangeListener listener);
-    boolean removeStateChangeListener(StateChangeListener listener);
+    void addStateChangeListener(StateChangeListener<QueueEntry, State> listener);
+    boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener);
 
 
     /**

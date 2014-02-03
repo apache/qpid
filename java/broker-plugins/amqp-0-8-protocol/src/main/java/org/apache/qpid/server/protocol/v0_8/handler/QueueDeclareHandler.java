@@ -41,6 +41,7 @@ import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
@@ -134,8 +135,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                             }
                         };
                         protocolConnection.addSessionCloseTask(sessionCloseTask);
-                        queue.addQueueDeleteTask(new AMQQueue.Task() {
-                            public void doTask(AMQQueue queue) throws AMQException
+                        queue.addQueueDeleteTask(new Action<AMQQueue>() {
+                            public void performAction(AMQQueue queue)
                             {
                                 protocolConnection.removeSessionCloseTask(sessionCloseTask);
                             }
@@ -245,9 +246,9 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
             session.addSessionCloseTask(deleteQueueTask);
 
-            queue.addQueueDeleteTask(new AMQQueue.Task()
+            queue.addQueueDeleteTask(new Action<AMQQueue>()
             {
-                public void doTask(AMQQueue queue)
+                public void performAction(AMQQueue queue)
                 {
                     session.removeSessionCloseTask(deleteQueueTask);
                 }

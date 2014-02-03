@@ -1678,7 +1678,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                                                   props,
                                                   _channelId,
                                                   deliveryTag,
-                                                  ((SubscriptionImpl)sub).getConsumerTag());
+                                                  new AMQShortString(sub.getName()));
         }
 
     }

@@ -26,12 +26,12 @@ import org.apache.qpid.transport.Method;
 
 public class MessageAcceptCompletionListener implements Method.CompletionListener
 {
-    private final Subscription_0_10 _sub;
+    private final SubscriptionTarget_0_10 _sub;
     private final QueueEntry _entry;
     private final ServerSession _session;
     private boolean _restoreCredit;
 
-    public MessageAcceptCompletionListener(Subscription_0_10 sub, ServerSession session, QueueEntry entry, boolean restoreCredit)
+    public MessageAcceptCompletionListener(SubscriptionTarget_0_10 sub, ServerSession session, QueueEntry entry, boolean restoreCredit)
     {
         super();
         _sub = sub;
@@ -46,7 +46,7 @@ public class MessageAcceptCompletionListener implements Method.CompletionListene
         {
             _sub.restoreCredit(_entry);
         }
-        if(_entry.isAcquiredBy(_sub))
+        if(_entry.isAcquiredBy(_sub.getSubscription()))
         {
             _session.acknowledge(_sub, _entry);
         }

@@ -26,6 +26,7 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.util.StateChangeListener;
 
 public interface Subscription
 {
@@ -48,11 +49,6 @@ public interface Subscription
         ACTIVE,
         SUSPENDED,
         CLOSED
-    }
-
-    public static interface StateListener
-    {
-        public void stateChange(Subscription sub, State oldState, State newState);
     }
 
     AMQQueue getQueue();
@@ -82,7 +78,7 @@ public interface Subscription
 
     void flushBatched();
 
-    void queueDeleted(AMQQueue queue);
+    void queueDeleted();
 
 
     boolean wouldSuspend(QueueEntry msg);
@@ -94,13 +90,9 @@ public interface Subscription
 
     void releaseSendLock();
 
-    void releaseQueueEntry(final QueueEntry queueEntryImpl);
-
-    void onDequeue(final QueueEntry queueEntry);
-
     void restoreCredit(final QueueEntry queueEntry);
 
-    void setStateListener(final StateListener listener);
+    void setStateListener(final StateChangeListener<Subscription, State> listener);
 
     public State getState();
 
@@ -115,9 +107,9 @@ public interface Subscription
 
     public Object get(String key);
 
-    boolean isSessionTransactional();
-
     void queueEmpty() throws AMQException;
 
-    String getConsumerName();
+    String getName();
+
+    void flush() throws AMQException;
 }

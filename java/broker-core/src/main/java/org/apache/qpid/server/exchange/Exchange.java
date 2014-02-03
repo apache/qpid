@@ -29,7 +29,9 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -105,7 +107,7 @@ public interface Exchange extends ExchangeReferrer
     int send(ServerMessage message,
              InstanceProperties instanceProperties,
              ServerTransaction txn,
-             BaseQueue.PostEnqueueAction postEnqueueAction);
+             Action<QueueEntry> postEnqueueAction);
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments

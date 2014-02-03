@@ -18,21 +18,9 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.util;
 
-package org.apache.qpid.server.queue;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.util.Action;
-
-public interface BaseQueue extends TransactionLogResource
+public interface Action<T>
 {
-    void enqueue(ServerMessage message) throws AMQException;
-    void enqueue(ServerMessage message, Action<QueueEntry> action) throws AMQException;
-
-    boolean isDurable();
-    boolean isDeleted();
-
-    String getName();
+    void performAction(T object);
 }

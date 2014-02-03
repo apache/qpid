@@ -47,7 +47,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
                                                queueAdapter.getName(),
                                                subscription.getSessionModel().getConnectionModel().getRemoteAddressString(),
                                                String.valueOf(subscription.getSessionModel().getChannelId()),
-                                               subscription.getConsumerName()), queueAdapter.getTaskExecutor());
+                                               subscription.getName()), queueAdapter.getTaskExecutor());
         _subscription = subscription;
         _queue = queueAdapter;
         _session = sessionAdapter;
@@ -57,7 +57,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 
     public String getName()
     {
-        return _subscription.getConsumerName();
+        return _subscription.getName();
     }
 
     public String setName(final String currentName, final String desiredName)

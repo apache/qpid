@@ -18,21 +18,45 @@
  * under the License.
  *
  */
-
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.util.StateChangeListener;
 
-public interface BaseQueue extends TransactionLogResource
+public interface SubscriptionTarget
 {
-    void enqueue(ServerMessage message) throws AMQException;
-    void enqueue(ServerMessage message, Action<QueueEntry> action) throws AMQException;
 
-    boolean isDurable();
-    boolean isDeleted();
 
-    String getName();
+    enum State
+    {
+        ACTIVE, SUSPENDED, CLOSED
+    }
+
+    State getState();
+
+    void setStateListener(StateChangeListener<SubscriptionTarget, State> listener);
+
+    long getUnacknowledgedBytes();
+
+    long getUnacknowledgedMessages();
+
+    AMQSessionModel getSessionModel();
+
+    void send(QueueEntry entry, boolean batch) throws AMQException;
+
+    void flushBatched();
+
+    void queueDeleted();
+
+    void queueEmpty() throws AMQException;
+
+    boolean allocateCredit(QueueEntry msg);
+
+    void restoreCredit(QueueEntry queueEntry);
+
+    boolean isSuspended();
+
+    boolean close();
 }

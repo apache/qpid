@@ -141,7 +141,7 @@ public class VirtualHostConfigRecoveryHandler implements
                             try
                             {
 
-                                queue.enqueue(message, true, null);
+                                queue.enqueue(message, null);
                                 ref.release();
                             }
                             catch (AMQException e)

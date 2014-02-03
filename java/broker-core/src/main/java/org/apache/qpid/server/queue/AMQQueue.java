@@ -30,6 +30,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -132,8 +133,8 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
 
-    void addQueueDeleteTask(final Task task);
-    void removeQueueDeleteTask(final Task task);
+    void addQueueDeleteTask(Action<AMQQueue> task);
+    void removeQueueDeleteTask(Action<AMQQueue> task);
 
 
 
@@ -269,11 +270,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
         {
             super("");
         }
-    }
-
-    static interface Task
-    {
-        public void doTask(AMQQueue queue) throws AMQException;
     }
 
     void configure(QueueConfiguration config);

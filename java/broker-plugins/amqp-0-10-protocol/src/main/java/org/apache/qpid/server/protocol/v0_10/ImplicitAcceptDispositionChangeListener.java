@@ -30,12 +30,12 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
 
     private final QueueEntry _entry;
-    private Subscription_0_10 _sub;
+    private SubscriptionTarget_0_10 _target;
 
-    public ImplicitAcceptDispositionChangeListener(QueueEntry entry, Subscription_0_10 subscription_0_10)
+    public ImplicitAcceptDispositionChangeListener(QueueEntry entry, SubscriptionTarget_0_10 target)
     {
         _entry = entry;
-        _sub = subscription_0_10;
+        _target = target;
     }
 
     public void onAccept()
@@ -45,9 +45,9 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        if(_entry.isAcquiredBy(_sub))
+        if(_entry.isAcquiredBy(_target.getSubscription()))
         {
-            getSubscription().release(_entry, setRedelivered);
+            _target.release(_entry, setRedelivered);
         }
         else
         {
@@ -57,9 +57,9 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        if(_entry.isAcquiredBy(_sub))
+        if(_entry.isAcquiredBy(_target.getSubscription()))
         {
-            getSubscription().reject(_entry);
+            _target.reject(_entry);
         }
         else
         {
@@ -70,19 +70,15 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        boolean acquired = _entry.acquire(getSubscription());
+        boolean acquired = _entry.acquire(_target.getSubscription());
         if(acquired)
         {
-            getSubscription().recordUnacknowledged(_entry);
+            _target.recordUnacknowledged(_entry);
         }
         return acquired;
 
     }
 
-    public Subscription_0_10 getSubscription()
-    {
-        return _sub;
-    }
 
 
 }

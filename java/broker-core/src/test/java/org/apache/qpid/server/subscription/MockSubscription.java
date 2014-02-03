@@ -33,6 +33,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.util.StateChangeListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +48,7 @@ public class MockSubscription implements Subscription
     private boolean _closed = false;
     private String tag = "mocktag";
     private AMQQueue queue = null;
-    private StateListener _listener = null;
+    private StateChangeListener<Subscription, State> _listener = null;
     private volatile AMQQueue.Context _queueContext = null;
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
@@ -75,14 +76,20 @@ public class MockSubscription implements Subscription
         _closed = true;
         if (_listener != null)
         {
-            _listener.stateChange(this, _state, State.CLOSED);
+            _listener.stateChanged(this, _state, State.CLOSED);
         }
         _state = State.CLOSED;
     }
 
-    public String getConsumerName()
+    public String getName()
     {
         return tag;
+    }
+
+    @Override
+    public void flush() throws AMQException
+    {
+
     }
 
     public long getSubscriptionID()
@@ -202,7 +209,7 @@ public class MockSubscription implements Subscription
         return false;
     }
 
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted()
     {
     }
 
@@ -211,15 +218,7 @@ public class MockSubscription implements Subscription
         _stateChangeLock.unlock();
     }
 
-    public void onDequeue(QueueEntry queueEntry)
-    {
-    }
-
     public void restoreCredit(QueueEntry queueEntry)
-    {
-    }
-
-    public void releaseQueueEntry(QueueEntry queueEntry)
     {
     }
 
@@ -251,7 +250,7 @@ public class MockSubscription implements Subscription
     {
     }
 
-    public void setStateListener(StateListener listener)
+    public void setStateListener(StateChangeListener<Subscription, State> listener)
     {
         this._listener = listener;
     }

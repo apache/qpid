@@ -27,6 +27,8 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
 
 public class MockQueueEntry implements QueueEntry
 {
@@ -53,7 +55,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public void addStateChangeListener(StateChangeListener listener)
+    public void addStateChangeListener(StateChangeListener<QueueEntry, State> listener)
     {
 
     }
@@ -63,7 +65,7 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public int routeToAlternate(final BaseQueue.PostEnqueueAction action, final ServerTransaction txn)
+    public int routeToAlternate(final Action<QueueEntry> action, final ServerTransaction txn)
     {
         return 0;
     }
@@ -137,7 +139,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean removeStateChangeListener(StateChangeListener listener)
+    public boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener)
     {
 
         return false;

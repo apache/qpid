@@ -31,20 +31,19 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
 
     private final QueueEntry _entry;
-    private final Subscription_0_10 _sub;
+    private final SubscriptionTarget_0_10 _target;
 
-    public ExplicitAcceptDispositionChangeListener(QueueEntry entry, Subscription_0_10 subscription_0_10)
+    public ExplicitAcceptDispositionChangeListener(QueueEntry entry, SubscriptionTarget_0_10 target)
     {
         _entry = entry;
-        _sub = subscription_0_10;
+        _target = target;
     }
 
     public void onAccept()
     {
-        final Subscription_0_10 subscription = getSubscription();
-        if(subscription != null && _entry.isAcquiredBy(_sub))
+        if(_target != null && _entry.isAcquiredBy(_target.getSubscription()))
         {
-            subscription.getSessionModel().acknowledge(subscription, _entry);
+            _target.getSessionModel().acknowledge(_target, _entry);
         }
         else
         {
@@ -55,10 +54,9 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        final Subscription_0_10 subscription = getSubscription();
-        if(subscription != null && _entry.isAcquiredBy(_sub))
+        if(_target != null && _entry.isAcquiredBy(_target.getSubscription()))
         {
-            subscription.release(_entry, setRedelivered);
+            _target.release(_entry, setRedelivered);
         }
         else
         {
@@ -68,10 +66,9 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        final Subscription_0_10 subscription = getSubscription();
-        if(subscription != null && _entry.isAcquiredBy(_sub))
+        if(_target != null && _entry.isAcquiredBy(_target.getSubscription()))
         {
-            subscription.reject(_entry);
+            _target.reject(_entry);
         }
         else
         {
@@ -82,12 +79,8 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        return _entry.acquire(getSubscription());
+        return _entry.acquire(_target.getSubscription());
     }
 
 
-    private Subscription_0_10 getSubscription()
-    {
-        return _sub;
-    }
 }

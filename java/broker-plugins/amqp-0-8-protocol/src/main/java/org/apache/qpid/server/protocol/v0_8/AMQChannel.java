@@ -85,6 +85,7 @@ import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TransportException;
 
@@ -1256,7 +1257,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 {
                     BaseQueue queue = _destinationQueues.get(i);
 
-                    BaseQueue.PostEnqueueAction action;
+                    Action<QueueEntry> action;
 
                     if(immediate)
                     {
@@ -1267,7 +1268,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                         action = null;
                     }
 
-                    queue.enqueue(message, isTransactional(), action);
+                    queue.enqueue(message, action);
 
                     if(queue instanceof AMQQueue)
                     {
@@ -1295,14 +1296,14 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
 
     }
-    private class ImmediateAction implements BaseQueue.PostEnqueueAction
+    private class ImmediateAction implements Action<QueueEntry>
     {
 
         public ImmediateAction()
         {
         }
 
-        public void onEnqueue(QueueEntry entry)
+        public void performAction(QueueEntry entry)
         {
             AMQQueue queue = entry.getQueue();
 
@@ -1310,11 +1311,11 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             {
 
                 ServerTransaction txn = new LocalTransaction(_messageStore);
-                Collection<QueueEntry> entries = new ArrayList<QueueEntry>(1);
-                entries.add(entry);
                 final AMQMessage message = (AMQMessage) entry.getMessage();
-                txn.dequeue(queue, entry.getMessage(),
-                            new MessageAcknowledgeAction(entries)
+                MessageReference ref = message.newReference();
+                entry.delete();
+                txn.dequeue(queue, message,
+                            new ServerTransaction.Action()
                             {
                                 @Override
                                 public void postCommit()
@@ -1336,11 +1337,17 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                                     {
                                         throw new RuntimeException(e);
                                     }
-                                    super.postCommit();
+                                }
+
+                                @Override
+                                public void onRollback()
+                                {
+
                                 }
                             }
                            );
                 txn.commit();
+                ref.release();
 
 
             }
@@ -1352,10 +1359,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         }
     }
 
-    private final class CapacityCheckAction implements BaseQueue.PostEnqueueAction
+    private final class CapacityCheckAction implements Action<QueueEntry>
     {
         @Override
-        public void onEnqueue(final QueueEntry entry)
+        public void performAction(final QueueEntry entry)
         {
             AMQQueue queue = entry.getQueue();
             queue.checkCapacity(AMQChannel.this);
@@ -1398,10 +1405,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             {
                 try
                 {
-                        for(QueueEntry entry : _ackedMessages)
-                        {
-                            entry.release();
-                        }
+                    for(QueueEntry entry : _ackedMessages)
+                    {
+                        entry.release();
+                    }
                 }
                 finally
                 {
@@ -1576,10 +1583,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         {
             final ServerMessage msg = rejectedQueueEntry.getMessage();
 
-            int requeues = rejectedQueueEntry.routeToAlternate(new BaseQueue.PostEnqueueAction()
+            int requeues = rejectedQueueEntry.routeToAlternate(new Action<QueueEntry>()
                 {
                     @Override
-                    public void onEnqueue(final QueueEntry requeueEntry)
+                    public void performAction(final QueueEntry requeueEntry)
                     {
                         _actor.message( _logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
                                                                                    requeueEntry.getQueue().getName()));

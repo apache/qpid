@@ -98,8 +98,6 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
                               " on channel:" + channel.debugIdentity());
             }
 
-            message.reject();
-
             if (body.getRequeue())
             {
                 channel.requeue(deliveryTag);
@@ -110,7 +108,9 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
             }
             else
             {
-                 final boolean maxDeliveryCountEnabled = channel.isMaxDeliveryCountEnabled(deliveryTag);
+                message.reject();
+
+                final boolean maxDeliveryCountEnabled = channel.isMaxDeliveryCountEnabled(deliveryTag);
                  _logger.debug("maxDeliveryCountEnabled: " + maxDeliveryCountEnabled + " deliveryTag " + deliveryTag);
                  if (maxDeliveryCountEnabled)
                  {

@@ -39,8 +39,10 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -66,7 +68,7 @@ public abstract class AbstractExchange implements Exchange
 
     private VirtualHost _virtualHost;
 
-    private final List<Task> _closeTaskList = new CopyOnWriteArrayList<Task>();
+    private final List<Action<Exchange>> _closeTaskList = new CopyOnWriteArrayList<Action<Exchange>>();
 
     /**
      * Whether the exchange is automatically deleted once all queues have detached from it
@@ -138,6 +140,12 @@ public abstract class AbstractExchange implements Exchange
 
         if(_closed.compareAndSet(false,true))
         {
+            List<Binding> bindings = new ArrayList<Binding>(_bindings);
+            for(Binding binding : bindings)
+            {
+                removeBinding(binding);
+            }
+
             if(_alternateExchange != null)
             {
                 _alternateExchange.removeReference(this);
@@ -145,9 +153,9 @@ public abstract class AbstractExchange implements Exchange
 
             CurrentActor.get().message(_logSubject, ExchangeMessages.DELETED());
 
-            for(Task task : _closeTaskList)
+            for(Action<Exchange> task : _closeTaskList)
             {
-                task.onClose(this);
+                task.performAction(this);
             }
             _closeTaskList.clear();
         }
@@ -300,12 +308,12 @@ public abstract class AbstractExchange implements Exchange
         return !_referrers.isEmpty();
     }
 
-    public void addCloseTask(final Task task)
+    public void addCloseTask(final Action<Exchange> task)
     {
         _closeTaskList.add(task);
     }
 
-    public void removeCloseTask(final Task task)
+    public void removeCloseTask(final Action<Exchange> task)
     {
         _closeTaskList.remove(task);
     }
@@ -421,7 +429,7 @@ public abstract class AbstractExchange implements Exchange
     public final int send(final ServerMessage message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final BaseQueue.PostEnqueueAction postEnqueueAction)
+                          final Action<QueueEntry> postEnqueueAction)
     {
         List<? extends BaseQueue> queues = route(message, instanceProperties);
 
@@ -579,8 +587,6 @@ public abstract class AbstractExchange implements Exchange
         {
             doRemoveBinding(b);
             queue.removeBinding(b);
-            removeCloseTask(b);
-            queue.removeQueueDeleteTask(b);
 
             if (b.isDurable())
             {
@@ -659,8 +665,6 @@ public abstract class AbstractExchange implements Exchange
                 DurableConfigurationStoreHelper.createBinding(_virtualHost.getDurableConfigurationStore(), b);
             }
 
-            queue.addQueueDeleteTask(b);
-            addCloseTask(b);
             queue.addBinding(b);
             doAddBinding(b);
             b.logCreation();
@@ -673,7 +677,7 @@ public abstract class AbstractExchange implements Exchange
         }
     }
 
-    private final class BindingImpl extends Binding implements AMQQueue.Task, Task
+    private final class BindingImpl extends Binding
     {
         private final BindingLogSubject _logSubject;
         //TODO : persist creation time
@@ -687,12 +691,6 @@ public abstract class AbstractExchange implements Exchange
             super(id, bindingKey, queue, AbstractExchange.this, arguments);
             _logSubject = new BindingLogSubject(bindingKey,AbstractExchange.this,queue);
 
-        }
-
-
-        public void doTask(final AMQQueue queue) throws AMQException
-        {
-            removeBinding(this);
         }
 
         public void onClose(final Exchange exchange) throws AMQSecurityException, AMQInternalException
@@ -728,12 +726,5 @@ public abstract class AbstractExchange implements Exchange
         }
 
     }
-
-    public static interface Task
-    {
-        public void onClose(Exchange exchange) throws AMQSecurityException, AMQInternalException;
-    }
-
-
 
 }

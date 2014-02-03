@@ -41,10 +41,10 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -228,9 +228,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue.registerSubscription(_subscription, false);
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
         {
-            public void onEnqueue(QueueEntry entry)
+            public void performAction(QueueEntry entry)
             {
                 queueEntries.add(entry);
             }
@@ -276,9 +276,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue.registerSubscription(_subscription, false);
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
         {
-            public void onEnqueue(QueueEntry entry)
+            public void performAction(QueueEntry entry)
             {
                 queueEntries.add(entry);
             }
@@ -323,9 +323,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue.registerSubscription(_subscription, false);
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
         {
-            public void onEnqueue(QueueEntry entry)
+            public void performAction(QueueEntry entry)
             {
                 queueEntries.add(entry);
             }
@@ -376,9 +376,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue.registerSubscription(subscription2, false);
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
         {
-            public void onEnqueue(QueueEntry entry)
+            public void performAction(QueueEntry entry)
             {
                 queueEntries.add(entry);
             }
@@ -1011,37 +1011,37 @@ public class SimpleAMQQueueTest extends QpidTestCase
         //verify behaviour in face of expected state changes:
 
         //verify a subscription going suspended->active increases the count
-        queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.ACTIVE);
+        queue.stateChanged(subscription2, Subscription.State.SUSPENDED, Subscription.State.ACTIVE);
         assertEquals("Unexpected active consumer count", 2, queue.getActiveConsumerCount());
 
         //verify a subscription going active->suspended decreases the count
-        queue.stateChange(subscription2, Subscription.State.ACTIVE, Subscription.State.SUSPENDED);
+        queue.stateChanged(subscription2, Subscription.State.ACTIVE, Subscription.State.SUSPENDED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify a subscription going suspended->closed doesn't change the count
-        queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.CLOSED);
+        queue.stateChanged(subscription2, Subscription.State.SUSPENDED, Subscription.State.CLOSED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify a subscription going active->closed  decreases the count
-        queue.stateChange(subscription2, Subscription.State.ACTIVE, Subscription.State.CLOSED);
+        queue.stateChanged(subscription2, Subscription.State.ACTIVE, Subscription.State.CLOSED);
         assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
 
         //verify behaviour in face of unexpected state changes:
 
         //verify a subscription going closed->active increases the count
-        queue.stateChange(subscription2, Subscription.State.CLOSED, Subscription.State.ACTIVE);
+        queue.stateChanged(subscription2, Subscription.State.CLOSED, Subscription.State.ACTIVE);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify a subscription going active->active doesn't change the count
-        queue.stateChange(subscription2, Subscription.State.ACTIVE, Subscription.State.ACTIVE);
+        queue.stateChanged(subscription2, Subscription.State.ACTIVE, Subscription.State.ACTIVE);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify a subscription going closed->suspended doesn't change the count
-        queue.stateChange(subscription2, Subscription.State.CLOSED, Subscription.State.SUSPENDED);
+        queue.stateChanged(subscription2, Subscription.State.CLOSED, Subscription.State.SUSPENDED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
 
         //verify a subscription going suspended->suspended doesn't change the count
-        queue.stateChange(subscription2, Subscription.State.SUSPENDED, Subscription.State.SUSPENDED);
+        queue.stateChanged(subscription2, Subscription.State.SUSPENDED, Subscription.State.SUSPENDED);
         assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
     }
 

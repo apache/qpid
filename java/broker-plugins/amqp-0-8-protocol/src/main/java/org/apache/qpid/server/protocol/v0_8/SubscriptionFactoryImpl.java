@@ -25,10 +25,14 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
+import org.apache.qpid.server.subscription.DelegatingSubscription;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionTarget;
 
 public class SubscriptionFactoryImpl implements SubscriptionFactory
 {
@@ -47,27 +51,30 @@ public class SubscriptionFactoryImpl implements SubscriptionFactory
 
 
         return createSubscription(channel, protocolSession, consumerTag, acks, filters,
-                                  noLocal,
-                                  creditManager,
-                                  clientMethod,
-                                  recordMethod
-        );
+                                      noLocal,
+                                      creditManager,
+                                      clientMethod,
+                                      recordMethod
+                                     );
     }
 
+
     public Subscription createSubscription(final AMQChannel channel,
-                                            final AMQProtocolSession protocolSession,
-                                            final AMQShortString consumerTag,
-                                            final boolean acks,
-                                            final FieldTable filters,
-                                            final boolean noLocal,
-                                            final FlowCreditManager creditManager,
-                                            final ClientDeliveryMethod clientMethod,
-                                            final RecordDeliveryMethod recordMethod
-    )
+                                           final AMQProtocolSession protocolSession,
+                                           final AMQShortString consumerTag,
+                                           final boolean acks,
+                                           final FieldTable filters,
+                                           final boolean noLocal,
+                                           final FlowCreditManager creditManager,
+                                           final ClientDeliveryMethod clientMethod,
+                                           final RecordDeliveryMethod recordMethod
+                                          )
             throws AMQException
     {
         boolean isBrowser;
-
+        SubscriptionTarget_0_8 target;
+        Subscription subscription;
+        
         if (filters != null)
         {
             Boolean isBrowserObj = (Boolean) filters.get(AMQPFilterTypes.NO_CONSUME.getValue());
@@ -78,30 +85,56 @@ public class SubscriptionFactoryImpl implements SubscriptionFactory
             isBrowser = false;
         }
 
+        final FilterManager filterManager = FilterManagerFactory.createManager(FieldTable.convertToMap(filters));
+        boolean acquires;
+        boolean seesReuques;
+        boolean isTransient;
         if(isBrowser)
         {
-            return new SubscriptionImpl.BrowserSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
+            target = new SubscriptionTarget_0_8.BrowserSubscription(channel, consumerTag, filters, creditManager, clientMethod, recordMethod);
+            acquires = false;
+            seesReuques = false;
+            isTransient = true;
         }
         else if(acks)
         {
-            return new SubscriptionImpl.AckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
+            target = new SubscriptionTarget_0_8.AckSubscription(channel, consumerTag, filters, creditManager, clientMethod, recordMethod);
+            acquires = true;
+            seesReuques = true;
+            isTransient = false;
         }
         else
         {
-            return new SubscriptionImpl.NoAckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
+            target = new SubscriptionTarget_0_8.NoAckSubscription(channel, consumerTag, filters, creditManager, clientMethod, recordMethod);
+            acquires = true;
+            seesReuques = true;
+            isTransient = false;
         }
+        subscription =
+                new DelegatingSubscription<SubscriptionTarget_0_8>(filterManager, AMQMessage.class, acquires, seesReuques, AMQShortString.toString(consumerTag),isTransient,target);
+        target.setSubscription(subscription);
+        return subscription;
     }
 
-    public SubscriptionImpl.GetNoAckSubscription createBasicGetNoAckSubscription(final AMQChannel channel,
-                                                                                 final AMQProtocolSession session,
-                                                                                 final AMQShortString consumerTag,
-                                                                                 final FieldTable filters,
-                                                                                 final boolean noLocal,
-                                                                                 final FlowCreditManager creditManager,
-                                                                                 final ClientDeliveryMethod deliveryMethod,
-                                                                                 final RecordDeliveryMethod recordMethod) throws AMQException
+
+
+    public Subscription createBasicGetNoAckSubscription(final AMQChannel channel,
+                                                        final AMQProtocolSession session,
+                                                        final AMQShortString consumerTag,
+                                                        final FieldTable filters,
+                                                        final boolean noLocal,
+                                                        final FlowCreditManager creditManager,
+                                                        final ClientDeliveryMethod deliveryMethod,
+                                                        final RecordDeliveryMethod recordMethod) throws AMQException
     {
-        return new SubscriptionImpl.GetNoAckSubscription(channel, session, null, null, false, creditManager, deliveryMethod, recordMethod);
+        SubscriptionTarget_0_8 target = new SubscriptionTarget_0_8.NoAckSubscription(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
+
+        Subscription subscription;
+        final FilterManager filterManager = FilterManagerFactory.createManager(FieldTable.convertToMap(filters));
+        subscription =
+                new DelegatingSubscription<SubscriptionTarget_0_8>(filterManager, AMQMessage.class, true, true, AMQShortString.toString(consumerTag),true,target);
+        target.setSubscription(subscription);
+        return subscription;
     }
 
     public static final SubscriptionFactoryImpl INSTANCE = new SubscriptionFactoryImpl();
