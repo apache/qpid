@@ -164,7 +164,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         {
             //Verify that the queue was deleted by querying for its JMX MBean
             _jmxc = JMXConnnectionFactory.getJMXConnection(5000, "127.0.0.1",
-                    getManagementPort(getPort()), USER, PASSWORD);
+                    getJmxManagementPort(getPort()), USER, PASSWORD);
 
             _jmxConnected = true;
             _mbsc = _jmxc.getMBeanServerConnection();

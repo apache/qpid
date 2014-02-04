@@ -510,4 +510,11 @@ public class RestTestHelper
         _useSslAuth = useSslAuth;
         _useSsl = true;
     }
+
+    public static RestTestHelper createRestTestHelperWithDefaultCredentials(int port)
+    {
+        RestTestHelper helper = new RestTestHelper(port);
+        helper.setUsernameAndPassword("webadmin", "webadmin");
+        return helper;
+    }
 }

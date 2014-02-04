@@ -53,6 +53,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
     {
         super.setUp();
         _taskExecutor = mock(TaskExecutor.class);
+        when(_taskExecutor.isTaskExecutorThread()).thenReturn(true);
         _virtualHost = mock(VirtualHost.class);
         _facade = mock(ReplicatedEnvironmentFacade.class);
     }

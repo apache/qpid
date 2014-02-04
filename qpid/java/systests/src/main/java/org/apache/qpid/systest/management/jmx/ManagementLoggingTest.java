@@ -195,7 +195,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             validateMessageID("MNG-1002", log);
 
             //Check the RMI Registry port is as expected
-            int mPort = getManagementPort(getPort());
+            int mPort = getJmxManagementPort(getPort());
             assertTrue("RMI Registry port not as expected(" + mPort + ").:" + getMessageString(log),
                        getMessageString(log).endsWith(String.valueOf(mPort)));
 

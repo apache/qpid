@@ -43,8 +43,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
@@ -107,7 +109,7 @@ public class HATestClusterCreator
         }
     }
 
-    public void setDesignatedPrimaryOnFirstBroker(boolean designatedPrimary) throws Exception
+    public void configureDesignatedPrimaryOnFirstBroker(boolean designatedPrimary) throws Exception
     {
         if (_numberOfNodes != 2)
         {
@@ -363,6 +365,8 @@ public class HATestClusterCreator
         config.addReplicationNodeConfiguration(hostId, replicationNodeAttributes);
 
         config.addJmxManagementConfiguration();
+        config.addHttpManagementConfiguration();
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 
     public String getIpAddressOfBrokerHost()
@@ -376,6 +380,30 @@ public class HATestClusterCreator
         {
             throw new RuntimeException("Could not determine IP address of host : " + brokerHost, e);
         }
+    }
+
+    public void setReplicationNodeAttributes(int brokerPort, Map<String, Object> attributeMap) throws Exception
+    {
+        RestTestHelper restHelper = createRestTestHelper(brokerPort);
+        String replicationNodeName = getNodeNameForBrokerPort(brokerPort);
+        int status = restHelper.submitRequest("/rest/replicationnode/" + _virtualHostName + "/" + replicationNodeName , "PUT", attributeMap);
+        if (status != 200)
+        {
+            throw new Exception("Unexpected http status when updating " + replicationNodeName + " attribute's : " + status);
+        }
+    }
+
+    public Map<String, Object> getReplicationNodeAttributes(int brokerPort) throws Exception
+    {
+        String replicationNodeName = getNodeNameForBrokerPort(brokerPort);
+        RestTestHelper restHelper = createRestTestHelper(brokerPort);
+        return restHelper.getJsonAsSingletonList("/rest/replicationnode/" + _virtualHostName + "/" + replicationNodeName );
+    }
+
+    private RestTestHelper createRestTestHelper(int brokerPort)
+    {
+        int httpPort = _testcase.getHttpManagementPort(brokerPort);
+        return RestTestHelper.createRestTestHelperWithDefaultCredentials(httpPort);
     }
 
 }

@@ -20,37 +20,30 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import javax.management.JMException;
-import javax.management.ObjectName;
 
 import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
-import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import com.sleepycat.je.rep.ReplicationConfig;
 
 public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 {
-    private static final long RECEIVE_TIMEOUT = 5000l;
-
     private static final String VIRTUAL_HOST = "test";
 
-    private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(VIRTUAL_HOST);
+    public static final long RECEIVE_TIMEOUT = 5000l;
+
     private static final int NUMBER_OF_NODES = 2;
 
     private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
-    private final JMXTestUtils _jmxUtils = new JMXTestUtils(this);
 
     private ConnectionURL _brokerFailoverUrl;
 
@@ -63,19 +56,6 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         assertTrue(isBrokerStorePersistent());
 
         super.setUp();
-    }
-
-    @Override
-    protected void tearDown() throws Exception
-    {
-        try
-        {
-            _jmxUtils.close();
-        }
-        finally
-        {
-            super.tearDown();
-        }
     }
 
     @Override
@@ -93,7 +73,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         replicationParameters.put(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES, "0");
 
         _clusterCreator.configureClusterNodes(replicationParameters);
-        _clusterCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);
+        _clusterCreator.configureDesignatedPrimaryOnFirstBroker(designedPrimary);
         _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();
         _clusterCreator.startCluster();
     }
@@ -170,22 +150,27 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     public void testInitialDesignatedPrimaryStateOfNodes() throws Exception
     {
         startCluster(true);
-        final ManagedBDBHAMessageStore primaryStoreBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfPrimary());
-        assertTrue("Expected primary node to be set as designated primary", primaryStoreBean.getDesignatedPrimary());
+        Map<String, Object> primaryAttributes = _clusterCreator.getReplicationNodeAttributes(_clusterCreator.getBrokerPortNumberOfPrimary());
+        assertTrue("Expected primary node to be set as designated primary", (Boolean)primaryAttributes.get(ReplicationNode.DESIGNATED_PRIMARY));
 
-        final ManagedBDBHAMessageStore secondaryStoreBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
-        assertFalse("Expected secondary node to NOT be set as designated primary", secondaryStoreBean.getDesignatedPrimary());
+        Map<String, Object> secondaryAttributes = _clusterCreator.getReplicationNodeAttributes(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
+        assertFalse("Expected secondary node to NOT be set as designated primary", (Boolean)secondaryAttributes.get(ReplicationNode.DESIGNATED_PRIMARY));
     }
 
     public void testSecondaryDesignatedAsPrimaryAfterOrginalPrimaryStopped() throws Exception
     {
         startCluster(true);
         _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfPrimary());
-        final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
 
-        assertFalse("Expected node to NOT be set as designated primary", storeBean.getDesignatedPrimary());
-        storeBean.setDesignatedPrimary(true);
-        assertTrue("Expected node to now be set as designated primary", storeBean.getDesignatedPrimary());
+        int brokerPortNumberOfSecondaryNode = _clusterCreator.getBrokerPortNumberOfSecondaryNode();
+
+        Map<String, Object> secondaryAttributes = _clusterCreator.getReplicationNodeAttributes(brokerPortNumberOfSecondaryNode);
+        assertFalse("Expected node to NOT be set as designated primary", (Boolean)secondaryAttributes.get(ReplicationNode.DESIGNATED_PRIMARY));
+
+        setDesignatedPrimary(brokerPortNumberOfSecondaryNode, true);
+
+        secondaryAttributes = _clusterCreator.getReplicationNodeAttributes(brokerPortNumberOfSecondaryNode);
+        assertTrue("Expected node to now be set as designated primary", (Boolean)secondaryAttributes.get(ReplicationNode.DESIGNATED_PRIMARY));
 
         final Connection connection = getConnection(_brokerFailoverUrl);
         assertNotNull("Expected to get a valid connection to new primary", connection);
@@ -214,52 +199,41 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
             je.printStackTrace();
         }
 
+        int brokerPortNumberOfPrimary = _clusterCreator.getBrokerPortNumberOfPrimary();
+
         // Check master is in UNKNOWN
-        ManagedBDBHAMessageStore bean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfPrimary());
-        awaitNodeToAttainState(bean, "UNKNOWN");
+        awaitNodeToAttainRole(brokerPortNumberOfPrimary, "UNKNOWN");
 
         // Designate primary
-        bean.setDesignatedPrimary(true);
+       setDesignatedPrimary(brokerPortNumberOfPrimary, true);
 
         // Check master is MASTER
-        awaitNodeToAttainState(bean, "MASTER");
+        awaitNodeToAttainRole(brokerPortNumberOfPrimary, "MASTER");
 
         final Connection connection2 = getConnection(_brokerFailoverUrl);
         assertProducingConsuming(connection2);
     }
 
-    private void awaitNodeToAttainState(ManagedBDBHAMessageStore bean, String desiredState)
-            throws IOException, JMException, InterruptedException
+    private void setDesignatedPrimary(int brokerPort, boolean designatedPrimary) throws Exception
+    {
+        _clusterCreator.setReplicationNodeAttributes(brokerPort, Collections.<String, Object>singletonMap(ReplicationNode.DESIGNATED_PRIMARY, designatedPrimary));
+    }
+
+    private void awaitNodeToAttainRole(int brokerPort, String desiredRole) throws Exception
     {
         final long startTime = System.currentTimeMillis();
-        while(!bean.getNodeState().equals(desiredState) && (System.currentTimeMillis() - startTime) < 30000)
+        Map<String, Object> data = Collections.emptyMap();
+
+        while(!desiredRole.equals(data.get(ReplicationNode.ROLE)) && (System.currentTimeMillis() - startTime) < 30000)
         {
-            _logger.debug("Awaiting node to transit into " + desiredState + " state");
-            Thread.sleep(1000);
+            _logger.debug("Awaiting node to transit into " + desiredRole + " role");
+            data = _clusterCreator.getReplicationNodeAttributes(brokerPort);
+            if (!desiredRole.equals(data.get(ReplicationNode.ROLE)))
+            {
+                Thread.sleep(1000);
+            }
         }
-        assertEquals("Node is in unexpected state", desiredState, bean.getNodeState());
-    }
-
-    private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(
-            final int activeBrokerPortNumber) throws Exception
-    {
-        _jmxUtils.open(activeBrokerPortNumber);
-
-        ManagedBDBHAMessageStore storeBean = _jmxUtils.getManagedObject(ManagedBDBHAMessageStore.class, MANAGED_OBJECT_QUERY);
-        return storeBean;
-    }
-
-    private void assertProducingConsuming(final Connection connection) throws JMSException, Exception
-    {
-        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Destination destination = session.createQueue(getTestQueueName());
-        MessageConsumer consumer = session.createConsumer(destination);
-        sendMessage(session, destination, 1);
-        connection.start();
-        Message m1 = consumer.receive(RECEIVE_TIMEOUT);
-        assertNotNull("Message 1 is not received", m1);
-        assertEquals("Unexpected first message received", 0, m1.getIntProperty(INDEX));
-        session.commit();
+        assertEquals("Node is in unexpected role", desiredRole, data.get(ReplicationNode.ROLE));
     }
 
 }

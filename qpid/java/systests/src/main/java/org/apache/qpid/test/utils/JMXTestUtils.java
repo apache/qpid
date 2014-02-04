@@ -82,7 +82,7 @@ public class JMXTestUtils
     public void open(final int brokerPort) throws Exception
     {
         int actualBrokerPort = _test.getPort(brokerPort);
-        int managementPort = _test.getManagementPort(actualBrokerPort);
+        int managementPort = _test.getJmxManagementPort(actualBrokerPort);
 
         _jmxc = JMXConnnectionFactory.getJMXConnection(5000, "127.0.0.1",
                     managementPort, _user, _password);

@@ -590,7 +590,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         when(node.getAttribute(COALESCING_SYNC)).thenReturn(TEST_COALESCING_SYNC);
 
         
-        // TMP REF contract with LRN is too complicated.
+        // TODO REF contract with LRN is too complicated.
         when(node.getActualAttribute(HOST_PORT)).thenReturn(nodeHostPort);
         when(node.getActualAttribute(DESIGNATED_PRIMARY)).thenReturn(designatedPrimary);
         when(node.getActualAttribute(QUORUM_OVERRIDE)).thenReturn(TEST_ELECTABLE_GROUP_OVERRIDE);

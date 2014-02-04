@@ -159,6 +159,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_PORT = Integer.getInteger("test.port", DEFAULT_PORT_VALUE);
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", DEFAULT_JMXPORT_REGISTRYSERVER);
+    public static final int HTTP_MANAGEMENT_PORT = Integer.getInteger("test.hport", DEFAULT_HTTP_MANAGEMENT_PORT);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", DEFAULT_SSL_PORT_VALUE);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
@@ -247,8 +248,9 @@ public class QpidBrokerTestCase extends QpidTestCase
         if (actualPort != DEFAULT_PORT)
         {
             configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.PORT, actualPort);
-            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT, Port.PORT, getManagementPort(actualPort));
-            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
+            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT, Port.PORT, getJmxManagementPort(actualPort));
+            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getJmxManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
+            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, getHttpManagementPort(actualPort));
         }
         return configuration;
     }
@@ -361,9 +363,14 @@ public class QpidBrokerTestCase extends QpidTestCase
      *
      * @return the management port that corresponds to the broker on the given port
      */
-    protected int getManagementPort(int mainPort)
+    protected int getJmxManagementPort(int mainPort)
     {
         return mainPort + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT);
+    }
+
+    public int getHttpManagementPort(int mainPort)
+    {
+        return mainPort + (HTTP_MANAGEMENT_PORT - DEFAULT_PORT);
     }
 
     /**
@@ -373,11 +380,13 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected Set<Integer> guessAllPortsUsedByBroker(int mainPort)
     {
         Set<Integer> ports = new HashSet<Integer>();
-        int managementPort = getManagementPort(mainPort);
+        int managementPort = getJmxManagementPort(mainPort);
+        int httpManagementPort = getHttpManagementPort(mainPort);
         int connectorServerPort = managementPort + JMXPORT_CONNECTORSERVER_OFFSET;
 
         ports.add(mainPort);
         ports.add(managementPort);
+        ports.add(httpManagementPort);
         ports.add(connectorServerPort);
         ports.add(DEFAULT_SSL_PORT);
 
@@ -1486,6 +1495,19 @@ public class QpidBrokerTestCase extends QpidTestCase
             return "Memory";
         }*/
         return supportedStoresClassToTypeMapping.get(storeClass);
+    }
+
+    public void assertProducingConsuming(final Connection connection) throws Exception
+    {
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Destination destination = session.createQueue(getTestQueueName());
+        MessageConsumer consumer = session.createConsumer(destination);
+        sendMessage(session, destination, 1);
+        connection.start();
+        Message m1 = consumer.receive(RECEIVE_TIMEOUT);
+        assertNotNull("Message 1 is not received", m1);
+        assertEquals("Unexpected first message received", 0, m1.getIntProperty(INDEX));
+        session.commit();
     }
 
 }

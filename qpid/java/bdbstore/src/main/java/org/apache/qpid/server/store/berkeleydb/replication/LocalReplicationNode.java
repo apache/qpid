@@ -277,7 +277,7 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     }
 
     @Override
-    public void setAttributes(Map<String, Object> attributes)
+    public void changeAttributes(Map<String, Object> attributes)
             throws IllegalStateException, AccessControlException,
             IllegalArgumentException
     {

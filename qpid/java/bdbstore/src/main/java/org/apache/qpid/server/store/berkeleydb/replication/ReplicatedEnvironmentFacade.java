@@ -479,6 +479,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public void setDesignatedPrimary(final boolean isPrimary) throws AMQStoreException
     {
+        // TODO : we have a race if the RE is being restarted?
+        // if (restarting) put setDesignatedPrimary job in queue???
         try
         {
             final ReplicationMutableConfig oldConfig = _environment.getRepMutableConfig();
@@ -487,9 +489,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
             if (LOGGER.isInfoEnabled())
             {
-                LOGGER.info("Node " + _prettyGroupNodeName + " successfully set as designated primary for group");
+                LOGGER.info("Node " + _prettyGroupNodeName + " successfully set designated primary : " + isPrimary);
             }
-
         }
         catch (DatabaseException e)
         {
