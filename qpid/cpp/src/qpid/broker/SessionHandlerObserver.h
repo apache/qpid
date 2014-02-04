@@ -1,3 +1,6 @@
+#ifndef QPID_BROKER_SESSIONHANDLEROBSERVER_H
+#define QPID_BROKER_SESSIONHANDLEROBSERVER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -7,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,30 +22,30 @@
  *
  */
 
-#include "qpid/broker/Broker.h"
-#include <stdlib.h>
+#include "Observers.h"
 
 namespace qpid {
 namespace broker {
+class SessionHandler;
 
-const std::string Broker::Options::DEFAULT_DATA_DIR_LOCATION("\\TEMP");
-const std::string Broker::Options::DEFAULT_DATA_DIR_NAME("\\QPIDD.DATA");
-const std::string Broker::Options::DEFAULT_PAGED_QUEUE_DIR("\\PQ");
+/**
+ * Observer of session handler events.
+ */
+class SessionHandlerObserver
+{
+  public:
+    virtual ~SessionHandlerObserver() {}
+    virtual void newSessionHandler(SessionHandler&) {}
+};
 
-std::string
-Broker::Options::getHome() {
-    std::string home;
-#ifdef _MSC_VER
-    char home_c[MAX_PATH+1];
-    size_t unused;
-    if (0 == getenv_s (&unused, home_c, sizeof(home_c), "HOME"))
-        home += home_c;
-#else
-    char *home_c = getenv("HOME");
-    if (home_c)
-        home += home_c;
-#endif
-    return home;
-}
 
-}}   // namespace qpid::broker
+class SessionHandlerObservers : public Observers<SessionHandlerObserver> {
+  public:
+    void newSessionHandler(SessionHandler& sh) {
+        each(boost::bind(&SessionHandlerObserver::newSessionHandler, _1, boost::ref(sh)));
+    }
+};
+
+}} // namespace qpid::broker
+
+#endif  /*!QPID_BROKER_SESSIONHANDLEROBSERVER_H*/

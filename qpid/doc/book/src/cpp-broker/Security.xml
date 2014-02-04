@@ -421,7 +421,11 @@ com.sun.security.jgss.initiate {
                 filemaxsizelowerlimit   | 
 		filemaxsizeupperlimit   |
                 filemaxcountlowerlimit  | 
-		filemaxcountupperlimit ]
+		filemaxcountupperlimit  |
+                pageslowerlimit         |
+                pagesupperlimit         |
+                pagefactorlowerlimit    |
+                pagefactorupperlimit ]
     
     acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all" 
                 [property=<property-value> ...]]
@@ -728,6 +732,12 @@ com.sun.security.jgss.initiate {
 				       <entry>Indicates the presence of an <parameter>exclusive</parameter> flag</entry>
 				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
+                                     <row>
+                                       <entry> <command>paging</command> </entry>
+                                       <entry>Boolean</entry>
+                                       <entry>Indicates if the queue is paging queue</entry>
+                                       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
+                                     </row>
 				     <row>
 				       <entry> <command>type</command> </entry>
 				       <entry>String</entry>
@@ -806,6 +816,30 @@ com.sun.security.jgss.initiate {
 				       <entry>Maximum value for file.max_count (files)</entry>
 				       <entry>CREATE QUEUE, ACCESS QUEUE</entry>
 				     </row>
+                                     <row>
+                                       <entry> <command>pageslowerlimit</command> </entry>
+                                       <entry>Integer</entry>
+                                       <entry>Minimum value for number of pages in memory of paged queue</entry>
+                                       <entry>CREATE QUEUE</entry>
+                                     </row>
+                                     <row>
+                                       <entry> <command>pagesupperlimit</command> </entry>
+                                       <entry>Integer</entry>
+                                       <entry>Maximum value for number of pages in memory of paged queue</entry>
+                                       <entry>CREATE QUEUE</entry>
+                                     </row>
+                                     <row>
+                                       <entry> <command>pagefactorlowerlimit</command> </entry>
+                                       <entry>Integer</entry>
+                                       <entry>Minimum value for size of one page in paged queue</entry>
+                                       <entry>CREATE QUEUE</entry>
+                                     </row>
+                                     <row>
+                                       <entry> <command>pagefactorupperlimit</command> </entry>
+                                       <entry>Integer</entry>
+                                       <entry>Maximum value for size of one page in paged queue</entry>
+                                       <entry>CREATE QUEUE</entry>
+                                     </row>
 				   </tbody>
 				</tgroup>
 			</table>
@@ -910,7 +944,7 @@ com.sun.security.jgss.initiate {
 				<row>
 				  <entry>create</entry>
 				  <entry>queue</entry>
-				  <entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit</entry>
+				  <entry>name alternate durable exclusive autodelete policy queuemaxsizelowerlimit queuemaxsizeupperlimit queuemaxcountlowerlimit queuemaxcountupperlimit filemaxsizelowerlimit filemaxsizeupperlimit filemaxcountlowerlimit filemaxcountupperlimit paging pageslowerlimit pagesupperlimit pagefactorlowerlimit pagefactorupperlimit</entry>
 				  <entry></entry>
 				</row>
 				<row>

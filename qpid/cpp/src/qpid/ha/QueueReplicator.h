@@ -46,11 +46,13 @@ class HaBroker;
 class Settings;
 
 /**
- * Exchange created on a backup broker to replicate a queue on the primary.
+ * Exchange created on a backup broker to receive replicated messages and
+ * replication events from a queue on the primary. It subscribes to the primary
+ * queue via a ReplicatingSubscription on the primary by passing special
+ * arguments to the subscribe command.
  *
- * Puts replicated messages on the local queue, handles dequeue events.
- * Creates a ReplicatingSubscription on the primary by passing special
- * arguments to the consume command.
+ * It puts replicated messages on the local replica queue and handles dequeue
+ * events by removing local messages.
  *
  * THREAD SAFE: Called in different connection threads.
  */
@@ -74,7 +76,7 @@ class QueueReplicator : public broker::Exchange,
 
     void disconnect();      // Called when we are disconnected from the primary.
 
-    std::string getType() const;
+    virtual std::string getType() const;
 
     void route(broker::Deliverable&);
 
@@ -101,7 +103,9 @@ class QueueReplicator : public broker::Exchange,
     void initialize();          // Called as part of create()
 
     virtual void deliver(const broker::Message&);
+
     virtual void destroy();             // Called when the queue is destroyed.
+    virtual void destroy(sys::Mutex::ScopedLock&);
 
     sys::Mutex lock;
     HaBroker& haBroker;
@@ -124,8 +128,7 @@ class QueueReplicator : public broker::Exchange,
     void dequeueEvent(const std::string& data, sys::Mutex::ScopedLock&);
     void idEvent(const std::string& data, sys::Mutex::ScopedLock&);
 
-    void incomingExecutionException(framing::execution::ErrorCode e,
-                                    const std::string& msg);
+    bool deletedOnPrimary(framing::execution::ErrorCode e, const std::string& msg);
 
     std::string logPrefix;
     std::string bridgeName;

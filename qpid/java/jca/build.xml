@@ -24,7 +24,7 @@
   <property name="module.name" value="jca"/>
 
   <property name="module.genpom" value="true"/>
-  <property name="module.genpom.args" value="-Sgeronimo-j2ee-connector_1.5_spec=provided -Sgeronimo-jta_1.1_spec=provided -Sgeronimo-jms_1.1_spec=provided -Sgeronimo-ejb_3.0_spec=provided -Sgeronimo-servlet_2.5_spec=provided -Sgeronimo-kernel=provided"/>
+  <property name="module.genpom.args" value="-Sgeronimo-j2ee-connector_1.5_spec=provided -Sgeronimo-jta_1.1_spec=provided -Sgeronimo-jms_1.1_spec=provided -Sgeronimo-ejb_3.0_spec=provided -Sgeronimo-servlet_3.0_spec=provided -Sgeronimo-kernel=provided"/>
 
   <import file="../module.xml"/>
 

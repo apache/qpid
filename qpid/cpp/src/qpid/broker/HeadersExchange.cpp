@@ -302,7 +302,12 @@ void HeadersExchange::route(Deliverable& msg)
     if (p.get()) {
         for (std::vector<BoundKey>::const_iterator i = p->begin(); i != p->end(); ++i) {
             if (match(i->args, msg.getMessage())) {
-                b->push_back(i->binding);
+                /* check if a binding tothe same queue has not been already added to b */
+                std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >::iterator bi = b->begin();
+                while ((bi != b->end()) && ((*bi)->queue != i->binding->queue))
+                    ++bi;
+                if (bi == b->end())
+                    b->push_back(i->binding);
             }
         }
     }

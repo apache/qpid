@@ -39,7 +39,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -337,28 +336,10 @@ public class ServerSessionDelegate extends SessionDelegate
             }
         };
 
-        List<? extends BaseQueue> queues = exchange.route(message, instanceProperties);
-        if(queues.isEmpty() && exchange.getAlternateExchange() != null)
-        {
-            final Exchange alternateExchange = exchange.getAlternateExchange();
-            queues = alternateExchange.route(message, instanceProperties);
-            if (!queues.isEmpty())
-            {
-                exchangeInUse = alternateExchange;
-            }
-            else
-            {
-                exchangeInUse = exchange;
-            }
-        }
-        else
-        {
-            exchangeInUse = exchange;
-        }
+        int enqueues = serverSession.enqueue(message, instanceProperties, exchange);
 
-        if(!queues.isEmpty())
+        if(enqueues != 0)
         {
-            serverSession.enqueue(message, queues);
             storeMessage.flushToStore();
         }
         else
@@ -372,7 +353,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                serverSession.getLogActor().message(ExchangeMessages.DISCARDMSG(exchangeInUse.getName(), messageMetaData.getRoutingKey()));
+                serverSession.getLogActor().message(ExchangeMessages.DISCARDMSG(exchange.getName(), messageMetaData.getRoutingKey()));
             }
         }
 

@@ -38,15 +38,15 @@
 
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-servlet_2.5_spec</artifactId>
-            <version>1.2</version>
+            <artifactId>geronimo-servlet_3.0_spec</artifactId>
+            <version>1.0</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -67,14 +67,14 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-continuation</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-http</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -100,7 +100,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-io</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -113,7 +113,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -126,14 +126,14 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-websocket</artifactId>
-            <version>7.6.10.v20130312</version>
+            <version>8.1.14.v20131031</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>

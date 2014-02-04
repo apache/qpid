@@ -29,6 +29,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.servlet.DispatcherType;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -78,7 +79,6 @@ import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -409,7 +409,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         root.addServlet(new ServletHolder(new LogFileServlet()), "/rest/logfile");
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
-        sessionManager.setSessionCookie(JSESSIONID_COOKIE_PREFIX + lastPort);
+        sessionManager.getSessionCookieConfig().setName(JSESSIONID_COOKIE_PREFIX + lastPort);
         sessionManager.setMaxInactiveInterval((Integer)getAttribute(TIME_OUT));
 
         return server;

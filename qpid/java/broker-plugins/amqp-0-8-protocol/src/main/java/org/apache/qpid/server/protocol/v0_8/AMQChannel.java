@@ -165,6 +165,11 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     private final TransactionTimeoutHelper _transactionTimeoutHelper;
     private final UUID _id = UUID.randomUUID();
 
+
+    private final CapacityCheckAction _capacityCheckAction = new CapacityCheckAction();
+    private final ImmediateAction _immediateAction = new ImmediateAction();
+
+
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
     {
@@ -330,6 +335,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                     }
                     else
                     {
+                        final boolean immediate = _currentMessage.getMessagePublishInfo().isImmediate();
+
                         final InstanceProperties instanceProperties =
                                 new InstanceProperties()
                                 {
@@ -341,7 +348,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                                             case EXPIRATION:
                                                 return amqMessage.getExpiration();
                                             case IMMEDIATE:
-                                                return _currentMessage.getMessagePublishInfo().isImmediate();
+                                                return immediate;
                                             case PERSISTENT:
                                                 return amqMessage.isPersistent();
                                             case MANDATORY:
@@ -353,21 +360,16 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                                     }
                                 };
 
-                        final List<? extends BaseQueue> destinationQueues =
-                            _currentMessage.getExchange().route(amqMessage, instanceProperties);
-
-                        if(destinationQueues == null || destinationQueues.isEmpty())
+                        int enqueues = _currentMessage.getExchange().send(amqMessage, instanceProperties, _transaction,
+                                                                          immediate ? _immediateAction : _capacityCheckAction);
+                        if(enqueues == 0)
                         {
                             handleUnroutableMessage(amqMessage);
                         }
                         else
                         {
-                            _transaction.enqueue(destinationQueues,
-                                                 amqMessage,
-                                                 new MessageDeliveryAction(amqMessage, destinationQueues));
                             incrementOutstandingTxnsIfNecessary();
                             handle.flushToStore();
-
                         }
                     }
                 }
@@ -1258,7 +1260,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
                     if(immediate)
                     {
-                        action = new ImmediateAction(queue);
+                        action = new ImmediateAction();
                     }
                     else
                     {
@@ -1291,58 +1293,72 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             _reference.release();
         }
 
-        private class ImmediateAction implements BaseQueue.PostEnqueueAction
+
+    }
+    private class ImmediateAction implements BaseQueue.PostEnqueueAction
+    {
+
+        public ImmediateAction()
         {
-            private final BaseQueue _queue;
+        }
 
-            public ImmediateAction(BaseQueue queue)
+        public void onEnqueue(QueueEntry entry)
+        {
+            AMQQueue queue = entry.getQueue();
+
+            if (!entry.getDeliveredToConsumer() && entry.acquire())
             {
-                _queue = queue;
-            }
 
-            public void onEnqueue(QueueEntry entry)
-            {
-                if (!entry.getDeliveredToConsumer() && entry.acquire())
-                {
-
-
-                    ServerTransaction txn = new LocalTransaction(_messageStore);
-                    Collection<QueueEntry> entries = new ArrayList<QueueEntry>(1);
-                    entries.add(entry);
-                    final AMQMessage message = (AMQMessage) entry.getMessage();
-                    txn.dequeue(_queue, entry.getMessage(),
-                                new MessageAcknowledgeAction(entries)
+                ServerTransaction txn = new LocalTransaction(_messageStore);
+                Collection<QueueEntry> entries = new ArrayList<QueueEntry>(1);
+                entries.add(entry);
+                final AMQMessage message = (AMQMessage) entry.getMessage();
+                txn.dequeue(queue, entry.getMessage(),
+                            new MessageAcknowledgeAction(entries)
+                            {
+                                @Override
+                                public void postCommit()
                                 {
-                                    @Override
-                                    public void postCommit()
+                                    try
                                     {
-                                        try
-                                        {
-                                            final
-                                            ProtocolOutputConverter outputConverter =
-                                                    _session.getProtocolOutputConverter();
+                                        final
+                                        ProtocolOutputConverter outputConverter =
+                                                _session.getProtocolOutputConverter();
 
-                                            outputConverter.writeReturn(message.getMessagePublishInfo(),
-                                                                        message.getContentHeaderBody(),
-                                                                        message,
-                                                                        _channelId,
-                                                                        AMQConstant.NO_CONSUMERS.getCode(),
-                                                                        IMMEDIATE_DELIVERY_REPLY_TEXT);
-                                        }
-                                        catch (AMQException e)
-                                        {
-                                            throw new RuntimeException(e);
-                                        }
-                                        super.postCommit();
+                                        outputConverter.writeReturn(message.getMessagePublishInfo(),
+                                                                    message.getContentHeaderBody(),
+                                                                    message,
+                                                                    _channelId,
+                                                                    AMQConstant.NO_CONSUMERS.getCode(),
+                                                                    IMMEDIATE_DELIVERY_REPLY_TEXT);
                                     }
+                                    catch (AMQException e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
+                                    super.postCommit();
                                 }
-                    );
-                    txn.commit();
+                            }
+                           );
+                txn.commit();
 
-
-                }
 
             }
+            else
+            {
+                queue.checkCapacity(AMQChannel.this);
+            }
+
+        }
+    }
+
+    private final class CapacityCheckAction implements BaseQueue.PostEnqueueAction
+    {
+        @Override
+        public void onEnqueue(final QueueEntry entry)
+        {
+            AMQQueue queue = entry.getQueue();
+            queue.checkCapacity(AMQChannel.this);
         }
     }
 
@@ -1550,48 +1566,46 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     public void deadLetter(long deliveryTag) throws AMQException
     {
         final UnacknowledgedMessageMap unackedMap = getUnacknowledgedMessageMap();
-        final QueueEntry rejectedQueueEntry = unackedMap.get(deliveryTag);
+        final QueueEntry rejectedQueueEntry = unackedMap.remove(deliveryTag);
 
         if (rejectedQueueEntry == null)
         {
             _logger.warn("No message found, unable to DLQ delivery tag: " + deliveryTag);
-            return;
         }
         else
         {
             final ServerMessage msg = rejectedQueueEntry.getMessage();
 
-            final AMQQueue queue = rejectedQueueEntry.getQueue();
+            int requeues = rejectedQueueEntry.routeToAlternate(new BaseQueue.PostEnqueueAction()
+                {
+                    @Override
+                    public void onEnqueue(final QueueEntry requeueEntry)
+                    {
+                        _actor.message( _logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
+                                                                                   requeueEntry.getQueue().getName()));
+                    }
+                }, null);
 
-            final Exchange altExchange = queue.getAlternateExchange();
-            unackedMap.remove(deliveryTag);
-
-            if (altExchange == null)
+            if(requeues == 0)
             {
-                _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
-                _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getRoutingKey()));
-                rejectedQueueEntry.delete();
-                return;
-            }
+                final AMQQueue queue = rejectedQueueEntry.getQueue();
 
+                final Exchange altExchange = queue.getAlternateExchange();
 
-            final List<? extends BaseQueue> destinationQueues =
-                    altExchange.route(rejectedQueueEntry.getMessage(), rejectedQueueEntry.getInstanceProperties());
+                if (altExchange == null)
+                {
+                    _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
+                    _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getRoutingKey()));
 
-            if (destinationQueues == null || destinationQueues.isEmpty())
-            {
-                _logger.debug("Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: " + deliveryTag);
-                _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
-                rejectedQueueEntry.delete();
-                return;
-            }
-
-            rejectedQueueEntry.routeToAlternate();
-
-            //output operational logging for each delivery post commit
-            for (final BaseQueue destinationQueue : destinationQueues)
-            {
-                _actor.message(_logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getName()));
+                }
+                else
+                {
+                    _logger.debug(
+                            "Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: "
+                            + deliveryTag);
+                    _actor.message(_logSubject,
+                                   ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
+                }
             }
 
         }

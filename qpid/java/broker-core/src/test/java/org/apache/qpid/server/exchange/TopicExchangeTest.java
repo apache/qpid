@@ -312,10 +312,9 @@ public class TopicExchangeTest extends QpidTestCase
 
     private int routeMessage(String routingKey, long messageNumber) throws AMQException
     {
-        ServerMessage serverMessage = mock(ServerMessage.class);
-        when(serverMessage.getRoutingKey()).thenReturn(routingKey);
-        List<? extends BaseQueue> queues = _exchange.route(serverMessage, InstanceProperties.EMPTY);
         ServerMessage message = mock(ServerMessage.class);
+        when(message.getRoutingKey()).thenReturn(routingKey);
+        List<? extends BaseQueue> queues = _exchange.route(message, InstanceProperties.EMPTY);
         MessageReference ref = mock(MessageReference.class);
         when(ref.getMessage()).thenReturn(message);
         when(message.newReference()).thenReturn(ref);

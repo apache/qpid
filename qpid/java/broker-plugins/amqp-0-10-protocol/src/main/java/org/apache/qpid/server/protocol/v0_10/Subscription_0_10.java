@@ -59,7 +59,6 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -544,7 +543,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     void reject(final QueueEntry entry)
     {
         entry.setRedelivered();
-        entry.routeToAlternate();
+        entry.routeToAlternate(null, null);
         if(entry.isAcquiredBy(this))
         {
             entry.delete();
@@ -575,34 +574,35 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     protected void sendToDLQOrDiscard(QueueEntry entry)
     {
-        final Exchange alternateExchange = entry.getQueue().getAlternateExchange();
         final LogActor logActor = CurrentActor.get();
         final ServerMessage msg = entry.getMessage();
-        if (alternateExchange != null)
+
+        int requeues = entry.routeToAlternate(new BaseQueue.PostEnqueueAction()
+                    {
+                        @Override
+                        public void onEnqueue(final QueueEntry requeueEntry)
+                        {
+                            logActor.message( ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
+                                                                            requeueEntry.getQueue().getName()));
+                        }
+                    }, null);
+
+        if (requeues == 0)
         {
-            final List<? extends BaseQueue> destinationQueues = alternateExchange.route(entry.getMessage(), entry.getInstanceProperties());
+            final AMQQueue queue = entry.getQueue();
+            final Exchange alternateExchange = queue.getAlternateExchange();
 
-            if (destinationQueues == null || destinationQueues.isEmpty())
+            if(alternateExchange != null)
             {
-                entry.delete();
-
-                logActor.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), alternateExchange.getName()));
+                logActor.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(),
+                                                                     alternateExchange.getName()));
             }
             else
             {
-                entry.routeToAlternate();
-
-                //output operational logging for each delivery post commit
-                for (final BaseQueue destinationQueue : destinationQueues)
-                {
-                    logActor.message( ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getName()));
-                }
+                logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(),
+                                                                      queue.getName(),
+                                                                      msg.getRoutingKey()));
             }
-        }
-        else
-        {
-            entry.delete();
-            logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), entry.getQueue().getName(), msg.getRoutingKey()));
         }
     }
 

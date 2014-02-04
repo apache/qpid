@@ -33,11 +33,35 @@ using namespace framing;
 using namespace std;
 using namespace qpid::sys;
 
+namespace {
+class DefaultErrorListener : public SessionHandler::ErrorListener {
+  public:
+    void connectionException(framing::connection::CloseCode code, const std::string& msg) {
+        QPID_LOG(error, "Connection exception: " << framing::createConnectionException(code, msg).what());
+    }
+    void channelException(framing::session::DetachCode code, const std::string& msg) {
+        QPID_LOG(error, "Channel exception: " << framing::createChannelException(code, msg).what());
+    }
+    void executionException(framing::execution::ErrorCode code, const std::string& msg) {
+        QPID_LOG(error, "Execution exception: " << framing::createSessionException(code, msg).what());
+    }
+    void incomingExecutionException(framing::execution::ErrorCode code, const std::string& msg) {
+        QPID_LOG(debug, "Incoming execution exception: " << framing::createSessionException(code, msg).what());
+    }
+    void detach() {}
+
+  private:
+};
+}
+
 SessionHandler::SessionHandler(amqp_0_10::Connection& c, ChannelId ch)
     : qpid::amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c),
-      proxy(out)
-{}
+      proxy(out),
+      errorListener(boost::shared_ptr<ErrorListener>(new DefaultErrorListener()))
+{
+    c.getBroker().getSessionHandlerObservers().newSessionHandler(*this);
+}
 
 SessionHandler::~SessionHandler()
 {

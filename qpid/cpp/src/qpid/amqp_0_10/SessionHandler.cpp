@@ -94,8 +94,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
         }
     }
     catch(const SessionException& e) {
-        QPID_LOG(error, "Execution exception: " << e.what());
-        executionException(e.code, e.what()); // Let subclass handle this first.
+        executionException(e.code, e.what());
         framing::AMQP_AllProxy::Execution  execution(channel);
         AMQMethodBody* m = f.getMethod();
         SequenceNumber commandId;
@@ -105,16 +104,13 @@ void SessionHandler::handleIn(AMQFrame& f) {
         sendDetach();
     }
     catch(const ChannelException& e){
-        QPID_LOG(error, "Channel exception: " << e.what());
-        channelException(e.code, e.what()); // Let subclass handle this first.
+        channelException(e.code, e.what());
         peer.detached(name, e.code);
     }
     catch(const ConnectionException& e) {
-        QPID_LOG(error, "Connection exception: " << e.what());
         connectionException(e.code, e.getMessage());
     }
     catch(const std::exception& e) {
-        QPID_LOG(error, "Unexpected exception: " << e.what());
         connectionException(connection::CLOSE_CODE_FRAMING_ERROR, e.what());
     }
 }
@@ -186,13 +182,14 @@ void SessionHandler::detach(const std::string& name) {
 }
 
 void SessionHandler::detached(const std::string& /*name*/, uint8_t code) {
-    // Special case for detached: Don't check if we are
-    // attached. Checking can lead to an endless game of "detached
-    // tennis" on federated brokers.
     awaitingDetached = false;
+    // Special case for detached: Don't throw if we are not attached.  Doing so
+    // can lead to an endless game of "detached tennis" on federated brokers.
+    if (!getState()) return;    // Already detached.
     if (code != session::DETACH_CODE_NORMAL) {
         sendReady = receiveReady = false;
-        channelException(convert(code), "session.detached from peer.");
+        channelException(convert(code), Msg() << "Channel " << channel.get()
+                         << " received session.detached from peer");
     } else {
         handleDetach();
     }

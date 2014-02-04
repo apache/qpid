@@ -625,32 +625,10 @@ public class MessageStoreTest extends QpidTestCase
         storedMessage.flushToStore();
         final AMQMessage currentMessage = new AMQMessage(storedMessage);
 
-        final List<? extends BaseQueue> destinationQueues = exchange.route(currentMessage, InstanceProperties.EMPTY);
 
 
         ServerTransaction trans = new AutoCommitTransaction(getVirtualHost().getMessageStore());
-
-        trans.enqueue(destinationQueues, currentMessage, new ServerTransaction.Action() {
-            public void postCommit()
-            {
-                try
-                {
-                    for(BaseQueue queue : destinationQueues)
-                    {
-                        queue.enqueue(currentMessage);
-                    }
-                }
-                catch (AMQException e)
-                {
-                    _logger.error("Problem enqueing message", e);
-                }
-            }
-
-            public void onRollback()
-            {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-        });
+        exchange.send(currentMessage, InstanceProperties.EMPTY, trans, null);
 
     }
 

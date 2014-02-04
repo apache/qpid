@@ -87,7 +87,6 @@
     <path id="compile.classpath">
         <fileset dir="${geronimo.home}/repository/org/apache/geronimo/specs">
             <include name="geronimo-jms_1.1_spec/1.1.1/geronimo-jms_1.1_spec-1.1.1.jar"/>
-            <include name="geronimo-servlet_2.5_spec/1.2/geronimo-servlet_2.5_spec-1.2.jar"/>
             <include name="geronimo-ejb_3.0_spec/1.0.1/geronimo-ejb_3.0_spec-1.0.1.jar"/>
             <include name="geronimo-jta_1.1_spec/1.1.1/geronimo-jta_1.1_spec-1.1.1.jar"/>
 
@@ -113,7 +112,7 @@
         <fileset dir="${geronimo.home}/repository/org/apache/geronimo/specs">
             <include name="geronimo-j2ee-connector_1.5_spec/2.0.0/geronimo-j2ee-connector_1.5_spec-2.0.0.jar"/>
             <include name="geronimo-jms_1.1_spec/1.1.1/geronimo-jms_1.1_spec-1.1.1.jar"/>
-            <include name="geronimo-servlet_2.5_spec/1.2/geronimo-servlet_2.5_spec-1.2.jar"/>
+            <include name="geronimo-servlet_3.0_spec/1.0/geronimo-servlet_3.0_spec-1.0.jar"/>
             <include name="geronimo-ejb_3.0_spec/1.0.1/geronimo-ejb_3.0_spec-1.0.1.jar"/>
             <include name="geronimo-jta_1.1_spec/1.1.1/geronimo-jta_1.1_spec-1.1.1.jar"/>
         </fileset>

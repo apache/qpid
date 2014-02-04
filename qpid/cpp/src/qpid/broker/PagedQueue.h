@@ -79,7 +79,6 @@ class PagedQueue : public Messages {
 
     qpid::sys::MemoryMappedFile file;
     std::string name;
-    std::string path;
     const size_t pageSize;
     const uint maxLoaded;
     ProtocolRegistry& protocols;
