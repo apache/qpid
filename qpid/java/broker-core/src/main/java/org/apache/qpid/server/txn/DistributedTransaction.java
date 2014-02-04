@@ -109,7 +109,6 @@ public class DistributedTransaction implements ServerTransaction
         {
             _branch.enqueue(queue, message);
             _branch.addPostTransactionAction(postTransactionAction);
-            enqueue(Collections.singletonList(queue), message, postTransactionAction);
         }
         else
         {
