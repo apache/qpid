@@ -69,7 +69,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
     private String _routingKey = "routing key";
     private DirectExchange _exchange;
     private MockSubscription _subscriptionTarget = new MockSubscription();
-    private Subscription _subscription;
+    private QueueSubscription _subscription;
     private Map<String,Object> _arguments = null;
 
     @Override
@@ -183,7 +183,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
         }
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull(((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
+        assertNull(_subscription.getQueueContext().getReleasedEntry());
 
         // Check removing the subscription removes it's information from the queue
         _subscription.close();
@@ -206,7 +206,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                     EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after an enqueue", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
+        assertNull("There should be no releasedEntry after an enqueue", _subscription.getQueueContext().getReleasedEntry());
     }
 
     /**
@@ -222,7 +222,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                     EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
         assertEquals(messageB, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after enqueues", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
+        assertNull("There should be no releasedEntry after enqueues",  _subscription.getQueueContext().getReleasedEntry());
     }
 
     /**
@@ -273,7 +273,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertFalse("Redelivery flag should remain be unset",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", _subscription.getQueueContext().getReleasedEntry());
     }
 
     /**
@@ -321,7 +321,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertTrue("Expecting the queue entry to be now expired", queueEntries.get(0).expired());
         assertEquals("Total number of messages sent should not have changed", 1, _subscriptionTarget.getMessages().size());
         assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", _subscription.getQueueContext().getReleasedEntry());
 
     }
 
@@ -375,7 +375,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertTrue("Redelivery flag should now be set",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", _subscription.getQueueContext().getReleasedEntry());
     }
 
 
@@ -392,11 +392,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
         MockSubscription target2 = new MockSubscription();
 
 
-        Subscription subscription1 = _queue.registerSubscription(target1, null, messageA.getClass(), "test",
+        QueueSubscription subscription1 = _queue.registerSubscription(target1, null, messageA.getClass(), "test",
                                                                  EnumSet.of(Subscription.Option.ACQUIRES,
                                                                             Subscription.Option.SEES_REQUEUES));
 
-        Subscription subscription2 = _queue.registerSubscription(target2, null, messageA.getClass(), "test",
+        QueueSubscription subscription2 = _queue.registerSubscription(target2, null, messageA.getClass(), "test",
                                                                  EnumSet.of(Subscription.Option.ACQUIRES,
                                                                             Subscription.Option.SEES_REQUEUES));
 
@@ -430,8 +430,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals("Unexpected total number of messages sent to both subscriptions after release",
                      3,
                      target1.getMessages().size() + target2.getMessages().size());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription1.getQueueContext()).getReleasedEntry());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription2.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", subscription1.getQueueContext().getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", subscription2.getQueueContext().getReleasedEntry());
     }
 
     public void testExclusiveConsumer() throws AMQException

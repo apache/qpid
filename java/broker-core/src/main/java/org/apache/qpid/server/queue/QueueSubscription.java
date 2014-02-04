@@ -30,32 +30,43 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.subscription.AbstractSubscription;
+import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.util.StateChangeListener;
 
 import java.text.MessageFormat;
 import java.util.EnumMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
 
-class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscription
+class QueueSubscription<T extends SubscriptionTarget> implements Subscription
 {
     private static final Logger _logger = Logger.getLogger(QueueSubscription.class);
     private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
+    private final long _subscriptionID;
+    private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
+    private final Lock _stateChangeLock = new ReentrantLock();
+    private final long _createTime = System.currentTimeMillis();
+    private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final boolean _acquires;
+    private final boolean _seesRequeues;
+    private final String _consumerName;
+    private final boolean _isTransient;
+    private final AtomicLong _deliveredCount = new AtomicLong(0);
+    private final AtomicLong _deliveredBytes = new AtomicLong(0);
+    private final FilterManager _filters;
+    private final Class<? extends ServerMessage> _messageClass;
+    private final Object _sessionReference;
     private SimpleAMQQueue _queue;
-    private String _traceExclude;
-    private String _trace;
     private GenericActor _logActor;
-    private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
-
 
     static final EnumMap<SubscriptionTarget.State, State> STATE_MAP =
             new EnumMap<SubscriptionTarget.State, State>(SubscriptionTarget.State.class);
@@ -69,6 +80,15 @@ class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscripti
 
     private final T _target;
     private final SubFlushRunner _runner = new SubFlushRunner(this);
+    private volatile QueueContext _queueContext;
+    private StateChangeListener<? extends Subscription, State> _stateListener = new StateChangeListener<Subscription, State>()
+    {
+        public void stateChanged(Subscription sub, State oldState, State newState)
+        {
+            CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
+        }
+    };
+    private boolean _noLocal;
 
     QueueSubscription(final FilterManager filters,
                       final Class<? extends ServerMessage> messageClass,
@@ -78,8 +98,14 @@ class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscripti
                       final boolean isTransient,
                       T target)
     {
-        super(filters, messageClass, target.getSessionModel().getConnectionReference(),
-              acquires, seesRequeues, consumerName, isTransient);
+        _messageClass = messageClass;
+        _sessionReference = target.getSessionModel().getConnectionReference();
+        _subscriptionID = SUB_ID_GENERATOR.getAndIncrement();
+        _filters = filters;
+        _acquires = acquires;
+        _seesRequeues = seesRequeues;
+        _consumerName = consumerName;
+        _isTransient = isTransient;
         _target = target;
         _target.setStateListener(
                 new StateChangeListener<SubscriptionTarget, SubscriptionTarget.State>()
@@ -187,12 +213,6 @@ class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscripti
     }
 
     @Override
-    protected void doSend(final QueueEntry entry, final boolean batch) throws AMQException
-    {
-        _target.send(entry, batch);
-    }
-
-    @Override
     public void flushBatched()
     {
         _target.flushBatched();
@@ -241,9 +261,6 @@ class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscripti
         }
         _queue = queue;
 
-        _traceExclude = (String) queue.getAttribute(Queue.FEDERATION_EXCLUDES);
-        _trace = (String) queue.getAttribute(Queue.FEDERATION_ID);
-
         String queueString = new QueueLogSubject(_queue).toLogString();
 
         _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getSubscriptionID())
@@ -262,18 +279,6 @@ class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscripti
                                                                                 filterLogString.length() > 0));
         }
     }
-
-
-    protected final String getTraceExclude()
-    {
-        return _traceExclude;
-    }
-
-    protected final String getTrace()
-    {
-        return _trace;
-    }
-
 
     protected final LogSubject getLogSubject()
     {
@@ -303,4 +308,166 @@ class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscripti
         return _runner;
     }
 
+    public final long getSubscriptionID()
+    {
+        return _subscriptionID;
+    }
+
+    public final StateChangeListener<? extends Subscription, State> getStateListener()
+    {
+        return _stateListener;
+    }
+
+    public final void setStateListener(StateChangeListener<? extends Subscription, State> listener)
+    {
+        _stateListener = listener;
+    }
+
+    final QueueContext getQueueContext()
+    {
+        return _queueContext;
+    }
+
+    final void setQueueContext(QueueContext queueContext)
+    {
+        _queueContext = queueContext;
+    }
+
+    protected boolean updateState(State from, State to)
+    {
+        return _state.compareAndSet(from, to);
+    }
+
+    public final boolean isActive()
+    {
+        return getState() == State.ACTIVE;
+    }
+
+    public final boolean isClosed()
+    {
+        return getState() == State.CLOSED;
+    }
+
+    public final void setNoLocal(boolean noLocal)
+    {
+        _noLocal = noLocal;
+    }
+
+    public final boolean hasInterest(QueueEntry entry)
+    {
+       //check that the message hasn't been rejected
+        if (entry.isRejectedBy(getSubscriptionID()))
+        {
+
+            return false;
+        }
+
+        if (entry.getMessage().getClass() == _messageClass)
+        {
+            if(_noLocal)
+            {
+                Object connectionRef = entry.getMessage().getConnectionReference();
+                if (connectionRef != null && connectionRef == _sessionReference)
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            // no interest in messages we can't convert
+            if(_messageClass != null && MessageConverterRegistry.getConverter(entry.getMessage().getClass(),
+                                                                              _messageClass)==null)
+            {
+                return false;
+            }
+        }
+        return (_filters == null) || _filters.allAllow(entry.asFilterable());
+    }
+
+    protected String getFilterLogString()
+    {
+        StringBuilder filterLogString = new StringBuilder();
+        String delimiter = ", ";
+        boolean hasEntries = false;
+        if (_filters != null && _filters.hasFilters())
+        {
+            filterLogString.append(_filters.toString());
+            hasEntries = true;
+        }
+
+        if (!acquires())
+        {
+            if (hasEntries)
+            {
+                filterLogString.append(delimiter);
+            }
+            filterLogString.append("Browser");
+            hasEntries = true;
+        }
+
+        return filterLogString.toString();
+    }
+
+    public final boolean trySendLock()
+    {
+        return _stateChangeLock.tryLock();
+    }
+
+    public final void getSendLock()
+    {
+        _stateChangeLock.lock();
+    }
+
+    public final void releaseSendLock()
+    {
+        _stateChangeLock.unlock();
+    }
+
+    public final long getCreateTime()
+    {
+        return _createTime;
+    }
+
+    public final QueueEntry.SubscriptionAcquiredState getOwningState()
+    {
+        return _owningState;
+    }
+
+    public final boolean acquires()
+    {
+        return _acquires;
+    }
+
+    public final boolean seesRequeues()
+    {
+        return _seesRequeues;
+    }
+
+    public final String getName()
+    {
+        return _consumerName;
+    }
+
+    public final boolean isTransient()
+    {
+        return _isTransient;
+    }
+
+    public final long getBytesOut()
+    {
+        return _deliveredBytes.longValue();
+    }
+
+    public final long getMessagesOut()
+    {
+        return _deliveredCount.longValue();
+    }
+
+    public final void send(final QueueEntry entry, final boolean batch) throws AMQException
+    {
+        _deliveredCount.incrementAndGet();
+        _deliveredBytes.addAndGet(entry.getMessage().getSize());
+        _target.send(entry, batch);
+    }
 }

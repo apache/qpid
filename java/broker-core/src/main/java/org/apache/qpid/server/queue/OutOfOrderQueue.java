@@ -44,10 +44,10 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
         SubscriptionList.SubscriptionNodeIterator subIter = getSubscriptionList().iterator();
         while(subIter.advance() && !entry.isAcquired())
         {
-            final Subscription subscription = subIter.getNode().getSubscription();
+            final QueueSubscription subscription = subIter.getNode().getSubscription();
             if(!subscription.isClosed())
             {
-                QueueContext context = (QueueContext) subscription.getQueueContext();
+                QueueContext context = subscription.getQueueContext();
                 if(context != null)
                 {
                     QueueEntry released = context.getReleasedEntry();

@@ -1216,68 +1216,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         return getId().compareTo(o.getId());
     }
 
-    private class MessageDeliveryAction implements ServerTransaction.Action
-    {
-        private final MessageReference<AMQMessage> _reference;
-        private List<? extends BaseQueue> _destinationQueues;
 
-        public MessageDeliveryAction(AMQMessage currentMessage,
-                                     List<? extends BaseQueue> destinationQueues)
-        {
-            _reference = currentMessage.newReference();
-            _destinationQueues = destinationQueues;
-        }
-
-        public void postCommit()
-        {
-            try
-            {
-                AMQMessage message = _reference.getMessage();
-                final boolean immediate = message.isImmediate();
-
-                for(int i = 0; i < _destinationQueues.size(); i++)
-                {
-                    BaseQueue queue = _destinationQueues.get(i);
-
-                    Action<QueueEntry> action;
-
-                    if(immediate)
-                    {
-                        action = new ImmediateAction();
-                    }
-                    else
-                    {
-                        action = null;
-                    }
-
-                    queue.enqueue(message, action);
-
-                    if(queue instanceof AMQQueue)
-                    {
-                        ((AMQQueue)queue).checkCapacity(AMQChannel.this);
-                    }
-
-                }
-
-                message.getStoredMessage().flushToStore();
-                _reference.release();
-            }
-            catch (AMQException e)
-            {
-                // TODO
-                throw new RuntimeException(e);
-            }
-        }
-
-        public void onRollback()
-        {
-            // Maybe keep track of entries that were created and then delete them here in case of failure
-            // to in memory enqueue
-            _reference.release();
-        }
-
-
-    }
     private class ImmediateAction implements Action<QueueEntry>
     {
 

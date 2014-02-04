@@ -70,11 +70,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     long getTotalEnqueueCount();
 
-    public interface Context
-    {
-        QueueEntry getLastSeenEntry();
-    }
-
     void setNoLocal(boolean b);
 
     boolean isAutoDelete();
@@ -91,8 +86,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
     Subscription registerSubscription(final SubscriptionTarget target, final FilterManager filters,
                                       final Class<? extends ServerMessage> messageClass,
                                       final String consumerName, EnumSet<Subscription.Option> options) throws AMQException;
-
-    void unregisterSubscription(final Subscription subscription) throws AMQException;
 
     Collection<Subscription> getConsumers();
 

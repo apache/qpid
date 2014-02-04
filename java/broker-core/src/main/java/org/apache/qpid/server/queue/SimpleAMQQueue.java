@@ -382,7 +382,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
 
     @Override
-    public Subscription registerSubscription(final SubscriptionTarget target,
+    public QueueSubscription registerSubscription(final SubscriptionTarget target,
                                              final FilterManager filters,
                                              final Class<? extends ServerMessage> messageClass,
                                              final String consumerName,
@@ -471,7 +471,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     }
 
-    public synchronized void unregisterSubscription(final Subscription subscription) throws AMQException
+    synchronized void unregisterSubscription(final QueueSubscription  subscription) throws AMQException
     {
         if (subscription == null)
         {
@@ -828,7 +828,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     private void setLastSeenEntry(final QueueSubscription sub, final QueueEntry entry)
     {
-        QueueContext subContext = (QueueContext) sub.getQueueContext();
+        QueueContext subContext = sub.getQueueContext();
         if (subContext != null)
         {
             QueueEntry releasedEntry = subContext.getReleasedEntry();
@@ -844,7 +844,7 @@ public class SimpleAMQQueue implements AMQQueue,
     private void updateSubRequeueEntry(final QueueSubscription sub, final QueueEntry entry)
     {
 
-        QueueContext subContext = (QueueContext) sub.getQueueContext();
+        QueueContext subContext = sub.getQueueContext();
         if(subContext != null)
         {
             QueueEntry oldEntry;
@@ -1611,7 +1611,7 @@ public class SimpleAMQQueue implements AMQQueue,
     private QueueEntry getNextAvailableEntry(final QueueSubscription sub)
             throws AMQException
     {
-        QueueContext context = (QueueContext) sub.getQueueContext();
+        QueueContext context = sub.getQueueContext();
         if(context != null)
         {
             QueueEntry lastSeen = context.getLastSeenEntry();
@@ -1651,7 +1651,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     public boolean isEntryAheadOfSubscription(QueueEntry entry, QueueSubscription sub)
     {
-        QueueContext context = (QueueContext) sub.getQueueContext();
+        QueueContext context = sub.getQueueContext();
         if(context != null)
         {
             QueueEntry releasedNode = context.getReleasedEntry();

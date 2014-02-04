@@ -106,11 +106,6 @@ public interface Subscription
 
     public State getState();
 
-    AMQQueue.Context getQueueContext();
-
-    void setQueueContext(AMQQueue.Context queueContext);
-
-
     boolean isActive();
 
     void queueEmpty() throws AMQException;
