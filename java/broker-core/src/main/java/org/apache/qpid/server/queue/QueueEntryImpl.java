@@ -480,6 +480,17 @@ public abstract class QueueEntryImpl implements QueueEntry
                 '}';
     }
 
+    @Override
+    public boolean resend() throws AMQException
+    {
+        Subscription sub = getDeliveredSubscription();
+        if(sub != null)
+        {
+            return sub.resend(this);
+        }
+        return false;
+    }
+
     private static class EntryInstanceProperties implements InstanceProperties
     {
         private final EnumMap<Property, Object> _properties = new EnumMap<Property, Object>(Property.class);

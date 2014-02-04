@@ -21,6 +21,8 @@
 package org.apache.qpid.server.message;
 
 
+import org.apache.qpid.AMQException;
+
 public interface MessageInstance
 {
 
@@ -31,6 +33,8 @@ public interface MessageInstance
     boolean isAcquired();
 
     void release();
+
+    boolean resend() throws AMQException;
 
     void delete();
 

@@ -38,7 +38,7 @@ class SubFlushRunner implements Runnable
     private static final Logger _logger = Logger.getLogger(SubFlushRunner.class);
 
 
-    private final Subscription _sub;
+    private final QueueSubscription _sub;
 
     private static int IDLE = 0;
     private static int SCHEDULED = 1;
@@ -51,7 +51,7 @@ class SubFlushRunner implements Runnable
     private static final long ITERATIONS = SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
-    public SubFlushRunner(Subscription sub)
+    public SubFlushRunner(QueueSubscription sub)
     {
         _sub = sub;
     }

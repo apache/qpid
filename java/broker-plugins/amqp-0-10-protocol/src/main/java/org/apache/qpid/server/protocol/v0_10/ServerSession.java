@@ -438,15 +438,8 @@ public class ServerSession extends Session
     public void unregister(SubscriptionTarget_0_10 sub)
     {
         _subscriptions.remove(sub.getName());
-        try
-        {
-            sub.getSendLock();
-            sub.close();
-        }
-        finally
-        {
-            sub.releaseSendLock();
-        }
+        sub.close();
+
     }
 
     public boolean isTransactional()

@@ -174,7 +174,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
 
         Subscription sub = queue.registerSubscription(target, null, AMQMessage.class, "", options);
         sub.flush();
-        queue.unregisterSubscription(sub);
+        sub.close();
         return(!singleMessageCredit.hasCredit());
 
 

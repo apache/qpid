@@ -18,13 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.subscription.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +34,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
 
 
     private final String _groupId;
-    private final ConcurrentHashMap<Integer, Subscription> _groupMap = new ConcurrentHashMap<Integer, Subscription>();
+    private final ConcurrentHashMap<Integer, QueueSubscription> _groupMap = new ConcurrentHashMap<Integer, QueueSubscription>();
     private final int _groupMask;
 
     public AssignedSubscriptionMessageGroupManager(final String groupId, final int maxGroups)
@@ -55,13 +53,13 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         return val;
     }
 
-    public Subscription getAssignedSubscription(final QueueEntry entry)
+    public QueueSubscription getAssignedSubscription(final QueueEntry entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         return groupVal == null ? null : _groupMap.get(groupVal.hashCode() & _groupMask);
     }
 
-    public boolean acceptMessage(Subscription sub, QueueEntry entry)
+    public boolean acceptMessage(QueueSubscription sub, QueueEntry entry)
     {
         if(assignMessage(sub, entry))
         {
@@ -73,7 +71,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         }
     }
 
-    private boolean assignMessage(Subscription sub, QueueEntry entry)
+    private boolean assignMessage(QueueSubscription sub, QueueEntry entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         if(groupVal == null)
@@ -83,7 +81,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         else
         {
             Integer group = groupVal.hashCode() & _groupMask;
-            Subscription assignedSub = _groupMap.get(group);
+            QueueSubscription assignedSub = _groupMap.get(group);
             if(assignedSub == sub)
             {
                 return true;
@@ -107,7 +105,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         }
     }
     
-    public QueueEntry findEarliestAssignedAvailableEntry(Subscription sub)
+    public QueueEntry findEarliestAssignedAvailableEntry(QueueSubscription sub)
     {
         EntryFinder visitor = new EntryFinder(sub);
         sub.getQueue().visit(visitor);
@@ -117,9 +115,9 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
     private class EntryFinder implements QueueEntryVisitor
     {
         private QueueEntry _entry;
-        private Subscription _sub;
+        private QueueSubscription _sub;
 
-        public EntryFinder(final Subscription sub)
+        public EntryFinder(final QueueSubscription sub)
         {
             _sub = sub;
         }
@@ -156,9 +154,9 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         }
     }
 
-    public void clearAssignments(Subscription sub)
+    public void clearAssignments(QueueSubscription sub)
     {
-        Iterator<Subscription> subIter = _groupMap.values().iterator();
+        Iterator<QueueSubscription> subIter = _groupMap.values().iterator();
         while(subIter.hasNext())
         {
             if(subIter.next() == sub)

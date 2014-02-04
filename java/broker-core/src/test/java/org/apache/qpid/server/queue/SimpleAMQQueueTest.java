@@ -186,7 +186,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertNull(((QueueContext) _subscription.getQueueContext()).getReleasedEntry());
 
         // Check removing the subscription removes it's information from the queue
-        _queue.unregisterSubscription(_subscription);
+        _subscription.close();
         assertTrue("Subscription still had queue", _subscriptionTarget.isClosed());
         assertFalse("Queue still has consumer", 1 == _queue.getConsumerCount());
         assertFalse("Queue still has active consumer",
@@ -476,7 +476,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         // Check we cannot add an exclusive subscriber to a queue with an
         // existing subscription
-        _queue.unregisterSubscription(_subscription);
+        _subscription.close();
         _subscription = _queue.registerSubscription(_subscriptionTarget, null, messageA.getClass(), "test",
                                                     EnumSet.noneOf(Subscription.Option.class));
 
@@ -505,7 +505,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                     EnumSet.noneOf(Subscription.Option.class));
 
        _queue.enqueue(message);
-       _queue.unregisterSubscription(_subscription);
+       _subscription.close();
        assertTrue("Queue was not deleted when subscription was removed",
                   _queue.isDeleted());
     }
@@ -521,7 +521,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue.enqueue(message);
         QueueEntry entry = _subscription.getQueueContext().getLastSeenEntry();
         entry.setRedelivered();
-        _queue.resend(entry, _subscription);
+        _subscription.resend(entry);
 
     }
 
@@ -669,7 +669,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                       false, false, _virtualHost, factory, null)
         {
             @Override
-            public void deliverAsync(Subscription sub)
+            public void deliverAsync(QueueSubscription sub)
             {
                 // do nothing, i.e prevent deliveries by the SubFlushRunner
                 // when registering the new subscriptions
@@ -896,7 +896,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
                 false, "testOwner", false, false, _virtualHost, null)
         {
             @Override
-            public void deliverAsync(Subscription sub)
+            public void deliverAsync(QueueSubscription sub)
             {
                 // do nothing
             }

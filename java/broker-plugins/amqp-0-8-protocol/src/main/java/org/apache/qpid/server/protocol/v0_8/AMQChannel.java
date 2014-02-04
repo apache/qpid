@@ -587,15 +587,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         Subscription sub = target == null ? null : target.getSubscription();
         if (sub != null)
         {
-            try
-            {
-                sub.getSendLock();
-                sub.getQueue().unregisterSubscription(sub);
-            }
-            finally
-            {
-                sub.releaseSendLock();
-            }
+            sub.close();
             return true;
         }
         else
@@ -669,15 +661,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             Subscription sub = me.getValue().getSubscription();
 
-            try
-            {
-                sub.getSendLock();
-                sub.getQueue().unregisterSubscription(sub);
-            }
-            finally
-            {
-                sub.releaseSendLock();
-            }
+
+            sub.close();
 
         }
 
@@ -876,31 +861,12 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             //Amend the delivery counter as the client hasn't seen these messages yet.
             message.decrementDeliveryCount();
 
-            AMQQueue queue = message.getQueue();
-
             // Without any details from the client about what has been processed we have to mark
             // all messages in the unacked map as redelivered.
             message.setRedelivered();
 
-            Subscription sub = message.getDeliveredSubscription();
-
-            if (sub != null)
+            if (!message.resend())
             {
-
-                if(!queue.resend(message,sub))
-                {
-                    msgToRequeue.put(deliveryTag, message);
-                }
-            }
-            else
-            {
-
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("DeliveredSubscription not recorded so just requeueing(" + message.toString()
-                              + ")to prevent loss");
-                }
-                // move this message to requeue
                 msgToRequeue.put(deliveryTag, message);
             }
         } // for all messages
@@ -995,7 +961,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 // may need to deliver queued messages
                 for (SubscriptionTarget_0_8 s : _tag2SubscriptionTargetMap.values())
                 {
-                    s.getSubscription().getQueue().deliverAsync(s.getSubscription());
+                    s.getSubscription().externalStateChange();
                 }
             }
 
@@ -1124,7 +1090,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             }
             else
             {
-                sub.getQueue().resend(entry, sub);
+                entry.resend();
             }
         }
         _resendList.clear();
@@ -1134,7 +1100,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             _suspended.set(false);
             for(SubscriptionTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
             {
-                sub.getSubscription().getQueue().deliverAsync(sub.getSubscription());
+                sub.getSubscription().externalStateChange();
             }
 
         }

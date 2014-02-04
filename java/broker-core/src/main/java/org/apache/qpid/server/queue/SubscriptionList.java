@@ -18,13 +18,13 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.queue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class SubscriptionList
+class SubscriptionList
 {
     private final SubscriptionNode _head = new SubscriptionNode();
 
@@ -36,7 +36,7 @@ public class SubscriptionList
     {
         private final AtomicBoolean _deleted = new AtomicBoolean();
         private final AtomicReference<SubscriptionNode> _next = new AtomicReference<SubscriptionNode>();
-        private final Subscription _sub;
+        private final QueueSubscription _sub;
 
         public SubscriptionNode()
         {
@@ -45,7 +45,7 @@ public class SubscriptionList
             _deleted.set(true);
         }
 
-        public SubscriptionNode(final Subscription sub)
+        public SubscriptionNode(final QueueSubscription sub)
         {
             //used for regular node construction
             _sub = sub;
@@ -112,7 +112,7 @@ public class SubscriptionList
             return _deleted.compareAndSet(false,true);
         }
 
-        public Subscription getSubscription()
+        public QueueSubscription getSubscription()
         {
             return _sub;
         }
@@ -146,13 +146,13 @@ public class SubscriptionList
         }
     }
 
-    public void add(final Subscription sub)
+    public void add(final QueueSubscription sub)
     {
         SubscriptionNode node = new SubscriptionNode(sub);
         insert(node, true);
     }
 
-    public boolean remove(final Subscription sub)
+    public boolean remove(final QueueSubscription sub)
     {
         SubscriptionNode prevNode = _head;
         SubscriptionNode node = _head.nextNode();

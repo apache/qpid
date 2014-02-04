@@ -18,25 +18,44 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
+import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.subscription.AbstractSubscription;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.util.StateChangeListener;
 
+import java.text.MessageFormat;
 import java.util.EnumMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class DelegatingSubscription<T extends SubscriptionTarget> extends AbstractSubscription
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
+
+class QueueSubscription<T extends SubscriptionTarget> extends AbstractSubscription
 {
-    private static final Logger _logger = Logger.getLogger(DelegatingSubscription.class);
+    private static final Logger _logger = Logger.getLogger(QueueSubscription.class);
+    private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
+    private SimpleAMQQueue _queue;
+    private String _traceExclude;
+    private String _trace;
+    private GenericActor _logActor;
+    private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
+
 
     static final EnumMap<SubscriptionTarget.State, State> STATE_MAP =
             new EnumMap<SubscriptionTarget.State, State>(SubscriptionTarget.State.class);
@@ -49,14 +68,15 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
     }
 
     private final T _target;
+    private final SubFlushRunner _runner = new SubFlushRunner(this);
 
-    public DelegatingSubscription(final FilterManager filters,
-                                  final Class<? extends ServerMessage> messageClass,
-                                  final boolean acquires,
-                                  final boolean seesRequeues,
-                                  final String consumerName,
-                                  final boolean isTransient,
-                                  T target)
+    QueueSubscription(final FilterManager filters,
+                      final Class<? extends ServerMessage> messageClass,
+                      final boolean acquires,
+                      final boolean seesRequeues,
+                      final String consumerName,
+                      final boolean isTransient,
+                      T target)
     {
         super(filters, messageClass, target.getSessionModel().getConnectionReference(),
               acquires, seesRequeues, consumerName, isTransient);
@@ -80,7 +100,7 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
         {
             if(newState == SubscriptionTarget.State.CLOSED)
             {
-                if(_closed.compareAndSet(false,true))
+                if(_targetClosed.compareAndSet(false,true))
                 {
                     CurrentActor.get().message(getLogSubject(), SubscriptionMessages.CLOSE());
                 }
@@ -91,11 +111,11 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
             }
         }
 
-        if(newState == SubscriptionTarget.State.CLOSED && oldState != newState)
+        if(newState == SubscriptionTarget.State.CLOSED && oldState != newState && !_closed.get())
         {
             try
             {
-                getQueue().unregisterSubscription(this);
+                close();
             }
             catch (AMQException e)
             {
@@ -103,7 +123,8 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
                 throw new RuntimeException(e);
             }
         }
-        final StateChangeListener<Subscription, State> stateListener = getStateListener();
+        final StateChangeListener<Subscription, State> stateListener =
+                (StateChangeListener<Subscription, State>) getStateListener();
         if(stateListener != null)
         {
             stateListener.stateChanged(this, STATE_MAP.get(oldState), STATE_MAP.get(newState));
@@ -113,6 +134,12 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
     public T getTarget()
     {
         return _target;
+    }
+
+    @Override
+    public void externalStateChange()
+    {
+        getQueue().deliverAsync(this);
     }
 
     @Override
@@ -140,10 +167,23 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
     }
 
     @Override
-    public void close()
+    public void close() throws AMQException
     {
-        _target.close();
-        _target.subscriptionRemoved(this);
+        if(_closed.compareAndSet(false,true))
+        {
+            getSendLock();
+            try
+            {
+                _target.close();
+                _target.subscriptionRemoved(this);
+                _queue.unregisterSubscription(this);
+            }
+            finally
+            {
+                releaseSendLock();
+            }
+
+        }
     }
 
     @Override
@@ -187,4 +227,80 @@ public class DelegatingSubscription<T extends SubscriptionTarget> extends Abstra
     {
         return STATE_MAP.get(_target.getState());
     }
+
+    public final SimpleAMQQueue getQueue()
+    {
+        return _queue;
+    }
+
+    final void setQueue(SimpleAMQQueue queue, boolean exclusive)
+    {
+        if(getQueue() != null)
+        {
+            throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
+        }
+        _queue = queue;
+
+        _traceExclude = (String) queue.getAttribute(Queue.FEDERATION_EXCLUDES);
+        _trace = (String) queue.getAttribute(Queue.FEDERATION_ID);
+
+        String queueString = new QueueLogSubject(_queue).toLogString();
+
+        _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getSubscriptionID())
+                             + "("
+                             // queueString is [vh(/{0})/qu({1}) ] so need to trim
+                             //                ^                ^^
+                             + queueString.substring(1,queueString.length() - 3)
+                             + ")"
+                             + "] ");
+
+
+        if (CurrentActor.get().getRootMessageLogger().isMessageEnabled(_logActor, _logActor.getLogSubject(), SubscriptionMessages.CREATE_LOG_HIERARCHY))
+        {
+            final String filterLogString = getFilterLogString();
+            CurrentActor.get().message(_logActor.getLogSubject(), SubscriptionMessages.CREATE(filterLogString, queue.isDurable() && exclusive,
+                                                                                filterLogString.length() > 0));
+        }
+    }
+
+
+    protected final String getTraceExclude()
+    {
+        return _traceExclude;
+    }
+
+    protected final String getTrace()
+    {
+        return _trace;
+    }
+
+
+    protected final LogSubject getLogSubject()
+    {
+        return _logActor.getLogSubject();
+    }
+
+    public final LogActor getLogActor()
+    {
+        return _logActor;
+    }
+
+
+    @Override
+    public final void flush() throws AMQException
+    {
+        getQueue().flushSubscription(this);
+    }
+
+    @Override
+    public boolean resend(final QueueEntry entry) throws AMQException
+    {
+        return getQueue().resend(entry, this);
+    }
+
+    final SubFlushRunner getRunner()
+    {
+        return _runner;
+    }
+
 }

@@ -18,16 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,10 +43,10 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
     private final class Group
     {
         private final Object _group;
-        private Subscription _subscription;
+        private QueueSubscription _subscription;
         private int _activeCount;
 
-        private Group(final Object key, final Subscription subscription)
+        private Group(final Object key, final QueueSubscription subscription)
         {
             _group = key;
             _subscription = subscription;
@@ -104,7 +103,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
             return !(_subscription == null || (_activeCount == 0 && _subscription.isClosed()));
         }
 
-        public Subscription getSubscription()
+        public QueueSubscription getSubscription()
         {
             return _subscription;
         }
@@ -127,7 +126,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         _resetHelper = resetHelper;
     }
     
-    public synchronized Subscription getAssignedSubscription(final QueueEntry entry)
+    public synchronized QueueSubscription getAssignedSubscription(final QueueEntry entry)
     {
         Object groupId = getKey(entry);
 
@@ -135,7 +134,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         return group == null || !group.isValid() ? null : group.getSubscription();
     }
 
-    public synchronized boolean acceptMessage(final Subscription sub, final QueueEntry entry)
+    public synchronized boolean acceptMessage(final QueueSubscription sub, final QueueEntry entry)
     {
         if(assignMessage(sub, entry))
         {
@@ -147,7 +146,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         }
     }
 
-    private boolean assignMessage(final Subscription sub, final QueueEntry entry)
+    private boolean assignMessage(final QueueSubscription sub, final QueueEntry entry)
     {
         Object groupId = getKey(entry);
         Group group = _groupMap.get(groupId);
@@ -180,7 +179,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         }
     }
 
-    public synchronized QueueEntry findEarliestAssignedAvailableEntry(final Subscription sub)
+    public synchronized QueueEntry findEarliestAssignedAvailableEntry(final QueueSubscription sub)
     {
         EntryFinder visitor = new EntryFinder(sub);
         sub.getQueue().visit(visitor);
@@ -190,9 +189,9 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
     private class EntryFinder implements QueueEntryVisitor
     {
         private QueueEntry _entry;
-        private Subscription _sub;
+        private QueueSubscription _sub;
 
-        public EntryFinder(final Subscription sub)
+        public EntryFinder(final QueueSubscription sub)
         {
             _sub = sub;
         }
@@ -225,7 +224,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
     }
 
     
-    public void clearAssignments(final Subscription sub)
+    public void clearAssignments(final QueueSubscription sub)
     {
     }
     

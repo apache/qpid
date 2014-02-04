@@ -32,6 +32,8 @@ public interface Subscription
 {
     AtomicLong SUB_ID_GENERATOR = new AtomicLong(0);
 
+    void externalStateChange();
+
     enum Option
     {
         ACQUIRES,
@@ -60,12 +62,9 @@ public interface Subscription
         CLOSED
     }
 
-    AMQQueue getQueue();
     AMQSessionModel getSessionModel();
 
     QueueEntry.SubscriptionAcquiredState getOwningState();
-
-    void setQueue(AMQQueue queue, boolean exclusive);
 
     void setNoLocal(boolean noLocal);
 
@@ -81,9 +80,11 @@ public interface Subscription
 
     boolean seesRequeues();
 
-    void close();
+    void close() throws AMQException;
 
     void send(QueueEntry entry, boolean batch) throws AMQException;
+
+    boolean resend(QueueEntry entry) throws AMQException;
 
     void flushBatched();
 
@@ -101,7 +102,7 @@ public interface Subscription
 
     void restoreCredit(final QueueEntry queueEntry);
 
-    void setStateListener(final StateChangeListener<Subscription, State> listener);
+    void setStateListener(final StateChangeListener<? extends Subscription, State> listener);
 
     public State getState();
 
@@ -111,10 +112,6 @@ public interface Subscription
 
 
     boolean isActive();
-
-    public void set(String key, Object value);
-
-    public Object get(String key);
 
     void queueEmpty() throws AMQException;
 

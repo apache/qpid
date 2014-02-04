@@ -218,8 +218,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     void flushSubscription(final Subscription sub) throws AMQException;
 
-    void deliverAsync(final Subscription sub);
-
     void deliverAsync();
 
     void stop();

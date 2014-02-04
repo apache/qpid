@@ -29,7 +29,6 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.subscription.DelegatingSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.util.Action;
@@ -214,7 +213,7 @@ public class MockAMQQueue implements AMQQueue
                                              final String consumerName,
                                              final EnumSet<Subscription.Option> options) throws AMQException
     {
-        return new DelegatingSubscription(filters, messageClass, options.contains(Subscription.Option.ACQUIRES),
+        return new QueueSubscription(filters, messageClass, options.contains(Subscription.Option.ACQUIRES),
                                           options.contains(Subscription.Option.SEES_REQUEUES), consumerName,
                                           options.contains(Subscription.Option.TRANSIENT), target );
     }

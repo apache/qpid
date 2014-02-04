@@ -46,12 +46,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.subscription.AssignedSubscriptionMessageGroupManager;
-import org.apache.qpid.server.subscription.DefinedGroupMessageGroupManager;
-import org.apache.qpid.server.subscription.DelegatingSubscription;
-import org.apache.qpid.server.subscription.MessageGroupManager;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
@@ -61,7 +56,7 @@ import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class SimpleAMQQueue implements AMQQueue,
-                                       StateChangeListener<Subscription, Subscription.State>,
+                                       StateChangeListener<QueueSubscription, Subscription.State>,
                                        MessageGroupManager.SubscriptionResetHelper
 {
 
@@ -99,7 +94,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     private final SubscriptionList _subscriptionList = new SubscriptionList();
 
-    private volatile Subscription _exclusiveSubscriber;
+    private volatile QueueSubscription _exclusiveSubscriber;
 
 
 
@@ -394,18 +389,6 @@ public class SimpleAMQQueue implements AMQQueue,
                                              EnumSet<Subscription.Option> optionSet) throws AMQException
     {
 
-        DelegatingSubscription sub = new DelegatingSubscription(filters, messageClass,
-                                                                optionSet.contains(Subscription.Option.ACQUIRES),
-                                                                optionSet.contains(Subscription.Option.SEES_REQUEUES),
-                                                                consumerName, optionSet.contains(Subscription.Option.TRANSIENT), target);
-        target.subscriptionRegistered(sub);
-        registerSubscription(sub, optionSet.contains(Subscription.Option.EXCLUSIVE));
-        return sub;
-    }
-
-    private synchronized void registerSubscription(final Subscription subscription, final boolean exclusive)
-            throws AMQSecurityException, ExistingExclusiveSubscription, ExistingSubscriptionPreventsExclusive
-    {
         // Access control
         if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
         {
@@ -418,22 +401,32 @@ public class SimpleAMQQueue implements AMQQueue,
             throw new ExistingExclusiveSubscription();
         }
 
-        if (exclusive && !subscription.isTransient())
+
+        boolean exclusive =  optionSet.contains(Subscription.Option.EXCLUSIVE);
+        boolean isTransient =  optionSet.contains(Subscription.Option.TRANSIENT);
+
+        if (exclusive && !isTransient && getConsumerCount() != 0)
         {
-            if (getConsumerCount() != 0)
-            {
-                throw new ExistingSubscriptionPreventsExclusive();
-            }
-            else
-            {
-                _exclusiveSubscriber = subscription;
-            }
+            throw new ExistingSubscriptionPreventsExclusive();
+        }
+
+        QueueSubscription subscription = new QueueSubscription(filters, messageClass,
+                                                                optionSet.contains(Subscription.Option.ACQUIRES),
+                                                                optionSet.contains(Subscription.Option.SEES_REQUEUES),
+                                                                consumerName, optionSet.contains(Subscription.Option.TRANSIENT), target);
+        target.subscriptionRegistered(subscription);
+
+
+        if (exclusive && !isTransient)
+        {
+            _exclusiveSubscriber = subscription;
         }
 
         if(subscription.isActive())
         {
             _activeSubscriberCount.incrementAndGet();
         }
+
         subscription.setStateListener(this);
         subscription.setQueueContext(new QueueContext(_entries.getHead()));
 
@@ -474,6 +467,8 @@ public class SimpleAMQQueue implements AMQQueue,
 
         deliverAsync(subscription);
 
+        return subscription;
+
     }
 
     public synchronized void unregisterSubscription(final Subscription subscription) throws AMQException
@@ -483,7 +478,7 @@ public class SimpleAMQQueue implements AMQQueue,
             throw new NullPointerException("subscription argument is null");
         }
 
-        boolean removed = _subscriptionList.remove(subscription);
+        boolean removed = _subscriptionList.remove((QueueSubscription)subscription);
 
         if (removed)
         {
@@ -495,7 +490,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
             if(_messageGroupManager != null)
             {
-                resetSubPointersForGroups(subscription, true);
+                resetSubPointersForGroups((QueueSubscription)subscription, true);
             }
 
             synchronized (_subscriptionListeners)
@@ -553,7 +548,7 @@ public class SimpleAMQQueue implements AMQQueue,
         }
     }
 
-    public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments)
+    public void resetSubPointersForGroups(QueueSubscription subscription, boolean clearAssignments)
     {
         QueueEntry entry = _messageGroupManager.findEarliestAssignedAvailableEntry(subscription);
         if(clearAssignments)
@@ -567,7 +562,7 @@ public class SimpleAMQQueue implements AMQQueue,
             // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
             while (subscriberIter.advance())
             {
-                Subscription sub = subscriberIter.getNode().getSubscription();
+                QueueSubscription sub = subscriberIter.getNode().getSubscription();
 
                 // we don't make browsers send the same stuff twice
                 if (sub.seesRequeues())
@@ -645,7 +640,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
 
         QueueEntry entry;
-        final Subscription exclusiveSub = _exclusiveSubscriber;
+        final QueueSubscription exclusiveSub = _exclusiveSubscriber;
         entry = _entries.add(message);
 
         if(action != null || (exclusiveSub == null  && _queueRunner.isIdle()))
@@ -692,7 +687,7 @@ public class SimpleAMQQueue implements AMQQueue,
                 else
                 {
                     // if subscription at end, and active, offer
-                    Subscription sub = nextNode.getSubscription();
+                    QueueSubscription sub = nextNode.getSubscription();
                     deliverToSubscription(sub, entry);
                 }
                 nextNode = nextNode.findNext();
@@ -724,7 +719,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     }
 
-    private void deliverToSubscription(final Subscription sub, final QueueEntry entry)
+    private void deliverToSubscription(final QueueSubscription sub, final QueueEntry entry)
             throws AMQException
     {
 
@@ -756,7 +751,7 @@ public class SimpleAMQQueue implements AMQQueue,
         }
     }
 
-    private boolean assign(final Subscription sub, final QueueEntry entry)
+    private boolean assign(final QueueSubscription sub, final QueueEntry entry)
     {
         if(_messageGroupManager == null)
         {
@@ -770,13 +765,13 @@ public class SimpleAMQQueue implements AMQQueue,
         }
     }
 
-    private boolean mightAssign(final Subscription sub, final QueueEntry entry)
+    private boolean mightAssign(final QueueSubscription sub, final QueueEntry entry)
     {
         if(_messageGroupManager == null || !sub.acquires())
         {
             return true;
         }
-        Subscription assigned = _messageGroupManager.getAssignedSubscription(entry);
+        QueueSubscription assigned = _messageGroupManager.getAssignedSubscription(entry);
         return (assigned == null) || (assigned == sub);
     }
 
@@ -814,7 +809,7 @@ public class SimpleAMQQueue implements AMQQueue,
         getAtomicQueueCount().incrementAndGet();
     }
 
-    private void deliverMessage(final Subscription sub, final QueueEntry entry, boolean batch)
+    private void deliverMessage(final QueueSubscription sub, final QueueEntry entry, boolean batch)
             throws AMQException
     {
         setLastSeenEntry(sub, entry);
@@ -825,13 +820,13 @@ public class SimpleAMQQueue implements AMQQueue,
         sub.send(entry, batch);
     }
 
-    private boolean subscriptionReadyAndHasInterest(final Subscription sub, final QueueEntry entry) throws AMQException
+    private boolean subscriptionReadyAndHasInterest(final QueueSubscription sub, final QueueEntry entry) throws AMQException
     {
         return sub.hasInterest(entry) && (getNextAvailableEntry(sub) == entry);
     }
 
 
-    private void setLastSeenEntry(final Subscription sub, final QueueEntry entry)
+    private void setLastSeenEntry(final QueueSubscription sub, final QueueEntry entry)
     {
         QueueContext subContext = (QueueContext) sub.getQueueContext();
         if (subContext != null)
@@ -846,7 +841,7 @@ public class SimpleAMQQueue implements AMQQueue,
         }
     }
 
-    private void updateSubRequeueEntry(final Subscription sub, final QueueEntry entry)
+    private void updateSubRequeueEntry(final QueueSubscription sub, final QueueEntry entry)
     {
 
         QueueContext subContext = (QueueContext) sub.getQueueContext();
@@ -870,7 +865,7 @@ public class SimpleAMQQueue implements AMQQueue,
         // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
         while (subscriberIter.advance() && entry.isAvailable())
         {
-            Subscription sub = subscriberIter.getNode().getSubscription();
+            QueueSubscription sub = subscriberIter.getNode().getSubscription();
 
             // we don't make browsers send the same stuff twice
             if (sub.seesRequeues())
@@ -925,7 +920,7 @@ public class SimpleAMQQueue implements AMQQueue,
         {
             if (!subscription.isClosed())
             {
-                deliverMessage(subscription, entry, false);
+                deliverMessage((QueueSubscription)subscription, entry, false);
                 return true;
             }
             else
@@ -1026,7 +1021,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     }
 
-    public void stateChanged(Subscription sub, Subscription.State oldState, Subscription.State newState)
+    public void stateChanged(QueueSubscription sub, Subscription.State oldState, Subscription.State newState)
     {
         if (oldState == Subscription.State.ACTIVE && newState != Subscription.State.ACTIVE)
         {
@@ -1064,7 +1059,7 @@ public class SimpleAMQQueue implements AMQQueue,
         return _exclusiveSubscriber != null;
     }
 
-    private void setExclusiveSubscriber(Subscription exclusiveSubscriber)
+    private void setExclusiveSubscriber(QueueSubscription exclusiveSubscriber)
     {
         _exclusiveSubscriber = exclusiveSubscriber;
     }
@@ -1320,7 +1315,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
             while (subscriptionIter.advance())
             {
-                Subscription s = subscriptionIter.getNode().getSubscription();
+                QueueSubscription s = subscriptionIter.getNode().getSubscription();
                 if (s != null)
                 {
                     s.queueDeleted();
@@ -1450,7 +1445,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     }
 
-    public void deliverAsync(Subscription sub)
+    public void deliverAsync(QueueSubscription sub)
     {
         if(_exclusiveSubscriber == null)
         {
@@ -1458,12 +1453,7 @@ public class SimpleAMQQueue implements AMQQueue,
         }
         else
         {
-            SubFlushRunner flusher = (SubFlushRunner) sub.get(SUB_FLUSH_RUNNER);
-            if(flusher == null)
-            {
-                flusher = new SubFlushRunner(sub);
-                sub.set(SUB_FLUSH_RUNNER, flusher);
-            }
+            SubFlushRunner flusher = sub.getRunner();
             flusher.execute(_asyncDelivery);
         }
 
@@ -1500,8 +1490,8 @@ public class SimpleAMQQueue implements AMQQueue,
                         sub.getSendLock();
                     }
 
-                    atTail = attemptDelivery(sub, true);
-                    if (atTail && getNextAvailableEntry(sub) == null)
+                    atTail = attemptDelivery((QueueSubscription)sub, true);
+                    if (atTail && getNextAvailableEntry((QueueSubscription)sub) == null)
                     {
                         queueEmpty = true;
                     }
@@ -1557,7 +1547,7 @@ public class SimpleAMQQueue implements AMQQueue,
      * @return true if we have completed all possible deliveries for this sub.
      * @throws AMQException
      */
-    private boolean attemptDelivery(Subscription sub, boolean batch) throws AMQException
+    private boolean attemptDelivery(QueueSubscription sub, boolean batch) throws AMQException
     {
         boolean atTail = false;
 
@@ -1606,7 +1596,7 @@ public class SimpleAMQQueue implements AMQQueue,
         while (subscriberIter.advance())
         {
             SubscriptionList.SubscriptionNode subNode = subscriberIter.getNode();
-            Subscription sub = subNode.getSubscription();
+            QueueSubscription sub = subNode.getSubscription();
             if(sub.acquires())
             {
                 getNextAvailableEntry(sub);
@@ -1618,7 +1608,7 @@ public class SimpleAMQQueue implements AMQQueue,
         }
     }
 
-    private QueueEntry getNextAvailableEntry(final Subscription sub)
+    private QueueEntry getNextAvailableEntry(final QueueSubscription sub)
             throws AMQException
     {
         QueueContext context = (QueueContext) sub.getQueueContext();
@@ -1659,7 +1649,7 @@ public class SimpleAMQQueue implements AMQQueue,
         }
     }
 
-    public boolean isEntryAheadOfSubscription(QueueEntry entry, Subscription sub)
+    public boolean isEntryAheadOfSubscription(QueueEntry entry, QueueSubscription sub)
     {
         QueueContext context = (QueueContext) sub.getQueueContext();
         if(context != null)
@@ -1740,7 +1730,7 @@ public class SimpleAMQQueue implements AMQQueue,
             //iterate over the subscribers and try to advance their pointer
             while (subscriptionIter.advance())
             {
-                Subscription sub = subscriptionIter.getNode().getSubscription();
+                QueueSubscription sub = subscriptionIter.getNode().getSubscription();
                 sub.getSendLock();
 
                     try
@@ -1976,9 +1966,9 @@ public class SimpleAMQQueue implements AMQQueue,
     private final class QueueEntryListener implements StateChangeListener<QueueEntry, QueueEntry.State>
     {
 
-        private final Subscription _sub;
+        private final QueueSubscription _sub;
 
-        public QueueEntryListener(final Subscription sub)
+        public QueueEntryListener(final QueueSubscription sub)
         {
             _sub = sub;
         }

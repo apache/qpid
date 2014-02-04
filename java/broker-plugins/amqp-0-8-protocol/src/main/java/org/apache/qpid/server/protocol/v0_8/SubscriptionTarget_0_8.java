@@ -180,7 +180,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
 
             // The send may of course still fail, in which case, as
             // the message is unacked, it will be lost.
-            _txn.dequeue(getSubscription().getQueue(), entry.getMessage(), NOOP);
+            _txn.dequeue(entry.getQueue(), entry.getMessage(), NOOP);
 
             ServerMessage message = entry.getMessage();
             MessageReference ref = message.newReference();

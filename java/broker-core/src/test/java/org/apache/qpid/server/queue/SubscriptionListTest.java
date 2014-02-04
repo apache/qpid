@@ -18,11 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.subscription.SubscriptionList.SubscriptionNode;
-import org.apache.qpid.server.subscription.SubscriptionList.SubscriptionNodeIterator;
+
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import static org.mockito.Mockito.mock;
@@ -31,10 +32,10 @@ import static org.mockito.Mockito.when;
 public class SubscriptionListTest extends QpidTestCase
 {
     private SubscriptionList _subList;
-    private Subscription _sub1;
-    private Subscription _sub2;
-    private Subscription _sub3;
-    private SubscriptionNode _node;
+    private QueueSubscription _sub1;
+    private QueueSubscription _sub2;
+    private QueueSubscription _sub3;
+    private SubscriptionList.SubscriptionNode _node;
 
     protected void setUp()
     {
@@ -52,12 +53,11 @@ public class SubscriptionListTest extends QpidTestCase
     }
 
 
-    private Subscription newMockSubscription()
+    private QueueSubscription newMockSubscription()
     {
-        final Subscription subscription = mock(Subscription.class);
-        when(subscription.getOwningState()).thenReturn(new QueueEntry.SubscriptionAcquiredState(subscription));
-        when(subscription.getSubscriptionID()).thenReturn(Subscription.SUB_ID_GENERATOR.getAndIncrement());
-        return subscription;
+        SubscriptionTarget target = mock(SubscriptionTarget.class);
+        when(target.getSessionModel()).thenReturn(mock(AMQSessionModel.class));
+        return new QueueSubscription(null,null,true,true,"sub",false,target);
     }
 
     /**
@@ -145,9 +145,9 @@ public class SubscriptionListTest extends QpidTestCase
      * Traverses the list nodes in a non-mutating fashion, returning the first node which matches the given
      * Subscription, or null if none is found.
      */
-    private SubscriptionNode getNodeForSubscription(final SubscriptionList list, final Subscription sub)
+    private SubscriptionList.SubscriptionNode getNodeForSubscription(final SubscriptionList list, final Subscription sub)
     {
-        SubscriptionNode node = list.getHead();
+        SubscriptionList.SubscriptionNode node = list.getHead();
         while (node != null && node.getSubscription() != sub)
         {
             node = node.nextNode();
@@ -161,7 +161,7 @@ public class SubscriptionListTest extends QpidTestCase
      */
     private int countNodes(final SubscriptionList list)
     {
-        SubscriptionNode node = list.getHead();
+        SubscriptionList.SubscriptionNode node = list.getHead();
         int count;
         for(count = -1; node != null; count++)
         {
@@ -190,9 +190,9 @@ public class SubscriptionListTest extends QpidTestCase
 
         assertEquals("Unexpected size result", 0, subList.size());
 
-        Subscription sub1 = newMockSubscription();
-        Subscription sub2 = newMockSubscription();
-        Subscription sub3 = newMockSubscription();
+        QueueSubscription sub1 = newMockSubscription();
+        QueueSubscription sub2 = newMockSubscription();
+        QueueSubscription sub3 = newMockSubscription();
 
         subList.add(sub1);
         assertEquals("Unexpected size result", 1, subList.size());
@@ -266,7 +266,7 @@ public class SubscriptionListTest extends QpidTestCase
      */
     public void testRemoveNonexistentNode()
     {
-        Subscription sub4 = newMockSubscription();
+        QueueSubscription sub4 = newMockSubscription();
         assertNull("Should not have been a node present for the subscription", getNodeForSubscription(_subList, sub4));
         assertFalse("Removing subscription node should not have succeeded", _subList.remove(sub4));
         assertEquals("Unexpected number of nodes", 3, countNodes(_subList));
@@ -281,9 +281,9 @@ public class SubscriptionListTest extends QpidTestCase
     public void testDeletedMarkedNodeDoesntLeakSubsequentlyDeletedNodes()
     {
         //get the nodes out the list for the 1st and 3rd subscriptions
-        SubscriptionNode sub1Node = getNodeForSubscription(_subList, _sub1);
+        SubscriptionList.SubscriptionNode sub1Node = getNodeForSubscription(_subList, _sub1);
         assertNotNull("Should have been a node present for the subscription", sub1Node);
-        SubscriptionNode sub3Node = getNodeForSubscription(_subList, _sub3);
+        SubscriptionList.SubscriptionNode sub3Node = getNodeForSubscription(_subList, _sub3);
         assertNotNull("Should have been a node present for the subscription", sub3Node);
 
         //mark the first subscription node
@@ -323,7 +323,7 @@ public class SubscriptionListTest extends QpidTestCase
     public void testMarkedNodeFindsNewSubscriptionAfterRemovingTailWhilstMarked()
     {
         //get the node out the list for the 3rd subscription
-        SubscriptionNode sub3Node = getNodeForSubscription(_subList, _sub3);
+        SubscriptionList.SubscriptionNode sub3Node = getNodeForSubscription(_subList, _sub3);
         assertNotNull("Should have been a node present for the subscription", sub3Node);
 
         //mark the 3rd subscription node
@@ -337,11 +337,11 @@ public class SubscriptionListTest extends QpidTestCase
         assertTrue("Removing subscription node should have succeeded", _subList.remove(_sub3));
 
         //add a new 4th subscription to the list
-        Subscription sub4 = newMockSubscription();
+        QueueSubscription sub4 = newMockSubscription();
         _subList.add(sub4);
 
         //get the node out the list for the 4th subscription
-        SubscriptionNode sub4Node = getNodeForSubscription(_subList, sub4);
+        SubscriptionList.SubscriptionNode sub4Node = getNodeForSubscription(_subList, sub4);
         assertNotNull("Should have been a node present for the subscription", sub4Node);
 
         //verify the marked node (which is now a dummy substitute for the 3rd subscription) returns
@@ -379,7 +379,7 @@ public class SubscriptionListTest extends QpidTestCase
         assertNotNull("Should still have been a node present for the deleted subscription",
                 getNodeForSubscription(_subList, _sub1));
 
-        SubscriptionNodeIterator iter = _subList.iterator();
+        SubscriptionList.SubscriptionNodeIterator iter = _subList.iterator();
 
         //verify the iterator returns the 2nd subscriptions node
         assertTrue("Iterator should have been able to advance", iter.advance());
@@ -402,7 +402,7 @@ public class SubscriptionListTest extends QpidTestCase
         assertNotNull("Should still have been a node present for the deleted subscription",
                 getNodeForSubscription(_subList, _sub2));
 
-        SubscriptionNodeIterator iter = _subList.iterator();
+        SubscriptionList.SubscriptionNodeIterator iter = _subList.iterator();
 
         //verify the iterator returns the 1st subscriptions node
         assertTrue("Iterator should have been able to advance", iter.advance());
@@ -425,7 +425,7 @@ public class SubscriptionListTest extends QpidTestCase
         assertNotNull("Should still have been a node present for the deleted 3rd subscription",
                 getNodeForSubscription(_subList, _sub3));
 
-        SubscriptionNodeIterator iter = _subList.iterator();
+        SubscriptionList.SubscriptionNodeIterator iter = _subList.iterator();
 
         //verify the iterator returns the 1st subscriptions node
         assertTrue("Iterator should have been able to advance", iter.advance());

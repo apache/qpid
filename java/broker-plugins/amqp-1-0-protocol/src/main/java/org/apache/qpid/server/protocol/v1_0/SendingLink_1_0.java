@@ -68,7 +68,6 @@ import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.subscription.DelegatingSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -96,6 +95,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     private List<QueueEntry> _resumeFullTransfers = new ArrayList<QueueEntry>();
     private List<Binary> _resumeAcceptedTransfers = new ArrayList<Binary>();
     private Runnable _closeAction;
+    private final AMQQueue _queue;
+
 
     public SendingLink_1_0(final SendingLinkAttachment linkAttachment,
                            final VirtualHost vhost,
@@ -109,7 +110,6 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         _durability = source.getDurable();
         linkAttachment.setDeliveryStateHandler(this);
         QueueDestination qd = null;
-        AMQQueue queue = null;
 
         EnumSet<Subscription.Option> options = EnumSet.noneOf(Subscription.Option.class);
 
@@ -119,9 +119,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
         if(destination instanceof QueueDestination)
         {
-            queue = ((QueueDestination) _destination).getQueue();
+            _queue = ((QueueDestination) _destination).getQueue();
 
-            if(queue.getAvailableAttributes().contains("topic"))
+            if(_queue.getAvailableAttributes().contains("topic"))
             {
                 source.setDistributionMode(StdDistMode.COPY);
             }
@@ -212,12 +212,12 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     name = UUID.randomUUID().toString();
                 }
 
-                queue = _vhost.getQueue(name);
+                AMQQueue queue = _vhost.getQueue(name);
                 Exchange exchange = exchangeDestination.getExchange();
 
                 if(queue == null)
                 {
-                    queue = _vhost.createQueue(
+                    _queue = _vhost.createQueue(
                                 UUIDGenerator.generateQueueUUID(name, _vhost.getName()),
                                 name,
                                 isDurable,
@@ -229,7 +229,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
                 else
                 {
-                    List<Binding> bindings = queue.getBindings();
+                    _queue = queue;
+                    List<Binding> bindings = _queue.getBindings();
                     List<Binding> bindingsToRemove = new ArrayList<Binding>();
                     for(Binding existingBinding : bindings)
                     {
@@ -314,13 +315,13 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
                 source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-                exchange.addBinding(binding,queue,null);
+                exchange.addBinding(binding, _queue,null);
                 source.setDistributionMode(StdDistMode.COPY);
 
                 if(!isDurable)
                 {
                     final String queueName = name;
-                    final AMQQueue tempQueue = queue;
+                    final AMQQueue tempQueue = _queue;
 
                     final Action<Connection_1_0> deleteQueueTask =
                                             new Action<Connection_1_0>()
@@ -344,7 +345,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                                     getSession().getConnection().addConnectionCloseTask(deleteQueueTask);
 
-                                    queue.addQueueDeleteTask(new Action<AMQQueue>()
+                                    _queue.addQueueDeleteTask(new Action<AMQQueue>()
                                     {
                                         public void performAction(AMQQueue queue)
                                         {
@@ -355,19 +356,22 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                     });
                 }
 
-                qd = new QueueDestination(queue);
+                qd = new QueueDestination(_queue);
             }
             catch (AMQSecurityException e)
             {
                 _logger.error("Security error", e);
+                throw new RuntimeException(e);
             }
             catch (AMQInternalException e)
             {
                 _logger.error("Internal error", e);
+                throw new RuntimeException(e);
             }
             catch (AMQException e)
             {
                 _logger.error("Error", e);
+                throw new RuntimeException(e);
             }
 
 
@@ -375,6 +379,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             options.add(Subscription.Option.ACQUIRES);
             options.add(Subscription.Option.SEES_REQUEUES);
 
+        }
+        else
+        {
+            throw new RuntimeException("Unknown destination type");
         }
 
         if(_target != null)
@@ -390,7 +398,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
             try
             {
-                _subscription = queue.registerSubscription(_target,
+                _subscription = _queue.registerSubscription(_target,
                                                            messageFilter == null ? null : new SimpleFilterManager(messageFilter),
                                                            Message_1_0.class, getEndpoint().getName(), options);
             }
@@ -415,12 +423,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         // if not durable or close
         if(!TerminusDurability.UNSETTLED_STATE.equals(_durability))
         {
-            AMQQueue queue = _subscription.getQueue();
 
             try
             {
 
-                queue.unregisterSubscription(_subscription);
+                _subscription.close();
 
             }
             catch (AMQException e)
@@ -447,7 +454,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             {
                 try
                 {
-                    queue.getVirtualHost().removeQueue(queue);
+                    _queue.getVirtualHost().removeQueue(_queue);
                 }
                 catch(AMQException e)
                 {

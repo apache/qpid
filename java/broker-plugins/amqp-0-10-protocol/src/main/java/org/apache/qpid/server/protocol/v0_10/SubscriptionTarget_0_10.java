@@ -50,6 +50,8 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     private static final Option[] BATCHED = new Option[] { Option.BATCH };
 
     private final AtomicBoolean _deleted = new AtomicBoolean(false);
+    private final AMQQueue _queue;
+    private final String _name;
 
 
     private FlowCreditManager_0_10 _creditManager;
@@ -71,13 +73,12 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
 
 
     public SubscriptionTarget_0_10(ServerSession session,
-                                   String destination,
+                                   String name,
                                    MessageAcceptMode acceptMode,
                                    MessageAcquireMode acquireMode,
                                    MessageFlowMode flowMode,
                                    FlowCreditManager_0_10 creditManager,
-                                   FilterManager filters,
-                                   Map<String, Object> arguments)
+                                   Map<String, Object> arguments, final AMQQueue queue)
     {
         super(State.SUSPENDED);
         _session = session;
@@ -89,9 +90,15 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         _creditManager.addStateListener(this);
         _arguments = arguments == null ? Collections.<String, Object> emptyMap() :
                                          Collections.<String, Object> unmodifiableMap(arguments);
+        _name = name;
+        _queue = queue;
 
     }
 
+    public AMQQueue getQueue()
+    {
+        return _queue;
+    }
 
     public Subscription getSubscription()
     {
@@ -150,17 +157,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
 
     public String getName()
     {
-        return getSubscription().getName();
-    }
-
-    public void getSendLock()
-    {
-        getSubscription().getSendLock();
-    }
-
-    public void releaseSendLock()
-    {
-        getSubscription().releaseSendLock();
+        return _name;
     }
 
 

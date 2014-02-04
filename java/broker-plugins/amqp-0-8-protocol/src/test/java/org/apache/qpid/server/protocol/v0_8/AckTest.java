@@ -371,7 +371,7 @@ public class AckTest extends QpidTestCase
         final int msgCount = 1;
         publishMessages(msgCount);
 
-        _queue.deliverAsync(_subscription);
+        _subscription.externalStateChange();
 
         _channel.acknowledgeMessage(1, false);
 

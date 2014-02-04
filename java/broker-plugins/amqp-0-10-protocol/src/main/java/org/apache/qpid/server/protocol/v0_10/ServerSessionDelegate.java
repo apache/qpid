@@ -46,7 +46,6 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.subscription.DelegatingSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.DtxNotSelectedException;
@@ -263,8 +262,8 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                                  method.getAcquireMode(),
                                                                                  MessageFlowMode.WINDOW,
                                                                                  creditManager,
-                                                                                 filterManager,
-                                                                                 method.getArguments());
+                                                                                 method.getArguments(),
+                                                                                 queue);
 
                     ((ServerSession)session).register(destination, target);
                     try
@@ -414,7 +413,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
-            AMQQueue queue = sub.getSubscription().getQueue();
+            AMQQueue queue = sub.getQueue();
             ((ServerSession)session).unregister(sub);
             if(!queue.isDeleted() && queue.isExclusive() && queue.getConsumerCount() == 0)
             {

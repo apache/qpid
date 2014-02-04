@@ -21,7 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionList;
+import org.apache.qpid.server.queue.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;

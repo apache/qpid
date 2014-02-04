@@ -18,24 +18,24 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.subscription.Subscription;
 
 public interface MessageGroupManager
 {
     public interface SubscriptionResetHelper
     {
-        public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments);
+        public void resetSubPointersForGroups(QueueSubscription subscription, boolean clearAssignments);
 
-        boolean isEntryAheadOfSubscription(QueueEntry entry, Subscription sub);
+        boolean isEntryAheadOfSubscription(QueueEntry entry, QueueSubscription sub);
     }
 
-    Subscription getAssignedSubscription(QueueEntry entry);
+    QueueSubscription getAssignedSubscription(QueueEntry entry);
 
-    boolean acceptMessage(Subscription sub, QueueEntry entry);
+    boolean acceptMessage(QueueSubscription sub, QueueEntry entry);
 
-    QueueEntry findEarliestAssignedAvailableEntry(Subscription sub);
+    QueueEntry findEarliestAssignedAvailableEntry(QueueSubscription sub);
 
-    void clearAssignments(Subscription sub);
+    void clearAssignments(QueueSubscription sub);
 }

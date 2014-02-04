@@ -138,6 +138,12 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
+    @Override
+    public boolean resend() throws AMQException
+    {
+        return false;
+    }
+
 
     public boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener)
     {
