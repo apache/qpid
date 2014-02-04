@@ -856,50 +856,6 @@ public class ServerSession extends Session
         awaitCommandCompletion();
     }
 
-    private class PostEnqueueAction implements ServerTransaction.Action
-    {
-
-        private final MessageReference<MessageTransferMessage> _reference;
-        private final List<? extends BaseQueue> _queues;
-        private final boolean _transactional;
-
-        public PostEnqueueAction(List<? extends BaseQueue> queues, MessageTransferMessage message, final boolean transactional)
-        {
-            _reference = message.newReference();
-            _transactional = transactional;
-            _queues = queues;
-        }
-
-        public void postCommit()
-        {
-            for(int i = 0; i < _queues.size(); i++)
-            {
-                try
-                {
-                    BaseQueue queue = _queues.get(i);
-                    queue.enqueue(_reference.getMessage(), _transactional, null);
-                    if(queue instanceof AMQQueue)
-                    {
-                        ((AMQQueue)queue).checkCapacity(ServerSession.this);
-                    }
-
-                }
-                catch (AMQException e)
-                {
-                    // TODO
-                    throw new RuntimeException(e);
-                }
-            }
-            _reference.release();
-        }
-
-        public void onRollback()
-        {
-            // NO-OP
-            _reference.release();
-        }
-    }
-
     public int getUnacknowledgedMessageCount()
     {
         return _messageDispositionListenerMap.size();
