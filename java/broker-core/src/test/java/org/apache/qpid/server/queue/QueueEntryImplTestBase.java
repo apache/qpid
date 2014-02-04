@@ -23,8 +23,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.QueueEntry.EntryState;
-import org.apache.qpid.server.subscription.MockSubscription;
+import org.apache.qpid.server.message.MessageInstance.EntryState;
 import org.apache.qpid.server.subscription.Subscription;
 
 import java.lang.reflect.Field;
@@ -154,9 +153,8 @@ public abstract class QueueEntryImplTestBase extends TestCase
     public void testRejectAndRejectedBy()
     {
         Subscription sub = newMockSubscription();
-        long subId = sub.getSubscriptionID();
 
-        assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(subId));
+        assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(sub));
         assertFalse("Queue entry should not yet have been acquired by a subscription", _queueEntry.isAcquired());
 
         //acquire, reject, and release the message using the subscription
@@ -165,19 +163,18 @@ public abstract class QueueEntryImplTestBase extends TestCase
         _queueEntry.release();
 
         //verify the rejection is recorded
-        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(subId));
+        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub));
 
         //repeat rejection using a second subscription
         Subscription sub2 = newMockSubscription();
-        long sub2Id = sub2.getSubscriptionID();
 
-        assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(sub2Id));
+        assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(sub2));
         assertTrue("Queue entry should have been able to be acquired", _queueEntry.acquire(sub2));
         _queueEntry.reject();
 
         //verify it still records being rejected by both subscriptions
-        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(subId));
-        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub2Id));
+        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub));
+        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub2));
     }
 
     /**

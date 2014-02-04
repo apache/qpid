@@ -294,12 +294,12 @@ public abstract class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public boolean isRejectedBy(long subscriptionId)
+    public boolean isRejectedBy(Subscription subscription)
     {
 
         if (_rejectedBy != null) // We have subscriptions that rejected this message
         {
-            return _rejectedBy.contains(subscriptionId);
+            return _rejectedBy.contains(subscription.getSubscriptionID());
         }
         else // This message hasn't been rejected yet.
         {

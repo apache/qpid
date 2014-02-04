@@ -227,13 +227,13 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
     @Override
     public boolean wouldSuspend(final QueueEntry msg)
     {
-        return !_target.allocateCredit(msg);
+        return !_target.allocateCredit(msg.getMessage());
     }
 
     @Override
     public void restoreCredit(final QueueEntry queueEntry)
     {
-        _target.restoreCredit(queueEntry);
+        _target.restoreCredit(queueEntry.getMessage());
     }
 
     @Override
@@ -356,7 +356,7 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
     public final boolean hasInterest(QueueEntry entry)
     {
        //check that the message hasn't been rejected
-        if (entry.isRejectedBy(getSubscriptionID()))
+        if (entry.isRejectedBy(this))
         {
 
             return false;

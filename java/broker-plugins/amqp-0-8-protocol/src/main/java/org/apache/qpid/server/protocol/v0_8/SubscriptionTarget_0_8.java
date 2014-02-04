@@ -26,8 +26,6 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -35,8 +33,6 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.subscription.AbstractSubscriptionTarget;
-import org.apache.qpid.server.subscription.ClientDeliveryMethod;
-import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -62,7 +58,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
                 {
                     if (oldSate == QueueEntry.State.ACQUIRED && (newState == QueueEntry.State.AVAILABLE || newState == QueueEntry.State.DEQUEUED))
                     {
-                        restoreCredit(entry);
+                        restoreCredit(entry.getMessage());
                     }
                     entry.removeStateChangeListener(this);
                 }
@@ -120,7 +116,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         }
 
         @Override
-        public boolean allocateCredit(QueueEntry msg)
+        public boolean allocateCredit(ServerMessage msg)
         {
             return true;
         }
@@ -201,7 +197,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         }
 
         @Override
-        public boolean allocateCredit(QueueEntry msg)
+        public boolean allocateCredit(ServerMessage msg)
         {
             return true;
         }
@@ -236,9 +232,9 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
         }
 
-        public boolean allocateCredit(QueueEntry msg)
+        public boolean allocateCredit(ServerMessage msg)
         {
-            return getCreditManager().useCreditForMessage(msg.getMessage().getSize());
+            return getCreditManager().useCreditForMessage(msg.getSize());
         }
 
     }
@@ -441,9 +437,9 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
     }
 
 
-    public boolean allocateCredit(QueueEntry msg)
+    public boolean allocateCredit(ServerMessage msg)
     {
-        return _creditManager.useCreditForMessage(msg.getMessage().getSize());
+        return _creditManager.useCreditForMessage(msg.getSize());
     }
 
     public AMQChannel getChannel()
@@ -461,9 +457,9 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         return _channel.getProtocolSession();
     }
 
-    public void restoreCredit(final QueueEntry queueEntry)
+    public void restoreCredit(final ServerMessage message)
     {
-        _creditManager.restoreCredit(1, queueEntry.getSize());
+        _creditManager.restoreCredit(1, message.getSize());
     }
 
     protected final StateChangeListener<QueueEntry, QueueEntry.State> getReleasedStateChangeListener()

@@ -344,7 +344,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
                                {
                                    if (restoreCredit)
                                    {
-                                       restoreCredit(entry);
+                                       restoreCredit(entry.getMessage());
                                    }
                                    entry.delete();
                                }
@@ -433,14 +433,14 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         _deleted.set(true);
     }
 
-    public boolean allocateCredit(QueueEntry entry)
+    public boolean allocateCredit(ServerMessage message)
     {
-        return _creditManager.useCreditForMessage(entry.getMessage().getSize());
+        return _creditManager.useCreditForMessage(message.getSize());
     }
 
-    public void restoreCredit(QueueEntry queueEntry)
+    public void restoreCredit(ServerMessage message)
     {
-        _creditManager.restoreCredit(1, queueEntry.getSize());
+        _creditManager.restoreCredit(1, message.getSize());
     }
 
     public FlowCreditManager_0_10 getCreditManager()

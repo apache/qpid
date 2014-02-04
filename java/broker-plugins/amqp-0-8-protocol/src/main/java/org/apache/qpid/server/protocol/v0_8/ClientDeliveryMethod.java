@@ -18,11 +18,15 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.subscription.Subscription;
 
-public interface RecordDeliveryMethod
+public interface ClientDeliveryMethod
 {
-    void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag);
+    void deliverToClient(final Subscription sub, final ServerMessage message, final InstanceProperties props,
+                         final long deliveryTag) throws AMQException;
 }

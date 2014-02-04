@@ -44,7 +44,7 @@ public class MessageAcceptCompletionListener implements Method.CompletionListene
     {
         if(_restoreCredit)
         {
-            _sub.restoreCredit(_entry);
+            _sub.restoreCredit(_entry.getMessage());
         }
         if(_entry.isAcquiredBy(_sub.getSubscription()))
         {

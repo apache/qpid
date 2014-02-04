@@ -22,9 +22,130 @@ package org.apache.qpid.server.message;
 
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.subscription.Subscription;
 
 public interface MessageInstance
 {
+
+
+
+    public static enum State
+    {
+        AVAILABLE,
+        ACQUIRED,
+        DEQUEUED,
+        DELETED
+    }
+
+    public abstract class EntryState
+    {
+        private EntryState()
+        {
+        }
+
+        public abstract State getState();
+
+        /**
+         * Returns true if state is either DEQUEUED or DELETED.
+         *
+         * @return true if state is either DEQUEUED or DELETED.
+         */
+        public boolean isDispensed()
+        {
+            State currentState = getState();
+            return currentState == State.DEQUEUED || currentState == State.DELETED;
+        }
+    }
+
+
+    public final class AvailableState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.AVAILABLE;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+
+    public final class DequeuedState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.DEQUEUED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+
+    public final class DeletedState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.DELETED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+    public final class NonSubscriptionAcquiredState extends EntryState
+    {
+        public State getState()
+        {
+            return State.ACQUIRED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+    public final class SubscriptionAcquiredState extends EntryState
+    {
+        private final Subscription _subscription;
+
+        public SubscriptionAcquiredState(Subscription subscription)
+        {
+            _subscription = subscription;
+        }
+
+
+        public State getState()
+        {
+            return State.ACQUIRED;
+        }
+
+        public Subscription getSubscription()
+        {
+            return _subscription;
+        }
+
+        public String toString()
+        {
+            return "{" + getState().name() + " : " + _subscription +"}";
+        }
+    }
+
+
+    final static EntryState AVAILABLE_STATE = new AvailableState();
+    final static EntryState DELETED_STATE = new DeletedState();
+    final static EntryState DEQUEUED_STATE = new DequeuedState();
+    final static EntryState NON_SUBSCRIPTION_ACQUIRED_STATE = new NonSubscriptionAcquiredState();
 
     boolean isAvailable();
 

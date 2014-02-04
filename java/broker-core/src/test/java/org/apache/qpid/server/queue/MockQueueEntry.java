@@ -118,7 +118,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean isRejectedBy(long subscriptionId)
+    public boolean isRejectedBy(Subscription subscription)
     {
 
         return false;

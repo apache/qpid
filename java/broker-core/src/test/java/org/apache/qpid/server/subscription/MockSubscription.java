@@ -27,15 +27,14 @@ import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.StateChangeListener;
 
@@ -153,7 +152,7 @@ public class MockSubscription implements SubscriptionTarget
     {
     }
 
-    public void restoreCredit(QueueEntry queueEntry)
+    public void restoreCredit(ServerMessage message)
     {
     }
 
@@ -215,7 +214,7 @@ public class MockSubscription implements SubscriptionTarget
     }
 
     @Override
-    public boolean allocateCredit(final QueueEntry msg)
+    public boolean allocateCredit(final ServerMessage msg)
     {
         return true;
     }

@@ -284,7 +284,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         getEndpoint().detach();
     }
 
-    public boolean allocateCredit(final QueueEntry msg)
+    public boolean allocateCredit(final ServerMessage msg)
     {
         synchronized (_link.getLock())
         {
@@ -308,7 +308,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
     }
 
 
-    public void restoreCredit(final QueueEntry queueEntry)
+    public void restoreCredit(final ServerMessage message)
     {
         //TODO
     }

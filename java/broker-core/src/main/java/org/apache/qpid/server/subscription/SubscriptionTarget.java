@@ -21,6 +21,7 @@
 package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -56,9 +57,9 @@ public interface SubscriptionTarget
 
     void queueEmpty() throws AMQException;
 
-    boolean allocateCredit(QueueEntry msg);
+    boolean allocateCredit(ServerMessage msg);
 
-    void restoreCredit(QueueEntry queueEntry);
+    void restoreCredit(ServerMessage queueEntry);
 
     boolean isSuspended();
 
