@@ -25,6 +25,7 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -43,6 +44,12 @@ public class MockQueueEntry implements QueueEntry
     public boolean acquire(Subscription sub)
     {
         return false;
+    }
+
+    @Override
+    public int getMaximumDeliveryCount()
+    {
+        return 0;
     }
 
     public boolean acquiredBySubscription()
@@ -224,5 +231,11 @@ public class MockQueueEntry implements QueueEntry
     public InstanceProperties getInstanceProperties()
     {
         return InstanceProperties.EMPTY;
+    }
+
+    @Override
+    public TransactionLogResource getOwningResource()
+    {
+        return getQueue();
     }
 }

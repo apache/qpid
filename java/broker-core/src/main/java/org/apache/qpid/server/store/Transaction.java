@@ -70,7 +70,7 @@ public interface Transaction
 
     public static interface Record
     {
-        TransactionLogResource getQueue();
+        TransactionLogResource getResource();
         EnqueueableMessage getMessage();
     }
 

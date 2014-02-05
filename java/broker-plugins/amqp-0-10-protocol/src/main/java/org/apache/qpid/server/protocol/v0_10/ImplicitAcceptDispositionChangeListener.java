@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 
 class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
@@ -29,10 +30,10 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
     private static final Logger _logger = Logger.getLogger(ImplicitAcceptDispositionChangeListener.class);
 
 
-    private final QueueEntry _entry;
+    private final MessageInstance _entry;
     private SubscriptionTarget_0_10 _target;
 
-    public ImplicitAcceptDispositionChangeListener(QueueEntry entry, SubscriptionTarget_0_10 target)
+    public ImplicitAcceptDispositionChangeListener(MessageInstance entry, SubscriptionTarget_0_10 target)
     {
         _entry = entry;
         _target = target;

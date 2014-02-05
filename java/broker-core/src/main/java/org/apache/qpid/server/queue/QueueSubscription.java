@@ -29,6 +29,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
@@ -225,13 +226,13 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
     }
 
     @Override
-    public boolean wouldSuspend(final QueueEntry msg)
+    public boolean wouldSuspend(final MessageInstance msg)
     {
         return !_target.allocateCredit(msg.getMessage());
     }
 
     @Override
-    public void restoreCredit(final QueueEntry queueEntry)
+    public void restoreCredit(final MessageInstance queueEntry)
     {
         _target.restoreCredit(queueEntry.getMessage());
     }
@@ -298,9 +299,9 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
     }
 
     @Override
-    public boolean resend(final QueueEntry entry) throws AMQException
+    public boolean resend(final MessageInstance entry) throws AMQException
     {
-        return getQueue().resend(entry, this);
+        return getQueue().resend((QueueEntry)entry, this);
     }
 
     final SubFlushRunner getRunner()
@@ -353,7 +354,7 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
         _noLocal = noLocal;
     }
 
-    public final boolean hasInterest(QueueEntry entry)
+    public final boolean hasInterest(MessageInstance entry)
     {
        //check that the message hasn't been rejected
         if (entry.isRejectedBy(this))
@@ -429,7 +430,7 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
         return _createTime;
     }
 
-    public final QueueEntry.SubscriptionAcquiredState getOwningState()
+    public final MessageInstance.SubscriptionAcquiredState getOwningState()
     {
         return _owningState;
     }
@@ -464,7 +465,7 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
         return _deliveredCount.longValue();
     }
 
-    public final void send(final QueueEntry entry, final boolean batch) throws AMQException
+    public final void send(final MessageInstance entry, final boolean batch) throws AMQException
     {
         _deliveredCount.incrementAndGet();
         _deliveredBytes.addAndGet(entry.getMessage().getSize());

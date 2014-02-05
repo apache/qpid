@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -102,7 +103,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public void send(QueueEntry entry, boolean batch) throws AMQException
+        public void send(MessageInstance entry, boolean batch) throws AMQException
         {
             // We don't decrement the reference here as we don't want to consume the message
             // but we do want to send it to the client.
@@ -165,7 +166,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public void send(QueueEntry entry, boolean batch) throws AMQException
+        public void send(MessageInstance entry, boolean batch) throws AMQException
         {
             // if we do not need to wait for client acknowledgements
             // we can decrement the reference count immediately.
@@ -176,7 +177,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
 
             // The send may of course still fail, in which case, as
             // the message is unacked, it will be lost.
-            _txn.dequeue(entry.getQueue(), entry.getMessage(), NOOP);
+            _txn.dequeue(entry.getOwningResource(), entry.getMessage(), NOOP);
 
             ServerMessage message = entry.getMessage();
             MessageReference ref = message.newReference();
@@ -281,7 +282,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public void send(QueueEntry entry, boolean batch) throws AMQException
+        public void send(MessageInstance entry, boolean batch) throws AMQException
         {
 
 
@@ -492,7 +493,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
     }
 
 
-    protected void recordMessageDelivery(final QueueEntry entry, final long deliveryTag)
+    protected void recordMessageDelivery(final MessageInstance entry, final long deliveryTag)
     {
         _recordMethod.recordMessageDelivery(getSubscription(),entry,deliveryTag);
     }
@@ -520,9 +521,9 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         _channel.getProtocolSession().flushBatched();
     }
 
-    protected void addUnacknowledgedMessage(QueueEntry entry)
+    protected void addUnacknowledgedMessage(MessageInstance entry)
     {
-        final long size = entry.getSize();
+        final long size = entry.getMessage().getSize();
         _unacknowledgedBytes.addAndGet(size);
         _unacknowledgedCount.incrementAndGet();
         entry.addStateChangeListener(new StateChangeListener<QueueEntry, QueueEntry.State>()

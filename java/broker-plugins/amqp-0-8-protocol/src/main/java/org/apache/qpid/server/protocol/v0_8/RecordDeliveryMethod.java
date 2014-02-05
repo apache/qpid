@@ -20,10 +20,10 @@
 */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.subscription.Subscription;
 
 public interface RecordDeliveryMethod
 {
-    void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag);
+    void recordMessageDelivery(final Subscription sub, final MessageInstance entry, final long deliveryTag);
 }

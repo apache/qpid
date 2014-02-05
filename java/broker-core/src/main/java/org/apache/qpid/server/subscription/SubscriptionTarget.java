@@ -21,9 +21,9 @@
 package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.util.StateChangeListener;
 
 public interface SubscriptionTarget
@@ -49,7 +49,7 @@ public interface SubscriptionTarget
 
     AMQSessionModel getSessionModel();
 
-    void send(QueueEntry entry, boolean batch) throws AMQException;
+    void send(MessageInstance entry, boolean batch) throws AMQException;
 
     void flushBatched();
 

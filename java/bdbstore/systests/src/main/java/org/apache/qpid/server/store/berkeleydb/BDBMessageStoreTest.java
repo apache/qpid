@@ -416,9 +416,21 @@ public class BDBMessageStoreTest extends MessageStoreTest
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override
+            public String getName()
+            {
+                return getId().toString();
+            }
+
+            @Override
             public UUID getId()
             {
                 return mockQueueId;
+            }
+
+            @Override
+            public boolean isDurable()
+            {
+                return true;
             }
         };
 
@@ -454,9 +466,21 @@ public class BDBMessageStoreTest extends MessageStoreTest
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override
+            public String getName()
+            {
+                return getId().toString();
+            }
+
+            @Override
             public UUID getId()
             {
                 return mockQueueId;
+            }
+
+            @Override
+            public boolean isDurable()
+            {
+                return true;
             }
         };
 
@@ -511,9 +535,21 @@ public class BDBMessageStoreTest extends MessageStoreTest
         TransactionLogResource mockQueue = new TransactionLogResource()
         {
             @Override
+            public String getName()
+            {
+                return getId().toString();
+            }
+
+            @Override
             public UUID getId()
             {
                 return mockQueueId;
+            }
+
+            @Override
+            public boolean isDurable()
+            {
+                return true;
             }
         };
 

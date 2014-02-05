@@ -55,6 +55,7 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -399,9 +400,9 @@ public class ServerSession extends Session
         // Broker shouldn't block awaiting close - thus do override this method to do nothing
     }
 
-    public void acknowledge(final SubscriptionTarget_0_10 sub, final QueueEntry entry)
+    public void acknowledge(final SubscriptionTarget_0_10 sub, final MessageInstance entry)
     {
-        _transaction.dequeue(entry.getQueue(), entry.getMessage(),
+        _transaction.dequeue(entry.getOwningResource(), entry.getMessage(),
                              new ServerTransaction.Action()
                              {
 

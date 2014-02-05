@@ -22,10 +22,12 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Xid;
 
@@ -74,7 +76,7 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void dequeue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
+    public void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
     {
         if(_branch != null)
         {
@@ -87,13 +89,13 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void dequeue(Collection<QueueEntry> messages, Action postTransactionAction)
+    public void dequeue(Collection<MessageInstance> messages, Action postTransactionAction)
     {
         if(_branch != null)
         {
-            for(QueueEntry entry : messages)
+            for(MessageInstance entry : messages)
             {
-                _branch.dequeue(entry.getQueue(), entry.getMessage());
+                _branch.dequeue(entry.getOwningResource(), entry.getMessage());
             }
             _branch.addPostTransactionAction(postTransactionAction);
         }

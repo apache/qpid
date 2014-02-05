@@ -28,6 +28,7 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
@@ -54,7 +55,7 @@ public class MockSubscription implements SubscriptionTarget
     private AMQQueue queue = null;
     private StateChangeListener<SubscriptionTarget, State> _listener = null;
     private State _state = State.ACTIVE;
-    private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
+    private ArrayList<MessageInstance> messages = new ArrayList<MessageInstance>();
     private final Lock _stateChangeLock = new ReentrantLock();
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
@@ -156,7 +157,7 @@ public class MockSubscription implements SubscriptionTarget
     {
     }
 
-    public void send(QueueEntry entry, boolean batch) throws AMQException
+    public void send(MessageInstance entry, boolean batch) throws AMQException
     {
         if (messages.contains(entry))
         {
@@ -203,7 +204,7 @@ public class MockSubscription implements SubscriptionTarget
         _listener = listener;
     }
 
-    public ArrayList<QueueEntry> getMessages()
+    public ArrayList<MessageInstance> getMessages()
     {
         return messages;
     }

@@ -28,6 +28,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoredMessage;
@@ -194,8 +195,8 @@ public class AckTest extends QpidTestCase
         {
             assertTrue(deliveryTag == i);
             i++;
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
         }
 
     }
@@ -275,8 +276,8 @@ public class AckTest extends QpidTestCase
         for (long deliveryTag : deliveryTagSet)
         {
             assertTrue(deliveryTag == i);
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
             // 5 is the delivery tag of the message that *should* be removed
             if (++i == 5)
             {
@@ -314,8 +315,8 @@ public class AckTest extends QpidTestCase
         for (long deliveryTag : deliveryTagSet)
         {
             assertTrue(deliveryTag == i + 5);
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
             ++i;
         }
     }
@@ -346,8 +347,8 @@ public class AckTest extends QpidTestCase
         for (long deliveryTag : deliveryTagSet)
         {
             assertTrue(deliveryTag == i + 5);
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
             ++i;
         }
     }

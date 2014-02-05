@@ -24,5 +24,7 @@ import java.util.UUID;
 
 public interface TransactionLogResource
 {
+    String getName();
     public UUID getId();
+    boolean isDurable();
 }

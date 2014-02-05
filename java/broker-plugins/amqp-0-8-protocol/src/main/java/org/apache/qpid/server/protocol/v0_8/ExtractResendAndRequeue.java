@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol.v0_8;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.subscription.Subscription;
@@ -35,26 +36,20 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 {
     private static final Logger _log = Logger.getLogger(ExtractResendAndRequeue.class);
 
-    private final Map<Long, QueueEntry> _msgToRequeue;
-    private final Map<Long, QueueEntry> _msgToResend;
-    private final boolean _requeueIfUnableToResend;
+    private final Map<Long, MessageInstance> _msgToRequeue;
+    private final Map<Long, MessageInstance> _msgToResend;
     private final UnacknowledgedMessageMap _unacknowledgedMessageMap;
-    private final MessageStore _transactionLog;
 
     public ExtractResendAndRequeue(UnacknowledgedMessageMap unacknowledgedMessageMap,
-                                   Map<Long, QueueEntry> msgToRequeue,
-                                   Map<Long, QueueEntry> msgToResend,
-                                   boolean requeueIfUnableToResend,
-                                   MessageStore txnLog)
+                                   Map<Long, MessageInstance> msgToRequeue,
+                                   Map<Long, MessageInstance> msgToResend)
     {
         _unacknowledgedMessageMap = unacknowledgedMessageMap;
         _msgToRequeue = msgToRequeue;
         _msgToResend = msgToResend;
-        _requeueIfUnableToResend = requeueIfUnableToResend;
-        _transactionLog = txnLog;
     }
 
-    public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
+    public boolean callback(final long deliveryTag, MessageInstance message) throws AMQException
     {
 
         message.setRedelivered();
@@ -73,56 +68,11 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
         }
         else
         {
-            // Message has no consumer tag, so was "delivered" to a GET
-            // or consumer no longer registered
-            // cannot resend, so re-queue.
-            if (!message.isQueueDeleted())
-            {
-                if (_requeueIfUnableToResend)
-                {
-                    _msgToRequeue.put(deliveryTag, message);
-                }
-                else
-                {
-
-                    dequeueEntry(message);
-                    _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
-                }
-            }
-            else
-            {
-                dequeueEntry(message);
-                _log.warn("Message.queue is null and no DeadLetter Queue so dropping message:" + message);
-            }
+            _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
         }
 
         // false means continue processing
         return false;
-    }
-
-
-    private void dequeueEntry(final QueueEntry node)
-    {
-        ServerTransaction txn = new AutoCommitTransaction(_transactionLog);
-        dequeueEntry(node, txn);
-    }
-
-    private void dequeueEntry(final QueueEntry node, ServerTransaction txn)
-    {
-        txn.dequeue(node.getQueue(), node.getMessage(),
-                    new ServerTransaction.Action()
-                    {
-
-                        public void postCommit()
-                        {
-                            node.delete();
-                        }
-
-                        public void onRollback()
-                        {
-
-                        }
-                    });
     }
 
     public void visitComplete()

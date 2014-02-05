@@ -65,6 +65,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -85,14 +86,14 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     private SubscriptionTarget_1_0 _target;
 
     private boolean _draining;
-    private final Map<Binary, QueueEntry> _unsettledMap =
-            new HashMap<Binary, QueueEntry>();
+    private final Map<Binary, MessageInstance> _unsettledMap =
+            new HashMap<Binary, MessageInstance>();
 
     private final ConcurrentHashMap<Binary, UnsettledAction> _unsettledActionMap =
             new ConcurrentHashMap<Binary, UnsettledAction>();
     private volatile SendingLinkAttachment _linkAttachment;
     private TerminusDurability _durability;
-    private List<QueueEntry> _resumeFullTransfers = new ArrayList<QueueEntry>();
+    private List<MessageInstance> _resumeFullTransfers = new ArrayList<MessageInstance>();
     private List<Binary> _resumeAcceptedTransfers = new ArrayList<Binary>();
     private Runnable _closeAction;
     private final AMQQueue _queue;
@@ -559,7 +560,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         }
     }
 
-    public void addUnsettled(Binary tag, UnsettledAction unsettledAction, QueueEntry queueEntry)
+    public void addUnsettled(Binary tag, UnsettledAction unsettledAction, MessageInstance queueEntry)
     {
         _unsettledActionMap.put(tag,unsettledAction);
         if(getTransactionId() == null)
@@ -631,14 +632,14 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         SendingLinkEndpoint endpoint = linkAttachment.getEndpoint();
         endpoint.setDeliveryStateHandler(this);
         Map initialUnsettledMap = endpoint.getInitialUnsettledMap();
-        Map<Binary, QueueEntry> unsettledCopy = new HashMap<Binary, QueueEntry>(_unsettledMap);
+        Map<Binary, MessageInstance> unsettledCopy = new HashMap<Binary, MessageInstance>(_unsettledMap);
         _resumeAcceptedTransfers.clear();
         _resumeFullTransfers.clear();
 
-        for(Map.Entry<Binary, QueueEntry> entry : unsettledCopy.entrySet())
+        for(Map.Entry<Binary, MessageInstance> entry : unsettledCopy.entrySet())
         {
             Binary deliveryTag = entry.getKey();
-            final QueueEntry queueEntry = entry.getValue();
+            final MessageInstance queueEntry = entry.getValue();
             if(initialUnsettledMap == null || !initialUnsettledMap.containsKey(deliveryTag))
             {
                 queueEntry.setRedelivered();
@@ -706,9 +707,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
     public Map getUnsettledOutcomeMap()
     {
-        Map<Binary, QueueEntry> unsettled = new HashMap<Binary, QueueEntry>(_unsettledMap);
+        Map<Binary, MessageInstance> unsettled = new HashMap<Binary, MessageInstance>(_unsettledMap);
 
-        for(Map.Entry<Binary, QueueEntry> entry : unsettled.entrySet())
+        for(Map.Entry<Binary, MessageInstance> entry : unsettled.entrySet())
         {
             entry.setValue(null);
         }
@@ -719,5 +720,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public void setCloseAction(Runnable action)
     {
         _closeAction = action;
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _vhost;
     }
 }

@@ -38,6 +38,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Released;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -112,7 +113,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         }
     }
 
-    public void send(QueueEntry entry, boolean batch) throws AMQException
+    public void send(MessageInstance entry, boolean batch) throws AMQException
     {
         // TODO
         send(entry);
@@ -123,7 +124,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         // TODO
     }
 
-    public void send(final QueueEntry queueEntry) throws AMQException
+    public void send(final MessageInstance queueEntry) throws AMQException
     {
         ServerMessage serverMessage = queueEntry.getMessage();
         Message_1_0 message;
@@ -134,7 +135,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         else
         {
             final MessageConverter converter = MessageConverterRegistry.getConverter(serverMessage.getClass(), Message_1_0.class);
-            message = (Message_1_0) converter.convert(serverMessage, queueEntry.getQueue().getVirtualHost());
+            message = (Message_1_0) converter.convert(serverMessage, _link.getVirtualHost());
         }
 
         Transfer transfer = new Transfer();
@@ -344,10 +345,10 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
     private class DispositionAction implements UnsettledAction
     {
 
-        private final QueueEntry _queueEntry;
+        private final MessageInstance _queueEntry;
         private final Binary _deliveryTag;
 
-        public DispositionAction(Binary tag, QueueEntry queueEntry)
+        public DispositionAction(Binary tag, MessageInstance queueEntry)
         {
             _deliveryTag = tag;
             _queueEntry = queueEntry;
@@ -378,7 +379,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
 
             if(outcome instanceof Accepted)
             {
-                txn.dequeue(_queueEntry.getQueue(), _queueEntry.getMessage(),
+                txn.dequeue(_queueEntry.getOwningResource(), _queueEntry.getMessage(),
                         new ServerTransaction.Action()
                         {
 
@@ -469,7 +470,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
     private class DoNothingAction implements UnsettledAction
     {
         public DoNothingAction(final Binary tag,
-                               final QueueEntry queueEntry)
+                               final MessageInstance queueEntry)
         {
         }
 

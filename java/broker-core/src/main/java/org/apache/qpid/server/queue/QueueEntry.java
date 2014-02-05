@@ -35,48 +35,11 @@ public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>
 
     long getSize();
 
-    boolean getDeliveredToConsumer();
-
-    boolean expired() throws AMQException;
-
-    boolean acquire(Subscription sub);
-
-    boolean acquiredBySubscription();
-    boolean isAcquiredBy(Subscription subscription);
-
-    void setRedelivered();
-
-    boolean isRedelivered();
-
-    Subscription getDeliveredSubscription();
-
-    void reject();
-
-    boolean isRejectedBy(Subscription subscription);
-
-    int routeToAlternate(final Action<QueueEntry> action, ServerTransaction txn);
-
     boolean isQueueDeleted();
 
     QueueEntry getNextNode();
 
     QueueEntry getNextValidEntry();
 
-    void addStateChangeListener(StateChangeListener<QueueEntry, State> listener);
-    boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener);
-
-
-    /**
-     * Number of times this queue entry has been delivered.
-     *
-     * @return delivery count
-     */
-    int getDeliveryCount();
-
-    void incrementDeliveryCount();
-
-    void decrementDeliveryCount();
-
-    Filterable asFilterable();
 
 }

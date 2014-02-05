@@ -22,12 +22,58 @@ package org.apache.qpid.server.message;
 
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
 
 public interface MessageInstance
 {
 
 
+    /**
+     * Number of times this queue entry has been delivered.
+     *
+     * @return delivery count
+     */
+    int getDeliveryCount();
+
+    void incrementDeliveryCount();
+
+    void decrementDeliveryCount();
+
+    void addStateChangeListener(StateChangeListener<QueueEntry, State> listener);
+
+    boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener);
+
+    boolean acquiredBySubscription();
+
+    boolean isAcquiredBy(Subscription subscription);
+
+    void setRedelivered();
+
+    boolean isRedelivered();
+
+    Subscription getDeliveredSubscription();
+
+    void reject();
+
+    boolean isRejectedBy(Subscription subscription);
+
+    boolean getDeliveredToConsumer();
+
+    boolean expired() throws AMQException;
+
+    boolean acquire(Subscription sub);
+
+    int getMaximumDeliveryCount();
+
+    int routeToAlternate(Action<QueueEntry> action, ServerTransaction txn);
+
+    Filterable asFilterable();
 
     public static enum State
     {
@@ -164,4 +210,6 @@ public interface MessageInstance
     ServerMessage getMessage();
 
     InstanceProperties getInstanceProperties();
+
+    TransactionLogResource getOwningResource();
 }

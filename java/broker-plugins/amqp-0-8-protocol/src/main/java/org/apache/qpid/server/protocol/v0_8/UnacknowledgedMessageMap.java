@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.Collection;
@@ -36,24 +37,24 @@ public interface UnacknowledgedMessageMap
          *@param message the message being iterated over @return true to stop iteration, false to continue
          * @throws AMQException
          */
-        boolean callback(final long deliveryTag, QueueEntry message) throws AMQException;
+        boolean callback(final long deliveryTag, MessageInstance message) throws AMQException;
 
         void visitComplete();
     }
 
     void visit(Visitor visitor) throws AMQException;
 
-    void add(long deliveryTag, QueueEntry message);
+    void add(long deliveryTag, MessageInstance message);
 
-    QueueEntry remove(long deliveryTag);
+    MessageInstance remove(long deliveryTag);
 
-    Collection<QueueEntry> cancelAllMessages();
+    Collection<MessageInstance> cancelAllMessages();
 
     int size();
 
     void clear();
 
-    QueueEntry get(long deliveryTag);
+    MessageInstance get(long deliveryTag);
 
     /**
      * Get the set of delivery tags that are outstanding.
@@ -62,7 +63,7 @@ public interface UnacknowledgedMessageMap
      */
     Set<Long> getDeliveryTags();
 
-    Collection<QueueEntry> acknowledge(long deliveryTag, boolean multiple);
+    Collection<MessageInstance> acknowledge(long deliveryTag, boolean multiple);
 
 }
 

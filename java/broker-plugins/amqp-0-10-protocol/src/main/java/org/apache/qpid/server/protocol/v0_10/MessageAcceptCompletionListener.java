@@ -21,17 +21,18 @@
 
 package org.apache.qpid.server.protocol.v0_10;
 
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.transport.Method;
 
 public class MessageAcceptCompletionListener implements Method.CompletionListener
 {
     private final SubscriptionTarget_0_10 _sub;
-    private final QueueEntry _entry;
+    private final MessageInstance _entry;
     private final ServerSession _session;
     private boolean _restoreCredit;
 
-    public MessageAcceptCompletionListener(SubscriptionTarget_0_10 sub, ServerSession session, QueueEntry entry, boolean restoreCredit)
+    public MessageAcceptCompletionListener(SubscriptionTarget_0_10 sub, ServerSession session, MessageInstance entry, boolean restoreCredit)
     {
         super();
         _sub = sub;

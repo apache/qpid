@@ -30,6 +30,7 @@ import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.flow.FlowCreditManager;
@@ -149,7 +150,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         final RecordDeliveryMethod getRecordMethod = new RecordDeliveryMethod()
         {
 
-            public void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+            public void recordMessageDelivery(final Subscription sub, final MessageInstance entry, final long deliveryTag)
             {
                 channel.addUnacknowledgedMessage(entry, deliveryTag, null);
             }

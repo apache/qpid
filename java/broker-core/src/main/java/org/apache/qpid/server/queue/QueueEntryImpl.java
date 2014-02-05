@@ -28,6 +28,7 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -456,6 +457,12 @@ public abstract class QueueEntryImpl implements QueueEntry
         return _deliveryCount;
     }
 
+    @Override
+    public int getMaximumDeliveryCount()
+    {
+        return getQueue().getMaximumDeliveryCount();
+    }
+
     public void incrementDeliveryCount()
     {
         _deliveryCountUpdater.incrementAndGet(this);
@@ -489,6 +496,12 @@ public abstract class QueueEntryImpl implements QueueEntry
             return sub.resend(this);
         }
         return false;
+    }
+
+    @Override
+    public TransactionLogResource getOwningResource()
+    {
+        return getQueue();
     }
 
     private static class EntryInstanceProperties implements InstanceProperties

@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol.v0_8;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -63,7 +64,6 @@ public class ExtractResendAndRequeueTest extends TestCase
     private UnacknowledgedMessageMapImpl _unacknowledgedMessageMap;
     private static final int INITIAL_MSG_COUNT = 10;
     private AMQQueue _queue;
-    private MessageStore _messageStore = new TestMemoryMessageStore();
     private LinkedList<QueueEntry> _referenceList = new LinkedList<QueueEntry>();
     private Subscription _subscription;
     private boolean _queueDeleted;
@@ -141,12 +141,12 @@ public class ExtractResendAndRequeueTest extends TestCase
         //We don't need the subscription object here.
         acquireMessages(_referenceList);
 
-        final Map<Long, QueueEntry> msgToRequeue = new LinkedHashMap<Long, QueueEntry>();
-        final Map<Long, QueueEntry> msgToResend = new LinkedHashMap<Long, QueueEntry>();
+        final Map<Long, MessageInstance> msgToRequeue = new LinkedHashMap<Long, MessageInstance>();
+        final Map<Long, MessageInstance> msgToResend = new LinkedHashMap<Long, MessageInstance>();
 
         // requeueIfUnableToResend doesn't matter here.
         _unacknowledgedMessageMap.visit(new ExtractResendAndRequeue(_unacknowledgedMessageMap, msgToRequeue,
-                                                                    msgToResend, true, _messageStore));
+                                                                    msgToResend));
 
         assertEquals("Message count for resend not correct.", INITIAL_MSG_COUNT, msgToResend.size());
         assertEquals("Message count for requeue not correct.", 0, msgToRequeue.size());
@@ -170,94 +170,17 @@ public class ExtractResendAndRequeueTest extends TestCase
         // Close subscription
         when(_subscription.isClosed()).thenReturn(true);
 
-        final Map<Long, QueueEntry> msgToRequeue = new LinkedHashMap<Long, QueueEntry>();
-        final Map<Long, QueueEntry> msgToResend = new LinkedHashMap<Long, QueueEntry>();
+        final Map<Long, MessageInstance> msgToRequeue = new LinkedHashMap<Long, MessageInstance>();
+        final Map<Long, MessageInstance> msgToResend = new LinkedHashMap<Long, MessageInstance>();
 
         // requeueIfUnableToResend doesn't matter here.
         _unacknowledgedMessageMap.visit(new ExtractResendAndRequeue(_unacknowledgedMessageMap, msgToRequeue,
-                                                                    msgToResend, true, _messageStore));
+                                                                    msgToResend));
 
         assertEquals("Message count for resend not correct.", 0, msgToResend.size());
         assertEquals("Message count for requeue not correct.", INITIAL_MSG_COUNT, msgToRequeue.size());
         assertEquals("Map was not emptied", 0, _unacknowledgedMessageMap.size());
     }
 
-    /**
-     * If the subscription is null, due to message being retrieved via a GET, And we request that messages are requeued
-     * requeueIfUnableToResend(set to true) then all messages should be sent to the msgToRequeue map.
-     *
-     * @throws AMQException the visit interface throws this
-     */
-
-    public void testRequeueDueToMessageHavingNoConsumerTag() throws AMQException
-    {
-        final Map<Long, QueueEntry> msgToRequeue = new LinkedHashMap<Long, QueueEntry>();
-        final Map<Long, QueueEntry> msgToResend = new LinkedHashMap<Long, QueueEntry>();
-
-        // requeueIfUnableToResend = true so all messages should go to msgToRequeue
-        _unacknowledgedMessageMap.visit(new ExtractResendAndRequeue(_unacknowledgedMessageMap, msgToRequeue,
-                                                                    msgToResend, true, _messageStore));
-
-        assertEquals("Message count for resend not correct.", 0, msgToResend.size());
-        assertEquals("Message count for requeue not correct.", INITIAL_MSG_COUNT, msgToRequeue.size());
-        assertEquals("Map was not emptied", 0, _unacknowledgedMessageMap.size());
-    }
-
-    /**
-     * If the subscription is null, due to message being retrieved via a GET, And we request that we don't
-     * requeueIfUnableToResend(set to false) then all messages should be dropped as we do not have a dead letter queue.
-     *
-     * @throws AMQException the visit interface throws this
-     */
-
-    public void testDrop() throws AMQException
-    {
-        final Map<Long, QueueEntry> msgToRequeue = new LinkedHashMap<Long, QueueEntry>();
-        final Map<Long, QueueEntry> msgToResend = new LinkedHashMap<Long, QueueEntry>();
-
-        // requeueIfUnableToResend = false so all messages should be dropped all maps should be empty
-        _unacknowledgedMessageMap.visit(new ExtractResendAndRequeue(_unacknowledgedMessageMap, msgToRequeue,
-                                                                    msgToResend, false, _messageStore));
-
-        assertEquals("Message count for resend not correct.", 0, msgToResend.size());
-        assertEquals("Message count for requeue not correct.", 0, msgToRequeue.size());
-        assertEquals("Map was not emptied", 0, _unacknowledgedMessageMap.size());
-
-
-        for (QueueEntry entry : _referenceList)
-        {
-            assertTrue("Message was not discarded", entry.isDeleted());
-        }
-
-    }
-
-    /**
-     * If the subscription is null, due to message being retrieved via a GET, AND the queue upon which the message was
-     * delivered has been deleted then it is not possible to requeue. Currently we simply discard the message but in the
-     * future we may wish to dead letter the message.
-     *
-     * Validate that at the end of the visit all Maps are empty and all messages are marked as deleted
-     *
-     * @throws AMQException the visit interface throws this
-     */
-    public void testDiscard() throws AMQException
-    {
-        final Map<Long, QueueEntry> msgToRequeue = new LinkedHashMap<Long, QueueEntry>();
-        final Map<Long, QueueEntry> msgToResend = new LinkedHashMap<Long, QueueEntry>();
-
-        _queueDeleted = true;
-        // requeueIfUnableToResend : value doesn't matter here as queue has been deleted
-        _unacknowledgedMessageMap.visit(new ExtractResendAndRequeue(_unacknowledgedMessageMap, msgToRequeue,
-                                                                    msgToResend, false, _messageStore));
-
-        assertEquals("Message count for resend not correct.", 0, msgToResend.size());
-        assertEquals("Message count for requeue not correct.", 0, msgToRequeue.size());
-        assertEquals("Map was not emptied", 0, _unacknowledgedMessageMap.size());
-
-        for (QueueEntry entry : _referenceList)
-        {
-            assertTrue("Message was not discarded", entry.isDeleted());
-        }
-    }
 
 }

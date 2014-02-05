@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicRejectBody;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -65,7 +66,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
 
         long deliveryTag = body.getDeliveryTag();
 
-        QueueEntry message = channel.getUnacknowledgedMessageMap().get(deliveryTag);
+        MessageInstance message = channel.getUnacknowledgedMessageMap().get(deliveryTag);
 
         if (message == null)
         {
@@ -73,16 +74,6 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
         }
         else
         {
-            if (message.isQueueDeleted())
-            {
-                _logger.warn("Message's Queue has already been purged, dropping message");
-                message = channel.getUnacknowledgedMessageMap().remove(deliveryTag);
-                if(message != null)
-                {
-                    message.delete();
-                }
-                return;
-            }
 
             if (message.getMessage() == null)
             {
@@ -100,11 +91,11 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
 
             if (body.getRequeue())
             {
-                channel.requeue(deliveryTag);
-
                 //this requeue represents a message rejected from the pre-dispatch queue
                 //therefore we need to amend the delivery counter.
                 message.decrementDeliveryCount();
+
+                channel.requeue(deliveryTag);
             }
             else
             {

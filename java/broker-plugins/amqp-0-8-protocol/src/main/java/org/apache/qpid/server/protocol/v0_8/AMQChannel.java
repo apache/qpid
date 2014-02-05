@@ -56,6 +56,7 @@ import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
@@ -67,7 +68,9 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionTarget;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
@@ -143,7 +146,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     private volatile boolean _rollingBack;
 
     private static final Runnable NULL_TASK = new Runnable() { public void run() {} };
-    private List<QueueEntry> _resendList = new ArrayList<QueueEntry>();
+    private List<MessageInstance> _resendList = new ArrayList<MessageInstance>();
     private static final
     AMQShortString IMMEDIATE_DELIVERY_REPLY_TEXT = new AMQShortString("Immediate delivery is not possible.");
     private long _createTime = System.currentTimeMillis();
@@ -673,22 +676,13 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      *                    delivery tag)
      * @param subscription The consumer that is to acknowledge this message.
      */
-    public void addUnacknowledgedMessage(QueueEntry entry, long deliveryTag, Subscription subscription)
+    public void addUnacknowledgedMessage(MessageInstance entry, long deliveryTag, Subscription subscription)
     {
         if (_logger.isDebugEnabled())
         {
-            if (entry.getQueue() == null)
-            {
-                _logger.debug("Adding unacked message with a null queue:" + entry);
-            }
-            else
-            {
-                if (_logger.isDebugEnabled())
-                {
                     _logger.debug(debugIdentity() + " Adding unacked message(" + entry.getMessage().toString() + " DT:" + deliveryTag
-                               + ") with a queue(" + entry.getQueue() + ") for " + subscription);
-                }
-            }
+                               + ") for " + subscription);
+
         }
 
         _unacknowledgedMessageMap.add(deliveryTag, entry);
@@ -711,7 +705,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     public void requeue() throws AMQException
     {
         // we must create a new map since all the messages will get a new delivery tag when they are redelivered
-        Collection<QueueEntry> messagesToBeDelivered = _unacknowledgedMessageMap.cancelAllMessages();
+        Collection<MessageInstance> messagesToBeDelivered = _unacknowledgedMessageMap.cancelAllMessages();
 
         if (!messagesToBeDelivered.isEmpty())
         {
@@ -722,21 +716,13 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         }
 
-        for (QueueEntry unacked : messagesToBeDelivered)
+        for (MessageInstance unacked : messagesToBeDelivered)
         {
-            if (!unacked.isQueueDeleted())
-            {
-                // Mark message redelivered
-                unacked.setRedelivered();
+            // Mark message redelivered
+            unacked.setRedelivered();
 
-                // Ensure message is released for redelivery
-                unacked.release();
-
-            }
-            else
-            {
-                unacked.delete();
-            }
+            // Ensure message is released for redelivery
+            unacked.release();
         }
 
     }
@@ -750,7 +736,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      */
     public void requeue(long deliveryTag) throws AMQException
     {
-        QueueEntry unacked = _unacknowledgedMessageMap.remove(deliveryTag);
+        MessageInstance unacked = _unacknowledgedMessageMap.remove(deliveryTag);
 
         if (unacked != null)
         {
@@ -758,20 +744,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             unacked.setRedelivered();
 
             // Ensure message is released for redelivery
-            if (!unacked.isQueueDeleted())
-            {
+            unacked.release();
 
-                // Ensure message is released for redelivery
-                unacked.release();
-
-            }
-            else
-            {
-                _logger.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked
-                          + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
-
-                unacked.delete();
-            }
         }
         else
         {
@@ -784,10 +758,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     public boolean isMaxDeliveryCountEnabled(final long deliveryTag)
     {
-        final QueueEntry queueEntry = _unacknowledgedMessageMap.get(deliveryTag);
+        final MessageInstance queueEntry = _unacknowledgedMessageMap.get(deliveryTag);
         if (queueEntry != null)
         {
-            final int maximumDeliveryCount = queueEntry.getQueue().getMaximumDeliveryCount();
+            final int maximumDeliveryCount = queueEntry.getMaximumDeliveryCount();
             return maximumDeliveryCount > 0;
         }
 
@@ -796,10 +770,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     public boolean isDeliveredTooManyTimes(final long deliveryTag)
     {
-        final QueueEntry queueEntry = _unacknowledgedMessageMap.get(deliveryTag);
+        final MessageInstance queueEntry = _unacknowledgedMessageMap.get(deliveryTag);
         if (queueEntry != null)
         {
-            final int maximumDeliveryCount = queueEntry.getQueue().getMaximumDeliveryCount();
+            final int maximumDeliveryCount = queueEntry.getMaximumDeliveryCount();
             final int numDeliveries = queueEntry.getDeliveryCount();
             return maximumDeliveryCount != 0 && numDeliveries >= maximumDeliveryCount;
         }
@@ -818,8 +792,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     {
 
 
-        final Map<Long, QueueEntry> msgToRequeue = new LinkedHashMap<Long, QueueEntry>();
-        final Map<Long, QueueEntry> msgToResend = new LinkedHashMap<Long, QueueEntry>();
+        final Map<Long, MessageInstance> msgToRequeue = new LinkedHashMap<Long, MessageInstance>();
+        final Map<Long, MessageInstance> msgToResend = new LinkedHashMap<Long, MessageInstance>();
 
         if (_logger.isDebugEnabled())
         {
@@ -831,9 +805,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         // and those that don't to be requeued.
         _unacknowledgedMessageMap.visit(new ExtractResendAndRequeue(_unacknowledgedMessageMap,
                                                                     msgToRequeue,
-                                                                    msgToResend,
-                                                                    requeue,
-                                                                    _messageStore));
+                                                                    msgToResend
+        ));
 
 
         // Process Messages to Resend
@@ -849,9 +822,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             }
         }
 
-        for (Map.Entry<Long, QueueEntry> entry : msgToResend.entrySet())
+        for (Map.Entry<Long, MessageInstance> entry : msgToResend.entrySet())
         {
-            QueueEntry message = entry.getValue();
+            MessageInstance message = entry.getValue();
             long deliveryTag = entry.getKey();
 
             //Amend the delivery counter as the client hasn't seen these messages yet.
@@ -877,9 +850,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         }
 
         // Process Messages to Requeue at the front of the queue
-        for (Map.Entry<Long, QueueEntry> entry : msgToRequeue.entrySet())
+        for (Map.Entry<Long, MessageInstance> entry : msgToRequeue.entrySet())
         {
-            QueueEntry message = entry.getValue();
+            MessageInstance message = entry.getValue();
             long deliveryTag = entry.getKey();
 
             //Amend the delivery counter as the client hasn't seen these messages yet.
@@ -905,11 +878,11 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      */
     public void acknowledgeMessage(long deliveryTag, boolean multiple) throws AMQException
     {
-        Collection<QueueEntry> ackedMessages = getAckedMessages(deliveryTag, multiple);
+        Collection<MessageInstance> ackedMessages = getAckedMessages(deliveryTag, multiple);
         _transaction.dequeue(ackedMessages, new MessageAcknowledgeAction(ackedMessages));
     }
 
-    private Collection<QueueEntry> getAckedMessages(long deliveryTag, boolean multiple)
+    private Collection<MessageInstance> getAckedMessages(long deliveryTag, boolean multiple)
     {
 
         return _unacknowledgedMessageMap.acknowledge(deliveryTag, multiple);
@@ -1077,7 +1050,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         postRollbackTask.run();
 
-        for(QueueEntry entry : _resendList)
+        for(MessageInstance entry : _resendList)
         {
             Subscription sub = entry.getDeliveredSubscription();
             if(sub == null || sub.isClosed())
@@ -1152,7 +1125,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     private final RecordDeliveryMethod _recordDeliveryMethod = new RecordDeliveryMethod()
         {
 
-            public void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+            public void recordMessageDelivery(final Subscription sub, final MessageInstance entry, final long deliveryTag)
             {
                 addUnacknowledgedMessage(entry, deliveryTag, sub);
             }
@@ -1288,9 +1261,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     private class MessageAcknowledgeAction implements ServerTransaction.Action
     {
-        private final Collection<QueueEntry> _ackedMessages;
+        private final Collection<MessageInstance> _ackedMessages;
 
-        public MessageAcknowledgeAction(Collection<QueueEntry> ackedMessages)
+        public MessageAcknowledgeAction(Collection<MessageInstance> ackedMessages)
         {
             _ackedMessages = ackedMessages;
         }
@@ -1299,7 +1272,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         {
             try
             {
-                for(QueueEntry entry : _ackedMessages)
+                for(MessageInstance entry : _ackedMessages)
                 {
                     entry.delete();
                 }
@@ -1322,7 +1295,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             {
                 try
                 {
-                    for(QueueEntry entry : _ackedMessages)
+                    for(MessageInstance entry : _ackedMessages)
                     {
                         entry.release();
                     }
@@ -1490,7 +1463,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     public void deadLetter(long deliveryTag) throws AMQException
     {
         final UnacknowledgedMessageMap unackedMap = getUnacknowledgedMessageMap();
-        final QueueEntry rejectedQueueEntry = unackedMap.remove(deliveryTag);
+        final MessageInstance rejectedQueueEntry = unackedMap.remove(deliveryTag);
 
         if (rejectedQueueEntry == null)
         {
@@ -1499,6 +1472,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         else
         {
             final ServerMessage msg = rejectedQueueEntry.getMessage();
+            final Subscription sub = rejectedQueueEntry.getDeliveredSubscription();
 
             int requeues = rejectedQueueEntry.routeToAlternate(new Action<QueueEntry>()
                 {
@@ -1512,23 +1486,28 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
             if(requeues == 0)
             {
-                final AMQQueue queue = rejectedQueueEntry.getQueue();
 
-                final Exchange altExchange = queue.getAlternateExchange();
-
-                if (altExchange == null)
+                final TransactionLogResource owningResource = rejectedQueueEntry.getOwningResource();
+                if(owningResource instanceof AMQQueue)
                 {
-                    _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
-                    _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getRoutingKey()));
+                    final AMQQueue queue = (AMQQueue) owningResource;
 
-                }
-                else
-                {
-                    _logger.debug(
-                            "Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: "
-                            + deliveryTag);
-                    _actor.message(_logSubject,
-                                   ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
+                    final Exchange altExchange = queue.getAlternateExchange();
+
+                    if (altExchange == null)
+                    {
+                        _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
+                        _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getRoutingKey()));
+
+                    }
+                    else
+                    {
+                        _logger.debug(
+                                "Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: "
+                                + deliveryTag);
+                        _actor.message(_logSubject,
+                                       ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
+                    }
                 }
             }
 

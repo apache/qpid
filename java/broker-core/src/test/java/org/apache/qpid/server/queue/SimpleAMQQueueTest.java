@@ -40,6 +40,7 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -206,7 +207,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                     EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after an enqueue", _subscription.getQueueContext().getReleasedEntry());
+        assertNull("There should be no releasedEntry after an enqueue",
+                   _subscription.getQueueContext().getReleasedEntry());
     }
 
     /**
@@ -222,7 +224,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                     EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
         assertEquals(messageB, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after enqueues",  _subscription.getQueueContext().getReleasedEntry());
+        assertNull("There should be no releasedEntry after enqueues",
+                   _subscription.getQueueContext().getReleasedEntry());
     }
 
     /**
@@ -273,7 +276,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertFalse("Redelivery flag should remain be unset",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", _subscription.getQueueContext().getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed",
+                   _subscription.getQueueContext().getReleasedEntry());
     }
 
     /**
@@ -321,7 +325,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertTrue("Expecting the queue entry to be now expired", queueEntries.get(0).expired());
         assertEquals("Total number of messages sent should not have changed", 1, _subscriptionTarget.getMessages().size());
         assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", _subscription.getQueueContext().getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed",
+                   _subscription.getQueueContext().getReleasedEntry());
 
     }
 
@@ -375,7 +380,8 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertTrue("Redelivery flag should now be set",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", _subscription.getQueueContext().getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed",
+                   _subscription.getQueueContext().getReleasedEntry());
     }
 
 
@@ -430,8 +436,10 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertEquals("Unexpected total number of messages sent to both subscriptions after release",
                      3,
                      target1.getMessages().size() + target2.getMessages().size());
-        assertNull("releasedEntry should be cleared after requeue processed", subscription1.getQueueContext().getReleasedEntry());
-        assertNull("releasedEntry should be cleared after requeue processed", subscription2.getQueueContext().getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed",
+                   subscription1.getQueueContext().getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed",
+                   subscription2.getQueueContext().getReleasedEntry());
     }
 
     public void testExclusiveConsumer() throws AMQException
@@ -726,9 +734,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         });
 
         // check expected messages delivered to correct consumers
-        verifyReceivedMessages(Arrays.asList(msg1,msg2,msg3), sub1.getMessages());
-        verifyReceivedMessages(Collections.singletonList(msg4), sub2.getMessages());
-        verifyReceivedMessages(Collections.singletonList(msg5), sub3.getMessages());
+        verifyReceivedMessages(Arrays.asList((MessageInstance)msg1,msg2,msg3), sub1.getMessages());
+        verifyReceivedMessages(Collections.singletonList((MessageInstance)msg4), sub2.getMessages());
+        verifyReceivedMessages(Collections.singletonList((MessageInstance)msg5), sub3.getMessages());
     }
 
     /**
@@ -919,7 +927,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
              * @param entry
              * @param batch
              */
-            public void send(QueueEntry entry, boolean batch) throws AMQException
+            public void send(MessageInstance entry, boolean batch) throws AMQException
             {
                 super.send(entry, batch);
                 latch.countDown();
@@ -953,7 +961,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         {
             Thread.currentThread().interrupt();
         }
-        List<QueueEntry> expected = Arrays.asList(entries.get(0), entries.get(2), entries.get(3));
+        List<MessageInstance> expected = Arrays.asList((MessageInstance)entries.get(0), entries.get(2), entries.get(3));
         verifyReceivedMessages(expected, subscription.getMessages());
     }
 
@@ -1027,7 +1035,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         putGivenNumberOfMessages(queue, 4);
 
         // assert received messages
-        List<QueueEntry> messages = subscription.getMessages();
+        List<MessageInstance> messages = subscription.getMessages();
         assertEquals("Only 2 messages should be returned", 2, messages.size());
         assertEquals("ID of first message should be 1", 1l,
                 (messages.get(0).getMessage()).getMessageNumber());
@@ -1222,13 +1230,13 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return entriesList;
     }
 
-    private void verifyReceivedMessages(List<QueueEntry> expected,
-                                        List<QueueEntry> delivered)
+    private void verifyReceivedMessages(List<MessageInstance> expected,
+                                        List<MessageInstance> delivered)
     {
         assertEquals("Consumer did not receive the expected number of messages",
                     expected.size(), delivered.size());
 
-        for (QueueEntry msg : expected)
+        for (MessageInstance msg : expected)
         {
             assertTrue("Consumer did not receive msg: "
                     + msg.getMessage().getMessageNumber(), delivered.contains(msg));

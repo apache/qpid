@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 
 
@@ -30,10 +31,10 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
     private static final Logger _logger = Logger.getLogger(ExplicitAcceptDispositionChangeListener.class);
 
 
-    private final QueueEntry _entry;
+    private final MessageInstance _entry;
     private final SubscriptionTarget_0_10 _target;
 
-    public ExplicitAcceptDispositionChangeListener(QueueEntry entry, SubscriptionTarget_0_10 target)
+    public ExplicitAcceptDispositionChangeListener(MessageInstance entry, SubscriptionTarget_0_10 target)
     {
         _entry = entry;
         _target = target;

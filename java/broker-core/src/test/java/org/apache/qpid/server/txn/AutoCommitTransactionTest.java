@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.txn;
 
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
@@ -47,7 +48,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
     private MessageStore _transactionLog;
     private AMQQueue _queue;
     private List<AMQQueue> _queues;
-    private Collection<QueueEntry> _queueEntries;
+    private Collection<MessageInstance> _queueEntries;
     private ServerMessage _message;
     private MockAction _action;
     private MockStoreTransaction _storeTransaction;
@@ -373,9 +374,9 @@ public class AutoCommitTransactionTest extends QpidTestCase
         assertFalse("Rollback action must be fired",  _action.isRollbackActionFired());
     }  
     
-    private Collection<QueueEntry> createTestQueueEntries(boolean[] queueDurableFlags, boolean[] messagePersistentFlags)
+    private Collection<MessageInstance> createTestQueueEntries(boolean[] queueDurableFlags, boolean[] messagePersistentFlags)
     {
-        Collection<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
+        Collection<MessageInstance> queueEntries = new ArrayList<MessageInstance>();
         
         assertTrue("Boolean arrays must be the same length", queueDurableFlags.length == messagePersistentFlags.length);
         

@@ -27,11 +27,13 @@ import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.AbstractSubscriptionTarget;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -193,7 +195,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
 
     private final AddMessageDispositionListenerAction _postIdSettingAction;
 
-    public void send(final QueueEntry entry, boolean batch) throws AMQException
+    public void send(final MessageInstance entry, boolean batch) throws AMQException
     {
         ServerMessage serverMsg = entry.getMessage();
 
@@ -275,7 +277,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
                                         {
                                             public void onComplete(Method method)
                                             {
-                                                deferredAddCredit(1, entry.getSize());
+                                                deferredAddCredit(1, entry.getMessage().getSize());
                                             }
                                         });
         }
@@ -309,10 +311,10 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
 
     }
 
-    void recordUnacknowledged(QueueEntry entry)
+    void recordUnacknowledged(MessageInstance entry)
     {
         _unacknowledgedCount.incrementAndGet();
-        _unacknowledgedBytes.addAndGet(entry.getSize());
+        _unacknowledgedBytes.addAndGet(entry.getMessage().getSize());
     }
 
     private void deferredAddCredit(final int deferredMessageCredit, final long deferredSizeCredit)
@@ -334,10 +336,10 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         }
     }
 
-    private void forceDequeue(final QueueEntry entry, final boolean restoreCredit)
+    private void forceDequeue(final MessageInstance entry, final boolean restoreCredit)
     {
         AutoCommitTransaction dequeueTxn = new AutoCommitTransaction(_session.getVirtualHost().getMessageStore());
-        dequeueTxn.dequeue(entry.getQueue(), entry.getMessage(),
+        dequeueTxn.dequeue(entry.getOwningResource(), entry.getMessage(),
                            new ServerTransaction.Action()
                            {
                                public void postCommit()
@@ -356,7 +358,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
                            });
    }
 
-    void reject(final QueueEntry entry)
+    void reject(final MessageInstance entry)
     {
         entry.setRedelivered();
         entry.routeToAlternate(null, null);
@@ -366,7 +368,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         }
     }
 
-    void release(final QueueEntry entry, final boolean setRedelivered)
+    void release(final MessageInstance entry, final boolean setRedelivered)
     {
         if (setRedelivered)
         {
@@ -388,7 +390,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         }
     }
 
-    protected void sendToDLQOrDiscard(QueueEntry entry)
+    protected void sendToDLQOrDiscard(MessageInstance entry)
     {
         final LogActor logActor = CurrentActor.get();
         final ServerMessage msg = entry.getMessage();
@@ -405,26 +407,30 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
 
         if (requeues == 0)
         {
-            final AMQQueue queue = entry.getQueue();
-            final Exchange alternateExchange = queue.getAlternateExchange();
+            TransactionLogResource owningResource = entry.getOwningResource();
+            if(owningResource instanceof AMQQueue)
+            {
+                final AMQQueue queue = (AMQQueue)owningResource;
+                final Exchange alternateExchange = queue.getAlternateExchange();
 
-            if(alternateExchange != null)
-            {
-                logActor.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(),
-                                                                     alternateExchange.getName()));
-            }
-            else
-            {
-                logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(),
-                                                                      queue.getName(),
-                                                                      msg.getRoutingKey()));
+                if(alternateExchange != null)
+                {
+                    logActor.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(),
+                                                                         alternateExchange.getName()));
+                }
+                else
+                {
+                    logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(),
+                                                                          queue.getName(),
+                                                                          msg.getRoutingKey()));
+                }
             }
         }
     }
 
-    private boolean isMaxDeliveryLimitReached(QueueEntry entry)
+    private boolean isMaxDeliveryLimitReached(MessageInstance entry)
     {
-        final int maxDeliveryLimit = entry.getQueue().getMaximumDeliveryCount();
+        final int maxDeliveryLimit = entry.getMaximumDeliveryCount();
         return (maxDeliveryLimit > 0 && entry.getDeliveryCount() >= maxDeliveryLimit);
     }
 
@@ -519,12 +525,12 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         return _stopped.get();
     }
 
-    public void acknowledge(QueueEntry entry)
+    public void acknowledge(MessageInstance entry)
     {
         // TODO Fix Store Context / cleanup
         if(entry.isAcquiredBy(getSubscription()))
         {
-            _unacknowledgedBytes.addAndGet(-entry.getSize());
+            _unacknowledgedBytes.addAndGet(-entry.getMessage().getSize());
             _unacknowledgedCount.decrementAndGet();
             entry.delete();
         }

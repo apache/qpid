@@ -23,9 +23,8 @@ package org.apache.qpid.server.subscription;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.util.StateChangeListener;
 
 public interface Subscription
@@ -64,7 +63,7 @@ public interface Subscription
 
     AMQSessionModel getSessionModel();
 
-    QueueEntry.SubscriptionAcquiredState getOwningState();
+    MessageInstance.SubscriptionAcquiredState getOwningState();
 
     void setNoLocal(boolean noLocal);
 
@@ -72,7 +71,7 @@ public interface Subscription
 
     boolean isSuspended();
 
-    boolean hasInterest(QueueEntry msg);
+    boolean hasInterest(MessageInstance msg);
 
     boolean isClosed();
 
@@ -82,16 +81,16 @@ public interface Subscription
 
     void close() throws AMQException;
 
-    void send(QueueEntry entry, boolean batch) throws AMQException;
+    void send(MessageInstance entry, boolean batch) throws AMQException;
 
-    boolean resend(QueueEntry entry) throws AMQException;
+    boolean resend(MessageInstance entry) throws AMQException;
 
     void flushBatched();
 
     void queueDeleted();
 
 
-    boolean wouldSuspend(QueueEntry msg);
+    boolean wouldSuspend(MessageInstance msg);
 
     boolean trySendLock();
 
@@ -100,7 +99,7 @@ public interface Subscription
 
     void releaseSendLock();
 
-    void restoreCredit(final QueueEntry queueEntry);
+    void restoreCredit(final MessageInstance queueEntry);
 
     void setStateListener(final StateChangeListener<? extends Subscription, State> listener);
 

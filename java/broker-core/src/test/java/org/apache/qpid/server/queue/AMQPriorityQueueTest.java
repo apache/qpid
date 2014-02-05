@@ -25,6 +25,7 @@ import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         queue.registerSubscription(getSubscription(), null, null, "test", EnumSet.noneOf(Subscription.Option.class));
         Thread.sleep(150);
 
-        ArrayList<QueueEntry> msgs = getSubscription().getMessages();
+        ArrayList<MessageInstance> msgs = getSubscription().getMessages();
         try
         {
             assertEquals(1L, msgs.get(0).getMessage().getMessageNumber());
@@ -87,7 +88,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         {
             // Show message order on failure.
             int index = 1;
-            for (QueueEntry qe : msgs)
+            for (MessageInstance qe : msgs)
             {
                 System.err.println(index + ":" + qe.getMessage().getMessageNumber());
                 index++;

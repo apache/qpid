@@ -25,11 +25,13 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 import java.util.Collection;
 import java.util.List;
@@ -73,7 +75,7 @@ public class AutoCommitTransaction implements ServerTransaction
         immediateAction.postCommit();
     }
 
-    public void dequeue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
+    public void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
     {
         Transaction txn = null;
         try
@@ -105,15 +107,15 @@ public class AutoCommitTransaction implements ServerTransaction
 
     }
 
-    public void dequeue(Collection<QueueEntry> queueEntries, Action postTransactionAction)
+    public void dequeue(Collection<MessageInstance> queueEntries, Action postTransactionAction)
     {
         Transaction txn = null;
         try
         {
-            for(QueueEntry entry : queueEntries)
+            for(MessageInstance entry : queueEntries)
             {
                 ServerMessage message = entry.getMessage();
-                BaseQueue queue = entry.getQueue();
+                TransactionLogResource queue = entry.getOwningResource();
 
                 if(message.isPersistent() && queue.isDurable())
                 {

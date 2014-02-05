@@ -21,7 +21,9 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +93,7 @@ public class LocalTransaction implements ServerTransaction
         _postTransactionActions.add(postTransactionAction);
     }
 
-    public void dequeue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
+    public void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
@@ -118,7 +120,7 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void dequeue(Collection<QueueEntry> queueEntries, Action postTransactionAction)
+    public void dequeue(Collection<MessageInstance> queueEntries, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
@@ -126,10 +128,10 @@ public class LocalTransaction implements ServerTransaction
 
         try
         {
-            for(QueueEntry entry : queueEntries)
+            for(MessageInstance entry : queueEntries)
             {
                 ServerMessage message = entry.getMessage();
-                BaseQueue queue = entry.getQueue();
+                TransactionLogResource queue = entry.getOwningResource();
 
                 if(message.isPersistent() && queue.isDurable())
                 {
