@@ -50,7 +50,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     private final QueueEntryList _queueEntryList;
 
-    private MessageReference _message;
+    private final MessageReference _message;
 
     private Set<Long> _rejectedBy = null;
 
