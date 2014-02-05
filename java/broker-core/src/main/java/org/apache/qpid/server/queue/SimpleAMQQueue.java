@@ -478,7 +478,7 @@ public class SimpleAMQQueue implements AMQQueue,
             throw new NullPointerException("subscription argument is null");
         }
 
-        boolean removed = _subscriptionList.remove((QueueSubscription)subscription);
+        boolean removed = _subscriptionList.remove(subscription);
 
         if (removed)
         {
@@ -487,10 +487,14 @@ public class SimpleAMQQueue implements AMQQueue,
             setExclusiveSubscriber(null);
             subscription.setQueueContext(null);
 
+            if(!isDeleted() && isExclusive() && getConsumerCount() == 0)
+            {
+                setAuthorizationHolder(null);
+            }
 
             if(_messageGroupManager != null)
             {
-                resetSubPointersForGroups((QueueSubscription)subscription, true);
+                resetSubPointersForGroups(subscription, true);
             }
 
             synchronized (_subscriptionListeners)

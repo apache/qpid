@@ -262,8 +262,8 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                                  method.getAcquireMode(),
                                                                                  MessageFlowMode.WINDOW,
                                                                                  creditManager,
-                                                                                 method.getArguments(),
-                                                                                 queue);
+                                                                                 method.getArguments()
+                    );
 
                     ((ServerSession)session).register(destination, target);
                     try
@@ -413,12 +413,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
-            AMQQueue queue = sub.getQueue();
             ((ServerSession)session).unregister(sub);
-            if(!queue.isDeleted() && queue.isExclusive() && queue.getConsumerCount() == 0)
-            {
-                queue.setAuthorizationHolder(null);
-            }
         }
     }
 

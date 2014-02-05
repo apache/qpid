@@ -52,7 +52,6 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     private static final Option[] BATCHED = new Option[] { Option.BATCH };
 
     private final AtomicBoolean _deleted = new AtomicBoolean(false);
-    private final AMQQueue _queue;
     private final String _name;
 
 
@@ -63,7 +62,6 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     private MessageFlowMode _flowMode;
     private final ServerSession _session;
     private final AtomicBoolean _stopped = new AtomicBoolean(true);
-    private static final Struct[] EMPTY_STRUCT_ARRAY = new Struct[0];
 
     private final AtomicLong _unacknowledgedCount = new AtomicLong(0);
     private final AtomicLong _unacknowledgedBytes = new AtomicLong(0);
@@ -80,7 +78,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
                                    MessageAcquireMode acquireMode,
                                    MessageFlowMode flowMode,
                                    FlowCreditManager_0_10 creditManager,
-                                   Map<String, Object> arguments, final AMQQueue queue)
+                                   Map<String, Object> arguments)
     {
         super(State.SUSPENDED);
         _session = session;
@@ -93,13 +91,6 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         _arguments = arguments == null ? Collections.<String, Object> emptyMap() :
                                          Collections.<String, Object> unmodifiableMap(arguments);
         _name = name;
-        _queue = queue;
-
-    }
-
-    public AMQQueue getQueue()
-    {
-        return _queue;
     }
 
     public Subscription getSubscription()
