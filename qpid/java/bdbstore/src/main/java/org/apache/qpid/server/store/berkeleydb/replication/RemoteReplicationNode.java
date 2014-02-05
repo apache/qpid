@@ -167,10 +167,19 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         {
             return true;
         }
-        else
+        else if (desiredState == State.DELETED)
         {
-            return false;
+            if (ReplicatedEnvironment.State.REPLICA.name().equals(getAttribute(ROLE)) )
+            {
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Deleting node " + _groupName + ":" + getName());
+                }
+                _replicationGroupAdmin.removeMember(getName());
+                return true;
+            }
         }
+        return false;
     }
 
     @Override

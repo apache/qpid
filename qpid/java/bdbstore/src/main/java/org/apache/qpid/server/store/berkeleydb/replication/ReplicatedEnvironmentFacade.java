@@ -20,16 +20,7 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
-import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
-import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
-import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
-import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
-import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
-import static org.apache.qpid.server.model.ReplicationNode.PARAMETERS;
-import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
 import static org.apache.qpid.server.model.ReplicationNode.*;
-import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -368,13 +359,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
         }
 
-        StateChangeListener listener = _stateChangeListener.get();
-
         if (state == ReplicatedEnvironment.State.MASTER)
         {
             reopenDatabases();
         }
 
+        StateChangeListener listener = _stateChangeListener.get();
         if (listener != null)
         {
             listener.stateChange(stateChangeEvent);
@@ -981,6 +971,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                             RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, group.getName());
 
                             _remoteReplicationNodes.put(discoveredNodeName, remoteNode);
+
                             if (replicationGroupListener != null)
                             {
                                 replicationGroupListener.onReplicationNodeAddedToGroup(remoteNode);
@@ -1122,6 +1113,5 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
     }
-
 
 }

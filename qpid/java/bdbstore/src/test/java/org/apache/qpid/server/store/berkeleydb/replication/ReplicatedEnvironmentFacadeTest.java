@@ -20,14 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
-import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
-import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
-import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
-import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
-import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
-import static org.apache.qpid.server.model.ReplicationNode.NAME;
-import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
 import static org.apache.qpid.server.model.ReplicationNode.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
@@ -85,11 +78,16 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private File _storePath;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
     private VirtualHost _virtualHost = mock(VirtualHost.class);
+
     private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = new ReplicatedEnvironmentFacadeFactory.RemoteReplicationNodeFactoryImpl(_virtualHost);
 
     public void setUp() throws Exception
     {
         super.setUp();
+
+        TaskExecutor taskExecutor = mock(TaskExecutor.class);
+        when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
+        when(_virtualHost.getTaskExecutor()).thenReturn(taskExecutor);
 
         _storePath = TestFileUtils.createTestDirectory("bdb", true);
 
@@ -518,6 +516,66 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Node made unknown an unexpected number of times", 1, unknownStateChangeCount.get());
     }
 
+    public void testEnvironmentFacadeDetectsRemovalOfRemoteNode() throws Exception
+    {
+        final CountDownLatch nodeRemovedLatch = new CountDownLatch(1);
+        final CountDownLatch nodeAddedLatch = new CountDownLatch(1);
+        final AtomicReference<ReplicationNode> addedNodeRef = new AtomicReference<ReplicationNode>();
+        final AtomicReference<ReplicationNode> removedNodeRef = new AtomicReference<ReplicationNode>();
+        ReplicationGroupListener listener = new NoopReplicationGroupListener()
+        {
+            @Override
+            public void onReplicationNodeAddedToGroup(ReplicationNode node)
+            {
+                if (addedNodeRef.compareAndSet(null, node))
+                {
+                    nodeAddedLatch.countDown();
+                }
+            }
+
+            @Override
+            public void onReplicationNodeRemovedFromGroup(ReplicationNode node)
+            {
+                removedNodeRef.set(node);
+                nodeRemovedLatch.countDown();
+            }
+        };
+
+        TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.MASTER);
+        final ReplicatedEnvironmentFacade masterEnvironment = addNode(State.MASTER, stateChangeListener, listener);
+        assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
+
+        masterEnvironment.setDesignatedPrimary(true);
+
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+
+        String replicaName = TEST_NODE_NAME + "_1";
+        addReplica(replicaName, node1NodeHostPort);
+
+        assertTrue("Node should be added", nodeAddedLatch.await(WAIT_STATE_CHANGE_TIMEOUT, TimeUnit.SECONDS));
+
+        ReplicationNode node = addedNodeRef.get();
+        assertEquals("Unexpected node name", replicaName, node.getName());
+
+        // Need to poll to await the remote node updating itself
+        long timeout = System.currentTimeMillis() + 5000;
+        while(!State.REPLICA.name().equals(node.getAttribute(ReplicationNode.ROLE)) && System.currentTimeMillis() < timeout)
+        {
+            Thread.sleep(200);
+        }
+        assertEquals("Unexpected node role", State.REPLICA.name(), node.getAttribute(ReplicationNode.ROLE));
+
+        // removing remote node
+        node.setDesiredState(node.getActualState(), org.apache.qpid.server.model.State.DELETED);
+
+        assertTrue("Node deleting is undetected by the environment facade", nodeRemovedLatch.await(WAIT_STATE_CHANGE_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals("Unexpected node is deleted", node, removedNodeRef.get());
+
+        //TODO: need a way to shut down the remote environment when the corresponding remote node is deleted.
+        // It is unclear whether it is possible
+    }
+
     public void testCloseStateTransitions() throws Exception
     {
         ReplicatedEnvironmentFacade replicatedEnvironmentFacade = createMaster();
@@ -552,7 +610,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private ReplicatedEnvironmentFacade addNode(String nodeName, String nodeHostPort, boolean designatedPrimary,
             State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
-
         LocalReplicationNode node = createReplicationNodeMock(nodeName, nodeHostPort, designatedPrimary);
         ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(node, _remoteReplicationNodeFactory);
         ref.setReplicationGroupListener(replicationGroupListener);
@@ -589,7 +646,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         when(node.getAttribute(DURABILITY)).thenReturn(TEST_DURABILITY);
         when(node.getAttribute(COALESCING_SYNC)).thenReturn(TEST_COALESCING_SYNC);
 
-        
         // TODO REF contract with LRN is too complicated.
         when(node.getActualAttribute(HOST_PORT)).thenReturn(nodeHostPort);
         when(node.getActualAttribute(DESIGNATED_PRIMARY)).thenReturn(designatedPrimary);
