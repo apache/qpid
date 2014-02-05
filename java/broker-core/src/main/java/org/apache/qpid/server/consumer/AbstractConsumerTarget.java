@@ -18,20 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.consumer;
 
 import org.apache.qpid.server.util.StateChangeListener;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class AbstractSubscriptionTarget implements SubscriptionTarget
+public abstract class AbstractConsumerTarget implements ConsumerTarget
 {
 
     private final AtomicReference<State> _state;
-    private final AtomicReference<StateChangeListener<SubscriptionTarget, State>> _stateListener =
-            new AtomicReference<StateChangeListener<SubscriptionTarget, State>>();
+    private final AtomicReference<StateChangeListener<ConsumerTarget, State>> _stateListener =
+            new AtomicReference<StateChangeListener<ConsumerTarget, State>>();
 
-    protected AbstractSubscriptionTarget(final State initialState)
+    protected AbstractConsumerTarget(final State initialState)
     {
         _state = new AtomicReference<State>(initialState);
     }
@@ -46,7 +46,7 @@ public abstract class AbstractSubscriptionTarget implements SubscriptionTarget
     {
         if(_state.compareAndSet(from, to))
         {
-            StateChangeListener<SubscriptionTarget, State> listener = _stateListener.get();
+            StateChangeListener<ConsumerTarget, State> listener = _stateListener.get();
             if(listener != null)
             {
                 listener.stateChanged(this, from, to);
@@ -60,12 +60,12 @@ public abstract class AbstractSubscriptionTarget implements SubscriptionTarget
     }
 
 
-    public final void setStateListener(StateChangeListener<SubscriptionTarget, State> listener)
+    public final void setStateListener(StateChangeListener<ConsumerTarget, State> listener)
     {
         _stateListener.set(listener);
     }
 
-    public final StateChangeListener<SubscriptionTarget, State> getStateListener()
+    public final StateChangeListener<ConsumerTarget, State> getStateListener()
     {
         return _stateListener.get();
     }

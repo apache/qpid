@@ -38,14 +38,13 @@ import org.apache.qpid.server.flow.MessageOnlyCreditManager;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.protocol.v0_8.SubscriptionTarget_0_8;
+import org.apache.qpid.server.protocol.v0_8.ConsumerTarget_0_8;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
 import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.EnumSet;
@@ -133,7 +132,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         {
 
             @Override
-            public void deliverToClient(final Subscription sub, final ServerMessage message, final
+            public void deliverToClient(final Consumer sub, final ServerMessage message, final
                                         InstanceProperties props, final long deliveryTag)
             throws AMQException
             {
@@ -150,30 +149,30 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         final RecordDeliveryMethod getRecordMethod = new RecordDeliveryMethod()
         {
 
-            public void recordMessageDelivery(final Subscription sub, final MessageInstance entry, final long deliveryTag)
+            public void recordMessageDelivery(final Consumer sub, final MessageInstance entry, final long deliveryTag)
             {
                 channel.addUnacknowledgedMessage(entry, deliveryTag, null);
             }
         };
 
-        SubscriptionTarget_0_8 target;
-        EnumSet<Subscription.Option> options = EnumSet.of(Subscription.Option.TRANSIENT, Subscription.Option.ACQUIRES,
-                                                          Subscription.Option.SEES_REQUEUES);
+        ConsumerTarget_0_8 target;
+        EnumSet<Consumer.Option> options = EnumSet.of(Consumer.Option.TRANSIENT, Consumer.Option.ACQUIRES,
+                                                          Consumer.Option.SEES_REQUEUES);
         if(acks)
         {
 
-            target = SubscriptionTarget_0_8.createAckTarget(channel,
-                                                            AMQShortString.EMPTY_STRING, null,
-                                                            singleMessageCredit, getDeliveryMethod, getRecordMethod);
+            target = ConsumerTarget_0_8.createAckTarget(channel,
+                                                        AMQShortString.EMPTY_STRING, null,
+                                                        singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
         else
         {
-            target = SubscriptionTarget_0_8.createNoAckTarget(channel,
-                                                              AMQShortString.EMPTY_STRING, null,
-                                                              singleMessageCredit, getDeliveryMethod, getRecordMethod);
+            target = ConsumerTarget_0_8.createNoAckTarget(channel,
+                                                          AMQShortString.EMPTY_STRING, null,
+                                                          singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
 
-        Subscription sub = queue.registerSubscription(target, null, AMQMessage.class, "", options);
+        Consumer sub = queue.addConsumer(target, null, AMQMessage.class, "", options);
         sub.flush();
         sub.close();
         return(!singleMessageCredit.hasCredit());

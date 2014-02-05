@@ -25,7 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -49,25 +49,25 @@ public interface MessageInstance
 
     boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener);
 
-    boolean acquiredBySubscription();
+    boolean acquiredByConsumer();
 
-    boolean isAcquiredBy(Subscription subscription);
+    boolean isAcquiredBy(Consumer consumer);
 
     void setRedelivered();
 
     boolean isRedelivered();
 
-    Subscription getDeliveredSubscription();
+    Consumer getDeliveredConsumer();
 
     void reject();
 
-    boolean isRejectedBy(Subscription subscription);
+    boolean isRejectedBy(Consumer consumer);
 
     boolean getDeliveredToConsumer();
 
     boolean expired() throws AMQException;
 
-    boolean acquire(Subscription sub);
+    boolean acquire(Consumer sub);
 
     int getMaximumDeliveryCount();
 
@@ -148,7 +148,7 @@ public interface MessageInstance
         }
     }
 
-    public final class NonSubscriptionAcquiredState extends EntryState
+    public final class NonConsumerAcquiredState extends EntryState
     {
         public State getState()
         {
@@ -161,13 +161,13 @@ public interface MessageInstance
         }
     }
 
-    public final class SubscriptionAcquiredState extends EntryState
+    public final class ConsumerAcquiredState extends EntryState
     {
-        private final Subscription _subscription;
+        private final Consumer _consumer;
 
-        public SubscriptionAcquiredState(Subscription subscription)
+        public ConsumerAcquiredState(Consumer consumer)
         {
-            _subscription = subscription;
+            _consumer = consumer;
         }
 
 
@@ -176,14 +176,14 @@ public interface MessageInstance
             return State.ACQUIRED;
         }
 
-        public Subscription getSubscription()
+        public Consumer getConsumer()
         {
-            return _subscription;
+            return _consumer;
         }
 
         public String toString()
         {
-            return "{" + getState().name() + " : " + _subscription +"}";
+            return "{" + getState().name() + " : " + _consumer +"}";
         }
     }
 
@@ -191,7 +191,7 @@ public interface MessageInstance
     final static EntryState AVAILABLE_STATE = new AvailableState();
     final static EntryState DELETED_STATE = new DeletedState();
     final static EntryState DEQUEUED_STATE = new DequeuedState();
-    final static EntryState NON_SUBSCRIPTION_ACQUIRED_STATE = new NonSubscriptionAcquiredState();
+    final static EntryState NON_CONSUMER_ACQUIRED_STATE = new NonConsumerAcquiredState();
 
     boolean isAvailable();
 

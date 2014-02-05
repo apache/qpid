@@ -22,33 +22,32 @@ package org.apache.qpid.server.model.adapter;
 
 import java.util.Map;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 
-public class ConsumerAdapter extends AbstractAdapter implements Consumer
+public class ConsumerAdapter extends AbstractAdapter implements org.apache.qpid.server.model.Consumer
 {
-    private final Subscription _subscription;
+    private final Consumer _consumer;
     private final QueueAdapter _queue;
     private final SessionAdapter _session;
     private final ConsumerStatistics _statistics;
 
     public ConsumerAdapter(final QueueAdapter queueAdapter, final SessionAdapter sessionAdapter,
-                           final Subscription subscription)
+                           final Consumer consumer)
     {
         super(UUIDGenerator.generateConsumerUUID(queueAdapter.getVirtualHost().getName(),
                                                queueAdapter.getName(),
-                                               subscription.getSessionModel().getConnectionModel().getRemoteAddressString(),
-                                               String.valueOf(subscription.getSessionModel().getChannelId()),
-                                               subscription.getName()), queueAdapter.getTaskExecutor());
-        _subscription = subscription;
+                                               consumer.getSessionModel().getConnectionModel().getRemoteAddressString(),
+                                               String.valueOf(consumer.getSessionModel().getChannelId()),
+                                               consumer.getName()), queueAdapter.getTaskExecutor());
+        _consumer = consumer;
         _queue = queueAdapter;
         _session = sessionAdapter;
         _statistics = new ConsumerStatistics();
@@ -57,7 +56,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
 
     public String getName()
     {
-        return _subscription.getName();
+        return _consumer.getName();
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -107,7 +106,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Consumer.AVAILABLE_ATTRIBUTES;
+        return org.apache.qpid.server.model.Consumer.AVAILABLE_ATTRIBUTES;
     }
 
     @Override
@@ -147,7 +146,7 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
         }
         else if(DISTRIBUTION_MODE.equals(name))
         {
-            return _subscription.acquires() ? "MOVE" : "COPY";
+            return _consumer.acquires() ? "MOVE" : "COPY";
         }
         else if(SETTLEMENT_MODE.equals(name))
         {
@@ -197,11 +196,11 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
         {
             if(name.equals(BYTES_OUT))
             {
-                return _subscription.getBytesOut();
+                return _consumer.getBytesOut();
             }
             else if(name.equals(MESSAGES_OUT))
             {
-                return _subscription.getMessagesOut();
+                return _consumer.getMessagesOut();
             }
             else if(name.equals(STATE_CHANGED))
             {
@@ -209,11 +208,11 @@ public class ConsumerAdapter extends AbstractAdapter implements Consumer
             }
             else if(name.equals(UNACKNOWLEDGED_BYTES))
             {
-                return _subscription.getUnacknowledgedBytes();
+                return _consumer.getUnacknowledgedBytes();
             }
             else if(name.equals(UNACKNOWLEDGED_MESSAGES))
             {
-                return _subscription.getUnacknowledgedMessages();
+                return _consumer.getUnacknowledgedMessages();
             }
             return null;  // TODO - Implement
         }

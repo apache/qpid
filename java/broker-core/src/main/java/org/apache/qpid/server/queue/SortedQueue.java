@@ -30,7 +30,7 @@ import java.util.UUID;
 public class SortedQueue extends OutOfOrderQueue
 {
     //Lock object to synchronize enqueue. Used instead of the object
-    //monitor to prevent lock order issues with subscription sendLocks
+    //monitor to prevent lock order issues with consumer sendLocks
     //and consumer updates in the super classes
     private final Object _sortedQueueLock = new Object();
     private final String _sortedPropertyName;

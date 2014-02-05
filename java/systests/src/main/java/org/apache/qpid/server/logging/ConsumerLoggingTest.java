@@ -46,7 +46,7 @@ import java.util.List;
  * SUB-1002 : Close
  * SUB-1003 : State : <state>
  */
-public class SubscriptionLoggingTest extends AbstractTestLogging
+public class ConsumerLoggingTest extends AbstractTestLogging
 {
     static final String SUB_PREFIX = "SUB-";
 

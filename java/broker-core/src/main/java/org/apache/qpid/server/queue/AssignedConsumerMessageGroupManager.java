@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +28,16 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class AssignedSubscriptionMessageGroupManager implements MessageGroupManager
+public class AssignedConsumerMessageGroupManager implements MessageGroupManager
 {
-    private static final Logger _logger = LoggerFactory.getLogger(AssignedSubscriptionMessageGroupManager.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AssignedConsumerMessageGroupManager.class);
 
 
     private final String _groupId;
-    private final ConcurrentHashMap<Integer, QueueSubscription> _groupMap = new ConcurrentHashMap<Integer, QueueSubscription>();
+    private final ConcurrentHashMap<Integer, QueueConsumer> _groupMap = new ConcurrentHashMap<Integer, QueueConsumer>();
     private final int _groupMask;
 
-    public AssignedSubscriptionMessageGroupManager(final String groupId, final int maxGroups)
+    public AssignedConsumerMessageGroupManager(final String groupId, final int maxGroups)
     {
         _groupId = groupId;
         _groupMask = pow2(maxGroups)-1;
@@ -53,13 +53,13 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         return val;
     }
 
-    public QueueSubscription getAssignedSubscription(final QueueEntry entry)
+    public QueueConsumer getAssignedConsumer(final QueueEntry entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         return groupVal == null ? null : _groupMap.get(groupVal.hashCode() & _groupMask);
     }
 
-    public boolean acceptMessage(QueueSubscription sub, QueueEntry entry)
+    public boolean acceptMessage(QueueConsumer sub, QueueEntry entry)
     {
         if(assignMessage(sub, entry))
         {
@@ -71,7 +71,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         }
     }
 
-    private boolean assignMessage(QueueSubscription sub, QueueEntry entry)
+    private boolean assignMessage(QueueConsumer sub, QueueEntry entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         if(groupVal == null)
@@ -81,7 +81,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         else
         {
             Integer group = groupVal.hashCode() & _groupMask;
-            QueueSubscription assignedSub = _groupMap.get(group);
+            QueueConsumer assignedSub = _groupMap.get(group);
             if(assignedSub == sub)
             {
                 return true;
@@ -105,7 +105,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         }
     }
     
-    public QueueEntry findEarliestAssignedAvailableEntry(QueueSubscription sub)
+    public QueueEntry findEarliestAssignedAvailableEntry(QueueConsumer sub)
     {
         EntryFinder visitor = new EntryFinder(sub);
         sub.getQueue().visit(visitor);
@@ -115,9 +115,9 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
     private class EntryFinder implements QueueEntryVisitor
     {
         private QueueEntry _entry;
-        private QueueSubscription _sub;
+        private QueueConsumer _sub;
 
-        public EntryFinder(final QueueSubscription sub)
+        public EntryFinder(final QueueConsumer sub)
         {
             _sub = sub;
         }
@@ -136,7 +136,7 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
             }
 
             Integer group = groupId.hashCode() & _groupMask;
-            Subscription assignedSub = _groupMap.get(group);
+            Consumer assignedSub = _groupMap.get(group);
             if(assignedSub == _sub)
             {
                 _entry = entry;
@@ -154,9 +154,9 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         }
     }
 
-    public void clearAssignments(QueueSubscription sub)
+    public void clearAssignments(QueueConsumer sub)
     {
-        Iterator<QueueSubscription> subIter = _groupMap.values().iterator();
+        Iterator<QueueConsumer> subIter = _groupMap.values().iterator();
         while(subIter.hasNext())
         {
             if(subIter.next() == sub)

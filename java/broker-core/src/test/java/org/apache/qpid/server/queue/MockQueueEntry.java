@@ -26,7 +26,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -41,7 +41,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public boolean acquire(Subscription sub)
+    public boolean acquire(Consumer sub)
     {
         return false;
     }
@@ -52,12 +52,12 @@ public class MockQueueEntry implements QueueEntry
         return 0;
     }
 
-    public boolean acquiredBySubscription()
+    public boolean acquiredByConsumer()
     {
         return false;
     }
 
-    public boolean isAcquiredBy(Subscription subscription)
+    public boolean isAcquiredBy(Consumer consumer)
     {
         return false;
     }
@@ -87,7 +87,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public Subscription getDeliveredSubscription()
+    public Consumer getDeliveredConsumer()
     {
         return null;
     }
@@ -125,7 +125,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean isRejectedBy(Subscription subscription)
+    public boolean isRejectedBy(Consumer consumer)
     {
 
         return false;

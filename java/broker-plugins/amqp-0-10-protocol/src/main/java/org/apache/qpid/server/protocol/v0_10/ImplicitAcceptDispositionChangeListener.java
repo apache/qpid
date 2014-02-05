@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol.v0_10;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.queue.QueueEntry;
 
 class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
 {
@@ -31,9 +30,9 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
 
     private final MessageInstance _entry;
-    private SubscriptionTarget_0_10 _target;
+    private ConsumerTarget_0_10 _target;
 
-    public ImplicitAcceptDispositionChangeListener(MessageInstance entry, SubscriptionTarget_0_10 target)
+    public ImplicitAcceptDispositionChangeListener(MessageInstance entry, ConsumerTarget_0_10 target)
     {
         _entry = entry;
         _target = target;
@@ -46,7 +45,7 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        if(_entry.isAcquiredBy(_target.getSubscription()))
+        if(_entry.isAcquiredBy(_target.getConsumer()))
         {
             _target.release(_entry, setRedelivered);
         }
@@ -58,7 +57,7 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        if(_entry.isAcquiredBy(_target.getSubscription()))
+        if(_entry.isAcquiredBy(_target.getConsumer()))
         {
             _target.reject(_entry);
         }
@@ -71,7 +70,7 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        boolean acquired = _entry.acquire(_target.getSubscription());
+        boolean acquired = _entry.acquire(_target.getConsumer());
         if(acquired)
         {
             _target.recordUnacknowledged(_entry);

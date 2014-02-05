@@ -46,7 +46,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.DtxNotSelectedException;
 import org.apache.qpid.server.txn.IncorrectDtxStateException;
@@ -257,7 +257,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         return;
                     }
 
-                    SubscriptionTarget_0_10 target = new SubscriptionTarget_0_10((ServerSession)session, destination,
+                    ConsumerTarget_0_10 target = new ConsumerTarget_0_10((ServerSession)session, destination,
                                                                                  method.getAcceptMode(),
                                                                                  method.getAcquireMode(),
                                                                                  MessageFlowMode.WINDOW,
@@ -268,31 +268,31 @@ public class ServerSessionDelegate extends SessionDelegate
                     ((ServerSession)session).register(destination, target);
                     try
                     {
-                        EnumSet<Subscription.Option> options = EnumSet.noneOf(Subscription.Option.class);
+                        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
                         if(method.getAcquireMode() == MessageAcquireMode.PRE_ACQUIRED)
                         {
-                            options.add(Subscription.Option.ACQUIRES);
+                            options.add(Consumer.Option.ACQUIRES);
                         }
                         if(method.getAcquireMode() != MessageAcquireMode.NOT_ACQUIRED || method.getAcceptMode() == MessageAcceptMode.EXPLICIT)
                         {
-                            options.add(Subscription.Option.SEES_REQUEUES);
+                            options.add(Consumer.Option.SEES_REQUEUES);
                         }
                         if(method.getExclusive())
                         {
-                            options.add(Subscription.Option.EXCLUSIVE);
+                            options.add(Consumer.Option.EXCLUSIVE);
                         }
-                        Subscription sub =
-                                queue.registerSubscription(target,
-                                                           filterManager,
-                                                           MessageTransferMessage.class,
-                                                           destination,
-                                                           options);
+                        Consumer sub =
+                                queue.addConsumer(target,
+                                                  filterManager,
+                                                  MessageTransferMessage.class,
+                                                  destination,
+                                                  options);
                     }
-                    catch (AMQQueue.ExistingExclusiveSubscription existing)
+                    catch (AMQQueue.ExistingExclusiveConsumer existing)
                     {
                         exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an exclusive consumer");
                     }
-                    catch (AMQQueue.ExistingSubscriptionPreventsExclusive exclusive)
+                    catch (AMQQueue.ExistingConsumerPreventsExclusive exclusive)
                     {
                         exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an existing consumer - can't subscribe exclusively");
                     }
@@ -405,7 +405,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = method.getDestination();
 
-        SubscriptionTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -422,7 +422,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = method.getDestination();
 
-        SubscriptionTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -1476,7 +1476,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = sfm.getDestination();
 
-        SubscriptionTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -1493,7 +1493,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = stop.getDestination();
 
-        SubscriptionTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -1511,7 +1511,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = flow.getDestination();
 
-        SubscriptionTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {

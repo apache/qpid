@@ -27,9 +27,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -65,7 +63,7 @@ public class ExtractResendAndRequeueTest extends TestCase
     private static final int INITIAL_MSG_COUNT = 10;
     private AMQQueue _queue;
     private LinkedList<QueueEntry> _referenceList = new LinkedList<QueueEntry>();
-    private Subscription _subscription;
+    private Consumer _consumer;
     private boolean _queueDeleted;
 
     @Override
@@ -76,8 +74,8 @@ public class ExtractResendAndRequeueTest extends TestCase
         _queue = mock(AMQQueue.class);
         when(_queue.getName()).thenReturn(getName());
         when(_queue.isDeleted()).thenReturn(_queueDeleted);
-        _subscription = mock(Subscription.class);
-        when(_subscription.getSubscriptionID()).thenReturn(Subscription.SUB_ID_GENERATOR.getAndIncrement());
+        _consumer = mock(Consumer.class);
+        when(_consumer.getId()).thenReturn(Consumer.SUB_ID_GENERATOR.getAndIncrement());
 
 
         long id = 0;
@@ -123,7 +121,7 @@ public class ExtractResendAndRequeueTest extends TestCase
         // Acquire messages in subscription
         for(QueueEntry entry : messageList)
         {
-            when(entry.getDeliveredSubscription()).thenReturn(_subscription);
+            when(entry.getDeliveredConsumer()).thenReturn(_consumer);
         }
     }
 
@@ -168,7 +166,7 @@ public class ExtractResendAndRequeueTest extends TestCase
         acquireMessages(_referenceList);
 
         // Close subscription
-        when(_subscription.isClosed()).thenReturn(true);
+        when(_consumer.isClosed()).thenReturn(true);
 
         final Map<Long, MessageInstance> msgToRequeue = new LinkedHashMap<Long, MessageInstance>();
         final Map<Long, MessageInstance> msgToResend = new LinkedHashMap<Long, MessageInstance>();

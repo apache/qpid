@@ -20,13 +20,7 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.StateChangeListener;
 
 public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>
 {

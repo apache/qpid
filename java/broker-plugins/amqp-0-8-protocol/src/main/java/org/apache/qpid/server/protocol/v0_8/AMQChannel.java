@@ -69,8 +69,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionTarget;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
@@ -113,7 +112,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     private IncomingMessage _currentMessage;
 
     /** Maps from consumer tag to subscription instance. Allows us to unsubscribe from a queue. */
-    private final Map<AMQShortString, SubscriptionTarget_0_8> _tag2SubscriptionTargetMap = new HashMap<AMQShortString, SubscriptionTarget_0_8>();
+    private final Map<AMQShortString, ConsumerTarget_0_8> _tag2SubscriptionTargetMap = new HashMap<AMQShortString, ConsumerTarget_0_8>();
 
     private final MessageStore _messageStore;
 
@@ -488,10 +487,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     }
 
 
-    public Subscription getSubscription(AMQShortString tag)
+    public Consumer getSubscription(AMQShortString tag)
     {
-        final SubscriptionTarget_0_8 target = _tag2SubscriptionTargetMap.get(tag);
-        return target == null ? null : target.getSubscription();
+        final ConsumerTarget_0_8 target = _tag2SubscriptionTargetMap.get(tag);
+        return target == null ? null : target.getConsumer();
     }
 
     /**
@@ -522,30 +521,30 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             throw new AMQException("Consumer already exists with same tag: " + tag);
         }
 
-        SubscriptionTarget_0_8 target;
-        EnumSet<Subscription.Option> options = EnumSet.noneOf(Subscription.Option.class);
+        ConsumerTarget_0_8 target;
+        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
 
         if(filters != null && Boolean.TRUE.equals(filters.get(AMQPFilterTypes.NO_CONSUME.getValue())))
         {
-            target = SubscriptionTarget_0_8.createBrowserTarget(this, tag, filters, _creditManager);
-            options.add(Subscription.Option.TRANSIENT);
+            target = ConsumerTarget_0_8.createBrowserTarget(this, tag, filters, _creditManager);
+            options.add(Consumer.Option.TRANSIENT);
         }
         else if(acks)
         {
-            target = SubscriptionTarget_0_8.createAckTarget(this, tag, filters, _creditManager);
-            options.add(Subscription.Option.ACQUIRES);
-            options.add(Subscription.Option.SEES_REQUEUES);
+            target = ConsumerTarget_0_8.createAckTarget(this, tag, filters, _creditManager);
+            options.add(Consumer.Option.ACQUIRES);
+            options.add(Consumer.Option.SEES_REQUEUES);
         }
         else
         {
-            target = SubscriptionTarget_0_8.createNoAckTarget(this, tag, filters, _creditManager);
-            options.add(Subscription.Option.ACQUIRES);
-            options.add(Subscription.Option.SEES_REQUEUES);
+            target = ConsumerTarget_0_8.createNoAckTarget(this, tag, filters, _creditManager);
+            options.add(Consumer.Option.ACQUIRES);
+            options.add(Consumer.Option.SEES_REQUEUES);
         }
 
         if(exclusive)
         {
-            options.add(Subscription.Option.EXCLUSIVE);
+            options.add(Consumer.Option.EXCLUSIVE);
         }
 
         // So to keep things straight we put before the call and catch all exceptions from the register and tidy up.
@@ -557,8 +556,12 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         try
         {
-            Subscription sub =
-                    queue.registerSubscription(target, FilterManagerFactory.createManager(FieldTable.convertToMap(filters)), AMQMessage.class, AMQShortString.toString(tag), options);
+            Consumer sub =
+                    queue.addConsumer(target,
+                                      FilterManagerFactory.createManager(FieldTable.convertToMap(filters)),
+                                      AMQMessage.class,
+                                      AMQShortString.toString(tag),
+                                      options);
         }
         catch (AMQException e)
         {
@@ -582,8 +585,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     public boolean unsubscribeConsumer(AMQShortString consumerTag) throws AMQException
     {
 
-        SubscriptionTarget_0_8 target = _tag2SubscriptionTargetMap.remove(consumerTag);
-        Subscription sub = target == null ? null : target.getSubscription();
+        ConsumerTarget_0_8 target = _tag2SubscriptionTargetMap.remove(consumerTag);
+        Consumer sub = target == null ? null : target.getConsumer();
         if (sub != null)
         {
             sub.close();
@@ -651,14 +654,14 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             }
         }
 
-        for (Map.Entry<AMQShortString, SubscriptionTarget_0_8> me : _tag2SubscriptionTargetMap.entrySet())
+        for (Map.Entry<AMQShortString, ConsumerTarget_0_8> me : _tag2SubscriptionTargetMap.entrySet())
         {
             if (_logger.isInfoEnabled())
             {
                 _logger.info("Unsubscribing consumer '" + me.getKey() + "' on channel " + toString());
             }
 
-            Subscription sub = me.getValue().getSubscription();
+            Consumer sub = me.getValue().getConsumer();
 
 
             sub.close();
@@ -674,14 +677,14 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      * @param entry       the record of the message on the queue that was delivered
      * @param deliveryTag the delivery tag used when delivering the message (see protocol spec for description of the
      *                    delivery tag)
-     * @param subscription The consumer that is to acknowledge this message.
+     * @param consumer The consumer that is to acknowledge this message.
      */
-    public void addUnacknowledgedMessage(MessageInstance entry, long deliveryTag, Subscription subscription)
+    public void addUnacknowledgedMessage(MessageInstance entry, long deliveryTag, Consumer consumer)
     {
         if (_logger.isDebugEnabled())
         {
                     _logger.debug(debugIdentity() + " Adding unacked message(" + entry.getMessage().toString() + " DT:" + deliveryTag
-                               + ") for " + subscription);
+                               + ") for " + consumer);
 
         }
 
@@ -928,9 +931,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             if (wasSuspended)
             {
                 // may need to deliver queued messages
-                for (SubscriptionTarget_0_8 s : _tag2SubscriptionTargetMap.values())
+                for (ConsumerTarget_0_8 s : _tag2SubscriptionTargetMap.values())
                 {
-                    s.getSubscription().externalStateChange();
+                    s.getConsumer().externalStateChange();
                 }
             }
 
@@ -944,15 +947,15 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             if (!wasSuspended)
             {
                 // may need to deliver queued messages
-                for (SubscriptionTarget_0_8 s : _tag2SubscriptionTargetMap.values())
+                for (ConsumerTarget_0_8 s : _tag2SubscriptionTargetMap.values())
                 {
                     try
                     {
-                        s.getSubscription().getSendLock();
+                        s.getConsumer().getSendLock();
                     }
                     finally
                     {
-                        s.getSubscription().releaseSendLock();
+                        s.getConsumer().releaseSendLock();
                     }
                 }
             }
@@ -1029,10 +1032,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         boolean requiresSuspend = _suspended.compareAndSet(false,true);
 
         // ensure all subscriptions have seen the change to the channel state
-        for(SubscriptionTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
+        for(ConsumerTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
         {
-            sub.getSubscription().getSendLock();
-            sub.getSubscription().releaseSendLock();
+            sub.getConsumer().getSendLock();
+            sub.getConsumer().releaseSendLock();
         }
 
         try
@@ -1052,7 +1055,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         for(MessageInstance entry : _resendList)
         {
-            Subscription sub = entry.getDeliveredSubscription();
+            Consumer sub = entry.getDeliveredConsumer();
             if(sub == null || sub.isClosed())
             {
                 entry.release();
@@ -1067,9 +1070,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         if(requiresSuspend)
         {
             _suspended.set(false);
-            for(SubscriptionTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
+            for(ConsumerTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
             {
-                sub.getSubscription().externalStateChange();
+                sub.getConsumer().externalStateChange();
             }
 
         }
@@ -1125,7 +1128,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     private final RecordDeliveryMethod _recordDeliveryMethod = new RecordDeliveryMethod()
         {
 
-            public void recordMessageDelivery(final Subscription sub, final MessageInstance entry, final long deliveryTag)
+            public void recordMessageDelivery(final Consumer sub, final MessageInstance entry, final long deliveryTag)
             {
                 addUnacknowledgedMessage(entry, deliveryTag, sub);
             }
@@ -1472,7 +1475,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         else
         {
             final ServerMessage msg = rejectedQueueEntry.getMessage();
-            final Subscription sub = rejectedQueueEntry.getDeliveredSubscription();
+            final Consumer sub = rejectedQueueEntry.getDeliveredConsumer();
 
             int requeues = rejectedQueueEntry.routeToAlternate(new Action<QueueEntry>()
                 {

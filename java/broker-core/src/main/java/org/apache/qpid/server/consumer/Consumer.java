@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.consumer;
 
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.AMQException;
@@ -27,7 +27,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.StateChangeListener;
 
-public interface Subscription
+public interface Consumer
 {
     AtomicLong SUB_ID_GENERATOR = new AtomicLong(0);
 
@@ -63,11 +63,11 @@ public interface Subscription
 
     AMQSessionModel getSessionModel();
 
-    MessageInstance.SubscriptionAcquiredState getOwningState();
+    MessageInstance.ConsumerAcquiredState getOwningState();
 
     void setNoLocal(boolean noLocal);
 
-    long getSubscriptionID();
+    long getId();
 
     boolean isSuspended();
 
@@ -101,7 +101,7 @@ public interface Subscription
 
     void restoreCredit(final MessageInstance queueEntry);
 
-    void setStateListener(final StateChangeListener<? extends Subscription, State> listener);
+    void setStateListener(final StateChangeListener<? extends Consumer, State> listener);
 
     public State getState();
 

@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol.v0_10;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.queue.QueueEntry;
 
 
 class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
@@ -32,9 +31,9 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
 
     private final MessageInstance _entry;
-    private final SubscriptionTarget_0_10 _target;
+    private final ConsumerTarget_0_10 _target;
 
-    public ExplicitAcceptDispositionChangeListener(MessageInstance entry, SubscriptionTarget_0_10 target)
+    public ExplicitAcceptDispositionChangeListener(MessageInstance entry, ConsumerTarget_0_10 target)
     {
         _entry = entry;
         _target = target;
@@ -42,7 +41,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onAccept()
     {
-        if(_target != null && _entry.isAcquiredBy(_target.getSubscription()))
+        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
         {
             _target.getSessionModel().acknowledge(_target, _entry);
         }
@@ -55,7 +54,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        if(_target != null && _entry.isAcquiredBy(_target.getSubscription()))
+        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
         {
             _target.release(_entry, setRedelivered);
         }
@@ -67,7 +66,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        if(_target != null && _entry.isAcquiredBy(_target.getSubscription()))
+        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
         {
             _target.reject(_entry);
         }
@@ -80,7 +79,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        return _entry.acquire(_target.getSubscription());
+        return _entry.acquire(_target.getConsumer());
     }
 
 

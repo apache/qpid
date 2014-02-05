@@ -63,7 +63,6 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.DistributedTransaction;
@@ -137,7 +136,7 @@ public class ServerSession extends Session
     private final AtomicLong _txnRejects = new AtomicLong(0);
     private final AtomicLong _txnCount = new AtomicLong(0);
 
-    private Map<String, SubscriptionTarget_0_10> _subscriptions = new ConcurrentHashMap<String, SubscriptionTarget_0_10>();
+    private Map<String, ConsumerTarget_0_10> _subscriptions = new ConcurrentHashMap<String, ConsumerTarget_0_10>();
 
     private final List<Action<ServerSession>> _taskList = new CopyOnWriteArrayList<Action<ServerSession>>();
 
@@ -400,7 +399,7 @@ public class ServerSession extends Session
         // Broker shouldn't block awaiting close - thus do override this method to do nothing
     }
 
-    public void acknowledge(final SubscriptionTarget_0_10 sub, final MessageInstance entry)
+    public void acknowledge(final ConsumerTarget_0_10 sub, final MessageInstance entry)
     {
         _transaction.dequeue(entry.getOwningResource(), entry.getMessage(),
                              new ServerTransaction.Action()
@@ -421,22 +420,22 @@ public class ServerSession extends Session
                              });
     }
 
-    public Collection<SubscriptionTarget_0_10> getSubscriptions()
+    public Collection<ConsumerTarget_0_10> getSubscriptions()
     {
         return _subscriptions.values();
     }
 
-    public void register(String destination, SubscriptionTarget_0_10 sub)
+    public void register(String destination, ConsumerTarget_0_10 sub)
     {
         _subscriptions.put(destination == null ? NULL_DESTINATION : destination, sub);
     }
 
-    public SubscriptionTarget_0_10 getSubscription(String destination)
+    public ConsumerTarget_0_10 getSubscription(String destination)
     {
         return _subscriptions.get(destination == null ? NULL_DESTINATION : destination);
     }
 
-    public void unregister(SubscriptionTarget_0_10 sub)
+    public void unregister(ConsumerTarget_0_10 sub)
     {
         _subscriptions.remove(sub.getName());
         sub.close();
@@ -808,8 +807,8 @@ public class ServerSession extends Session
 
     void unregisterSubscriptions()
     {
-        final Collection<SubscriptionTarget_0_10> subscriptions = getSubscriptions();
-        for (SubscriptionTarget_0_10 subscription_0_10 : subscriptions)
+        final Collection<ConsumerTarget_0_10> subscriptions = getSubscriptions();
+        for (ConsumerTarget_0_10 subscription_0_10 : subscriptions)
         {
             unregister(subscription_0_10);
         }
@@ -817,8 +816,8 @@ public class ServerSession extends Session
 
     void stopSubscriptions()
     {
-        final Collection<SubscriptionTarget_0_10> subscriptions = getSubscriptions();
-        for (SubscriptionTarget_0_10 subscription_0_10 : subscriptions)
+        final Collection<ConsumerTarget_0_10> subscriptions = getSubscriptions();
+        for (ConsumerTarget_0_10 subscription_0_10 : subscriptions)
         {
             subscription_0_10.stop();
         }
@@ -827,8 +826,8 @@ public class ServerSession extends Session
 
     public void receivedComplete()
     {
-        final Collection<SubscriptionTarget_0_10> subscriptions = getSubscriptions();
-        for (SubscriptionTarget_0_10 subscription_0_10 : subscriptions)
+        final Collection<ConsumerTarget_0_10> subscriptions = getSubscriptions();
+        for (ConsumerTarget_0_10 subscription_0_10 : subscriptions)
         {
             subscription_0_10.flushCreditState(false);
         }

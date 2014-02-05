@@ -31,8 +31,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionTarget;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -83,27 +83,27 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     VirtualHost getVirtualHost();
 
-    Subscription registerSubscription(final SubscriptionTarget target, final FilterManager filters,
-                                      final Class<? extends ServerMessage> messageClass,
-                                      final String consumerName, EnumSet<Subscription.Option> options) throws AMQException;
+    Consumer addConsumer(final ConsumerTarget target, final FilterManager filters,
+                         final Class<? extends ServerMessage> messageClass,
+                         final String consumerName, EnumSet<Consumer.Option> options) throws AMQException;
 
-    Collection<Subscription> getConsumers();
+    Collection<Consumer> getConsumers();
 
-    interface SubscriptionRegistrationListener
+    interface ConsumerRegistrationListener
     {
-        void subscriptionRegistered(AMQQueue queue, Subscription subscription);
-        void subscriptionUnregistered(AMQQueue queue, Subscription subscription);
+        void consumerAdded(AMQQueue queue, Consumer consumer);
+        void consumerRemoved(AMQQueue queue, Consumer consumer);
     }
 
-    void addSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
-    void removeSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
+    void addConsumerRegistrationListener(ConsumerRegistrationListener listener);
+    void removeConsumerRegistrationListener(ConsumerRegistrationListener listener);
 
 
     int getConsumerCount();
 
     int getActiveConsumerCount();
 
-    boolean hasExclusiveSubscriber();
+    boolean hasExclusiveConsumer();
 
     boolean isUnused();
 
@@ -126,11 +126,11 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     void requeue(QueueEntry entry);
 
-    void dequeue(QueueEntry entry, Subscription sub);
+    void dequeue(QueueEntry entry, Consumer sub);
 
     void decrementUnackedMsgCount(QueueEntry queueEntry);
 
-    boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
+    boolean resend(final QueueEntry entry, final Consumer consumer) throws AMQException;
 
     void addQueueDeleteTask(Action<AMQQueue> task);
     void removeQueueDeleteTask(Action<AMQQueue> task);
@@ -209,7 +209,7 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     Set<NotificationCheck> getNotificationChecks();
 
-    void flushSubscription(final Subscription sub) throws AMQException;
+    void flushConsumer(final Consumer sub) throws AMQException;
 
     void deliverAsync();
 
@@ -227,43 +227,43 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
     void checkCapacity(AMQSessionModel channel);
 
     /**
-     * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
+     * ExistingExclusiveConsumer signals a failure to create a consumer, because an exclusive consumer
      * already exists.
      *
      * <p/><table id="crc"><caption>CRC Card</caption>
      * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create a subscription, because an exclusive subscription already exists.
+     * <tr><td> Represent failure to create a consumer, because an exclusive consumer already exists.
      * </table>
      *
      * @todo Not an AMQP exception as no status code.
      *
      * @todo Move to top level, used outside this class.
      */
-    static final class ExistingExclusiveSubscription extends AMQException
+    static final class ExistingExclusiveConsumer extends AMQException
     {
 
-        public ExistingExclusiveSubscription()
+        public ExistingExclusiveConsumer()
         {
             super("");
         }
     }
 
     /**
-     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusive subscription, as a subscription
+     * ExistingConsumerPreventsExclusive signals a failure to create an exclusive consumer, as a consumer
      * already exists.
      *
      * <p/><table id="crc"><caption>CRC Card</caption>
      * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create an exclusive subscription, as a subscription already exists.
+     * <tr><td> Represent failure to create an exclusive consumer, as a consumer already exists.
      * </table>
      *
      * @todo Not an AMQP exception as no status code.
      *
      * @todo Move to top level, used outside this class.
      */
-    static final class ExistingSubscriptionPreventsExclusive extends AMQException
+    static final class ExistingConsumerPreventsExclusive extends AMQException
     {
-        public ExistingSubscriptionPreventsExclusive()
+        public ExistingConsumerPreventsExclusive()
         {
             super("");
         }

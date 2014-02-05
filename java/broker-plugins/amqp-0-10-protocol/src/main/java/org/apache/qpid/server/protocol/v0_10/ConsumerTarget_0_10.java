@@ -22,7 +22,6 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -34,8 +33,8 @@ import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.subscription.AbstractSubscriptionTarget;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.AbstractConsumerTarget;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -46,7 +45,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implements FlowCreditManager.FlowCreditManagerListener
+public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowCreditManager.FlowCreditManagerListener
 {
 
     private static final Option[] BATCHED = new Option[] { Option.BATCH };
@@ -69,16 +68,16 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     private final Map<String, Object> _arguments;
     private int _deferredMessageCredit;
     private long _deferredSizeCredit;
-    private Subscription _subscription;
+    private Consumer _consumer;
 
 
-    public SubscriptionTarget_0_10(ServerSession session,
-                                   String name,
-                                   MessageAcceptMode acceptMode,
-                                   MessageAcquireMode acquireMode,
-                                   MessageFlowMode flowMode,
-                                   FlowCreditManager_0_10 creditManager,
-                                   Map<String, Object> arguments)
+    public ConsumerTarget_0_10(ServerSession session,
+                               String name,
+                               MessageAcceptMode acceptMode,
+                               MessageAcquireMode acquireMode,
+                               MessageFlowMode flowMode,
+                               FlowCreditManager_0_10 creditManager,
+                               Map<String, Object> arguments)
     {
         super(State.SUSPENDED);
         _session = session;
@@ -93,9 +92,9 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         _name = name;
     }
 
-    public Subscription getSubscription()
+    public Consumer getConsumer()
     {
-        return _subscription;
+        return _consumer;
     }
 
     public boolean isSuspended()
@@ -108,7 +107,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         boolean closed = false;
         State state = getState();
 
-        getSubscription().getSendLock();
+        getConsumer().getSendLock();
         try
         {
             while(!closed && state != State.CLOSED)
@@ -124,7 +123,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
             }
         finally
         {
-            getSubscription().releaseSendLock();
+            getConsumer().releaseSendLock();
         }
 
         return closed;
@@ -255,8 +254,8 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         Header header = new Header(deliveryProps, messageProps, msg.getHeader() == null ? null : msg.getHeader().getNonStandardProperties());
 
 
-        xfr = batch ? new MessageTransfer(getSubscription().getName(),_acceptMode,_acquireMode,header,msg.getBody(), BATCHED)
-                    : new MessageTransfer(getSubscription().getName(),_acceptMode,_acquireMode,header,msg.getBody());
+        xfr = batch ? new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header,msg.getBody(), BATCHED)
+                    : new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header,msg.getBody());
 
         if(_acceptMode == MessageAcceptMode.NONE && _acquireMode != MessageAcquireMode.PRE_ACQUIRED)
         {
@@ -353,7 +352,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     {
         entry.setRedelivered();
         entry.routeToAlternate(null, null);
-        if(entry.isAcquiredBy(getSubscription()))
+        if(entry.isAcquiredBy(getConsumer()))
         {
             entry.delete();
         }
@@ -450,7 +449,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     {
         try
         {
-            getSubscription().getSendLock();
+            getConsumer().getSendLock();
 
             updateState(State.ACTIVE, State.SUSPENDED);
             _stopped.set(true);
@@ -459,7 +458,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
         }
         finally
         {
-            getSubscription().releaseSendLock();
+            getConsumer().releaseSendLock();
         }
     }
 
@@ -519,7 +518,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     public void acknowledge(MessageInstance entry)
     {
         // TODO Fix Store Context / cleanup
-        if(entry.isAcquiredBy(getSubscription()))
+        if(entry.isAcquiredBy(getConsumer()))
         {
             _unacknowledgedBytes.addAndGet(-entry.getMessage().getSize());
             _unacknowledgedCount.decrementAndGet();
@@ -530,7 +529,7 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
     public void flush() throws AMQException
     {
         flushCreditState(true);
-        getSubscription().flush();
+        getConsumer().flush();
         stop();
     }
 
@@ -560,13 +559,13 @@ public class SubscriptionTarget_0_10 extends AbstractSubscriptionTarget implemen
 
 
     @Override
-    public void subscriptionRegistered(final Subscription sub)
+    public void consumerAdded(final Consumer sub)
     {
-        _subscription = sub;
+        _consumer = sub;
     }
 
     @Override
-    public void subscriptionRemoved(final Subscription sub)
+    public void consumerRemoved(final Consumer sub)
     {
     }
 

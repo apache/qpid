@@ -49,7 +49,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -245,7 +245,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
 
         @Override
-        public void deliverToClient(Subscription sub, ServerMessage message,
+        public void deliverToClient(Consumer sub, ServerMessage message,
                                     InstanceProperties props, long deliveryTag) throws AMQException
         {
             _deliveryCount.incrementAndGet();

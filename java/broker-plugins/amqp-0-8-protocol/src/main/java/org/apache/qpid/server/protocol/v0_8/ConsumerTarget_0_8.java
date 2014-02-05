@@ -33,8 +33,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.subscription.AbstractSubscriptionTarget;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.AbstractConsumerTarget;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Encapsulation of a subscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
  * that was given out by the broker and the channel id. <p/>
  */
-public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget implements FlowCreditManager.FlowCreditManagerListener
+public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implements FlowCreditManager.FlowCreditManagerListener
 {
 
     private final StateChangeListener<QueueEntry, QueueEntry.State> _entryReleaseListener =
@@ -70,23 +70,23 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
 
     private final AtomicLong _unacknowledgedCount = new AtomicLong(0);
     private final AtomicLong _unacknowledgedBytes = new AtomicLong(0);
-    private Subscription _subscription;
+    private Consumer _consumer;
 
 
-    public static SubscriptionTarget_0_8 createBrowserTarget(AMQChannel channel,
+    public static ConsumerTarget_0_8 createBrowserTarget(AMQChannel channel,
                                                              AMQShortString consumerTag, FieldTable filters,
                                                              FlowCreditManager creditManager) throws AMQException
     {
-        return new BrowserSubscription(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
+        return new BrowserConsumer(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
     }
 
-    static final class BrowserSubscription extends SubscriptionTarget_0_8
+    static final class BrowserConsumer extends ConsumerTarget_0_8
     {
-        public BrowserSubscription(AMQChannel channel,
-                                   AMQShortString consumerTag, FieldTable filters,
-                                   FlowCreditManager creditManager,
-                                   ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod)
+        public BrowserConsumer(AMQChannel channel,
+                               AMQShortString consumerTag, FieldTable filters,
+                               FlowCreditManager creditManager,
+                               ClientDeliveryMethod deliveryMethod,
+                               RecordDeliveryMethod recordMethod)
             throws AMQException
         {
             super(channel, consumerTag,
@@ -124,31 +124,31 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
 
     }
 
-    public static SubscriptionTarget_0_8 createNoAckTarget(AMQChannel channel,
+    public static ConsumerTarget_0_8 createNoAckTarget(AMQChannel channel,
                                                            AMQShortString consumerTag, FieldTable filters,
                                                            FlowCreditManager creditManager) throws AMQException
     {
-        return new NoAckSubscription(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
+        return new NoAckConsumer(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
     }
 
-    public static SubscriptionTarget_0_8 createNoAckTarget(AMQChannel channel,
+    public static ConsumerTarget_0_8 createNoAckTarget(AMQChannel channel,
                                                            AMQShortString consumerTag, FieldTable filters,
                                                            FlowCreditManager creditManager,
                                                            ClientDeliveryMethod deliveryMethod,
                                                            RecordDeliveryMethod recordMethod) throws AMQException
     {
-        return new NoAckSubscription(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
+        return new NoAckConsumer(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
     }
 
-    public static class NoAckSubscription extends SubscriptionTarget_0_8
+    public static class NoAckConsumer extends ConsumerTarget_0_8
     {
         private final AutoCommitTransaction _txn;
 
-        public NoAckSubscription(AMQChannel channel,
-                                 AMQShortString consumerTag, FieldTable filters,
-                                 FlowCreditManager creditManager,
-                                 ClientDeliveryMethod deliveryMethod,
-                                 RecordDeliveryMethod recordMethod)
+        public NoAckConsumer(AMQChannel channel,
+                             AMQShortString consumerTag, FieldTable filters,
+                             FlowCreditManager creditManager,
+                             ClientDeliveryMethod deliveryMethod,
+                             RecordDeliveryMethod recordMethod)
             throws AMQException
         {
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
@@ -221,13 +221,13 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
     /**
      * NoAck Subscription for use with BasicGet method.
      */
-    public static final class GetNoAckSubscription extends SubscriptionTarget_0_8.NoAckSubscription
+    public static final class GetNoAckConsumer extends NoAckConsumer
     {
-        public GetNoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
-                                    AMQShortString consumerTag, FieldTable filters,
-                                    boolean noLocal, FlowCreditManager creditManager,
-                                    ClientDeliveryMethod deliveryMethod,
-                                    RecordDeliveryMethod recordMethod)
+        public GetNoAckConsumer(AMQChannel channel, AMQProtocolSession protocolSession,
+                                AMQShortString consumerTag, FieldTable filters,
+                                boolean noLocal, FlowCreditManager creditManager,
+                                ClientDeliveryMethod deliveryMethod,
+                                RecordDeliveryMethod recordMethod)
             throws AMQException
         {
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
@@ -241,32 +241,32 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
     }
 
 
-    public static SubscriptionTarget_0_8 createAckTarget(AMQChannel channel,
+    public static ConsumerTarget_0_8 createAckTarget(AMQChannel channel,
                                                          AMQShortString consumerTag, FieldTable filters,
                                                          FlowCreditManager creditManager)
             throws AMQException
     {
-        return new AckSubscription(channel,consumerTag,filters,creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
+        return new AckConsumer(channel,consumerTag,filters,creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
     }
 
 
-    public static SubscriptionTarget_0_8 createAckTarget(AMQChannel channel,
+    public static ConsumerTarget_0_8 createAckTarget(AMQChannel channel,
                                                          AMQShortString consumerTag, FieldTable filters,
                                                          FlowCreditManager creditManager,
                                                          ClientDeliveryMethod deliveryMethod,
                                                          RecordDeliveryMethod recordMethod)
             throws AMQException
     {
-        return new AckSubscription(channel,consumerTag,filters,creditManager, deliveryMethod, recordMethod);
+        return new AckConsumer(channel,consumerTag,filters,creditManager, deliveryMethod, recordMethod);
     }
 
-    static final class AckSubscription extends SubscriptionTarget_0_8
+    static final class AckConsumer extends ConsumerTarget_0_8
     {
-        public AckSubscription(AMQChannel channel,
-                               AMQShortString consumerTag, FieldTable filters,
-                               FlowCreditManager creditManager,
-                               ClientDeliveryMethod deliveryMethod,
-                               RecordDeliveryMethod recordMethod)
+        public AckConsumer(AMQChannel channel,
+                           AMQShortString consumerTag, FieldTable filters,
+                           FlowCreditManager creditManager,
+                           ClientDeliveryMethod deliveryMethod,
+                           RecordDeliveryMethod recordMethod)
             throws AMQException
         {
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
@@ -305,7 +305,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
     }
 
 
-    private static final Logger _logger = Logger.getLogger(SubscriptionTarget_0_8.class);
+    private static final Logger _logger = Logger.getLogger(ConsumerTarget_0_8.class);
 
     private final AMQChannel _channel;
 
@@ -320,12 +320,12 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
 
 
 
-    public SubscriptionTarget_0_8(AMQChannel channel,
-                                  AMQShortString consumerTag,
-                                  FieldTable arguments,
-                                  FlowCreditManager creditManager,
-                                  ClientDeliveryMethod deliveryMethod,
-                                  RecordDeliveryMethod recordMethod)
+    public ConsumerTarget_0_8(AMQChannel channel,
+                              AMQShortString consumerTag,
+                              FieldTable arguments,
+                              FlowCreditManager creditManager,
+                              ClientDeliveryMethod deliveryMethod,
+                              RecordDeliveryMethod recordMethod)
             throws AMQException
     {
         super(State.ACTIVE);
@@ -357,20 +357,20 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         }
     }
 
-    public Subscription getSubscription()
+    public Consumer getConsumer()
     {
-        return _subscription;
+        return _consumer;
     }
 
     @Override
-    public void subscriptionRemoved(final Subscription sub)
+    public void consumerRemoved(final Consumer sub)
     {
     }
 
     @Override
-    public void subscriptionRegistered(final Subscription sub)
+    public void consumerAdded(final Consumer sub)
     {
-        _subscription = sub;
+        _consumer = sub;
     }
 
     public AMQSessionModel getSessionModel()
@@ -417,7 +417,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         boolean closed = false;
         State state = getState();
 
-        getSubscription().getSendLock();
+        getConsumer().getSendLock();
         try
         {
             while(!closed && state != State.CLOSED)
@@ -433,7 +433,7 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
         }
         finally
         {
-            getSubscription().releaseSendLock();
+            getConsumer().releaseSendLock();
         }
     }
 
@@ -488,14 +488,14 @@ public abstract class SubscriptionTarget_0_8 extends AbstractSubscriptionTarget 
     protected void sendToClient(final ServerMessage message, final InstanceProperties props, final long deliveryTag)
             throws AMQException
     {
-        _deliveryMethod.deliverToClient(getSubscription(), message, props, deliveryTag);
+        _deliveryMethod.deliverToClient(getConsumer(), message, props, deliveryTag);
 
     }
 
 
     protected void recordMessageDelivery(final MessageInstance entry, final long deliveryTag)
     {
-        _recordMethod.recordMessageDelivery(getSubscription(),entry,deliveryTag);
+        _recordMethod.recordMessageDelivery(getConsumer(),entry,deliveryTag);
     }
 
 

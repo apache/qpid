@@ -19,7 +19,7 @@
 *
 */
 
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.consumer;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.StateChangeListener;
 
@@ -46,29 +45,26 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class MockSubscription implements SubscriptionTarget
+public class MockConsumer implements ConsumerTarget
 {
 
     private final List<String> _messageIds;
     private boolean _closed = false;
     private String tag = "mocktag";
     private AMQQueue queue = null;
-    private StateChangeListener<SubscriptionTarget, State> _listener = null;
+    private StateChangeListener<ConsumerTarget, State> _listener = null;
     private State _state = State.ACTIVE;
     private ArrayList<MessageInstance> messages = new ArrayList<MessageInstance>();
     private final Lock _stateChangeLock = new ReentrantLock();
 
-    private static final AtomicLong idGenerator = new AtomicLong(0);
-    // Create a simple ID that increments for ever new Subscription
     private boolean _isActive = true;
-    private Subscription _subscription;
 
-    public MockSubscription()
+    public MockConsumer()
     {
         _messageIds = null;
     }
 
-    public MockSubscription(List<String> messageIds)
+    public MockConsumer(List<String> messageIds)
     {
         _messageIds = messageIds;
     }
@@ -177,13 +173,12 @@ public class MockSubscription implements SubscriptionTarget
     }
 
     @Override
-    public void subscriptionRegistered(final Subscription sub)
+    public void consumerAdded(final Consumer sub)
     {
-        _subscription = sub;
     }
 
     @Override
-    public void subscriptionRemoved(final Subscription sub)
+    public void consumerRemoved(final Consumer sub)
     {
 
     }
@@ -199,7 +194,7 @@ public class MockSubscription implements SubscriptionTarget
     }
 
     @Override
-    public void setStateListener(final StateChangeListener<SubscriptionTarget, State> listener)
+    public void setStateListener(final StateChangeListener<ConsumerTarget, State> listener)
     {
         _listener = listener;
     }

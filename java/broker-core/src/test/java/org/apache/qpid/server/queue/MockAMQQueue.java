@@ -29,8 +29,8 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionTarget;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -207,15 +207,15 @@ public class MockAMQQueue implements AMQQueue
     }
 
     @Override
-    public Subscription registerSubscription(final SubscriptionTarget target,
-                                             final FilterManager filters,
-                                             final Class<? extends ServerMessage> messageClass,
-                                             final String consumerName,
-                                             final EnumSet<Subscription.Option> options) throws AMQException
+    public Consumer addConsumer(final ConsumerTarget target,
+                                final FilterManager filters,
+                                final Class<? extends ServerMessage> messageClass,
+                                final String consumerName,
+                                final EnumSet<Consumer.Option> options) throws AMQException
     {
-        return new QueueSubscription(filters, messageClass, options.contains(Subscription.Option.ACQUIRES),
-                                          options.contains(Subscription.Option.SEES_REQUEUES), consumerName,
-                                          options.contains(Subscription.Option.TRANSIENT), target );
+        return new QueueConsumer(filters, messageClass, options.contains(Consumer.Option.ACQUIRES),
+                                          options.contains(Consumer.Option.SEES_REQUEUES), consumerName,
+                                          options.contains(Consumer.Option.TRANSIENT), target );
     }
 
     public String getName()
@@ -224,22 +224,18 @@ public class MockAMQQueue implements AMQQueue
     }
 
 
-    public void unregisterSubscription(Subscription subscription) throws AMQException
-    {
 
-    }
-
-    public Collection<Subscription> getConsumers()
+    public Collection<Consumer> getConsumers()
     {
         return Collections.emptyList();
     }
 
-    public void addSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    public void addConsumerRegistrationListener(final ConsumerRegistrationListener listener)
     {
 
     }
 
-    public void removeSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    public void removeConsumerRegistrationListener(final ConsumerRegistrationListener listener)
     {
 
     }
@@ -254,7 +250,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public boolean hasExclusiveSubscriber()
+    public boolean hasExclusiveConsumer()
     {
         return false;
     }
@@ -318,11 +314,11 @@ public class MockAMQQueue implements AMQQueue
     {
     }
 
-    public void dequeue(QueueEntry entry, Subscription sub)
+    public void dequeue(QueueEntry entry, Consumer sub)
     {
     }
 
-    public boolean resend(QueueEntry entry, Subscription subscription) throws AMQException
+    public boolean resend(QueueEntry entry, Consumer consumer) throws AMQException
     {
         return false;
     }
@@ -431,12 +427,12 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void flushSubscription(Subscription sub) throws AMQException
+    public void flushConsumer(Consumer sub) throws AMQException
     {
 
     }
 
-    public void deliverAsync(Subscription sub)
+    public void deliverAsync(Consumer sub)
     {
 
     }

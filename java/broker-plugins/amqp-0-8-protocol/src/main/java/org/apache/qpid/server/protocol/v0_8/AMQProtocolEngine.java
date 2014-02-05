@@ -94,7 +94,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
@@ -1668,7 +1668,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
 
         @Override
-        public void deliverToClient(final Subscription sub, final ServerMessage message,
+        public void deliverToClient(final Consumer sub, final ServerMessage message,
                                     final InstanceProperties props, final long deliveryTag)
                 throws AMQException
         {

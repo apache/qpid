@@ -68,8 +68,7 @@ import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -82,8 +81,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     private VirtualHost _vhost;
     private SendingDestination _destination;
 
-    private Subscription _subscription;
-    private SubscriptionTarget_1_0 _target;
+    private Consumer _consumer;
+    private ConsumerTarget_1_0 _target;
 
     private boolean _draining;
     private final Map<Binary, MessageInstance> _unsettledMap =
@@ -112,7 +111,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         linkAttachment.setDeliveryStateHandler(this);
         QueueDestination qd = null;
 
-        EnumSet<Subscription.Option> options = EnumSet.noneOf(Subscription.Option.class);
+        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
 
 
         boolean noLocal = false;
@@ -175,11 +174,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-            _target = new SubscriptionTarget_1_0(this, source.getDistributionMode() != StdDistMode.COPY);
+            _target = new ConsumerTarget_1_0(this, source.getDistributionMode() != StdDistMode.COPY);
             if(source.getDistributionMode() != StdDistMode.COPY)
             {
-                options.add(Subscription.Option.ACQUIRES);
-                options.add(Subscription.Option.SEES_REQUEUES);
+                options.add(Consumer.Option.ACQUIRES);
+                options.add(Consumer.Option.SEES_REQUEUES);
             }
 
         }
@@ -376,9 +375,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
 
 
-            _target = new SubscriptionTarget_1_0(this, true);
-            options.add(Subscription.Option.ACQUIRES);
-            options.add(Subscription.Option.SEES_REQUEUES);
+            _target = new ConsumerTarget_1_0(this, true);
+            options.add(Consumer.Option.ACQUIRES);
+            options.add(Consumer.Option.SEES_REQUEUES);
 
         }
         else
@@ -390,18 +389,18 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         {
             if(noLocal)
             {
-                options.add(Subscription.Option.NO_LOCAL);
+                options.add(Consumer.Option.NO_LOCAL);
             }
 
 
-            _subscription.setNoLocal(noLocal);
+            _consumer.setNoLocal(noLocal);
 
 
             try
             {
-                _subscription = _queue.registerSubscription(_target,
-                                                           messageFilter == null ? null : new SimpleFilterManager(messageFilter),
-                                                           Message_1_0.class, getEndpoint().getName(), options);
+                _consumer = _queue.addConsumer(_target,
+                                               messageFilter == null ? null : new SimpleFilterManager(messageFilter),
+                                               Message_1_0.class, getEndpoint().getName(), options);
             }
             catch (AMQException e)
             {
@@ -428,7 +427,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             try
             {
 
-                _subscription.close();
+                _consumer.close();
 
             }
             catch (AMQException e)
@@ -622,7 +621,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public synchronized void setLinkAttachment(SendingLinkAttachment linkAttachment)
     {
 
-        if(_subscription.isActive())
+        if(_consumer.isActive())
         {
             _target.suspend();
         }
@@ -653,7 +652,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 if(outcome instanceof Accepted)
                 {
                     AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getMessageStore());
-                    if(_subscription.acquires())
+                    if(_consumer.acquires())
                     {
                         txn.dequeue(Collections.singleton(queueEntry),
                                 new ServerTransaction.Action()
@@ -673,7 +672,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 else if(outcome instanceof Released)
                 {
                     AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getMessageStore());
-                    if(_subscription.acquires())
+                    if(_consumer.acquires())
                     {
                         txn.dequeue(Collections.singleton(queueEntry),
                                 new ServerTransaction.Action()

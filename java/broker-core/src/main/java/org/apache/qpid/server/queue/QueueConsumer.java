@@ -33,8 +33,8 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionTarget;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.util.StateChangeListener;
 
 import java.text.MessageFormat;
@@ -47,16 +47,16 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
 
-class QueueSubscription<T extends SubscriptionTarget> implements Subscription
+class QueueConsumer<T extends ConsumerTarget> implements Consumer
 {
-    private static final Logger _logger = Logger.getLogger(QueueSubscription.class);
+    private static final Logger _logger = Logger.getLogger(QueueConsumer.class);
     private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
-    private final long _subscriptionID;
+    private final long _id;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
     private final Lock _stateChangeLock = new ReentrantLock();
     private final long _createTime = System.currentTimeMillis();
-    private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final MessageInstance.ConsumerAcquiredState _owningState = new MessageInstance.ConsumerAcquiredState(this);
     private final boolean _acquires;
     private final boolean _seesRequeues;
     private final String _consumerName;
@@ -69,39 +69,39 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
     private SimpleAMQQueue _queue;
     private GenericActor _logActor;
 
-    static final EnumMap<SubscriptionTarget.State, State> STATE_MAP =
-            new EnumMap<SubscriptionTarget.State, State>(SubscriptionTarget.State.class);
+    static final EnumMap<ConsumerTarget.State, State> STATE_MAP =
+            new EnumMap<ConsumerTarget.State, State>(ConsumerTarget.State.class);
 
     static
     {
-        STATE_MAP.put(SubscriptionTarget.State.ACTIVE, State.ACTIVE);
-        STATE_MAP.put(SubscriptionTarget.State.SUSPENDED, State.SUSPENDED);
-        STATE_MAP.put(SubscriptionTarget.State.CLOSED, State.CLOSED);
+        STATE_MAP.put(ConsumerTarget.State.ACTIVE, State.ACTIVE);
+        STATE_MAP.put(ConsumerTarget.State.SUSPENDED, State.SUSPENDED);
+        STATE_MAP.put(ConsumerTarget.State.CLOSED, State.CLOSED);
     }
 
     private final T _target;
     private final SubFlushRunner _runner = new SubFlushRunner(this);
     private volatile QueueContext _queueContext;
-    private StateChangeListener<? extends Subscription, State> _stateListener = new StateChangeListener<Subscription, State>()
+    private StateChangeListener<? extends Consumer, State> _stateListener = new StateChangeListener<Consumer, State>()
     {
-        public void stateChanged(Subscription sub, State oldState, State newState)
+        public void stateChanged(Consumer sub, State oldState, State newState)
         {
             CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
         }
     };
     private boolean _noLocal;
 
-    QueueSubscription(final FilterManager filters,
-                      final Class<? extends ServerMessage> messageClass,
-                      final boolean acquires,
-                      final boolean seesRequeues,
-                      final String consumerName,
-                      final boolean isTransient,
-                      T target)
+    QueueConsumer(final FilterManager filters,
+                  final Class<? extends ServerMessage> messageClass,
+                  final boolean acquires,
+                  final boolean seesRequeues,
+                  final String consumerName,
+                  final boolean isTransient,
+                  T target)
     {
         _messageClass = messageClass;
         _sessionReference = target.getSessionModel().getConnectionReference();
-        _subscriptionID = SUB_ID_GENERATOR.getAndIncrement();
+        _id = SUB_ID_GENERATOR.getAndIncrement();
         _filters = filters;
         _acquires = acquires;
         _seesRequeues = seesRequeues;
@@ -109,23 +109,23 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
         _isTransient = isTransient;
         _target = target;
         _target.setStateListener(
-                new StateChangeListener<SubscriptionTarget, SubscriptionTarget.State>()
+                new StateChangeListener<ConsumerTarget, ConsumerTarget.State>()
                     {
                         @Override
-                        public void stateChanged(final SubscriptionTarget object,
-                                                 final SubscriptionTarget.State oldState,
-                                                 final SubscriptionTarget.State newState)
+                        public void stateChanged(final ConsumerTarget object,
+                                                 final ConsumerTarget.State oldState,
+                                                 final ConsumerTarget.State newState)
                         {
                             targetStateChanged(oldState, newState);
                         }
                     });
     }
 
-    private void targetStateChanged(final SubscriptionTarget.State oldState, final SubscriptionTarget.State newState)
+    private void targetStateChanged(final ConsumerTarget.State oldState, final ConsumerTarget.State newState)
     {
         if(oldState != newState)
         {
-            if(newState == SubscriptionTarget.State.CLOSED)
+            if(newState == ConsumerTarget.State.CLOSED)
             {
                 if(_targetClosed.compareAndSet(false,true))
                 {
@@ -138,7 +138,7 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
             }
         }
 
-        if(newState == SubscriptionTarget.State.CLOSED && oldState != newState && !_closed.get())
+        if(newState == ConsumerTarget.State.CLOSED && oldState != newState && !_closed.get())
         {
             try
             {
@@ -146,12 +146,12 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
             }
             catch (AMQException e)
             {
-                _logger.error("Unable to remove to remove subscription", e);
+                _logger.error("Unable to remove to remove consumer", e);
                 throw new RuntimeException(e);
             }
         }
-        final StateChangeListener<Subscription, State> stateListener =
-                (StateChangeListener<Subscription, State>) getStateListener();
+        final StateChangeListener<Consumer, State> stateListener =
+                (StateChangeListener<Consumer, State>) getStateListener();
         if(stateListener != null)
         {
             stateListener.stateChanged(this, STATE_MAP.get(oldState), STATE_MAP.get(newState));
@@ -202,8 +202,8 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
             try
             {
                 _target.close();
-                _target.subscriptionRemoved(this);
-                _queue.unregisterSubscription(this);
+                _target.consumerRemoved(this);
+                _queue.unregisterConsumer(this);
             }
             finally
             {
@@ -258,13 +258,13 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
     {
         if(getQueue() != null)
         {
-            throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
+            throw new IllegalStateException("Attempt to set queue for consumer " + this + " to " + queue + "when already set to " + getQueue());
         }
         _queue = queue;
 
         String queueString = new QueueLogSubject(_queue).toLogString();
 
-        _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getSubscriptionID())
+        _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getId())
                              + "("
                              // queueString is [vh(/{0})/qu({1}) ] so need to trim
                              //                ^                ^^
@@ -295,7 +295,7 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
     @Override
     public final void flush() throws AMQException
     {
-        getQueue().flushSubscription(this);
+        getQueue().flushConsumer(this);
     }
 
     @Override
@@ -309,17 +309,17 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
         return _runner;
     }
 
-    public final long getSubscriptionID()
+    public final long getId()
     {
-        return _subscriptionID;
+        return _id;
     }
 
-    public final StateChangeListener<? extends Subscription, State> getStateListener()
+    public final StateChangeListener<? extends Consumer, State> getStateListener()
     {
         return _stateListener;
     }
 
-    public final void setStateListener(StateChangeListener<? extends Subscription, State> listener)
+    public final void setStateListener(StateChangeListener<? extends Consumer, State> listener)
     {
         _stateListener = listener;
     }
@@ -430,7 +430,7 @@ class QueueSubscription<T extends SubscriptionTarget> implements Subscription
         return _createTime;
     }
 
-    public final MessageInstance.SubscriptionAcquiredState getOwningState()
+    public final MessageInstance.ConsumerAcquiredState getOwningState()
     {
         return _owningState;
     }

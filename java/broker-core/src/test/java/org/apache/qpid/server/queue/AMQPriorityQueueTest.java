@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 
 import static org.mockito.Mockito.when;
 
@@ -66,10 +66,10 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         queue.enqueue(createMessage(9L, (byte) 0));
 
         // Register subscriber
-        queue.registerSubscription(getSubscription(), null, null, "test", EnumSet.noneOf(Subscription.Option.class));
+        queue.addConsumer(getConsumer(), null, null, "test", EnumSet.noneOf(Consumer.Option.class));
         Thread.sleep(150);
 
-        ArrayList<MessageInstance> msgs = getSubscription().getMessages();
+        ArrayList<MessageInstance> msgs = getConsumer().getMessages();
         try
         {
             assertEquals(1L, msgs.get(0).getMessage().getMessageNumber());

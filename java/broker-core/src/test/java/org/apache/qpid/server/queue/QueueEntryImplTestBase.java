@@ -21,10 +21,11 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 
 import java.lang.reflect.Field;
 
@@ -112,17 +113,17 @@ public abstract class QueueEntryImplTestBase extends TestCase
      */
     private void acquire()
     {
-        _queueEntry.acquire(newMockSubscription());
+        _queueEntry.acquire(newMockConsumer());
         assertTrue("Queue entry should be in ACQUIRED state after invoking of acquire method",
                 _queueEntry.isAcquired());
     }
 
-    private Subscription newMockSubscription()
+    private Consumer newMockConsumer()
     {
-        final Subscription subscription = mock(Subscription.class);
-        when(subscription.getOwningState()).thenReturn(new QueueEntry.SubscriptionAcquiredState(subscription));
-        when(subscription.getSubscriptionID()).thenReturn(Subscription.SUB_ID_GENERATOR.getAndIncrement());
-        return subscription;
+        final Consumer consumer = mock(Consumer.class);
+        when(consumer.getOwningState()).thenReturn(new MessageInstance.ConsumerAcquiredState(consumer));
+        when(consumer.getId()).thenReturn(Consumer.SUB_ID_GENERATOR.getAndIncrement());
+        return consumer;
     }
 
     /**
@@ -147,34 +148,34 @@ public abstract class QueueEntryImplTestBase extends TestCase
     }
 
     /**
-     * Tests rejecting a queue entry records the Subscription ID
-     * for later verification by isRejectedBy(subscriptionId).
+     * Tests rejecting a queue entry records the Consumer ID
+     * for later verification by isRejectedBy(consumerId).
      */
     public void testRejectAndRejectedBy()
     {
-        Subscription sub = newMockSubscription();
+        Consumer sub = newMockConsumer();
 
-        assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(sub));
-        assertFalse("Queue entry should not yet have been acquired by a subscription", _queueEntry.isAcquired());
+        assertFalse("Queue entry should not yet have been rejected by the consumer", _queueEntry.isRejectedBy(sub));
+        assertFalse("Queue entry should not yet have been acquired by a consumer", _queueEntry.isAcquired());
 
-        //acquire, reject, and release the message using the subscription
+        //acquire, reject, and release the message using the consumer
         assertTrue("Queue entry should have been able to be acquired", _queueEntry.acquire(sub));
         _queueEntry.reject();
         _queueEntry.release();
 
         //verify the rejection is recorded
-        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub));
+        assertTrue("Queue entry should have been rejected by the consumer", _queueEntry.isRejectedBy(sub));
 
-        //repeat rejection using a second subscription
-        Subscription sub2 = newMockSubscription();
+        //repeat rejection using a second consumer
+        Consumer sub2 = newMockConsumer();
 
-        assertFalse("Queue entry should not yet have been rejected by the subscription", _queueEntry.isRejectedBy(sub2));
+        assertFalse("Queue entry should not yet have been rejected by the consumer", _queueEntry.isRejectedBy(sub2));
         assertTrue("Queue entry should have been able to be acquired", _queueEntry.acquire(sub2));
         _queueEntry.reject();
 
-        //verify it still records being rejected by both subscriptions
-        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub));
-        assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub2));
+        //verify it still records being rejected by both consumers
+        assertTrue("Queue entry should have been rejected by the consumer", _queueEntry.isRejectedBy(sub));
+        assertTrue("Queue entry should have been rejected by the consumer", _queueEntry.isRejectedBy(sub2));
     }
 
     /**

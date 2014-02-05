@@ -20,22 +20,20 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.subscription.Subscription;
-
 public interface MessageGroupManager
 {
-    public interface SubscriptionResetHelper
+    public interface ConsumerResetHelper
     {
-        public void resetSubPointersForGroups(QueueSubscription subscription, boolean clearAssignments);
+        public void resetSubPointersForGroups(QueueConsumer consumer, boolean clearAssignments);
 
-        boolean isEntryAheadOfSubscription(QueueEntry entry, QueueSubscription sub);
+        boolean isEntryAheadOfConsumer(QueueEntry entry, QueueConsumer sub);
     }
 
-    QueueSubscription getAssignedSubscription(QueueEntry entry);
+    QueueConsumer getAssignedConsumer(QueueEntry entry);
 
-    boolean acceptMessage(QueueSubscription sub, QueueEntry entry);
+    boolean acceptMessage(QueueConsumer sub, QueueEntry entry);
 
-    QueueEntry findEarliestAssignedAvailableEntry(QueueSubscription sub);
+    QueueEntry findEarliestAssignedAvailableEntry(QueueConsumer sub);
 
-    void clearAssignments(QueueSubscription sub);
+    void clearAssignments(QueueConsumer sub);
 }

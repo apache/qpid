@@ -35,7 +35,6 @@ import org.apache.qpid.server.logging.LogSubject;
  * 2) We can set new actors at the point we have enough information. i.e.
  * - Set a low level ConnectionActor when processing bytes from the wire.
  * - Set a ChannelActor when we are processing the frame
- * - Set a SubscriptionActor when we are handling the subscription.
  * <p/>
  * The code performing the logging need not worry about what type of actor is
  * currently set so can perform its logging. The resulting log entry though will

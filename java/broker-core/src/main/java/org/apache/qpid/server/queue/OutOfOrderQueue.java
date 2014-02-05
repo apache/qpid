@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.queue.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
@@ -38,16 +36,16 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
     }
 
     @Override
-    protected void checkSubscriptionsNotAheadOfDelivery(final QueueEntry entry)
+    protected void checkConsumersNotAheadOfDelivery(final QueueEntry entry)
     {
-        // check that all subscriptions are not in advance of the entry
-        SubscriptionList.SubscriptionNodeIterator subIter = getSubscriptionList().iterator();
+        // check that all consumers are not in advance of the entry
+        QueueConsumerList.ConsumerNodeIterator subIter = getConsumerList().iterator();
         while(subIter.advance() && !entry.isAcquired())
         {
-            final QueueSubscription subscription = subIter.getNode().getSubscription();
-            if(!subscription.isClosed())
+            final QueueConsumer consumer = subIter.getNode().getConsumer();
+            if(!consumer.isClosed())
             {
-                QueueContext context = subscription.getQueueContext();
+                QueueContext context = consumer.getQueueContext();
                 if(context != null)
                 {
                     QueueEntry released = context.getReleasedEntry();

@@ -29,7 +29,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -131,7 +131,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         // indicate we are using the prefetch credit. i.e. using acks not No-Ack
         assertTrue("The subscription has been suspended",
                    !getChannel().getSubscription(browser).getState()
-                           .equals(Subscription.State.SUSPENDED));
+                           .equals(Consumer.State.SUSPENDED));
     }
 
     private void checkStoreContents(int messageCount)

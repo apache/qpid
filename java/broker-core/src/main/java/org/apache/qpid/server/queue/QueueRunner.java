@@ -32,8 +32,8 @@ import org.apache.qpid.transport.TransportException;
 
 /**
  * QueueRunners are Runnables used to process a queue when requiring
- * asynchronous message delivery to subscriptions, which is necessary
- * when straight-through delivery of a message to a subscription isn't
+ * asynchronous message delivery to consumers, which is necessary
+ * when straight-through delivery of a message to a consumer isn't
  * possible during the enqueue operation.
  */
 public class QueueRunner implements Runnable

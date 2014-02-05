@@ -43,15 +43,14 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.subscription.AbstractSubscriptionTarget;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.AbstractConsumerTarget;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
-class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
+class ConsumerTarget_1_0 extends AbstractConsumerTarget
 {
     private final boolean _acquires;
     private SendingLink_1_0 _link;
@@ -61,10 +60,10 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
     private Binary _transactionId;
     private final AMQPDescribedTypeRegistry _typeRegistry;
     private final SectionEncoder _sectionEncoder;
-    private Subscription _subscription;
+    private Consumer _consumer;
 
-    public SubscriptionTarget_1_0(final SendingLink_1_0 link,
-                                  boolean acquires)
+    public ConsumerTarget_1_0(final SendingLink_1_0 link,
+                              boolean acquires)
     {
         super(State.SUSPENDED);
         _link = link;
@@ -73,9 +72,9 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         _acquires = acquires;
     }
 
-    public Subscription getSubscription()
+    public Consumer getConsumer()
     {
-        return _subscription;
+        return _consumer;
     }
 
     private SendingLinkEndpoint getEndpoint()
@@ -94,7 +93,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         boolean closed = false;
         State state = getState();
 
-        getSubscription().getSendLock();
+        getConsumer().getSendLock();
         try
         {
             while(!closed && state != State.CLOSED)
@@ -109,7 +108,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
         }
         finally
         {
-            getSubscription().releaseSendLock();
+            getConsumer().releaseSendLock();
         }
     }
 
@@ -255,7 +254,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
 
                             public void onRollback()
                             {
-                                if(queueEntry.isAcquiredBy(getSubscription()))
+                                if(queueEntry.isAcquiredBy(getConsumer()))
                                 {
                                     queueEntry.release();
                                     _link.getEndpoint().updateDisposition(tag, (DeliveryState)null, true);
@@ -385,7 +384,7 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
 
                             public void postCommit()
                             {
-                                if(_queueEntry.isAcquiredBy(getSubscription()))
+                                if(_queueEntry.isAcquiredBy(getConsumer()))
                                 {
                                     _queueEntry.delete();
                                 }
@@ -499,13 +498,13 @@ class SubscriptionTarget_1_0 extends AbstractSubscriptionTarget
     }
 
     @Override
-    public void subscriptionRegistered(final Subscription sub)
+    public void consumerAdded(final Consumer sub)
     {
-        _subscription = sub;
+        _consumer = sub;
     }
 
     @Override
-    public void subscriptionRemoved(final Subscription sub)
+    public void consumerRemoved(final Consumer sub)
     {
 
     }

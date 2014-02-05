@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.consumer;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.MessageInstance;
@@ -26,7 +26,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.StateChangeListener;
 
-public interface SubscriptionTarget
+public interface ConsumerTarget
 {
 
 
@@ -37,11 +37,11 @@ public interface SubscriptionTarget
 
     State getState();
 
-    void subscriptionRegistered(Subscription sub);
+    void consumerAdded(Consumer sub);
 
-    void subscriptionRemoved(Subscription sub);
+    void consumerRemoved(Consumer sub);
 
-    void setStateListener(StateChangeListener<SubscriptionTarget, State> listener);
+    void setStateListener(StateChangeListener<ConsumerTarget, State> listener);
 
     long getUnacknowledgedBytes();
 

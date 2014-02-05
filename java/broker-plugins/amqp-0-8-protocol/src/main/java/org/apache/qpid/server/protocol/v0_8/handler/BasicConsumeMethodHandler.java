@@ -156,14 +156,14 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
 
                 }
-                catch (AMQQueue.ExistingExclusiveSubscription e)
+                catch (AMQQueue.ExistingExclusiveConsumer e)
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
                                                    + queue.getName()
                                                    + " as it already has an existing exclusive consumer");
                 }
-                catch (AMQQueue.ExistingSubscriptionPreventsExclusive e)
+                catch (AMQQueue.ExistingConsumerPreventsExclusive e)
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
