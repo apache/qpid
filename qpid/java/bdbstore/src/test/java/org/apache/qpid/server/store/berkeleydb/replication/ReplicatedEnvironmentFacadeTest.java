@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ReplicationNode;
@@ -62,6 +63,8 @@ import com.sleepycat.je.rep.StateChangeListener;
 
 public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 {
+    private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacadeTest.class);
+
     private static final int TEST_NODE_PORT = new QpidTestCase().findFreePort();
     private static final int LISTENER_TIMEOUT = 5;
     private static final int WAIT_STATE_CHANGE_TIMEOUT = 30;
@@ -92,7 +95,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         _storePath = TestFileUtils.createTestDirectory("bdb", true);
 
         when(_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_INTERVAL)).thenReturn(100L);
-        when(_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT)).thenReturn(100L);
+        setTestSystemProperty(ReplicatedEnvironmentFacade.DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, "100");
     }
 
     @Override
@@ -179,6 +182,13 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     public void testGetNodeName() throws Exception
     {
         assertEquals("Unexpected group name", TEST_NODE_NAME, createMaster().getNodeName());
+    }
+
+    public void testLastKnownReplicationTransactionId() throws Exception
+    {
+        ReplicatedEnvironmentFacade master = createMaster();
+        long lastKnownReplicationTransactionId = master.getLastKnownReplicationTransactionId();
+        assertTrue("Unexpected LastKnownReplicationTransactionId " + lastKnownReplicationTransactionId, lastKnownReplicationTransactionId > 0);
     }
 
     public void testGetNodeHostPort() throws Exception
@@ -418,6 +428,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testEnvironmentRestartOnInsufficientReplicas() throws Exception
     {
+        long startTime = System.currentTimeMillis();
+
         ReplicatedEnvironmentFacade master = createMaster();
 
         int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
@@ -429,7 +441,9 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         String replica2NodeName = TEST_NODE_NAME + "_2";
         String replica2NodeHostPort = "localhost:" + replica2Port;
         ReplicatedEnvironmentFacade replica2 = addReplica(replica2NodeName, replica2NodeHostPort);
-
+        
+        long setUpTime = System.currentTimeMillis();
+        LOGGER.debug("XXX Start Up Time " + (setUpTime - startTime));
         String databaseName = "test";
 
         DatabaseConfig dbConfig = createDatabase(master, databaseName);
@@ -438,6 +452,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         replica1.close();
         replica2.close();
 
+        long closeTime = System.currentTimeMillis();
+        LOGGER.debug("XXX Env close  Time " + (closeTime - setUpTime));
         Environment e = master.getEnvironment();
         Database db = master.getOpenDatabase(databaseName);
         try
@@ -449,17 +465,22 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         {
             master.handleDatabaseException(null, ex);
         }
+        long openDatabaseTime = System.currentTimeMillis();
+        LOGGER.debug("XXX Open db Time " + (openDatabaseTime - closeTime ));
 
         replica1 = addReplica(replica1NodeName, replica1NodeHostPort);
         replica2 = addReplica(replica2NodeName, replica2NodeHostPort);
 
+        long reopenTime = System.currentTimeMillis();
+        LOGGER.debug("XXX Restart Time " + (reopenTime - openDatabaseTime ));
         // Need to poll to await the remote node updating itself
         long timeout = System.currentTimeMillis() + 5000;
         while(!(State.REPLICA.name().equals(master.getNodeState()) || State.MASTER.name().equals(master.getNodeState()) ) && System.currentTimeMillis() < timeout)
         {
             Thread.sleep(200);
         }
-
+        long recoverTime = System.currentTimeMillis();
+        LOGGER.debug("XXX Recover Time " + (recoverTime - reopenTime));
         assertTrue("The node could not rejoin the cluster. State is " + master.getNodeState(),
                 State.REPLICA.name().equals(master.getNodeState()) || State.MASTER.name().equals(master.getNodeState()) );
 
@@ -659,7 +680,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         Map<String, String> repConfig = new HashMap<String, String>();
         repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
         repConfig.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
-        when(node.getAttribute(REPLICATION_PARAMETERS)).thenReturn(repConfig);
+        when(node.getActualAttribute(REPLICATION_PARAMETERS)).thenReturn(repConfig);
 
         when(node.getAttribute(STORE_PATH)).thenReturn(new File(_storePath, nodeName).getAbsolutePath());
         return node;

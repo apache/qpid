@@ -47,6 +47,8 @@ import org.apache.qpid.server.store.berkeleydb.jmx.BDBHAMessageStoreManagerMBean
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
+import com.sleepycat.je.DatabaseException;
+
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {
     private static final String TEST_GROUP_NAME = "testGroupName";
@@ -168,7 +170,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testRemoveNodeFromReplicationGroupWithError() throws Exception
     {
-        doThrow(new AMQStoreException("mocked exception")).when(_replicatedEnvironmentFacadee).removeNodeFromGroup(TEST_NODE_NAME);
+        doThrow(new RuntimeException("mocked exception")).when(_replicatedEnvironmentFacadee).removeNodeFromGroup(TEST_NODE_NAME);
 
         try
         {

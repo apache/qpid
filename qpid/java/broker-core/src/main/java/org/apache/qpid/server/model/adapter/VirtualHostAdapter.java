@@ -99,18 +99,15 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         put(CONFIG_PATH, String.class);
         put(DESIRED_STATE, State.class);
         put(REMOTE_REPLICATION_NODE_MONITOR_INTERVAL, Long.class);
-        put(REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT, Long.class);
         put(QUIESCE_ON_MASTER_CHANGE, Boolean.class);
     }});
 
     private static final long DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_INTERVAL = 10000L;
-    private static final long DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT = 1000L;
 
     @SuppressWarnings("serial")
     static final Map<String, Object> DEFAULTS = new HashMap<String, Object>()
     {{
         put(REMOTE_REPLICATION_NODE_MONITOR_INTERVAL, DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_INTERVAL);
-        put(REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT, DEFAULT_REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT);
         put(QUIESCE_ON_MASTER_CHANGE, false);
     }};
 

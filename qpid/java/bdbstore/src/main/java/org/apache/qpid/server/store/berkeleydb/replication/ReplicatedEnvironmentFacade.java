@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 import static org.apache.qpid.server.model.ReplicationNode.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,6 +66,8 @@ import com.sleepycat.je.rep.InsufficientLogException;
 import com.sleepycat.je.rep.InsufficientReplicasException;
 import com.sleepycat.je.rep.NetworkRestore;
 import com.sleepycat.je.rep.NetworkRestoreConfig;
+import com.sleepycat.je.rep.NodeState;
+import com.sleepycat.je.rep.RepInternal;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
 import com.sleepycat.je.rep.ReplicationGroup;
@@ -72,8 +75,12 @@ import com.sleepycat.je.rep.ReplicationMutableConfig;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
+import com.sleepycat.je.rep.util.DbPing;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
+import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedException;
+import com.sleepycat.je.rep.vlsn.VLSNRange;
 import com.sleepycat.je.utilint.PropUtil;
+import com.sleepycat.je.utilint.VLSN;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
@@ -87,6 +94,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private static final int DEFAULT_MASTER_TRANSFER_TIMEOUT = 1000 * 60;
 
     public static final int MASTER_TRANSFER_TIMEOUT = Integer.getInteger(MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME, DEFAULT_MASTER_TRANSFER_TIMEOUT);
+
+    public static final String DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.db_ping_socket_timeout";
+    private static final int DEFAULT_DB_PING_SOCKET_TIMEOUT = 1000;
+
+    private static final int DB_PING_SOCKET_TIMEOUT = Integer.getInteger(DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, DEFAULT_DB_PING_SOCKET_TIMEOUT);
 
     @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
@@ -148,7 +160,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private volatile ReplicatedEnvironment _environment;
     private long _joinTime;
-    private long _lastKnownReplicationTransactionId;
 
     public ReplicatedEnvironmentFacade(LocalReplicationNode replicationNode, RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
@@ -449,22 +460,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return members;
     }
 
-    public void removeNodeFromGroup(final String nodeName) throws AMQStoreException
+    public void removeNodeFromGroup(final String nodeName)
     {
-        try
-        {
-            createReplicationGroupAdmin().removeMember(nodeName);
-        }
-        catch (OperationFailureException ofe)
-        {
-            // TODO: I am not sure about the exception handing here
-            throw new AMQStoreException("Failed to remove '" + nodeName + "' from group. " + ofe.getMessage(), ofe);
-        }
-        catch (DatabaseException e)
-        {
-            // TODO: I am not sure about the exception handing here
-            throw new AMQStoreException("Failed to remove '" + nodeName + "' from group. " + e.getMessage(), e);
-        }
+        createReplicationGroupAdmin().removeMember(nodeName);
     }
 
     public void setDesignatedPrimary(final boolean isPrimary) throws AMQStoreException
@@ -517,8 +515,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public void setPriority(int priority) throws AMQStoreException
     {
-        checkNotOpeningAndEnvironmentIsValid();
-
         try
         {
             final ReplicationMutableConfig oldConfig = _environment.getRepMutableConfig();
@@ -537,11 +533,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private void checkNotOpeningAndEnvironmentIsValid()
+    private void checkIsOpenAndEnvironmentIsValid()
     {
-        if (_state.get() == State.OPENING)
+        if (_state.get() != State.OPEN)
         {
-            throw new IllegalStateException("Environment facade is in opening state");
+            throw new IllegalStateException("Environment facade is not in open state");
         }
 
         if (!_environment.isValid())
@@ -558,8 +554,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public void setElectableGroupSizeOverride(int electableGroupOverride) throws AMQStoreException
     {
-        checkNotOpeningAndEnvironmentIsValid();
-
         try
         {
             final ReplicationMutableConfig oldConfig = _environment.getRepMutableConfig();
@@ -586,13 +580,27 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public long getLastKnownReplicationTransactionId()
     {
-        return _lastKnownReplicationTransactionId;
+        if (_state.get() == State.OPEN)
+        {
+            VLSNRange range = RepInternal.getRepImpl(_environment).getVLSNIndex().getRange();
+            VLSN lastTxnEnd = range.getLastTxnEnd();
+            LOGGER.debug("VLSN Range is " + range );
+            return lastTxnEnd.getSequence();
+        }
+        else
+        {
+            return -1L;
+        }
     }
 
-    public void transferMasterToSelfAsynchronously() throws AMQStoreException
+    public void transferMasterToSelfAsynchronously()
     {
-        checkNotOpeningAndEnvironmentIsValid();
+        final String nodeName = getNodeName();
+        transferMasterAsynchronously(nodeName);
+    }
 
+    public void transferMasterAsynchronously(final String nodeName)
+    {
         _groupChangeExecutor.submit(new Runnable()
         {
             @Override
@@ -601,7 +609,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 try
                 {
                     ReplicationGroupAdmin admin = createReplicationGroupAdmin();
-                    String newMaster = admin.transferMaster(Collections.singleton(getNodeName()), MASTER_TRANSFER_TIMEOUT, TimeUnit.MILLISECONDS, true);
+                    String newMaster = admin.transferMaster(Collections.singleton(nodeName), MASTER_TRANSFER_TIMEOUT, TimeUnit.MILLISECONDS, true);
                     if (LOGGER.isDebugEnabled())
                     {
                         LOGGER.debug("The mastership has been transfered to " + newMaster);
@@ -661,7 +669,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             String discoveredNodeName = replicationNode.getName();
             if (!discoveredNodeName.equals(localNodeName))
             {
-                RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, group.getName());
+                RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, this);
 
                 _remoteReplicationNodes.put(replicationNode.getName(), remoteNode);
             }
@@ -679,10 +687,15 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private ReplicationGroupAdmin createReplicationGroupAdmin()
     {
         final Set<InetSocketAddress> helpers = new HashSet<InetSocketAddress>();
-        helpers.addAll(_environment.getRepConfig().getHelperSockets());
+        for (RemoteReplicationNode node : _remoteReplicationNodes.values())
+        {
+            helpers.add(node.getReplicationNode().getSocketAddress());
+        }
 
-        final ReplicationConfig repConfig = _environment.getRepConfig();
-        helpers.add(InetSocketAddress.createUnresolved(repConfig.getNodeHostname(), repConfig.getNodePort()));
+        //TODO: refactor this into a method on LocalReplicationNode
+        String hostPort = (String)_replicationNode.getAttribute(org.apache.qpid.server.model.ReplicationNode.HOST_PORT);
+        String[] tokens = hostPort.split(":");
+        helpers.add(new InetSocketAddress(tokens[0], Integer.parseInt(tokens[1])));
 
         return new ReplicationGroupAdmin((String)_replicationNode.getAttribute(GROUP_NAME), helpers);
     }
@@ -936,6 +949,15 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
+    public NodeState getRemoteNodeState(ReplicationNode repNode) throws IOException, ServiceConnectFailedException
+    {
+        if (repNode == null)
+        {
+            throw new IllegalArgumentException("Node cannot be null");
+        }
+        return new DbPing(repNode, (String)_replicationNode.getAttribute(GROUP_NAME), DB_PING_SOCKET_TIMEOUT).getNodeState();
+    }
+
     private final class GroupChangeLearner implements Runnable
     {
         @Override
@@ -968,7 +990,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                                 LOGGER.debug("Remote replication node added '" + replicationNode + "' to '" + groupName + "'");
                             }
 
-                            RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, group.getName());
+                            RemoteReplicationNode remoteNode = _remoteReplicationNodeFactory.create(replicationNode, ReplicatedEnvironmentFacade.this);
 
                             _remoteReplicationNodes.put(discoveredNodeName, remoteNode);
 
@@ -1113,5 +1135,4 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
     }
-
 }

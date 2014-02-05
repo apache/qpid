@@ -22,7 +22,7 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 
 public interface RemoteReplicationNodeFactory
 {
-    RemoteReplicationNode create(com.sleepycat.je.rep.ReplicationNode jeNode, String groupName);
+    RemoteReplicationNode create(com.sleepycat.je.rep.ReplicationNode jeNode, ReplicatedEnvironmentFacade environmentFacade);
 
     long getRemoteNodeMonitorInterval();
 }

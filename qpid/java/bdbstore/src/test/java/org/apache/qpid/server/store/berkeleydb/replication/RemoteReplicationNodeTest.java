@@ -1,17 +1,26 @@
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import static org.mockito.Mockito.any;
+import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
+import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
+import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
+import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.JOIN_TIME;
+import static org.apache.qpid.server.model.ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID;
+import static org.apache.qpid.server.model.ReplicationNode.NAME;
+import static org.apache.qpid.server.model.ReplicationNode.PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.ROLE;
+import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.apache.qpid.server.model.ReplicationNode.*;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -21,8 +30,6 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment.State;
 import com.sleepycat.je.rep.ReplicationNode;
-import com.sleepycat.je.rep.util.DbPing;
-import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 
 public class RemoteReplicationNodeTest extends QpidTestCase
 {
@@ -34,8 +41,7 @@ public class RemoteReplicationNodeTest extends QpidTestCase
     private ReplicationNode _replicationNode;
     private String _nodeName;
     private int _port;
-    private DbPing _dbPing;
-    private ReplicationGroupAdmin _remoteReplicationAdmin;
+    private ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
 
     @Override
     protected void setUp() throws Exception
@@ -47,15 +53,15 @@ public class RemoteReplicationNodeTest extends QpidTestCase
         _replicationNode = mock(ReplicationNode.class);
         _virtualHost = mock(VirtualHost.class);
         _taskExecutor = mock(TaskExecutor.class);
-        _dbPing = mock(DbPing.class);
-        _remoteReplicationAdmin = mock(ReplicationGroupAdmin.class);
+        _replicatedEnvironmentFacade = mock(ReplicatedEnvironmentFacade.class);
+        when(_replicatedEnvironmentFacade.getGroupName()).thenReturn(_groupName);
 
         when(_taskExecutor.isTaskExecutorThread()).thenReturn(true);
         when(_replicationNode.getName()).thenReturn(_nodeName);
         when(_replicationNode.getHostName()).thenReturn("localhost");
         when(_replicationNode.getPort()).thenReturn(_port);
 
-        _node = new RemoteReplicationNode(_replicationNode, _groupName, _virtualHost, _taskExecutor, _dbPing, _remoteReplicationAdmin);
+        _node = new RemoteReplicationNode(_replicationNode, _virtualHost, _taskExecutor, _replicatedEnvironmentFacade);
     }
 
     public void testGetAttribute() throws Exception
@@ -73,14 +79,28 @@ public class RemoteReplicationNodeTest extends QpidTestCase
         assertEquals("Unexpected join time", joinTime, _node.getAttribute(JOIN_TIME));
     }
 
-    @SuppressWarnings("unchecked")
     public void testSetRoleAttribute() throws Exception
     {
         updateNodeState();
         _node.setAttributes(Collections.<String, Object>singletonMap(ROLE, State.MASTER.name()));
-        when(_remoteReplicationAdmin.transferMaster(any(Set.class), any(int.class), any(TimeUnit.class), any(boolean.class))).thenReturn(_nodeName);
 
-        verify(_remoteReplicationAdmin).transferMaster(any(Set.class), any(int.class), any(TimeUnit.class), any(boolean.class));
+        verify(_replicatedEnvironmentFacade).transferMasterAsynchronously(_nodeName);
+    }
+
+    public void testSetRoleAttributeDisallowedIfAlreadyMaster() throws Exception
+    {
+        updateNodeState(State.MASTER, System.currentTimeMillis(), 0L);
+        try
+        {
+            _node.setAttributes(Collections.<String, Object>singletonMap(ROLE, State.MASTER.name()));
+            fail("Exception not thrown");
+        }
+        catch (IllegalConfigurationException ice)
+        {
+            // pass
+        }
+
+        verify(_replicatedEnvironmentFacade, never()).transferMasterAsynchronously(_nodeName);
     }
 
     public void testSetImmutableAttributesThrowException() throws Exception
@@ -127,7 +147,7 @@ public class RemoteReplicationNodeTest extends QpidTestCase
     private void updateNodeState(State state, long joinTime, long currentTxnEndVLSN) throws Exception
     {
         NodeState nodeState = new NodeState(_nodeName, _groupName, state, null, null, joinTime, currentTxnEndVLSN, 2, 1, 0, null, 0.0);
-        when(_dbPing.getNodeState()).thenReturn(nodeState);
+        when(_replicatedEnvironmentFacade.getRemoteNodeState(_replicationNode)).thenReturn(nodeState);
         _node.updateNodeState();
     }
 }

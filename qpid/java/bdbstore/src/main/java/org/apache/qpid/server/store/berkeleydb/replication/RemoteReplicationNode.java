@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -47,8 +46,6 @@ import org.apache.qpid.server.util.MapValueConverter;
 
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
-import com.sleepycat.je.rep.util.DbPing;
-import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedException;
 
 /**
@@ -67,23 +64,21 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
     private final com.sleepycat.je.rep.ReplicationNode _replicationNode;
     private final String _hostPort;
     private final String _groupName;
-    private final DbPing _dbPing;
-    private final ReplicationGroupAdmin _replicationGroupAdmin;
+    private final ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
 
     private volatile String _role;
     private volatile long _joinTime;
     private volatile long _lastTransactionId;
 
-    public RemoteReplicationNode(com.sleepycat.je.rep.ReplicationNode replicationNode, String groupName, VirtualHost virtualHost,
-            TaskExecutor taskExecutor, DbPing dbPing, ReplicationGroupAdmin admin)
+    public RemoteReplicationNode(com.sleepycat.je.rep.ReplicationNode replicationNode, VirtualHost virtualHost,
+            TaskExecutor taskExecutor, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
-        super(UUIDGenerator.generateReplicationNodeId(groupName, replicationNode.getName()), null, null, taskExecutor);
+        super(UUIDGenerator.generateReplicationNodeId(replicatedEnvironmentFacade.getGroupName(), replicationNode.getName()), null, null, taskExecutor);
         addParent(VirtualHost.class, virtualHost);
-        _groupName = groupName;
+        _groupName = replicatedEnvironmentFacade.getGroupName();
         _hostPort = replicationNode.getHostName() + ":" + replicationNode.getPort();
         _replicationNode = replicationNode;
-        _dbPing = dbPing;
-        _replicationGroupAdmin = admin;
+        _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
     }
 
     @Override
@@ -175,8 +170,15 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
                 {
                     LOGGER.debug("Deleting node " + _groupName + ":" + getName());
                 }
-                _replicationGroupAdmin.removeMember(getName());
-                return true;
+                try
+                {
+                    _replicatedEnvironmentFacade.removeNodeFromGroup(getName());
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    LOGGER.warn("Failure to remove node remotely", e);
+                }
             }
         }
         return false;
@@ -240,7 +242,8 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
 
         try
         {
-            NodeState state = _dbPing.getNodeState();
+            //TODO: updateNodeState is called from ReplicatedEnvironmentFacade to call getRemoteNodeState. Odd!!!
+            NodeState state = _replicatedEnvironmentFacade.getRemoteNodeState(_replicationNode);
             _role = state.getNodeState().name();
             _joinTime = state.getJoinTime();
             _lastTransactionId = state.getCurrentTxnEndVLSN();
@@ -248,12 +251,12 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         catch (IOException e)
         {
             _role = com.sleepycat.je.rep.ReplicatedEnvironment.State.UNKNOWN.name();
-            LOGGER.warn("Cannot connect to node " + _replicationNode.getName() + " from " + _groupName, e);
+            LOGGER.warn("Cannot connect to node " + _replicationNode.getName() + " from " + _groupName);
         }
         catch (ServiceConnectFailedException e)
         {
             _role = com.sleepycat.je.rep.ReplicatedEnvironment.State.UNKNOWN.name();
-            LOGGER.warn("Cannot retrieve the node details for node " + _replicationNode.getName() + " from " + _groupName, e);
+            LOGGER.warn("Cannot retrieve the node details for node " + _replicationNode.getName() + " from " + _groupName);
         }
 
         if (!_role.equals(oldRole))
@@ -306,7 +309,7 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
                         LOGGER.debug("Trying to transfer master to " + nodeName);
                     }
 
-                    _replicationGroupAdmin.transferMaster(Collections.singleton(nodeName), ReplicatedEnvironmentFacade.MASTER_TRANSFER_TIMEOUT, TimeUnit.MILLISECONDS, true);
+                    _replicatedEnvironmentFacade.transferMasterAsynchronously(nodeName);
 
                     if (LOGGER.isDebugEnabled())
                     {
@@ -344,6 +347,11 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
                 throw new IllegalConfigurationException("Cannot change value of immutable attribute " + attributeName);
             }
         }
+    }
+
+    com.sleepycat.je.rep.ReplicationNode getReplicationNode()
+    {
+        return _replicationNode;
     }
 
 }

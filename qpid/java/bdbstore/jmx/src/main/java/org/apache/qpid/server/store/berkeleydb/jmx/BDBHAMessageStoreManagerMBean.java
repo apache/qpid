@@ -185,7 +185,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         {
             _replicatedEnvironmentFacade.removeNodeFromGroup(nodeName);
         }
-        catch (AMQStoreException e)
+        catch (Exception e)
         {
             LOGGER.error("Failed to remove node " + nodeName + " from group", e);
             throw new JMException(e.getMessage());
