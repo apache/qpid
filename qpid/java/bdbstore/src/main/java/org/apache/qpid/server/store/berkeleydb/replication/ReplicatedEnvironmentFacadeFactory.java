@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +33,8 @@ import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
 
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.SyncPolicy;
+import com.sleepycat.je.rep.util.DbPing;
+import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 
 //TODO: Should LocalReplicationNode implement EnvironmentFacadeFactory instead of having this class?
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
@@ -82,7 +85,13 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             attributes.put(ReplicationNode.NAME, replicationNode.getName());
             attributes.put(ReplicationNode.GROUP_NAME, groupName);
             attributes.put(ReplicationNode.HOST_PORT, replicationNode.getHostName() + ":" + replicationNode.getPort());
-            return new RemoteReplicationNode(replicationNode, groupName, _virtualHost, _virtualHost.getTaskExecutor());
+
+            Long monitorTimeout = (Long)_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT);
+            DbPing dbPing = new DbPing(replicationNode, groupName, monitorTimeout.intValue());
+
+            ReplicationGroupAdmin replicationGroupAdmin = new ReplicationGroupAdmin(groupName, Collections.singleton(replicationNode.getSocketAddress()));
+
+            return new RemoteReplicationNode(replicationNode, groupName, _virtualHost, _virtualHost.getTaskExecutor(), dbPing, replicationGroupAdmin);
         }
 
         @Override

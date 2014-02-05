@@ -120,7 +120,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
-    public void testTransferMaster() throws Exception
+    public void testTransferMasterFromLocalNode() throws Exception
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
@@ -145,6 +145,33 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         assertProducingConsuming(connection);
     }
 
+    public void testTransferMasterFromRemoteNode() throws Exception
+    {
+        final Connection connection = getConnection(_brokerFailoverUrl);
+
+        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+
+        final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
+        LOGGER.info("Active connection port " + activeBrokerPort);
+
+        final int inactiveBrokerPort = _clusterCreator.getPortNumberOfAnInactiveBroker(connection);
+        LOGGER.info("Update role attribute on inactive broker on port " + inactiveBrokerPort);
+
+        String nodeName = _clusterCreator.getNodeNameForBrokerPort(inactiveBrokerPort);
+        _clusterCreator.awaitNodeToAttainRole(activeBrokerPort, nodeName, "REPLICA");
+        Map<String, Object> attributes = _clusterCreator.getReplicationNodeAttributes(activeBrokerPort, nodeName);
+        assertEquals("Inactive broker has unexpeced role", "REPLICA", attributes.get(ReplicationNode.ROLE));
+
+        _clusterCreator.setReplicationNodeAttributes(activeBrokerPort, nodeName, Collections.<String, Object>singletonMap(ReplicationNode.ROLE, "MASTER"));
+
+        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        LOGGER.info("Listener has finished");
+
+        attributes = _clusterCreator.getReplicationNodeAttributes(inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(ReplicationNode.ROLE));
+
+        assertProducingConsuming(connection);
+    }
     public void testQuorumOverride() throws Exception
     {
         final Connection connection = getConnection(_brokerFailoverUrl);

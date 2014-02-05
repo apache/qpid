@@ -20,8 +20,10 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 
+import junit.framework.Assert;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
@@ -50,6 +54,8 @@ import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
 
 public class HATestClusterCreator
 {
@@ -384,8 +390,14 @@ public class HATestClusterCreator
 
     public void setReplicationNodeAttributes(int brokerPort, Map<String, Object> attributeMap) throws Exception
     {
-        RestTestHelper restHelper = createRestTestHelper(brokerPort);
         String replicationNodeName = getNodeNameForBrokerPort(brokerPort);
+        setReplicationNodeAttributes(brokerPort, replicationNodeName, attributeMap);
+    }
+
+    public void setReplicationNodeAttributes(int brokerPort, String replicationNodeName, Map<String, Object> attributeMap)
+            throws IOException, JsonGenerationException, JsonMappingException, Exception
+    {
+        RestTestHelper restHelper = createRestTestHelper(brokerPort);
         int status = restHelper.submitRequest("/rest/replicationnode/" + _virtualHostName + "/" + replicationNodeName , "PUT", attributeMap);
         if (status != 200)
         {
@@ -396,6 +408,11 @@ public class HATestClusterCreator
     public Map<String, Object> getReplicationNodeAttributes(int brokerPort) throws Exception
     {
         String replicationNodeName = getNodeNameForBrokerPort(brokerPort);
+        return getReplicationNodeAttributes(brokerPort, replicationNodeName);
+    }
+
+    public Map<String, Object> getReplicationNodeAttributes(int brokerPort, String replicationNodeName) throws IOException
+    {
         RestTestHelper restHelper = createRestTestHelper(brokerPort);
         return restHelper.getJsonAsSingletonList("/rest/replicationnode/" + _virtualHostName + "/" + replicationNodeName );
     }
@@ -406,4 +423,20 @@ public class HATestClusterCreator
         return RestTestHelper.createRestTestHelperWithDefaultCredentials(httpPort);
     }
 
+    public void awaitNodeToAttainRole(int brokerPort, String nodeName, String desiredRole) throws Exception
+    {
+        final long startTime = System.currentTimeMillis();
+        Map<String, Object> data = Collections.emptyMap();
+
+        while(!desiredRole.equals(data.get(ReplicationNode.ROLE)) && (System.currentTimeMillis() - startTime) < 30000)
+        {
+            LOGGER.debug("Awaiting node to transit into " + desiredRole + " role");
+            data = getReplicationNodeAttributes(brokerPort, nodeName);
+            if (!desiredRole.equals(data.get(ReplicationNode.ROLE)))
+            {
+                Thread.sleep(1000);
+            }
+        }
+        Assert.assertEquals("Node is in unexpected role", desiredRole, data.get(ReplicationNode.ROLE));
+    }
 }

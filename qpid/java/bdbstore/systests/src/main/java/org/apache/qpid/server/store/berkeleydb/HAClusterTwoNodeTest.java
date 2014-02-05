@@ -221,19 +221,8 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 
     private void awaitNodeToAttainRole(int brokerPort, String desiredRole) throws Exception
     {
-        final long startTime = System.currentTimeMillis();
-        Map<String, Object> data = Collections.emptyMap();
-
-        while(!desiredRole.equals(data.get(ReplicationNode.ROLE)) && (System.currentTimeMillis() - startTime) < 30000)
-        {
-            _logger.debug("Awaiting node to transit into " + desiredRole + " role");
-            data = _clusterCreator.getReplicationNodeAttributes(brokerPort);
-            if (!desiredRole.equals(data.get(ReplicationNode.ROLE)))
-            {
-                Thread.sleep(1000);
-            }
-        }
-        assertEquals("Node is in unexpected role", desiredRole, data.get(ReplicationNode.ROLE));
+        String nodeName = _clusterCreator.getNodeNameForBrokerPort(brokerPort);
+        _clusterCreator.awaitNodeToAttainRole(brokerPort, nodeName, desiredRole);
     }
 
 }

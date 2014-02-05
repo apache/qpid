@@ -21,11 +21,18 @@
 package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -36,9 +43,12 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractAdapter;
 import org.apache.qpid.server.model.adapter.NoStatistics;
+import org.apache.qpid.server.util.MapValueConverter;
 
 import com.sleepycat.je.rep.NodeState;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.util.DbPing;
+import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedException;
 
 /**
@@ -48,23 +58,32 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
 {
     private static final Logger LOGGER = Logger.getLogger(RemoteReplicationNode.class);
 
+    @SuppressWarnings("serial")
+    private static final Map<String, Type> ATTRIBUTE_TYPES = new HashMap<String, Type>()
+    {{
+        put(ROLE, String.class);
+    }};
+
     private final com.sleepycat.je.rep.ReplicationNode _replicationNode;
-    private final VirtualHost _virtualHost;
     private final String _hostPort;
     private final String _groupName;
+    private final DbPing _dbPing;
+    private final ReplicationGroupAdmin _replicationGroupAdmin;
 
     private volatile String _role;
     private volatile long _joinTime;
     private volatile long _lastTransactionId;
 
-    public RemoteReplicationNode(com.sleepycat.je.rep.ReplicationNode replicationNode, String groupName, VirtualHost virtualHost, TaskExecutor taskExecutor)
+    public RemoteReplicationNode(com.sleepycat.je.rep.ReplicationNode replicationNode, String groupName, VirtualHost virtualHost,
+            TaskExecutor taskExecutor, DbPing dbPing, ReplicationGroupAdmin admin)
     {
         super(UUIDGenerator.generateReplicationNodeId(groupName, replicationNode.getName()), null, null, taskExecutor);
         addParent(VirtualHost.class, virtualHost);
         _groupName = groupName;
         _hostPort = replicationNode.getHostName() + ":" + replicationNode.getPort();
         _replicationNode = replicationNode;
-        _virtualHost = virtualHost;
+        _dbPing = dbPing;
+        _replicationGroupAdmin = admin;
     }
 
     @Override
@@ -154,7 +173,6 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         }
     }
 
-
     @Override
     public Object getAttribute(String name)
     {
@@ -207,15 +225,13 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
 
     public void updateNodeState()
     {
-        Long monitorTimeout = (Long)_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_TIMEOUT);
-        DbPing ping = new DbPing(_replicationNode, _groupName, monitorTimeout.intValue());
         String oldRole = _role;
         long oldJoinTime = _joinTime;
         long oldTransactionId = _lastTransactionId;
 
         try
         {
-            NodeState state = ping.getNodeState();
+            NodeState state = _dbPing.getNodeState();
             _role = state.getNodeState().name();
             _joinTime = state.getJoinTime();
             _lastTransactionId = state.getCurrentTxnEndVLSN();
@@ -252,4 +268,73 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
     {
         return ReplicationNode.AVAILABLE_ATTRIBUTES;
     }
+
+    @Override
+    public void changeAttributes(Map<String, Object> attributes)
+            throws IllegalStateException, AccessControlException,
+            IllegalArgumentException
+    {
+        checkWhetherImmutableAttributeChanged(attributes);
+        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
+
+        if (convertedAttributes.containsKey(ROLE))
+        {
+            String currentRole = (String)getAttribute(ROLE);
+            if (!ReplicatedEnvironment.State.REPLICA.name().equals(currentRole))
+            {
+                throw new IllegalConfigurationException("Cannot transfer mastership when not a replica");
+            }
+
+            String role  = (String)convertedAttributes.get(ROLE);
+
+            if (ReplicatedEnvironment.State.MASTER.name().equals(role) )
+            {
+                try
+                {
+                    String nodeName = getName();
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Trying to transfer master to " + nodeName);
+                    }
+
+                    _replicationGroupAdmin.transferMaster(Collections.singleton(nodeName), ReplicatedEnvironmentFacade.MASTER_TRANSFER_TIMEOUT, TimeUnit.MILLISECONDS, true);
+
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("The mastership has been transfered to " + nodeName);
+                    }
+                }
+                catch(Exception e)
+                {
+                    throw new IllegalConfigurationException("Cannot transfer mastership to " + getName(), e);
+                }
+            }
+            else
+            {
+                throw new IllegalConfigurationException("Changing role to other value then "
+                        + ReplicatedEnvironment.State.MASTER.name() + " is unsupported");
+            }
+        }
+
+        super.changeAttributes(convertedAttributes);
+    }
+
+    private void checkWhetherImmutableAttributeChanged(Map<String, Object> attributes)
+    {
+        Set<String> immutableAttributeNames = new HashSet<String>(getAttributeNames());
+        immutableAttributeNames.remove(ROLE);
+        for (String attributeName : immutableAttributeNames)
+        {
+            if (attributes.containsKey(attributeName))
+            {
+                // the name is appended into attributes map in REST layer
+                if (attributeName.equals(NAME) && getName().equals(attributes.get(NAME)))
+                {
+                    continue;
+                }
+                throw new IllegalConfigurationException("Cannot change value of immutable attribute " + attributeName);
+            }
+        }
+    }
+
 }
