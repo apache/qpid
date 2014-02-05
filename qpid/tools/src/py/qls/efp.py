@@ -26,10 +26,11 @@ class EfpManager(object):
     Top level class to analyze the Qpid Linear Store (QLS) directory for the partitions that make up the
     Empty File Pool (EFP).
     """
-    def __init__(self, directory):
+    def __init__(self, directory, args):
         if not os.path.exists(directory):
             raise qls.err.InvalidQlsDirectoryNameError(directory)
         self.directory = directory
+        self.args = args
         self.partitions = []
     def report(self):
         print 'Found', len(self.partitions), 'partition(s).'
