@@ -34,29 +34,36 @@ Current/pending:
                    ** Basic performance tests
    5362 -        Linearstore: No store tools exist for examining the journals
                    svn r.1558888 2014-01-09: WIP checkin for linearstore version of qpid_qls_analyze. Needs testing and tidy-up.
+                   svn r.1560530 2014-01-22: Bugfixes for qpid_qls_analyze
+                   svn r.1561848 2014-01-27: Bugfixes and enhancements for qpid_qls_analyze
+                   svn r.1564808 2014-02-05: Bugfixes and enhancements for qpid_qls_analyze
                    * Store analysis and status
                    * Recovery/reading of message content
                    * Empty file pool status and management
    5464 -        [linearstore] Incompletely created journal files accumulate in EFP
-   5479 1053701  [linearstore] Using recovered store results in "JERR_JNLF_FILEOFFSOVFL: Attempted to increase submitted offset past file size. (JournalFile::submittedDblkCount)" error message
-                   * Probablilty: 2 of 600 (0.3%) using tx-test-soak.sh
-   5480 1053749  [linearstore] Recovery of store failure with "JERR_MAP_NOTFOUND: Key not found in map." error message
+#  5479 1053701  [linearstore] Using recovered store results in "JERR_JNLF_FILEOFFSOVFL: Attempted to increase submitted offset past file size. (JournalFile::submittedDblkCount)" error message
+                   * Probability: 2 of 600 (0.3%) using tx-test-soak.sh
+#  5480 1053749  [linearstore] Recovery of store failure with "JERR_MAP_NOTFOUND: Key not found in map." error message
                    * Probability: 6 of 600 (1.0%) using tx-test-soak.sh
                    * If broker is started a second time after failure, it starts correctly and test completes ok.
+                   * Problem: File is being recycled to EFP with still-locked enqueues in it (ie dequeued transactionally).
+                   * Problem: Record alignment check writes filler records to wrong file when decoding bad record moves across a file boundary
    5484 1035843  Slow performance for producers
                    svn r.1558592 fixes an issue with using /dev/random as a source of random numbers for Journal serial numbers.
-   -    1036026  [LinearStore] Qpid linear store unable to create durable queue - framing-error: Queue <q-name>: create() failed: jexception 0x0000
+                   svn r.1558913 replaces use of /dev/urandom with several calls to rand() to construct a 64-bit random number.
+                   * Recommend rebuilding and testing for performance again with these two fixes.
+#  -    1036026  [LinearStore] Qpid linear store unable to create durable queue - framing-error: Queue <q-name>: create() failed: jexception 0x0000
                    UNABLE TO REPRODUCE - but Frantizek has additional info
    -    1039522  Qpid crashes while recovering from linear store around apid::linearstore::journal::JournalFile::getFqFileName() including enq_rec::decode() threw JERR_JREC_BAD_RECTAIL
                    * Possible dup of 1039525
-                   * May be fixed by QPID-5483 - waiting for needinfo
+                   * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing
    -    1039525  Qpid crashes while recovering from linear store around apid::linearstore::journal::jexception::format including enq_rec::decode() threw JERR_JREC_BAD_REC_TAIL
                    * Possible dup of 1039522
-                   * May be fixed by QPID-5483 - waiting for needinfo
-   5487 -        [linearstore] Replace use of /dev/urandom with c random generator calls
+                   * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing
+#  -    1049870  [LinearStore] auto-delete property does not survive restart
 
-Fixed/closed:
-=============
+Fixed/closed (in commit order):
+===============================
  Q-JIRA RHBZ     Description / Comments
  ------ -------  ----------------------
    5357 1052518  Linearstore: Empty file recycling not functional
@@ -85,6 +92,8 @@ NO-JIRA -        Added missing Apache copyright/license text
                    svn r.1558589 2014-01-15: Proposed fix
                    * May be linked to RHBZ 1039522 - waiting for needinfo
                    * May be linked to RHBZ 1039525 - waiting for needinfo
+   5487 1054448  [linearstore] Replace use of /dev/urandom with c random generator calls
+                   svn r.1558913 2014-01-16: Proposed fix
 
 Future:
 =======
@@ -101,3 +110,4 @@ Code tidy-up
 * Member names: xxx_
 * Rename classes, functions and variables to camel-case
 * Add Doxygen docs to classes
+* Make fid's consistent in name (fid, file_id, pfid) and format (hex vs decimal)

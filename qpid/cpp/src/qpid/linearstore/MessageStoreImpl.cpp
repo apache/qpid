@@ -593,7 +593,7 @@ void MessageStoreImpl::recover(qpid::broker::RecoveryManager& registry_)
     std::ostringstream oss;
     oss << "Recovered transaction prepared list:";
     for (txn_list::iterator i = prepared.begin(); i != prepared.end(); i++) {
-        oss << std::endl << "     " << str2hexnum(i->xid);
+        oss << std::endl << "     " << qpid::linearstore::journal::jcntl::str2hexnum(i->xid);
     }
     QLS_LOG(debug, oss.str());
 
@@ -1292,7 +1292,7 @@ void MessageStoreImpl::completed(TxnCtxt& txn_,
                 mgmtObject->inc_tplTxnAborts();
         }
     } catch (const std::exception& e) {
-        QLS_LOG(error, "Error completing xid " << txn_.getXid() << ": " << e.what());
+        QLS_LOG(error, "Error completing xid " << qpid::linearstore::journal::jcntl::str2hexnum(txn_.getXid()) << ": " << e.what());
         throw;
     }
 }
@@ -1514,15 +1514,6 @@ std::string MessageStoreImpl::getStoreDir() const { return storeDir; }
 void MessageStoreImpl::journalDeleted(JournalImpl& j_) {
     qpid::sys::Mutex::ScopedLock sl(journalListLock);
     journalList.erase(j_.id());
-}
-
-std::string MessageStoreImpl::str2hexnum(const std::string& str) {
-    std::ostringstream oss;
-    oss << "(" << str.size() << ")0x" << std::hex;
-    for (unsigned i=str.size(); i>0; --i) {
-        oss << std::setfill('0') << std::setw(2) << (uint16_t)(uint8_t)str[i-1];
-    }
-    return oss.str();
 }
 
 MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name_) :

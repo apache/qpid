@@ -49,7 +49,7 @@ public:
     void reset(const bool commitFlag, const uint64_t serial, const uint64_t rid, const void* const xidp,
                const std::size_t xidlen);
     uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum);
-    bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs);
+    bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs, const std::streampos rec_start);
 
     std::size_t get_xid(void** const xidpp);
     std::string& str(std::string& str) const;
@@ -57,7 +57,7 @@ public:
     std::size_t xid_size() const;
     std::size_t rec_size() const;
     inline uint64_t rid() const { return _txn_hdr._rhdr._rid; }
-    void check_rec_tail() const;
+    void check_rec_tail(const std::streampos rec_start) const;
 
 private:
     virtual void clean();
