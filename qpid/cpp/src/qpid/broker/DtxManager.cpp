@@ -62,7 +62,12 @@ namespace {
 
 }
 
-DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(&t) {}
+DtxManager::DtxManager(qpid::sys::Timer& t, uint32_t _dtxDefaultTimeout) :
+    store(0),
+    timer(&t),
+    dtxDefaultTimeout(_dtxDefaultTimeout)
+{
+}
 
 DtxManager::~DtxManager() {}
 
@@ -150,8 +155,12 @@ DtxWorkRecord* DtxManager::createWork(const std::string& xid)
     if (i != work.end()) {
         throw NotAllowedException(QPID_MSG("Xid " << convert(xid) << " is already known (use 'join' to add work to an existing xid)"));
     } else {
-        std::string ncxid = xid; // Work around const correctness problems in ptr_map.
-        return ptr_map_ptr(work.insert(ncxid, new DtxWorkRecord(ncxid, store)).first);
+        std::string ncxid = xid; // Work around const correctness problems with work.insert
+        DtxWorkRecord* dtxWorkRecord = new DtxWorkRecord(xid, store);
+        work.insert(ncxid, dtxWorkRecord);
+        if (dtxDefaultTimeout>0)
+            setTimeout(xid, dtxDefaultTimeout);
+        return dtxWorkRecord;
     }
 }
 
