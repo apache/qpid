@@ -182,14 +182,18 @@ void SslAsynchIO::notifyPendingWrite() {
 }
 
 void SslAsynchIO::queueWriteClose() {
-    if (state == Negotiating) {
-        // Never got going, so don't bother trying to close SSL down orderly.
+    {
+        qpid::sys::Mutex::ScopedLock l(lock);
+        if (state == Negotiating) {
+            // Never got going, so don't bother trying to close SSL down orderly.
+            state = ShuttingDown;
+            aio->queueWriteClose();
+            return;
+        }
+        if (state == ShuttingDown)
+            return;
         state = ShuttingDown;
-        aio->queueWriteClose();
-        return;
     }
-
-    state = ShuttingDown;
 
     DWORD shutdown = SCHANNEL_SHUTDOWN;
     SecBuffer shutBuff;

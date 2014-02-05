@@ -26,6 +26,7 @@
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/CommonImportExport.h"
+#include "qpid/sys/Mutex.h"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <windows.h>
@@ -86,6 +87,7 @@ protected:
 
     // AsynchIO layer below that's actually doing the I/O
     qpid::sys::AsynchIO *aio;
+    Mutex lock;
 
     // Track what the state of the SSL session is. Have to know when it's
     // time to notify the upper layer that the session is up, and also to
