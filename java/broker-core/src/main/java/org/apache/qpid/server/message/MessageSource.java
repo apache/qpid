@@ -32,7 +32,7 @@ import org.apache.qpid.server.store.TransactionLogResource;
 import java.util.Collection;
 import java.util.EnumSet;
 
-public interface MessageSource extends TransactionLogResource
+public interface MessageSource extends TransactionLogResource, MessageNode
 {
     Consumer addConsumer(ConsumerTarget target, FilterManager filters,
                          Class<? extends ServerMessage> messageClass,

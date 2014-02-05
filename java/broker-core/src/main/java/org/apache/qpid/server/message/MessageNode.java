@@ -20,24 +20,7 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.Action;
-
-public interface MessageDestination extends MessageNode
+public interface MessageNode
 {
-
-    public String getName();
-
-    /**
-     * Routes a message
-     * @param message the message to be routed
-     * @param instanceProperties the instance properties
-     * @param txn the transaction to enqueue within
-     * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
-     * @return the number of queues in which the message was enqueued performed
-     */
-    int send(ServerMessage message,
-             InstanceProperties instanceProperties,
-             ServerTransaction txn,
-             Action<MessageInstance> postEnqueueAction);
+    String getName();
 }

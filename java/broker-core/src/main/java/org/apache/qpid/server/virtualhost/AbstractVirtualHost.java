@@ -48,9 +48,12 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
@@ -101,6 +104,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     private final DtxRegistry _dtxRegistry;
     private final AMQQueueFactory _queueFactory;
+    private final SystemNodeRegistry _systemNodeRegistry = new SystemNodeRegistry();
 
     private volatile State _state = State.INITIALISING;
 
@@ -108,6 +112,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
     private boolean _blocked;
+
+    private final Map<String, MessageDestination> _systemNodeDestinations =
+            Collections.synchronizedMap(new HashMap<String,MessageDestination>());
+
+    private final Map<String, MessageSource> _systemNodeSources =
+            Collections.synchronizedMap(new HashMap<String,MessageSource>());
+
 
     public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                StatisticsGatherer brokerStatisticsGatherer,
@@ -151,12 +162,24 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _exchangeRegistry = new DefaultExchangeRegistry(this, _queueRegistry);
 
+        registerSystemNodes();
+
         initialiseStatistics();
 
         initialiseStorage(hostConfig, virtualHost);
 
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+    }
+
+    private void registerSystemNodes()
+    {
+        QpidServiceLoader<SystemNodeCreator> qpidServiceLoader = new QpidServiceLoader<SystemNodeCreator>();
+        Iterable<SystemNodeCreator> factories = qpidServiceLoader.instancesOf(SystemNodeCreator.class);
+        for(SystemNodeCreator creator : factories)
+        {
+            creator.register(_systemNodeRegistry);
+        }
     }
 
     abstract protected void initialiseStorage(VirtualHostConfiguration hostConfig,
@@ -445,7 +468,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     @Override
     public MessageSource getMessageSource(final String name)
     {
-        return getQueue(name);
+        MessageSource systemSource = _systemNodeSources.get(name);
+        return systemSource == null ? getQueue(name) : systemSource;
     }
 
     @Override
@@ -536,7 +560,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     @Override
     public MessageDestination getMessageDestination(final String name)
     {
-        return getExchange(name);
+        MessageDestination destination = _systemNodeDestinations.get(name);
+        return destination == null ? getExchange(name) : destination;
     }
 
     @Override
@@ -939,6 +964,34 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                         _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
                     }
                 }
+            }
+        }
+    }
+
+    private class SystemNodeRegistry implements SystemNodeCreator.SystemNodeRegistry
+    {
+        @Override
+        public void registerSystemNode(final MessageNode node)
+        {
+            if(node instanceof MessageDestination)
+            {
+                _systemNodeDestinations.put(node.getName(), (MessageDestination) node);
+            }
+            if(node instanceof MessageSource)
+            {
+                _systemNodeSources.put(node.getName(), (MessageSource)node);
+            }
+        }
+
+        public void removeSystemNode(final MessageNode node)
+        {
+            if(node instanceof MessageDestination)
+            {
+                _systemNodeDestinations.remove(node.getName());
+            }
+            if(node instanceof MessageSource)
+            {
+                _systemNodeSources.remove(node.getName());
             }
         }
     }
