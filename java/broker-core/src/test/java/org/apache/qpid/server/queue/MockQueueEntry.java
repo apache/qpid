@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.consumer.Consumer;
@@ -62,7 +63,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public void addStateChangeListener(StateChangeListener<QueueEntry, State> listener)
+    public void addStateChangeListener(StateChangeListener<MessageInstance, State> listener)
     {
 
     }
@@ -72,7 +73,7 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public int routeToAlternate(final Action<QueueEntry> action, final ServerTransaction txn)
+    public int routeToAlternate(final Action<MessageInstance> action, final ServerTransaction txn)
     {
         return 0;
     }
@@ -152,7 +153,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener)
+    public boolean removeStateChangeListener(StateChangeListener<MessageInstance, State> listener)
     {
 
         return false;

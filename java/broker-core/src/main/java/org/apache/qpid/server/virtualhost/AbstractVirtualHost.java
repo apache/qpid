@@ -47,6 +47,8 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
+import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -441,6 +443,12 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
+    public MessageSource getMessageSource(final String name)
+    {
+        return getQueue(name);
+    }
+
+    @Override
     public AMQQueue getQueue(UUID id)
     {
         return _queueRegistry.getQueue(id);
@@ -522,6 +530,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                     arguments);
         }
 
+    }
+
+
+    @Override
+    public MessageDestination getMessageDestination(final String name)
+    {
+        return getExchange(name);
     }
 
     @Override

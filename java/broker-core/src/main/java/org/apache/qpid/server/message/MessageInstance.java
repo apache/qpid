@@ -45,9 +45,9 @@ public interface MessageInstance
 
     void decrementDeliveryCount();
 
-    void addStateChangeListener(StateChangeListener<QueueEntry, State> listener);
+    void addStateChangeListener(StateChangeListener<MessageInstance, State> listener);
 
-    boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener);
+    boolean removeStateChangeListener(StateChangeListener<MessageInstance, State> listener);
 
     boolean acquiredByConsumer();
 
@@ -71,7 +71,7 @@ public interface MessageInstance
 
     int getMaximumDeliveryCount();
 
-    int routeToAlternate(Action<QueueEntry> action, ServerTransaction txn);
+    int routeToAlternate(Action<MessageInstance> action, ServerTransaction txn);
 
     Filterable asFilterable();
 

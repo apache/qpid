@@ -18,22 +18,26 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.message;
 
-package org.apache.qpid.server.queue;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 
-public interface BaseQueue extends TransactionLogResource
+public interface MessageDestination
 {
-    void enqueue(ServerMessage message) throws AMQException;
-    void enqueue(ServerMessage message, Action<MessageInstance> action) throws AMQException;
 
-    boolean isDurable();
-    boolean isDeleted();
+    public String getName();
 
-    String getName();
+    /**
+     * Routes a message
+     * @param message the message to be routed
+     * @param instanceProperties the instance properties
+     * @param txn the transaction to enqueue within
+     * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
+     * @return the number of queues in which the message was enqueued performed
+     */
+    int send(ServerMessage message,
+             InstanceProperties instanceProperties,
+             ServerTransaction txn,
+             Action<MessageInstance> postEnqueueAction);
 }

@@ -363,7 +363,7 @@ public class DtxBranch
     }
 
 
-    public void enqueue(BaseQueue queue, EnqueueableMessage message)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message)
     {
         _enqueueRecords.add(new Record(queue, message));
     }

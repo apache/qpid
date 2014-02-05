@@ -27,6 +27,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -127,6 +129,12 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
+    public MessageSource getMessageSource(final String name)
+    {
+        return null;
+    }
+
+    @Override
     public AMQQueue getQueue(UUID id)
     {
         return null;
@@ -171,6 +179,12 @@ public class MockVirtualHost implements VirtualHost
     @Override
     public void removeExchange(Exchange exchange, boolean force) throws AMQException
     {
+    }
+
+    @Override
+    public MessageDestination getMessageDestination(final String name)
+    {
+        return null;
     }
 
     @Override

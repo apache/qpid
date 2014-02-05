@@ -197,7 +197,7 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);

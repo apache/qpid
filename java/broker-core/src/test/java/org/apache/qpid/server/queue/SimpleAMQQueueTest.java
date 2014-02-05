@@ -245,11 +245,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                       Consumer.Option.SEES_REQUEUES));
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
+        Action<MessageInstance> postEnqueueAction = new Action<MessageInstance>()
         {
-            public void performAction(QueueEntry entry)
+            public void performAction(MessageInstance entry)
             {
-                queueEntries.add(entry);
+                queueEntries.add((QueueEntry) entry);
             }
         };
 
@@ -298,11 +298,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                       Consumer.Option.ACQUIRES));
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
+        Action<MessageInstance> postEnqueueAction = new Action<MessageInstance>()
         {
-            public void performAction(QueueEntry entry)
+            public void performAction(MessageInstance entry)
             {
-                queueEntries.add(entry);
+                queueEntries.add((QueueEntry) entry);
             }
         };
 
@@ -356,11 +356,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
                                                       Consumer.Option.SEES_REQUEUES));
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
+        Action<MessageInstance> postEnqueueAction = new Action<MessageInstance>()
         {
-            public void performAction(QueueEntry entry)
+            public void performAction(MessageInstance entry)
             {
-                queueEntries.add(entry);
+                queueEntries.add((QueueEntry) entry);
             }
         };
 
@@ -420,11 +420,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
 
         final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        Action<QueueEntry> postEnqueueAction = new Action<QueueEntry>()
+        Action<MessageInstance> postEnqueueAction = new Action<MessageInstance>()
         {
-            public void performAction(QueueEntry entry)
+            public void performAction(MessageInstance entry)
             {
-                queueEntries.add(entry);
+                queueEntries.add((QueueEntry)entry);
             }
         };
 

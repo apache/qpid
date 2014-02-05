@@ -35,7 +35,9 @@ import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -196,7 +198,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 String queueName = method.getQueue();
                 VirtualHost vhost = getVirtualHost(session);
 
-                final AMQQueue queue = vhost.getQueue(queueName);
+                final MessageSource queue = vhost.getMessageSource(queueName);
 
                 if(queue == null)
                 {
@@ -308,7 +310,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageTransfer(Session ssn, final MessageTransfer xfr)
     {
-        final Exchange exchange = getExchangeForMessage(ssn, xfr);
+        final MessageDestination exchange = getDestinationForMessage(ssn, xfr);
 
         final DeliveryProperties delvProps = xfr.getHeader() == null ? null : xfr.getHeader().getDeliveryProperties();
         if(delvProps != null && delvProps.hasTtl() && !delvProps.hasExpiration())
@@ -327,7 +329,6 @@ public class ServerSessionDelegate extends SessionDelegate
             return;
         }
 
-        final Exchange exchangeInUse;
         final MessageStore store = getVirtualHost(ssn).getMessageStore();
         final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
         final ServerSession serverSession = (ServerSession) ssn;
@@ -829,24 +830,24 @@ public class ServerSessionDelegate extends SessionDelegate
         return getVirtualHost(session).getExchange(exchangeName);
     }
 
-    private Exchange getExchangeForMessage(Session ssn, MessageTransfer xfr)
+    private MessageDestination getDestinationForMessage(Session ssn, MessageTransfer xfr)
     {
         VirtualHost virtualHost = getVirtualHost(ssn);
 
-        Exchange exchange;
+        MessageDestination destination;
         if(xfr.hasDestination())
         {
-            exchange = virtualHost.getExchange(xfr.getDestination());
-            if(exchange == null)
+            destination = virtualHost.getMessageDestination(xfr.getDestination());
+            if(destination == null)
             {
-                exchange = virtualHost.getDefaultExchange();
+                destination = virtualHost.getDefaultExchange();
             }
         }
         else
         {
-            exchange = virtualHost.getDefaultExchange();
+            destination = virtualHost.getDefaultExchange();
         }
-        return exchange;
+        return destination;
     }
 
     private VirtualHost getVirtualHost(Session session)

@@ -24,22 +24,16 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public interface Exchange extends ExchangeReferrer
+public interface Exchange extends ExchangeReferrer, MessageDestination
 {
     void initialise(UUID id, VirtualHost host, String name, boolean durable, boolean autoDelete)
             throws AMQException;
@@ -95,19 +89,6 @@ public interface Exchange extends ExchangeReferrer
     Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
 
     void close() throws AMQException;
-
-    /**
-     * Routes a message
-     * @param message the message to be routed
-     * @param instanceProperties the instance properties
-     * @param txn the transaction to enqueue within
-     * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
-     * @return the number of queues in which the message was enqueued performed
-     */
-    int send(ServerMessage message,
-             InstanceProperties instanceProperties,
-             ServerTransaction txn,
-             Action<QueueEntry> postEnqueueAction);
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments

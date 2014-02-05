@@ -105,7 +105,7 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
     {
         if(_branch != null)
         {

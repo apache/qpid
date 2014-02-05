@@ -49,13 +49,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implements FlowCreditManager.FlowCreditManagerListener
 {
 
-    private final StateChangeListener<QueueEntry, QueueEntry.State> _entryReleaseListener =
-            new StateChangeListener<QueueEntry, QueueEntry.State>()
+    private final StateChangeListener<MessageInstance, MessageInstance.State> _entryReleaseListener =
+            new StateChangeListener<MessageInstance, MessageInstance.State>()
             {
                 @Override
-                public void stateChanged(final QueueEntry entry,
-                                         final QueueEntry.State oldSate,
-                                         final QueueEntry.State newState)
+                public void stateChanged(final MessageInstance entry,
+                                         final MessageInstance.State oldSate,
+                                         final MessageInstance.State newState)
                 {
                     if (oldSate == QueueEntry.State.ACQUIRED && (newState == QueueEntry.State.AVAILABLE || newState == QueueEntry.State.DEQUEUED))
                     {
@@ -463,7 +463,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         _creditManager.restoreCredit(1, message.getSize());
     }
 
-    protected final StateChangeListener<QueueEntry, QueueEntry.State> getReleasedStateChangeListener()
+    protected final StateChangeListener<MessageInstance, MessageInstance.State> getReleasedStateChangeListener()
     {
         return _entryReleaseListener;
     }
@@ -526,11 +526,11 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         final long size = entry.getMessage().getSize();
         _unacknowledgedBytes.addAndGet(size);
         _unacknowledgedCount.incrementAndGet();
-        entry.addStateChangeListener(new StateChangeListener<QueueEntry, QueueEntry.State>()
+        entry.addStateChangeListener(new StateChangeListener<MessageInstance, MessageInstance.State>()
         {
-            public void stateChanged(QueueEntry entry, QueueEntry.State oldState, QueueEntry.State newState)
+            public void stateChanged(MessageInstance entry, MessageInstance.State oldState, MessageInstance.State newState)
             {
-                if(oldState.equals(QueueEntry.State.ACQUIRED) && !newState.equals(QueueEntry.State.ACQUIRED))
+                if(oldState.equals(MessageInstance.State.ACQUIRED) && !newState.equals(MessageInstance.State.ACQUIRED))
                 {
                     _unacknowledgedBytes.addAndGet(-size);
                     _unacknowledgedCount.decrementAndGet();

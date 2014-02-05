@@ -25,25 +25,19 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
-import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue
+public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, BaseQueue, MessageSource, CapacityChecker
 {
-    String getName();
 
     public interface NotificationListener
     {
@@ -75,28 +69,8 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
     boolean isAutoDelete();
 
     String getOwner();
-    AuthorizationHolder getAuthorizationHolder();
-    void setAuthorizationHolder(AuthorizationHolder principalHolder);
-
-    void setExclusiveOwningSession(AMQSessionModel owner);
-    AMQSessionModel getExclusiveOwningSession();
 
     VirtualHost getVirtualHost();
-
-    Consumer addConsumer(final ConsumerTarget target, final FilterManager filters,
-                         final Class<? extends ServerMessage> messageClass,
-                         final String consumerName, EnumSet<Consumer.Option> options) throws AMQException;
-
-    Collection<Consumer> getConsumers();
-
-    interface ConsumerRegistrationListener
-    {
-        void consumerAdded(AMQQueue queue, Consumer consumer);
-        void consumerRemoved(AMQQueue queue, Consumer consumer);
-    }
-
-    void addConsumerRegistrationListener(ConsumerRegistrationListener listener);
-    void removeConsumerRegistrationListener(ConsumerRegistrationListener listener);
 
 
     int getConsumerCount();
@@ -215,59 +189,12 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     void stop();
 
-    boolean isExclusive();
-
     Exchange getAlternateExchange();
 
     void setAlternateExchange(Exchange exchange);
 
     Collection<String> getAvailableAttributes();
     Object getAttribute(String attrName);
-
-    void checkCapacity(AMQSessionModel channel);
-
-    /**
-     * ExistingExclusiveConsumer signals a failure to create a consumer, because an exclusive consumer
-     * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create a consumer, because an exclusive consumer already exists.
-     * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
-     * @todo Move to top level, used outside this class.
-     */
-    static final class ExistingExclusiveConsumer extends AMQException
-    {
-
-        public ExistingExclusiveConsumer()
-        {
-            super("");
-        }
-    }
-
-    /**
-     * ExistingConsumerPreventsExclusive signals a failure to create an exclusive consumer, as a consumer
-     * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create an exclusive consumer, as a consumer already exists.
-     * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
-     * @todo Move to top level, used outside this class.
-     */
-    static final class ExistingConsumerPreventsExclusive extends AMQException
-    {
-        public ExistingConsumerPreventsExclusive()
-        {
-            super("");
-        }
-    }
 
     void configure(QueueConfiguration config);
 

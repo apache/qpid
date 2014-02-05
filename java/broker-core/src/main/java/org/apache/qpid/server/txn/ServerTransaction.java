@@ -94,7 +94,7 @@ public interface ServerTransaction
      * 
      * A store operation will result only for a persistent message on a durable queue.
      */
-    void enqueue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction);
+    void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction);
 
     /** 
      * Enqueue a message(s) to queue(s) registering a post transaction action.

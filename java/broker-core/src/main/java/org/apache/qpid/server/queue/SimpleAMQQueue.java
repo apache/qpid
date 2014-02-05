@@ -42,6 +42,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -635,7 +636,7 @@ public class SimpleAMQQueue implements AMQQueue,
         enqueue(message, null);
     }
 
-    public void enqueue(ServerMessage message, Action<QueueEntry> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance> action) throws AMQException
     {
         incrementQueueCount();
         incrementQueueSize(message);
@@ -1967,7 +1968,7 @@ public class SimpleAMQQueue implements AMQQueue,
         return _notificationChecks;
     }
 
-    private final class QueueEntryListener implements StateChangeListener<QueueEntry, QueueEntry.State>
+    private final class QueueEntryListener implements StateChangeListener<MessageInstance, QueueEntry.State>
     {
 
         private final QueueConsumer _sub;
@@ -1988,7 +1989,7 @@ public class SimpleAMQQueue implements AMQQueue,
             return System.identityHashCode(_sub);
         }
 
-        public void stateChanged(QueueEntry entry, QueueEntry.State oldSate, QueueEntry.State newState)
+        public void stateChanged(MessageInstance entry, QueueEntry.State oldSate, QueueEntry.State newState)
         {
             entry.removeStateChangeListener(this);
             deliverAsync(_sub);

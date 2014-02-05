@@ -385,13 +385,13 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         final LogActor logActor = CurrentActor.get();
         final ServerMessage msg = entry.getMessage();
 
-        int requeues = entry.routeToAlternate(new Action<QueueEntry>()
+        int requeues = entry.routeToAlternate(new Action<MessageInstance>()
                     {
                         @Override
-                        public void performAction(final QueueEntry requeueEntry)
+                        public void performAction(final MessageInstance requeueEntry)
                         {
                             logActor.message( ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
-                                                                            requeueEntry.getQueue().getName()));
+                                                                            requeueEntry.getOwningResource().getName()));
                         }
                     }, null);
 

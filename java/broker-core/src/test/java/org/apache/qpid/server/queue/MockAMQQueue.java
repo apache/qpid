@@ -26,6 +26,7 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
@@ -305,7 +306,7 @@ public class MockAMQQueue implements AMQQueue
     {
     }
 
-    public void enqueue(ServerMessage message, Action<QueueEntry> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance> action) throws AMQException
     {
     }
 

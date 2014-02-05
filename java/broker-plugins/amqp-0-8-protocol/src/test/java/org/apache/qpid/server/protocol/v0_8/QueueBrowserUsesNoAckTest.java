@@ -144,6 +144,6 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         FieldTable filters = new FieldTable();
         filters.put(AMQPFilterTypes.NO_CONSUME.getValue(), true);
 
-        return channel.subscribeToQueue(null, queue, true, filters, false, true);
+        return channel.consumeFromSource(null, queue, true, filters, true);
     }
 }

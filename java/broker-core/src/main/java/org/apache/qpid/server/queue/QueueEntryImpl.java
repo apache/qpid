@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -62,7 +63,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         (QueueEntryImpl.class, EntryState.class, "_state");
 
 
-    private volatile Set<StateChangeListener<QueueEntry, State>> _stateChangeListeners;
+    private volatile Set<StateChangeListener<MessageInstance, State>> _stateChangeListeners;
 
     private static final
         AtomicReferenceFieldUpdater<QueueEntryImpl, Set>
@@ -332,7 +333,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     private void notifyStateChange(final State oldState, final State newState)
     {
-        for(StateChangeListener<QueueEntry, State> l : _stateChangeListeners)
+        for(StateChangeListener<MessageInstance, State> l : _stateChangeListeners)
         {
             l.stateChanged(this, oldState, newState);
         }
@@ -363,7 +364,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         dispose();
     }
 
-    public int routeToAlternate(final Action<QueueEntry> action, ServerTransaction txn)
+    public int routeToAlternate(final Action<MessageInstance> action, ServerTransaction txn)
     {
         final AMQQueue currentQueue = getQueue();
         Exchange alternateExchange = currentQueue.getAlternateExchange();
@@ -408,21 +409,21 @@ public abstract class QueueEntryImpl implements QueueEntry
         return getQueue().isDeleted();
     }
 
-    public void addStateChangeListener(StateChangeListener<QueueEntry, State> listener)
+    public void addStateChangeListener(StateChangeListener<MessageInstance, State> listener)
     {
-        Set<StateChangeListener<QueueEntry, State>> listeners = _stateChangeListeners;
+        Set<StateChangeListener<MessageInstance, State>> listeners = _stateChangeListeners;
         if(listeners == null)
         {
-            _listenersUpdater.compareAndSet(this, null, new CopyOnWriteArraySet<StateChangeListener<QueueEntry, State>>());
+            _listenersUpdater.compareAndSet(this, null, new CopyOnWriteArraySet<StateChangeListener<MessageInstance, State>>());
             listeners = _stateChangeListeners;
         }
 
         listeners.add(listener);
     }
 
-    public boolean removeStateChangeListener(StateChangeListener<QueueEntry, State> listener)
+    public boolean removeStateChangeListener(StateChangeListener<MessageInstance, State> listener)
     {
-        Set<StateChangeListener<QueueEntry, State>> listeners = _stateChangeListeners;
+        Set<StateChangeListener<MessageInstance, State>> listeners = _stateChangeListeners;
         if(listeners != null)
         {
             return listeners.remove(listener);

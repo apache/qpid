@@ -33,6 +33,7 @@ import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -429,7 +430,7 @@ public abstract class AbstractExchange implements Exchange
     public final int send(final ServerMessage message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final Action<QueueEntry> postEnqueueAction)
+                          final Action<MessageInstance> postEnqueueAction)
     {
         List<? extends BaseQueue> queues = route(message, instanceProperties);
 

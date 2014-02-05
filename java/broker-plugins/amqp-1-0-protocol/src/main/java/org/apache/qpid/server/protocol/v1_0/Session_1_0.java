@@ -41,6 +41,8 @@ import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -109,7 +111,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                         source.setAddress(tempQueue.getName());
                     }
                     String addr = source.getAddress();
-                    AMQQueue queue = _vhost.getQueue(addr);
+                    MessageSource queue = _vhost.getMessageSource(addr);
                     if(queue != null)
                     {
 
@@ -250,11 +252,11 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                         }
 
                         String addr = target.getAddress();
-                        Exchange exchg = _vhost.getExchange(addr);
-                        if(exchg != null)
+                        MessageDestination messageDestination = _vhost.getMessageDestination(addr);
+                        if(messageDestination != null)
                         {
-                            destination = new ExchangeDestination(exchg, target.getDurable(),
-                                                                  target.getExpiryPolicy());
+                            destination = new NodeReceivingDestination(messageDestination, target.getDurable(),
+                                                                       target.getExpiryPolicy());
                         }
                         else
                         {
