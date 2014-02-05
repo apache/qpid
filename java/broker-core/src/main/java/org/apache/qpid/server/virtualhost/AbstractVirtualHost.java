@@ -983,6 +983,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             }
         }
 
+        @Override
         public void removeSystemNode(final MessageNode node)
         {
             if(node instanceof MessageDestination)
@@ -993,6 +994,12 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             {
                 _systemNodeSources.remove(node.getName());
             }
+        }
+
+        @Override
+        public VirtualHost getVirtualHost()
+        {
+            return AbstractVirtualHost.this;
         }
     }
 }
