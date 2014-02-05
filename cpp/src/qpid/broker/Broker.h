@@ -38,6 +38,7 @@
 #include "qpid/broker/System.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/ConnectionObservers.h"
+#include "qpid/broker/SessionHandlerObserver.h"
 #include "qpid/broker/BrokerObservers.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/sys/ConnectionCodec.h"
@@ -86,6 +87,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     struct Options : public qpid::Options {
         static const std::string DEFAULT_DATA_DIR_LOCATION;
         static const std::string DEFAULT_DATA_DIR_NAME;
+        static const std::string DEFAULT_PAGED_QUEUE_DIR;
 
         QPID_BROKER_EXTERN Options(const std::string& name="Broker Options");
 
@@ -178,6 +180,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DataDir dataDir;
     DataDir pagingDir;
     ConnectionObservers connectionObservers;
+    SessionHandlerObservers sessionHandlerObservers;
     BrokerObservers brokerObservers;
 
     QueueRegistry queues;
@@ -237,11 +240,11 @@ class Broker : public sys::Runnable, public Plugin::Target,
     ExchangeRegistry& getExchanges() { return exchanges; }
     LinkRegistry& getLinks() { return links; }
     DtxManager& getDtxManager() { return dtxManager; }
-    DataDir& getDataDir() { return dataDir; }
+    const DataDir& getDataDir() { return dataDir; }
+    const DataDir& getPagingDir() { return pagingDir; }
     Options& getOptions() { return config; }
     ProtocolRegistry& getProtocolRegistry() { return protocolRegistry; }
     ObjectFactoryRegistry& getObjectFactoryRegistry() { return objectFactory; }
-    std::string getPagingDirectoryPath();
 
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
     boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
@@ -360,6 +363,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
     ConnectionObservers& getConnectionObservers() { return connectionObservers; }
+    SessionHandlerObservers& getSessionHandlerObservers() { return sessionHandlerObservers; }
     BrokerObservers& getBrokerObservers() { return brokerObservers; }
 
     /** Properties to be set on outgoing link connections */

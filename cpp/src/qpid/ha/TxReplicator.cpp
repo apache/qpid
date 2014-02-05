@@ -87,7 +87,7 @@ TxReplicator::TxReplicator(
     QueueReplicator(hb, txQueue, link),
     store(hb.getBroker().hasStore() ? &hb.getBroker().getStore() : 0),
     channel(link->nextChannel()),
-    ended(false),
+    empty(true), ended(false),
     dequeueState(hb.getBroker().getQueues())
 {
     string id(getTxId(txQueue->getName()));
@@ -151,6 +151,7 @@ void TxReplicator::enqueue(const string& data, sys::Mutex::ScopedLock&) {
     decodeStr(data, e);
     QPID_LOG(trace, logPrefix << "Enqueue: " << e);
     enq = e;
+    empty = false;
 }
 
 void TxReplicator::dequeue(const string& data, sys::Mutex::ScopedLock&) {
@@ -163,6 +164,7 @@ void TxReplicator::dequeue(const string& data, sys::Mutex::ScopedLock&) {
     // prepared, then they are all receieved before the prepare event.
     // We collect the events here so we can do a single scan of the queue in prepare.
     dequeueState.add(e);
+    empty = false;
 }
 
 void TxReplicator::DequeueState::add(const TxDequeueEvent& event) {
@@ -227,7 +229,9 @@ void TxReplicator::commit(const string&, sys::Mutex::ScopedLock& l) {
 
 void TxReplicator::rollback(const string&, sys::Mutex::ScopedLock& l) {
     if (!txBuffer) return;
-    QPID_LOG(debug, logPrefix << "Rollback");
+    // Don't bleat about rolling back empty transactions, this happens all the time
+    // when a session closes and rolls back its outstanding transaction.
+    if (!empty) QPID_LOG(debug, logPrefix << "Rollback");
     if (context.get()) store->abort(*context);
     txBuffer->rollback();
     end(l);
@@ -255,15 +259,12 @@ void TxReplicator::end(sys::Mutex::ScopedLock&) {
 }
 
 // Called when the tx queue is deleted.
-void TxReplicator::destroy() {
-    {
-        sys::Mutex::ScopedLock l(lock);
-        if (!ended) {
-            QPID_LOG(error, logPrefix << "Destroyed prematurely, rollback.");
-            rollback(string(), l);
-        }
+void TxReplicator::destroy(sys::Mutex::ScopedLock& l) {
+    if (!ended) {
+        if (!empty) QPID_LOG(error, logPrefix << "Destroyed prematurely, rollback");
+        rollback(string(), l);
     }
-    QueueReplicator::destroy();
+    QueueReplicator::destroy(l);
 }
 
 }} // namespace qpid::ha

@@ -36,6 +36,7 @@
 <!ENTITY oracleJdkDocUrl "http://docs.oracle.com/javase/6/docs/api/">
 <!ENTITY oracleJeeDocUrl "http://docs.oracle.com/javaee/6/api/">
 <!ENTITY oracleKeytool "http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html">
+<!ENTITY oracleJconsole "http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html">
 
 <!-- Oracle BDB JE-->
 <!ENTITY oracleJeDownloadUrl "http://www.oracle.com/technetwork/products/berkeleydb/downloads/index.html?ssSourceSiteId=ocomen">
@@ -44,3 +45,8 @@
 <!ENTITY oracleBdbJavaDocUrl "http://docs.oracle.com/cd/E17277_02/html/java/">
 <!ENTITY oracleBdbProductVersion "5.0.97">
 
+<!ENTITY oracleJmxTutorial "http://docs.oracle.com/javase/tutorial/jmx/">
+
+<!ENTITY qpidSrc "http://svn.apache.org/viewvc/qpid/trunk/qpid/java/">
+<!ENTITY qpidManagementCommonSrc "&qpidSrc;management/common/src/main/java/">
+<!ENTITY qpidSrcSuffix ".java?view=co">

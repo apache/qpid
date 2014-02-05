@@ -45,16 +45,20 @@ Exception::Exception(const std::string& msg) throw() : message(msg) {
 
 Exception::~Exception() throw() {}
 
-std::string Exception::getPrefix() const { return ""; }
+std::string Exception::getPrefix() const { return std::string(); }
 
 std::string Exception::getMessage() const { return message; }
+
+namespace { const std::string COLON(": "); }
 
 const char* Exception::what() const throw() {
     // Construct the what string the first time it is needed.
     if (whatStr.empty()) {
-        whatStr = getPrefix();
-        if (!whatStr.empty()) whatStr +=  ": ";
-        whatStr += message;
+        if (message.compare(0, getPrefix().size(), getPrefix()) == 0 || // Already has prefix
+            getPrefix().empty())                                        // No prefix
+            whatStr = message;
+        else
+            whatStr = getPrefix() + COLON + message;
     }
     return whatStr.c_str();
 }

@@ -215,9 +215,18 @@ class TxnMap(object):
     
     def _abort(self, xid):
         """Perform an abort operation for the given xid record"""
-        for fid, hdr, lock in self.__map[xid]:
+        for _, hdr, _ in self.__map[xid]:
             if isinstance(hdr, jrnl.DeqRec):
-                self.__emap.unlock(hdr.deq_rid)
+                try:
+                    self.__emap.unlock(hdr.deq_rid)
+                except jerr.NonExistentRecordError as err: # Not in emap, look in current transaction op list (TPL)
+                    found_rid = False
+                    for _, hdr1, _ in self.__map[xid]:
+                        if isinstance(hdr1, jrnl.EnqRec) and hdr1.rid == hdr.deq_rid:
+                            found_rid = True
+                            break
+                    if not found_rid: # Not found in current transaction op list, re-throw error
+                        raise err
         del self.__map[xid]
     
     def _commit(self, xid):

@@ -160,6 +160,16 @@ bool AclData::lookupMatchRule(
                 //  as rule's index.
                 propertyMapItr lookupParamItr;
                 switch (rulePropMapItr->first) {
+                case acl::SPECPROP_MAXPAGESLOWERLIMIT:
+                case acl::SPECPROP_MAXPAGESUPPERLIMIT:
+                    lookupParamItr = params->find(PROP_MAXPAGES);
+                    break;
+
+                case acl::SPECPROP_MAXPAGEFACTORLOWERLIMIT:
+                case acl::SPECPROP_MAXPAGEFACTORUPPERLIMIT:
+                    lookupParamItr = params->find(PROP_MAXPAGEFACTOR);
+                    break;
+
                 case acl::SPECPROP_MAXQUEUECOUNTUPPERLIMIT:
                 case acl::SPECPROP_MAXQUEUECOUNTLOWERLIMIT:
                     lookupParamItr = params->find(PROP_MAXQUEUECOUNT);
@@ -201,6 +211,8 @@ bool AclData::lookupMatchRule(
                     case acl::SPECPROP_MAXQUEUESIZEUPPERLIMIT:
                     case acl::SPECPROP_MAXFILECOUNTUPPERLIMIT:
                     case acl::SPECPROP_MAXFILESIZEUPPERLIMIT:
+                    case acl::SPECPROP_MAXPAGESUPPERLIMIT:
+                    case acl::SPECPROP_MAXPAGEFACTORUPPERLIMIT:
                         limitChecked &=
                             compareInt(
                                 rulePropMapItr->first,
@@ -213,6 +225,8 @@ bool AclData::lookupMatchRule(
                     case acl::SPECPROP_MAXQUEUESIZELOWERLIMIT:
                     case acl::SPECPROP_MAXFILECOUNTLOWERLIMIT:
                     case acl::SPECPROP_MAXFILESIZELOWERLIMIT:
+                    case acl::SPECPROP_MAXPAGESLOWERLIMIT:
+                    case acl::SPECPROP_MAXPAGEFACTORLOWERLIMIT:
                         limitChecked &=
                             compareInt(
                                 rulePropMapItr->first,

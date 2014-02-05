@@ -172,34 +172,29 @@ Variant::Map asMapVoid(const Variant& value) {
 }
 } // namespace
 
-// Listens for errors on the bridge session.
-class BrokerReplicator::ErrorListener : public SessionHandler::ErrorListener {
+// Report errors on the broker replication session.
+class BrokerReplicator::ErrorListener : public broker::SessionHandler::ErrorListener {
   public:
-    ErrorListener(const std::string& lp, BrokerReplicator& br) :
-        logPrefix(lp), brokerReplicator(br) {}
+    ErrorListener(const std::string& logPrefix_) : logPrefix(logPrefix_) {}
 
-    void connectionException(framing::connection::CloseCode, const std::string& msg) {
-        QPID_LOG(error, logPrefix << "Connection error: " << msg);
+    void connectionException(framing::connection::CloseCode code, const std::string& msg) {
+        QPID_LOG(error, logPrefix << framing::createConnectionException(code, msg).what());
     }
-    void channelException(framing::session::DetachCode, const std::string& msg) {
-        QPID_LOG(error, logPrefix << "Channel error: " << msg);
+    void channelException(framing::session::DetachCode code, const std::string& msg) {
+        QPID_LOG(error, logPrefix << framing::createChannelException(code, msg).what());
     }
-    void executionException(framing::execution::ErrorCode, const std::string& msg) {
-        QPID_LOG(error, logPrefix << "Execution error: " << msg);
+    void executionException(framing::execution::ErrorCode code, const std::string& msg) {
+        QPID_LOG(error, logPrefix << framing::createSessionException(code, msg).what());
     }
-
-    void incomingExecutionException(
-        framing::execution::ErrorCode, const std::string& msg) {
-        QPID_LOG(error, logPrefix << "Incoming execution error: " << msg);
+    void incomingExecutionException(framing::execution::ErrorCode code, const std::string& msg) {
+        QPID_LOG(error, logPrefix << "Incoming " << framing::createSessionException(code, msg).what());
     }
-
     void detach() {
         QPID_LOG(debug, logPrefix << "Session detached.");
     }
 
   private:
     std::string logPrefix;
-    BrokerReplicator& brokerReplicator;
 };
 
 /** Keep track of queues or exchanges during the update process to solve 2
@@ -328,8 +323,7 @@ void BrokerReplicator::initialize() {
         boost::bind(&BrokerReplicator::connected, shared_from_this(), _1, _2)
     );
     assert(result.second);
-    result.first->setErrorListener(
-        boost::shared_ptr<ErrorListener>(new ErrorListener(logPrefix, *this)));
+    result.first->setErrorListener(boost::shared_ptr<ErrorListener>(new ErrorListener(logPrefix)));
     broker.getConnectionObservers().add(shared_from_this());
 }
 

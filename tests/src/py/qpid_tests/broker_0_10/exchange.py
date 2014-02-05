@@ -456,6 +456,12 @@ class HeadersExchangeTests(TestHelper):
         self.myBasicPublish({"irrelevant":0})
         self.assertEmpty(self.q)
 
+    def testMultipleBindings(self):
+        self.session.exchange_bind(queue="q", exchange="amq.match", binding_key="SomeKey", arguments={ 'x-match':'any', "name":"fred"})
+        self.session.exchange_bind(queue="q", exchange="amq.match", binding_key="AnotherKey", arguments={ 'x-match':'all', "age":3})
+        self.myAssertPublishGet({"name":"fred", "age":3})
+        self.assertEmpty(self.q)
+ 
 
 class MiscellaneousErrorsTests(TestHelper):
     """

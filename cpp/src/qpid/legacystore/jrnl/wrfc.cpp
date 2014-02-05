@@ -125,7 +125,8 @@ wrfc::enq_threshold(const u_int32_t enq_dsize_dblks) const
     u_int32_t fwd_dblks = subm_dblks + enq_dsize_dblks + _enq_cap_offs_dblks;
     u_int16_t findex = _fc_index;
     fcntl* fcp = _curr_fc;
-    bool in_use = false;
+    bool in_use = false; // at least one file contains an enqueued record
+    bool overwrite = false; // reached the original journal file we started with
     while (fwd_dblks && !(findex != _fc_index && fcp->enqcnt()))
     {
         fwd_dblks -= fwd_dblks > _fsize_dblks ? _fsize_dblks : fwd_dblks;
@@ -133,12 +134,13 @@ wrfc::enq_threshold(const u_int32_t enq_dsize_dblks) const
         {
             if (++findex == _lpmp->num_jfiles())
                 findex = 0;
+	    overwrite |= findex == _fc_index;
             fcp = _lpmp->get_fcntlp(findex);
         }
         in_use |= fcp->enqcnt() > 0;
     }
     // Return true if threshold exceeded
-    return findex != _fc_index && in_use;
+    return (findex != _fc_index && in_use) || overwrite;
 }
 
 bool wrfc::wr_reset()

@@ -67,7 +67,8 @@ class TxReplicator : public QueueReplicator {
 
     // QueueReplicator overrides
     void route(broker::Deliverable& deliverable);
-    void destroy();
+    using QueueReplicator::destroy;
+    void destroy(sys::Mutex::ScopedLock&);
 
   protected:
 

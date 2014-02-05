@@ -370,7 +370,7 @@ MSSqlClfsProvider::earlyInitialize(Plugin::Target &target)
         // Check the store dir option; if not specified, need to
         // grab the broker's data dir.
         if (options.storeDir.empty()) {
-            DataDir& dir = store->getBroker()->getDataDir();
+            const DataDir& dir = store->getBroker()->getDataDir();
             if (dir.isEnabled()) {
                 options.storeDir = dir.getPath();
             }

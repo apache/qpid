@@ -91,13 +91,16 @@ PagedQueue::PagedQueue(const std::string& name_, const std::string& directory, u
     : name(name_), pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0), loaded(0), version(0),
       expiryPolicy(e)
 {
-    path = file.open(name, directory);
-    QPID_LOG(debug, "PagedQueue[" << path << "]");
+    if (directory.empty()) {
+        throw qpid::Exception(QPID_MSG("Cannot create paged queue: No paged queue directory specified"));
+    }
+    file.open(name, directory);
+    QPID_LOG(debug, "PagedQueue[" << name << "]");
 }
 
 PagedQueue::~PagedQueue()
 {
-    file.close(path);
+    file.close();
 }
 
 size_t PagedQueue::size()
@@ -133,7 +136,7 @@ bool PagedQueue::deleted(const QueueCursor& cursor)
 void PagedQueue::publish(const Message& added)
 {
     if (encodedSize(added) > pageSize) {
-        QPID_LOG(error, "Message is larger than page size for queue " << name << ", backed by " << path);
+        QPID_LOG(error, "Message is larger than page size for queue " << name);
         throw qpid::framing::PreconditionFailedException(QPID_MSG("Message is larger than page size for queue " << name));
     }
     Used::reverse_iterator i = used.rbegin();
@@ -143,7 +146,7 @@ void PagedQueue::publish(const Message& added)
     }
     //used is empty or last page is full, need to add a new page
     if (!newPage(added.getSequence()).add(added)) {
-        QPID_LOG(error, "Could not add message to paged queue " << name << ", backed by " << path);
+        QPID_LOG(error, "Could not add message to paged queue " << name);
         throw qpid::Exception(QPID_MSG("Could not add message to paged queue " << name));
     }
 }
@@ -388,14 +391,14 @@ void PagedQueue::load(Page& page)
     }
     page.load(file, protocols, expiryPolicy);
     ++loaded;
-    QPID_LOG(debug, "PagedQueue[" << path << "] loaded page, " << loaded << " pages now loaded");
+    QPID_LOG(debug, "PagedQueue[" << name << "] loaded page, " << loaded << " pages now loaded");
 }
 
 void PagedQueue::unload(Page& page)
 {
     page.unload(file);
     --loaded;
-    QPID_LOG(debug, "PagedQueue[" << path << "] unloaded page, " << loaded << " pages now loaded");
+    QPID_LOG(debug, "PagedQueue[" << name << "] unloaded page, " << loaded << " pages now loaded");
 }
 
 
