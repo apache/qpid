@@ -594,9 +594,10 @@ class DtxTests(TestBase010):
 
         session.dtx_select()
         session.dtx_start(xid=tx)
-        self.assertEqual(0, session.dtx_get_timeout(xid=tx).timeout)
-        session.dtx_set_timeout(xid=tx, timeout=60)
+        # below test checks for default value of dtx-default-timeout broker option
         self.assertEqual(60, session.dtx_get_timeout(xid=tx).timeout)
+        session.dtx_set_timeout(xid=tx, timeout=200)
+        self.assertEqual(200, session.dtx_get_timeout(xid=tx).timeout)
         self.assertEqual(self.XA_OK, session.dtx_end(xid=tx).status)
         self.assertEqual(self.XA_OK, session.dtx_rollback(xid=tx).status)
 
@@ -627,6 +628,21 @@ class DtxTests(TestBase010):
         #check the correct codes are returned when we try to complete the txn
         self.assertEqual(self.XA_RBTIMEOUT, session.dtx_end(xid=tx).status)
         self.assertEqual(self.XA_RBTIMEOUT, session.dtx_rollback(xid=tx).status)
+
+    def test_set_timeout_too_high(self):
+        """
+        Test the timeout can't be more than --dtx-max-timeout
+        broker option
+        """
+        session = self.session
+        tx = self.xid("dummy")
+
+        session.dtx_select()
+        session.dtx_start(xid=tx)
+        try:
+            session.dtx_set_timeout(xid=tx, timeout=3601)
+        except SessionException, e:
+            self.assertEquals(542, e.args[0].error_code)
 
 
 
