@@ -22,9 +22,11 @@
 #ifndef QPID_LINEARSTORE_JOURNAL_WMGR_H
 #define QPID_LINEARSTORE_JOURNAL_WMGR_H
 
+#include <deque>
+#include <map>
 #include "qpid/linearstore/journal/enums.h"
 #include "qpid/linearstore/journal/pmgr.h"
-#include <set>
+#include <vector>
 
 namespace qpid {
 namespace linearstore {
@@ -51,11 +53,15 @@ class LinearFileController;
 class wmgr : public pmgr
 {
 private:
+    typedef std::vector<uint64_t> fidl_t;
+    typedef fidl_t::iterator fidl_itr_t;
+    typedef std::map<std::string, fidl_t> pending_txn_map_t;
+    typedef pending_txn_map_t::iterator pending_txn_map_itr_t;
+
     LinearFileController& _lfc;     ///< Linear File Controller ref
     uint32_t _max_dtokpp;           ///< Max data writes per page
     uint32_t _max_io_wait_us;       ///< Max wait in microseconds till submit
     uint32_t _cached_offset_dblks;  ///< Amount of unwritten data in page (dblocks)
-    std::deque<data_tok*> _ddtokl;  ///< Deferred dequeue data_tok list
 
     // TODO: Convert _enq_busy etc into a proper threadsafe lock
     // TODO: Convert to enum? Are these encodes mutually exclusive?
@@ -70,7 +76,7 @@ private:
     enq_rec _enq_rec;               ///< Enqueue record used for encoding/decoding
     deq_rec _deq_rec;               ///< Dequeue record used for encoding/decoding
     txn_rec _txn_rec;               ///< Transaction record used for encoding/decoding
-    std::set<std::string> _txn_pending_set; ///< Set containing xids of pending commits/aborts
+    pending_txn_map_t _txn_pending_map; ///< Set containing xids of pending commits/aborts
 
 public:
     wmgr(jcntl* jc,

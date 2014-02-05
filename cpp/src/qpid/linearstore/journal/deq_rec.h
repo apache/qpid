@@ -49,7 +49,7 @@ public:
     void reset(const uint64_t serial, const uint64_t rid, const  uint64_t drid, const void* const xidp,
                const std::size_t xidlen, const bool txn_coml_commit);
     uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum);
-    bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs);
+    bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs, const std::streampos rec_start);
 
     inline bool is_txn_coml_commit() const { return ::is_txn_coml_commit(&_deq_hdr); }
     inline uint64_t rid() const { return _deq_hdr._rhdr._rid; }
@@ -59,7 +59,7 @@ public:
     inline std::size_t data_size() const { return 0; } // This record never carries data
     std::size_t xid_size() const;
     std::size_t rec_size() const;
-    void check_rec_tail() const;
+    void check_rec_tail(const std::streampos rec_start) const;
 
 private:
     virtual void clean();

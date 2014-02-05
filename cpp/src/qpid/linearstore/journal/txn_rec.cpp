@@ -176,7 +176,7 @@ txn_rec::encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Ch
 }
 
 bool
-txn_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
+txn_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs, const std::streampos rec_start)
 {
     if (rec_offs == 0)
     {
@@ -218,7 +218,7 @@ txn_rec::decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs)
             assert(!ifsp->fail() && !ifsp->bad());
             return false;
         }
-        check_rec_tail();
+        check_rec_tail(rec_start);
     }
     ifsp->ignore(rec_size_dblks() * QLS_DBLK_SIZE_BYTES - rec_size());
     assert(!ifsp->fail() && !ifsp->bad());
@@ -266,7 +266,7 @@ txn_rec::rec_size() const
 }
 
 void
-txn_rec::check_rec_tail() const {
+txn_rec::check_rec_tail(const std::streampos rec_start) const {
     Checksum checksum;
     checksum.addData((const unsigned char*)&_txn_hdr, sizeof(::txn_hdr_t));
     if (_txn_hdr._xidsize > 0) {
@@ -276,7 +276,7 @@ txn_rec::check_rec_tail() const {
     uint16_t res = ::rec_tail_check(&_txn_tail, &_txn_hdr._rhdr, cs);
     if (res != 0) {
         std::stringstream oss;
-        oss << std::hex;
+        oss << std::endl << "  Record offset: 0x" << std::hex << rec_start;
         if (res & ::REC_TAIL_MAGIC_ERR_MASK) {
             oss << std::endl << "  Magic: expected 0x" << ~_txn_hdr._rhdr._magic << "; found 0x" << _txn_tail._xmagic;
         }

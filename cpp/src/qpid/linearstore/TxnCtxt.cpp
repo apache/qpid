@@ -52,7 +52,9 @@ void TxnCtxt::commitTxn(JournalImpl* jc, bool commit) {
                 jc->txn_abort(dtokp.get(), getXid());
             }
         } catch (const qpid::linearstore::journal::jexception& e) {
-            THROW_STORE_EXCEPTION(std::string("Error commit") + e.what());
+            std::ostringstream oss;
+            oss << "Error during " << (commit ? "commit" : "abort") << ": " << e.what();
+            THROW_STORE_EXCEPTION(oss.str());
         }
     }
 }
