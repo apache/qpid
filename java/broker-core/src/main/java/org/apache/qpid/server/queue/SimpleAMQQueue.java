@@ -384,7 +384,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
 
     @Override
-    public QueueConsumer addConsumer(final ConsumerTarget target,
+    public synchronized QueueConsumer addConsumer(final ConsumerTarget target,
                                      final FilterManager filters,
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
