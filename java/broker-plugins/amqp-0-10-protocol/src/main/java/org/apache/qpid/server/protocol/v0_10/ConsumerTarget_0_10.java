@@ -113,7 +113,6 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
             while(!closed && state != State.CLOSED)
             {
                 closed = updateState(state, State.CLOSED);
-                closed = updateState(state, State.CLOSED);
                 if(!closed)
                 {
                     state = getState();
