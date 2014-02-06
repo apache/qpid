@@ -16,48 +16,44 @@
   limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-project</artifactId>
-    <version>0.26-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>qpid-test-utils</artifactId>
+  <version>0.28-SNAPSHOT</version>
+  <name>Qpid Test Utilities</name>
+  <description>Testing utilities</description>
 
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>${junit-version}</version>
       <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>${log4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>${slf4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jms_1.1_spec</artifactId>
-      <version>1.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

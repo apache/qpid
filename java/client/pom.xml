@@ -16,42 +16,42 @@
   limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-project</artifactId>
-    <version>0.26-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>qpid-client</artifactId>
+  <version>0.28-SNAPSHOT</version>
+  <name>Qpid AMQP 0.x JMS Client</name>
+  <description>JMS client supporting AMQP 0-8, 0-9, 0-9-1 and 0-10.</description>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-common</artifactId>
-      <version>0.26-SNAPSHOT</version>
-      <scope>compile</scope>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jms_1.1_spec</artifactId>
-      <version>1.0</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <!-- test dependencies -->
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-test-utils</artifactId>
-      <version>0.26-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

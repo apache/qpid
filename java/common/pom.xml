@@ -16,14 +16,18 @@
   limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-project</artifactId>
-    <version>0.26-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>qpid-common</artifactId>
+  <version>0.28-SNAPSHOT</version>
+  <name>Qpid Common</name>
+  <description>Common functionality</description>
 
   <properties>
     <!-- used during the antrun-plugin execution -->
@@ -37,15 +41,13 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <!-- test dependencies -->
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-test-utils</artifactId>
-      <version>0.26-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -91,17 +93,17 @@
           <dependency>
             <groupId>velocity</groupId>
             <artifactId>velocity</artifactId>
-            <version>1.4</version>
+            <version>${velocity-version}</version>
           </dependency>
           <dependency>
             <groupId>velocity</groupId>
             <artifactId>velocity-dep</artifactId>
-            <version>1.4</version>
+            <version>${velocity-version}</version>
           </dependency>
           <dependency>
             <groupId>org.python</groupId>
             <artifactId>jython-standalone</artifactId>
-            <version>2.5.3</version>
+            <version>${jython-version}</version>
           </dependency>
         </dependencies>
       </plugin>

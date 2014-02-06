@@ -16,14 +16,18 @@
   limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-project</artifactId>
-    <version>0.26-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>qpid-perftests</artifactId>
+  <version>0.28-SNAPSHOT</version>
+  <name>Qpid Performance Tests</name>
+  <description>Performance testing configuration, code and tests</description>
 
   <properties>
     <broker.home.dir>target${file.separator}qpid-broker${file.separator}${project.version}</broker.home.dir>
@@ -37,28 +41,22 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-client</artifactId>
-      <version>0.26-SNAPSHOT</version>
-      <scope>compile</scope>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>${log4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jms_1.1_spec</artifactId>
-      <version>1.0</version>
       <scope>provided</scope>
     </dependency>
 
@@ -66,35 +64,26 @@
     <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
-      <version>2.6</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>
-      <version>3.2.1</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>commons-beanutils</groupId>
       <artifactId>commons-beanutils-core</artifactId>
-      <version>1.8.3</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.0</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.derby</groupId>
       <artifactId>derby</artifactId>
-      <version>10.8.2.2</version>
       <scope>runtime</scope>
     </dependency>
 
@@ -102,14 +91,14 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-systests</artifactId>
-      <version>0.26-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-test-utils</artifactId>
-      <version>0.26-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
