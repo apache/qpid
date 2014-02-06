@@ -29,11 +29,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.State;
@@ -44,6 +46,7 @@ import org.apache.qpid.server.model.adapter.AbstractAdapter;
 import org.apache.qpid.server.model.adapter.NoStatistics;
 import org.apache.qpid.server.util.MapValueConverter;
 
+import com.sleepycat.je.rep.MasterStateException;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedException;
@@ -70,6 +73,8 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
     private volatile long _joinTime;
     private volatile long _lastTransactionId;
 
+    private final AtomicReference<State> _state;
+
     public RemoteReplicationNode(com.sleepycat.je.rep.ReplicationNode replicationNode, VirtualHost virtualHost,
             TaskExecutor taskExecutor, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
@@ -79,6 +84,7 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         _hostPort = replicationNode.getHostName() + ":" + replicationNode.getPort();
         _replicationNode = replicationNode;
         _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
+        _state = new AtomicReference<State>(State.ACTIVE);
     }
 
     @Override
@@ -102,7 +108,7 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
     @Override
     public State getActualState()
     {
-        return State.UNAVAILABLE;
+        return _state.get();
     }
 
     @Override
@@ -158,27 +164,29 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
     @Override
     protected boolean setState(State currentState, State desiredState)
     {
-        if (desiredState == State.STOPPED)
+        //TODO: Need to decide how to display STOPPED state on a remote node when a corresponding local node is in STOPPED state
+        if (desiredState == State.DELETED)
         {
-            return true;
-        }
-        else if (desiredState == State.DELETED)
-        {
-            if (ReplicatedEnvironment.State.REPLICA.name().equals(getAttribute(ROLE)) )
+            String nodeName = getName();
+
+            if (LOGGER.isDebugEnabled())
             {
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Deleting node " + _groupName + ":" + getName());
-                }
-                try
-                {
-                    _replicatedEnvironmentFacade.removeNodeFromGroup(getName());
-                    return true;
-                }
-                catch (Exception e)
-                {
-                    LOGGER.warn("Failure to remove node remotely", e);
-                }
+                LOGGER.debug("Deleting node '"  + nodeName + "' from group '" + _groupName + "'");
+            }
+
+            try
+            {
+                _replicatedEnvironmentFacade.removeNodeFromGroup(nodeName);
+                _state.set(State.DELETED);
+                return true;
+            }
+            catch(MasterStateException e)
+            {
+                throw new IllegalStateTransitionException("Node '" + nodeName + "' cannot be deleted when role is a master");
+            }
+            catch (Exception e)
+            {
+                throw new IllegalStateTransitionException("Unexpected exception on node '" + nodeName + "' deletion", e);
             }
         }
         return false;
@@ -191,11 +199,11 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         {
             return getId();
         }
-        else if (ReplicationNode.LIFETIME_POLICY.equals(name))
+        else if (LIFETIME_POLICY.equals(name))
         {
             return getLifetimePolicy();
         }
-        else if (ReplicationNode.DURABLE.equals(name))
+        else if (DURABLE.equals(name))
         {
             return isDurable();
         }

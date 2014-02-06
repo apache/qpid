@@ -19,8 +19,17 @@
  */
 package org.apache.qpid.server.store.berkeleydb.jmx;
 
+import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
+import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
+import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
+import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
+import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.ROLE;
+
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.management.JMException;
@@ -36,10 +45,13 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.model.ConfiguredObjectFinder;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
 
 /**
  * Management mbean for BDB HA.
@@ -52,12 +64,13 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     private static final CompositeType GROUP_MEMBER_ROW;
     private static final OpenType<?>[] GROUP_MEMBER_ATTRIBUTE_TYPES;
 
+
     static
     {
         try
         {
             GROUP_MEMBER_ATTRIBUTE_TYPES = new OpenType<?>[] {SimpleType.STRING, SimpleType.STRING};
-            final String[] itemNames = new String[] {ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT};
+            final String[] itemNames = new String[] {GRP_MEM_COL_NODE_NAME, GRP_MEM_COL_NODE_HOST_PORT};
             final String[] itemDescriptions = new String[] {"Unique node name", "Node host / port "};
             GROUP_MEMBER_ROW = new CompositeType("GroupMember", "Replication group member",
                                                 itemNames,
@@ -65,7 +78,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
                                                 GROUP_MEMBER_ATTRIBUTE_TYPES );
             GROUP_MEMBERS_TABLE = new TabularType("GroupMembers", "Replication group memebers",
                                                 GROUP_MEMBER_ROW,
-                                                new String[] {ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME});
+                                                new String[] {GRP_MEM_COL_NODE_NAME});
         }
         catch (final OpenDataException ode)
         {
@@ -73,15 +86,24 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         }
     }
 
-    private final ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
+    private final ReplicationNode _localReplicationNode;
     private final String _objectName;
+    private final VirtualHost _parent;
+    private final String _virtualHostName;
 
-    protected BDBHAMessageStoreManagerMBean(String virtualHostName, ReplicatedEnvironmentFacade replicatedEnvironmentFacade, ManagedObject parent) throws JMException
+    public BDBHAMessageStoreManagerMBean(ReplicationNode localReplicationNode, ManagedObject parent) throws JMException
     {
         super(ManagedBDBHAMessageStore.class, ManagedBDBHAMessageStore.TYPE, ((AMQManagedObject)parent).getRegistry());
-        LOGGER.debug("Creating BDBHAMessageStoreManagerMBean for " + virtualHostName);
-        _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
-        _objectName = ObjectName.quote(virtualHostName);
+
+        _localReplicationNode = localReplicationNode;
+        _virtualHostName = localReplicationNode.getParent(VirtualHost.class).getName();
+        _objectName = ObjectName.quote(_virtualHostName);
+        _parent = _localReplicationNode.getParent(VirtualHost.class);
+
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Creating BDBHAMessageStoreManagerMBean for " + _localReplicationNode.getName());
+        }
         register();
     }
 
@@ -94,60 +116,44 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public String getGroupName()
     {
-        return _replicatedEnvironmentFacade.getGroupName();
+        return (String) _localReplicationNode.getAttribute(GROUP_NAME);
     }
 
     @Override
     public String getNodeName()
     {
-        return _replicatedEnvironmentFacade.getNodeName();
+        return (String) _localReplicationNode.getName();
     }
 
     @Override
     public String getNodeHostPort()
     {
-        return _replicatedEnvironmentFacade.getHostPort();
+        return (String) _localReplicationNode.getAttribute(HOST_PORT);
     }
 
     @Override
     public String getHelperHostPort()
     {
-        return _replicatedEnvironmentFacade.getHelperHostPort();
+        return (String) _localReplicationNode.getAttribute(HELPER_HOST_PORT);
     }
 
     @Override
     public String getDurability() throws IOException, JMException
     {
-        try
-        {
-            return _replicatedEnvironmentFacade.getDurability();
-        }
-        catch (RuntimeException e)
-        {
-            LOGGER.debug("Failed query replication policy", e);
-            throw new JMException(e.getMessage());
-        }
+        return (String) _localReplicationNode.getAttribute(DURABILITY);
     }
 
 
     @Override
     public boolean getCoalescingSync() throws IOException, JMException
     {
-        return _replicatedEnvironmentFacade.isCoalescingSync();
+        return (Boolean)_localReplicationNode.getAttribute(COALESCING_SYNC);
     }
 
     @Override
     public String getNodeState() throws IOException, JMException
     {
-        try
-        {
-            return _replicatedEnvironmentFacade.getNodeState();
-        }
-        catch (RuntimeException e)
-        {
-            LOGGER.debug("Failed query node state", e);
-            throw new JMException(e.getMessage());
-        }
+        return (String)_localReplicationNode.getAttribute(ROLE);
     }
 
     @Override
@@ -155,7 +161,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     {
         try
         {
-            return _replicatedEnvironmentFacade.isDesignatedPrimary();
+            return (Boolean)_localReplicationNode.getAttribute(DESIGNATED_PRIMARY);
         }
         catch (RuntimeException e)
         {
@@ -167,12 +173,16 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public TabularData getAllNodesInGroup() throws IOException, JMException
     {
-        final TabularDataSupport data = new TabularDataSupport(GROUP_MEMBERS_TABLE);
-        final List<Map<String, String>> members = _replicatedEnvironmentFacade.getGroupMembers();
+        Collection<ReplicationNode> allNodes = _parent.getChildren(ReplicationNode.class);
 
-        for (Map<String, String> map : members)
+        final TabularDataSupport data = new TabularDataSupport(GROUP_MEMBERS_TABLE);
+        for (ReplicationNode replicationNode : allNodes)
         {
-            CompositeData memberData = new CompositeDataSupport(GROUP_MEMBER_ROW, map);
+            Map<String, String> nodeMap = new HashMap<String, String>();
+            nodeMap.put(GRP_MEM_COL_NODE_NAME, replicationNode.getName());
+            nodeMap.put(GRP_MEM_COL_NODE_HOST_PORT, (String)replicationNode.getAttribute(HOST_PORT));
+
+            CompositeData memberData = new CompositeDataSupport(GROUP_MEMBER_ROW, nodeMap);
             data.put(memberData);
         }
         return data;
@@ -181,14 +191,26 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public void removeNodeFromGroup(String nodeName) throws JMException
     {
+        // find the replication node object, set the desired state
+        Collection<ReplicationNode> allNodes = _parent.getChildren(ReplicationNode.class);
+        ReplicationNode targetNode = ConfiguredObjectFinder.findConfiguredObjectByName(allNodes, nodeName);
+
+        if (targetNode == null)
+        {
+            throw new JMException("Failed to find replication node with name '" + nodeName + "'.");
+        }
         try
         {
-            _replicatedEnvironmentFacade.removeNodeFromGroup(nodeName);
+            State newState = targetNode.setDesiredState(targetNode.getActualState(), State.DELETED);
+            if (newState != State.DELETED)
+            {
+                throw new JMException("Failed to delete replication node with name '" + nodeName + "'. New unexpectedly state is " + newState);
+            }
         }
-        catch (Exception e)
+        catch(IllegalStateTransitionException e)
         {
-            LOGGER.error("Failed to remove node " + nodeName + " from group", e);
-            throw new JMException(e.getMessage());
+            LOGGER.error("Cannot remove node '" + nodeName + "' from the group", e);
+            throw new JMException("Cannot remove node '" + nodeName + "' from the group:" + e.getMessage());
         }
     }
 
@@ -197,11 +219,11 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     {
         try
         {
-            _replicatedEnvironmentFacade.setDesignatedPrimary(primary);
+            _localReplicationNode.setAttribute(DESIGNATED_PRIMARY, _localReplicationNode.getAttribute(DESIGNATED_PRIMARY), primary);
         }
-        catch (AMQStoreException e)
+        catch (Exception e)
         {
-            LOGGER.error("Failed to set node " + _replicatedEnvironmentFacade.getNodeName() + " as designated primary", e);
+            LOGGER.error("Failed to set node " + _localReplicationNode.getName() + " to designated primary : " + primary, e);
             throw new JMException(e.getMessage());
         }
     }
@@ -209,15 +231,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public void updateAddress(String nodeName, String newHostName, int newPort) throws JMException
     {
-        try
-        {
-            _replicatedEnvironmentFacade.updateAddress(nodeName, newHostName, newPort);
-        }
-        catch(AMQStoreException e)
-        {
-            LOGGER.error("Failed to update address for node " + nodeName + " to " + newHostName + ":" + newPort, e);
-            throw new JMException(e.getMessage());
-        }
+        throw new UnsupportedOperationException("Unsupported operation.  Delete the node then add a new node in its place.");
     }
 
     @Override

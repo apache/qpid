@@ -20,16 +20,24 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import static org.apache.qpid.server.model.ReplicationNode.*;
+import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
+import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
+import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
+import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
+import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
+import static org.apache.qpid.server.model.ReplicationNode.PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.PRIORITY;
+import static org.apache.qpid.server.model.ReplicationNode.QUORUM_OVERRIDE;
+import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
+import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -60,7 +68,6 @@ import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
-import com.sleepycat.je.OperationFailureException;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.rep.InsufficientLogException;
 import com.sleepycat.je.rep.InsufficientReplicasException;
@@ -139,9 +146,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public static final String TYPE = "BDB-HA";
 
-    // TODO: JMX will change to observe the model, at that point these names will disappear
-    public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
-    public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
 
     private final LocalReplicationNode _replicationNode;
     private final Durability _durability;
@@ -445,21 +449,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return _environment.getRepMutableConfig().getDesignatedPrimary();
     }
 
-    public List<Map<String, String>> getGroupMembers()
-    {
-        List<Map<String, String>> members = new ArrayList<Map<String, String>>();
-
-        for (ReplicationNode node : _environment.getGroup().getNodes())
-        {
-            Map<String, String> nodeMap = new HashMap<String, String>();
-            nodeMap.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, node.getName());
-            nodeMap.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT, node.getHostName() + ":" + node.getPort());
-            members.add(nodeMap);
-        }
-
-        return members;
-    }
-
     public void removeNodeFromGroup(final String nodeName)
     {
         createReplicationGroupAdmin().removeMember(nodeName);
@@ -484,26 +473,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             // TODO: I am not sure about the exception handing here
             throw handleDatabaseException("Cannot set designated primary", e);
-        }
-    }
-
-    public void updateAddress(final String nodeName, final String newHostName, final int newPort) throws AMQStoreException
-    {
-        try
-        {
-            createReplicationGroupAdmin().updateAddress(nodeName, newHostName, newPort);
-        }
-        catch (OperationFailureException ofe)
-        {
-            // TODO: I am not sure about the exception handing here
-            throw new AMQStoreException("Failed to update address for '" + nodeName + "' with new host " + newHostName
-                    + " and new port " + newPort + ". " + ofe.getMessage(), ofe);
-        }
-        catch (DatabaseException e)
-        {
-            // TODO: I am not sure about the exception handing here
-            throw handleDatabaseException("Failed to update address for '" + nodeName + "' with new host " + newHostName
-                    + " and new port " + newPort + ". " + e.getMessage(), e);
         }
     }
 
@@ -958,6 +927,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return new DbPing(repNode, (String)_replicationNode.getAttribute(GROUP_NAME), DB_PING_SOCKET_TIMEOUT).getNodeState();
     }
 
+    // For testing only
+    int getNumberOfElectableGroupMembers()
+    {
+        return _environment.getGroup().getElectableNodes().size();
+    }
+
     private final class GroupChangeLearner implements Runnable
     {
         @Override
@@ -1135,4 +1110,5 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
     }
+
 }

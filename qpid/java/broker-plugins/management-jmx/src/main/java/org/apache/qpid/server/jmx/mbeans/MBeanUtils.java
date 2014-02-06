@@ -20,15 +20,28 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import javax.management.JMException;
 import javax.management.OperationsException;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.MBeanProvider;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class MBeanUtils
 {
+    private static final Logger LOGGER = Logger.getLogger(MBeanUtils.class);
+
     public static Queue findQueueFromQueueName(VirtualHost virtualHost, String queueName) throws OperationsException
     {
         Queue queue = ConfiguredObjectFinder.findConfiguredObjectByName(virtualHost.getQueues(), queueName);
@@ -54,4 +67,24 @@ public class MBeanUtils
             return exchange;
         }
     }
+
+    public static Collection<ManagedObject> createAdditionalMBeansFromProviders(ConfiguredObject child, AMQManagedObject mbean) throws JMException
+    {
+        List<ManagedObject> mbeans = new ArrayList<ManagedObject>();
+        QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
+        for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
+        {
+            if (provider.isChildManageableByMBean(child))
+            {
+                if(LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Provider of type " + provider.getType() + " will create MBean for child : " + child);
+                }
+                ManagedObject childMBean = provider.createMBean(child, mbean);
+                mbeans.add(childMBean);
+            }
+        }
+        return mbeans;
+    }
+
 }

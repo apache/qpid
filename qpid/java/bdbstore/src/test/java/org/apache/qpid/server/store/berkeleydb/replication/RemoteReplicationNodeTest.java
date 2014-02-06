@@ -14,6 +14,7 @@ import static org.apache.qpid.server.model.ReplicationNode.ROLE;
 import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,9 +25,11 @@ import java.util.Map.Entry;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
+import com.sleepycat.je.rep.MasterStateException;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment.State;
 import com.sleepycat.je.rep.ReplicationNode;
@@ -101,6 +104,26 @@ public class RemoteReplicationNodeTest extends QpidTestCase
         }
 
         verify(_replicatedEnvironmentFacade, never()).transferMasterAsynchronously(_nodeName);
+    }
+
+    public void testSetDesiredStateToDeleted() throws Exception
+    {
+        _node.setDesiredState(_node.getActualState(), org.apache.qpid.server.model.State.DELETED);
+        verify(_replicatedEnvironmentFacade).removeNodeFromGroup(_nodeName);
+    }
+
+    public void testSetDesiredStateToDeletedOnMasterStateException() throws Exception
+    {
+        doThrow(new MasterStateException("mocked exception")).when(_replicatedEnvironmentFacade).removeNodeFromGroup(_nodeName);
+        try
+        {
+            _node.setDesiredState(_node.getActualState(), org.apache.qpid.server.model.State.DELETED);
+            fail("Exception not thrown");
+        }
+        catch(IllegalStateTransitionException e)
+        {
+            // pass
+        }
     }
 
     public void testSetImmutableAttributesThrowException() throws Exception

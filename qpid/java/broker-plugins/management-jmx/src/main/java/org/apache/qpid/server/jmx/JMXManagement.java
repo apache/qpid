@@ -35,6 +35,7 @@ import javax.management.JMException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
+import org.apache.qpid.server.jmx.mbeans.MBeanUtils;
 import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
@@ -52,7 +53,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public class JMXManagement extends AbstractPluginAdapter implements ConfigurationChangeListener
@@ -183,7 +183,9 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                     {
                         LOGGER.debug("Check for additional MBeans for virtual host:" + virtualHost.getName());
                     }
-                    createAdditionalMBeansFromProviders(virtualHost, mbean);
+
+                    _children.put(virtualHost, mbean);
+                    MBeanUtils.createAdditionalMBeansFromProviders(virtualHost, mbean);
                 }
             }
             Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
@@ -273,7 +275,10 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
 
                 if (mbean != null)
                 {
-                    createAdditionalMBeansFromProviders(child, mbean);
+                    _children.put(child, mbean);
+                    MBeanUtils.createAdditionalMBeansFromProviders(child, mbean);
+                    // TODO track the mbeans that have been created on behalf of a child in a map, then
+                    // if the child is ever removed, destroy these beans too.
                 }
             }
             catch(Exception e)
@@ -309,31 +314,6 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
         // no-op
-    }
-
-    private void createAdditionalMBeansFromProviders(ConfiguredObject child, AMQManagedObject mbean) throws JMException
-    {
-        _children.put(child, mbean);
-
-        QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
-        for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
-        {
-            if(LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("Consulting mbean provider : " + provider + " for child : " + child);
-            }
-
-            if (provider.isChildManageableByMBean(child))
-            {
-                if(LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Provider will create mbean");
-                }
-                provider.createMBean(child, mbean);
-                // TODO track the mbeans that have been created on behalf of a child in a map, then
-                // if the child is ever removed, destroy these beans too.
-            }
-        }
     }
 
     @Override

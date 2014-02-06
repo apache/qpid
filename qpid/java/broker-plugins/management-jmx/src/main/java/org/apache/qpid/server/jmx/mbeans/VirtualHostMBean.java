@@ -21,6 +21,14 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.management.JMException;
+import javax.management.ObjectName;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
@@ -29,17 +37,11 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.virtualhost.ManagedVirtualHost;
-
-import javax.management.JMException;
-import javax.management.ObjectName;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost, ConfigurationChangeListener
 {
@@ -47,8 +49,14 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
 
     private final VirtualHost _virtualHost;
 
+    private final Object _childrenLock = new Object();
+
     private final Map<ConfiguredObject, AMQManagedObject> _children =
             new HashMap<ConfiguredObject, AMQManagedObject>();
+
+    private final Map<ConfiguredObject, Collection<ManagedObject>> _additionalChildren =
+            new HashMap<ConfiguredObject, Collection<ManagedObject>>();
+
     private VirtualHostManagerMBean _managerMBean;
 
     public VirtualHostMBean(VirtualHost virtualHost, ManagedObjectRegistry registry) throws JMException
@@ -61,13 +69,48 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
         initExchanges();
         initConnections();
 
+        initAdditionalMbeansForAllChildren();
+
         //This is the actual JMX bean for this 'VirtualHostMBean', leave it alone.
         _managerMBean = new VirtualHostManagerMBean(this);
     }
 
+    private void initAdditionalMbeansForAllChildren()
+    {
+        synchronized (_childrenLock)
+        {
+            Collection<Class<? extends ConfiguredObject>> childrenTypes = Model.getInstance().getChildTypes(VirtualHost.class);
+            for (Class<? extends ConfiguredObject> childType : childrenTypes)
+            {
+                Collection<? extends ConfiguredObject> children = _virtualHost.getChildren(childType);
+                for (ConfiguredObject child : children)
+                {
+                    createAdditionalMBeans(child);
+                }
+            }
+        }
+    }
+
+    private void createAdditionalMBeans(ConfiguredObject child)
+    {
+        try
+        {
+            Collection<ManagedObject> mbeans = MBeanUtils.createAdditionalMBeansFromProviders(child, this);
+            if (!mbeans.isEmpty())
+            {
+                _additionalChildren.put(child, mbeans);
+            }
+        }
+        catch(Exception e)
+        {
+            LOGGER.error("Cannot create mbeans for the child " + child.getName(), e);
+        }
+    }
+
+
     private void initQueues()
     {
-        synchronized (_children)
+        synchronized (_childrenLock)
         {
             for(Queue queue : _virtualHost.getQueues())
             {
@@ -88,7 +131,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
 
     private void initExchanges()
     {
-        synchronized (_children)
+        synchronized (_childrenLock)
         {
             for(Exchange exchange : _virtualHost.getExchanges())
             {
@@ -109,7 +152,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
 
     private void initConnections()
     {
-        synchronized (_children)
+        synchronized (_childrenLock)
         {
             for(Connection conn : _virtualHost.getConnections())
             {
@@ -145,7 +188,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
 
     public void childAdded(ConfiguredObject object, ConfiguredObject child)
     {
-        synchronized (_children)
+        synchronized (_childrenLock)
         {
             try
             {
@@ -153,39 +196,52 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 {
                     QueueMBean queueMB = new QueueMBean((Queue)child, this);
                     _children.put(child, queueMB);
-
                 }
                 else if(child instanceof Exchange)
                 {
                     ExchangeMBean exchangeMBean = new ExchangeMBean((Exchange)child, this);
                     _children.put(child, exchangeMBean);
-
                 }
                 else if(child instanceof Connection)
                 {
                     ConnectionMBean connectionMBean = new ConnectionMBean((Connection)child, this);
                     _children.put(child, connectionMBean);
-
                 }
-                else
-                {
-                    LOGGER.debug("Unsupported child : " + child.getName() + " type : " + child.getClass());
-                }
-
             }
             catch(Exception e)
             {
                 LOGGER.error("Exception while creating mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
             }
+            createAdditionalMBeans(child);
         }
     }
 
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
     {
-        synchronized (_children)
+        synchronized (_childrenLock)
         {
             AMQManagedObject mbean = _children.remove(child);
             if(mbean != null)
+            {
+                try
+                {
+                    mbean.unregister();
+                }
+                catch(Exception e)
+                {
+                    LOGGER.error("Exception while unregistering mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
+                }
+            }
+            unregisterAdditionalMBeansIfPresent(child);
+        }
+    }
+
+    private void unregisterAdditionalMBeansIfPresent(ConfiguredObject child)
+    {
+        Collection<ManagedObject> additionalMBeans = _additionalChildren.remove(child);
+        if (additionalMBeans != null)
+        {
+            for (ManagedObject mbean : additionalMBeans)
             {
                 try
                 {
@@ -213,7 +269,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
     public Collection<QueueMBean> getQueues()
     {
         Collection<AMQManagedObject> children;
-        synchronized (_children)
+        synchronized (_childrenLock)
         {
             children = new ArrayList<AMQManagedObject>(_children.values());
         }
@@ -235,7 +291,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
     {
         _virtualHost.removeChangeListener(this);
 
-        synchronized (_children)
+        synchronized (_childrenLock)
         {
             for (AMQManagedObject mbean : _children.values())
             {
@@ -252,6 +308,11 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
                 }
             }
             _children.clear();
+
+            for (ConfiguredObject child : new ArrayList<ConfiguredObject>(_additionalChildren.keySet()))
+            {
+                unregisterAdditionalMBeansIfPresent(child);
+            }
         }
         _managerMBean.unregister();
     }

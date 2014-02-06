@@ -216,15 +216,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected state", State.MASTER.name(), createMaster().getNodeState());
     }
 
-    public void testGetGroupMembers()  throws Exception
-    {
-        List<Map<String, String>> groupMembers = createMaster().getGroupMembers();
-        Map<String, String> expectedMember = new HashMap<String, String>();
-        expectedMember.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, TEST_NODE_NAME);
-        expectedMember.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT, TEST_NODE_HOST_PORT);
-        Set<Map<String, String>> expectedGroupMembers = Collections.singleton(expectedMember);
-        assertEquals("Unexpected group members", expectedGroupMembers, new HashSet<Map<String, String>>(groupMembers));
-    }
 
     public void testPriority() throws Exception
     {
@@ -274,8 +265,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         addReplica(nodeName2, node2NodeHostPort, listener);
 
-        List<Map<String, String>> groupMembers = master.getGroupMembers();
-        assertEquals("Unexpected number of nodes", 2, groupMembers.size());
+        assertEquals("Unexpected number of nodes", 2, master.getNumberOfElectableGroupMembers());
 
         assertTrue("Listener not fired within timeout", nodeRecoveryLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
         assertEquals("Unexpected number of listener invocations", 1, invocationCount.get());
@@ -299,8 +289,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(State.MASTER, stateChangeListener, listener);
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
-        List<Map<String, String>> initialGroupMembers = replicatedEnvironmentFacade.getGroupMembers();
-        assertEquals("Unexpected number of nodes at start of test", 1, initialGroupMembers.size());
+        assertEquals("Unexpected number of nodes at start of test", 1, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
 
         String node2Name = TEST_NODE_NAME + "_2";
         String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
@@ -308,8 +297,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         assertTrue("Listener not fired within timeout", nodeAddedLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
-        List<Map<String, String>> groupMembers = replicatedEnvironmentFacade.getGroupMembers();
-        assertEquals("Unexpected number of nodes", 2, groupMembers.size());
+        assertEquals("Unexpected number of nodes", 2, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
 
         assertEquals("Unexpected number of listener invocations", 1, invocationCount.get());
     }
@@ -349,8 +337,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
         addReplica(node2Name, node2NodeHostPort);
 
-        List<Map<String, String>> initialGroupMembers = replicatedEnvironmentFacade.getGroupMembers();
-        assertEquals("Unexpected number of nodes at start of test", 2, initialGroupMembers.size());
+        assertEquals("Unexpected number of nodes at start of test", 2, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
 
         // Need to await the listener hearing the addition of the node to the model.
         assertTrue("Node add not fired within timeout", nodeAddedLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
@@ -360,8 +347,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         assertTrue("Node delete not fired within timeout", nodeDeletedLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
-        List<Map<String, String>> groupMembers = replicatedEnvironmentFacade.getGroupMembers();
-        assertEquals("Unexpected number of nodes after node removal", 1, groupMembers.size());
+        assertEquals("Unexpected number of nodes after node removal", 1, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
 
         assertEquals("Unexpected number of listener invocations", 1, invocationCount.get());
     }
@@ -389,8 +375,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
         addReplica(node2Name, node2NodeHostPort);
 
-        List<Map<String, String>> initialGroupMembers = replicatedEnvironmentFacade.getGroupMembers();
-        assertEquals("Unexpected number of nodes at start of test", 2, initialGroupMembers.size());
+        assertEquals("Unexpected number of nodes at start of test", 2, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
 
         assertTrue("Node add not fired within timeout", nodeAddedLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
@@ -417,13 +402,11 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         String node2NodeHostPort = "localhost:" + getNextAvailable(TEST_NODE_PORT + 1);
         ReplicatedEnvironmentFacade ref2 = addReplica(node2Name, node2NodeHostPort);
 
-        List<Map<String, String>> groupMembers = environmentFacade.getGroupMembers();
-        assertEquals("Unexpected group members count", 2, groupMembers.size());
+        assertEquals("Unexpected group members count", 2, environmentFacade.getNumberOfElectableGroupMembers());
         ref2.close();
 
         environmentFacade.removeNodeFromGroup(node2Name);
-        groupMembers = environmentFacade.getGroupMembers();
-        assertEquals("Unexpected group members count", 1, groupMembers.size());
+        assertEquals("Unexpected group members count", 1, environmentFacade.getNumberOfElectableGroupMembers());
     }
 
     public void testEnvironmentRestartOnInsufficientReplicas() throws Exception

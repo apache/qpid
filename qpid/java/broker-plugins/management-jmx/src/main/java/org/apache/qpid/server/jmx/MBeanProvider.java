@@ -22,7 +22,6 @@
 package org.apache.qpid.server.jmx;
 
 import javax.management.JMException;
-import javax.management.StandardMBean;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.Pluggable;
@@ -47,6 +46,6 @@ public interface MBeanProvider extends Pluggable
      *
      * @return newly created mbean
      */
-    StandardMBean createMBean(ConfiguredObject child, StandardMBean parent) throws JMException;
+    ManagedObject createMBean(ConfiguredObject child, ManagedObject parent) throws JMException;
 
 }

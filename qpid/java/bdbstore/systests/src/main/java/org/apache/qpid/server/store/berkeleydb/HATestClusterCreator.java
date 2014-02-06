@@ -414,7 +414,20 @@ public class HATestClusterCreator
     public Map<String, Object> getReplicationNodeAttributes(int brokerPort, String replicationNodeName) throws IOException
     {
         RestTestHelper restHelper = createRestTestHelper(brokerPort);
-        return restHelper.getJsonAsSingletonList("/rest/replicationnode/" + _virtualHostName + "/" + replicationNodeName );
+        List<Map<String, Object>> results= restHelper.getJsonAsList("/rest/replicationnode/" + _virtualHostName + "/" + replicationNodeName );
+        int size = results.size();
+        if (size == 0)
+        {
+            return Collections.emptyMap();
+        }
+        else if (size == 1)
+        {
+            return results.get(0);
+        }
+        else
+        {
+            throw new RuntimeException("Unexpected number of nodes " + size);
+        }
     }
 
     private RestTestHelper createRestTestHelper(int brokerPort)
@@ -430,7 +443,7 @@ public class HATestClusterCreator
 
         while(!desiredRole.equals(data.get(ReplicationNode.ROLE)) && (System.currentTimeMillis() - startTime) < 30000)
         {
-            LOGGER.debug("Awaiting node to transit into " + desiredRole + " role");
+            LOGGER.debug("Awaiting node '" + nodeName + "' to transit into " + desiredRole + " role");
             data = getReplicationNodeAttributes(brokerPort, nodeName);
             if (!desiredRole.equals(data.get(ReplicationNode.ROLE)))
             {
