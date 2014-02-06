@@ -631,10 +631,6 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     }
 
     // ------ Enqueue / Dequeue
-    public void enqueue(ServerMessage message) throws AMQException
-    {
-        enqueue(message, null);
-    }
 
     public void enqueue(ServerMessage message, Action<MessageInstance<QueueConsumer>> action) throws AMQException
     {

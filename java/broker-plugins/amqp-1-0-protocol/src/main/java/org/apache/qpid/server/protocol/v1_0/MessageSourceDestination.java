@@ -23,64 +23,26 @@ package org.apache.qpid.server.protocol.v1_0;
 import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
-
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.queue.AMQQueue;
-
 import org.apache.qpid.server.txn.ServerTransaction;
 
-public class QueueDestination extends MessageSourceDestination implements SendingDestination, ReceivingDestination
+public class MessageSourceDestination implements SendingDestination
 {
-    private static final Logger _logger = Logger.getLogger(QueueDestination.class);
+    private static final Logger _logger = Logger.getLogger(MessageSourceDestination.class);
     private static final Accepted ACCEPTED = new Accepted();
     private static final Outcome[] OUTCOMES = new Outcome[] { ACCEPTED };
 
 
-    public QueueDestination(AMQQueue queue)
+    private MessageSource _queue;
+
+    public MessageSourceDestination(MessageSource queue)
     {
-        super(queue);
+        _queue = queue;
     }
 
     public Outcome[] getOutcomes()
     {
         return OUTCOMES;
-    }
-
-    public Outcome send(final Message_1_0 message, ServerTransaction txn)
-    {
-
-        try
-        {
-            txn.enqueue(getQueue(),message, new ServerTransaction.Action()
-            {
-
-
-                public void postCommit()
-                {
-                    try
-                    {
-                        getQueue().enqueue(message,null);
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
-                    }
-
-                }
-
-                public void onRollback()
-                {
-                    // NO-OP
-                }
-            });
-        }
-        catch(Exception e)
-        {
-            _logger.error("Send error", e);
-            throw new RuntimeException(e);
-        }
-        return ACCEPTED;
     }
 
     public int getCredit()
@@ -89,9 +51,9 @@ public class QueueDestination extends MessageSourceDestination implements Sendin
         return 100;
     }
 
-    public AMQQueue getQueue()
+    public MessageSource getQueue()
     {
-        return (AMQQueue) super.getQueue();
+        return _queue;
     }
 
 }

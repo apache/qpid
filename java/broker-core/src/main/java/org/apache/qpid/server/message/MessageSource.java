@@ -54,8 +54,6 @@ public interface MessageSource<C extends Consumer> extends TransactionLogResourc
 
     boolean isExclusive();
 
-    void enqueue(ServerMessage message) throws AMQException;
-
     interface ConsumerRegistrationListener
     {
         void consumerAdded(AMQQueue queue, Consumer consumer);

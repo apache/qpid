@@ -115,7 +115,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                     if(queue != null)
                     {
 
-                        destination = new QueueDestination(queue);
+                        destination = new MessageSourceDestination(queue);
 
 
 

@@ -145,7 +145,7 @@ public class AckTest extends QpidTestCase
                     try
                     {
 
-                        _queue.enqueue(message);
+                        _queue.enqueue(message,null);
                     }
                     catch (AMQException e)
                     {

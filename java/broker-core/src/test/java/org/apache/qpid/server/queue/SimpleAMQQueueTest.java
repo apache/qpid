@@ -1214,7 +1214,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
             // Put message on queue
             try
             {
-                queue.enqueue(message);
+                queue.enqueue(message,null);
             }
             catch (AMQException e)
             {

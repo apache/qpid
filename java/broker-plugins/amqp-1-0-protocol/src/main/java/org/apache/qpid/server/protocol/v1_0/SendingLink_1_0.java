@@ -118,16 +118,14 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         boolean noLocal = false;
         JMSSelectorFilter messageFilter = null;
 
-        if(destination instanceof QueueDestination)
+        if(destination instanceof MessageSourceDestination)
         {
-            _queue = ((QueueDestination) _destination).getQueue();
+            _queue = ((MessageSourceDestination) _destination).getQueue();
 
             if(_queue instanceof AMQQueue && ((AMQQueue)_queue).getAvailableAttributes().contains("topic"))
             {
                 source.setDistributionMode(StdDistMode.COPY);
             }
-
-            qd = (QueueDestination) destination;
 
             Map<Symbol,Filter> filters = source.getFilter();
 

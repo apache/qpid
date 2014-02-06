@@ -292,7 +292,7 @@ public class VirtualHostConfigRecoveryHandler implements
                         count = 0;
                     }
 
-                    queue.enqueue(message);
+                    queue.enqueue(message,null);
 
                     _queueRecoveries.put(queueName, ++count);
                 }

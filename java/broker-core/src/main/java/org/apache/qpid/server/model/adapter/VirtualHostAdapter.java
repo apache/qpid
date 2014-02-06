@@ -789,7 +789,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                     {
                         try
                         {
-                            toQueue.enqueue(message);
+                            toQueue.enqueue(message, null);
                         }
                         catch(AMQException e)
                         {
@@ -818,7 +818,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                                     {
                                         try
                                         {
-                                            toQueue.enqueue(message);
+                                            toQueue.enqueue(message, null);
                                         }
                                         catch (AMQException e)
                                         {
