@@ -80,6 +80,7 @@ import com.sleepycat.je.rep.ReplicationConfig;
 import com.sleepycat.je.rep.ReplicationGroup;
 import com.sleepycat.je.rep.ReplicationMutableConfig;
 import com.sleepycat.je.rep.ReplicationNode;
+import com.sleepycat.je.rep.RestartRequiredException;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.DbPing;
@@ -153,7 +154,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final String _prettyGroupNodeName;
     private final File _environmentDirectory;
 
-    private final ExecutorService _restartEnvironmentExecutor;
+    private final ExecutorService _environmentJobExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.OPENING);
     private final ConcurrentMap<String, DatabaseHolder> _databases = new ConcurrentHashMap<String, DatabaseHolder>();
@@ -183,7 +184,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _coalescingSync = (Boolean)_replicationNode.getAttribute(COALESCING_SYNC);
         _prettyGroupNodeName = (String)_replicationNode.getAttribute(GROUP_NAME) + ":" + _replicationNode.getName();
 
-        _restartEnvironmentExecutor = Executors.newFixedThreadPool(1, new DaemonThreadFactory("Environment-Starter:" + _prettyGroupNodeName));
+        // we relay on this executor being single-threaded as we need to restart and mutate the environment in one thread
+        _environmentJobExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Environment-" + _prettyGroupNodeName));
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
 
         _remoteReplicationNodeFactory = remoteReplicationNodeFactory;
@@ -224,7 +226,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     LOGGER.debug("Closing replicated environment facade for " + _prettyGroupNodeName);
                 }
 
-                _restartEnvironmentExecutor.shutdown();
+                _environmentJobExecutor.shutdown();
                 _groupChangeExecutor.shutdown();
                 closeDatabases();
                 closeEnvironment();
@@ -239,8 +241,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public AMQStoreException handleDatabaseException(String contextMessage, final DatabaseException dbe)
     {
-        //TODO: restart environment if dbe  instanceof MasterReplicaTransitionException
-        boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientReplicasException);
+        boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientReplicasException || dbe instanceof RestartRequiredException);
         if (restart)
         {
             if (_state.compareAndSet(State.OPEN, State.RESTARTING))
@@ -249,7 +250,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 {
                     LOGGER.debug("Environment restarting due to exception " + dbe.getMessage(), dbe);
                 }
-                _restartEnvironmentExecutor.execute(new Runnable()
+
+                _environmentJobExecutor.execute(new Runnable()
                 {
                     @Override
                     public void run()
@@ -436,20 +438,36 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return state.toString();
     }
 
-    public boolean isDesignatedPrimary()
-    {
-        return _environment.getRepMutableConfig().getDesignatedPrimary();
-    }
-
     public void removeNodeFromGroup(final String nodeName)
     {
         createReplicationGroupAdmin().removeMember(nodeName);
     }
 
-    public void setDesignatedPrimary(final boolean isPrimary) throws AMQStoreException
+    public boolean isDesignatedPrimary()
     {
-        // TODO : we have a race if the RE is being restarted?
-        // if (restarting) put setDesignatedPrimary job in queue???
+        return _environment.getRepMutableConfig().getDesignatedPrimary();
+    }
+
+    public Future<Void> setDesignatedPrimary(final boolean isPrimary)
+    {
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Submitting a job to set designated primary on " + _prettyGroupNodeName + " to " + isPrimary);
+        }
+
+        return _environmentJobExecutor.submit(new Callable<Void>()
+        {
+            @Override
+            public Void call()
+            {
+                setDesignatedPrimaryInternal(isPrimary);
+                return null;
+            }
+        });
+    }
+
+    private void setDesignatedPrimaryInternal(final boolean isPrimary)
+    {
         try
         {
             final ReplicationMutableConfig oldConfig = _environment.getRepMutableConfig();
@@ -461,10 +479,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 LOGGER.info("Node " + _prettyGroupNodeName + " successfully set designated primary : " + isPrimary);
             }
         }
-        catch (DatabaseException e)
+        catch (Exception e)
         {
-            // TODO: I am not sure about the exception handing here
-            throw handleDatabaseException("Cannot set designated primary", e);
+            LOGGER.error("Cannot set designated primary to " + isPrimary + " on node " + _prettyGroupNodeName, e);
         }
     }
 
@@ -474,7 +491,25 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return repConfig.getNodePriority();
     }
 
-    public void setPriority(int priority) throws AMQStoreException
+    public Future<Void> setPriority(final int priority)
+    {
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Submitting a job to set priority on " + _prettyGroupNodeName + " to " + priority);
+        }
+
+        return _environmentJobExecutor.submit(new Callable<Void>()
+        {
+            @Override
+            public Void call()
+            {
+                setPriorityInternal(priority);
+                return null;
+            }
+        });
+    }
+
+    private void setPriorityInternal(int priority)
     {
         try
         {
@@ -487,10 +522,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 LOGGER.debug("Node " + _prettyGroupNodeName + " priority has been changed to " + priority);
             }
         }
-        catch (DatabaseException e)
+        catch (Exception e)
         {
-            // TODO: I am not sure about the exception handing here
-            throw handleDatabaseException("Cannot set priority on " + _prettyGroupNodeName, e);
+            LOGGER.error("Cannot set priority to " + priority + " on node " + _prettyGroupNodeName, e);
         }
     }
 
@@ -500,7 +534,25 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return repConfig.getElectableGroupSizeOverride();
     }
 
-    public void setElectableGroupSizeOverride(int electableGroupOverride) throws AMQStoreException
+    public Future<Void> setElectableGroupSizeOverride(final int electableGroupOverride)
+    {
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Submitting a job to set electable group override on " + _prettyGroupNodeName + " to " + electableGroupOverride);
+        }
+
+        return _environmentJobExecutor.submit(new Callable<Void>()
+        {
+            @Override
+            public Void call()
+            {
+                setElectableGroupSizeOverrideInternal(electableGroupOverride);
+                return null;
+            }
+        });
+    }
+
+    private void setElectableGroupSizeOverrideInternal(int electableGroupOverride)
     {
         try
         {
@@ -513,10 +565,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 LOGGER.debug("Node " + _prettyGroupNodeName + " electable group size override has been changed to " + electableGroupOverride);
             }
         }
-        catch (DatabaseException e)
+        catch (Exception e)
         {
-            // TODO: I am not sure about the exception handing here
-            throw handleDatabaseException("Cannot set electable group size override on " + _prettyGroupNodeName, e);
+            LOGGER.error("Cannot set electable group size to " + electableGroupOverride + " on node " + _prettyGroupNodeName, e);
         }
     }
 
@@ -666,7 +717,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private void restartEnvironment(DatabaseException dbe) throws AMQStoreException
+    private void restartEnvironment(DatabaseException dbe)
     {
         LOGGER.info("Restarting environment");
 
@@ -828,7 +879,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private ReplicatedEnvironment createEnvironmentInSeparateThread(final File environmentPathFile, final EnvironmentConfig envConfig,
             final ReplicationConfig replicationConfig)
     {
-        Future<ReplicatedEnvironment> environmentFuture = _restartEnvironmentExecutor.submit(new Callable<ReplicatedEnvironment>(){
+        Future<ReplicatedEnvironment> environmentFuture = _environmentJobExecutor.submit(new Callable<ReplicatedEnvironment>(){
             @Override
             public ReplicatedEnvironment call() throws Exception
             {

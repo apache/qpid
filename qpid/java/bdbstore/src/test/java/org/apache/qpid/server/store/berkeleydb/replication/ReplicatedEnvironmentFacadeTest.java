@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -221,8 +222,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     {
         ReplicatedEnvironmentFacade facade = createMaster();
         assertEquals("Unexpected priority", TEST_PRIORITY, facade.getPriority());
-
-        facade.setPriority(TEST_PRIORITY + 1);
+        Future<Void> future = facade.setPriority(TEST_PRIORITY + 1);
+        future.get(5, TimeUnit.SECONDS);
         assertEquals("Unexpected priority after change", TEST_PRIORITY + 1, facade.getPriority());
     }
 
@@ -230,16 +231,17 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     {
         ReplicatedEnvironmentFacade master = createMaster();
         assertEquals("Unexpected designated primary", TEST_DESIGNATED_PRIMARY, master.isDesignatedPrimary());
-        master.setDesignatedPrimary(!TEST_DESIGNATED_PRIMARY);
+        Future<Void> future = master.setDesignatedPrimary(!TEST_DESIGNATED_PRIMARY);
+        future.get(5, TimeUnit.SECONDS);
         assertEquals("Unexpected designated primary after change", !TEST_DESIGNATED_PRIMARY, master.isDesignatedPrimary());
     }
-
 
     public void testElectableGroupSizeOverride() throws Exception
     {
         ReplicatedEnvironmentFacade facade = createMaster();
         assertEquals("Unexpected Electable Group Size Override", TEST_ELECTABLE_GROUP_OVERRIDE, facade.getElectableGroupSizeOverride());
-        facade.setElectableGroupSizeOverride(TEST_ELECTABLE_GROUP_OVERRIDE + 1);
+        Future<Void> future = facade.setElectableGroupSizeOverride(TEST_ELECTABLE_GROUP_OVERRIDE + 1);
+        future.get(5, TimeUnit.SECONDS);
         assertEquals("Unexpected Electable Group Size Override after change", TEST_ELECTABLE_GROUP_OVERRIDE + 1, facade.getElectableGroupSizeOverride());
     }
 

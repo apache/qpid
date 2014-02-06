@@ -284,7 +284,11 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     public boolean changeAttribute(final String name, final Object expected, final Object desired)
     {
         updateReplicatedEnvironmentFacade(name, desired);
-        return super.changeAttribute(name, expected, desired);
+        if (!ROLE.equals(name))
+        {
+            return super.changeAttribute(name, expected, desired);
+        }
+        return false;
     }
 
     @Override

@@ -137,8 +137,7 @@ public class ReplicationNodeRestTest extends QpidRestTestCase
     }
 
     private void assertReplicationNodeSetAttribute(String attributeName, Object initialValue,
-            Object newValueBeforeHostActivation, Object newValueAfterHostActivation) throws IOException, JsonGenerationException,
-            JsonMappingException
+            Object newValueBeforeHostActivation, Object newValueAfterHostActivation) throws Exception
     {
         Map<String, Object> nodeAttributes = getRestTestHelper().getJsonAsSingletonList(_nodeRestUrl);
         assertEquals("Unexpected " + attributeName + " after creation", initialValue, nodeAttributes.get(attributeName));
@@ -146,19 +145,28 @@ public class ReplicationNodeRestTest extends QpidRestTestCase
         int responseCode = getRestTestHelper().submitRequest(_nodeRestUrl, "PUT", Collections.<String, Object>singletonMap(attributeName, newValueBeforeHostActivation));
         assertEquals("Unexpected response code for node " + attributeName + " update", 200, responseCode);
 
-        nodeAttributes = getRestTestHelper().getJsonAsSingletonList(_nodeRestUrl);
-        assertEquals("Unexpected " + attributeName + " after update but before host activation", newValueBeforeHostActivation, nodeAttributes.get(attributeName));
+        waitForAttributeChanged(attributeName, newValueBeforeHostActivation);
 
         responseCode = getRestTestHelper().submitRequest(_hostRestUrl, "PUT", Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.ACTIVE));
         assertEquals("Unexpected response code for virtual host update status", 200, responseCode);
 
-        nodeAttributes = getRestTestHelper().getJsonAsSingletonList(_nodeRestUrl);
-        assertEquals("Unexpected " + attributeName + " after host activation", newValueBeforeHostActivation, nodeAttributes.get(attributeName));
+        waitForAttributeChanged(attributeName, newValueBeforeHostActivation);
 
         responseCode = getRestTestHelper().submitRequest(_nodeRestUrl, "PUT", Collections.<String, Object>singletonMap(attributeName, newValueAfterHostActivation));
         assertEquals("Unexpected response code for node " + attributeName + " update", 200, responseCode);
 
-        nodeAttributes = getRestTestHelper().getJsonAsSingletonList(_nodeRestUrl);
-        assertEquals("Unexpected " + attributeName + " after update after host activation", newValueAfterHostActivation, nodeAttributes.get(attributeName));
+        waitForAttributeChanged(attributeName, newValueAfterHostActivation);
+    }
+
+    private void waitForAttributeChanged(String attributeName, Object newValue) throws Exception
+    {
+        Map<String, Object> nodeAttributes = getRestTestHelper().getJsonAsSingletonList(_nodeRestUrl);
+        long limit = System.currentTimeMillis() + 5000;
+        while(!newValue.equals(nodeAttributes.get(attributeName)) && System.currentTimeMillis() < limit)
+        {
+            Thread.sleep(100l);
+            nodeAttributes = getRestTestHelper().getJsonAsSingletonList(_nodeRestUrl);
+        }
+        assertEquals("Unexpected attribute " + attributeName, newValue, nodeAttributes.get(attributeName));
     }
 }

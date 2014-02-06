@@ -204,6 +204,11 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(brokerPort);
         assertFalse("Unexpected designated primary before change", storeBean.getDesignatedPrimary());
         storeBean.setDesignatedPrimary(true);
+        long limit = System.currentTimeMillis() + 5000;
+        while(!storeBean.getDesignatedPrimary() && System.currentTimeMillis() < limit)
+        {
+            Thread.sleep(100l);
+        }
         assertTrue("Unexpected designated primary after change", storeBean.getDesignatedPrimary());
     }
 
