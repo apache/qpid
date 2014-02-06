@@ -71,7 +71,7 @@ public interface MessageInstance<C extends Consumer>
 
     int getMaximumDeliveryCount();
 
-    int routeToAlternate(Action<MessageInstance<C>> action, ServerTransaction txn);
+    int routeToAlternate(Action<MessageInstance<? extends Consumer>> action, ServerTransaction txn);
 
     Filterable asFilterable();
 

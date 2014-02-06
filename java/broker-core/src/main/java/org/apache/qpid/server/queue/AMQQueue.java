@@ -26,6 +26,7 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.consumer.Consumer;
@@ -36,7 +37,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface AMQQueue<C extends Consumer> extends Comparable<AMQQueue<C>>, ExchangeReferrer, BaseQueue<C>, MessageSource<C>, CapacityChecker
+public interface AMQQueue<C extends Consumer> extends Comparable<AMQQueue<C>>, ExchangeReferrer, BaseQueue,
+                                                      MessageSource<C>, CapacityChecker, MessageDestination
 {
 
     public interface NotificationListener

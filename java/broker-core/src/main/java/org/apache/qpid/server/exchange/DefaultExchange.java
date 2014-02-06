@@ -335,10 +335,10 @@ public class DefaultExchange implements Exchange
         return _id;
     }
 
-    public final <C extends Consumer> int send(final ServerMessage message,
+    public final int send(final ServerMessage message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final Action<MessageInstance<C>> postEnqueueAction)
+                          final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
     {
         final AMQQueue q = _virtualHost.getQueue(message.getRoutingKey());
         if(q == null)

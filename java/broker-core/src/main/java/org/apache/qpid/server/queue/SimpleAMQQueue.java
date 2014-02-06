@@ -42,7 +42,10 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -632,7 +635,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     // ------ Enqueue / Dequeue
 
-    public void enqueue(ServerMessage message, Action<MessageInstance<QueueConsumer>> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException
     {
         incrementQueueCount();
         incrementQueueSize(message);
@@ -2182,6 +2185,41 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     public String getDescription()
     {
         return (String) _arguments.get(Queue.DESCRIPTION);
+    }
+
+    public final int send(final ServerMessage message,
+                              final InstanceProperties instanceProperties,
+                              final ServerTransaction txn,
+                              final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
+    {
+            txn.enqueue(this,message, new ServerTransaction.Action()
+            {
+                MessageReference _reference = message.newReference();
+
+                public void postCommit()
+                {
+                    try
+                    {
+                        SimpleAMQQueue.this.enqueue(message, postEnqueueAction);
+                    }
+                    catch (AMQException e)
+                    {
+                        // TODO
+                        throw new RuntimeException(e);
+                    }
+                    finally
+                    {
+                        _reference.release();
+                    }
+                }
+
+                public void onRollback()
+                {
+                    _reference.release();
+                }
+            });
+            return 1;
+
     }
 
 }

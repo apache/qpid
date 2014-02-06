@@ -37,8 +37,8 @@ public interface MessageDestination extends MessageNode
      * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
      * @return the number of queues in which the message was enqueued performed
      */
-    <C extends Consumer> int send(ServerMessage message,
+    int send(ServerMessage message,
              InstanceProperties instanceProperties,
              ServerTransaction txn,
-             Action<MessageInstance<C>> postEnqueueAction);
+             Action<MessageInstance<? extends Consumer>> postEnqueueAction);
 }

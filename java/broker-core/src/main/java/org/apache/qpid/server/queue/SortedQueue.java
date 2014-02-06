@@ -20,6 +20,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.util.Action;
@@ -50,7 +51,7 @@ public class SortedQueue extends OutOfOrderQueue
         return _sortedPropertyName;
     }
 
-    public void enqueue(ServerMessage message, Action<MessageInstance<QueueConsumer>> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException
     {
         synchronized (_sortedQueueLock)
         {

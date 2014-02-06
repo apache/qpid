@@ -26,12 +26,14 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -224,6 +226,14 @@ public class MockAMQQueue implements AMQQueue<QueueConsumer>
         return _name;
     }
 
+    @Override
+    public int send(final ServerMessage message,
+                    final InstanceProperties instanceProperties,
+                    final ServerTransaction txn,
+                    final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
+    {
+        return 0;
+    }
 
 
     public Collection<QueueConsumer> getConsumers()
@@ -302,11 +312,7 @@ public class MockAMQQueue implements AMQQueue<QueueConsumer>
        return getMessageCount();
     }
 
-    public void enqueue(ServerMessage message) throws AMQException
-    {
-    }
-
-    public void enqueue(ServerMessage message, Action<MessageInstance<QueueConsumer>> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException
     {
     }
 

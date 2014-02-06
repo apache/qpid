@@ -364,7 +364,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         dispose();
     }
 
-    public int routeToAlternate(final Action<MessageInstance<QueueConsumer>> action, ServerTransaction txn)
+    public int routeToAlternate(final Action<MessageInstance<? extends Consumer>> action, ServerTransaction txn)
     {
         final AMQQueue currentQueue = getQueue();
         Exchange alternateExchange = currentQueue.getAlternateExchange();

@@ -428,10 +428,10 @@ public abstract class AbstractExchange implements Exchange
         return queues;
     }
 
-    public final <C extends Consumer> int send(final ServerMessage message,
+    public final int send(final ServerMessage message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final Action<MessageInstance<C>> postEnqueueAction)
+                          final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
     {
         List<? extends BaseQueue> queues = route(message, instanceProperties);
 

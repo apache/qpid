@@ -73,7 +73,7 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public int routeToAlternate(final Action<MessageInstance<QueueConsumer>> action, final ServerTransaction txn)
+    public int routeToAlternate(final Action<MessageInstance<? extends Consumer>> action, final ServerTransaction txn)
     {
         return 0;
     }

@@ -520,10 +520,10 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _consumer = _queue.addConsumer(_consumerTarget, null, message.getClass(), "test",
                                            EnumSet.of(Consumer.Option.ACQUIRES, Consumer.Option.SEES_REQUEUES));
 
-        _queue.enqueue(message, new Action<MessageInstance<QueueConsumer>>()
+        _queue.enqueue(message, new Action<MessageInstance<? extends Consumer>>()
         {
             @Override
-            public void performAction(final MessageInstance<QueueConsumer> object)
+            public void performAction(final MessageInstance<? extends Consumer> object)
             {
                 QueueEntry entry = (QueueEntry) object;
                 entry.setRedelivered();
@@ -1310,7 +1310,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return message;
     }
 
-    private static class EntryListAddingAction implements Action<MessageInstance<QueueConsumer>>
+    private static class EntryListAddingAction implements Action<MessageInstance<? extends Consumer>>
     {
         private final ArrayList<QueueEntry> _queueEntries;
 
@@ -1319,7 +1319,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
             _queueEntries = queueEntries;
         }
 
-        public void performAction(MessageInstance entry)
+        public void performAction(MessageInstance<? extends Consumer> entry)
         {
             _queueEntries.add((QueueEntry) entry);
         }
