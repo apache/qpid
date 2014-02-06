@@ -118,9 +118,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     private final AtomicLong _persistentMessageDequeueSize = new AtomicLong();
     private final AtomicLong _persistentMessageEnqueueCount = new AtomicLong();
     private final AtomicLong _persistentMessageDequeueCount = new AtomicLong();
-    private final AtomicInteger _consumerCountHigh = new AtomicInteger(0);
     private final AtomicLong _unackedMsgCount = new AtomicLong(0);
-    private final AtomicLong _unackedMsgCountHigh = new AtomicLong(0);
     private final AtomicLong _unackedMsgBytes = new AtomicLong();
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
@@ -451,13 +449,6 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             }
 
             _consumerList.add(consumer);
-
-            //Increment consumerCountHigh if necessary. (un)registerConsumer are both
-            //synchronized methods so we don't need additional synchronization here
-            if(_consumerCountHigh.get() < getConsumerCount())
-            {
-                _consumerCountHigh.incrementAndGet();
-            }
 
             if (isDeleted())
             {
@@ -943,11 +934,6 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     public int getConsumerCount()
     {
         return _consumerList.size();
-    }
-
-    public int getConsumerCountHigh()
-    {
-        return _consumerCountHigh.get();
     }
 
     public int getActiveConsumerCount()
@@ -2086,11 +2072,6 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return getName();
     }
 
-    public long getUnackedMessageCountHigh()
-    {
-        return _unackedMsgCountHigh.get();
-    }
-
     public long getUnackedMessageCount()
     {
         return _unackedMsgCount.get();
@@ -2109,17 +2090,8 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     private void incrementUnackedMsgCount(QueueEntry entry)
     {
-        long unackedMsgCount = _unackedMsgCount.incrementAndGet();
+        _unackedMsgCount.incrementAndGet();
         _unackedMsgBytes.addAndGet(entry.getSize());
-
-        long unackedMsgCountHigh;
-        while(unackedMsgCount > (unackedMsgCountHigh = _unackedMsgCountHigh.get()))
-        {
-            if(_unackedMsgCountHigh.compareAndSet(unackedMsgCountHigh, unackedMsgCount))
-            {
-                break;
-            }
-        }
     }
 
     public LogActor getLogActor()
