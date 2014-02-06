@@ -49,6 +49,14 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPT
 
 class QueueConsumer<T extends ConsumerTarget> implements Consumer
 {
+
+    public static enum State
+    {
+        ACTIVE,
+        SUSPENDED,
+        CLOSED
+    }
+
     private static final Logger _logger = Logger.getLogger(QueueConsumer.class);
     private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
@@ -238,8 +246,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         _target.queueEmpty();
     }
 
-    @Override
-    public State getState()
+    State getState()
     {
         return STATE_MAP.get(_target.getState());
     }
@@ -281,7 +288,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         return _logActor.getLogSubject();
     }
 
-    public final LogActor getLogActor()
+    final LogActor getLogActor()
     {
         return _logActor;
     }

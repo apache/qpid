@@ -57,7 +57,7 @@ import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
-                                       StateChangeListener<QueueConsumer, Consumer.State>,
+                                       StateChangeListener<QueueConsumer, QueueConsumer.State>,
                                        MessageGroupManager.ConsumerResetHelper
 {
 
@@ -1026,16 +1026,16 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    public void stateChanged(QueueConsumer sub, Consumer.State oldState, Consumer.State newState)
+    public void stateChanged(QueueConsumer sub, QueueConsumer.State oldState, QueueConsumer.State newState)
     {
-        if (oldState == Consumer.State.ACTIVE && newState != Consumer.State.ACTIVE)
+        if (oldState == QueueConsumer.State.ACTIVE && newState != QueueConsumer.State.ACTIVE)
         {
             _activeSubscriberCount.decrementAndGet();
 
         }
-        else if (newState == Consumer.State.ACTIVE)
+        else if (newState == QueueConsumer.State.ACTIVE)
         {
-            if (oldState != Consumer.State.ACTIVE)
+            if (oldState != QueueConsumer.State.ACTIVE)
             {
                 _activeSubscriberCount.incrementAndGet();
 

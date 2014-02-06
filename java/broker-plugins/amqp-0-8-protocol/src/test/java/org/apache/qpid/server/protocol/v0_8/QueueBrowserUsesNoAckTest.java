@@ -130,8 +130,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         //Check the process didn't suspend the subscription as this would
         // indicate we are using the prefetch credit. i.e. using acks not No-Ack
         assertTrue("The subscription has been suspended",
-                   !getChannel().getSubscription(browser).getState()
-                           .equals(Consumer.State.SUSPENDED));
+                   !getChannel().getSubscription(browser).isSuspended());
     }
 
     private void checkStoreContents(int messageCount)

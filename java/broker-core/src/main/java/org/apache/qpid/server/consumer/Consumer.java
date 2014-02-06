@@ -42,8 +42,6 @@ public interface Consumer
         NO_LOCAL
     }
 
-    LogActor getLogActor();
-
     long getBytesOut();
 
     long getMessagesOut();
@@ -51,13 +49,6 @@ public interface Consumer
     long getUnacknowledgedBytes();
 
     long getUnacknowledgedMessages();
-
-    public static enum State
-    {
-        ACTIVE,
-        SUSPENDED,
-        CLOSED
-    }
 
     AMQSessionModel getSessionModel();
 
@@ -81,10 +72,6 @@ public interface Consumer
     void getSendLock();
 
     void releaseSendLock();
-
-    void setStateListener(final StateChangeListener<? extends Consumer, State> listener);
-
-    public State getState();
 
     boolean isActive();
 
