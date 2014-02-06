@@ -530,7 +530,6 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         if(filters != null && Boolean.TRUE.equals(filters.get(AMQPFilterTypes.NO_CONSUME.getValue())))
         {
             target = ConsumerTarget_0_8.createBrowserTarget(this, tag, filters, _creditManager);
-            options.add(Consumer.Option.TRANSIENT);
         }
         else if(acks)
         {
