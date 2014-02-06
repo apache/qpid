@@ -1208,41 +1208,47 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                 ServerTransaction txn = new LocalTransaction(_messageStore);
                 final AMQMessage message = (AMQMessage) entry.getMessage();
                 MessageReference ref = message.newReference();
-                entry.delete();
-                txn.dequeue(queue, message,
-                            new ServerTransaction.Action()
-                            {
-                                @Override
-                                public void postCommit()
+                try
+                {
+                    entry.delete();
+                    txn.dequeue(queue, message,
+                                new ServerTransaction.Action()
                                 {
-                                    try
+                                    @Override
+                                    public void postCommit()
                                     {
-                                        final
-                                        ProtocolOutputConverter outputConverter =
-                                                _session.getProtocolOutputConverter();
+                                        try
+                                        {
+                                            final
+                                            ProtocolOutputConverter outputConverter =
+                                                    _session.getProtocolOutputConverter();
 
-                                        outputConverter.writeReturn(message.getMessagePublishInfo(),
-                                                                    message.getContentHeaderBody(),
-                                                                    message,
-                                                                    _channelId,
-                                                                    AMQConstant.NO_CONSUMERS.getCode(),
-                                                                    IMMEDIATE_DELIVERY_REPLY_TEXT);
+                                            outputConverter.writeReturn(message.getMessagePublishInfo(),
+                                                                        message.getContentHeaderBody(),
+                                                                        message,
+                                                                        _channelId,
+                                                                        AMQConstant.NO_CONSUMERS.getCode(),
+                                                                        IMMEDIATE_DELIVERY_REPLY_TEXT);
+                                        }
+                                        catch (AMQException e)
+                                        {
+                                            throw new RuntimeException(e);
+                                        }
                                     }
-                                    catch (AMQException e)
+
+                                    @Override
+                                    public void onRollback()
                                     {
-                                        throw new RuntimeException(e);
+
                                     }
                                 }
-
-                                @Override
-                                public void onRollback()
-                                {
-
-                                }
-                            }
-                           );
-                txn.commit();
-                ref.release();
+                               );
+                    txn.commit();
+                }
+                finally
+                {
+                    ref.release();
+                }
 
 
             }
