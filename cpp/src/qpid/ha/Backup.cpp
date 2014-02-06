@@ -63,18 +63,16 @@ void Backup::setBrokerUrl(const Url& brokers) {
         QPID_LOG(info, logPrefix << "Connecting to cluster, broker URL: " << brokers);
         string protocol = brokers[0].protocol.empty() ? "tcp" : brokers[0].protocol;
         types::Uuid uuid(true);
-        std::pair<Link::shared_ptr, bool> result;
-        result = broker.getLinks().declare(
+        link = broker.getLinks().declare(
             broker::QPID_NAME_PREFIX + string("ha.link.") + uuid.str(),
             brokers[0].host, brokers[0].port, protocol,
             false,                  // durable
             settings.mechanism, settings.username, settings.password,
-            false);               // no amq.failover - don't want to use client URL.
-        link = result.first;
+            false).first;     // no amq.failover - don't want to use client URL.
         replicator = BrokerReplicator::create(haBroker, link);
         broker.getExchanges().registerExchange(replicator);
     }
-    link->setUrl(brokers);          // Outside the lock, once set link doesn't change.
+    link->setUrl(brokers);
 }
 
 void Backup::stop(Mutex::ScopedLock&) {
