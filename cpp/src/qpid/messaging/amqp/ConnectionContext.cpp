@@ -819,6 +819,11 @@ qpid::sys::Codec& ConnectionContext::getCodec()
     return *this;
 }
 
+const qpid::messaging::ConnectionOptions* ConnectionContext::getOptions()
+{
+    return this;
+}
+
 std::size_t ConnectionContext::decode(const char* buffer, std::size_t size)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);

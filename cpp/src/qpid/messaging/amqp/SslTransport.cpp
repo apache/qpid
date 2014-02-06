@@ -20,6 +20,7 @@
  */
 #include "SslTransport.h"
 #include "TransportContext.h"
+#include "qpid/messaging/ConnectionOptions.h"
 #include "qpid/sys/ssl/SslSocket.h"
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/ConnectionCodec.h"
@@ -52,7 +53,14 @@ struct StaticInit
 }
 
 
-SslTransport::SslTransport(TransportContext& c, boost::shared_ptr<Poller> p) : context(c), connector(0), aio(0), poller(p) {}
+SslTransport::SslTransport(TransportContext& c, boost::shared_ptr<Poller> p) : context(c), connector(0), aio(0), poller(p)
+{
+    const ConnectionOptions* options = context.getOptions();
+    if (options->sslCertName != "") {
+        QPID_LOG(debug, "ssl-cert-name = " << options->sslCertName);
+        socket.setCertName(options->sslCertName);
+    }
+}
 
 void SslTransport::connect(const std::string& host, const std::string& port)
 {
