@@ -686,7 +686,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         if (_logger.isDebugEnabled())
         {
                     _logger.debug(debugIdentity() + " Adding unacked message(" + entry.getMessage().toString() + " DT:" + deliveryTag
-                               + ") for " + consumer);
+                               + ") for " + consumer + " on " + entry.getOwningResource().getName());
 
         }
 
