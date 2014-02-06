@@ -112,7 +112,7 @@ class QueueReplicator : public broker::Exchange,
     const BrokerInfo brokerInfo;
     DispatchMap dispatch;
     boost::shared_ptr<broker::Link> link;
-    boost::shared_ptr<broker::Bridge> bridge;
+    boost::weak_ptr<broker::Bridge> bridge;
     boost::shared_ptr<broker::Queue> queue;
     broker::SessionHandler* sessionHandler;
 
