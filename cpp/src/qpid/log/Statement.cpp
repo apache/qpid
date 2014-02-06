@@ -153,17 +153,21 @@ Statement::Initializer::Initializer(Statement& s) : statement(s) {
     //   "qpid::name::space::Function".
     if (s.function) {
         const char* end = s.function + strlen(s.function);
-        const char* fEnd = std::find(s.function, end, '(');        
+        const char* fEnd = std::find(s.function, end, '(');
         typedef std::reverse_iterator<const char*> Reverse;
         const char* fBegin = find(Reverse(fEnd), Reverse(s.function), ' ').base();
-        s.function = ::strndup(fBegin, fEnd-fBegin);
+        size_t n = fEnd - fBegin;
+        char* name = new char[n+1];
+        std::copy(fBegin, fEnd, name);
+        name[n] = '\0';
+        s.function = name;
     }
     Statement::categorize(s);
     Logger::instance().add(s);
 }
 
 Statement::Initializer::~Initializer() {
-    ::free(const_cast<char*>(statement.function));
+    delete[] const_cast<char*>(statement.function);
     statement.function = 0;
 }
 
