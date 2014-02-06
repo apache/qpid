@@ -159,15 +159,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public boolean getDesignatedPrimary() throws IOException, JMException
     {
-        try
-        {
-            return (Boolean)_localReplicationNode.getAttribute(DESIGNATED_PRIMARY);
-        }
-        catch (RuntimeException e)
-        {
-            LOGGER.debug("Failed query designated primary", e);
-            throw new JMException(e.getMessage());
-        }
+        return (Boolean)_localReplicationNode.getAttribute(DESIGNATED_PRIMARY);
     }
 
     @Override
@@ -224,7 +216,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         catch (Exception e)
         {
             LOGGER.error("Failed to set node " + _localReplicationNode.getName() + " to designated primary : " + primary, e);
-            throw new JMException(e.getMessage());
+            throw new JMException("Failed to set node " + _localReplicationNode.getName() + " to designated primary : " + primary + ":" + e.getMessage());
         }
     }
 

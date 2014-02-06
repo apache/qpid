@@ -198,6 +198,15 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         }
     }
 
+    public void testSetDesignatedPrimary() throws Exception
+    {
+        int brokerPort = _clusterCreator.getBrokerPortNumbersForNodes().iterator().next();
+        final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(brokerPort);
+        assertFalse("Unexpected designated primary before change", storeBean.getDesignatedPrimary());
+        storeBean.setDesignatedPrimary(true);
+        assertTrue("Unexpected designated primary after change", storeBean.getDesignatedPrimary());
+    }
+
     private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(final int brokerPortNumber) throws Exception
     {
         _jmxUtils.open(brokerPortNumber);

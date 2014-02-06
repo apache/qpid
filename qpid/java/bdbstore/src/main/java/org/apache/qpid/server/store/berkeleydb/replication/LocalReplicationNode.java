@@ -40,6 +40,7 @@ import org.apache.qpid.server.model.adapter.NoStatistics;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
 
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.ReplicaAckPolicy;
 import com.sleepycat.je.Durability.SyncPolicy;
@@ -221,40 +222,43 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
         }
         if (_replicatedEnvironmentFacade != null)
         {
-            if(ROLE.equals(attributeName))
+            try
             {
-                return _replicatedEnvironmentFacade.getNodeState();
+                if(ROLE.equals(attributeName))
+                {
+                    return _replicatedEnvironmentFacade.getNodeState();
+                }
+                else if(JOIN_TIME.equals(attributeName))
+                {
+                    return _replicatedEnvironmentFacade.getJoinTime();
+                }
+                else if(LAST_KNOWN_REPLICATION_TRANSACTION_ID.equals(attributeName))
+                {
+                    return _replicatedEnvironmentFacade.getLastKnownReplicationTransactionId();
+                }
+                else if(QUORUM_OVERRIDE.equals(attributeName))
+                {
+                    return _replicatedEnvironmentFacade.getElectableGroupSizeOverride();
+                }
+                else if(DESIGNATED_PRIMARY.equals(attributeName))
+                {
+                    return _replicatedEnvironmentFacade.isDesignatedPrimary();
+                }
+                else if(PRIORITY.equals(attributeName))
+                {
+                    return _replicatedEnvironmentFacade.getPriority();
+                }
             }
-            else if(JOIN_TIME.equals(attributeName))
+            catch(IllegalStateException e)
             {
-                return _replicatedEnvironmentFacade.getJoinTime();
+                // ignore, as attribute value will be returned from actual/default attribute maps if present
             }
-            else if(LAST_KNOWN_REPLICATION_TRANSACTION_ID.equals(attributeName))
+            catch(DatabaseException e)
             {
-                return _replicatedEnvironmentFacade.getLastKnownReplicationTransactionId();
-            }
-            else if(QUORUM_OVERRIDE.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getElectableGroupSizeOverride();
-            }
-            else if(DESIGNATED_PRIMARY.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.isDesignatedPrimary();
-            }
-            else if(PRIORITY.equals(attributeName))
-            {
-                return _replicatedEnvironmentFacade.getPriority();
+                // ignore, as attribute value will be returned from actual/default attribute maps if present
             }
         }
         return super.getAttribute(attributeName);
-    }
-
-    @Override
-    public Object setAttribute(String name, Object expected, Object desired)
-            throws IllegalStateException, AccessControlException,
-            IllegalArgumentException
-    {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -277,6 +281,13 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     }
 
     @Override
+    public boolean changeAttribute(final String name, final Object expected, final Object desired)
+    {
+        updateReplicatedEnvironmentFacade(name, desired);
+        return super.changeAttribute(name, expected, desired);
+    }
+
+    @Override
     public void changeAttributes(Map<String, Object> attributes)
             throws IllegalStateException, AccessControlException,
             IllegalArgumentException
@@ -285,18 +296,16 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
 
         checkWhetherImmutableAttributeChanged(convertedAttributes);
 
-        updateReplicatedEnvironmentFacade(convertedAttributes);
-
         super.changeAttributes(convertedAttributes);
     }
 
-    private void updateReplicatedEnvironmentFacade(Map<String, Object> convertedAttributes)
+    private void updateReplicatedEnvironmentFacade(String attributeName, Object attributeValue)
     {
         if (_replicatedEnvironmentFacade != null)
         {
-            if (convertedAttributes.get(PRIORITY) != null)
+            if (PRIORITY.equals(attributeName))
             {
-                int priority = (Integer)convertedAttributes.get(PRIORITY);
+                int priority = (Integer)attributeValue;
                 try
                 {
                     _replicatedEnvironmentFacade.setPriority(priority);
@@ -307,9 +316,9 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
                 }
             }
 
-            if (convertedAttributes.get(DESIGNATED_PRIMARY) != null)
+            if (DESIGNATED_PRIMARY.equals(attributeName))
             {
-                boolean designatedPrimary = (Boolean)convertedAttributes.get(DESIGNATED_PRIMARY);
+                boolean designatedPrimary = (Boolean)attributeValue;
                 try
                 {
                     _replicatedEnvironmentFacade.setDesignatedPrimary(designatedPrimary);
@@ -320,9 +329,9 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
                 }
             }
 
-            if (convertedAttributes.get(QUORUM_OVERRIDE) != null)
+            if (QUORUM_OVERRIDE.equals(attributeName))
             {
-                int quorumOverride = (Integer)convertedAttributes.get(QUORUM_OVERRIDE);
+                int quorumOverride = (Integer)attributeValue;
                 try
                 {
                     _replicatedEnvironmentFacade.setElectableGroupSizeOverride(quorumOverride);
@@ -334,7 +343,7 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             }
         }
 
-        if (convertedAttributes.containsKey(ROLE))
+        if (ROLE.equals(attributeName))
         {
             String currentRole = (String)getAttribute(ROLE);
             if (!ReplicatedEnvironment.State.REPLICA.name().equals(currentRole))
@@ -343,7 +352,7 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             }
 
             // we do not want to write role into the store
-            String role  = (String)convertedAttributes.remove(ROLE);
+            String role  = (String)attributeValue;
 
             if (ReplicatedEnvironment.State.MASTER.name().equals(role) )
             {

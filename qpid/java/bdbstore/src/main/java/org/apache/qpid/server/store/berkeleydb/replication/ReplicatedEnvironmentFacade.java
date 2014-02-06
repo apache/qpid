@@ -432,16 +432,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public String getNodeState()
     {
-        try
-        {
-            ReplicatedEnvironment.State state = _environment.getState();
-            return state.toString();
-        }
-        catch (IllegalStateException ise)
-        {
-            // Environment must be being recreated
-            return ReplicatedEnvironment.State.UNKNOWN.name();
-        }
+        ReplicatedEnvironment.State state = _environment.getState();
+        return state.toString();
     }
 
     public boolean isDesignatedPrimary()
@@ -502,19 +494,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private void checkIsOpenAndEnvironmentIsValid()
-    {
-        if (_state.get() != State.OPEN)
-        {
-            throw new IllegalStateException("Environment facade is not in open state");
-        }
-
-        if (!_environment.isValid())
-        {
-            throw new IllegalStateException("Environment is not valid");
-        }
-    }
-
     int getElectableGroupSizeOverride()
     {
         ReplicationMutableConfig repConfig = _environment.getRepMutableConfig();
@@ -553,7 +532,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             VLSNRange range = RepInternal.getRepImpl(_environment).getVLSNIndex().getRange();
             VLSN lastTxnEnd = range.getLastTxnEnd();
-            LOGGER.debug("VLSN Range is " + range );
             return lastTxnEnd.getSequence();
         }
         else
