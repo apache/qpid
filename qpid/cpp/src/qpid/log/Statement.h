@@ -114,6 +114,7 @@ struct Statement {
 
     struct Initializer {
         QPID_COMMON_EXTERN Initializer(Statement& s);
+        QPID_COMMON_EXTERN ~Initializer();
         Statement& statement;
     };
 };
