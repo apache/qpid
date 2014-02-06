@@ -44,8 +44,6 @@ public interface Consumer
 
     LogActor getLogActor();
 
-    boolean isTransient();
-
     long getBytesOut();
 
     long getMessagesOut();
@@ -63,15 +61,11 @@ public interface Consumer
 
     AMQSessionModel getSessionModel();
 
-    MessageInstance.ConsumerAcquiredState getOwningState();
-
     void setNoLocal(boolean noLocal);
 
     long getId();
 
     boolean isSuspended();
-
-    boolean hasInterest(MessageInstance msg);
 
     boolean isClosed();
 
@@ -81,17 +75,6 @@ public interface Consumer
 
     void close() throws AMQException;
 
-    void send(MessageInstance entry, boolean batch) throws AMQException;
-
-    boolean resend(MessageInstance entry) throws AMQException;
-
-    void flushBatched();
-
-    void queueDeleted();
-
-
-    boolean wouldSuspend(MessageInstance msg);
-
     boolean trySendLock();
 
 
@@ -99,15 +82,11 @@ public interface Consumer
 
     void releaseSendLock();
 
-    void restoreCredit(final MessageInstance queueEntry);
-
     void setStateListener(final StateChangeListener<? extends Consumer, State> listener);
 
     public State getState();
 
     boolean isActive();
-
-    void queueEmpty() throws AMQException;
 
     String getName();
 

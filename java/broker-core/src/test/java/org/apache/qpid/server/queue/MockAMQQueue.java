@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class MockAMQQueue implements AMQQueue
+public class MockAMQQueue implements AMQQueue<QueueConsumer>
 {
     private boolean _deleted = false;
     private String _name;
@@ -208,7 +208,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     @Override
-    public Consumer addConsumer(final ConsumerTarget target,
+    public QueueConsumer addConsumer(final ConsumerTarget target,
                                 final FilterManager filters,
                                 final Class<? extends ServerMessage> messageClass,
                                 final String consumerName,
@@ -226,7 +226,7 @@ public class MockAMQQueue implements AMQQueue
 
 
 
-    public Collection<Consumer> getConsumers()
+    public Collection<QueueConsumer> getConsumers()
     {
         return Collections.emptyList();
     }
@@ -306,7 +306,7 @@ public class MockAMQQueue implements AMQQueue
     {
     }
 
-    public void enqueue(ServerMessage message, Action<MessageInstance> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<QueueConsumer>> action) throws AMQException
     {
     }
 

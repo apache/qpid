@@ -28,7 +28,7 @@ import org.apache.qpid.server.queue.SortedQueueEntryImpl.Colour;
  * Uses the red/black tree algorithm specified in "Introduction to Algorithms".
  * ISBN-10: 0262033844
  * ISBN-13: 978-0262033848
- * @see http://en.wikipedia.org/wiki/Red-black_tree
+ * see http://en.wikipedia.org/wiki/Red-black_tree
  */
 public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl>
 {
@@ -36,17 +36,17 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
     private SortedQueueEntryImpl _root;
     private long _entryId = Long.MIN_VALUE;
     private final Object _lock = new Object();
-    private final AMQQueue _queue;
+    private final AMQQueue<QueueConsumer> _queue;
     private final String _propertyName;
 
-    public SortedQueueEntryList(final AMQQueue queue, final String propertyName)
+    public SortedQueueEntryList(final AMQQueue<QueueConsumer> queue, final String propertyName)
     {
         _queue = queue;
         _head = new SortedQueueEntryImpl(this);
         _propertyName = propertyName;
     }
 
-    public AMQQueue getQueue()
+    public AMQQueue<QueueConsumer> getQueue()
     {
         return _queue;
     }

@@ -63,7 +63,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         (QueueEntryImpl.class, EntryState.class, "_state");
 
 
-    private volatile Set<StateChangeListener<MessageInstance, State>> _stateChangeListeners;
+    private volatile Set<StateChangeListener<MessageInstance<QueueConsumer>, State>> _stateChangeListeners;
 
     private static final
         AtomicReferenceFieldUpdater<QueueEntryImpl, Set>
@@ -138,7 +138,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return _entryId;
     }
 
-    public AMQQueue getQueue()
+    public AMQQueue<QueueConsumer> getQueue()
     {
         return _queueEntryList.getQueue();
     }
@@ -202,7 +202,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return acquired;
     }
 
-    public boolean acquire(Consumer sub)
+    public boolean acquire(QueueConsumer sub)
     {
         final boolean acquired = acquire(sub.getOwningState());
         if(acquired)
@@ -218,7 +218,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return (_state instanceof ConsumerAcquiredState);
     }
 
-    public boolean isAcquiredBy(Consumer consumer)
+    public boolean isAcquiredBy(QueueConsumer consumer)
     {
         EntryState state = _state;
         return state instanceof ConsumerAcquiredState
@@ -264,12 +264,12 @@ public abstract class QueueEntryImpl implements QueueEntry
         return Boolean.TRUE.equals(_instanceProperties.getProperty(InstanceProperties.Property.REDELIVERED));
     }
 
-    public Consumer getDeliveredConsumer()
+    public QueueConsumer getDeliveredConsumer()
     {
         EntryState state = _state;
         if (state instanceof ConsumerAcquiredState)
         {
-            return ((ConsumerAcquiredState) state).getConsumer();
+            return (QueueConsumer) ((ConsumerAcquiredState) state).getConsumer();
         }
         else
         {
@@ -279,7 +279,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public void reject()
     {
-        Consumer consumer = getDeliveredConsumer();
+        QueueConsumer consumer = getDeliveredConsumer();
 
         if (consumer != null)
         {
@@ -296,7 +296,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public boolean isRejectedBy(Consumer consumer)
+    public boolean isRejectedBy(QueueConsumer consumer)
     {
 
         if (_rejectedBy != null) // We have consumers that rejected this message
@@ -333,7 +333,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     private void notifyStateChange(final State oldState, final State newState)
     {
-        for(StateChangeListener<MessageInstance, State> l : _stateChangeListeners)
+        for(StateChangeListener<MessageInstance<QueueConsumer>, State> l : _stateChangeListeners)
         {
             l.stateChanged(this, oldState, newState);
         }
@@ -364,7 +364,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         dispose();
     }
 
-    public int routeToAlternate(final Action<MessageInstance> action, ServerTransaction txn)
+    public int routeToAlternate(final Action<MessageInstance<QueueConsumer>> action, ServerTransaction txn)
     {
         final AMQQueue currentQueue = getQueue();
         Exchange alternateExchange = currentQueue.getAlternateExchange();
@@ -376,7 +376,10 @@ public abstract class QueueEntryImpl implements QueueEntry
                 txn = new LocalTransaction(getQueue().getVirtualHost().getMessageStore());
             }
 
-            int enqueues = alternateExchange.send(getMessage(), getInstanceProperties(), txn, action);
+            int enqueues = alternateExchange.send(getMessage(),
+                                                  getInstanceProperties(),
+                                                  txn,
+                                                  action);
 
             txn.dequeue(currentQueue, getMessage(), new ServerTransaction.Action()
             {
@@ -409,21 +412,21 @@ public abstract class QueueEntryImpl implements QueueEntry
         return getQueue().isDeleted();
     }
 
-    public void addStateChangeListener(StateChangeListener<MessageInstance, State> listener)
+    public void addStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
     {
-        Set<StateChangeListener<MessageInstance, State>> listeners = _stateChangeListeners;
+        Set<StateChangeListener<MessageInstance<QueueConsumer>, State>> listeners = _stateChangeListeners;
         if(listeners == null)
         {
-            _listenersUpdater.compareAndSet(this, null, new CopyOnWriteArraySet<StateChangeListener<MessageInstance, State>>());
+            _listenersUpdater.compareAndSet(this, null, new CopyOnWriteArraySet<StateChangeListener<MessageInstance<QueueConsumer>, State>>());
             listeners = _stateChangeListeners;
         }
 
         listeners.add(listener);
     }
 
-    public boolean removeStateChangeListener(StateChangeListener<MessageInstance, State> listener)
+    public boolean removeStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
     {
-        Set<StateChangeListener<MessageInstance, State>> listeners = _stateChangeListeners;
+        Set<StateChangeListener<MessageInstance<QueueConsumer>, State>> listeners = _stateChangeListeners;
         if(listeners != null)
         {
             return listeners.remove(listener);
@@ -491,7 +494,7 @@ public abstract class QueueEntryImpl implements QueueEntry
     @Override
     public boolean resend() throws AMQException
     {
-        Consumer sub = getDeliveredConsumer();
+        QueueConsumer sub = getDeliveredConsumer();
         if(sub != null)
         {
             return sub.resend(this);

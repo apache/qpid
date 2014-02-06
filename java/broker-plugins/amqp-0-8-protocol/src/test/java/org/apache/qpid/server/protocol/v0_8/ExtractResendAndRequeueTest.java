@@ -62,7 +62,7 @@ public class ExtractResendAndRequeueTest extends TestCase
     private UnacknowledgedMessageMapImpl _unacknowledgedMessageMap;
     private static final int INITIAL_MSG_COUNT = 10;
     private AMQQueue _queue;
-    private LinkedList<QueueEntry> _referenceList = new LinkedList<QueueEntry>();
+    private LinkedList<MessageInstance> _referenceList = new LinkedList<MessageInstance>();
     private Consumer _consumer;
     private boolean _queueDeleted;
 
@@ -115,11 +115,11 @@ public class ExtractResendAndRequeueTest extends TestCase
      *
      * @return Subscription that performed the acquire
      */
-    private void acquireMessages(LinkedList<QueueEntry> messageList)
+    private void acquireMessages(LinkedList<MessageInstance> messageList)
     {
 
         // Acquire messages in subscription
-        for(QueueEntry entry : messageList)
+        for(MessageInstance entry : messageList)
         {
             when(entry.getDeliveredConsumer()).thenReturn(_consumer);
         }

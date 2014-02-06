@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, BaseQueue, MessageSource, CapacityChecker
+public interface AMQQueue<C extends Consumer> extends Comparable<AMQQueue<C>>, ExchangeReferrer, BaseQueue<C>, MessageSource<C>, CapacityChecker
 {
 
     public interface NotificationListener
@@ -182,8 +182,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, BaseQu
     void checkMessageStatus() throws AMQException;
 
     Set<NotificationCheck> getNotificationChecks();
-
-    void flushConsumer(final Consumer sub) throws AMQException;
 
     void deliverAsync();
 

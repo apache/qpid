@@ -32,13 +32,13 @@ import org.apache.qpid.server.store.TransactionLogResource;
 import java.util.Collection;
 import java.util.EnumSet;
 
-public interface MessageSource extends TransactionLogResource, MessageNode
+public interface MessageSource<C extends Consumer> extends TransactionLogResource, MessageNode
 {
-    Consumer addConsumer(ConsumerTarget target, FilterManager filters,
+    C addConsumer(ConsumerTarget target, FilterManager filters,
                          Class<? extends ServerMessage> messageClass,
                          String consumerName, EnumSet<Consumer.Option> options) throws AMQException;
 
-    Collection<Consumer> getConsumers();
+    Collection<C> getConsumers();
 
     void addConsumerRegistrationListener(ConsumerRegistrationListener listener);
 

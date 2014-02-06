@@ -39,7 +39,7 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
         (SimpleQueueEntryList.class, SimpleQueueEntryImpl.class, "_tail");
 
 
-    private final AMQQueue _queue;
+    private final AMQQueue<QueueConsumer> _queue;
 
     static final AtomicReferenceFieldUpdater<SimpleQueueEntryImpl, SimpleQueueEntryImpl>
                 _nextUpdater = SimpleQueueEntryImpl._nextUpdater;
@@ -49,7 +49,7 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
     private final AtomicReference<SimpleQueueEntryImpl> _unscavengedHWM = new AtomicReference<SimpleQueueEntryImpl>();
 
 
-    public SimpleQueueEntryList(AMQQueue queue)
+    public SimpleQueueEntryList(AMQQueue<QueueConsumer> queue)
     {
         _queue = queue;
         _head = new SimpleQueueEntryImpl(this);
@@ -71,7 +71,7 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
     }
 
 
-    public AMQQueue getQueue()
+    public AMQQueue<QueueConsumer> getQueue()
     {
         return _queue;
     }

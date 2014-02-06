@@ -42,7 +42,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public boolean acquire(Consumer sub)
+    public boolean acquire(QueueConsumer sub)
     {
         return false;
     }
@@ -58,12 +58,12 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public boolean isAcquiredBy(Consumer consumer)
+    public boolean isAcquiredBy(QueueConsumer consumer)
     {
         return false;
     }
 
-    public void addStateChangeListener(StateChangeListener<MessageInstance, State> listener)
+    public void addStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
     {
 
     }
@@ -73,7 +73,7 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public int routeToAlternate(final Action<MessageInstance> action, final ServerTransaction txn)
+    public int routeToAlternate(final Action<MessageInstance<QueueConsumer>> action, final ServerTransaction txn)
     {
         return 0;
     }
@@ -88,7 +88,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public Consumer getDeliveredConsumer()
+    public QueueConsumer getDeliveredConsumer()
     {
         return null;
     }
@@ -103,7 +103,7 @@ public class MockQueueEntry implements QueueEntry
         return _message;
     }
 
-    public AMQQueue getQueue()
+    public AMQQueue<QueueConsumer> getQueue()
     {
         return null;
     }
@@ -126,7 +126,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean isRejectedBy(Consumer consumer)
+    public boolean isRejectedBy(QueueConsumer consumer)
     {
 
         return false;
@@ -153,7 +153,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean removeStateChangeListener(StateChangeListener<MessageInstance, State> listener)
+    public boolean removeStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
     {
 
         return false;

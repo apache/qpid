@@ -56,7 +56,7 @@ import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class SimpleAMQQueue implements AMQQueue,
+public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
                                        StateChangeListener<QueueConsumer, Consumer.State>,
                                        MessageGroupManager.ConsumerResetHelper
 {
@@ -525,9 +525,9 @@ public class SimpleAMQQueue implements AMQQueue,
 
     }
 
-    public Collection<Consumer> getConsumers()
+    public Collection<QueueConsumer> getConsumers()
     {
-        List<Consumer> consumers = new ArrayList<Consumer>();
+        List<QueueConsumer> consumers = new ArrayList<QueueConsumer>();
         QueueConsumerList.ConsumerNodeIterator iter = _consumerList.iterator();
         while(iter.advance())
         {
@@ -636,7 +636,7 @@ public class SimpleAMQQueue implements AMQQueue,
         enqueue(message, null);
     }
 
-    public void enqueue(ServerMessage message, Action<MessageInstance> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<QueueConsumer>> action) throws AMQException
     {
         incrementQueueCount();
         incrementQueueSize(message);
@@ -1464,7 +1464,7 @@ public class SimpleAMQQueue implements AMQQueue,
 
     }
 
-    public void flushConsumer(Consumer sub) throws AMQException
+    void flushConsumer(QueueConsumer sub) throws AMQException
     {
         // Access control
         if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
@@ -1474,7 +1474,7 @@ public class SimpleAMQQueue implements AMQQueue,
         flushConsumer(sub, Long.MAX_VALUE);
     }
 
-    public boolean flushConsumer(Consumer sub, long iterations) throws AMQException
+    boolean flushConsumer(QueueConsumer sub, long iterations) throws AMQException
     {
         boolean atTail = false;
         final boolean keepSendLockHeld = iterations <=  SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
@@ -1968,7 +1968,7 @@ public class SimpleAMQQueue implements AMQQueue,
         return _notificationChecks;
     }
 
-    private final class QueueEntryListener implements StateChangeListener<MessageInstance, QueueEntry.State>
+    private final class QueueEntryListener implements StateChangeListener<MessageInstance<QueueConsumer>, QueueEntry.State>
     {
 
         private final QueueConsumer _sub;

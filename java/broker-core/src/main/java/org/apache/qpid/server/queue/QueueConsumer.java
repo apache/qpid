@@ -213,32 +213,27 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         }
     }
 
-    @Override
-    public void flushBatched()
+    void flushBatched()
     {
         _target.flushBatched();
     }
 
-    @Override
-    public void queueDeleted()
+    void queueDeleted()
     {
         _target.queueDeleted();
     }
 
-    @Override
-    public boolean wouldSuspend(final MessageInstance msg)
+    boolean wouldSuspend(final MessageInstance msg)
     {
         return !_target.allocateCredit(msg.getMessage());
     }
 
-    @Override
-    public void restoreCredit(final MessageInstance queueEntry)
+    void restoreCredit(final MessageInstance queueEntry)
     {
         _target.restoreCredit(queueEntry.getMessage());
     }
 
-    @Override
-    public void queueEmpty() throws AMQException
+    void queueEmpty() throws AMQException
     {
         _target.queueEmpty();
     }
@@ -298,8 +293,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         getQueue().flushConsumer(this);
     }
 
-    @Override
-    public boolean resend(final MessageInstance entry) throws AMQException
+    boolean resend(final MessageInstance entry) throws AMQException
     {
         return getQueue().resend((QueueEntry)entry, this);
     }
@@ -430,7 +424,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         return _createTime;
     }
 
-    public final MessageInstance.ConsumerAcquiredState getOwningState()
+    final MessageInstance.ConsumerAcquiredState getOwningState()
     {
         return _owningState;
     }
@@ -465,10 +459,15 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         return _deliveredCount.longValue();
     }
 
-    public final void send(final MessageInstance entry, final boolean batch) throws AMQException
+    final void send(final QueueEntry entry, final boolean batch) throws AMQException
     {
         _deliveredCount.incrementAndGet();
-        _deliveredBytes.addAndGet(entry.getMessage().getSize());
+        ServerMessage message = entry.getMessage();
+        if(message == null)
+        {
+            throw new AMQException("message was null!");
+        }
+        _deliveredBytes.addAndGet(message.getSize());
         _target.send(entry, batch);
     }
 }

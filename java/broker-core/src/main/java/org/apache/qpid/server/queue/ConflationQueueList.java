@@ -43,7 +43,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
     private final QueueEntry _deleteInProgress = new SimpleQueueEntryImpl(this);
     private final QueueEntry _newerEntryAlreadyBeenAndGone = new SimpleQueueEntryImpl(this);
 
-    public ConflationQueueList(AMQQueue queue, String conflationKey)
+    public ConflationQueueList(AMQQueue<QueueConsumer> queue, String conflationKey)
     {
         super(queue);
         _conflationKey = conflationKey;

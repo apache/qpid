@@ -241,17 +241,17 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         return groupVal;
     }
 
-    private class GroupStateChangeListener implements StateChangeListener<MessageInstance, QueueEntry.State>
+    private class GroupStateChangeListener implements StateChangeListener<MessageInstance<QueueConsumer>, QueueEntry.State>
     {
         private final Group _group;
 
         public GroupStateChangeListener(final Group group,
-                                        final MessageInstance entry)
+                                        final MessageInstance<QueueConsumer> entry)
         {
             _group = group;
         }
 
-        public void stateChanged(final MessageInstance entry,
+        public void stateChanged(final MessageInstance<QueueConsumer> entry,
                                  final MessageInstance.State oldState,
                                  final MessageInstance.State newState)
         {

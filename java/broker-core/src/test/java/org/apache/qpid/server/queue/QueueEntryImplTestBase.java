@@ -21,11 +21,11 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 
 import java.lang.reflect.Field;
 
@@ -113,16 +113,16 @@ public abstract class QueueEntryImplTestBase extends TestCase
      */
     private void acquire()
     {
-        _queueEntry.acquire(newMockConsumer());
+        _queueEntry.acquire(newConsumer());
         assertTrue("Queue entry should be in ACQUIRED state after invoking of acquire method",
                 _queueEntry.isAcquired());
     }
 
-    private Consumer newMockConsumer()
+    private QueueConsumer newConsumer()
     {
-        final Consumer consumer = mock(Consumer.class);
-        when(consumer.getOwningState()).thenReturn(new MessageInstance.ConsumerAcquiredState(consumer));
-        when(consumer.getId()).thenReturn(Consumer.SUB_ID_GENERATOR.getAndIncrement());
+        final ConsumerTarget target = mock(ConsumerTarget.class);
+        when(target.getSessionModel()).thenReturn(mock(AMQSessionModel.class));
+        final QueueConsumer consumer = new QueueConsumer(null,null,true,true,"mock",false,target);
         return consumer;
     }
 
@@ -153,7 +153,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
      */
     public void testRejectAndRejectedBy()
     {
-        Consumer sub = newMockConsumer();
+        QueueConsumer sub = newConsumer();
 
         assertFalse("Queue entry should not yet have been rejected by the consumer", _queueEntry.isRejectedBy(sub));
         assertFalse("Queue entry should not yet have been acquired by a consumer", _queueEntry.isAcquired());
@@ -167,7 +167,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
         assertTrue("Queue entry should have been rejected by the consumer", _queueEntry.isRejectedBy(sub));
 
         //repeat rejection using a second consumer
-        Consumer sub2 = newMockConsumer();
+        QueueConsumer sub2 = newConsumer();
 
         assertFalse("Queue entry should not yet have been rejected by the consumer", _queueEntry.isRejectedBy(sub2));
         assertTrue("Queue entry should have been able to be acquired", _queueEntry.acquire(sub2));

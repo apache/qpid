@@ -50,7 +50,7 @@ public class SortedQueue extends OutOfOrderQueue
         return _sortedPropertyName;
     }
 
-    public void enqueue(ServerMessage message, Action<MessageInstance> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<QueueConsumer>> action) throws AMQException
     {
         synchronized (_sortedQueueLock)
         {

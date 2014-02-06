@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.message;
 
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 
@@ -36,8 +37,8 @@ public interface MessageDestination extends MessageNode
      * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
      * @return the number of queues in which the message was enqueued performed
      */
-    int send(ServerMessage message,
+    <C extends Consumer> int send(ServerMessage message,
              InstanceProperties instanceProperties,
              ServerTransaction txn,
-             Action<MessageInstance> postEnqueueAction);
+             Action<MessageInstance<C>> postEnqueueAction);
 }

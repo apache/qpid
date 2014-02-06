@@ -30,7 +30,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
-public interface MessageInstance
+public interface MessageInstance<C extends Consumer>
 {
 
 
@@ -45,33 +45,33 @@ public interface MessageInstance
 
     void decrementDeliveryCount();
 
-    void addStateChangeListener(StateChangeListener<MessageInstance, State> listener);
+    void addStateChangeListener(StateChangeListener<MessageInstance<C>, State> listener);
 
-    boolean removeStateChangeListener(StateChangeListener<MessageInstance, State> listener);
+    boolean removeStateChangeListener(StateChangeListener<MessageInstance<C>, State> listener);
 
     boolean acquiredByConsumer();
 
-    boolean isAcquiredBy(Consumer consumer);
+    boolean isAcquiredBy(C consumer);
 
     void setRedelivered();
 
     boolean isRedelivered();
 
-    Consumer getDeliveredConsumer();
+    C getDeliveredConsumer();
 
     void reject();
 
-    boolean isRejectedBy(Consumer consumer);
+    boolean isRejectedBy(C consumer);
 
     boolean getDeliveredToConsumer();
 
     boolean expired() throws AMQException;
 
-    boolean acquire(Consumer sub);
+    boolean acquire(C sub);
 
     int getMaximumDeliveryCount();
 
-    int routeToAlternate(Action<MessageInstance> action, ServerTransaction txn);
+    int routeToAlternate(Action<MessageInstance<C>> action, ServerTransaction txn);
 
     Filterable asFilterable();
 
@@ -161,11 +161,11 @@ public interface MessageInstance
         }
     }
 
-    public final class ConsumerAcquiredState extends EntryState
+    public final class ConsumerAcquiredState<C extends Consumer> extends EntryState
     {
-        private final Consumer _consumer;
+        private final C _consumer;
 
-        public ConsumerAcquiredState(Consumer consumer)
+        public ConsumerAcquiredState(C consumer)
         {
             _consumer = consumer;
         }
@@ -176,7 +176,7 @@ public interface MessageInstance
             return State.ACQUIRED;
         }
 
-        public Consumer getConsumer()
+        public C getConsumer()
         {
             return _consumer;
         }

@@ -25,6 +25,7 @@ import junit.framework.Assert;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -85,7 +86,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testDirectMatch() throws AMQException
     {
-        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "ab", false, null, false, false,
+        AMQQueue<Consumer> queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "ab", false, null, false, false,
                 false, null);
         _exchange.registerQueue(new Binding(null, "a.b",queue, _exchange, null));
 
@@ -108,7 +109,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testStarMatch() throws AMQException
     {
-        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a*", false, null, false, false, false, null);
+        AMQQueue<Consumer> queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a*", false, null, false, false, false, null);
         _exchange.registerQueue(new Binding(null, "a.*",queue, _exchange, null));
 
 
@@ -139,7 +140,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashMatch() throws AMQException
     {
-        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, false, null);
+        AMQQueue<Consumer> queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false, false, null);
         _exchange.registerQueue(new Binding(null, "a.#",queue, _exchange, null));
 
 
@@ -190,7 +191,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMidHash() throws AMQException
     {
-        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
+        AMQQueue<Consumer> queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a", false, null, false, false,
                 false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b",queue, _exchange, null));
 
@@ -216,7 +217,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testMatchAfterHash() throws AMQException
     {
-        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+        AMQQueue<Consumer> queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
                 false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b.c",queue, _exchange, null));
 
@@ -255,7 +256,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashAfterHash() throws AMQException
     {
-        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+        AMQQueue<Consumer> queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
                 false, null);
         _exchange.registerQueue(new Binding(null, "a.*.#.b.c.#.d",queue, _exchange, null));
 
@@ -277,7 +278,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     public void testHashHash() throws AMQException
     {
-        AMQQueue queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
+        AMQQueue<Consumer> queue = _vhost.createQueue(UUIDGenerator.generateRandomUUID(), "a#", false, null, false, false,
                 false, null);
         _exchange.registerQueue(new Binding(null, "a.#.*.#.d",queue, _exchange, null));
 
@@ -321,7 +322,7 @@ public class TopicExchangeTest extends QpidTestCase
         when(message.getMessageNumber()).thenReturn(messageNumber);
         for(BaseQueue q : queues)
         {
-            q.enqueue(message);
+            q.enqueue(message, null);
         }
 
         return queues.size();
