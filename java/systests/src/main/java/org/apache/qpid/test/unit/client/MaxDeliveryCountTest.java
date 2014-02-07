@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.RejectBehaviour;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -86,7 +87,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         // dead-lettered or requeued.
         if (!isBroker010())
         {
-            setTestClientSystemProperty(ClientProperties.REJECT_BEHAVIOUR_PROP_NAME, "server");
+            setTestClientSystemProperty(ClientProperties.REJECT_BEHAVIOUR_PROP_NAME, RejectBehaviour.SERVER.toString());
         }
         super.setUp();
 
