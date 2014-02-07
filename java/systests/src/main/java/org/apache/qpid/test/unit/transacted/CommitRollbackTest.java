@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
+import org.apache.qpid.client.RejectBehaviour;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -637,5 +638,45 @@ public class CommitRollbackTest extends QpidBrokerTestCase
                 _logger.error("OnMessage error",e);
             }
         }
+    }
+
+
+    public void testResendUnseenMessagesAfterRollback() throws Exception
+    {
+        resendAfterRollback();
+    }
+
+    public void testResendUnseenMessagesAfterRollbackWithServerReject() throws Exception
+    {
+        setTestSystemProperty(ClientProperties.REJECT_BEHAVIOUR_PROP_NAME, RejectBehaviour.SERVER.toString());
+        resendAfterRollback();
+    }
+
+    private void resendAfterRollback() throws Exception
+    {
+        newConnection();
+
+        assertTrue("session is not transacted", _session.getTransacted());
+        assertTrue("session is not transacted", _pubSession.getTransacted());
+
+        _logger.info("sending test message");
+        String MESSAGE_TEXT = "message text";
+
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+
+        _pubSession.commit();
+
+        assertNotNull("two messages were sent, but none has been received", _consumer.receive(1000));
+
+        _session.rollback();
+
+        _logger.info("receiving result");
+
+        assertNotNull("two messages were sent, but none has been received", _consumer.receive(1000));
+        assertNotNull("two messages were sent, but only one has been received", _consumer.receive(1000));
+        assertNull("Only two messages were sent, but more have been received", _consumer.receive(100));
+
+        _session.commit();
     }
 }

@@ -131,7 +131,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
                  }
                  else
                  {
-                     channel.deadLetter(body.getDeliveryTag());
+                     channel.requeue(deliveryTag);
                  }
             }
         }
