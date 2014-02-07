@@ -106,7 +106,7 @@
             }
         } catch (qpid::types::Exception& ex) {
             static VALUE error = rb_define_class("Error", rb_eStandardError);
-            rb_raise(error, ex.what());
+            rb_raise(error, "%s", ex.what());
         }
 
         return result;
