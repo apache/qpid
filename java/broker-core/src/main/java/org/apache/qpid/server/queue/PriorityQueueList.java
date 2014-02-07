@@ -24,7 +24,7 @@ import org.apache.qpid.server.message.ServerMessage;
 
 public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
 {
-    private final AMQQueue _queue;
+    private final AMQQueue<QueueConsumer> _queue;
     private final PriorityQueueEntrySubList[] _priorityLists;
     private final int _priorities;
     private final int _priorityOffset;
@@ -46,7 +46,7 @@ public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
         return _priorities;
     }
 
-    public AMQQueue getQueue()
+    public AMQQueue<QueueConsumer> getQueue()
     {
         return _queue;
     }
@@ -166,7 +166,7 @@ public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
     {
         private int _listPriority;
 
-        public PriorityQueueEntrySubList(AMQQueue queue, int listPriority)
+        public PriorityQueueEntrySubList(AMQQueue<QueueConsumer> queue, int listPriority)
         {
             super(queue);
             _listPriority = listPriority;

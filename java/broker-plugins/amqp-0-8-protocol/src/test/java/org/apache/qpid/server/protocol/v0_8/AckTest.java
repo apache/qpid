@@ -28,11 +28,11 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -40,6 +40,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -47,7 +48,8 @@ import java.util.Set;
  */
 public class AckTest extends QpidTestCase
 {
-    private Subscription _subscription;
+    private ConsumerTarget_0_8 _subscriptionTarget;
+    private Consumer _consumer;
 
     private AMQProtocolSession _protocolSession;
 
@@ -86,7 +88,6 @@ public class AckTest extends QpidTestCase
 
     private void publishMessages(int count, boolean persistent) throws AMQException
     {
-        _queue.registerSubscription(_subscription,false);
         for (int i = 1; i <= count; i++)
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -144,7 +145,7 @@ public class AckTest extends QpidTestCase
                     try
                     {
 
-                        _queue.enqueue(message);
+                        _queue.enqueue(message,null);
                     }
                     catch (AMQException e)
                     {
@@ -178,7 +179,13 @@ public class AckTest extends QpidTestCase
      */
     public void testAckChannelAssociationTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true, null, false, new LimitlessCreditManager());
+        _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
+                                                                 DEFAULT_CONSUMER_TAG,
+                                                                 null,
+                                                                 new LimitlessCreditManager());
+        _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
+                                                  Consumer.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount, true);
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
@@ -190,8 +197,8 @@ public class AckTest extends QpidTestCase
         {
             assertTrue(deliveryTag == i);
             i++;
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
         }
 
     }
@@ -202,7 +209,16 @@ public class AckTest extends QpidTestCase
     public void testNoAckMode() throws AMQException
     {
         // false arg means no acks expected
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, false, null, false, new LimitlessCreditManager());
+        _subscriptionTarget = ConsumerTarget_0_8.createNoAckTarget(_channel,
+                                                                   DEFAULT_CONSUMER_TAG,
+                                                                   null,
+                                                                   new LimitlessCreditManager());
+        _consumer = _queue.addConsumer(_subscriptionTarget,
+                                       null,
+                                       AMQMessage.class,
+                                       DEFAULT_CONSUMER_TAG.toString(),
+                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
+                                                  Consumer.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount);
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
@@ -218,7 +234,13 @@ public class AckTest extends QpidTestCase
     public void testPersistentNoAckMode() throws AMQException
     {
         // false arg means no acks expected
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, false,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = ConsumerTarget_0_8.createNoAckTarget(_channel,
+                                                                   DEFAULT_CONSUMER_TAG,
+                                                                   null,
+                                                                   new LimitlessCreditManager());
+        _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                       EnumSet.of(Consumer.Option.SEES_REQUEUES, Consumer.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount, true);
 
@@ -235,7 +257,15 @@ public class AckTest extends QpidTestCase
      */
     public void testSingleAckReceivedTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
+                                                                 DEFAULT_CONSUMER_TAG,
+                                                                 null,
+                                                                 new LimitlessCreditManager());
+        _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
+                                                  Consumer.Option.ACQUIRES));
+
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -248,8 +278,8 @@ public class AckTest extends QpidTestCase
         for (long deliveryTag : deliveryTagSet)
         {
             assertTrue(deliveryTag == i);
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
             // 5 is the delivery tag of the message that *should* be removed
             if (++i == 5)
             {
@@ -264,7 +294,15 @@ public class AckTest extends QpidTestCase
      */
     public void testMultiAckReceivedTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
+                                                                 DEFAULT_CONSUMER_TAG,
+                                                                 null,
+                                                                 new LimitlessCreditManager());
+        _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
+                                                  Consumer.Option.ACQUIRES));
+
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -279,8 +317,8 @@ public class AckTest extends QpidTestCase
         for (long deliveryTag : deliveryTagSet)
         {
             assertTrue(deliveryTag == i + 5);
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
             ++i;
         }
     }
@@ -290,7 +328,15 @@ public class AckTest extends QpidTestCase
      */
     public void testMultiAckAllReceivedTest() throws AMQException
     {
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true,null,false, new LimitlessCreditManager());
+
+        _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
+                                                                 DEFAULT_CONSUMER_TAG,
+                                                                 null,
+                                                                 new LimitlessCreditManager());
+        _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
+                                                  Consumer.Option.ACQUIRES));
+
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -303,8 +349,8 @@ public class AckTest extends QpidTestCase
         for (long deliveryTag : deliveryTagSet)
         {
             assertTrue(deliveryTag == i + 5);
-            QueueEntry unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.getQueue() == _queue);
+            MessageInstance unackedMsg = map.get(deliveryTag);
+            assertTrue(unackedMsg.getOwningResource() == _queue);
             ++i;
         }
     }
@@ -319,12 +365,16 @@ public class AckTest extends QpidTestCase
         // Send 10 messages
         Pre0_10CreditManager creditManager = new Pre0_10CreditManager(0l, 1);
 
-        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession,
-                                                                            DEFAULT_CONSUMER_TAG, true, null, false, creditManager);
+
+        _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel, DEFAULT_CONSUMER_TAG, null, creditManager);
+        _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
+                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
+                                                  Consumer.Option.ACQUIRES));
+
         final int msgCount = 1;
         publishMessages(msgCount);
 
-        _queue.deliverAsync(_subscription);
+        _consumer.externalStateChange();
 
         _channel.acknowledgeMessage(1, false);
 

@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Test SUB Log Messages
  */
-public class SubscriptionMessagesTest extends AbstractTestMessages
+public class ConsumerMessagesTest extends AbstractTestMessages
 {
     public void testSubscriptionCreateALL()
     {

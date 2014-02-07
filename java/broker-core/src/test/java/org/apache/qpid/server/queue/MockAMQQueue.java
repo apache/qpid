@@ -24,21 +24,28 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class MockAMQQueue implements AMQQueue
+public class MockAMQQueue implements AMQQueue<QueueConsumer>
 {
     private boolean _deleted = false;
     private String _name;
@@ -202,32 +209,44 @@ public class MockAMQQueue implements AMQQueue
         return _virtualhost;
     }
 
+    @Override
+    public QueueConsumer addConsumer(final ConsumerTarget target,
+                                final FilterManager filters,
+                                final Class<? extends ServerMessage> messageClass,
+                                final String consumerName,
+                                final EnumSet<Consumer.Option> options) throws AMQException
+    {
+        return new QueueConsumer(filters, messageClass, options.contains(Consumer.Option.ACQUIRES),
+                                          options.contains(Consumer.Option.SEES_REQUEUES), consumerName,
+                                          options.contains(Consumer.Option.TRANSIENT), target );
+    }
+
     public String getName()
     {
         return _name;
     }
 
-    public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
+    @Override
+    public int send(final ServerMessage message,
+                    final InstanceProperties instanceProperties,
+                    final ServerTransaction txn,
+                    final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
     {
-
+        return 0;
     }
 
-    public void unregisterSubscription(Subscription subscription) throws AMQException
-    {
 
-    }
-
-    public Collection<Subscription> getConsumers()
+    public Collection<QueueConsumer> getConsumers()
     {
         return Collections.emptyList();
     }
 
-    public void addSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    public void addConsumerRegistrationListener(final ConsumerRegistrationListener listener)
     {
 
     }
 
-    public void removeSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    public void removeConsumerRegistrationListener(final ConsumerRegistrationListener listener)
     {
 
     }
@@ -242,7 +261,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public boolean hasExclusiveSubscriber()
+    public boolean hasExclusiveConsumer()
     {
         return false;
     }
@@ -293,41 +312,29 @@ public class MockAMQQueue implements AMQQueue
        return getMessageCount();
     }
 
-    public void enqueue(ServerMessage message) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException
     {
     }
 
-    public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
-    {
-    }
-
-
-    public void enqueue(ServerMessage message, boolean sync, PostEnqueueAction action) throws AMQException
-    {
-    }
 
     public void requeue(QueueEntry entry)
     {
     }
 
-    public void requeue(QueueEntryImpl storeContext, Subscription subscription)
+    public void dequeue(QueueEntry entry, Consumer sub)
     {
     }
 
-    public void dequeue(QueueEntry entry, Subscription sub)
-    {
-    }
-
-    public boolean resend(QueueEntry entry, Subscription subscription) throws AMQException
+    public boolean resend(QueueEntry entry, Consumer consumer) throws AMQException
     {
         return false;
     }
 
-    public void addQueueDeleteTask(Task task)
+    public void addQueueDeleteTask(Action<AMQQueue> task)
     {
     }
 
-    public void removeQueueDeleteTask(final Task task)
+    public void removeQueueDeleteTask(final Action<AMQQueue> task)
     {
     }
 
@@ -427,12 +434,12 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void flushSubscription(Subscription sub) throws AMQException
+    public void flushConsumer(Consumer sub) throws AMQException
     {
 
     }
 
-    public void deliverAsync(Subscription sub)
+    public void deliverAsync(Consumer sub)
     {
 
     }

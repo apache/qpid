@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
@@ -144,11 +145,11 @@ public interface VirtualHost extends ConfiguredObject
 
     public static interface Transaction
     {
-        void dequeue(QueueEntry entry);
+        void dequeue(MessageInstance entry);
 
-        void copy(QueueEntry entry, Queue queue);
+        void copy(MessageInstance entry, Queue queue);
 
-        void move(QueueEntry entry, Queue queue);
+        void move(MessageInstance entry, Queue queue);
 
     }
 

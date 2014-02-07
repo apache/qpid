@@ -77,6 +77,6 @@ public interface Session extends ConfiguredObject
                                                              CHANNEL_ID,
                                                              PRODUCER_FLOW_BLOCKED));
 
-    Collection<Consumer> getSubscriptions();
+    Collection<Consumer> getConsumers();
     Collection<Publisher> getPublishers();
 }

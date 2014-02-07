@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.Collection;
@@ -34,7 +35,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 
     private long _unackedSize;
 
-    private Map<Long, QueueEntry> _map;
+    private Map<Long, MessageInstance> _map;
 
     private long _lastDeliveryTag;
 
@@ -43,10 +44,10 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
     public UnacknowledgedMessageMapImpl(int prefetchLimit)
     {
         _prefetchLimit = prefetchLimit;
-        _map = new LinkedHashMap<Long, QueueEntry>(prefetchLimit);
+        _map = new LinkedHashMap<Long, MessageInstance>(prefetchLimit);
     }
 
-    public void collect(long deliveryTag, boolean multiple, Map<Long, QueueEntry> msgs)
+    public void collect(long deliveryTag, boolean multiple, Map<Long, MessageInstance> msgs)
     {
         if (multiple)
         {
@@ -54,7 +55,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
         else
         {
-            final QueueEntry entry = get(deliveryTag);
+            final MessageInstance entry = get(deliveryTag);
             if(entry != null)
             {
                 msgs.put(deliveryTag, entry);
@@ -63,7 +64,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 
     }
 
-    public void remove(Map<Long,QueueEntry> msgs)
+    public void remove(Map<Long,MessageInstance> msgs)
     {
         synchronized (_lock)
         {
@@ -74,12 +75,12 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public QueueEntry remove(long deliveryTag)
+    public MessageInstance remove(long deliveryTag)
     {
         synchronized (_lock)
         {
 
-            QueueEntry message = _map.remove(deliveryTag);
+            MessageInstance message = _map.remove(deliveryTag);
             if(message != null)
             {
                 _unackedSize -= message.getMessage().getSize();
@@ -94,8 +95,8 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
     {
         synchronized (_lock)
         {
-            Set<Map.Entry<Long, QueueEntry>> currentEntries = _map.entrySet();
-            for (Map.Entry<Long, QueueEntry> entry : currentEntries)
+            Set<Map.Entry<Long, MessageInstance>> currentEntries = _map.entrySet();
+            for (Map.Entry<Long, MessageInstance> entry : currentEntries)
             {
                 visitor.callback(entry.getKey().longValue(), entry.getValue());
             }
@@ -103,7 +104,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public void add(long deliveryTag, QueueEntry message)
+    public void add(long deliveryTag, MessageInstance message)
     {
         synchronized (_lock)
         {
@@ -113,12 +114,12 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public Collection<QueueEntry> cancelAllMessages()
+    public Collection<MessageInstance> cancelAllMessages()
     {
         synchronized (_lock)
         {
-            Collection<QueueEntry> currentEntries = _map.values();
-            _map = new LinkedHashMap<Long, QueueEntry>(_prefetchLimit);
+            Collection<MessageInstance> currentEntries = _map.values();
+            _map = new LinkedHashMap<Long, MessageInstance>(_prefetchLimit);
             _unackedSize = 0l;
             return currentEntries;
         }
@@ -141,7 +142,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public QueueEntry get(long key)
+    public MessageInstance get(long key)
     {
         synchronized (_lock)
         {
@@ -157,19 +158,19 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public Collection<QueueEntry> acknowledge(long deliveryTag, boolean multiple)
+    public Collection<MessageInstance> acknowledge(long deliveryTag, boolean multiple)
     {
-        Map<Long, QueueEntry> ackedMessageMap = new LinkedHashMap<Long,QueueEntry>();
+        Map<Long, MessageInstance> ackedMessageMap = new LinkedHashMap<Long,MessageInstance>();
         collect(deliveryTag, multiple, ackedMessageMap);
         remove(ackedMessageMap);
         return ackedMessageMap.values();
     }
 
-    private void collect(long key, Map<Long, QueueEntry> msgs)
+    private void collect(long key, Map<Long, MessageInstance> msgs)
     {
         synchronized (_lock)
         {
-            for (Map.Entry<Long, QueueEntry> entry : _map.entrySet())
+            for (Map.Entry<Long, MessageInstance> entry : _map.entrySet())
             {
                 msgs.put(entry.getKey(),entry.getValue());
                 if (entry.getKey() == key)

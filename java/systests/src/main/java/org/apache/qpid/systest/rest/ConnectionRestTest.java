@@ -67,16 +67,15 @@ public class ConnectionRestTest extends QpidRestTestCase
             producer.send(_session.createTextMessage("Test-" + i));
         }
         _session.commit();
-
         Message m = consumer.receive(1000l);
-        assertNotNull("Message was not received", m);
+        assertNotNull("First message was not received", m);
         _session.commit();
 
         // receive the rest of messages for rollback
         for (int i = 0; i < MESSAGE_NUMBER - 1; i++)
         {
             m = consumer.receive(1000l);
-            assertNotNull("Message was not received", m);
+            assertNotNull("Subsequent messages were not received", m);
         }
         _session.rollback();
 
@@ -84,7 +83,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         for (int i = 0; i < MESSAGE_NUMBER - 1; i++)
         {
             m = consumer.receive(1000l);
-            assertNotNull("Message was not received", m);
+            assertNotNull("Message was not received after rollback", m);
         }
     }
 

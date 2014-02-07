@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
@@ -34,7 +35,9 @@ import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -45,6 +48,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.DtxNotSelectedException;
 import org.apache.qpid.server.txn.IncorrectDtxStateException;
@@ -55,6 +59,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.SuspendAndFailDtxException;
 import org.apache.qpid.server.txn.TimeoutDtxException;
 import org.apache.qpid.server.txn.UnknownDtxBranchException;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
@@ -193,7 +198,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 String queueName = method.getQueue();
                 VirtualHost vhost = getVirtualHost(session);
 
-                final AMQQueue queue = vhost.getQueue(queueName);
+                final MessageSource queue = vhost.getMessageSource(queueName);
 
                 if(queue == null)
                 {
@@ -214,9 +219,9 @@ public class ServerSessionDelegate extends SessionDelegate
                         ServerSession s = (ServerSession) session;
                         queue.setExclusiveOwningSession(s);
 
-                        ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
+                        ((ServerSession) session).addSessionCloseTask(new Action<ServerSession>()
                         {
-                            public void doTask(ServerSession session)
+                            public void performAction(ServerSession session)
                             {
                                 if(queue.getExclusiveOwningSession() == session)
                                 {
@@ -228,9 +233,9 @@ public class ServerSessionDelegate extends SessionDelegate
                         if(queue.getAuthorizationHolder() == null)
                         {
                             queue.setAuthorizationHolder(s);
-                            ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
+                            ((ServerSession) session).addSessionCloseTask(new Action<ServerSession>()
                             {
-                                public void doTask(ServerSession session)
+                                public void performAction(ServerSession session)
                                 {
                                     if(queue.getAuthorizationHolder() == session)
                                     {
@@ -254,25 +259,42 @@ public class ServerSessionDelegate extends SessionDelegate
                         return;
                     }
 
-                    Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
-                                                                  destination,
-                                                                  method.getAcceptMode(),
-                                                                  method.getAcquireMode(),
-                                                                  MessageFlowMode.WINDOW,
-                                                                  creditManager,
-                                                                  filterManager,
-                                                                  method.getArguments());
+                    ConsumerTarget_0_10 target = new ConsumerTarget_0_10((ServerSession)session, destination,
+                                                                                 method.getAcceptMode(),
+                                                                                 method.getAcquireMode(),
+                                                                                 MessageFlowMode.WINDOW,
+                                                                                 creditManager,
+                                                                                 method.getArguments()
+                    );
 
-                    ((ServerSession)session).register(destination, sub);
+                    ((ServerSession)session).register(destination, target);
                     try
                     {
-                        queue.registerSubscription(sub, method.getExclusive());
+                        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
+                        if(method.getAcquireMode() == MessageAcquireMode.PRE_ACQUIRED)
+                        {
+                            options.add(Consumer.Option.ACQUIRES);
+                        }
+                        if(method.getAcquireMode() != MessageAcquireMode.NOT_ACQUIRED || method.getAcceptMode() == MessageAcceptMode.EXPLICIT)
+                        {
+                            options.add(Consumer.Option.SEES_REQUEUES);
+                        }
+                        if(method.getExclusive())
+                        {
+                            options.add(Consumer.Option.EXCLUSIVE);
+                        }
+                        Consumer sub =
+                                queue.addConsumer(target,
+                                                  filterManager,
+                                                  MessageTransferMessage.class,
+                                                  destination,
+                                                  options);
                     }
-                    catch (AMQQueue.ExistingExclusiveSubscription existing)
+                    catch (AMQQueue.ExistingExclusiveConsumer existing)
                     {
                         exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an exclusive consumer");
                     }
-                    catch (AMQQueue.ExistingSubscriptionPreventsExclusive exclusive)
+                    catch (AMQQueue.ExistingConsumerPreventsExclusive exclusive)
                     {
                         exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an existing consumer - can't subscribe exclusively");
                     }
@@ -288,7 +310,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageTransfer(Session ssn, final MessageTransfer xfr)
     {
-        final Exchange exchange = getExchangeForMessage(ssn, xfr);
+        final MessageDestination exchange = getDestinationForMessage(ssn, xfr);
 
         final DeliveryProperties delvProps = xfr.getHeader() == null ? null : xfr.getHeader().getDeliveryProperties();
         if(delvProps != null && delvProps.hasTtl() && !delvProps.hasExpiration())
@@ -307,7 +329,6 @@ public class ServerSessionDelegate extends SessionDelegate
             return;
         }
 
-        final Exchange exchangeInUse;
         final MessageStore store = getVirtualHost(ssn).getMessageStore();
         final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
         final ServerSession serverSession = (ServerSession) ssn;
@@ -385,7 +406,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = method.getDestination();
 
-        Subscription_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -393,12 +414,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
-            AMQQueue queue = sub.getQueue();
             ((ServerSession)session).unregister(sub);
-            if(!queue.isDeleted() && queue.isExclusive() && queue.getConsumerCount() == 0)
-            {
-                queue.setAuthorizationHolder(null);
-            }
         }
     }
 
@@ -407,7 +423,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = method.getDestination();
 
-        Subscription_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -814,24 +830,24 @@ public class ServerSessionDelegate extends SessionDelegate
         return getVirtualHost(session).getExchange(exchangeName);
     }
 
-    private Exchange getExchangeForMessage(Session ssn, MessageTransfer xfr)
+    private MessageDestination getDestinationForMessage(Session ssn, MessageTransfer xfr)
     {
         VirtualHost virtualHost = getVirtualHost(ssn);
 
-        Exchange exchange;
+        MessageDestination destination;
         if(xfr.hasDestination())
         {
-            exchange = virtualHost.getExchange(xfr.getDestination());
-            if(exchange == null)
+            destination = virtualHost.getMessageDestination(xfr.getDestination());
+            if(destination == null)
             {
-                exchange = virtualHost.getDefaultExchange();
+                destination = virtualHost.getDefaultExchange();
             }
         }
         else
         {
-            exchange = virtualHost.getDefaultExchange();
+            destination = virtualHost.getDefaultExchange();
         }
-        return exchange;
+        return destination;
     }
 
     private VirtualHost getVirtualHost(Session session)
@@ -1249,9 +1265,9 @@ public class ServerSessionDelegate extends SessionDelegate
                 if (autoDelete && exclusive)
                 {
                     final AMQQueue q = queue;
-                    final ServerSession.Task deleteQueueTask = new ServerSession.Task()
+                    final Action<ServerSession> deleteQueueTask = new Action<ServerSession>()
                         {
-                            public void doTask(ServerSession session)
+                            public void performAction(ServerSession session)
                             {
                                 try
                                 {
@@ -1265,9 +1281,9 @@ public class ServerSessionDelegate extends SessionDelegate
                         };
                     final ServerSession s = (ServerSession) session;
                     s.addSessionCloseTask(deleteQueueTask);
-                    queue.addQueueDeleteTask(new AMQQueue.Task()
+                    queue.addQueueDeleteTask(new Action<AMQQueue>()
                         {
-                            public void doTask(AMQQueue queue) throws AMQException
+                            public void performAction(AMQQueue queue)
                             {
                                 s.removeSessionCloseTask(deleteQueueTask);
                             }
@@ -1276,9 +1292,9 @@ public class ServerSessionDelegate extends SessionDelegate
                 if (exclusive)
                 {
                     final AMQQueue q = queue;
-                    final ServerSession.Task removeExclusive = new ServerSession.Task()
+                    final Action<ServerSession> removeExclusive = new Action<ServerSession>()
                     {
-                        public void doTask(ServerSession session)
+                        public void performAction(ServerSession session)
                         {
                             q.setAuthorizationHolder(null);
                             q.setExclusiveOwningSession(null);
@@ -1287,9 +1303,9 @@ public class ServerSessionDelegate extends SessionDelegate
                     final ServerSession s = (ServerSession) session;
                     q.setExclusiveOwningSession(s);
                     s.addSessionCloseTask(removeExclusive);
-                    queue.addQueueDeleteTask(new AMQQueue.Task()
+                    queue.addQueueDeleteTask(new Action<AMQQueue>()
                     {
-                        public void doTask(AMQQueue queue) throws AMQException
+                        public void performAction(AMQQueue queue)
                         {
                             s.removeSessionCloseTask(removeExclusive);
                         }
@@ -1461,7 +1477,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = sfm.getDestination();
 
-        Subscription_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -1478,7 +1494,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = stop.getDestination();
 
-        Subscription_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {
@@ -1496,7 +1512,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         String destination = flow.getDestination();
 
-        Subscription_0_10 sub = ((ServerSession)session).getSubscription(destination);
+        ConsumerTarget_0_10 sub = ((ServerSession)session).getSubscription(destination);
 
         if(sub == null)
         {

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.txn;
 
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
@@ -46,7 +47,7 @@ public class LocalTransactionTest extends QpidTestCase
     
     private AMQQueue _queue;
     private List<AMQQueue> _queues;
-    private Collection<QueueEntry> _queueEntries;
+    private Collection<MessageInstance> _queueEntries;
     private ServerMessage _message;
     private MockAction _action1;
     private MockAction _action2;
@@ -597,9 +598,9 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Transaction update time should be reset after rollback", 0, _transaction.getTransactionUpdateTime());
     }
 
-    private Collection<QueueEntry> createTestQueueEntries(boolean[] queueDurableFlags, boolean[] messagePersistentFlags)
+    private Collection<MessageInstance> createTestQueueEntries(boolean[] queueDurableFlags, boolean[] messagePersistentFlags)
     {
-        Collection<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
+        Collection<MessageInstance> queueEntries = new ArrayList<MessageInstance>();
         
         assertTrue("Boolean arrays must be the same length", queueDurableFlags.length == messagePersistentFlags.length);
         

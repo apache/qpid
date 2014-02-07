@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.transport.TransportException;
 
 import java.util.concurrent.Executor;
@@ -38,7 +37,7 @@ class SubFlushRunner implements Runnable
     private static final Logger _logger = Logger.getLogger(SubFlushRunner.class);
 
 
-    private final Subscription _sub;
+    private final QueueConsumer _sub;
 
     private static int IDLE = 0;
     private static int SCHEDULED = 1;
@@ -51,7 +50,7 @@ class SubFlushRunner implements Runnable
     private static final long ITERATIONS = SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
-    public SubFlushRunner(Subscription sub)
+    public SubFlushRunner(QueueConsumer sub)
     {
         _sub = sub;
     }
@@ -65,7 +64,7 @@ class SubFlushRunner implements Runnable
             try
             {
                 CurrentActor.set(_sub.getLogActor());
-                complete = getQueue().flushSubscription(_sub, ITERATIONS);
+                complete = getQueue().flushConsumer(_sub, ITERATIONS);
             }
             catch (AMQException e)
             {

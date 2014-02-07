@@ -24,8 +24,9 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 
 /**
@@ -79,21 +80,21 @@ public interface ServerTransaction
      * 
      * A store operation will result only for a persistent message on a durable queue.
      */
-    void dequeue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction);
+    void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction);
 
     /** 
      * Dequeue a message(s) from queue(s) registering a post transaction action.
      * 
      * Store operations will result only for a persistent messages on durable queues.
      */
-    void dequeue(Collection<QueueEntry> messages, Action postTransactionAction);
+    void dequeue(Collection<MessageInstance> messages, Action postTransactionAction);
 
     /** 
      * Enqueue a message to a queue registering a post transaction action.
      * 
      * A store operation will result only for a persistent message on a durable queue.
      */
-    void enqueue(BaseQueue queue, EnqueueableMessage message, Action postTransactionAction);
+    void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction);
 
     /** 
      * Enqueue a message(s) to queue(s) registering a post transaction action.

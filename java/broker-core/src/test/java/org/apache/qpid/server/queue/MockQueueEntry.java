@@ -24,9 +24,13 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
 
 public class MockQueueEntry implements QueueEntry
 {
@@ -38,22 +42,28 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public boolean acquire(Subscription sub)
+    public boolean acquire(QueueConsumer sub)
     {
         return false;
     }
 
-    public boolean acquiredBySubscription()
+    @Override
+    public int getMaximumDeliveryCount()
+    {
+        return 0;
+    }
+
+    public boolean acquiredByConsumer()
     {
         return false;
     }
 
-    public boolean isAcquiredBy(Subscription subscription)
+    public boolean isAcquiredBy(QueueConsumer consumer)
     {
         return false;
     }
 
-    public void addStateChangeListener(StateChangeListener listener)
+    public void addStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
     {
 
     }
@@ -63,7 +73,7 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public int routeToAlternate(final BaseQueue.PostEnqueueAction action, final ServerTransaction txn)
+    public int routeToAlternate(final Action<MessageInstance<? extends Consumer>> action, final ServerTransaction txn)
     {
         return 0;
     }
@@ -78,7 +88,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public Subscription getDeliveredSubscription()
+    public QueueConsumer getDeliveredConsumer()
     {
         return null;
     }
@@ -93,7 +103,7 @@ public class MockQueueEntry implements QueueEntry
         return _message;
     }
 
-    public AMQQueue getQueue()
+    public AMQQueue<QueueConsumer> getQueue()
     {
         return null;
     }
@@ -116,7 +126,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean isRejectedBy(long subscriptionId)
+    public boolean isRejectedBy(QueueConsumer consumer)
     {
 
         return false;
@@ -136,8 +146,14 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
+    @Override
+    public boolean resend() throws AMQException
+    {
+        return false;
+    }
 
-    public boolean removeStateChangeListener(StateChangeListener listener)
+
+    public boolean removeStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
     {
 
         return false;
@@ -216,5 +232,11 @@ public class MockQueueEntry implements QueueEntry
     public InstanceProperties getInstanceProperties()
     {
         return InstanceProperties.EMPTY;
+    }
+
+    @Override
+    public TransactionLogResource getOwningResource()
+    {
+        return getQueue();
     }
 }

@@ -18,29 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.actors;
+package org.apache.qpid.server.util;
 
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
-import org.apache.qpid.server.subscription.Subscription;
-
-/**
- * The subscription actor provides formatted logging for actions that are
- * performed by the subscription. Such as STATE changes.
- */
-public class SubscriptionActor extends AbstractActor
+public interface Action<T>
 {
-    private SubscriptionLogSubject _logSubject;
-
-    public SubscriptionActor(RootMessageLogger logger, Subscription subscription)
-    {
-        super(logger);
-
-        _logSubject = new SubscriptionLogSubject(subscription);
-    }
-
-    public String getLogMessage()
-    {
-        return _logSubject.toLogString();
-    }
+    void performAction(T object);
 }

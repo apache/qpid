@@ -21,8 +21,177 @@
 package org.apache.qpid.server.message;
 
 
-public interface MessageInstance
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
+
+public interface MessageInstance<C extends Consumer>
 {
+
+
+    /**
+     * Number of times this queue entry has been delivered.
+     *
+     * @return delivery count
+     */
+    int getDeliveryCount();
+
+    void incrementDeliveryCount();
+
+    void decrementDeliveryCount();
+
+    void addStateChangeListener(StateChangeListener<MessageInstance<C>, State> listener);
+
+    boolean removeStateChangeListener(StateChangeListener<MessageInstance<C>, State> listener);
+
+    boolean acquiredByConsumer();
+
+    boolean isAcquiredBy(C consumer);
+
+    void setRedelivered();
+
+    boolean isRedelivered();
+
+    C getDeliveredConsumer();
+
+    void reject();
+
+    boolean isRejectedBy(C consumer);
+
+    boolean getDeliveredToConsumer();
+
+    boolean expired() throws AMQException;
+
+    boolean acquire(C sub);
+
+    int getMaximumDeliveryCount();
+
+    int routeToAlternate(Action<MessageInstance<? extends Consumer>> action, ServerTransaction txn);
+
+    Filterable asFilterable();
+
+    public static enum State
+    {
+        AVAILABLE,
+        ACQUIRED,
+        DEQUEUED,
+        DELETED
+    }
+
+    public abstract class EntryState
+    {
+        private EntryState()
+        {
+        }
+
+        public abstract State getState();
+
+        /**
+         * Returns true if state is either DEQUEUED or DELETED.
+         *
+         * @return true if state is either DEQUEUED or DELETED.
+         */
+        public boolean isDispensed()
+        {
+            State currentState = getState();
+            return currentState == State.DEQUEUED || currentState == State.DELETED;
+        }
+    }
+
+
+    public final class AvailableState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.AVAILABLE;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+
+    public final class DequeuedState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.DEQUEUED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+
+    public final class DeletedState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.DELETED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+    public final class NonConsumerAcquiredState extends EntryState
+    {
+        public State getState()
+        {
+            return State.ACQUIRED;
+        }
+
+        public String toString()
+        {
+            return getState().name();
+        }
+    }
+
+    public final class ConsumerAcquiredState<C extends Consumer> extends EntryState
+    {
+        private final C _consumer;
+
+        public ConsumerAcquiredState(C consumer)
+        {
+            _consumer = consumer;
+        }
+
+
+        public State getState()
+        {
+            return State.ACQUIRED;
+        }
+
+        public C getConsumer()
+        {
+            return _consumer;
+        }
+
+        public String toString()
+        {
+            return "{" + getState().name() + " : " + _consumer +"}";
+        }
+    }
+
+
+    final static EntryState AVAILABLE_STATE = new AvailableState();
+    final static EntryState DELETED_STATE = new DeletedState();
+    final static EntryState DEQUEUED_STATE = new DequeuedState();
+    final static EntryState NON_CONSUMER_ACQUIRED_STATE = new NonConsumerAcquiredState();
 
     boolean isAvailable();
 
@@ -32,6 +201,8 @@ public interface MessageInstance
 
     void release();
 
+    boolean resend() throws AMQException;
+
     void delete();
 
     boolean isDeleted();
@@ -39,4 +210,6 @@ public interface MessageInstance
     ServerMessage getMessage();
 
     InstanceProperties getInstanceProperties();
+
+    TransactionLogResource getOwningResource();
 }
