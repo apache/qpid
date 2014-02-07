@@ -38,6 +38,7 @@ protected:
     const efpIdentity_t efpIdentity_;
     const std::string fqFileName_;
     const uint64_t fileSeqNum_;
+    const std::string queueName_;
     const uint64_t serial_;
     uint64_t firstRecordOffset_;
     int fileHandle_;
@@ -46,6 +47,7 @@ protected:
     ::file_hdr_t* fileHeaderPtr_;
     aio_cb* aioControlBlockPtr_;
     uint32_t fileSize_dblks_;                           ///< File size in data blocks, including file header
+    bool initializedFlag_;
 
     AtomicCounter<uint32_t> enqueuedRecordCount_;       ///< Count of enqueued records
     AtomicCounter<uint32_t> submittedDblkCount_;        ///< Write file count (data blocks) for submitted AIO
@@ -56,10 +58,12 @@ public:
     // Constructor for creating new file with known fileSeqNum and random serial
     JournalFile(const std::string& fqFileName,
                 const efpIdentity_t& efpIdentity,
-                const uint64_t fileSeqNum);
+                const uint64_t fileSeqNum,
+                const std::string queueName);
     // Constructor for recovery in which fileSeqNum and serial are recovered from fileHeader param
     JournalFile(const std::string& fqFileName,
-                const ::file_hdr_t& fileHeader);
+                const ::file_hdr_t& fileHeader,
+                const std::string queueName);
     virtual ~JournalFile();
 
     void initialize(const uint32_t completedDblkCount);
@@ -76,13 +80,13 @@ public:
                               const efpDataSize_kib_t efpDataSize_kib,
                               const uint16_t userFlags,
                               const uint64_t recordId,
-                              const uint64_t firstRecordOffset,
-                              const std::string queueName);
+                              const uint64_t firstRecordOffset);
     void asyncPageWrite(io_context_t ioContextPtr,
                         aio_cb* aioControlBlockPtr,
                         void* data,
                         uint32_t dataSize_dblks);
 
+    uint32_t getSubmittedDblkCount() const;
     uint32_t getEnqueuedRecordCount() const;
     uint32_t incrEnqueuedRecordCount();
     uint32_t decrEnqueuedRecordCount();
@@ -109,7 +113,6 @@ protected:
     static uint64_t getRandom64();
     bool isOpen() const;
 
-    uint32_t getSubmittedDblkCount() const;
     uint32_t addSubmittedDblkCount(const uint32_t a);
 
     uint32_t getCompletedDblkCount() const;

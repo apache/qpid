@@ -27,7 +27,7 @@
         $action
     }
     catch (qpid::messaging::MessagingException& mex) {
-        Perl_croak(aTHX_ mex.what());
+      Perl_croak(aTHX_ "%s", mex.what());
     }
 }
 

@@ -51,15 +51,21 @@ struct RecoveredRecordData_t {
     RecoveredRecordData_t(const uint64_t rid, const uint64_t fid, const std::streampos foffs, bool ptxn);
 };
 
+struct RecoveredFileData_t {
+    JournalFile* journalFilePtr_;
+    uint32_t completedDblkCount_;
+    RecoveredFileData_t(JournalFile* journalFilePtr, const uint32_t completedDblkCount);
+};
+
 bool recordIdListCompare(RecoveredRecordData_t a, RecoveredRecordData_t b);
 
 class RecoveryManager
 {
 protected:
     // Types
-    typedef std::vector<std::string> directoryList_t;
-    typedef directoryList_t::const_iterator directoryListConstItr_t;
-    typedef std::map<uint64_t, JournalFile*> fileNumberMap_t;
+    typedef std::vector<std::string> stringList_t;
+    typedef stringList_t::const_iterator stringListConstItr_t;
+    typedef std::map<uint64_t, RecoveredFileData_t*> fileNumberMap_t;
     typedef fileNumberMap_t::iterator fileNumberMapItr_t;
     typedef fileNumberMap_t::const_iterator fileNumberMapConstItr_t;
     typedef std::vector<RecoveredRecordData_t> recordIdList_t;
@@ -74,18 +80,20 @@ protected:
 
     // Initial journal analysis data
     fileNumberMap_t fileNumberMap_;             ///< File number - JournalFilePtr map
+    stringList_t notNeededFilesList_;           ///< Files not needed and to be returned to EFP
+    stringList_t uninitFileList_;               ///< File name of uninitialized journal files found during header analysis
     bool journalEmptyFlag_;                     ///< Journal data files empty
     std::streamoff firstRecordOffset_;          ///< First record offset in ffid
     std::streamoff endOffset_;                  ///< End offset (first byte past last record)
     uint64_t highestRecordId_;                  ///< Highest rid found
     uint64_t highestFileNumber_;                ///< Highest file number found
     bool lastFileFullFlag_;                     ///< Last file is full
-    std::string uninitializedJournal_;          ///< File name of uninitialized journal found during header analysis
+    uint64_t initial_fid_;                      ///< File id where initial write after recovery will occur
 
     // State for recovery of individual enqueued records
     uint64_t currentSerial_;
     uint32_t efpFileSize_kib_;
-    fileNumberMapConstItr_t currentJournalFileConstItr_;
+    fileNumberMapConstItr_t currentJournalFileItr_;
     std::string currentFileName_;
     std::ifstream inFileStream_;
     recordIdList_t recordIdList_;
@@ -121,16 +129,18 @@ public:
 protected:
     void analyzeJournalFileHeaders(efpIdentity_t& efpIdentity);
     void checkFileStreamOk(bool checkEof);
-    void checkJournalAlignment(const std::streampos recordPosition);
+    void checkJournalAlignment(const uint64_t start_fid, const std::streampos recordPosition);
     bool decodeRecord(jrec& record,
                       std::size_t& cumulativeSizeRead,
                       ::rec_hdr_t& recordHeader,
-                      std::streampos& fileOffset);
+                      const uint64_t start_fid,
+                      const std::streampos recordOffset);
     std::string getCurrentFileName() const;
     uint64_t getCurrentFileNumber() const;
     bool getFile(const uint64_t fileNumber, bool jumpToFirstRecordOffsetFlag);
     bool getNextFile(bool jumpToFirstRecordOffsetFlag);
     bool getNextRecordHeader();
+    void lastRecord(const uint64_t file_id, const std::streamoff endOffset);
     bool needNextFile();
     void prepareRecordList();
     bool readFileHeader();

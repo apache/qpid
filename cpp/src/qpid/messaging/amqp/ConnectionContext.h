@@ -102,6 +102,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
 
     void activateOutput();
     qpid::sys::Codec& getCodec();
+    const qpid::messaging::ConnectionOptions* getOptions();
     //ConnectionCodec interface:
     std::size_t decode(const char* buffer, std::size_t size);
     std::size_t encode(char* buffer, std::size_t size);

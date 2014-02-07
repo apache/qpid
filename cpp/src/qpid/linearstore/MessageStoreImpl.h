@@ -235,8 +235,6 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     }
     void chkTplStoreInit();
 
-    static std::string str2hexnum(const std::string& str);
-
   public:
     typedef boost::shared_ptr<MessageStoreImpl> shared_ptr;
 

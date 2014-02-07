@@ -15,142 +15,45 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>qpid-project</artifactId>
-        <groupId>org.apache.qpid</groupId>
-        <version>0.26-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
-    </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.apache.qpid</groupId>
+        <artifactId>qpid-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
     <artifactId>qpid-broker-plugins-websocket</artifactId>
+    <version>0.28-SNAPSHOT</version>
+    <name>Qpid WebSocket Broker Plug-in</name>
+    <description>WebSocket broker plug-in</description>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-core</artifactId>
-            <version>0.26-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-servlet_3.0_spec</artifactId>
-            <version>1.0</version>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty.orbit</groupId>
-                    <artifactId>javax.servlet</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-continuation</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-http</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-continuation</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-security</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-server</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-http</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-io</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-io</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-util</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-security</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-util</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-websocket</artifactId>
-            <version>8.1.14.v20131031</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-util</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-io</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-http</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
-        </dependencies>
+
+    </dependencies>
 
     <build>
     </build>

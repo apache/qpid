@@ -21,6 +21,7 @@
 
 #include "qpid/linearstore/journal/jcntl.h"
 
+#include <iomanip>
 #include "qpid/linearstore/journal/data_tok.h"
 #include "qpid/linearstore/journal/JournalLog.h"
 
@@ -90,7 +91,7 @@ jcntl::initialize(EmptyFilePool* efpp,
     _linearFileController.finalize();
     _jdir.clear_dir(); // Clear any existing journal files
     _linearFileController.initialize(_jdir.dirname(), efpp, 0ULL);
-    _linearFileController.pullEmptyFileFromEfp();
+    _linearFileController.getNextJournalFile();
     _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, QLS_WMGR_MAXDTOKPP, QLS_WMGR_MAXWAITUS);
     _init_flag = true;
 }
@@ -120,6 +121,9 @@ jcntl::recover(EmptyFilePoolManager* efpmp,
     _jrnl_log.log(/*LOG_DEBUG*/JournalLog::LOG_INFO, _jid, _recoveryManager.toLog(_jid, 5));
     _linearFileController.initialize(_jdir.dirname(), _emptyFilePoolPtr, _recoveryManager.getHighestFileNumber());
     _recoveryManager.setLinearFileControllerJournals(&qpid::linearstore::journal::LinearFileController::addJournalFile, &_linearFileController);
+    if (_recoveryManager.isLastFileFull()) {
+        _linearFileController.getNextJournalFile();
+    }
     _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, QLS_WMGR_MAXDTOKPP, QLS_WMGR_MAXWAITUS,
             (_recoveryManager.isLastFileFull() ? 0 : _recoveryManager.getEndOffset()));
 
@@ -314,6 +318,20 @@ jcntl::stop(const bool block_till_aio_cmpl)
 LinearFileController&
 jcntl::getLinearFileControllerRef() {
     return _linearFileController;
+}
+
+// static
+std::string
+jcntl::str2hexnum(const std::string& str) {
+    if (str.empty()) {
+        return "<null>";
+    }
+    std::ostringstream oss;
+    oss << "(" << str.size() << ")0x" << std::hex;
+    for (unsigned i=str.size(); i>0; --i) {
+        oss << std::setfill('0') << std::setw(2) << (uint16_t)(uint8_t)str[i-1];
+    }
+    return oss.str();
 }
 
 iores

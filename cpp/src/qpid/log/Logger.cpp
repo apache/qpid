@@ -106,7 +106,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
         os << s.file << ":";
     if (flags&LINE)
         os << dec << s.line << ":";
-    if (flags&FUNCTION)
+    if ((flags&FUNCTION) && s.function)
         os << s.function << ":";
     if (flags & (FILE|LINE|FUNCTION))
         os << " ";

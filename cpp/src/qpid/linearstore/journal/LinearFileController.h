@@ -44,12 +44,12 @@ protected:
     jcntl& jcntlRef_;
     std::string journalDirectory_;
     EmptyFilePool* emptyFilePoolPtr_;
-    JournalFile* currentJournalFilePtr_;
     AtomicCounter<uint64_t> fileSeqCounter_;
     AtomicCounter<uint64_t> recordIdCounter_;
     AtomicCounter<uint64_t> decrCounter_;
 
     JournalFileList_t journalFileList_;
+    JournalFile* currentJournalFilePtr_;
     smutex journalFileListMutex_;
 
 public:
@@ -62,12 +62,14 @@ public:
     void finalize();
 
     void addJournalFile(JournalFile* journalFilePtr,
-                        const uint32_t completedDblkCount);
+                        const uint32_t completedDblkCount,
+                        const bool makeCurrentFlag);
 
     efpDataSize_sblks_t dataSize_sblks() const;
     efpFileSize_sblks_t fileSize_sblks() const;
+    void getNextJournalFile();
     uint64_t getNextRecordId();
-    void pullEmptyFileFromEfp();
+    void removeFileToEfp(const std::string& fileName);
     void restoreEmptyFile(const std::string& fileName);
     void purgeEmptyFilesToEfp();
 
@@ -105,11 +107,12 @@ protected:
     bool checkCurrentJournalFileValid() const;
     JournalFile* find(const efpFileCount_t fileSeqNumber);
     uint64_t getNextFileSeqNum();
-    void purgeEmptyFilesToEfpNoLock();
+    void pullEmptyFileFromEfp();
 };
 
 typedef void (LinearFileController::*lfcAddJournalFileFn)(JournalFile* journalFilePtr,
-                                                          const uint32_t completedDblkCount);
+                                                          const uint32_t completedDblkCount,
+                                                          const bool makeCurrentFlag);
 
 }}}
 

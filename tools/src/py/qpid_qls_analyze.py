@@ -37,8 +37,8 @@ class QqpdLinearStoreAnalyzer(object):
         self.args = None
         self._process_args()
         self.qls_dir = os.path.abspath(self.args.qls_dir)
-        self.efp_manager = efp.EfpManager(self.qls_dir)
-        self.jrnl_recovery_mgr = jrnl.JournalRecoveryManager(self.qls_dir)
+        self.efp_manager = efp.EfpManager(self.qls_dir, self.args)
+        self.jrnl_recovery_mgr = jrnl.JournalRecoveryManager(self.qls_dir, self.args)
     def _analyze_efp(self):
         self.efp_manager.run(self.args)
     def _analyze_journals(self):
@@ -49,6 +49,10 @@ class QqpdLinearStoreAnalyzer(object):
                             help='Qpid Linear Store (QLS) directory to be analyzed')
         parser.add_argument('--efp', action='store_true',
                             help='Analyze the Emtpy File Pool (EFP) and show stats')
+        parser.add_argument('--show-recs', action='store_true',
+                            help='Show material records found during recovery')
+        parser.add_argument('--show-all-recs', action='store_true',
+                            help='Show all records (including fillers) found during recovery')
         parser.add_argument('--stats', action='store_true',
                             help='Print journal record stats')
         parser.add_argument('--txn', action='store_true',

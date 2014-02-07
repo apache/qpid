@@ -44,12 +44,13 @@ class DtxManager{
     TransactionalStore* store;
     qpid::sys::Mutex lock;
     qpid::sys::Timer* timer;
+    uint32_t dtxDefaultTimeout;
 
     void remove(const std::string& xid);
     DtxWorkRecord* createWork(const std::string& xid);
 
 public:
-    DtxManager(sys::Timer&);
+    DtxManager(sys::Timer&, uint32_t _dtxDefaultTimeout=0);
     ~DtxManager();
     void start(const std::string& xid, boost::intrusive_ptr<DtxBuffer> work);
     void join(const std::string& xid, boost::intrusive_ptr<DtxBuffer> work);

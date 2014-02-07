@@ -26,6 +26,8 @@ namespace sys {
 class Codec;
 }
 namespace messaging {
+class ConnectionOptions;
+
 namespace amqp {
 
 /**
@@ -38,6 +40,7 @@ class TransportContext
   public:
     virtual ~TransportContext() {}
     virtual qpid::sys::Codec& getCodec() = 0;
+    virtual const qpid::messaging::ConnectionOptions* getOptions() = 0;
     virtual void closed() = 0;
     virtual void opened() = 0;
   private:

@@ -98,7 +98,7 @@ public:
     * \returns Number of data-blocks encoded.
     */
     virtual uint32_t encode(void* wptr, uint32_t rec_offs_dblks, uint32_t max_size_dblks, Checksum& checksum) = 0;
-    virtual bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs) = 0;
+    virtual bool decode(::rec_hdr_t& h, std::ifstream* ifsp, std::size_t& rec_offs, const std::streampos rec_start) = 0;
 
     virtual std::string& str(std::string& str) const = 0;
     virtual std::size_t data_size() const = 0;
