@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
@@ -41,63 +35,46 @@ import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.Header;
 import org.apache.qpid.amqp_1_0.type.messaging.Modified;
 import org.apache.qpid.amqp_1_0.type.messaging.Released;
-import org.apache.qpid.amqp_1_0.type.messaging.Source;
-import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
-import org.apache.qpid.server.plugin.MessageConverter;
-import org.apache.qpid.server.protocol.MessageConverterRegistry;
-import org.apache.qpid.server.filter.FilterManager;
-import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.protocol.MessageConverterRegistry;
+import org.apache.qpid.server.consumer.AbstractConsumerTarget;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 
-class
-        Subscription_1_0 implements Subscription
+import java.nio.ByteBuffer;
+import java.util.List;
+
+class ConsumerTarget_1_0 extends AbstractConsumerTarget
 {
+    private final boolean _acquires;
     private SendingLink_1_0 _link;
 
-    private AMQQueue _queue;
-
-    private final AtomicReference<State> _state = new AtomicReference<State>(State.SUSPENDED);
-
-    private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
-    private final long _id;
-    private final boolean _acquires;
-    private volatile AMQQueue.Context _queueContext;
-    private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
-    private ReentrantLock _stateChangeLock = new ReentrantLock();
-
-    private boolean _noLocal;
-    private FilterManager _filters;
-
     private long _deliveryTag = 0L;
-    private StateListener _stateListener;
 
     private Binary _transactionId;
-    private final AMQPDescribedTypeRegistry _typeRegistry = AMQPDescribedTypeRegistry.newInstance()
-                                                                                     .registerTransportLayer()
-                                                                                     .registerMessagingLayer()
-                                                                                     .registerTransactionLayer()
-                                                                                     .registerSecurityLayer();
-    private SectionEncoder _sectionEncoder = new SectionEncoderImpl(_typeRegistry);
+    private final AMQPDescribedTypeRegistry _typeRegistry;
+    private final SectionEncoder _sectionEncoder;
+    private Consumer _consumer;
 
-    public Subscription_1_0(final SendingLink_1_0 link, final QueueDestination destination)
+    public ConsumerTarget_1_0(final SendingLink_1_0 link,
+                              boolean acquires)
     {
-        this(link, destination, ((Source)link.getEndpoint().getSource()).getDistributionMode() != StdDistMode.COPY);
+        super(State.SUSPENDED);
+        _link = link;
+        _typeRegistry = link.getEndpoint().getSession().getConnection().getDescribedTypeRegistry();
+        _sectionEncoder = new SectionEncoderImpl(_typeRegistry);
+        _acquires = acquires;
     }
 
-    public Subscription_1_0(final SendingLink_1_0 link, final QueueDestination destination, boolean acquires)
+    public Consumer getConsumer()
     {
-        _link = link;
-        _queue = destination.getQueue();
-        _id = getEndpoint().getLocalHandle().longValue();
-        _acquires = acquires;
+        return _consumer;
     }
 
     private SendingLinkEndpoint getEndpoint()
@@ -105,89 +82,37 @@ class
         return _link.getEndpoint();
     }
 
-    public LogActor getLogActor()
-    {
-        return null;  //TODO
-    }
-
-    public boolean isTransient()
-    {
-        return true;  //TODO
-    }
-
-    public AMQQueue getQueue()
-    {
-        return _queue;
-    }
-
-    public QueueEntry.SubscriptionAcquiredState getOwningState()
-    {
-        return _owningState;
-    }
-
-    public void setQueue(final AMQQueue queue, final boolean exclusive)
-    {
-        //TODO
-    }
-
-    public void setNoLocal(final boolean noLocal)
-    {
-        _noLocal = noLocal;
-    }
-
-    public long getSubscriptionID()
-    {
-        return _id;
-    }
-
     public boolean isSuspended()
     {
-        return _link.getSession().getConnectionModel().isStopped() || !isActive();// || !getEndpoint().hasCreditToSend();
+        return _link.getSession().getConnectionModel().isStopped() || getState() != State.ACTIVE;// || !getEndpoint().hasCreditToSend();
 
     }
 
-    public boolean hasInterest(final QueueEntry entry)
+    public boolean close()
     {
-        if(_noLocal && entry.getMessage().getConnectionReference() == getSession().getConnection().getReference())
+        boolean closed = false;
+        State state = getState();
+
+        getConsumer().getSendLock();
+        try
         {
-            return false;
+            while(!closed && state != State.CLOSED)
+            {
+                closed = updateState(state, State.CLOSED);
+                if(!closed)
+                {
+                    state = getState();
+                }
+            }
+            return closed;
         }
-        else if(!(entry.getMessage() instanceof Message_1_0)
-                && MessageConverterRegistry.getConverter(entry.getMessage().getClass(), Message_1_0.class)==null)
+        finally
         {
-            return false;
+            getConsumer().releaseSendLock();
         }
-        return checkFilters(entry);
-
     }
 
-    private boolean checkFilters(final QueueEntry entry)
-    {
-        return (_filters == null) || _filters.allAllow(entry.asFilterable());
-    }
-
-    public boolean isClosed()
-    {
-        return !getEndpoint().isAttached();
-    }
-
-    public boolean acquires()
-    {
-        return _acquires;
-    }
-
-    public boolean seesRequeues()
-    {
-        // TODO
-        return acquires();
-    }
-
-    public void close()
-    {
-        getEndpoint().detach();
-    }
-
-    public void send(QueueEntry entry, boolean batch) throws AMQException
+    public void send(MessageInstance entry, boolean batch) throws AMQException
     {
         // TODO
         send(entry);
@@ -198,7 +123,7 @@ class
         // TODO
     }
 
-    public void send(final QueueEntry queueEntry) throws AMQException
+    public void send(final MessageInstance queueEntry) throws AMQException
     {
         ServerMessage serverMessage = queueEntry.getMessage();
         Message_1_0 message;
@@ -209,7 +134,7 @@ class
         else
         {
             final MessageConverter converter = MessageConverterRegistry.getConverter(serverMessage.getClass(), Message_1_0.class);
-            message = (Message_1_0) converter.convert(serverMessage, queueEntry.getQueue().getVirtualHost());
+            message = (Message_1_0) converter.convert(serverMessage, _link.getVirtualHost());
         }
 
         Transfer transfer = new Transfer();
@@ -329,7 +254,7 @@ class
 
                             public void onRollback()
                             {
-                                if(queueEntry.isAcquiredBy(Subscription_1_0.this))
+                                if(queueEntry.isAcquiredBy(getConsumer()))
                                 {
                                     queueEntry.release();
                                     _link.getEndpoint().updateDisposition(tag, (DeliveryState)null, true);
@@ -352,14 +277,14 @@ class
 
     }
 
-    public void queueDeleted(final AMQQueue queue)
+    public void queueDeleted()
     {
         //TODO
         getEndpoint().setSource(null);
         getEndpoint().detach();
     }
 
-    public boolean wouldSuspend(final QueueEntry msg)
+    public boolean allocateCredit(final ServerMessage msg)
     {
         synchronized (_link.getLock())
         {
@@ -369,91 +294,23 @@ class
                 suspend();
             }
 
-            return !hasCredit;
+            return hasCredit;
         }
     }
 
-    public boolean trySendLock()
-    {
-        return _stateChangeLock.tryLock();
-    }
 
     public void suspend()
     {
         synchronized(_link.getLock())
         {
-            if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
-            {
-                _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
-            }
+            updateState(State.ACTIVE, State.SUSPENDED);
         }
     }
 
-    public void getSendLock()
-    {
-        _stateChangeLock.lock();
-    }
 
-    public void releaseSendLock()
-    {
-        _stateChangeLock.unlock();
-    }
-
-    public void releaseQueueEntry(QueueEntry queueEntryImpl)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-
-    public void onDequeue(final QueueEntry queueEntry)
+    public void restoreCredit(final ServerMessage message)
     {
         //TODO
-    }
-
-    public void restoreCredit(final QueueEntry queueEntry)
-    {
-        //TODO
-    }
-
-    public void setStateListener(final StateListener listener)
-    {
-        _stateListener = listener;
-    }
-
-    public State getState()
-    {
-        return _state.get();
-    }
-
-    public AMQQueue.Context getQueueContext()
-    {
-        return _queueContext;
-    }
-
-    public void setQueueContext(AMQQueue.Context queueContext)
-    {
-        _queueContext = queueContext;
-    }
-
-
-    public boolean isActive()
-    {
-        return getState() == State.ACTIVE;
-    }
-
-    public void set(String key, Object value)
-    {
-        _properties.put(key, value);
-    }
-
-    public Object get(String key)
-    {
-        return _properties.get(key);
-    }
-
-    public boolean isSessionTransactional()
-    {
-        return false;  //TODO
     }
 
     public void queueEmpty()
@@ -462,10 +319,7 @@ class
         {
             if(_link.drained())
             {
-                if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
-                {
-                    _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
-                }
+                updateState(State.ACTIVE, State.SUSPENDED);
             }
         }
     }
@@ -476,10 +330,7 @@ class
         {
             if(isSuspended() && getEndpoint() != null)
             {
-                if(_state.compareAndSet(State.SUSPENDED, State.ACTIVE))
-                {
-                    _stateListener.stateChange(this, State.SUSPENDED, State.ACTIVE);
-                }
+                updateState(State.SUSPENDED, State.ACTIVE);
                 _transactionId = _link.getTransactionId();
             }
         }
@@ -493,10 +344,10 @@ class
     private class DispositionAction implements UnsettledAction
     {
 
-        private final QueueEntry _queueEntry;
+        private final MessageInstance _queueEntry;
         private final Binary _deliveryTag;
 
-        public DispositionAction(Binary tag, QueueEntry queueEntry)
+        public DispositionAction(Binary tag, MessageInstance queueEntry)
         {
             _deliveryTag = tag;
             _queueEntry = queueEntry;
@@ -527,13 +378,13 @@ class
 
             if(outcome instanceof Accepted)
             {
-                txn.dequeue(_queueEntry.getQueue(), _queueEntry.getMessage(),
+                txn.dequeue(_queueEntry.getOwningResource(), _queueEntry.getMessage(),
                         new ServerTransaction.Action()
                         {
 
                             public void postCommit()
                             {
-                                if(_queueEntry.isAcquiredBy(Subscription_1_0.this))
+                                if(_queueEntry.isAcquiredBy(getConsumer()))
                                 {
                                     _queueEntry.delete();
                                 }
@@ -618,7 +469,7 @@ class
     private class DoNothingAction implements UnsettledAction
     {
         public DoNothingAction(final Binary tag,
-                               final QueueEntry queueEntry)
+                               final MessageInstance queueEntry)
         {
         }
 
@@ -640,35 +491,22 @@ class
         }
     }
 
-    public FilterManager getFilters()
-    {
-        return _filters;
-    }
-
-    public void setFilters(final FilterManager filters)
-    {
-        _filters = filters;
-    }
-
     @Override
     public AMQSessionModel getSessionModel()
     {
-        // TODO
         return getSession();
     }
 
     @Override
-    public long getBytesOut()
+    public void consumerAdded(final Consumer sub)
     {
-        // TODO
-        return 0;
+        _consumer = sub;
     }
 
     @Override
-    public long getMessagesOut()
+    public void consumerRemoved(final Consumer sub)
     {
-        // TODO
-        return 0;
+
     }
 
     @Override
@@ -685,10 +523,4 @@ class
         return 0;
     }
 
-    @Override
-    public String getConsumerName()
-    {
-        //TODO
-        return "TODO";
-    }
 }

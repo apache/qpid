@@ -464,7 +464,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         }
 
         @Override
-        public TransactionLogResource getQueue()
+        public TransactionLogResource getResource()
         {
             return _queue;
         }
@@ -505,7 +505,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
             {
                 return false;
             }
-            if (_queue == null && other.getQueue() != null)
+            if (_queue == null && other.getResource() != null)
             {
                 return false;
             }
@@ -513,7 +513,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
             {
                 return false;
             }
-            return _queue.getId().equals(other.getQueue().getId());
+            return _queue.getId().equals(other.getResource().getId());
         }
 
     }

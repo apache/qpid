@@ -44,6 +44,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -759,11 +760,11 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
         op.withinTransaction(new Transaction()
         {
-            public void dequeue(final QueueEntry entry)
+            public void dequeue(final MessageInstance entry)
             {
                 if(entry.acquire())
                 {
-                    txn.dequeue(entry.getQueue(), entry.getMessage(), new ServerTransaction.Action()
+                    txn.dequeue(entry.getOwningResource(), entry.getMessage(), new ServerTransaction.Action()
                     {
                         public void postCommit()
                         {
@@ -777,7 +778,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 }
             }
 
-            public void copy(QueueEntry entry, Queue queue)
+            public void copy(MessageInstance entry, Queue queue)
             {
                 final ServerMessage message = entry.getMessage();
                 final AMQQueue toQueue = ((QueueAdapter)queue).getAMQQueue();
@@ -788,7 +789,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                     {
                         try
                         {
-                            toQueue.enqueue(message);
+                            toQueue.enqueue(message, null);
                         }
                         catch(AMQException e)
                         {
@@ -803,7 +804,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
             }
 
-            public void move(final QueueEntry entry, Queue queue)
+            public void move(final MessageInstance entry, Queue queue)
             {
                 final ServerMessage message = entry.getMessage();
                 final AMQQueue toQueue = ((QueueAdapter)queue).getAMQQueue();
@@ -817,7 +818,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                                     {
                                         try
                                         {
-                                            toQueue.enqueue(message);
+                                            toQueue.enqueue(message, null);
                                         }
                                         catch (AMQException e)
                                         {
@@ -830,7 +831,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                                         entry.release();
                                     }
                                 });
-                    txn.dequeue(entry.getQueue(), message,
+                    txn.dequeue(entry.getOwningResource(), message,
                                 new ServerTransaction.Action()
                                 {
 

@@ -34,9 +34,8 @@ import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
@@ -47,7 +46,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
 
     private AMQSessionModel _session;
     private SessionStatistics _statistics;
-    private Map<Subscription, ConsumerAdapter> _consumerAdapters = new HashMap<Subscription, ConsumerAdapter>();
+    private Map<Consumer, ConsumerAdapter> _consumerAdapters = new HashMap<Consumer, ConsumerAdapter>();
 
     public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
     {
@@ -56,11 +55,11 @@ final class SessionAdapter extends AbstractAdapter implements Session
         _statistics = new SessionStatistics();
     }
 
-    public Collection<Consumer> getSubscriptions()
+    public Collection<org.apache.qpid.server.model.Consumer> getConsumers()
     {
         synchronized (_consumerAdapters)
         {
-            return new ArrayList<Consumer>(_consumerAdapters.values());
+            return new ArrayList<org.apache.qpid.server.model.Consumer>(_consumerAdapters.values());
         }
     }
 
@@ -119,29 +118,29 @@ final class SessionAdapter extends AbstractAdapter implements Session
     }
 
     /**
-     * Register a ConsumerAdapter (Subscription) with this Session keyed by the Subscription.
-     * @param subscription the org.apache.qpid.server.subscription.Subscription used to key the ConsumerAdapter.
+     * Register a ConsumerAdapter with this Session keyed by the Consumer.
+     * @param consumer the org.apache.qpid.server.consumer.Consumer used to key the ConsumerAdapter.
      * @param adapter the registered ConsumerAdapter.
      */
-    void subscriptionRegistered(Subscription subscription, ConsumerAdapter adapter)
+    void consumerRegistered(Consumer consumer, ConsumerAdapter adapter)
     {
         synchronized (_consumerAdapters)
         {
-            _consumerAdapters.put(subscription, adapter);
+            _consumerAdapters.put(consumer, adapter);
         }
         childAdded(adapter);
     }
 
     /**
-     * Unregister a ConsumerAdapter (Subscription) with this Session keyed by the Subscription.
-     * @param subscription the org.apache.qpid.server.subscription.Subscription used to key the ConsumerAdapter.
+     * Unregister a ConsumerAdapter  with this Session keyed by the Consumer.
+     * @param consumer the org.apache.qpid.server.consumer.Consumer used to key the ConsumerAdapter.
      */
-    void subscriptionUnregistered(Subscription subscription)
+    void consumerUnregistered(Consumer consumer)
     {
         ConsumerAdapter adapter = null;
         synchronized (_consumerAdapters)
         {
-            adapter = _consumerAdapters.remove(subscription);
+            adapter = _consumerAdapters.remove(consumer);
         }
         if (adapter != null)
         {
@@ -188,9 +187,9 @@ final class SessionAdapter extends AbstractAdapter implements Session
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        if(clazz == Consumer.class)
+        if(clazz == org.apache.qpid.server.model.Consumer.class)
         {
-            return (Collection<C>) getSubscriptions();
+            return (Collection<C>) getConsumers();
         }
         else if(clazz == Publisher.class)
         {

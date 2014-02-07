@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol.v1_0;
 import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -286,7 +285,7 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
         Binary dataEncoding = sectionEncoder.getEncoding();
 
         final ByteBuffer allData = ByteBuffer.allocate(headerSize + dataEncoding.getLength());
-        metaData.writeToBuffer(0,allData);
+        metaData.writeToBuffer(allData);
         allData.put(dataEncoding.getArray(),dataEncoding.getArrayOffset(),dataEncoding.getLength());
         return allData;
     }

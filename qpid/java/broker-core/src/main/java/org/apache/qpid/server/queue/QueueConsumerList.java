@@ -18,34 +18,34 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.queue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class SubscriptionList
+class QueueConsumerList
 {
-    private final SubscriptionNode _head = new SubscriptionNode();
+    private final ConsumerNode _head = new ConsumerNode();
 
-    private final AtomicReference<SubscriptionNode> _tail = new AtomicReference<SubscriptionNode>(_head);
-    private final AtomicReference<SubscriptionNode> _subNodeMarker = new AtomicReference<SubscriptionNode>(_head);
+    private final AtomicReference<ConsumerNode> _tail = new AtomicReference<ConsumerNode>(_head);
+    private final AtomicReference<ConsumerNode> _subNodeMarker = new AtomicReference<ConsumerNode>(_head);
     private final AtomicInteger _size = new AtomicInteger();
 
-    public static final class SubscriptionNode
+    public static final class ConsumerNode
     {
         private final AtomicBoolean _deleted = new AtomicBoolean();
-        private final AtomicReference<SubscriptionNode> _next = new AtomicReference<SubscriptionNode>();
-        private final Subscription _sub;
+        private final AtomicReference<ConsumerNode> _next = new AtomicReference<ConsumerNode>();
+        private final QueueConsumer _sub;
 
-        public SubscriptionNode()
+        public ConsumerNode()
         {
             //used for sentinel head and dummy node construction
             _sub = null;
             _deleted.set(true);
         }
 
-        public SubscriptionNode(final Subscription sub)
+        public ConsumerNode(final QueueConsumer sub)
         {
             //used for regular node construction
             _sub = sub;
@@ -57,12 +57,12 @@ public class SubscriptionList
          *
          * @return the next non-deleted node, or null if none was found.
          */
-        public SubscriptionNode findNext()
+        public ConsumerNode findNext()
         {
-            SubscriptionNode next = nextNode();
+            ConsumerNode next = nextNode();
             while(next != null && next.isDeleted())
             {
-                final SubscriptionNode newNext = next.nextNode();
+                final ConsumerNode newNext = next.nextNode();
                 if(newNext != null)
                 {
                     //try to move our _next reference forward to the 'newNext'
@@ -86,7 +86,7 @@ public class SubscriptionList
          *
          * @return the immediately next node in the structure, or null if at the tail.
          */
-        protected SubscriptionNode nextNode()
+        protected ConsumerNode nextNode()
         {
             return _next.get();
         }
@@ -94,10 +94,10 @@ public class SubscriptionList
         /**
          * Used to initialise the 'next' reference. Will only succeed if the reference was not previously set.
          *
-         * @param node the SubscriptionNode to set as 'next'
+         * @param node the ConsumerNode to set as 'next'
          * @return whether the operation succeeded
          */
-        private boolean setNext(final SubscriptionNode node)
+        private boolean setNext(final ConsumerNode node)
         {
             return _next.compareAndSet(null, node);
         }
@@ -112,18 +112,18 @@ public class SubscriptionList
             return _deleted.compareAndSet(false,true);
         }
 
-        public Subscription getSubscription()
+        public QueueConsumer getConsumer()
         {
             return _sub;
         }
     }
 
-    private void insert(final SubscriptionNode node, final boolean count)
+    private void insert(final ConsumerNode node, final boolean count)
     {
         for (;;)
         {
-            SubscriptionNode tail = _tail.get();
-            SubscriptionNode next = tail.nextNode();
+            ConsumerNode tail = _tail.get();
+            ConsumerNode next = tail.nextNode();
             if (tail == _tail.get())
             {
                 if (next == null)
@@ -146,35 +146,35 @@ public class SubscriptionList
         }
     }
 
-    public void add(final Subscription sub)
+    public void add(final QueueConsumer sub)
     {
-        SubscriptionNode node = new SubscriptionNode(sub);
+        ConsumerNode node = new ConsumerNode(sub);
         insert(node, true);
     }
 
-    public boolean remove(final Subscription sub)
+    public boolean remove(final QueueConsumer sub)
     {
-        SubscriptionNode prevNode = _head;
-        SubscriptionNode node = _head.nextNode();
+        ConsumerNode prevNode = _head;
+        ConsumerNode node = _head.nextNode();
 
         while(node != null)
         {
-            if(sub.equals(node.getSubscription()) && node.delete())
+            if(sub.equals(node.getConsumer()) && node.delete())
             {
                 _size.decrementAndGet();
 
-                SubscriptionNode tail = _tail.get();
+                ConsumerNode tail = _tail.get();
                 if(node == tail)
                 {
                     //we cant remove the last node from the structure for
                     //correctness reasons, however we have just 'deleted'
                     //the tail. Inserting an empty dummy node after it will
-                    //let us scavenge the node containing the Subscription.
-                    insert(new SubscriptionNode(), false);
+                    //let us scavenge the node containing the Consumer.
+                    insert(new ConsumerNode(), false);
                 }
 
                 //advance the next node reference in the 'prevNode' to scavenge
-                //the newly 'deleted' node for the Subscription.
+                //the newly 'deleted' node for the Consumer.
                 prevNode.findNext();
 
                 nodeMarkerCleanup(node);
@@ -189,9 +189,9 @@ public class SubscriptionList
         return false;
     }
 
-    private void nodeMarkerCleanup(final SubscriptionNode node)
+    private void nodeMarkerCleanup(final ConsumerNode node)
     {
-        SubscriptionNode markedNode = _subNodeMarker.get();
+        ConsumerNode markedNode = _subNodeMarker.get();
         if(node == markedNode)
         {
             //if the marked node is the one we are removing, then
@@ -200,7 +200,7 @@ public class SubscriptionList
             //into the list and find the next node to use.
             //Because we inserted a dummy if node was the
             //tail, markedNode.nextNode() can never be null.
-            SubscriptionNode dummy = new SubscriptionNode();
+            ConsumerNode dummy = new ConsumerNode();
             dummy.setNext(markedNode.nextNode());
 
             //if the CAS fails the marked node has changed, thus
@@ -219,53 +219,53 @@ public class SubscriptionList
         }
     }
 
-    public boolean updateMarkedNode(final SubscriptionNode expected, final SubscriptionNode nextNode)
+    public boolean updateMarkedNode(final ConsumerNode expected, final ConsumerNode nextNode)
     {
         return _subNodeMarker.compareAndSet(expected, nextNode);
     }
 
     /**
-     * Get the current marked SubscriptionNode. This should only be used only to index into the list and find the next node
+     * Get the current marked ConsumerNode. This should only be used only to index into the list and find the next node
      * after the mark, since if the previously marked node was subsequently deleted the item returned may be a dummy node
      * with reference to the next node.
      *
      * @return the previously marked node (or a dummy if it was subsequently deleted)
      */
-    public SubscriptionNode getMarkedNode()
+    public ConsumerNode getMarkedNode()
     {
         return _subNodeMarker.get();
     }
 
 
-    public static class SubscriptionNodeIterator
+    public static class ConsumerNodeIterator
     {
-        private SubscriptionNode _lastNode;
+        private ConsumerNode _lastNode;
 
-        SubscriptionNodeIterator(SubscriptionNode startNode)
+        ConsumerNodeIterator(ConsumerNode startNode)
         {
             _lastNode = startNode;
         }
 
-        public SubscriptionNode getNode()
+        public ConsumerNode getNode()
         {
             return _lastNode;
         }
 
         public boolean advance()
         {
-            SubscriptionNode nextNode = _lastNode.findNext();
+            ConsumerNode nextNode = _lastNode.findNext();
             _lastNode = nextNode;
 
             return _lastNode != null;
         }
     }
 
-    public SubscriptionNodeIterator iterator()
+    public ConsumerNodeIterator iterator()
     {
-        return new SubscriptionNodeIterator(_head);
+        return new ConsumerNodeIterator(_head);
     }
 
-    public SubscriptionNode getHead()
+    public ConsumerNode getHead()
     {
         return _head;
     }

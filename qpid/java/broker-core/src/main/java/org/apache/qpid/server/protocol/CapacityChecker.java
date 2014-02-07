@@ -18,24 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.server.queue.QueueEntry;
-
-public interface MessageGroupManager
+public interface CapacityChecker
 {
-    public interface SubscriptionResetHelper
-    {
-        public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments);
-
-        boolean isEntryAheadOfSubscription(QueueEntry entry, Subscription sub);
-    }
-
-    Subscription getAssignedSubscription(QueueEntry entry);
-
-    boolean acceptMessage(Subscription sub, QueueEntry entry);
-
-    QueueEntry findEarliestAssignedAvailableEntry(Subscription sub);
-
-    void clearAssignments(Subscription sub);
+    void checkCapacity(AMQSessionModel channel);
 }

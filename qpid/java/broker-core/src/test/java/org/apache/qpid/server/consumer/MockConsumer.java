@@ -19,20 +19,24 @@
 *
 */
 
-package org.apache.qpid.server.subscription;
+package org.apache.qpid.server.consumer;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.filter.MessageFilter;
+import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.util.StateChangeListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,83 +45,66 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class MockSubscription implements Subscription
+public class MockConsumer implements ConsumerTarget
 {
 
+    private final List<String> _messageIds;
     private boolean _closed = false;
     private String tag = "mocktag";
     private AMQQueue queue = null;
-    private StateListener _listener = null;
-    private volatile AMQQueue.Context _queueContext = null;
+    private StateChangeListener<ConsumerTarget, State> _listener = null;
     private State _state = State.ACTIVE;
-    private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
+    private ArrayList<MessageInstance> messages = new ArrayList<MessageInstance>();
     private final Lock _stateChangeLock = new ReentrantLock();
-    private List<QueueEntry> _acceptEntries = null;
 
-    private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
-
-    private static final AtomicLong idGenerator = new AtomicLong(0);
-    // Create a simple ID that increments for ever new Subscription
-    private final long _subscriptionID = idGenerator.getAndIncrement();
     private boolean _isActive = true;
 
-    public MockSubscription()
+    public MockConsumer()
     {
+        _messageIds = null;
     }
 
-    public MockSubscription(List<QueueEntry> acceptEntries)
+    public MockConsumer(List<String> messageIds)
     {
-        _acceptEntries = acceptEntries;
+        _messageIds = messageIds;
     }
 
-    public void close()
+    public boolean close()
     {
         _closed = true;
         if (_listener != null)
         {
-            _listener.stateChange(this, _state, State.CLOSED);
+            _listener.stateChanged(this, _state, State.CLOSED);
         }
         _state = State.CLOSED;
+        return true;
     }
 
-    public String getConsumerName()
+    public String getName()
     {
         return tag;
     }
 
-    public long getSubscriptionID()
+    public FilterManager getFilters()
     {
-        return _subscriptionID;
-    }
-
-    public AMQQueue.Context getQueueContext()
-    {
-        return _queueContext;
-    }
-
-    public SubscriptionAcquiredState getOwningState()
-    {
-        return _owningState;
-    }
-
-    public LogActor getLogActor()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean isTransient()
-    {
-        return false;
-    }
-
-    public long getBytesOut()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    public long getMessagesOut()
-    {
-        return 0;  // TODO - Implement
+        if(_messageIds != null)
+        {
+            SimpleFilterManager filters = new SimpleFilterManager();
+            filters.add(new MessageFilter()
+            {
+                @Override
+                public boolean matches(final Filterable message)
+                {
+                    final String messageId = message.getMessageHeader().getMessageId();
+                    return _messageIds.contains(messageId);
+                }
+            });
+            return filters;
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public long getUnacknowledgedBytes()
@@ -140,90 +127,33 @@ public class MockSubscription implements Subscription
         return new MockSessionModel();
     }
 
-    public boolean trySendLock()
-    {
-        return _stateChangeLock.tryLock();
-    }
-
-
-    public void getSendLock()
-    {
-        _stateChangeLock.lock();
-    }
-
-    public boolean hasInterest(QueueEntry entry)
-    {
-        if(_acceptEntries != null)
-        {
-            //simulate selector behaviour, only signal
-            //interest in the dictated queue entries
-            return _acceptEntries.contains(entry);
-        }
-
-        return true;
-    }
-
     public boolean isActive()
     {
         return _isActive ;
     }
 
-    public void set(String key, Object value)
-    {
-    }
 
-    public Object get(String key)
-    {
-        return null;
-    }
-
-    public boolean isAutoClose()
-    {
-        return false;
-    }
 
     public boolean isClosed()
     {
         return _closed;
     }
 
-    public boolean acquires()
-    {
-        return true;
-    }
-
-    public boolean seesRequeues()
-    {
-        return true;
-    }
 
     public boolean isSuspended()
     {
         return false;
     }
 
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted()
     {
     }
 
-    public void releaseSendLock()
-    {
-        _stateChangeLock.unlock();
-    }
-
-    public void onDequeue(QueueEntry queueEntry)
+    public void restoreCredit(ServerMessage message)
     {
     }
 
-    public void restoreCredit(QueueEntry queueEntry)
-    {
-    }
-
-    public void releaseQueueEntry(QueueEntry queueEntry)
-    {
-    }
-
-    public void send(QueueEntry entry, boolean batch) throws AMQException
+    public void send(MessageInstance entry, boolean batch) throws AMQException
     {
         if (messages.contains(entry))
         {
@@ -237,47 +167,52 @@ public class MockSubscription implements Subscription
 
     }
 
-    public void setQueueContext(AMQQueue.Context queueContext)
-    {
-        _queueContext = queueContext;
-    }
-
-    public void setQueue(AMQQueue queue, boolean exclusive)
-    {
-        this.queue = queue;
-    }
-
-    public void setNoLocal(boolean noLocal)
-    {
-    }
-
-    public void setStateListener(StateListener listener)
-    {
-        this._listener = listener;
-    }
-
     public State getState()
     {
         return _state;
     }
 
-    public boolean wouldSuspend(QueueEntry msg)
+    @Override
+    public void consumerAdded(final Consumer sub)
     {
-        return false;
     }
 
-    public ArrayList<QueueEntry> getMessages()
+    @Override
+    public void consumerRemoved(final Consumer sub)
+    {
+
+    }
+
+    public void setState(State state)
+    {
+        State oldState = _state;
+        _state = state;
+        if(_listener != null)
+        {
+            _listener.stateChanged(this, oldState, state);
+        }
+    }
+
+    @Override
+    public void setStateListener(final StateChangeListener<ConsumerTarget, State> listener)
+    {
+        _listener = listener;
+    }
+
+    public ArrayList<MessageInstance> getMessages()
     {
         return messages;
     }
 
-    public boolean isSessionTransactional()
-    {
-        return false;
-    }
 
     public void queueEmpty() throws AMQException
     {
+    }
+
+    @Override
+    public boolean allocateCredit(final ServerMessage msg)
+    {
+        return true;
     }
 
     public void setActive(final boolean isActive)

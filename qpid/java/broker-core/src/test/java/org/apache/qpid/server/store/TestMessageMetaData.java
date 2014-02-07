@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 
 import org.apache.qpid.framing.EncodingUtils;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
-import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.util.ByteBufferOutputStream;
 
 public class TestMessageMetaData implements StorableMessageMetaData
@@ -72,7 +71,7 @@ public class TestMessageMetaData implements StorableMessageMetaData
     }
 
     @Override
-    public int writeToBuffer(int offsetInMetaData, ByteBuffer dest)
+    public int writeToBuffer(ByteBuffer dest)
     {
         int oldPosition = dest.position();
         try

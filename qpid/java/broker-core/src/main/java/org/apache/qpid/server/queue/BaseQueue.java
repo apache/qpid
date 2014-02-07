@@ -22,19 +22,15 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.util.Action;
 
 public interface BaseQueue extends TransactionLogResource
 {
-    public static interface PostEnqueueAction
-    {
-        public void onEnqueue(QueueEntry entry);
-    }
-
-    void enqueue(ServerMessage message) throws AMQException;
-    void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException;
-    void enqueue(ServerMessage message, boolean transactional, PostEnqueueAction action) throws AMQException;
+    void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException;
 
     boolean isDurable();
     boolean isDeleted();

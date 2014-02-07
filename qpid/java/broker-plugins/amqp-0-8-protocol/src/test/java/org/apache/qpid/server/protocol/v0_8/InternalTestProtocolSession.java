@@ -47,11 +47,9 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.subscription.ClientDeliveryMethod;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -60,7 +58,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 {
     private static final Logger _logger = Logger.getLogger(InternalTestProtocolSession.class);
     // ChannelID(LIST)  -> LinkedList<Pair>
-    private final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
+    private final Map<Integer, Map<String, LinkedList<DeliveryPair>>> _channelDelivers;
     private AtomicInteger _deliveryCount = new AtomicInteger(0);
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
@@ -68,7 +66,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     {
         super(broker, new TestNetworkConnection(), ID_GENERATOR.getAndIncrement(), null, null);
 
-        _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
+        _channelDelivers = new HashMap<Integer, Map<String, LinkedList<DeliveryPair>>>();
 
         setTestAuthorizedSubject();
         setVirtualHost(virtualHost);
@@ -117,7 +115,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     {
         synchronized (_channelDelivers)
         {
-            List<DeliveryPair> all =_channelDelivers.get(channelId).get(consumerTag);
+            List<DeliveryPair> all =_channelDelivers.get(channelId).get(AMQShortString.toString(consumerTag));
 
             if (all == null)
             {
@@ -153,23 +151,23 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
         synchronized (_channelDelivers)
         {
-            Map<AMQShortString, LinkedList<DeliveryPair>> consumers = _channelDelivers.get(channelId);
+            Map<String, LinkedList<DeliveryPair>> consumers = _channelDelivers.get(channelId);
 
             if (consumers == null)
             {
-                consumers = new HashMap<AMQShortString, LinkedList<DeliveryPair>>();
+                consumers = new HashMap<String, LinkedList<DeliveryPair>>();
                 _channelDelivers.put(channelId, consumers);
             }
 
-            LinkedList<DeliveryPair> consumerDelivers = consumers.get(consumerTag);
+            LinkedList<DeliveryPair> consumerDelivers = consumers.get(AMQShortString.toString(consumerTag));
 
             if (consumerDelivers == null)
             {
                 consumerDelivers = new LinkedList<DeliveryPair>();
-                consumers.put(consumerTag, consumerDelivers);
+                consumers.put(consumerTag.toString(), consumerDelivers);
             }
 
-            consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)msg));
+            consumerDelivers.add(new DeliveryPair(deliveryTag, msg));
         }
     }
 
@@ -247,27 +245,27 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
 
         @Override
-        public void deliverToClient(Subscription sub, ServerMessage message,
+        public void deliverToClient(Consumer sub, ServerMessage message,
                                     InstanceProperties props, long deliveryTag) throws AMQException
         {
             _deliveryCount.incrementAndGet();
 
             synchronized (_channelDelivers)
             {
-                Map<AMQShortString, LinkedList<DeliveryPair>> consumers = _channelDelivers.get(_channelId);
+                Map<String, LinkedList<DeliveryPair>> consumers = _channelDelivers.get(_channelId);
 
                 if (consumers == null)
                 {
-                    consumers = new HashMap<AMQShortString, LinkedList<DeliveryPair>>();
+                    consumers = new HashMap<String, LinkedList<DeliveryPair>>();
                     _channelDelivers.put(_channelId, consumers);
                 }
 
-                LinkedList<DeliveryPair> consumerDelivers = consumers.get(((SubscriptionImpl)sub).getConsumerTag());
+                LinkedList<DeliveryPair> consumerDelivers = consumers.get(sub.getName());
 
                 if (consumerDelivers == null)
                 {
                     consumerDelivers = new LinkedList<DeliveryPair>();
-                    consumers.put(((SubscriptionImpl)sub).getConsumerTag(), consumerDelivers);
+                    consumers.put(sub.getName(), consumerDelivers);
                 }
 
                 consumerDelivers.add(new DeliveryPair(deliveryTag, message));

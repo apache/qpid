@@ -23,7 +23,7 @@ package org.apache.qpid.server.queue;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-final class QueueContext implements AMQQueue.Context
+final class QueueContext
 {
     private volatile QueueEntry _lastSeenEntry;
     private volatile QueueEntry _releasedEntry;

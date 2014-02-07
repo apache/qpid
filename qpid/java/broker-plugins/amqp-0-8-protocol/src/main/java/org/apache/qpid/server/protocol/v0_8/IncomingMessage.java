@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.message.MessageDestination;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +35,7 @@ public class IncomingMessage
 
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
-    private Exchange _exchange;
+    private MessageDestination _messageDestination;
 
     /**
      * Keeps a track of how many bytes we have received in body frames
@@ -77,9 +74,9 @@ public class IncomingMessage
         return _messagePublishInfo.getExchange();
     }
 
-    public Exchange getExchange()
+    public MessageDestination getDestination()
     {
-        return _exchange;
+        return _messageDestination;
     }
 
     public ContentHeaderBody getContentHeader()
@@ -92,9 +89,9 @@ public class IncomingMessage
         return getContentHeader().getBodySize();
     }
 
-    public void setExchange(final Exchange e)
+    public void setMessageDestination(final MessageDestination e)
     {
-        _exchange = e;
+        _messageDestination = e;
     }
 
     public int getBodyCount() throws AMQException

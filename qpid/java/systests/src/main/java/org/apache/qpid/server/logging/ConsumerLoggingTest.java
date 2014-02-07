@@ -46,7 +46,7 @@ import java.util.List;
  * SUB-1002 : Close
  * SUB-1003 : State : <state>
  */
-public class SubscriptionLoggingTest extends AbstractTestLogging
+public class ConsumerLoggingTest extends AbstractTestLogging
 {
     static final String SUB_PREFIX = "SUB-";
 
@@ -177,7 +177,8 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         List<String> results = findMatches(SUB_PREFIX);
 
-        assertEquals("Result set larger than expected.", 2, results.size());
+        final int expected = isBroker010() ? 5 : 2;
+        assertEquals("Result set larger than expected.", expected, results.size());
 
         String log = getLogMessage(results, 0);
 
@@ -185,14 +186,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         String message = getMessageString(fromMessage(log));
         assertTrue("Browser not on log message:" + message, message.contains("Browser"));
-        if(!isBroker010())
-        {
-            assertTrue("AutoClose not on log message:" + message, message.contains("AutoClose"));
-        }
 
         // Beacause it is an auto close and we have no messages on the queue we
         // will get a close message
-        log = getLogMessage(results, 1);
+        log = getLogMessage(results, expected-1);
         validateMessageID("SUB-1002", log);
 
     }

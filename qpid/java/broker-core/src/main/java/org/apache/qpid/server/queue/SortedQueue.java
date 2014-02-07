@@ -20,7 +20,10 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
@@ -29,7 +32,7 @@ import java.util.UUID;
 public class SortedQueue extends OutOfOrderQueue
 {
     //Lock object to synchronize enqueue. Used instead of the object
-    //monitor to prevent lock order issues with subscription sendLocks
+    //monitor to prevent lock order issues with consumer sendLocks
     //and consumer updates in the super classes
     private final Object _sortedQueueLock = new Object();
     private final String _sortedPropertyName;
@@ -48,7 +51,7 @@ public class SortedQueue extends OutOfOrderQueue
         return _sortedPropertyName;
     }
 
-    public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
+    public void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException
     {
         synchronized (_sortedQueueLock)
         {

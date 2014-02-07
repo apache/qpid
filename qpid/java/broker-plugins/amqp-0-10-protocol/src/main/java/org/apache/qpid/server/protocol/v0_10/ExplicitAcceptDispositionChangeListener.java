@@ -22,7 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.message.MessageInstance;
 
 
 class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
@@ -30,21 +30,20 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
     private static final Logger _logger = Logger.getLogger(ExplicitAcceptDispositionChangeListener.class);
 
 
-    private final QueueEntry _entry;
-    private final Subscription_0_10 _sub;
+    private final MessageInstance _entry;
+    private final ConsumerTarget_0_10 _target;
 
-    public ExplicitAcceptDispositionChangeListener(QueueEntry entry, Subscription_0_10 subscription_0_10)
+    public ExplicitAcceptDispositionChangeListener(MessageInstance entry, ConsumerTarget_0_10 target)
     {
         _entry = entry;
-        _sub = subscription_0_10;
+        _target = target;
     }
 
     public void onAccept()
     {
-        final Subscription_0_10 subscription = getSubscription();
-        if(subscription != null && _entry.isAcquiredBy(_sub))
+        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
         {
-            subscription.getSessionModel().acknowledge(subscription, _entry);
+            _target.getSessionModel().acknowledge(_target, _entry);
         }
         else
         {
@@ -55,10 +54,9 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        final Subscription_0_10 subscription = getSubscription();
-        if(subscription != null && _entry.isAcquiredBy(_sub))
+        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
         {
-            subscription.release(_entry, setRedelivered);
+            _target.release(_entry, setRedelivered);
         }
         else
         {
@@ -68,10 +66,9 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        final Subscription_0_10 subscription = getSubscription();
-        if(subscription != null && _entry.isAcquiredBy(_sub))
+        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
         {
-            subscription.reject(_entry);
+            _target.reject(_entry);
         }
         else
         {
@@ -82,12 +79,8 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        return _entry.acquire(getSubscription());
+        return _entry.acquire(_target.getConsumer());
     }
 
 
-    private Subscription_0_10 getSubscription()
-    {
-        return _sub;
-    }
 }

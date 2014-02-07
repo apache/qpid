@@ -69,7 +69,7 @@ public class MessageMetaDataBinding extends TupleBinding<StorableMessageMetaData
         buf.position(1);
         buf = buf.slice();
 
-        metaData.writeToBuffer(0, buf);
+        metaData.writeToBuffer(buf);
         tupleOutput.writeInt(bodySize);
         tupleOutput.writeFast(underlying);
     }

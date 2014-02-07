@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -73,7 +74,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                               " args:" + body.getArguments());
             }
 
-            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueue(body.getQueue().intern().toString());
+            MessageSource queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueue(body.getQueue().intern().toString());
 
             if (queue == null)
             {
@@ -120,8 +121,11 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     if(consumerTagName == null || channel.getSubscription(consumerTagName) == null)
                     {
 
-                        AMQShortString consumerTag = channel.subscribeToQueue(consumerTagName, queue, !body.getNoAck(),
-                                                                              body.getArguments(), body.getNoLocal(), body.getExclusive());
+                        AMQShortString consumerTag = channel.consumeFromSource(consumerTagName,
+                                                                               queue,
+                                                                               !body.getNoAck(),
+                                                                               body.getArguments(),
+                                                                               body.getExclusive());
                         if (!body.getNowait())
                         {
                             MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
@@ -156,14 +160,14 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
 
                 }
-                catch (AMQQueue.ExistingExclusiveSubscription e)
+                catch (AMQQueue.ExistingExclusiveConsumer e)
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
                                                    + queue.getName()
                                                    + " as it already has an existing exclusive consumer");
                 }
-                catch (AMQQueue.ExistingSubscriptionPreventsExclusive e)
+                catch (AMQQueue.ExistingConsumerPreventsExclusive e)
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "

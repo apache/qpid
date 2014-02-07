@@ -34,6 +34,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Xid;
 
@@ -335,7 +336,7 @@ public class DtxBranch
         {
             if(enqueue.isDurable())
             {
-                _transaction.enqueueMessage(enqueue.getQueue(), enqueue.getMessage());
+                _transaction.enqueueMessage(enqueue.getResource(), enqueue.getMessage());
             }
         }
 
@@ -344,7 +345,7 @@ public class DtxBranch
         {
             if(enqueue.isDurable())
             {
-                _transaction.dequeueMessage(enqueue.getQueue(), enqueue.getMessage());
+                _transaction.dequeueMessage(enqueue.getResource(), enqueue.getMessage());
             }
         }
     }
@@ -356,31 +357,31 @@ public class DtxBranch
     }
 
 
-    public void dequeue(BaseQueue queue, EnqueueableMessage message)
+    public void dequeue(TransactionLogResource resource, EnqueueableMessage message)
     {
-        _dequeueRecords.add(new Record(queue, message));
+        _dequeueRecords.add(new Record(resource, message));
     }
 
 
-    public void enqueue(BaseQueue queue, EnqueueableMessage message)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message)
     {
         _enqueueRecords.add(new Record(queue, message));
     }
 
     private static final class Record implements Transaction.Record
     {
-        private final BaseQueue _queue;
+        private final TransactionLogResource _resource;
         private final EnqueueableMessage _message;
 
-        public Record(BaseQueue queue, EnqueueableMessage message)
+        public Record(TransactionLogResource resource, EnqueueableMessage message)
         {
-            _queue = queue;
+            _resource = resource;
             _message = message;
         }
 
-        public BaseQueue getQueue()
+        public TransactionLogResource getResource()
         {
-            return _queue;
+            return _resource;
         }
 
         public EnqueueableMessage getMessage()
@@ -390,7 +391,7 @@ public class DtxBranch
 
         public boolean isDurable()
         {
-            return _message.isPersistent() && _queue.isDurable();
+            return _message.isPersistent() && _resource.isDurable();
         }
     }
 
