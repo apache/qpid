@@ -1199,7 +1199,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             buf.position(1);
             buf = buf.slice();
 
-            metaData.writeToBuffer(0, buf);
+            metaData.writeToBuffer(buf);
             ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
             try
             {

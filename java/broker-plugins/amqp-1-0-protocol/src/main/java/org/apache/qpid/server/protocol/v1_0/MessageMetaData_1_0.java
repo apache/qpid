@@ -314,7 +314,7 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         return buf;
     }
 
-    public int writeToBuffer(int offsetInMetaData, ByteBuffer dest)
+    public int writeToBuffer(ByteBuffer dest)
     {
         ByteBuffer buf = _encoded;
 
@@ -326,7 +326,7 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
 
         buf = buf.duplicate();
 
-        buf.position(offsetInMetaData);
+        buf.position(0);
 
         if(dest.remaining() < buf.limit())
         {
