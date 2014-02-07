@@ -1627,242 +1627,295 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 
     </section>
 
-    <section id="connection-options">
-      <title>Connection Options</title>
-
+    <section id="connections">
+      <title>Connections</title>
+      
       <para>
-        Aspects of the connections behaviour can be controlled through
-        specifying connection options. For example, connections can be
-        configured to automatically reconnect if the connection to a
-        broker is lost.
+	Messaging connections are created by specifying a broker or a list of brokers, and 
+	an optional set of connection options. The constructor prototypes for Connections
+	are:
       </para>
 
-      <example>
-	<title>Specifying Connection Options in C++, Python, and .NET</title>
+      <programlisting><![CDATA[
+      Connection connection();
+      Connection connection(const string url);
+      Connection connection(const string url, const string& options);
+      Connection connection(const string url, const Variant::Map& options);
+      ]]></programlisting>
 
-	<para>In C++, these options can be set using <function>Connection::setOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:</para>
+      <para>
+	Messaging connection URLs specify only the network host address(es). Connection 
+	options are specified separately as an options string or map. This is different
+	from JMS Connection URLs that combine the network address and connection properties
+	in a single string.
+      </para>
 
-	<programlisting><![CDATA[
-	Connection connection("localhost:5672", "{reconnect: true}");
-	try {
-	connection.open();
-	!!! SNIP !!!
-	]]></programlisting>
-
-	<para>or</para>
-
-	<programlisting><![CDATA[
-	Connection connection("localhost:5672");
-	connection.setOption("reconnect", true);
-	try {
-	connection.open();
-	!!! SNIP !!!
-	]]></programlisting>
-
-	<para>In Python, these options can be set as attributes of the connection or using named arguments in
-	the <function>Connection</function> constructor:</para>
-
-	<programlisting><![CDATA[
-	connection = Connection("localhost:5672", reconnect=True)
-	try:
-	connection.open()
-	!!! SNIP !!!
-	]]></programlisting>
-
-	<para>or</para>
-
-	<programlisting><![CDATA[
-	connection = Connection("localhost:5672")
-	connection.reconnect = True
-	try:
-	connection.open()
-	!!! SNIP !!!
-	]]></programlisting>
-	<para>
-	  In .NET, these options can be set using <function>Connection.SetOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:
+      <section id="connection-url">
+	<title>Connection URLs</title>
+	<para>	
+	  Connection URLs describe the broker or set of brokers to which the connection
+	  is to attach. The format of the Connection URL is defined by AMQP 0.10
+	  Domain:connection.amqp-host-url.
 	</para>
 
-	<programlisting>
-	  Connection connection= new Connection(&#34;localhost:5672&#34;, &#34;{reconnect: true}&#34;);
-	  try {
-	  connection.Open();
-	  !!! SNIP !!!
-	</programlisting>
+	<programlisting><![CDATA[
+	amqp_url = "amqp:" prot_addr_list
+	prot_addr_list = [prot_addr ","]* prot_addr
+	prot_addr = tcp_prot_addr | tls_prot_addr
+	
+	tcp_prot_addr = tcp_id tcp_addr
+	tcp_id = "tcp:" | ""
+	tcp_addr = [host [":" port] ]
+	host = <as per http://www.ietf.org/rfc/rfc3986.txt>
+	port = number	]]></programlisting>
+
 	<para>
-	  or
+	  Examples of Messaging Connection URLs
 	</para>
 
-	<programlisting>
-	  Connection connection = new Connection(&#34;localhost:5672&#34;);
-	  connection.SetOption(&#34;reconnect&#34;, true);
-	  try {
-	  connection.Open();
-	  !!! SNIP !!!
-	</programlisting>
+	<programlisting><![CDATA[
+	localhost
+	localhost:5672
+	localhost:9999
+	192.168.1.2:5672
+	mybroker.example.com:5672
+	amqp:tcp:localhost:5672
+	tcp:locahost:5672,localhost:5800
+	]]></programlisting>
 
-	<para>See the reference documentation for details in each language.</para>
-      </example>
+      </section>
 
-      <para>The following table lists the supported connection options.</para>
-
-      <table pgwide="1">
+      <section id="connection-options">
 	<title>Connection Options</title>
-	<tgroup cols="3">
-	  <thead>
-	    <colspec colnum="1" colwidth="1*"/>
-	    <colspec colnum="2" colwidth="1*"/>
-	    <colspec colnum="3" colwidth="3*"/>
-	    <row>
-	      <entry>option name</entry>
-	      <entry>value type</entry>
-	      <entry>semantics</entry>
-	    </row>
-	  </thead>
-	  <tbody>
-
-	    <row>
-	      <entry>
-		<literal>username</literal>
-	      </entry>
-	      <entry>
-		string
-	      </entry>
-	      <entry>
-		The username to use when authenticating to the broker.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>password</literal>
-	      </entry>
-	      <entry>
-		string
-	      </entry>
-	      <entry>
-		The password to use when authenticating to the broker.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>sasl_mechanisms</literal>
-	      </entry>
-	      <entry>
-		string
-	      </entry>
-	      <entry>
-		The specific SASL mechanisms to use with the python
-		client when authenticating to the broker. The value
-		is a space separated list.
-	      </entry>
-	    </row>
-
-
-	    <row>
-	      <entry>
-		<literal>reconnect</literal>
-	      </entry>
-	      <entry>
-		boolean
-	      </entry>
-	      <entry>
-		Transparently reconnect if the connection is lost.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>reconnect_timeout</literal>
-	      </entry>
-	      <entry>
-		integer
-	      </entry>
-	      <entry>
-		Total number of seconds to continue reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>reconnect_limit</literal>
-	      </entry>
-	      <entry>
-		integer
-	      </entry>
-	      <entry>
-		Maximum number of reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>reconnect_interval_min</literal>
-	      </entry>
-	      <entry>
-		integer representing time in seconds
-	      </entry>
-	      <entry>
-		Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>reconnect_interval_max</literal>
-	      </entry>
-	      <entry>
-		integer representing time in seconds
-	      </entry>
-	      <entry>
-		Maximum reconnect interval.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>reconnect_interval</literal>
-	      </entry>
-	      <entry>
-		integer representing time in seconds
-	      </entry>
-	      <entry>
-		Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
-	      </entry>
-	    </row>
-
-	    <row>
-	      <entry>
-		<literal>heartbeat</literal>
-	      </entry>
-	      <entry>
-		integer representing time in seconds
-	      </entry>
-	      <entry>
-		Requests that heartbeats be sent every N seconds. If two
-		successive heartbeats are missed the connection is
-		considered to be lost.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>protocol</literal>
-	      </entry>
-	      <entry>
-		string
-	      </entry>
-	      <entry>
-		Sets the underlying protocol used. The default option is 'tcp'. To enable ssl, set to 'ssl'. The C++ client additionally supports 'rdma'.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<literal>tcp-nodelay</literal>
-	      </entry>
-	      <entry>
-		boolean
-	      </entry>
-	      <entry>
-		Set tcp no-delay, i.e. disable Nagle algorithm. [C++ only]
-	      </entry>
-	    </row>
-	  </tbody>
-	</tgroup>
-      </table>
-
+	
+	<para>
+          Aspects of the connections behaviour can be controlled through
+          specifying connection options. For example, connections can be
+          configured to automatically reconnect if the connection to a
+          broker is lost.
+	</para>
+	
+	<example>
+	  <title>Specifying Connection Options in C++, Python, and .NET</title>
+	  
+	  <para>In C++, these options can be set using <function>Connection::setOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:</para>
+	  
+	  
+	  <para>or</para>
+	  
+	  <programlisting><![CDATA[
+	  Connection connection("localhost:5672");
+	  connection.setOption("reconnect", true);
+	  try {
+	  connection.open();
+	  !!! SNIP !!!
+	  ]]></programlisting>
+	  
+	  <para>In Python, these options can be set as attributes of the connection or using named arguments in
+	  the <function>Connection</function> constructor:</para>
+	  
+	  <programlisting><![CDATA[
+	  connection = Connection("localhost:5672", reconnect=True)
+	  try:
+	  connection.open()
+	  !!! SNIP !!!
+	  ]]></programlisting>
+	  
+	  <para>or</para>
+	  
+	  <programlisting><![CDATA[
+	  connection = Connection("localhost:5672")
+	  connection.reconnect = True
+	  try:
+	  connection.open()
+	  !!! SNIP !!!
+	  ]]></programlisting>
+	  <para>
+	    In .NET, these options can be set using <function>Connection.SetOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:
+	  </para>
+	  
+	  <programlisting>
+	    Connection connection= new Connection(&#34;localhost:5672&#34;, &#34;{reconnect: true}&#34;);
+	    try {
+	    connection.Open();
+	    !!! SNIP !!!
+	  </programlisting>
+	  <para>
+	    or
+	  </para>
+	  
+	  <programlisting>
+	    Connection connection = new Connection(&#34;localhost:5672&#34;);
+	    connection.SetOption(&#34;reconnect&#34;, true);
+	    try {
+	    connection.Open();
+	    !!! SNIP !!!
+	  </programlisting>
+	  
+	  <para>See the reference documentation for details in each language.</para>
+	</example>
+	
+	<para>The following table lists the supported connection options.</para>
+	
+	<table pgwide="1">
+	  <title>Connection Options</title>
+	  <tgroup cols="3">
+	    <thead>
+	      <colspec colnum="1" colwidth="1*"/>
+	      <colspec colnum="2" colwidth="1*"/>
+	      <colspec colnum="3" colwidth="3*"/>
+	      <row>
+		<entry>option name</entry>
+		<entry>value type</entry>
+		<entry>semantics</entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      
+	      <row>
+		<entry>
+		  <literal>username</literal>
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The username to use when authenticating to the broker.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>password</literal>
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The password to use when authenticating to the broker.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>sasl_mechanisms</literal>
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The specific SASL mechanisms to use with the python
+		  client when authenticating to the broker. The value
+		  is a space separated list.
+		</entry>
+	      </row>
+	      
+	      
+	      <row>
+		<entry>
+		  <literal>reconnect</literal>
+		</entry>
+		<entry>
+		  boolean
+		</entry>
+		<entry>
+		  Transparently reconnect if the connection is lost.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>reconnect_timeout</literal>
+		</entry>
+		<entry>
+		  integer
+		</entry>
+		<entry>
+		  Total number of seconds to continue reconnection attempts before giving up and raising an exception.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>reconnect_limit</literal>
+		</entry>
+		<entry>
+		  integer
+		</entry>
+		<entry>
+		  Maximum number of reconnection attempts before giving up and raising an exception.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>reconnect_interval_min</literal>
+		</entry>
+		<entry>
+		  integer representing time in seconds
+		</entry>
+		<entry>
+		  Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>reconnect_interval_max</literal>
+		</entry>
+		<entry>
+		  integer representing time in seconds
+		</entry>
+		<entry>
+		  Maximum reconnect interval.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>reconnect_interval</literal>
+		</entry>
+		<entry>
+		  integer representing time in seconds
+		</entry>
+		<entry>
+		  Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
+		</entry>
+	      </row>
+	      
+	      <row>
+		<entry>
+		  <literal>heartbeat</literal>
+		</entry>
+		<entry>
+		  integer representing time in seconds
+		</entry>
+		<entry>
+		  Requests that heartbeats be sent every N seconds. If two
+		  successive heartbeats are missed the connection is
+		  considered to be lost.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>protocol</literal>
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  Sets the underlying protocol used. The default option is 'tcp'. To enable ssl, set to 'ssl'. The C++ client additionally supports 'rdma'.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>tcp-nodelay</literal>
+		</entry>
+		<entry>
+		  boolean
+		</entry>
+		<entry>
+		  Set tcp no-delay, i.e. disable Nagle algorithm. [C++ only]
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+	
+      </section>
     </section>
 
     <section id="section-Maps">
