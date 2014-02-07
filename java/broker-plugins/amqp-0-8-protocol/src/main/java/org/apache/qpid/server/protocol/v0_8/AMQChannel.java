@@ -789,11 +789,9 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     /**
      * Called to resend all outstanding unacknowledged messages to this same channel.
      *
-     * @param requeue Are the messages to be requeued or dropped.
-     *
      * @throws AMQException When something goes wrong.
      */
-    public void resend(final boolean requeue) throws AMQException
+    public void resend() throws AMQException
     {
 
 
