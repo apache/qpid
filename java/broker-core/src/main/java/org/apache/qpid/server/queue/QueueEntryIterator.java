@@ -20,11 +20,13 @@
 */
 package org.apache.qpid.server.queue;
 
-public interface QueueEntryIterator<QE extends QueueEntry>
+import org.apache.qpid.server.consumer.Consumer;
+
+public interface QueueEntryIterator<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, L extends QueueEntryList<E,Q,L,C>, C extends Consumer>
 {
     boolean atTail();
 
-    QE getNode();
+    E getNode();
 
     boolean advance();
 }

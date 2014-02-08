@@ -45,7 +45,6 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
-import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.consumer.MockConsumer;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.Action;
@@ -56,14 +55,13 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-public class SimpleAMQQueueTest extends QpidTestCase
+abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> extends QpidTestCase
 {
-    private static final Logger _logger = Logger.getLogger(SimpleAMQQueueTest.class);
+    private static final Logger _logger = Logger.getLogger(SimpleAMQQueueTestBase.class);
 
-    private SimpleAMQQueue _queue;
+
+    private Q _queue;
     private VirtualHost _virtualHost;
     private String _qname = "qname";
     private String _owner = "owner";
@@ -81,7 +79,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
 
-        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner,
+        _queue = (Q) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner,
                 false, false, false, _arguments);
 
         _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
@@ -107,7 +105,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue.stop();
         try
         {
-            _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), null,
+            _queue = (Q) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), null,
                                                                          false, _owner, false,
                                                                          false, false, _arguments);
             assertNull("Queue was created", _queue);
@@ -118,23 +116,13 @@ public class SimpleAMQQueueTest extends QpidTestCase
                             e.getMessage().contains("name"));
         }
 
-        try
-        {
-            _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner, false,false, null, Collections.EMPTY_MAP);
-            assertNull("Queue was created", _queue);
-        }
-        catch (IllegalArgumentException e)
-        {
-            assertTrue("Exception was not about missing vhost",
-                    e.getMessage().contains("Host"));
-        }
-
-        _queue = (SimpleAMQQueue) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(),
+        _queue = (Q) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(),
                                                                      "differentName", false,
                                                                      _owner, false,
                                                                      false, false, _arguments);
         assertNotNull("Queue was not created", _queue);
     }
+
 
     public void testGetVirtualHost()
     {
@@ -150,11 +138,11 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertTrue("Queue was not bound to key",
                     _exchange.isBound(_routingKey,_queue));
         assertEquals("Exchange binding count", 1,
-                _queue.getBindings().size());
+                     _queue.getBindings().size());
         assertEquals("Wrong exchange bound", _routingKey,
                 _queue.getBindings().get(0).getBindingKey());
         assertEquals("Wrong exchange bound", _exchange,
-                _queue.getBindings().get(0).getExchange());
+                     _queue.getBindings().get(0).getExchange());
 
         _exchange.removeBinding(_routingKey, _queue, Collections.EMPTY_MAP);
         assertFalse("Routing key was still bound",
@@ -495,22 +483,6 @@ public class SimpleAMQQueueTest extends QpidTestCase
         assertNotNull(ex);
     }
 
-    public void testAutoDeleteQueue() throws Exception
-    {
-       _queue.stop();
-       _queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), _qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
-       _queue.setDeleteOnNoConsumers(true);
-
-        ServerMessage message = createMessage(new Long(25));
-        _consumer = _queue.addConsumer(_consumerTarget, null, message.getClass(), "test",
-                                       EnumSet.of(Consumer.Option.ACQUIRES,
-                                                  Consumer.Option.SEES_REQUEUES));
-
-       _queue.enqueue(message, null);
-       _consumer.close();
-       assertTrue("Queue was not deleted when consumer was removed",
-                  _queue.isDeleted());
-    }
 
     public void testResend() throws Exception
     {
@@ -520,12 +492,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _consumer = _queue.addConsumer(_consumerTarget, null, message.getClass(), "test",
                                            EnumSet.of(Consumer.Option.ACQUIRES, Consumer.Option.SEES_REQUEUES));
 
-        _queue.enqueue(message, new Action<MessageInstance<? extends Consumer>>()
+        _queue.enqueue(message, new Action<MessageInstance<?,? extends Consumer>>()
         {
             @Override
-            public void performAction(final MessageInstance<? extends Consumer> object)
+            public void performAction(final MessageInstance<?,? extends Consumer> object)
             {
-                QueueEntry entry = (QueueEntry) object;
+                QueueEntryImpl entry = (QueueEntryImpl) object;
                 entry.setRedelivered();
                 try
                 {
@@ -612,7 +584,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
 
         // Get non-existent 0th QueueEntry & check returned list was empty
         // (the position parameters in this method are indexed from 1)
-        List<QueueEntry> entries = _queue.getMessagesRangeOnTheQueue(0, 0);
+        List<E> entries = _queue.getMessagesRangeOnTheQueue(0, 0);
         assertTrue(entries.size() == 0);
 
         // Check that when 'from' is 0 it is ignored and the range continues from 1
@@ -681,22 +653,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
      */
     public void testProcessQueueWithUniqueSelectors() throws Exception
     {
-        TestSimpleQueueEntryListFactory factory = new TestSimpleQueueEntryListFactory();
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "testQueue", false,"testOwner",
-                                                      false, false, _virtualHost, factory, null)
-        {
-            @Override
-            public void deliverAsync(QueueConsumer sub)
-            {
-                // do nothing, i.e prevent deliveries by the SubFlushRunner
-                // when registering the new consumers
-            }
-        };
+        SimpleAMQQueue testQueue = createNonAsyncDeliverQueue();
 
         // retrieve the QueueEntryList the queue creates and insert the test
         // messages, thus avoiding straight-through delivery attempts during
         //enqueue() process.
-        QueueEntryList list = factory.getQueueEntryList();
+        QueueEntryList list = testQueue.getEntries();
         assertNotNull("QueueEntryList should have been created", list);
 
         QueueEntry msg1 = list.add(createMessage(1L));
@@ -748,6 +710,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
         verifyReceivedMessages(Collections.singletonList((MessageInstance)msg5), sub3.getMessages());
     }
 
+    private SimpleAMQQueue createNonAsyncDeliverQueue()
+    {
+        TestSimpleQueueEntryListFactory factory = new TestSimpleQueueEntryListFactory();
+        return new NonAsyncDeliverQueue(factory, getVirtualHost());
+    }
+
     /**
      * Tests that dequeued message is not present in the list returned form
      * {@link SimpleAMQQueue#getMessagesOnTheQueue()}
@@ -764,7 +732,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         dequeueMessage(_queue, dequeueMessageIndex);
 
         // get messages on the queue
-        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
+        List<E> entries = _queue.getMessagesOnTheQueue();
 
         // assert queue entries
         assertEquals(messageNumber - 1, entries.size());
@@ -801,9 +769,9 @@ public class SimpleAMQQueueTest extends QpidTestCase
         dequeueMessage(_queue, dequeueMessageIndex);
 
         // get messages on the queue with filter accepting all available messages
-        List<QueueEntry> entries = _queue.getMessagesOnTheQueue(new QueueEntryFilter()
+        List<E> entries = _queue.getMessagesOnTheQueue(new QueueEntryFilter<E>()
         {
-            public boolean accept(QueueEntry entry)
+            public boolean accept(E entry)
             {
                 return true;
             }
@@ -855,12 +823,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
         _queue.deleteMessageFromTop();
 
         //get queue entries
-        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
+        List<E> entries = _queue.getMessagesOnTheQueue();
 
         // assert queue entries
         assertNotNull("Null is returned from getMessagesOnTheQueue", entries);
         assertEquals("Expected " + (messageNumber - 2) + " number of messages  but recieved " + entries.size(),
-                messageNumber - 2, entries.size());
+                     messageNumber - 2, entries.size());
         assertEquals("Expected first entry with id 2", 2l,
                 (entries.get(0).getMessage()).getMessageNumber());
     }
@@ -891,241 +859,13 @@ public class SimpleAMQQueueTest extends QpidTestCase
         }
 
         // get queue entries
-        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
+        List<E> entries = _queue.getMessagesOnTheQueue();
 
         // assert queue entries
         assertNotNull(entries);
         assertEquals(0, entries.size());
     }
 
-    /**
-     * Tests whether dequeued entry is sent to subscriber in result of
-     * invocation of {@link SimpleAMQQueue#processQueue(QueueRunner)}
-     */
-    public void testProcessQueueWithDequeuedEntry()
-    {
-        // total number of messages to send
-        int messageNumber = 4;
-        int dequeueMessageIndex = 1;
-
-        // create queue with overridden method deliverAsync
-        SimpleAMQQueue testQueue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "test",
-                false, "testOwner", false, false, _virtualHost, null)
-        {
-            @Override
-            public void deliverAsync(QueueConsumer sub)
-            {
-                // do nothing
-            }
-        };
-
-        // put messages
-        List<QueueEntry> entries = enqueueGivenNumberOfMessages(testQueue, messageNumber);
-
-        // dequeue message
-        dequeueMessage(testQueue, dequeueMessageIndex);
-
-        // latch to wait for message receipt
-        final CountDownLatch latch = new CountDownLatch(messageNumber -1);
-
-        // create a consumer
-        MockConsumer consumer = new MockConsumer()
-        {
-            /**
-             * Send a message and decrement latch
-             * @param entry
-             * @param batch
-             */
-            public void send(MessageInstance entry, boolean batch) throws AMQException
-            {
-                super.send(entry, batch);
-                latch.countDown();
-            }
-        };
-
-        try
-        {
-            // subscribe
-            testQueue.addConsumer(consumer,
-                                  null,
-                                  entries.get(0).getMessage().getClass(),
-                                  "test",
-                                  EnumSet.of(Consumer.Option.ACQUIRES,
-                                             Consumer.Option.SEES_REQUEUES));
-
-            // process queue
-            testQueue.processQueue(new QueueRunner(testQueue)
-            {
-                public void run()
-                {
-                    // do nothing
-                }
-            });
-        }
-        catch (AMQException e)
-        {
-            fail("Failure to process queue:" + e.getMessage());
-        }
-        // wait up to 1 minute for message receipt
-        try
-        {
-            latch.await(1, TimeUnit.MINUTES);
-        }
-        catch (InterruptedException e1)
-        {
-            Thread.currentThread().interrupt();
-        }
-        List<MessageInstance> expected = Arrays.asList((MessageInstance)entries.get(0), entries.get(2), entries.get(3));
-        verifyReceivedMessages(expected, consumer.getMessages());
-    }
-
-    /**
-     * Tests that entry in dequeued state are not enqueued and not delivered to consumer
-     */
-    public void testEnqueueDequeuedEntry()
-    {
-        // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "test", false,
-                "testOwner", false, false, _virtualHost, new QueueEntryListFactory()
-                {
-                    public QueueEntryList createQueueEntryList(AMQQueue queue)
-                    {
-                        /**
-                         * Override SimpleQueueEntryList to create a dequeued
-                         * entries for messages with even id
-                         */
-                        return new SimpleQueueEntryList(queue)
-                        {
-                            /**
-                             * Entries with even message id are considered
-                             * dequeued!
-                             */
-                            protected SimpleQueueEntryImpl createQueueEntry(final ServerMessage message)
-                            {
-                                return new SimpleQueueEntryImpl(this, message)
-                                {
-
-                                    public boolean isDeleted()
-                                    {
-                                        return (message.getMessageNumber() % 2 == 0);
-                                    }
-
-                                    public boolean isAvailable()
-                                    {
-                                        return !(message.getMessageNumber() % 2 == 0);
-                                    }
-
-                                    @Override
-                                    public boolean acquire(QueueConsumer sub)
-                                    {
-                                        if(message.getMessageNumber() % 2 == 0)
-                                        {
-                                            return false;
-                                        }
-                                        else
-                                        {
-                                            return super.acquire(sub);
-                                        }
-                                    }
-                                };
-                            }
-                        };
-                    }
-                }, null);
-        // create a consumer
-        MockConsumer consumer = new MockConsumer();
-
-        // register consumer
-        try
-        {
-            queue.addConsumer(consumer,
-                              null,
-                              createMessage(-1l).getClass(),
-                              "test",
-                              EnumSet.of(Consumer.Option.ACQUIRES,
-                                         Consumer.Option.SEES_REQUEUES));
-        }
-        catch (AMQException e)
-        {
-            fail("Failure to register consumer:" + e.getMessage());
-        }
-
-        // put test messages into a queue
-        putGivenNumberOfMessages(queue, 4);
-
-        // assert received messages
-        List<MessageInstance> messages = consumer.getMessages();
-        assertEquals("Only 2 messages should be returned", 2, messages.size());
-        assertEquals("ID of first message should be 1", 1l,
-                (messages.get(0).getMessage()).getMessageNumber());
-        assertEquals("ID of second message should be 3", 3l,
-                (messages.get(1).getMessage()).getMessageNumber());
-    }
-
-    public void testActiveConsumerCount() throws Exception
-    {
-        final SimpleAMQQueue queue = new SimpleAMQQueue(UUIDGenerator.generateRandomUUID(), "testActiveConsumerCount", false,
-                "testOwner", false, false, _virtualHost, new SimpleQueueEntryList.Factory(), null);
-
-        //verify adding an active consumer increases the count
-        final MockConsumer consumer1 = new MockConsumer();
-        consumer1.setActive(true);
-        consumer1.setState(ConsumerTarget.State.ACTIVE);
-        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
-        queue.addConsumer(consumer1,
-                          null,
-                          createMessage(-1l).getClass(),
-                          "test",
-                          EnumSet.of(Consumer.Option.ACQUIRES,
-                                     Consumer.Option.SEES_REQUEUES));
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-
-        //verify adding an inactive consumer doesn't increase the count
-        final MockConsumer consumer2 = new MockConsumer();
-        consumer2.setActive(false);
-        consumer2.setState(ConsumerTarget.State.SUSPENDED);
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-        queue.addConsumer(consumer2,
-                          null,
-                          createMessage(-1l).getClass(),
-                          "test",
-                          EnumSet.of(Consumer.Option.ACQUIRES,
-                                     Consumer.Option.SEES_REQUEUES));
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-
-        //verify behaviour in face of expected state changes:
-
-        //verify a consumer going suspended->active increases the count
-        consumer2.setState(ConsumerTarget.State.ACTIVE);
-        assertEquals("Unexpected active consumer count", 2, queue.getActiveConsumerCount());
-
-        //verify a consumer going active->suspended decreases the count
-        consumer2.setState(ConsumerTarget.State.SUSPENDED);
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-
-        //verify a consumer going suspended->closed doesn't change the count
-        consumer2.setState(ConsumerTarget.State.CLOSED);
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-
-        //verify a consumer going active->active doesn't change the count
-        consumer1.setState(ConsumerTarget.State.ACTIVE);
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-
-        consumer1.setState(ConsumerTarget.State.SUSPENDED);
-        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
-
-        //verify a consumer going suspended->suspended doesn't change the count
-        consumer1.setState(ConsumerTarget.State.SUSPENDED);
-        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
-
-        consumer1.setState(ConsumerTarget.State.ACTIVE);
-        assertEquals("Unexpected active consumer count", 1, queue.getActiveConsumerCount());
-
-        //verify a consumer going active->closed  decreases the count
-        consumer1.setState(ConsumerTarget.State.CLOSED);
-        assertEquals("Unexpected active consumer count", 0, queue.getActiveConsumerCount());
-
-    }
 
     public void testNotificationFiredOnEnqueue() throws Exception
     {
@@ -1170,12 +910,12 @@ public class SimpleAMQQueueTest extends QpidTestCase
      * @param messageNumber
      *            number of messages to put into queue
      */
-    private List<QueueEntry> enqueueGivenNumberOfMessages(AMQQueue queue, int messageNumber)
+    protected List<E> enqueueGivenNumberOfMessages(Q queue, int messageNumber)
     {
         putGivenNumberOfMessages(queue, messageNumber);
 
         // make sure that all enqueued messages are on the queue
-        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
+        List<E> entries = queue.getMessagesOnTheQueue();
         assertEquals(messageNumber, entries.size());
         for (int i = 0; i < messageNumber; i++)
         {
@@ -1196,16 +936,15 @@ public class SimpleAMQQueueTest extends QpidTestCase
      * @param queue
      * @param messageNumber
      */
-    private void putGivenNumberOfMessages(AMQQueue queue, int messageNumber)
+    protected <T extends SimpleAMQQueue> void putGivenNumberOfMessages(T queue, int messageNumber)
     {
         for (int i = 0; i < messageNumber; i++)
         {
             // Create message
-            Long messageId = new Long(i);
             ServerMessage message = null;
             try
             {
-                message = createMessage(messageId);
+                message = createMessage((long)i);
             }
             catch (AMQException e)
             {
@@ -1239,7 +978,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
      * @param dequeueMessageIndex
      *            entry index to dequeue.
      */
-    private QueueEntry dequeueMessage(AMQQueue queue, int dequeueMessageIndex)
+    protected QueueEntry dequeueMessage(AMQQueue queue, int dequeueMessageIndex)
     {
         List<QueueEntry> entries = queue.getMessagesOnTheQueue();
         QueueEntry entry = entries.get(dequeueMessageIndex);
@@ -1259,7 +998,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return entriesList;
     }
 
-    private void verifyReceivedMessages(List<MessageInstance> expected,
+    protected void verifyReceivedMessages(List<MessageInstance> expected,
                                         List<MessageInstance> delivered)
     {
         assertEquals("Consumer did not receive the expected number of messages",
@@ -1272,9 +1011,14 @@ public class SimpleAMQQueueTest extends QpidTestCase
         }
     }
 
-    public SimpleAMQQueue getQueue()
+    public Q getQueue()
     {
         return _queue;
+    }
+
+    protected void setQueue(Q queue)
+    {
+        _queue = queue;
     }
 
     public MockConsumer getConsumer()
@@ -1310,7 +1054,7 @@ public class SimpleAMQQueueTest extends QpidTestCase
         return message;
     }
 
-    private static class EntryListAddingAction implements Action<MessageInstance<? extends Consumer>>
+    private static class EntryListAddingAction implements Action<MessageInstance<?,? extends Consumer>>
     {
         private final ArrayList<QueueEntry> _queueEntries;
 
@@ -1319,25 +1063,122 @@ public class SimpleAMQQueueTest extends QpidTestCase
             _queueEntries = queueEntries;
         }
 
-        public void performAction(MessageInstance<? extends Consumer> entry)
+        public void performAction(MessageInstance<?,? extends Consumer> entry)
         {
             _queueEntries.add((QueueEntry) entry);
         }
     }
 
-    class TestSimpleQueueEntryListFactory implements QueueEntryListFactory
-    {
-        QueueEntryList _list;
 
-        public QueueEntryList createQueueEntryList(AMQQueue queue)
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    public String getQname()
+    {
+        return _qname;
+    }
+
+    public String getOwner()
+    {
+        return _owner;
+    }
+
+    public String getRoutingKey()
+    {
+        return _routingKey;
+    }
+
+    public DirectExchange getExchange()
+    {
+        return _exchange;
+    }
+
+    public MockConsumer getConsumerTarget()
+    {
+        return _consumerTarget;
+    }
+
+
+    static class TestSimpleQueueEntryListFactory implements QueueEntryListFactory<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    {
+
+        @Override
+        public NonAsyncDeliverList createQueueEntryList(final NonAsyncDeliverQueue queue)
         {
-            _list = new SimpleQueueEntryList(queue);
-            return _list;
+            return new NonAsyncDeliverList(queue);
+        }
+    }
+
+    private static class NonAsyncDeliverEntry extends OrderedQueueEntry<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    {
+
+        public NonAsyncDeliverEntry(final NonAsyncDeliverList queueEntryList)
+        {
+            super(queueEntryList);
         }
 
-        public QueueEntryList getQueueEntryList()
+        public NonAsyncDeliverEntry(final NonAsyncDeliverList queueEntryList,
+                                    final ServerMessage message,
+                                    final long entryId)
         {
-            return _list;
+            super(queueEntryList, message, entryId);
+        }
+
+        public NonAsyncDeliverEntry(final NonAsyncDeliverList queueEntryList, final ServerMessage message)
+        {
+            super(queueEntryList, message);
+        }
+    }
+
+    private static class NonAsyncDeliverList extends OrderedQueueEntryList<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    {
+
+        private static final HeadCreator<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList> HEAD_CREATOR =
+                new HeadCreator<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>()
+                {
+
+                    @Override
+                    public NonAsyncDeliverEntry createHead(final NonAsyncDeliverList list)
+                    {
+                        return new NonAsyncDeliverEntry(list);
+                    }
+                };
+
+        public NonAsyncDeliverList(final NonAsyncDeliverQueue queue)
+        {
+            super(queue, HEAD_CREATOR);
+        }
+
+        @Override
+        protected NonAsyncDeliverEntry createQueueEntry(final ServerMessage<?> message)
+        {
+            return new NonAsyncDeliverEntry(this,message);
+        }
+    }
+
+
+    private static class NonAsyncDeliverQueue extends SimpleAMQQueue<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    {
+        public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHost vhost)
+        {
+            super(UUIDGenerator.generateRandomUUID(),
+                  "testQueue",
+                  false,
+                  "testOwner",
+                  false,
+                  false,
+                  vhost,
+                  factory,
+                  null);
+        }
+
+        @Override
+        public void deliverAsync(QueueConsumer sub)
+        {
+            // do nothing, i.e prevent deliveries by the SubFlushRunner
+            // when registering the new consumers
         }
     }
 }

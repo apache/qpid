@@ -32,17 +32,17 @@ import org.apache.qpid.server.store.TransactionLogResource;
 import java.util.Collection;
 import java.util.EnumSet;
 
-public interface MessageSource<C extends Consumer> extends TransactionLogResource, MessageNode
+public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>> extends TransactionLogResource, MessageNode
 {
-    C addConsumer(ConsumerTarget target, FilterManager filters,
+    <T extends ConsumerTarget> C addConsumer(T target, FilterManager filters,
                          Class<? extends ServerMessage> messageClass,
                          String consumerName, EnumSet<Consumer.Option> options) throws AMQException;
 
     Collection<C> getConsumers();
 
-    void addConsumerRegistrationListener(ConsumerRegistrationListener listener);
+    void addConsumerRegistrationListener(ConsumerRegistrationListener<S> listener);
 
-    void removeConsumerRegistrationListener(ConsumerRegistrationListener listener);
+    void removeConsumerRegistrationListener(ConsumerRegistrationListener<S> listener);
 
     AuthorizationHolder getAuthorizationHolder();
 
@@ -54,10 +54,10 @@ public interface MessageSource<C extends Consumer> extends TransactionLogResourc
 
     boolean isExclusive();
 
-    interface ConsumerRegistrationListener
+    interface ConsumerRegistrationListener<Q extends MessageSource<? extends Consumer,Q>>
     {
-        void consumerAdded(AMQQueue queue, Consumer consumer);
-        void consumerRemoved(AMQQueue queue, Consumer consumer);
+        void consumerAdded(Q source, Consumer consumer);
+        void consumerRemoved(Q queue, Consumer consumer);
     }
 
     /**

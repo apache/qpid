@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.consumer.Consumer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -32,19 +33,20 @@ import static org.mockito.Mockito.when;
 /**
  * Abstract test class for QueueEntryList implementations.
  */
-public abstract class QueueEntryListTestBase extends TestCase
+public abstract class QueueEntryListTestBase<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, L extends QueueEntryList<E,Q,L,C>, C extends Consumer> extends TestCase
 {
-    protected static final AMQQueue _testQueue = new MockAMQQueue("test");
-    public abstract QueueEntryList<QueueEntry> getTestList();
-    public abstract QueueEntryList<QueueEntry> getTestList(boolean newList);
+    public abstract L getTestList();
+    public abstract L getTestList(boolean newList);
     public abstract long getExpectedFirstMsgId();
     public abstract int getExpectedListLength();
     public abstract ServerMessage getTestMessageToAdd() throws AMQException;
 
     public void testGetQueue()
     {
-        assertEquals("Unexpected head entry returned by getHead()", getTestList().getQueue(), _testQueue);
+        assertEquals("Unexpected head entry returned by getHead()", getTestList().getQueue(), getTestQueue());
     }
+
+    protected abstract Q getTestQueue();
 
     /**
      * Test to add a message with properties specific to the queue type.
@@ -54,10 +56,10 @@ public abstract class QueueEntryListTestBase extends TestCase
      */
     public void testAddSpecificMessage() throws AMQException
     {
-        final QueueEntryList<QueueEntry> list = getTestList();
+        final L list = getTestList();
         list.add(getTestMessageToAdd());
 
-        final QueueEntryIterator<?> iter = list.iterator();
+        final QueueEntryIterator<E,Q,L,C> iter = list.iterator();
         int count = 0;
         while(iter.advance())
         {
@@ -75,11 +77,11 @@ public abstract class QueueEntryListTestBase extends TestCase
      */
     public void testAddGenericMessage() throws AMQException
     {
-        final QueueEntryList<QueueEntry> list = getTestList();
+        final L list = getTestList();
         final ServerMessage message = createServerMessage(666l);
         list.add(message);
 
-        final QueueEntryIterator<?> iter = list.iterator();
+        final QueueEntryIterator<E,Q,L,C> iter = list.iterator();
         int count = 0;
         while(iter.advance())
         {
@@ -109,8 +111,8 @@ public abstract class QueueEntryListTestBase extends TestCase
      */
     public void testListNext()
     {
-        final QueueEntryList<QueueEntry> entryList = getTestList();
-        QueueEntry entry = entryList.getHead();
+        final L entryList = getTestList();
+        E entry = entryList.getHead();
         int count = 0;
         while(entryList.next(entry) != null)
         {
@@ -127,7 +129,7 @@ public abstract class QueueEntryListTestBase extends TestCase
      */
     public void testIterator()
     {
-        final QueueEntryIterator<?> iter = getTestList().iterator();
+        final QueueEntryIterator<E,Q,L,C> iter = getTestList().iterator();
         int count = 0;
         while(iter.advance())
         {
@@ -145,10 +147,10 @@ public abstract class QueueEntryListTestBase extends TestCase
     public void testDequeuedMessagedNotPresentInIterator() throws Exception
     {
         final int numberOfMessages = getExpectedListLength();
-        final QueueEntryList<QueueEntry> entryList = getTestList();
+        final L entryList = getTestList();
 
         // dequeue all even messages
-        final QueueEntryIterator<?> it1 = entryList.iterator();
+        final QueueEntryIterator<E,Q,L,C> it1 = entryList.iterator();
         int counter = 0;
         while (it1.advance())
         {
@@ -161,7 +163,7 @@ public abstract class QueueEntryListTestBase extends TestCase
         }
 
         // iterate and check that dequeued messages are not returned by iterator
-        final QueueEntryIterator<?> it2 = entryList.iterator();
+        final QueueEntryIterator<E,Q,L,C> it2 = entryList.iterator();
         int counter2 = 0;
         while(it2.advance())
         {
@@ -180,7 +182,7 @@ public abstract class QueueEntryListTestBase extends TestCase
      */
     public void testGetHead()
     {
-        final QueueEntry head = getTestList().getHead();
+        final E head = getTestList().getHead();
         assertNull("Head entry should not contain an actual message", head.getMessage());
         assertEquals("Unexpected message id for first list entry", getExpectedFirstMsgId(), getTestList().next(head)
                         .getMessage().getMessageNumber());
@@ -192,16 +194,16 @@ public abstract class QueueEntryListTestBase extends TestCase
      */
     public void testEntryDeleted()
     {
-        final QueueEntry head = getTestList().getHead();
+        final E head = getTestList().getHead();
 
-        final QueueEntry first = getTestList().next(head);
+        final E first = getTestList().next(head);
         first.delete();
 
-        final QueueEntry second = getTestList().next(head);
+        final E second = getTestList().next(head);
         assertNotSame("After deletion the next entry should be different", first.getMessage().getMessageNumber(), second
                         .getMessage().getMessageNumber());
 
-        final QueueEntry third = getTestList().next(first);
+        final E third = getTestList().next(first);
         assertEquals("After deletion the deleted nodes next node should be the same as the next from head", second
                         .getMessage().getMessageNumber(), third.getMessage().getMessageNumber());
     }
@@ -215,11 +217,11 @@ public abstract class QueueEntryListTestBase extends TestCase
      */
     public void testIteratorIgnoresDeletedFinalNode() throws Exception
     {
-        QueueEntryList<QueueEntry> list = getTestList(true);
+        L list = getTestList(true);
         int i = 0;
 
-        QueueEntry queueEntry1 = list.add(createServerMessage(i++));
-        QueueEntry queueEntry2 = list.add(createServerMessage(i++));
+        E queueEntry1 = list.add(createServerMessage(i++));
+        E queueEntry2 = list.add(createServerMessage(i++));
 
         assertSame(queueEntry2, list.next(queueEntry1));
         assertNull(list.next(queueEntry2));
@@ -228,7 +230,7 @@ public abstract class QueueEntryListTestBase extends TestCase
         queueEntry2.delete();
         assertTrue("Deleting node should have succeeded", queueEntry2.isDeleted());
 
-        QueueEntryIterator<QueueEntry> iter = list.iterator();
+        QueueEntryIterator<E,Q,L,C> iter = list.iterator();
 
         //verify the iterator isn't 'atTail', can advance, and returns the 1st QueueEntry
         assertFalse("Iterator should not have been 'atTail'", iter.atTail());

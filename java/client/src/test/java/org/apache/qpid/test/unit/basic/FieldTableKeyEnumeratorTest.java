@@ -64,7 +64,7 @@ public class FieldTableKeyEnumeratorTest extends TestCase
 
     }
 
-    public void testPropertEnu()
+    public void testPropertyEnum()
     {
         try
         {

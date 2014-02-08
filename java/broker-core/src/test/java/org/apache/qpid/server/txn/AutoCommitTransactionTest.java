@@ -24,9 +24,9 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.queue.MockQueueEntry;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.MockMessageInstance;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -385,7 +385,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
             final AMQQueue queue = createTestAMQQueue(queueDurableFlags[i]);
             final ServerMessage message = createTestMessage(messagePersistentFlags[i]);
             
-            queueEntries.add(new MockQueueEntry()
+            queueEntries.add(new MockMessageInstance()
             {
 
                 @Override
@@ -395,7 +395,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
                 }
 
                 @Override
-                public AMQQueue getQueue()
+                public TransactionLogResource getOwningResource()
                 {
                     return queue;
                 }

@@ -20,20 +20,21 @@
 */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.message.MessageInstance;
 
-public interface QueueEntry extends MessageInstance<QueueConsumer>, Comparable<QueueEntry>
+public interface QueueEntry<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, C extends Consumer> extends MessageInstance<E,C>, Comparable<E>
 {
 
-    AMQQueue<QueueConsumer> getQueue();
+    Q getQueue();
 
     long getSize();
 
     boolean isQueueDeleted();
 
-    QueueEntry getNextNode();
+    E getNextNode();
 
-    QueueEntry getNextValidEntry();
+    E getNextValidEntry();
 
 
 }

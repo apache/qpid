@@ -18,22 +18,24 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public interface BaseQueue<C extends Consumer> extends TransactionLogResource
+import java.util.Map;
+import java.util.UUID;
+
+public class StandardQueue extends SimpleAMQQueue<StandardQueueEntry,StandardQueue,StandardQueueEntryList>
 {
-    void enqueue(ServerMessage message, Action<? super MessageInstance<?,C>> action) throws AMQException;
-
-    boolean isDurable();
-    boolean isDeleted();
-
-    String getName();
+    public StandardQueue(final UUID id,
+                         final String name,
+                         final boolean durable,
+                         final String owner,
+                         final boolean autoDelete,
+                         final boolean exclusive,
+                         final VirtualHost virtualHost,
+                         final Map<String, Object> arguments)
+    {
+        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, new StandardQueueEntryList.Factory(), arguments);
+    }
 }

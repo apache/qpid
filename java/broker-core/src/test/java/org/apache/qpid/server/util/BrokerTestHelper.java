@@ -44,8 +44,8 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -179,9 +179,9 @@ public class BrokerTestHelper
         return factory.createExchange("amp.direct", "direct", false, false);
     }
 
-    public static SimpleAMQQueue createQueue(String queueName, VirtualHost virtualHost) throws AMQException
+    public static AMQQueue createQueue(String queueName, VirtualHost virtualHost) throws AMQException
     {
-        SimpleAMQQueue queue = (SimpleAMQQueue) virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, null,
+        AMQQueue queue = virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, null,
                 false, false, false, Collections.<String, Object>emptyMap());
         return queue;
     }

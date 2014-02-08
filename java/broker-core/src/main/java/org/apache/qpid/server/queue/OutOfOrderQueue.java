@@ -25,30 +25,30 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import java.util.Map;
 import java.util.UUID;
 
-public abstract class OutOfOrderQueue extends SimpleAMQQueue
+public abstract class OutOfOrderQueue<E extends QueueEntryImpl<E,Q,L>, Q extends OutOfOrderQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> extends SimpleAMQQueue<E,Q,L>
 {
 
     protected OutOfOrderQueue(UUID id, String name, boolean durable,
                               String owner, boolean autoDelete, boolean exclusive,
-                              VirtualHost virtualHost, QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
+                              VirtualHost virtualHost, QueueEntryListFactory<E,Q,L> entryListFactory, Map<String, Object> arguments)
     {
         super(id, name, durable, owner, autoDelete, exclusive, virtualHost, entryListFactory, arguments);
     }
 
     @Override
-    protected void checkConsumersNotAheadOfDelivery(final QueueEntry entry)
+    protected void checkConsumersNotAheadOfDelivery(final E entry)
     {
         // check that all consumers are not in advance of the entry
-        QueueConsumerList.ConsumerNodeIterator subIter = getConsumerList().iterator();
+        QueueConsumerList.ConsumerNodeIterator<E,Q,L> subIter = getConsumerList().iterator();
         while(subIter.advance() && !entry.isAcquired())
         {
-            final QueueConsumer consumer = subIter.getNode().getConsumer();
+            final QueueConsumer<?,E,Q,L> consumer = subIter.getNode().getConsumer();
             if(!consumer.isClosed())
             {
-                QueueContext context = consumer.getQueueContext();
+                QueueContext<E,Q,L> context = consumer.getQueueContext();
                 if(context != null)
                 {
-                    QueueEntry released = context.getReleasedEntry();
+                    E released = context.getReleasedEntry();
                     while(!entry.isAcquired() && (released == null || released.compareTo(entry) > 0))
                     {
                         if(QueueContext._releasedUpdater.compareAndSet(context,released,entry))

@@ -26,7 +26,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class ConflationQueue extends SimpleAMQQueue
+public class ConflationQueue extends SimpleAMQQueue<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>
 {
     protected ConflationQueue(UUID id,
                               String name,
@@ -42,7 +42,7 @@ public class ConflationQueue extends SimpleAMQQueue
 
     public String getConflationKey()
     {
-        return ((ConflationQueueList) getEntries()).getConflationKey();
+        return getEntries().getConflationKey();
     }
 
 }

@@ -18,22 +18,28 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.util.Action;
 
-public interface BaseQueue<C extends Consumer> extends TransactionLogResource
+public class StandardQueueEntry extends OrderedQueueEntry<StandardQueueEntry, StandardQueue, StandardQueueEntryList>
 {
-    void enqueue(ServerMessage message, Action<? super MessageInstance<?,C>> action) throws AMQException;
+    protected StandardQueueEntry(final StandardQueueEntryList queueEntryList)
+    {
+        super(queueEntryList);
+    }
 
-    boolean isDurable();
-    boolean isDeleted();
+    public StandardQueueEntry(final StandardQueueEntryList queueEntryList,
+                              final ServerMessage message,
+                              final long entryId)
+    {
+        super(queueEntryList, message, entryId);
+    }
 
-    String getName();
+    public StandardQueueEntry(final StandardQueueEntryList queueEntryList, final ServerMessage message)
+    {
+        super(queueEntryList, message);
+    }
+
+
 }

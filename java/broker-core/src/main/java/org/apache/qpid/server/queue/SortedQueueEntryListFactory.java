@@ -19,7 +19,7 @@
  */
 package org.apache.qpid.server.queue;
 
-public class SortedQueueEntryListFactory implements QueueEntryListFactory
+public class SortedQueueEntryListFactory implements QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>
 {
 
     private final String _propertyName;
@@ -30,9 +30,8 @@ public class SortedQueueEntryListFactory implements QueueEntryListFactory
     }
 
     @Override
-    public QueueEntryList<SortedQueueEntryImpl> createQueueEntryList(final AMQQueue queue)
+    public SortedQueueEntryList createQueueEntryList(final SortedQueue queue)
     {
         return new SortedQueueEntryList(queue, _propertyName);
     }
-
 }

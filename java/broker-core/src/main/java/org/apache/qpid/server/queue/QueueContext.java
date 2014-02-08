@@ -23,32 +23,32 @@ package org.apache.qpid.server.queue;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-final class QueueContext
+final class QueueContext<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>>
 {
-    private volatile QueueEntry _lastSeenEntry;
-    private volatile QueueEntry _releasedEntry;
+    private volatile E _lastSeenEntry;
+    private volatile E _releasedEntry;
 
-    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntry>
+    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntryImpl>
             _lastSeenUpdater =
         AtomicReferenceFieldUpdater.newUpdater
-        (QueueContext.class, QueueEntry.class, "_lastSeenEntry");
-    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntry>
+        (QueueContext.class, QueueEntryImpl.class, "_lastSeenEntry");
+    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntryImpl>
             _releasedUpdater =
         AtomicReferenceFieldUpdater.newUpdater
-        (QueueContext.class, QueueEntry.class, "_releasedEntry");
+        (QueueContext.class, QueueEntryImpl.class, "_releasedEntry");
 
-    public QueueContext(QueueEntry head)
+    public QueueContext(E head)
     {
         _lastSeenEntry = head;
     }
 
-    public QueueEntry getLastSeenEntry()
+    public E getLastSeenEntry()
     {
         return _lastSeenEntry;
     }
 
 
-    QueueEntry getReleasedEntry()
+    E getReleasedEntry()
     {
         return _releasedEntry;
     }

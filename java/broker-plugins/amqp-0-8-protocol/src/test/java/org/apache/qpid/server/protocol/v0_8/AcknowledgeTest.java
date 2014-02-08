@@ -24,7 +24,7 @@ package org.apache.qpid.server.protocol.v0_8;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -36,7 +36,7 @@ import java.util.List;
 public class AcknowledgeTest extends QpidTestCase
 {
     private AMQChannel _channel;
-    private SimpleAMQQueue _queue;
+    private AMQQueue _queue;
     private MessageStore _messageStore;
     private String _queueName;
 
@@ -79,7 +79,7 @@ public class AcknowledgeTest extends QpidTestCase
         return (InternalTestProtocolSession)_channel.getProtocolSession();
     }
 
-    private SimpleAMQQueue getQueue()
+    private AMQQueue getQueue()
     {
         return _queue;
     }

@@ -27,12 +27,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
 
 /**
  * Session model interface.
  * Extends {@link Comparable} to allow objects to be inserted into a {@link ConcurrentSkipListSet}
- * when monitoring the blocking and blocking of queues/sessions in {@link SimpleAMQQueue}.
+ * when monitoring the blocking and blocking of queues/sessions in {@link AMQQueue}.
  */
 public interface AMQSessionModel extends Comparable<AMQSessionModel>
 {

@@ -23,16 +23,21 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SimpleQueueEntryListTest extends QueueEntryListTestBase
+public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQueueEntry, StandardQueue, StandardQueueEntryList, QueueConsumer<?,StandardQueueEntry, StandardQueue, StandardQueueEntryList>>
 {
-    private SimpleQueueEntryList _sqel;
+
+    private StandardQueue _testQueue;
+    private StandardQueueEntryList _sqel;
 
     private static final String SCAVENGE_PROP = "qpid.queue.scavenge_count";
     private String oldScavengeValue = null;
@@ -41,7 +46,10 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
     protected void setUp()
     {
         oldScavengeValue = System.setProperty(SCAVENGE_PROP, "9");
-        _sqel = new SimpleQueueEntryList(_testQueue);
+        _testQueue = new StandardQueue(UUID.randomUUID(),getName(),false,null,false,false,mock(VirtualHost.class),
+                                       Collections.<String,Object>emptyMap());
+
+        _sqel = _testQueue.getEntries();
         for(int i = 1; i <= 100; i++)
         {
             final ServerMessage message = mock(ServerMessage.class);
@@ -69,17 +77,21 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
     }
 
     @Override
-    public QueueEntryList getTestList()
+    public StandardQueueEntryList getTestList()
     {
         return getTestList(false);
     }
 
     @Override
-    public QueueEntryList getTestList(boolean newList)
+    public StandardQueueEntryList getTestList(boolean newList)
     {
         if(newList)
         {
-            return new SimpleQueueEntryList(_testQueue);
+            StandardQueue queue =
+                    new StandardQueue(UUID.randomUUID(), getName(), false, null, false, false, mock(VirtualHost.class),
+                                      Collections.<String, Object>emptyMap());
+
+            return queue.getEntries();
         }
         else
         {
@@ -107,9 +119,15 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         return msg;
     }
 
+    @Override
+    protected StandardQueue getTestQueue()
+    {
+        return _testQueue;
+    }
+
     public void testScavenge() throws Exception
     {
-        SimpleQueueEntryList sqel = new SimpleQueueEntryList(null);
+        OrderedQueueEntryList sqel = new StandardQueueEntryList(null);
         ConcurrentHashMap<Integer,QueueEntry> entriesMap = new ConcurrentHashMap<Integer,QueueEntry>();
 
 
@@ -126,7 +144,7 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
             entriesMap.put(i,bleh);
         }
 
-        SimpleQueueEntryImpl head = sqel.getHead();
+        OrderedQueueEntry head = sqel.getHead();
 
         //We shall now delete some specific messages mid-queue that will lead to
         //requiring a scavenge once the requested threshold of 9 deletes is passed
@@ -172,10 +190,10 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         return entry.isDeleted() && !wasDeleted;
     }
 
-    private void verifyDeletedButPresentBeforeScavenge(SimpleQueueEntryImpl head, long messageId)
+    private void verifyDeletedButPresentBeforeScavenge(OrderedQueueEntry head, long messageId)
     {
         //Use the head to get the initial entry in the queue
-        SimpleQueueEntryImpl entry = head.getNextNode();
+        OrderedQueueEntry entry = head.getNextNode();
 
         for(long i = 1; i < messageId ; i++)
         {
@@ -186,10 +204,10 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         assertTrue("Entry should have been deleted", entry.isDeleted());
     }
 
-    private void verifyAllDeletedMessagedNotPresent(SimpleQueueEntryImpl head, Map<Integer,QueueEntry> remainingMessages)
+    private void verifyAllDeletedMessagedNotPresent(OrderedQueueEntry head, Map<Integer,QueueEntry> remainingMessages)
     {
         //Use the head to get the initial entry in the queue
-        SimpleQueueEntryImpl entry = head.getNextNode();
+        OrderedQueueEntry entry = head.getNextNode();
 
         assertNotNull("Initial entry should not have been null", entry);
 
@@ -211,8 +229,8 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
     public void testGettingNextElement()
     {
         final int numberOfEntries = 5;
-        final SimpleQueueEntryImpl[] entries = new SimpleQueueEntryImpl[numberOfEntries];
-        final SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
+        final OrderedQueueEntry[] entries = new OrderedQueueEntry[numberOfEntries];
+        final OrderedQueueEntryList queueEntryList = getTestList(true);
 
         // create test entries
         for(int i = 0; i < numberOfEntries; i++)
@@ -228,7 +246,7 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         // test getNext for not acquired entries
         for(int i = 0; i < numberOfEntries; i++)
         {
-            final SimpleQueueEntryImpl next = entries[i].getNextValidEntry();
+            final OrderedQueueEntry next = entries[i].getNextValidEntry();
 
             if(i < numberOfEntries - 1)
             {
@@ -248,7 +266,7 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         entries[2].acquire();
         entries[2].delete();
 
-        SimpleQueueEntryImpl next = entries[2].getNextValidEntry();
+        OrderedQueueEntry next = entries[2].getNextValidEntry();
         assertEquals("expected forth entry", entries[3], next);
         next = next.getNextValidEntry();
         assertEquals("expected fifth entry", entries[4], next);
