@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.qpid.AMQException;
@@ -323,7 +322,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
             {
                 // TODO
             }
-            else if(TYPE.equals(name))
+            else if(QUEUE_TYPE.equals(name))
             {
                 // TODO
             }
@@ -436,7 +435,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
                 return ((SortedQueue)queue).getSortedPropertyName();
             }
         }
-        else if(TYPE.equals(name))
+        else if(QUEUE_TYPE.equals(name))
         {
             AMQQueue queue = _queue;
             if(queue instanceof SortedQueue)

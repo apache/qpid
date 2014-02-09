@@ -103,6 +103,7 @@ perftests.test.libs=${test.libs}
 qpid-test-utils.libs = ${test.libs} ${geronimo-jms}
 
 broker-plugins-access-control.test.libs=${test.libs}
+broker-plugins-management-amqp.test.libs=${test.libs}
 broker-plugins-management-http.test.libs=${test.libs}
 broker-plugins-management-jmx.test.libs=${test.libs}
 broker-plugins-jdbc-store.test.libs=${test.libs}

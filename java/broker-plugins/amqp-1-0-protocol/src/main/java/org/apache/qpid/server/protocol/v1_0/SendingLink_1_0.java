@@ -391,10 +391,6 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 options.add(Consumer.Option.NO_LOCAL);
             }
 
-
-            _consumer.setNoLocal(noLocal);
-
-
             try
             {
                 _consumer = _queue.addConsumer(_target,

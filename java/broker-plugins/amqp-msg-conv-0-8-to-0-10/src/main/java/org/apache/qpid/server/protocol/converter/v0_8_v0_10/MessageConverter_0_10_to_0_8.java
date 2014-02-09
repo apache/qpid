@@ -61,7 +61,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
         {
             if(deliveryProps.hasDeliveryMode())
             {
-                props.setDeliveryMode((byte) (deliveryProps.getDeliveryMode() == MessageDeliveryMode.PERSISTENT
+                props.setDeliveryMode((deliveryProps.getDeliveryMode() == MessageDeliveryMode.PERSISTENT
                                               ? BasicContentHeaderProperties.PERSISTENT
                                               : BasicContentHeaderProperties.NON_PERSISTENT));
             }

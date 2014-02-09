@@ -28,8 +28,6 @@ import javax.net.ssl.TrustManager;
 
 public interface TrustStore extends ConfiguredObject
 {
-    String ID = "id";
-    String NAME = "name";
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE = "state";

@@ -25,12 +25,22 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+@AmqpManagement(
+        attributes = {
+                ConfiguredObject.ID,
+                ConfiguredObject.NAME
+        },
+        operations = {},
+        creatable = false
+)
 /**
  * An object that can be "managed" (eg via the web interface) and usually read from configuration.
  */
 public interface ConfiguredObject
 {
-
+    public static final String ID = "id";
+    public static final String NAME = "name";
+//    public static final String TYPE = "type";
     /**
      * Get the universally unique identifier for the object
      *

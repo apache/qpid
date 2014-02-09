@@ -43,9 +43,7 @@ public interface Binding extends ConfiguredObject
     public String ARGUMENTS = "arguments";
     public String CREATED = "created";
     public String DURABLE = "durable";
-    public String ID = "id";
     public String LIFETIME_POLICY = "lifetimePolicy";
-    public String NAME = "name";
     public String STATE = "state";
     public String TIME_TO_LIVE = "timeToLive";
     public String UPDATED = "updated";

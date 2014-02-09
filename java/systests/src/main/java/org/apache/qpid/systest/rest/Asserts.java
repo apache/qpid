@@ -97,7 +97,7 @@ public class Asserts
         assertEquals("Unexpected value of queue attribute " + Queue.STATE, State.ACTIVE.name(), queueData.get(Queue.STATE));
         assertEquals("Unexpected value of queue attribute " + Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                 queueData.get(Queue.LIFETIME_POLICY));
-        assertEquals("Unexpected value of queue attribute " + Queue.TYPE, queueType, queueData.get(Queue.TYPE));
+        assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_TYPE, queueType, queueData.get(Queue.QUEUE_TYPE));
         if (expectedAttributes == null)
         {
             assertEquals("Unexpected value of queue attribute " + Queue.EXCLUSIVE, Boolean.FALSE, queueData.get(Queue.EXCLUSIVE));
