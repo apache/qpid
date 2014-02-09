@@ -422,6 +422,10 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         {
             return performDeleteOperation(requestMessage, entity);
         }
+        else if(UPDATE_OPERATION.equals(operation))
+        {
+            return performUpdateOperation(requestMessage, entity);
+        }
         else
         {
             return createFailureResponse(requestMessage, NOT_IMPLEMENTED_STATUS_CODE, "Unable to perform the {0} operation",operation);
@@ -484,6 +488,50 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
         return InternalMessage.createMapMessage(_virtualHost.getMessageStore(),responseHeader, Collections.emptyMap());
+    }
+
+
+    private InternalMessage performUpdateOperation(final InternalMessage requestMessage, final ConfiguredObject entity)
+    {
+        final InternalMessageHeader requestHeader = requestMessage.getMessageHeader();
+        final MutableMessageHeader responseHeader = new MutableMessageHeader();
+        responseHeader.setCorrelationId(requestHeader.getCorrelationId() == null
+                                                ? requestHeader.getMessageId()
+                                                : requestHeader.getCorrelationId());
+        responseHeader.setMessageId(UUID.randomUUID().toString());
+        responseHeader.setHeader(NAME_ATTRIBUTE, entity.getName());
+        responseHeader.setHeader(IDENTITY_ATTRIBUTE, entity.getId().toString());
+        final String type = getManagementClass(entity.getClass()).getName();
+        responseHeader.setHeader(TYPE_ATTRIBUTE, type);
+
+        Object messageBody = requestMessage.getMessageBody();
+        if(messageBody instanceof Map)
+        {
+            try
+            {
+                entity.setAttributes((Map)messageBody);
+                return performReadOperation(requestMessage, entity);
+            }
+            catch(RuntimeException e)
+            {
+                if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+                {
+                    return createFailureResponse(requestMessage, STATUS_CODE_FORBIDDEN, e.getMessage());
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+        }
+        else
+        {
+            return createFailureResponse(requestMessage,
+                                             STATUS_CODE_BAD_REQUEST,
+                                             "The message body in the request was not of the correct type");
+        }
+
+
     }
 
     private ConfiguredObject findSubject(final String name, final String id, final String type)
