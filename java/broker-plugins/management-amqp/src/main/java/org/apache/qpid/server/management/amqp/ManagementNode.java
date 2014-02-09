@@ -21,6 +21,7 @@
 package org.apache.qpid.server.management.amqp;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.FilterManager;
@@ -51,12 +52,44 @@ import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.nio.charset.Charset;
+import java.security.AccessControlException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementNode>, MessageDestination
 {
+
+    public static final String NAME_ATTRIBUTE = "name";
+    public static final String IDENTITY_ATTRIBUTE = "identity";
+    public static final String TYPE_ATTRIBUTE = "type";
+    public static final String OPERATION_HEADER = "operation";
+    public static final String SELF_NODE_NAME = "self";
+    public static final String MANAGEMENT_TYPE = "org.amqp.management";
+    public static final String GET_TYPES = "GET-TYPES";
+    public static final String GET_ATTRIBUTES = "GET-ATTRIBUTES";
+    public static final String GET_OPERATIONS = "GET-OPERATIONS";
+    public static final String QUERY = "QUERY";
+    public static final String ENTITY_TYPES_HEADER = "entityTypes";
+    public static final String STATUS_CODE_HEADER = "statusCode";
+    public static final int STATUS_CODE_OK = 200;
+    public static final String ATTRIBUTES_HEADER = "attributes";
+    public static final String OFFSET_HEADER = "offset";
+    public static final String COUNT_HEADER = "count";
+    public static final String MANAGEMENT_NODE_NAME = "$management";
+    public static final String CREATE_OPERATION = "CREATE";
+    public static final String READ_OPERATION = "READ";
+    public static final String UPDATE_OPERATION = "UPDATE";
+    public static final String DELETE_OPERATION = "DELETE";
+    public static final String STATUS_DESCRIPTION_HEADER = "statusDescription";
+    public static final int NOT_FOUND_STATUS_CODE = 404;
+    public static final int NOT_IMPLEMENTED_STATUS_CODE = 501;
+    public static final int STATUS_CODE_NO_CONTENT = 204;
+    public static final int STATUS_CODE_FORBIDDEN = 403;
+    public static final int STATUS_CODE_BAD_REQUEST = 400;
+    public static final int STATUS_CODE_INTERNAL_ERROR = 500;
+
 
     private final VirtualHost _virtualHost;
 
@@ -79,7 +112,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     {
         _virtualHost = registry.getVirtualHost();
         _registry = registry;
-        final String name = configuredObject.getId() + "$management";
+        final String name = configuredObject.getId() + MANAGEMENT_NODE_NAME;
         _id = UUID.nameUUIDFromBytes(name.getBytes(Charset.defaultCharset()));
 
 
@@ -155,12 +188,12 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                     isCreatableChild = parentConfig.isAssignableFrom(_managedObject.getClass());
                     if(isCreatableChild)
                     {
-                        opsList.add("CREATE");
+                        opsList.add(CREATE_OPERATION);
                         break;
                     }
                 }
             }
-            opsList.addAll(Arrays.asList("READ","UPDATE","DELETE"));
+            opsList.addAll(Arrays.asList(READ_OPERATION, UPDATE_OPERATION, DELETE_OPERATION));
 
             Set<ManagedEntityType> parentSet = new HashSet<ManagedEntityType>();
 
@@ -243,8 +276,8 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     private boolean validateMessage(final ServerMessage message)
     {
         AMQMessageHeader header = message.getMessageHeader();
-        return containsStringHeader(header, "type") && containsStringHeader(header, "operation")
-               && (containsStringHeader(header,"name") || containsStringHeader(header,"identity"));
+        return containsStringHeader(header, TYPE_ATTRIBUTE) && containsStringHeader(header, OPERATION_HEADER)
+               && (containsStringHeader(header, NAME_ATTRIBUTE) || containsStringHeader(header, IDENTITY_ATTRIBUTE));
     }
 
     private boolean containsStringHeader(final AMQMessageHeader header, String name)
@@ -261,19 +294,45 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
 
 
 
-        String name = (String) message.getMessageHeader().getHeader("name");
-        String id = (String) message.getMessageHeader().getHeader("identity");
-        String type = (String) message.getMessageHeader().getHeader("type");
+        String name = (String) message.getMessageHeader().getHeader(NAME_ATTRIBUTE);
+        String id = (String) message.getMessageHeader().getHeader(IDENTITY_ATTRIBUTE);
+        String type = (String) message.getMessageHeader().getHeader(TYPE_ATTRIBUTE);
+        String operation = (String) message.getMessageHeader().getHeader(OPERATION_HEADER);
 
         InternalMessage response;
 
-        if("self".equals(name) && type.equals("org.amqp.management"))
+        if(SELF_NODE_NAME.equals(name) && type.equals(MANAGEMENT_TYPE))
         {
             response = performManagementOperation(message);
         }
+        else if(CREATE_OPERATION.equals(operation))
+        {
+            response = performCreateOperation(message, type);
+        }
         else
         {
-            response = createFailureResponse(message);
+
+            ConfiguredObject entity = findSubject(name, id, type);
+
+            if(entity != null)
+            {
+                response = performOperation(message, entity);
+            }
+            else
+            {
+                if(id != null)
+                {
+                    response = createFailureResponse(message,
+                                                     NOT_FOUND_STATUS_CODE,
+                                                     "No entity with id {0} of type {1} found", id, type);
+                }
+                else
+                {
+                    response = createFailureResponse(message,
+                                                     NOT_FOUND_STATUS_CODE,
+                                                     "No entity with name {0} of type {1} found", name, type);
+                }
+            }
         }
 
 
@@ -282,6 +341,223 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         {
             consumer.send(response);
         }
+
+    }
+
+    private InternalMessage performCreateOperation(final InternalMessage message, final String type)
+    {
+        InternalMessage response;
+        ManagedEntityType entityType = _entityTypes.get(type);
+        if(type != null)
+        {
+            if(Arrays.asList(entityType.getOperations()).contains(CREATE_OPERATION))
+            {
+                Object messageBody = message.getMessageBody();
+                if(messageBody instanceof Map)
+                {
+                    try
+                    {
+
+                        Class<? extends ConfiguredObject> clazz =
+                                (Class<? extends ConfiguredObject>) Class.forName(type);
+                        try
+                        {
+                            ConfiguredObject child = _managedObject.createChild(clazz, (Map) messageBody);
+                            if(child == null)
+                            {
+                                child = _entities.get(entityType).get(message.getMessageHeader().getHeader(NAME_ATTRIBUTE));
+                            }
+                            response = performReadOperation(message, child);
+                        }
+                        catch(RuntimeException e)
+                        {
+                            if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+                            {
+                                response = createFailureResponse(message, STATUS_CODE_FORBIDDEN, e.getMessage());
+                            }
+                            else
+                            {
+                                throw e;
+                            }
+                        }
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        response = createFailureResponse(message,
+                                                         STATUS_CODE_INTERNAL_ERROR, "Unable to instantiate an instance of {0} ", type);
+                    }
+                }
+                else
+                {
+                    response = createFailureResponse(message,
+                                                     STATUS_CODE_BAD_REQUEST,
+                                                     "The message body in the request was not of the correct type");
+                }
+            }
+            else
+            {
+                response = createFailureResponse(message,
+                                                 STATUS_CODE_FORBIDDEN,
+                                                 "Cannot CREATE entities of type {0}", type);
+            }
+        }
+        else
+        {
+            response = createFailureResponse(message,
+                                             NOT_FOUND_STATUS_CODE,
+                                             "Unknown type {0}",type);
+        }
+        return response;
+    }
+
+    private InternalMessage performOperation(final InternalMessage requestMessage, final ConfiguredObject entity)
+    {
+        String operation = (String) requestMessage.getMessageHeader().getHeader(OPERATION_HEADER);
+
+        if(READ_OPERATION.equals(operation))
+        {
+            return performReadOperation(requestMessage, entity);
+        }
+        else if(DELETE_OPERATION.equals(operation))
+        {
+            return performDeleteOperation(requestMessage, entity);
+        }
+        else
+        {
+            return createFailureResponse(requestMessage, NOT_IMPLEMENTED_STATUS_CODE, "Unable to perform the {0} operation",operation);
+        }
+    }
+
+    private InternalMessage performReadOperation(final InternalMessage requestMessage, final ConfiguredObject entity)
+    {
+        final InternalMessageHeader requestHeader = requestMessage.getMessageHeader();
+        final MutableMessageHeader responseHeader = new MutableMessageHeader();
+        responseHeader.setCorrelationId(requestHeader.getCorrelationId() == null
+                                                ? requestHeader.getMessageId()
+                                                : requestHeader.getCorrelationId());
+        responseHeader.setMessageId(UUID.randomUUID().toString());
+        responseHeader.setHeader(NAME_ATTRIBUTE, entity.getName());
+        responseHeader.setHeader(IDENTITY_ATTRIBUTE, entity.getId().toString());
+        responseHeader.setHeader(STATUS_CODE_HEADER,STATUS_CODE_OK);
+        final String type = getManagementClass(entity.getClass()).getName();
+        responseHeader.setHeader(TYPE_ATTRIBUTE, type);
+
+        Map<String,Object> responseBody = new LinkedHashMap<String, Object>();
+        final ManagedEntityType entityType = _entityTypes.get(type);
+        for(String attribute : entityType.getAttributes())
+        {
+            responseBody.put(attribute, fixValue(entity.getAttribute(attribute)));
+        }
+
+        return InternalMessage.createMapMessage(_virtualHost.getMessageStore(),responseHeader, responseBody);
+    }
+
+
+    private InternalMessage performDeleteOperation(final InternalMessage requestMessage, final ConfiguredObject entity)
+    {
+        final InternalMessageHeader requestHeader = requestMessage.getMessageHeader();
+        final MutableMessageHeader responseHeader = new MutableMessageHeader();
+        responseHeader.setCorrelationId(requestHeader.getCorrelationId() == null
+                                                ? requestHeader.getMessageId()
+                                                : requestHeader.getCorrelationId());
+        responseHeader.setMessageId(UUID.randomUUID().toString());
+        responseHeader.setHeader(NAME_ATTRIBUTE, entity.getName());
+        responseHeader.setHeader(IDENTITY_ATTRIBUTE, entity.getId().toString());
+        final String type = getManagementClass(entity.getClass()).getName();
+        responseHeader.setHeader(TYPE_ATTRIBUTE, type);
+        try
+        {
+            entity.setDesiredState(entity.getActualState(),State.DELETED);
+            responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_NO_CONTENT);
+        }
+        catch(RuntimeException e)
+        {
+            if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+            {
+                responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_FORBIDDEN);
+            }
+            else
+            {
+                throw e;
+            }
+
+        }
+
+        return InternalMessage.createMapMessage(_virtualHost.getMessageStore(),responseHeader, Collections.emptyMap());
+    }
+
+    private ConfiguredObject findSubject(final String name, final String id, final String type)
+    {
+        ConfiguredObject subject;
+        ManagedEntityType met = _entityTypes.get(type);
+        if(met == null)
+        {
+            return null;
+        }
+
+        subject = findSubject(name, id, met);
+        if(subject == null)
+        {
+            ArrayList<ManagedEntityType> allTypes = new ArrayList<ManagedEntityType>(_entityTypes.values());
+            for(ManagedEntityType entityType : allTypes)
+            {
+                if(Arrays.asList(entityType.getParents()).contains(met))
+                {
+                    subject = findSubject(name, id, entityType);
+                    if(subject != null)
+                    {
+                        return subject;
+                    }
+                }
+            }
+        }
+        return subject;
+    }
+
+    private ConfiguredObject findSubject(final String name, final String id, final ManagedEntityType entityType)
+    {
+
+        Map<String, ConfiguredObject> objects = _entities.get(entityType);
+        if(name != null)
+        {
+            ConfiguredObject subject = objects.get(name);
+            if(subject != null)
+            {
+                return subject;
+            }
+        }
+        else
+        {
+            final Collection<ConfiguredObject> values = new ArrayList<ConfiguredObject>(objects.values());
+            for(ConfiguredObject o : values)
+            {
+                if(o.getId().toString().equals(id))
+                {
+                    return o;
+                }
+            }
+        }
+        return null;
+    }
+
+    private InternalMessage createFailureResponse(final InternalMessage requestMessage,
+                                       final int statusCode,
+                                       final String stateDescription,
+                                       String... params)
+    {
+        final InternalMessageHeader requestHeader = requestMessage.getMessageHeader();
+        final MutableMessageHeader responseHeader = new MutableMessageHeader();
+        responseHeader.setCorrelationId(requestHeader.getCorrelationId() == null
+                                                ? requestHeader.getMessageId()
+                                                : requestHeader.getCorrelationId());
+        responseHeader.setMessageId(UUID.randomUUID().toString());
+        for(String header : requestHeader.getHeaderNames())
+        {
+            responseHeader.setHeader(header, requestHeader.getHeader(header));
+        }
+        responseHeader.setHeader(STATUS_CODE_HEADER, statusCode);
+        responseHeader.setHeader(STATUS_DESCRIPTION_HEADER, MessageFormat.format(stateDescription, params));
+        return InternalMessage.createBytesMessage(_virtualHost.getMessageStore(), responseHeader, new byte[0]);
 
     }
 
@@ -296,20 +572,20 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         responseHeader.setMessageId(UUID.randomUUID().toString());
 
 
-        String operation = (String) requestHeader.getHeader("operation");
-        if("GET-TYPES".equals(operation))
+        String operation = (String) requestHeader.getHeader(OPERATION_HEADER);
+        if(GET_TYPES.equals(operation))
         {
             responseMessage = performGetTypes(requestHeader, responseHeader);
         }
-        else if("GET-ATTRIBUTES".equals(operation))
+        else if(GET_ATTRIBUTES.equals(operation))
         {
             responseMessage = performGetAttributes(requestHeader, responseHeader);
         }
-        else if("GET-OPERATIONS".equals(operation))
+        else if(GET_OPERATIONS.equals(operation))
         {
             responseMessage = performGetOperations(requestHeader, responseHeader);
         }
-        else if("QUERY".equals(operation))
+        else if(QUERY.equals(operation))
         {
             responseMessage = performQuery(requestHeader, responseHeader);
         }
@@ -325,16 +601,16 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     {
         final InternalMessage responseMessage;
         List<String> restriction;
-        if(requestHeader.containsHeader("entityTypes"))
+        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader("entityTypes");
+            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
         }
         else
         {
             restriction = null;
         }
 
-        responseHeader.setHeader("statusCode", 200);
+        responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_OK);
         Map<String,Object> responseMap = new LinkedHashMap<String, Object>();
         Map<String,ManagedEntityType> entityMapCopy;
         synchronized (_entityTypes)
@@ -367,16 +643,16 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     {
         final InternalMessage responseMessage;
         List<String> restriction;
-        if(requestHeader.containsHeader("entityTypes"))
+        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader("entityTypes");
+            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
         }
         else
         {
             restriction = null;
         }
 
-        responseHeader.setHeader("statusCode", 200);
+        responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_OK);
         Map<String,Object> responseMap = new LinkedHashMap<String, Object>();
         Map<String,ManagedEntityType> entityMapCopy;
         synchronized (_entityTypes)
@@ -401,16 +677,16 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     {
         final InternalMessage responseMessage;
         List<String> restriction;
-        if(requestHeader.containsHeader("entityTypes"))
+        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader("entityTypes");
+            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
         }
         else
         {
             restriction = null;
         }
 
-        responseHeader.setHeader("statusCode", 200);
+        responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_OK);
         Map<String,Object> responseMap = new LinkedHashMap<String, Object>();
         Map<String,ManagedEntityType> entityMapCopy;
         synchronized (_entityTypes)
@@ -438,10 +714,10 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         int offset;
         int count;
 
-        if(requestHeader.containsHeader("entityTypes"))
+        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader("entityTypes");
-            responseHeader.setHeader("entityTypes", restriction);
+            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
+            responseHeader.setHeader(ENTITY_TYPES_HEADER, restriction);
         }
         else
         {
@@ -449,9 +725,9 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
 
-        if(requestHeader.containsHeader("attributes"))
+        if(requestHeader.containsHeader(ATTRIBUTES_HEADER))
         {
-            attributes = (List<String>) requestHeader.getHeader("attributes");
+            attributes = (List<String>) requestHeader.getHeader(ATTRIBUTES_HEADER);
         }
         else
         {
@@ -471,28 +747,28 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
 
         }
 
-        if(requestHeader.containsHeader("offset"))
+        if(requestHeader.containsHeader(OFFSET_HEADER))
         {
-            offset = ((Number) requestHeader.getHeader("offset")).intValue();
-            responseHeader.setHeader("offset",offset);
+            offset = ((Number) requestHeader.getHeader(OFFSET_HEADER)).intValue();
+            responseHeader.setHeader(OFFSET_HEADER,offset);
         }
         else
         {
             offset = 0;
         }
 
-        if(requestHeader.containsHeader("count"))
+        if(requestHeader.containsHeader(COUNT_HEADER))
         {
-            count = ((Number) requestHeader.getHeader("count")).intValue();
+            count = ((Number) requestHeader.getHeader(COUNT_HEADER)).intValue();
         }
         else
         {
             count = Integer.MAX_VALUE;
         }
 
-        responseHeader.setHeader("attributes", attributes);
+        responseHeader.setHeader(ATTRIBUTES_HEADER, attributes);
 
-        responseHeader.setHeader("statusCode", 200);
+        responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_OK);
         List<List<Object>> responseList = new ArrayList<List<Object>>();
 
         int rowNo = 0;
@@ -518,7 +794,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                             for(String attr : attributes)
                             {
                                 Object value;
-                                if("type".equals(attr))
+                                if(TYPE_ATTRIBUTE.equals(attr))
                                 {
                                     value = entityType.getName();
                                 }
@@ -543,7 +819,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                 break;
             }
         }
-        responseHeader.setHeader("count", count);
+        responseHeader.setHeader(COUNT_HEADER, count);
         responseMessage = InternalMessage.createListMessage(_virtualHost.getMessageStore(),
                                                             responseHeader,
                                                             responseList);
@@ -607,36 +883,6 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             }
         }
         return false;
-    }
-
-    private InternalMessage createFailureResponse(final InternalMessage msg)
-    {
-        final InternalMessageHeader requestHeader = msg.getMessageHeader();
-        final Map<String,Object> appProps = new HashMap<String, Object>();
-        final Map<Object, Object> body = new HashMap<Object, Object>();
-
-        appProps.put("statusCode",200);
-        body.put("prop1", "wibble");
-
-
-        final InternalMessageHeader header =
-                new InternalMessageHeader(appProps,
-                                          requestHeader.getCorrelationId() == null
-                                                  ? requestHeader.getMessageId()
-                                                  : requestHeader.getCorrelationId(),
-                                          0,
-                                          null,
-                                          null,
-                                          UUID.randomUUID().toString(),
-                                          null,
-                                          null,
-                                          (byte)4,
-                                          System.currentTimeMillis(),
-                                          null,
-                                          null);
-
-
-        return InternalMessage.createMapMessage(_virtualHost.getMessageStore(), header, body);
     }
 
     @Override
@@ -708,7 +954,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     @Override
     public String getName()
     {
-        return "$management";
+        return MANAGEMENT_NODE_NAME;
     }
 
     @Override
