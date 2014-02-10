@@ -125,7 +125,8 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                                                                                queue,
                                                                                !body.getNoAck(),
                                                                                body.getArguments(),
-                                                                               body.getExclusive());
+                                                                               body.getExclusive(),
+                                                                               body.getNoLocal());
                         if (!body.getNowait())
                         {
                             MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
