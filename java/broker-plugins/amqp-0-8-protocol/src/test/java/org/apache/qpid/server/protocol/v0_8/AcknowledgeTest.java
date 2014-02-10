@@ -140,7 +140,7 @@ public class AcknowledgeTest extends QpidTestCase
         assertEquals("Channel should have no unacked msgs ", 0, getChannel().getUnacknowledgedMessageMap().size());
 
         //Subscribe to the queue
-        AMQShortString subscriber = _channel.consumeFromSource(null, _queue, true, null, true);
+        AMQShortString subscriber = _channel.consumeFromSource(null, _queue, true, null, true, false);
 
         getQueue().deliverAsync();
 

@@ -31,6 +31,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.v0_8.handler.BasicGetMethodHandler;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
@@ -78,6 +79,16 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                                                              FlowCreditManager creditManager) throws AMQException
     {
         return new BrowserConsumer(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
+    }
+
+    public static ConsumerTarget_0_8 createGetNoAckTarget(final AMQChannel channel,
+                                                          final AMQShortString consumerTag,
+                                                          final FieldTable filters,
+                                                          final FlowCreditManager creditManager,
+                                                          final ClientDeliveryMethod deliveryMethod,
+                                                          final RecordDeliveryMethod recordMethod) throws AMQException
+    {
+        return new GetNoAckConsumer(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
     }
 
     static final class BrowserConsumer extends ConsumerTarget_0_8
@@ -132,10 +143,10 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     }
 
     public static ConsumerTarget_0_8 createNoAckTarget(AMQChannel channel,
-                                                           AMQShortString consumerTag, FieldTable filters,
-                                                           FlowCreditManager creditManager,
-                                                           ClientDeliveryMethod deliveryMethod,
-                                                           RecordDeliveryMethod recordMethod) throws AMQException
+                                                       AMQShortString consumerTag, FieldTable filters,
+                                                       FlowCreditManager creditManager,
+                                                       ClientDeliveryMethod deliveryMethod,
+                                                       RecordDeliveryMethod recordMethod) throws AMQException
     {
         return new NoAckConsumer(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
     }
@@ -223,9 +234,9 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
      */
     public static final class GetNoAckConsumer extends NoAckConsumer
     {
-        public GetNoAckConsumer(AMQChannel channel, AMQProtocolSession protocolSession,
+        public GetNoAckConsumer(AMQChannel channel,
                                 AMQShortString consumerTag, FieldTable filters,
-                                boolean noLocal, FlowCreditManager creditManager,
+                                FlowCreditManager creditManager,
                                 ClientDeliveryMethod deliveryMethod,
                                 RecordDeliveryMethod recordMethod)
             throws AMQException
@@ -417,7 +428,12 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         boolean closed = false;
         State state = getState();
 
-        getConsumer().getSendLock();
+        final Consumer consumer = getConsumer();
+
+        if(consumer != null)
+        {
+            consumer.getSendLock();
+        }
         try
         {
             while(!closed && state != State.CLOSED)
@@ -433,7 +449,10 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         }
         finally
         {
-            getConsumer().releaseSendLock();
+            if(consumer != null)
+            {
+                consumer.releaseSendLock();
+            }
         }
     }
 

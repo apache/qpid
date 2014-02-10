@@ -107,7 +107,11 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         boolean closed = false;
         State state = getState();
 
-        getConsumer().getSendLock();
+        final Consumer consumer = getConsumer();
+        if(consumer != null)
+        {
+            consumer.getSendLock();
+        }
         try
         {
             while(!closed && state != State.CLOSED)
@@ -122,7 +126,10 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
             }
         finally
         {
-            getConsumer().releaseSendLock();
+            if(consumer != null)
+            {
+                consumer.releaseSendLock();
+            }
         }
 
         return closed;
