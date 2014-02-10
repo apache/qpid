@@ -30,6 +30,7 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.TokenMgrError;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -118,11 +119,11 @@ public class FilterSupport
         }
     }
 
-    static final class NoLocalFilter implements MessageFilter
+    public static final class NoLocalFilter implements MessageFilter
     {
-        private final AMQQueue _queue;
+        private final MessageSource _queue;
 
-        public NoLocalFilter(AMQQueue queue)
+        public NoLocalFilter(MessageSource queue)
         {
             _queue = queue;
         }

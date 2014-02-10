@@ -44,7 +44,10 @@ import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.filter.FilterSupport;
+import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.logging.LogActor;
@@ -512,7 +515,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      * @throws AMQException                  if something goes wrong
      */
     public AMQShortString consumeFromSource(AMQShortString tag, MessageSource source, boolean acks,
-                                            FieldTable filters, boolean exclusive) throws AMQException
+                                            FieldTable filters, boolean exclusive, boolean noLocal) throws AMQException
     {
         if (tag == null)
         {
@@ -549,6 +552,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             options.add(Consumer.Option.EXCLUSIVE);
         }
 
+
         // So to keep things straight we put before the call and catch all exceptions from the register and tidy up.
         // We add before we register as the Async Delivery process may AutoClose the subscriber
         // so calling _cT2QM.remove before we have done put which was after the register succeeded.
@@ -558,9 +562,18 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         try
         {
+            FilterManager filterManager = FilterManagerFactory.createManager(FieldTable.convertToMap(filters));
+            if(noLocal)
+            {
+                if(filterManager == null)
+                {
+                    filterManager = new SimpleFilterManager();
+                }
+                filterManager.add(new FilterSupport.NoLocalFilter(source));
+            }
             Consumer sub =
                     source.addConsumer(target,
-                                      FilterManagerFactory.createManager(FieldTable.convertToMap(filters)),
+                                       filterManager,
                                       AMQMessage.class,
                                       AMQShortString.toString(tag),
                                       options);
