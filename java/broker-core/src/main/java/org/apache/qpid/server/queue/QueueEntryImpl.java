@@ -369,42 +369,45 @@ public abstract class QueueEntryImpl implements QueueEntry
         final AMQQueue currentQueue = getQueue();
         Exchange alternateExchange = currentQueue.getAlternateExchange();
         boolean autocommit =  txn == null;
+        int enqueues;
+
+        if(autocommit)
+        {
+            txn = new LocalTransaction(getQueue().getVirtualHost().getMessageStore());
+        }
+
         if (alternateExchange != null)
         {
-            if(autocommit)
-            {
-                txn = new LocalTransaction(getQueue().getVirtualHost().getMessageStore());
-            }
 
-            int enqueues = alternateExchange.send(getMessage(),
+            enqueues = alternateExchange.send(getMessage(),
                                                   getInstanceProperties(),
                                                   txn,
                                                   action);
-
-            txn.dequeue(currentQueue, getMessage(), new ServerTransaction.Action()
-            {
-                public void postCommit()
-                {
-                    delete();
-                }
-
-                public void onRollback()
-                {
-
-                }
-            });
-
-            if(autocommit)
-            {
-                txn.commit();
-            }
-            return enqueues;
-
         }
         else
         {
-            return 0;
+            enqueues = 0;
         }
+
+        txn.dequeue(currentQueue, getMessage(), new ServerTransaction.Action()
+        {
+            public void postCommit()
+            {
+                delete();
+            }
+
+            public void onRollback()
+            {
+
+            }
+        });
+
+        if(autocommit)
+        {
+            txn.commit();
+        }
+        return enqueues;
+
     }
 
     public boolean isQueueDeleted()
