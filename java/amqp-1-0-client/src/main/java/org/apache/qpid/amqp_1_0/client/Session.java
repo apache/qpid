@@ -78,8 +78,14 @@ public class Session
     public Sender createSender(final String targetName, final SourceConfigurator configurator)
             throws Sender.SenderCreationException, ConnectionClosedException
     {
-
         final String sourceName = UUID.randomUUID().toString();
+        return createSender(sourceName, targetName, configurator);
+    }
+
+    public Sender createSender(final String sourceName, final String targetName, final SourceConfigurator configurator)
+        throws Sender.SenderCreationException, ConnectionClosedException
+        {
+
         return new Sender(this, targetName +"<-"+sourceName, targetName, sourceName, false)
         {
             @Override
@@ -150,33 +156,40 @@ public class Session
 
     public Receiver createReceiver(final String sourceAddr) throws ConnectionErrorException
     {
-        return createReceiver(sourceAddr, null, AcknowledgeMode.ALO);
+        return createReceiver(sourceAddr, UUID.randomUUID().toString(), null, AcknowledgeMode.ALO);
     }
 
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode)
             throws ConnectionErrorException
     {
-        return createReceiver(queue, null, mode);
+        return createReceiver(queue, UUID.randomUUID().toString(), null, mode);
     }
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName)
             throws ConnectionErrorException
     {
-        return createReceiver(queue, null, mode, linkName);
+        return createReceiver(queue, UUID.randomUUID().toString(), null, mode, linkName);
     }
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName, boolean isDurable)
             throws ConnectionErrorException
     {
-        return createReceiver(queue, null, mode, linkName, isDurable);
+        return createReceiver(queue, UUID.randomUUID().toString(), null, mode, linkName, isDurable);
     }
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName, boolean isDurable,
                                    Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
             throws ConnectionErrorException
     {
-        return createReceiver(queue, null, mode, linkName, isDurable, filters, unsettled);
+        return createReceiver(queue, (DistributionMode) null, mode, linkName, isDurable, filters, unsettled);
+    }
+
+    public Receiver createReceiver(final String queue, String targetName, final AcknowledgeMode mode, String linkName, boolean isDurable,
+                                   Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
+            throws ConnectionErrorException
+    {
+        return createReceiver(queue, targetName, null, mode, linkName, isDurable, filters, unsettled);
     }
 
 
@@ -184,59 +197,77 @@ public class Session
                                    boolean isDurable, Map<Binary, Outcome> unsettled)
             throws ConnectionErrorException
     {
-        return createReceiver(queue, null, mode, linkName, isDurable, unsettled);
+        return createReceiver(queue, UUID.randomUUID().toString(), null, mode, linkName, isDurable, unsettled);
     }
 
 
-    private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode)
+    private synchronized Receiver createReceiver(final String sourceAddr,
+                                                 final String targetAddr,
+                                                 DistributionMode mode)
             throws ConnectionErrorException
     {
-        return createReceiver(sourceAddr, mode, AcknowledgeMode.ALO);
+        return createReceiver(sourceAddr, targetAddr, mode, AcknowledgeMode.ALO);
     }
 
-    private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode, String linkName)
+
+    private synchronized Receiver createReceiver(final String sourceAddr,
+                                                 final String targetAddr,
+                                                 DistributionMode mode,
+                                                 final AcknowledgeMode ackMode)
             throws ConnectionErrorException
     {
-        return createReceiver(sourceAddr, mode, AcknowledgeMode.ALO, linkName);
+        return createReceiver(sourceAddr, targetAddr, mode, ackMode, null);
     }
 
-
-    private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
-                                            final AcknowledgeMode ackMode)
+    private synchronized Receiver createReceiver(final String sourceAddr,
+                                                 final String targetAddr,
+                                                 DistributionMode mode,
+                                                 final AcknowledgeMode ackMode,
+                                                 String linkName)
             throws ConnectionErrorException
     {
-        return createReceiver(sourceAddr, mode, ackMode, null);
+        return createReceiver(sourceAddr, targetAddr, mode, ackMode, linkName, false);
     }
 
-    private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
-                                            final AcknowledgeMode ackMode, String linkName)
+    private synchronized Receiver createReceiver(final String sourceAddr,
+                                                 final String targetAddr,
+                                                 DistributionMode mode,
+                                                 final AcknowledgeMode ackMode,
+                                                 String linkName,
+                                                 boolean isDurable)
             throws ConnectionErrorException
     {
-        return createReceiver(sourceAddr,mode, ackMode, linkName, false);
+        return createReceiver(sourceAddr, targetAddr, mode, ackMode, linkName, isDurable, null);
     }
 
-    private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
-                                            final AcknowledgeMode ackMode, String linkName, boolean isDurable)
-            throws ConnectionErrorException
-    {
-        return createReceiver(sourceAddr, mode, ackMode, linkName, isDurable, null);
-    }
-
-    private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
-                                            final AcknowledgeMode ackMode, String linkName, boolean isDurable,
-                                            Map<Binary, Outcome> unsettled)
+    private synchronized Receiver createReceiver(final String sourceAddr,
+                                                 final String targetAddr,
+                                                 DistributionMode mode,
+                                                 final AcknowledgeMode ackMode,
+                                                 String linkName,
+                                                 boolean isDurable,
+                                                 Map<Binary, Outcome> unsettled)
             throws ConnectionErrorException
     {
         return createReceiver(sourceAddr,mode,ackMode, linkName, isDurable, null, unsettled);
     }
 
     public synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
+                                                final AcknowledgeMode ackMode, String linkName, boolean isDurable,
+                                                Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
+            throws ConnectionErrorException
+    {
+        return createReceiver(sourceAddr, UUID.randomUUID().toString(), mode, ackMode, linkName, isDurable, filters, unsettled);
+    }
+
+    public synchronized Receiver createReceiver(final String sourceAddr, String targetAddr, DistributionMode mode,
                                             final AcknowledgeMode ackMode, String linkName, boolean isDurable,
                                             Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
             throws ConnectionErrorException
     {
 
         final Target target = new Target();
+        target.setAddress(targetAddr);
         final Source source = new Source();
         source.setAddress(sourceAddr);
         source.setDistributionMode(mode);
@@ -258,12 +289,17 @@ public class Session
 
     public synchronized Receiver createCopyingReceiver(final String sourceAddr) throws ConnectionErrorException
     {
-        return createReceiver(sourceAddr, StdDistMode.COPY);
+        return createReceiver(sourceAddr, UUID.randomUUID().toString(), StdDistMode.COPY);
     }
 
     public synchronized Receiver createMovingReceiver(final String sourceAddr) throws ConnectionErrorException
     {
-        return createReceiver(sourceAddr, StdDistMode.MOVE);
+        return createReceiver(sourceAddr, UUID.randomUUID().toString(), StdDistMode.MOVE);
+    }
+
+    public synchronized Receiver createMovingReceiver(final String sourceAddr, final String targetAddr) throws ConnectionErrorException
+    {
+        return createReceiver(sourceAddr, UUID.randomUUID().toString(), StdDistMode.MOVE);
     }
 
     public Receiver createTemporaryQueueReceiver() throws AmqpErrorException, ConnectionErrorException

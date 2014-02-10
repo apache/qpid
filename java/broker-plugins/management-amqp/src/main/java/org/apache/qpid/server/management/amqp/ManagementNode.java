@@ -336,11 +336,13 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
 
-
-        for(ManagementNodeConsumer consumer : _consumers.values())
+        ManagementNodeConsumer consumer = _consumers.get(message.getMessageHeader().getReplyTo());
+        if(consumer != null)
         {
+            // TODO - check same owner
             consumer.send(response);
         }
+        // TODO - route to a queue
 
     }
 
