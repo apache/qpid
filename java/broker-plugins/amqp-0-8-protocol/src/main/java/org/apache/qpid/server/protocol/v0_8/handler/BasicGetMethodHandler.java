@@ -128,24 +128,8 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
 
         final FlowCreditManager singleMessageCredit = new MessageOnlyCreditManager(1L);
 
-        final ClientDeliveryMethod getDeliveryMethod = new ClientDeliveryMethod()
-        {
-
-            @Override
-            public void deliverToClient(final Consumer sub, final ServerMessage message, final
-                                        InstanceProperties props, final long deliveryTag)
-            throws AMQException
-            {
-                singleMessageCredit.useCreditForMessage(message.getSize());
-                session.getProtocolOutputConverter().writeGetOk(message,
-                                                                props,
-                                                                channel.getChannelId(),
-                                                                deliveryTag,
-                                                                queue.getMessageCount());
-
-
-            }
-        };
+        final GetDeliveryMethod getDeliveryMethod =
+                new GetDeliveryMethod(singleMessageCredit, session, channel, queue);
         final RecordDeliveryMethod getRecordMethod = new RecordDeliveryMethod()
         {
 
@@ -167,7 +151,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         }
         else
         {
-            target = ConsumerTarget_0_8.createNoAckTarget(channel,
+            target = ConsumerTarget_0_8.createGetNoAckTarget(channel,
                                                           AMQShortString.EMPTY_STRING, null,
                                                           singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
@@ -175,10 +159,48 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         Consumer sub = queue.addConsumer(target, null, AMQMessage.class, "", options);
         sub.flush();
         sub.close();
-        return(!singleMessageCredit.hasCredit());
+        return(getDeliveryMethod.hasDeliveredMessage());
 
 
     }
 
 
+    private static class GetDeliveryMethod implements ClientDeliveryMethod
+    {
+
+        private final FlowCreditManager _singleMessageCredit;
+        private final AMQProtocolSession _session;
+        private final AMQChannel _channel;
+        private final AMQQueue _queue;
+        private boolean _deliveredMessage;
+
+        public GetDeliveryMethod(final FlowCreditManager singleMessageCredit,
+                                 final AMQProtocolSession session,
+                                 final AMQChannel channel, final AMQQueue queue)
+        {
+            _singleMessageCredit = singleMessageCredit;
+            _session = session;
+            _channel = channel;
+            _queue = queue;
+        }
+
+        @Override
+        public void deliverToClient(final Consumer sub, final ServerMessage message,
+                                    final InstanceProperties props, final long deliveryTag) throws AMQException
+        {
+            _singleMessageCredit.useCreditForMessage(message.getSize());
+            _session.getProtocolOutputConverter().writeGetOk(message,
+                                                            props,
+                                                            _channel.getChannelId(),
+                                                            deliveryTag,
+                                                            _queue.getMessageCount());
+
+            _deliveredMessage = true;
+        }
+
+        public boolean hasDeliveredMessage()
+        {
+            return _deliveredMessage;
+        }
+    }
 }
