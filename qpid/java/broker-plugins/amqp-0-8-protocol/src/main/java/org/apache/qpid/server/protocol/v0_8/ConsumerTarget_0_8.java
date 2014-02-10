@@ -428,7 +428,12 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         boolean closed = false;
         State state = getState();
 
-        getConsumer().getSendLock();
+        final Consumer consumer = getConsumer();
+
+        if(consumer != null)
+        {
+            consumer.getSendLock();
+        }
         try
         {
             while(!closed && state != State.CLOSED)
@@ -444,7 +449,10 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         }
         finally
         {
-            getConsumer().releaseSendLock();
+            if(consumer != null)
+            {
+                consumer.releaseSendLock();
+            }
         }
     }
 
