@@ -527,6 +527,39 @@ sub get_properties {
 
 =pod
 
+=head2 CONTENT OBJECT
+
+The message content, represented as anh object.
+
+=over
+
+=item $msg->set_content_object( \%content )
+
+=item $content = $msg->get_Content_object
+
+=back
+
+=cut
+
+sub set_content_object {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+
+    my $content = $_[1];
+
+    $impl->setContentObject($content);
+}
+
+sub get_content_object {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+    my $content = $impl->getContentObject;
+
+    return $content;
+}
+
+=pod
+
 =head2 CONTENT
 
 The message content.
