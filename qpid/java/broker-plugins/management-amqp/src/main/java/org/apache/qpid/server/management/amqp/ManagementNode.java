@@ -243,10 +243,10 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     {
 
         @SuppressWarnings("unchecked")
-        MessageConverter<M, InternalMessage> converter =
-                MessageConverterRegistry.getConverter((Class<M>)message.getClass(), InternalMessage.class);
+        MessageConverter converter =
+                MessageConverterRegistry.getConverter(message.getClass(), InternalMessage.class);
 
-        final InternalMessage msg = converter.<M>convert(message, _virtualHost);
+        final InternalMessage msg = (InternalMessage) converter.convert(message, _virtualHost);
 
         if(validateMessage(msg))
         {
