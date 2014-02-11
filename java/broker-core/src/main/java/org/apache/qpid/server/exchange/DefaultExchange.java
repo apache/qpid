@@ -46,6 +46,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -335,10 +336,10 @@ public class DefaultExchange implements Exchange
         return _id;
     }
 
-    public final int send(final ServerMessage message,
+    public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
+                          final Action<? super MessageInstance<?, ? extends Consumer>> postEnqueueAction)
     {
         final AMQQueue q = _virtualHost.getQueue(message.getRoutingKey());
         if(q == null)

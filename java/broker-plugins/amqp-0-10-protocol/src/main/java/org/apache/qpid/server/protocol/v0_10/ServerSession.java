@@ -928,10 +928,10 @@ public class ServerSession extends Session
         return getId().compareTo(o.getId());
     }
 
-    private class CheckCapacityAction<C extends Consumer> implements Action<MessageInstance<C>>
+    private class CheckCapacityAction<C extends Consumer> implements Action<MessageInstance<?,C>>
     {
         @Override
-        public void performAction(final MessageInstance<C> entry)
+        public void performAction(final MessageInstance<?,C> entry)
         {
             TransactionLogResource queue = entry.getOwningResource();
             if(queue instanceof CapacityChecker)

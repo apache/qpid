@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class AssignedConsumerMessageGroupManager implements MessageGroupManager
+public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> implements MessageGroupManager<E,Q,L>
 {
     private static final Logger _logger = LoggerFactory.getLogger(AssignedConsumerMessageGroupManager.class);
 
@@ -53,25 +53,18 @@ public class AssignedConsumerMessageGroupManager implements MessageGroupManager
         return val;
     }
 
-    public QueueConsumer getAssignedConsumer(final QueueEntry entry)
+    public QueueConsumer getAssignedConsumer(final E entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         return groupVal == null ? null : _groupMap.get(groupVal.hashCode() & _groupMask);
     }
 
-    public boolean acceptMessage(QueueConsumer sub, QueueEntry entry)
+    public boolean acceptMessage(QueueConsumer<?,E,Q,L> sub, E entry)
     {
-        if(assignMessage(sub, entry))
-        {
-            return entry.acquire(sub);
-        }
-        else
-        {
-            return false;
-        }
+        return assignMessage(sub, entry) && entry.acquire(sub);
     }
 
-    private boolean assignMessage(QueueConsumer sub, QueueEntry entry)
+    private boolean assignMessage(QueueConsumer sub, E entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         if(groupVal == null)
@@ -105,16 +98,16 @@ public class AssignedConsumerMessageGroupManager implements MessageGroupManager
         }
     }
     
-    public QueueEntry findEarliestAssignedAvailableEntry(QueueConsumer sub)
+    public E findEarliestAssignedAvailableEntry(QueueConsumer sub)
     {
         EntryFinder visitor = new EntryFinder(sub);
         sub.getQueue().visit(visitor);
         return visitor.getEntry();
     }
 
-    private class EntryFinder implements QueueEntryVisitor
+    private class EntryFinder implements QueueEntryVisitor<E>
     {
-        private QueueEntry _entry;
+        private E _entry;
         private QueueConsumer _sub;
 
         public EntryFinder(final QueueConsumer sub)
@@ -122,7 +115,7 @@ public class AssignedConsumerMessageGroupManager implements MessageGroupManager
             _sub = sub;
         }
 
-        public boolean visit(final QueueEntry entry)
+        public boolean visit(final E entry)
         {
             if(!entry.isAvailable())
             {
@@ -148,7 +141,7 @@ public class AssignedConsumerMessageGroupManager implements MessageGroupManager
             }
         }
 
-        public QueueEntry getEntry()
+        public E getEntry()
         {
             return _entry;
         }

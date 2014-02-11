@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
@@ -159,7 +160,8 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     {
         try
         {
-            return _session.getClientSession().createReceiver(_session.toAddress(_destination), AcknowledgeMode.ALO,
+            String targetAddr = _destination.getLocalTerminus() != null ? _destination.getLocalTerminus() : UUID.randomUUID().toString();
+            return _session.getClientSession().createReceiver(_session.toAddress(_destination), targetAddr, AcknowledgeMode.ALO,
                     _linkName, _durable, getFilters(), null);
         }
         catch (ConnectionErrorException e)

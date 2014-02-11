@@ -460,7 +460,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     {
         checkClosed();
         checkNotTopicSession();
-        return new QueueImpl(s);
+        return QueueImpl.valueOf(s);
     }
 
     public QueueReceiver createReceiver(final Queue queue) throws JMSException
@@ -488,7 +488,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     {
         checkClosed();
         checkNotQueueSession();
-        return new TopicImpl(s);
+        return TopicImpl.valueOf(s);
     }
 
     public TopicSubscriber createSubscriber(final Topic topic) throws JMSException

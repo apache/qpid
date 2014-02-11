@@ -24,6 +24,8 @@ import java.util.Collections;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
@@ -34,9 +36,10 @@ import java.util.EnumSet;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.consumer.Consumer;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AMQPriorityQueueTest extends SimpleAMQQueueTest
+public class PriorityQueueTest extends SimpleAMQQueueTestBase
 {
 
     @Override

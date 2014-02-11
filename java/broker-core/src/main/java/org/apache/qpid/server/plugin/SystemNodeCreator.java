@@ -31,6 +31,7 @@ public interface SystemNodeCreator extends Pluggable
         void removeSystemNode(MessageNode node);
 
         VirtualHost getVirtualHost();
+        org.apache.qpid.server.model.VirtualHost getVirtualHostModel();
     }
 
     void register(SystemNodeRegistry registry);

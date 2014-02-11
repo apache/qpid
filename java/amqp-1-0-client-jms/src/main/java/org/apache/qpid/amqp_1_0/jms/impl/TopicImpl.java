@@ -20,6 +20,7 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.jms.Topic;
 
+import java.util.UUID;
 import java.util.WeakHashMap;
 
 public class TopicImpl extends DestinationImpl implements Topic
@@ -38,13 +39,24 @@ public class TopicImpl extends DestinationImpl implements Topic
         return getAddress();
     }
 
-    public static synchronized TopicImpl createTopic(final String address)
+    public static synchronized TopicImpl createTopic(String address)
     {
-        TopicImpl topic = TOPIC_CACHE.get(address);
-        if(topic == null)
+        TopicImpl topic;
+        if (address.endsWith("!!"))
         {
+            address = address.substring(0, address.length() - 2);
+            String localTerminusName = UUID.randomUUID().toString();
             topic = new TopicImpl(address);
-            TOPIC_CACHE.put(address, topic);
+            topic.setLocalTerminus(localTerminusName);
+        }
+        else
+        {
+            topic = TOPIC_CACHE.get(address);
+            if(topic == null)
+            {
+                topic = new TopicImpl(address);
+                TOPIC_CACHE.put(address, topic);
+            }
         }
         return topic;
     }

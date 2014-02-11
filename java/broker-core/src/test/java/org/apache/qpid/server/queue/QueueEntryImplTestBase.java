@@ -22,12 +22,18 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -56,6 +62,15 @@ public abstract class QueueEntryImplTestBase extends TestCase
         _queueEntry2 = getQueueEntryImpl(2);
         _queueEntry3 = getQueueEntryImpl(3);
     }
+
+
+    protected void mockLogging()
+    {
+        final LogActor logActor = mock(LogActor.class);
+        when(logActor.getRootMessageLogger()).thenReturn(mock(RootMessageLogger.class));
+        CurrentActor.setDefault(logActor);
+    }
+
 
     public void testAcquire()
     {
@@ -185,7 +200,9 @@ public abstract class QueueEntryImplTestBase extends TestCase
     {
         int numberOfEntries = 5;
         QueueEntryImpl[] entries = new QueueEntryImpl[numberOfEntries];
-        SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
+        StandardQueue queue = new StandardQueue(UUID.randomUUID(), getName(), false, null, false, false,
+                                                mock(VirtualHost.class), Collections.<String,Object>emptyMap());
+        OrderedQueueEntryList queueEntryList = queue.getEntries();
 
         // create test entries
         for(int i = 0; i < numberOfEntries ; i++)

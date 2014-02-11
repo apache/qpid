@@ -26,11 +26,9 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.NotificationCheckTest;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.queue.SimpleAMQQueueTest;
+import org.apache.qpid.server.queue.StandardQueue;
 import org.apache.qpid.test.client.destination.AddressBasedDestinationTest;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -661,7 +659,7 @@ public class QueueManagementTest extends QpidBrokerTestCase
         final Object messageGroupKey = "test";
         final Map<String, Object> arguments = new HashMap<String, Object>(2);
         arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY, messageGroupKey);
-        arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP, SimpleAMQQueue.SHARED_MSG_GROUP_ARG_VALUE);
+        arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP, StandardQueue.SHARED_MSG_GROUP_ARG_VALUE);
         managedBroker.createNewQueue(queueName, null, true, arguments);
 
         final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);

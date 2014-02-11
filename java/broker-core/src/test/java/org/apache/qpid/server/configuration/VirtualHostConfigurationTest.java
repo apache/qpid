@@ -27,7 +27,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.queue.AMQPriorityQueue;
+import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -113,17 +113,17 @@ public class VirtualHostConfigurationTest extends QpidTestCase
 
         // Check that atest was a priority queue with 5 priorities
         AMQQueue atest = vhost.getQueue("atest");
-        assertTrue(atest instanceof AMQPriorityQueue);
-        assertEquals(5, ((AMQPriorityQueue) atest).getPriorities());
+        assertTrue(atest instanceof PriorityQueue);
+        assertEquals(5, ((PriorityQueue) atest).getPriorities());
 
         // Check that ptest was a priority queue with 10 priorities
         AMQQueue ptest = vhost.getQueue("ptest");
-        assertTrue(ptest instanceof AMQPriorityQueue);
-        assertEquals(10, ((AMQPriorityQueue) ptest).getPriorities());
+        assertTrue(ptest instanceof PriorityQueue);
+        assertEquals(10, ((PriorityQueue) ptest).getPriorities());
 
         // Check that ntest wasn't a priority queue
         AMQQueue ntest = vhost.getQueue("ntest");
-        assertFalse(ntest instanceof AMQPriorityQueue);
+        assertFalse(ntest instanceof PriorityQueue);
     }
 
     public void testQueueAlerts() throws Exception

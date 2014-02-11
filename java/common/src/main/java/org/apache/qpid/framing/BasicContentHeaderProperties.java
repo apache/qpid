@@ -30,8 +30,8 @@ import java.io.IOException;
 public class BasicContentHeaderProperties
 {
     //persistent & non-persistent constants, values as per JMS DeliveryMode
-    public static final int NON_PERSISTENT = 1;
-    public static final int PERSISTENT = 2;
+    public static final byte NON_PERSISTENT = 1;
+    public static final byte PERSISTENT = 2;
 
     private static final Logger _logger = LoggerFactory.getLogger(BasicContentHeaderProperties.class);
 

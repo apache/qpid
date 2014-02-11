@@ -1202,14 +1202,14 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
     }
 
 
-    private class ImmediateAction<C extends Consumer> implements Action<MessageInstance<C>>
+    private class ImmediateAction<C extends Consumer> implements Action<MessageInstance<?,C>>
     {
 
         public ImmediateAction()
         {
         }
 
-        public void performAction(MessageInstance<C> entry)
+        public void performAction(MessageInstance<?,C> entry)
         {
             TransactionLogResource queue = entry.getOwningResource();
 
@@ -1274,10 +1274,10 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         }
     }
 
-    private final class CapacityCheckAction<C extends Consumer> implements Action<MessageInstance<C>>
+    private final class CapacityCheckAction<C extends Consumer> implements Action<MessageInstance<?,C>>
     {
         @Override
-        public void performAction(final MessageInstance<C> entry)
+        public void performAction(final MessageInstance<?,C> entry)
         {
             TransactionLogResource queue = entry.getOwningResource();
             if(queue instanceof CapacityChecker)

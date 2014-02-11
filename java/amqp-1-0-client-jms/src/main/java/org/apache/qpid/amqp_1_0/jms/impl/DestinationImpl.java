@@ -24,6 +24,7 @@ import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 
 import javax.jms.JMSException;
+import java.util.UUID;
 import java.util.WeakHashMap;
 
 public class DestinationImpl implements Destination, Queue, Topic
@@ -32,6 +33,7 @@ public class DestinationImpl implements Destination, Queue, Topic
             new WeakHashMap<String, DestinationImpl>();
 
     private final String _address;
+    private String _localTerminus;
 
     protected DestinationImpl(String address)
     {
@@ -62,13 +64,24 @@ public class DestinationImpl implements Destination, Queue, Topic
                && _address.equals(((DestinationImpl)obj)._address);
     }
 
-    public static synchronized DestinationImpl createDestination(final String address)
+    public static synchronized DestinationImpl createDestination(String address)
     {
-        DestinationImpl destination = DESTINATION_CACHE.get(address);
-        if(destination == null)
+        DestinationImpl destination;
+        if (address.endsWith("!!"))
         {
+            address = address.substring(0, address.length() - 2);
+            String localTerminusName = UUID.randomUUID().toString();
             destination = new DestinationImpl(address);
-            DESTINATION_CACHE.put(address, destination);
+            destination.setLocalTerminus(localTerminusName);
+        }
+        else
+        {
+            destination = DESTINATION_CACHE.get(address);
+            if (destination == null)
+            {
+                destination = new DestinationImpl(address);
+                DESTINATION_CACHE.put(address, destination);
+            }
         }
         return destination;
     }
@@ -81,5 +94,15 @@ public class DestinationImpl implements Destination, Queue, Topic
     public String getTopicName() throws JMSException
     {
         return getAddress();
+    }
+
+    void setLocalTerminus(final String localTerminus)
+    {
+        _localTerminus = localTerminus;
+    }
+
+    String getLocalTerminus()
+    {
+        return _localTerminus;
     }
 }
