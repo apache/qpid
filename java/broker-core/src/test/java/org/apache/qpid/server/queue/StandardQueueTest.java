@@ -348,7 +348,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
         }
 
         @Override
-        public boolean acquire(QueueConsumer sub)
+        public boolean acquire(QueueConsumer<?,DequeuedQueueEntry,DequeuedQueue,DequeuedQueueEntryList> sub)
         {
             if(_message.getMessageNumber() % 2 == 0)
             {

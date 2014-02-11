@@ -54,7 +54,7 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
 
     boolean isExclusive();
 
-    interface ConsumerRegistrationListener<Q extends MessageSource<? extends Consumer,Q>>
+    interface ConsumerRegistrationListener<Q extends MessageSource<? extends Consumer,?>>
     {
         void consumerAdded(Q source, Consumer consumer);
         void consumerRemoved(Q queue, Consumer consumer);

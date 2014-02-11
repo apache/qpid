@@ -202,7 +202,7 @@ public abstract class QueueEntryImpl<E extends QueueEntryImpl<E,Q,L>, Q extends 
         return acquired;
     }
 
-    public boolean acquire(QueueConsumer sub)
+    public boolean acquire(QueueConsumer<?,E,Q,L> sub)
     {
         final boolean acquired = acquire(sub.getOwningState());
         if(acquired)
