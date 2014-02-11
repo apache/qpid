@@ -92,13 +92,13 @@ eval {
 
         # if the message content was a map, then we will print
         # it out as a series of name => value pairs
+        my $content = $message->get_content_object;
         if ( $message->get_content_type() eq "amqp/map" ) {
-            my $content = $message->get_content();
             map { print "\n$_ => $content->{$_}"; } keys %{$content};
         }
         else {
             # it's not a map, so just print the content as a string
-            print $message->get_content();
+            print $content;
         }
         print "')\n";
 

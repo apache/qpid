@@ -91,7 +91,7 @@ eval {
     if (@entries) {
         my $content = {};
         setEntries($content);
-        $message->set_content($content);
+        $message->set_content_object($content);
     }
     elsif ($content) {
         $message->set_content($content);
