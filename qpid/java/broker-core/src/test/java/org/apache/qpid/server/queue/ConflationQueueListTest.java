@@ -28,6 +28,9 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Collections;
+import java.util.UUID;
+
 public class ConflationQueueListTest extends TestCase
 {
     private static final String CONFLATION_KEY = "CONFLATION_KEY";
@@ -37,13 +40,15 @@ public class ConflationQueueListTest extends TestCase
     private static final String TEST_KEY_VALUE2 = "testKeyValue2";
 
     private ConflationQueueList _list;
-    private AMQQueue _queue = createTestQueue();
+    private ConflationQueue _queue;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
-        _list = new ConflationQueueList(_queue, CONFLATION_KEY);
+        _queue = new ConflationQueue(UUID.randomUUID(), getName(), false, null, false, false, mock(VirtualHost.class),
+                                     Collections.<String,Object>emptyMap(),CONFLATION_KEY);
+        _list = _queue.getEntries();
     }
 
     public void testListHasNoEntries()
@@ -175,7 +180,8 @@ public class ConflationQueueListTest extends TestCase
 
     private int countEntries(ConflationQueueList list)
     {
-        QueueEntryIterator<SimpleQueueEntryImpl> iterator = list.iterator();
+        QueueEntryIterator<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList,QueueConsumer<?,ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>> iterator =
+                list.iterator();
         int count = 0;
         while(iterator.advance())
         {

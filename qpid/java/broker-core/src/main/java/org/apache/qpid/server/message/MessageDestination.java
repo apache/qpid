@@ -21,6 +21,7 @@
 package org.apache.qpid.server.message;
 
 import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 
@@ -37,8 +38,8 @@ public interface MessageDestination extends MessageNode
      * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
      * @return the number of queues in which the message was enqueued performed
      */
-    int send(ServerMessage message,
+    <M extends ServerMessage<? extends StorableMessageMetaData>> int send(M message,
              InstanceProperties instanceProperties,
              ServerTransaction txn,
-             Action<MessageInstance<? extends Consumer>> postEnqueueAction);
+             Action<? super MessageInstance<?,? extends Consumer>> postEnqueueAction);
 }

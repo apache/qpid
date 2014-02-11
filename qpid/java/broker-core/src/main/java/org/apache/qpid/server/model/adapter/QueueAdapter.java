@@ -26,13 +26,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
 import org.apache.qpid.server.model.Exchange;
@@ -49,8 +49,9 @@ import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.MapValueConverter;
 
-final class QueueAdapter extends AbstractAdapter implements Queue,
-                                                            AMQQueue.ConsumerRegistrationListener, AMQQueue.NotificationListener
+final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter implements Queue,
+                                                            MessageSource.ConsumerRegistrationListener<Q>,
+                                                            AMQQueue.NotificationListener
 {
     @SuppressWarnings("serial")
     static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
@@ -66,10 +67,11 @@ final class QueueAdapter extends AbstractAdapter implements Queue,
         put(DESCRIPTION, String.class);
     }});
 
-    private final AMQQueue _queue;
+    private final AMQQueue<?,Q,?> _queue;
+
     private final Map<Binding, BindingAdapter> _bindingAdapters =
             new HashMap<Binding, BindingAdapter>();
-    private Map<Consumer, ConsumerAdapter> _consumerAdapters =
+    private final Map<Consumer, ConsumerAdapter> _consumerAdapters =
             new HashMap<Consumer, ConsumerAdapter>();
 
 
@@ -77,7 +79,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue,
     private QueueStatisticsAdapter _statistics;
     private QueueNotificationListener _queueNotificationListener;
 
-    public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue queue)
+    public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue<?,Q,?> queue)
     {
         super(queue.getId(), virtualHostAdapter.getTaskExecutor());
         _vhost = virtualHostAdapter;
@@ -124,11 +126,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue,
 
     private void populateConsumers()
     {
-        Collection<Consumer> actualConsumers = _queue.getConsumers();
+        Collection<? extends Consumer> actualConsumers = _queue.getConsumers();
 
         synchronized (_consumerAdapters)
         {
-            Iterator<Consumer> iter = _consumerAdapters.keySet().iterator();
             for(Consumer consumer : actualConsumers)
             {
                 if(!_consumerAdapters.containsKey(consumer))
@@ -321,7 +322,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue,
             {
                 // TODO
             }
-            else if(TYPE.equals(name))
+            else if(QUEUE_TYPE.equals(name))
             {
                 // TODO
             }
@@ -396,9 +397,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue,
         }
         else if(LVQ_KEY.equals(name))
         {
-            if(_queue instanceof ConflationQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof ConflationQueue)
             {
-                return ((ConflationQueue)_queue).getConflationKey();
+                return ((ConflationQueue)queue).getConflationKey();
             }
         }
         else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
@@ -427,22 +429,24 @@ final class QueueAdapter extends AbstractAdapter implements Queue,
         }
         else if(SORT_KEY.equals(name))
         {
-            if(_queue instanceof SortedQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof SortedQueue)
             {
-                return ((SortedQueue)_queue).getSortedPropertyName();
+                return ((SortedQueue)queue).getSortedPropertyName();
             }
         }
-        else if(TYPE.equals(name))
+        else if(QUEUE_TYPE.equals(name))
         {
-            if(_queue instanceof SortedQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof SortedQueue)
             {
                 return "sorted";
             }
-            if(_queue instanceof ConflationQueue)
+            if(queue instanceof ConflationQueue)
             {
                 return "lvq";
             }
-            if(_queue instanceof AMQPriorityQueue)
+            if(queue instanceof PriorityQueue)
             {
                 return "priority";
             }
@@ -486,9 +490,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue,
         }
         else if(PRIORITIES.equals(name))
         {
-            if(_queue instanceof AMQPriorityQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof PriorityQueue)
             {
-                return ((AMQPriorityQueue)_queue).getPriorities();
+                return ((PriorityQueue)queue).getPriorities();
             }
         }
         return super.getAttribute(name);

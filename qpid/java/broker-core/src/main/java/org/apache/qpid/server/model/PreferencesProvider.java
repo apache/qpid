@@ -29,8 +29,6 @@ import java.util.Set;
 
 public interface PreferencesProvider extends ConfiguredObject
 {
-    String ID              = "id";
-    String NAME            = "name";
     String TYPE            = "type";
     String CREATED         = "created";
     String UPDATED         = "updated";

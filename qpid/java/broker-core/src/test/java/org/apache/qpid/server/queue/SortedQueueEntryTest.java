@@ -20,21 +20,41 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Collections;
+import java.util.UUID;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SortedQueueEntryImplTest extends QueueEntryImplTestBase
+public class SortedQueueEntryTest extends QueueEntryImplTestBase
 {
 
     public final static String keys[] = { "CCC", "AAA", "BBB" };
 
-    private SelfValidatingSortedQueueEntryList queueEntryList = new SelfValidatingSortedQueueEntryList(new MockAMQQueue("test"),"KEY");
+    private SelfValidatingSortedQueueEntryList _queueEntryList;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        mockLogging();
+        SortedQueue queue = new SortedQueue(UUID.randomUUID(), getName(), false, null, false,false, mock(VirtualHost.class), null, "KEY", new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
+        {
+
+            @Override
+            public SortedQueueEntryList createQueueEntryList(final SortedQueue queue)
+            {
+                return new SelfValidatingSortedQueueEntryList(queue, "KEY");
+            }
+        });
+        _queueEntryList = (SelfValidatingSortedQueueEntryList) queue.getEntries();
+        super.setUp();
+    }
 
     public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException
     {
@@ -48,7 +68,7 @@ public class SortedQueueEntryImplTest extends QueueEntryImplTestBase
         final MessageReference reference = mock(MessageReference.class);
         when(reference.getMessage()).thenReturn(message);
         when(message.newReference()).thenReturn(reference);
-        return queueEntryList.add(message);
+        return _queueEntryList.add(message);
     }
 
     public void testCompareTo()

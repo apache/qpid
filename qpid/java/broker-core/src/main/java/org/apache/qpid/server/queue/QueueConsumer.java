@@ -47,7 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
 
-class QueueConsumer<T extends ConsumerTarget> implements Consumer
+class QueueConsumer<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> implements Consumer
 {
 
     public static enum State
@@ -61,10 +61,9 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
     private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
     private final long _id;
-    private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
     private final Lock _stateChangeLock = new ReentrantLock();
     private final long _createTime = System.currentTimeMillis();
-    private final MessageInstance.ConsumerAcquiredState _owningState = new MessageInstance.ConsumerAcquiredState(this);
+    private final MessageInstance.ConsumerAcquiredState<QueueConsumer<T,E,Q,L>> _owningState = new MessageInstance.ConsumerAcquiredState<QueueConsumer<T,E,Q,L>>(this);
     private final boolean _acquires;
     private final boolean _seesRequeues;
     private final String _consumerName;
@@ -74,8 +73,10 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
     private final FilterManager _filters;
     private final Class<? extends ServerMessage> _messageClass;
     private final Object _sessionReference;
-    private SimpleAMQQueue _queue;
-    private GenericActor _logActor;
+    private Q _queue;
+    private GenericActor _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getId())
+                                                      + "(UNKNOWN)"
+                                                      + "] ");
 
     static final EnumMap<ConsumerTarget.State, State> STATE_MAP =
             new EnumMap<ConsumerTarget.State, State>(ConsumerTarget.State.class);
@@ -89,10 +90,10 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
 
     private final T _target;
     private final SubFlushRunner _runner = new SubFlushRunner(this);
-    private volatile QueueContext _queueContext;
-    private StateChangeListener<? extends Consumer, State> _stateListener = new StateChangeListener<Consumer, State>()
+    private volatile QueueContext<E,Q,L> _queueContext;
+    private StateChangeListener<? super QueueConsumer<T,E,Q,L>, State> _stateListener = new StateChangeListener<QueueConsumer<T,E,Q,L>, State>()
     {
-        public void stateChanged(Consumer sub, State oldState, State newState)
+        public void stateChanged(QueueConsumer sub, State oldState, State newState)
         {
             CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
         }
@@ -158,8 +159,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
                 throw new RuntimeException(e);
             }
         }
-        final StateChangeListener<Consumer, State> stateListener =
-                (StateChangeListener<Consumer, State>) getStateListener();
+        final StateChangeListener<? super QueueConsumer<T,E,Q,L>, State> stateListener = getStateListener();
         if(stateListener != null)
         {
             stateListener.stateChanged(this, STATE_MAP.get(oldState), STATE_MAP.get(newState));
@@ -251,12 +251,12 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         return STATE_MAP.get(_target.getState());
     }
 
-    public final SimpleAMQQueue getQueue()
+    public final Q getQueue()
     {
         return _queue;
     }
 
-    final void setQueue(SimpleAMQQueue queue, boolean exclusive)
+    final void setQueue(Q queue, boolean exclusive)
     {
         if(getQueue() != null)
         {
@@ -300,9 +300,9 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         getQueue().flushConsumer(this);
     }
 
-    boolean resend(final MessageInstance entry) throws AMQException
+    boolean resend(final E entry) throws AMQException
     {
-        return getQueue().resend((QueueEntry)entry, this);
+        return getQueue().resend(entry, this);
     }
 
     final SubFlushRunner getRunner()
@@ -315,29 +315,24 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         return _id;
     }
 
-    public final StateChangeListener<? extends Consumer, State> getStateListener()
+    public final StateChangeListener<? super QueueConsumer<T,E,Q,L>, State> getStateListener()
     {
         return _stateListener;
     }
 
-    public final void setStateListener(StateChangeListener<? extends Consumer, State> listener)
+    public final void setStateListener(StateChangeListener<? super QueueConsumer<T,E,Q,L>, State> listener)
     {
         _stateListener = listener;
     }
 
-    final QueueContext getQueueContext()
+    final QueueContext<E,Q,L> getQueueContext()
     {
         return _queueContext;
     }
 
-    final void setQueueContext(QueueContext queueContext)
+    final void setQueueContext(QueueContext<E,Q,L> queueContext)
     {
         _queueContext = queueContext;
-    }
-
-    protected boolean updateState(State from, State to)
-    {
-        return _state.compareAndSet(from, to);
     }
 
     public final boolean isActive()
@@ -355,7 +350,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         _noLocal = noLocal;
     }
 
-    public final boolean hasInterest(MessageInstance entry)
+    public final boolean hasInterest(E entry)
     {
        //check that the message hasn't been rejected
         if (entry.isRejectedBy(this))
@@ -405,7 +400,6 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
                 filterLogString.append(delimiter);
             }
             filterLogString.append("Browser");
-            hasEntries = true;
         }
 
         return filterLogString.toString();
@@ -431,7 +425,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         return _createTime;
     }
 
-    final MessageInstance.ConsumerAcquiredState getOwningState()
+    final MessageInstance.ConsumerAcquiredState<QueueConsumer<T,E,Q,L>> getOwningState()
     {
         return _owningState;
     }
@@ -466,7 +460,7 @@ class QueueConsumer<T extends ConsumerTarget> implements Consumer
         return _deliveredCount.longValue();
     }
 
-    final void send(final QueueEntry entry, final boolean batch) throws AMQException
+    final void send(final E entry, final boolean batch) throws AMQException
     {
         _deliveredCount.incrementAndGet();
         ServerMessage message = entry.getMessage();

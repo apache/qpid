@@ -37,8 +37,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface AMQQueue<C extends Consumer> extends Comparable<AMQQueue<C>>, ExchangeReferrer, BaseQueue,
-                                                      MessageSource<C>, CapacityChecker, MessageDestination
+public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, C extends Consumer>
+        extends Comparable<Q>, ExchangeReferrer, BaseQueue<C>, MessageSource<C,Q>, CapacityChecker, MessageDestination
 {
 
     public interface NotificationListener
@@ -87,12 +87,8 @@ public interface AMQQueue<C extends Consumer> extends Comparable<AMQQueue<C>>, E
 
     int getMessageCount();
 
-    int getUndeliveredMessageCount();
-
 
     long getQueueDepth();
-
-    long getReceivedMessageCount();
 
     long getOldestMessageArrivalTime();
 
@@ -100,28 +96,26 @@ public interface AMQQueue<C extends Consumer> extends Comparable<AMQQueue<C>>, E
 
     int delete() throws AMQException;
 
-    void requeue(QueueEntry entry);
+    void requeue(E entry);
 
-    void dequeue(QueueEntry entry, Consumer sub);
+    void dequeue(E entry);
 
-    void decrementUnackedMsgCount(QueueEntry queueEntry);
+    void decrementUnackedMsgCount(E queueEntry);
 
-    boolean resend(final QueueEntry entry, final Consumer consumer) throws AMQException;
+    boolean resend(final E entry, final C consumer) throws AMQException;
 
     void addQueueDeleteTask(Action<AMQQueue> task);
     void removeQueueDeleteTask(Action<AMQQueue> task);
 
 
 
-    List<QueueEntry> getMessagesOnTheQueue();
-
-    List<QueueEntry> getMessagesOnTheQueue(long fromMessageId, long toMessageId);
+    List<E> getMessagesOnTheQueue();
 
     List<Long> getMessagesOnTheQueue(int num);
 
     List<Long> getMessagesOnTheQueue(int num, int offset);
 
-    QueueEntry getMessageOnTheQueue(long messageId);
+    E getMessageOnTheQueue(long messageId);
 
     /**
      * Returns a list of QueEntries from a given range of queue positions, eg messages 5 to 10 on the queue.
@@ -132,9 +126,9 @@ public interface AMQQueue<C extends Consumer> extends Comparable<AMQQueue<C>>, E
      * @param toPosition
      * @return
      */
-    public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
+    public List<E> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
-    void visit(QueueEntryVisitor visitor);
+    void visit(QueueEntryVisitor<E> visitor);
 
 
     long getMaximumMessageSize();

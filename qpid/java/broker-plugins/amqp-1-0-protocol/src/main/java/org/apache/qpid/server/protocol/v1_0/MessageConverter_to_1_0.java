@@ -156,7 +156,7 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
         }
     }
 
-    private static Map fixMapValues(final Map<String, Object> map)
+    static Map fixMapValues(final Map<String, Object> map)
     {
         for(Map.Entry<String,Object> entry : map.entrySet())
         {
@@ -165,7 +165,7 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
         return map;
     }
 
-    private static Object fixValue(final Object value)
+    static Object fixValue(final Object value)
     {
         if(value instanceof byte[])
         {
@@ -185,7 +185,7 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
         }
     }
 
-    private static List fixListValues(final List list)
+    static List fixListValues(final List list)
     {
         ListIterator iterator = list.listIterator();
         while(iterator.hasNext())
@@ -198,83 +198,88 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
     }
 
     private StoredMessage<MessageMetaData_1_0> convertServerMessage(final MessageMetaData_1_0 metaData,
-                                                                      final ServerMessage serverMessage,
+                                                                      final M serverMessage,
                                                                       SectionEncoder sectionEncoder)
     {
-            final String mimeType = serverMessage.getMessageHeader().getMimeType();
-            byte[] data = new byte[(int) serverMessage.getSize()];
-            serverMessage.getContent(ByteBuffer.wrap(data), 0);
+        final String mimeType = serverMessage.getMessageHeader().getMimeType();
+        Section bodySection = getBodySection(serverMessage, mimeType);
 
-            Section bodySection = convertMessageBody(mimeType, data);
+        final ByteBuffer allData = encodeConvertedMessage(metaData, bodySection, sectionEncoder);
 
-            final ByteBuffer allData = encodeConvertedMessage(metaData, bodySection, sectionEncoder);
-
-            return new StoredMessage<MessageMetaData_1_0>()
-            {
-                @Override
-                public MessageMetaData_1_0 getMetaData()
-                {
-                    return metaData;
-                }
-
-                @Override
-                public long getMessageNumber()
-                {
-                    return serverMessage.getMessageNumber();
-                }
-
-                @Override
-                public void addContent(int offsetInMessage, ByteBuffer src)
-                {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public int getContent(int offsetInMessage, ByteBuffer dst)
-                {
-                    ByteBuffer buf = allData.duplicate();
-                    buf.position(offsetInMessage);
-                    buf = buf.slice();
-                    int size;
-                    if(dst.remaining()<buf.remaining())
+        return new StoredMessage<MessageMetaData_1_0>()
                     {
-                        buf.limit(dst.remaining());
-                        size = dst.remaining();
-                    }
-                    else
-                    {
-                        size = buf.remaining();
-                    }
-                    dst.put(buf);
-                    return size;
-                }
+                        @Override
+                        public MessageMetaData_1_0 getMetaData()
+                        {
+                            return metaData;
+                        }
 
-                @Override
-                public ByteBuffer getContent(int offsetInMessage, int size)
-                {
-                    ByteBuffer buf = allData.duplicate();
-                    buf.position(offsetInMessage);
-                    buf = buf.slice();
-                    if(size < buf.remaining())
-                    {
-                        buf.limit(size);
-                    }
-                    return buf;
-                }
+                        @Override
+                        public long getMessageNumber()
+                        {
+                            return serverMessage.getMessageNumber();
+                        }
 
-                @Override
-                public StoreFuture flushToStore()
-                {
-                    throw new UnsupportedOperationException();
-                }
+                        @Override
+                        public void addContent(int offsetInMessage, ByteBuffer src)
+                        {
+                            throw new UnsupportedOperationException();
+                        }
 
-                @Override
-                public void remove()
-                {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        }
+                        @Override
+                        public int getContent(int offsetInMessage, ByteBuffer dst)
+                        {
+                            ByteBuffer buf = allData.duplicate();
+                            buf.position(offsetInMessage);
+                            buf = buf.slice();
+                            int size;
+                            if(dst.remaining()<buf.remaining())
+                            {
+                                buf.limit(dst.remaining());
+                                size = dst.remaining();
+                            }
+                            else
+                            {
+                                size = buf.remaining();
+                            }
+                            dst.put(buf);
+                            return size;
+                        }
+
+                        @Override
+                        public ByteBuffer getContent(int offsetInMessage, int size)
+                        {
+                            ByteBuffer buf = allData.duplicate();
+                            buf.position(offsetInMessage);
+                            buf = buf.slice();
+                            if(size < buf.remaining())
+                            {
+                                buf.limit(size);
+                            }
+                            return buf;
+                        }
+
+                        @Override
+                        public StoreFuture flushToStore()
+                        {
+                            throw new UnsupportedOperationException();
+                        }
+
+                        @Override
+                        public void remove()
+                        {
+                            throw new UnsupportedOperationException();
+                        }
+                    };
+    }
+
+    protected Section getBodySection(final M serverMessage, final String mimeType)
+    {
+        byte[] data = new byte[(int) serverMessage.getSize()];
+        serverMessage.getContent(ByteBuffer.wrap(data), 0);
+
+        return convertMessageBody(mimeType, data);
+    }
 
     private ByteBuffer encodeConvertedMessage(MessageMetaData_1_0 metaData, Section bodySection, SectionEncoder sectionEncoder)
     {

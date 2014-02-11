@@ -43,6 +43,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -428,10 +429,10 @@ public abstract class AbstractExchange implements Exchange
         return queues;
     }
 
-    public final int send(final ServerMessage message,
+    public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
+                          final Action<? super MessageInstance<?, ? extends Consumer>> postEnqueueAction)
     {
         List<? extends BaseQueue> queues = route(message, instanceProperties);
 

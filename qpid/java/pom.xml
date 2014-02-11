@@ -173,6 +173,7 @@
     <module>broker-plugins/derby-store</module>
     <module>broker-plugins/jdbc-provider-bone</module>
     <module>broker-plugins/jdbc-store</module>
+    <module>broker-plugins/management-amqp</module>
     <module>broker-plugins/management-http</module>
     <module>broker-plugins/management-jmx</module>
     <module>broker-plugins/memory-store</module>

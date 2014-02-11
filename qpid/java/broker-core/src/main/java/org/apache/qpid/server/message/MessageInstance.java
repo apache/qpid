@@ -30,7 +30,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
-public interface MessageInstance<C extends Consumer>
+public interface MessageInstance<M extends MessageInstance<M,C>, C extends Consumer>
 {
 
 
@@ -45,9 +45,9 @@ public interface MessageInstance<C extends Consumer>
 
     void decrementDeliveryCount();
 
-    void addStateChangeListener(StateChangeListener<MessageInstance<C>, State> listener);
+    void addStateChangeListener(StateChangeListener<? super M,State> listener);
 
-    boolean removeStateChangeListener(StateChangeListener<MessageInstance<C>, State> listener);
+    boolean removeStateChangeListener(StateChangeListener<? super M, State> listener);
 
     boolean acquiredByConsumer();
 
@@ -71,7 +71,7 @@ public interface MessageInstance<C extends Consumer>
 
     int getMaximumDeliveryCount();
 
-    int routeToAlternate(Action<MessageInstance<? extends Consumer>> action, ServerTransaction txn);
+    int routeToAlternate(Action<? super MessageInstance<?, ? extends Consumer>> action, ServerTransaction txn);
 
     Filterable asFilterable();
 

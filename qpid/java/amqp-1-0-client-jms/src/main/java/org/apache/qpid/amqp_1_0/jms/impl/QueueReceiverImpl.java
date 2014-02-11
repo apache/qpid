@@ -24,6 +24,8 @@ import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 
+import java.util.UUID;
+
 public class QueueReceiverImpl extends MessageConsumerImpl implements QueueReceiver
 {
     QueueReceiverImpl(final QueueImpl destination,
@@ -40,7 +42,11 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
     {
         try
         {
-            return getSession().getClientSession().createMovingReceiver(getSession().toAddress(getDestination()));
+            final String targetAddr =
+                    getDestination().getLocalTerminus() != null ? getDestination().getLocalTerminus() : UUID
+                            .randomUUID().toString();
+            return getSession().getClientSession().createMovingReceiver(getSession().toAddress(getDestination()),
+                                                                        targetAddr);
         }
         catch (ConnectionErrorException e)
         {

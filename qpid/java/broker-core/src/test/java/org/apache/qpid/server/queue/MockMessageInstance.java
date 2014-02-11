@@ -32,17 +32,12 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
-public class MockQueueEntry implements QueueEntry
+public class MockMessageInstance implements MessageInstance<MockMessageInstance,Consumer>
 {
 
     private ServerMessage _message;
 
     public boolean acquire()
-    {
-        return false;
-    }
-
-    public boolean acquire(QueueConsumer sub)
     {
         return false;
     }
@@ -53,19 +48,22 @@ public class MockQueueEntry implements QueueEntry
         return 0;
     }
 
+    @Override
+    public int routeToAlternate(final Action<? super MessageInstance<?, ? extends Consumer>> action,
+                                final ServerTransaction txn)
+    {
+        return 0;
+    }
+
     public boolean acquiredByConsumer()
     {
         return false;
     }
 
-    public boolean isAcquiredBy(QueueConsumer consumer)
+    @Override
+    public boolean isAcquiredBy(final Consumer consumer)
     {
         return false;
-    }
-
-    public void addStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
-    {
-
     }
 
     public void delete()
@@ -73,12 +71,13 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public int routeToAlternate(final Action<MessageInstance<? extends Consumer>> action, final ServerTransaction txn)
+    public boolean expired() throws AMQException
     {
-        return 0;
+        return false;
     }
 
-    public boolean expired() throws AMQException
+    @Override
+    public boolean acquire(final Consumer sub)
     {
         return false;
     }
@@ -88,7 +87,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public QueueConsumer getDeliveredConsumer()
+    public Consumer getDeliveredConsumer()
     {
         return null;
     }
@@ -103,11 +102,6 @@ public class MockQueueEntry implements QueueEntry
         return _message;
     }
 
-    public AMQQueue<QueueConsumer> getQueue()
-    {
-        return null;
-    }
-
     public long getSize()
     {
         return 0;
@@ -118,32 +112,19 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-
-    public boolean isQueueDeleted()
-    {
-
-        return false;
-    }
-
-
-    public boolean isRejectedBy(QueueConsumer consumer)
-    {
-
-        return false;
-    }
-
-
     public void reject()
     {
+    }
 
-
+    @Override
+    public boolean isRejectedBy(final Consumer consumer)
+    {
+        return false;
     }
 
 
     public void release()
     {
-
-
     }
 
     @Override
@@ -153,37 +134,23 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean removeStateChangeListener(StateChangeListener<MessageInstance<QueueConsumer>, State> listener)
-    {
-
-        return false;
-    }
-
     public void setRedelivered()
     {
-
-
     }
 
     public AMQMessageHeader getMessageHeader()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public boolean isPersistent()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public boolean isRedelivered()
     {
         return false;
-    }
-
-    public int compareTo(QueueEntry o)
-    {
-
-        return 0;
     }
 
     public void setMessage(ServerMessage msg)
@@ -195,17 +162,6 @@ public class MockQueueEntry implements QueueEntry
     {
         return false;
     }
-
-    public QueueEntry getNextNode()
-    {
-        return null;
-    }
-
-    public QueueEntry getNextValidEntry()
-    {
-        return null;
-    }
-
     @Override
     public int getDeliveryCount()
     {
@@ -223,6 +179,18 @@ public class MockQueueEntry implements QueueEntry
     }
 
     @Override
+    public void addStateChangeListener(final StateChangeListener<? super MockMessageInstance, State> listener)
+    {
+
+    }
+
+    @Override
+    public boolean removeStateChangeListener(final StateChangeListener<? super MockMessageInstance, State> listener)
+    {
+        return false;
+    }
+
+    @Override
     public Filterable asFilterable()
     {
         return Filterable.Factory.newInstance(_message, getInstanceProperties());
@@ -237,6 +205,6 @@ public class MockQueueEntry implements QueueEntry
     @Override
     public TransactionLogResource getOwningResource()
     {
-        return getQueue();
+        return null;
     }
 }

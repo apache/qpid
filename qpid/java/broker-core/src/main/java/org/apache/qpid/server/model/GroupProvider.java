@@ -27,9 +27,7 @@ import java.util.Set;
 
 public interface GroupProvider extends ConfiguredObject
 {
-    public static final String ID = "id";
     public static final String DESCRIPTION = "description";
-    public static final String NAME = "name";
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";

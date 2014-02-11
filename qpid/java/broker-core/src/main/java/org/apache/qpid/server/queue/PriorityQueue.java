@@ -25,22 +25,22 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import java.util.Map;
 import java.util.UUID;
 
-public class AMQPriorityQueue extends OutOfOrderQueue
+public class PriorityQueue extends OutOfOrderQueue<PriorityQueueList.PriorityQueueEntry, PriorityQueue, PriorityQueueList>
 {
-    protected AMQPriorityQueue(UUID id,
-                                final String name,
-                                final boolean durable,
-                                final String owner,
-                                final boolean autoDelete,
-                                boolean exclusive,
-                                final VirtualHost virtualHost,
-                                Map<String, Object> arguments, int priorities)
+    protected PriorityQueue(UUID id,
+                            final String name,
+                            final boolean durable,
+                            final String owner,
+                            final boolean autoDelete,
+                            boolean exclusive,
+                            final VirtualHost virtualHost,
+                            Map<String, Object> arguments, int priorities)
     {
         super(id, name, durable, owner, autoDelete, exclusive, virtualHost, new PriorityQueueList.Factory(priorities), arguments);
     }
 
     public int getPriorities()
     {
-        return ((PriorityQueueList) getEntries()).getPriorities();
+        return getEntries().getPriorities();
     }
 }

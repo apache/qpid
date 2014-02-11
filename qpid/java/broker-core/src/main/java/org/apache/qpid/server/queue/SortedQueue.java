@@ -29,7 +29,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import java.util.Map;
 import java.util.UUID;
 
-public class SortedQueue extends OutOfOrderQueue
+public class SortedQueue extends OutOfOrderQueue<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
 {
     //Lock object to synchronize enqueue. Used instead of the object
     //monitor to prevent lock order issues with consumer sendLocks
@@ -41,17 +41,33 @@ public class SortedQueue extends OutOfOrderQueue
                             final boolean durable, final String owner, final boolean autoDelete,
                             final boolean exclusive, final VirtualHost virtualHost, Map<String, Object> arguments, String sortedPropertyName)
     {
+        this(id, name, durable, owner, autoDelete, exclusive,
+             virtualHost, arguments, sortedPropertyName, new SortedQueueEntryListFactory(sortedPropertyName));
+    }
+
+
+    protected SortedQueue(UUID id, final String name,
+                          final boolean durable, final String owner, final boolean autoDelete,
+                          final boolean exclusive, final VirtualHost virtualHost,
+                          Map<String, Object> arguments,
+                          String sortedPropertyName,
+                          QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList> factory)
+    {
         super(id, name, durable, owner, autoDelete, exclusive,
-                virtualHost, new SortedQueueEntryListFactory(sortedPropertyName), arguments);
+              virtualHost, factory, arguments);
         this._sortedPropertyName = sortedPropertyName;
     }
+
 
     public String getSortedPropertyName()
     {
         return _sortedPropertyName;
     }
 
-    public void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException
+    @Override
+    public void enqueue(final ServerMessage message,
+                        final Action<? super MessageInstance<?, QueueConsumer<?, SortedQueueEntry, SortedQueue, SortedQueueEntryList>>> action)
+            throws AMQException
     {
         synchronized (_sortedQueueLock)
         {

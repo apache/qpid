@@ -43,16 +43,7 @@ import org.apache.qpid.amqp_1_0.type.DeliveryState;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
-import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
-import org.apache.qpid.amqp_1_0.type.messaging.ExactSubjectFilter;
-import org.apache.qpid.amqp_1_0.type.messaging.Filter;
-import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
-import org.apache.qpid.amqp_1_0.type.messaging.Modified;
-import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
-import org.apache.qpid.amqp_1_0.type.messaging.Released;
-import org.apache.qpid.amqp_1_0.type.messaging.Source;
-import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
-import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
+import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
@@ -391,15 +382,21 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 options.add(Consumer.Option.NO_LOCAL);
             }
 
-
-            _consumer.setNoLocal(noLocal);
-
-
             try
             {
+                final String name;
+                if(getEndpoint().getTarget() instanceof Target)
+                {
+                    Target target = (Target) getEndpoint().getTarget();
+                    name = target.getAddress() == null ? getEndpoint().getName() : target.getAddress();
+                }
+                else
+                {
+                    name = getEndpoint().getName();
+                }
                 _consumer = _queue.addConsumer(_target,
                                                messageFilter == null ? null : new SimpleFilterManager(messageFilter),
-                                               Message_1_0.class, getEndpoint().getName(), options);
+                                               Message_1_0.class, name, options);
             }
             catch (AMQException e)
             {

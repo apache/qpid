@@ -66,7 +66,6 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -190,7 +189,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             {
                 if(!_exchangeAdapters.containsKey(exchange))
                 {
-                    _exchangeAdapters.put(exchange, new ExchangeAdapter(this,exchange));
+                    final ExchangeAdapter adapter = new ExchangeAdapter(this, exchange);
+                    _exchangeAdapters.put(exchange, adapter);
+                    childAdded(adapter);
+
                 }
             }
         }
@@ -208,7 +210,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 {
                     if(!_queueAdapters.containsKey(queue))
                     {
-                        _queueAdapters.put(queue, new QueueAdapter(this, queue));
+                        final QueueAdapter adapter = new QueueAdapter(this, queue);
+                        _queueAdapters.put(queue, adapter);
+                        childAdded(adapter);
                     }
                 }
             }
@@ -381,9 +385,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     {
         attributes = new HashMap<String, Object>(attributes);
 
-        if (attributes.containsKey(Queue.TYPE))
+        if (attributes.containsKey(Queue.QUEUE_TYPE))
         {
-            String typeAttribute = MapValueConverter.getStringAttribute(Queue.TYPE, attributes, null);
+            String typeAttribute = MapValueConverter.getStringAttribute(Queue.QUEUE_TYPE, attributes, null);
             QueueType queueType = null;
             try
             {

@@ -24,46 +24,46 @@ import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class SimpleQueueEntryImpl extends QueueEntryImpl
+public abstract class OrderedQueueEntry<E extends OrderedQueueEntry<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> extends QueueEntryImpl<E,Q,L>
 {
-    static final AtomicReferenceFieldUpdater<SimpleQueueEntryImpl, SimpleQueueEntryImpl>
+    static final AtomicReferenceFieldUpdater<OrderedQueueEntry, OrderedQueueEntry>
                 _nextUpdater =
             AtomicReferenceFieldUpdater.newUpdater
-            (SimpleQueueEntryImpl.class, SimpleQueueEntryImpl.class, "_next");
+            (OrderedQueueEntry.class, OrderedQueueEntry.class, "_next");
 
-    private volatile SimpleQueueEntryImpl _next;
+    private volatile E _next;
 
-    public SimpleQueueEntryImpl(SimpleQueueEntryList queueEntryList)
+    public OrderedQueueEntry(L queueEntryList)
     {
         super(queueEntryList);
     }
 
-    public SimpleQueueEntryImpl(SimpleQueueEntryList queueEntryList, ServerMessage message, final long entryId)
+    public OrderedQueueEntry(L queueEntryList, ServerMessage message, final long entryId)
     {
         super(queueEntryList, message, entryId);
     }
 
-    public SimpleQueueEntryImpl(SimpleQueueEntryList queueEntryList, ServerMessage message)
+    public OrderedQueueEntry(L queueEntryList, ServerMessage message)
     {
         super(queueEntryList, message);
     }
 
-    public SimpleQueueEntryImpl getNextNode()
+    public E getNextNode()
     {
         return _next;
     }
 
-    public SimpleQueueEntryImpl getNextValidEntry()
+    public E getNextValidEntry()
     {
 
-        SimpleQueueEntryImpl next = getNextNode();
+        E next = getNextNode();
         while(next != null && next.isDeleted())
         {
 
-            final SimpleQueueEntryImpl newNext = next.getNextNode();
+            final E newNext = next.getNextNode();
             if(newNext != null)
             {
-                SimpleQueueEntryList._nextUpdater.compareAndSet(this,next, newNext);
+                OrderedQueueEntryList._nextUpdater.compareAndSet(this,next, newNext);
                 next = getNextNode();
             }
             else

@@ -105,6 +105,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     private final DtxRegistry _dtxRegistry;
     private final AMQQueueFactory _queueFactory;
     private final SystemNodeRegistry _systemNodeRegistry = new SystemNodeRegistry();
+    private final org.apache.qpid.server.model.VirtualHost _model;
 
     private volatile State _state = State.INITIALISING;
 
@@ -141,6 +142,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
+        _model = virtualHost;
 
         _id = UUIDGenerator.generateVhostUUID(_name);
 
@@ -1000,6 +1002,12 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         public VirtualHost getVirtualHost()
         {
             return AbstractVirtualHost.this;
+        }
+
+        @Override
+        public org.apache.qpid.server.model.VirtualHost getVirtualHostModel()
+        {
+            return _model;
         }
     }
 }

@@ -43,7 +43,6 @@ import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -52,6 +51,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -59,9 +59,9 @@ import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
-                                       StateChangeListener<QueueConsumer, QueueConsumer.State>,
-                                       MessageGroupManager.ConsumerResetHelper
+abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E, Q,L>, L extends SimpleQueueEntryList<E,Q,L>> implements AMQQueue<E, Q, QueueConsumer<?,E,Q,L>>,
+                                       StateChangeListener<QueueConsumer<?,E,Q,L>, QueueConsumer.State>,
+                                       MessageGroupManager.ConsumerResetHelper<E,Q,L>
 {
 
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
@@ -94,11 +94,11 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     private Exchange _alternateExchange;
 
 
-    private final QueueEntryList<QueueEntry> _entries;
+    private final L _entries;
 
-    private final QueueConsumerList _consumerList = new QueueConsumerList();
+    private final QueueConsumerList<E,Q,L> _consumerList = new QueueConsumerList<E,Q,L>();
 
-    private volatile QueueConsumer _exclusiveSubscriber;
+    private volatile QueueConsumer<?,E,Q,L> _exclusiveSubscriber;
 
 
 
@@ -163,8 +163,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     private LogSubject _logSubject;
     private LogActor _logActor;
 
-    private static final String SUB_FLUSH_RUNNER = "SUB_FLUSH_RUNNER";
-    private boolean _nolocal;
+    private boolean _noLocal;
 
     private final AtomicBoolean _overfull = new AtomicBoolean(false);
     private boolean _deleteOnNoConsumers;
@@ -177,19 +176,14 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
     private int _maximumDeliveryCount;
-    private final MessageGroupManager _messageGroupManager;
+    private final MessageGroupManager<E,Q,L> _messageGroupManager;
 
-    private final Collection<ConsumerRegistrationListener> _consumerListeners =
-            new ArrayList<ConsumerRegistrationListener>();
+    private final Collection<ConsumerRegistrationListener<Q>> _consumerListeners =
+            new ArrayList<ConsumerRegistrationListener<Q>>();
 
     private AMQQueue.NotificationListener _notificationListener;
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
-
-    public SimpleAMQQueue(UUID id, String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String, Object> arguments)
-    {
-        this(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, new SimpleQueueEntryList.Factory(), arguments);
-    }
 
     protected SimpleAMQQueue(UUID id,
                              String name,
@@ -198,7 +192,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
                              boolean autoDelete,
                              boolean exclusive,
                              VirtualHost virtualHost,
-                             QueueEntryListFactory entryListFactory, Map<String,Object> arguments)
+                             QueueEntryListFactory<E,Q,L> entryListFactory, Map<String,Object> arguments)
     {
 
         if (name == null)
@@ -217,7 +211,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         _autoDelete = autoDelete;
         _exclusive = exclusive;
         _virtualHost = virtualHost;
-        _entries = entryListFactory.createQueueEntryList(this);
+        _entries = entryListFactory.createQueueEntryList((Q)this);
         _arguments = Collections.synchronizedMap(arguments == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(arguments));
 
         _id = id;
@@ -243,13 +237,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             {
                 Object defaultGroup = arguments.get(Queue.MESSAGE_GROUP_DEFAULT_GROUP);
                 _messageGroupManager =
-                        new DefinedGroupMessageGroupManager(String.valueOf(arguments.get(Queue.MESSAGE_GROUP_KEY)),
+                        new DefinedGroupMessageGroupManager<E,Q,L>(String.valueOf(arguments.get(Queue.MESSAGE_GROUP_KEY)),
                                 defaultGroup == null ? DEFAULT_SHARED_MESSAGE_GROUP : defaultGroup.toString(),
                                 this);
             }
             else
             {
-                _messageGroupManager = new AssignedConsumerMessageGroupManager(String.valueOf(arguments.get(
+                _messageGroupManager = new AssignedConsumerMessageGroupManager<E,Q,L>(String.valueOf(arguments.get(
                         Queue.MESSAGE_GROUP_KEY)), DEFAULT_MAX_GROUPS);
             }
         }
@@ -281,21 +275,20 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
         catch (RejectedExecutionException ree)
         {
-            if (_stopped.get())
-            {
-                // Ignore - SubFlusherRunner or QueueRunner submitted execution as queue was being stopped.
-            }
-            else
+            // Ignore - SubFlusherRunner or QueueRunner submitted execution as queue was being stopped.
+            if(!_stopped.get())
             {
                 _logger.error("Unexpected rejected execution", ree);
                 throw ree;
+
             }
+
         }
     }
 
     public void setNoLocal(boolean nolocal)
     {
-        _nolocal = nolocal;
+        _noLocal = nolocal;
     }
 
     public UUID getId()
@@ -384,7 +377,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
 
     @Override
-    public synchronized QueueConsumer addConsumer(final ConsumerTarget target,
+    public synchronized <T extends ConsumerTarget> QueueConsumer<T,E,Q,L> addConsumer(final T target,
                                      final FilterManager filters,
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
@@ -412,10 +405,10 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             throw new ExistingConsumerPreventsExclusive();
         }
 
-        QueueConsumer consumer = new QueueConsumer(filters, messageClass,
-                                                                optionSet.contains(Consumer.Option.ACQUIRES),
-                                                                optionSet.contains(Consumer.Option.SEES_REQUEUES),
-                                                                consumerName, optionSet.contains(Consumer.Option.TRANSIENT), target);
+        QueueConsumer<T,E,Q,L> consumer = new QueueConsumer<T,E,Q,L>(filters, messageClass,
+                                                         optionSet.contains(Consumer.Option.ACQUIRES),
+                                                         optionSet.contains(Consumer.Option.SEES_REQUEUES),
+                                                         consumerName, optionSet.contains(Consumer.Option.TRANSIENT), target);
         target.consumerAdded(consumer);
 
 
@@ -430,21 +423,21 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
 
         consumer.setStateListener(this);
-        consumer.setQueueContext(new QueueContext(_entries.getHead()));
+        consumer.setQueueContext(new QueueContext<E,Q,L>(_entries.getHead()));
 
         if (!isDeleted())
         {
-            consumer.setQueue(this, exclusive);
-            if(_nolocal)
+            consumer.setQueue((Q)this, exclusive);
+            if(_noLocal)
             {
-                consumer.setNoLocal(_nolocal);
+                consumer.setNoLocal(true);
             }
 
             synchronized (_consumerListeners)
             {
-                for(ConsumerRegistrationListener listener : _consumerListeners)
+                for(ConsumerRegistrationListener<Q> listener : _consumerListeners)
                 {
-                    listener.consumerAdded(this, consumer);
+                    listener.consumerAdded((Q)this, consumer);
                 }
             }
 
@@ -466,7 +459,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    synchronized void unregisterConsumer(final QueueConsumer consumer) throws AMQException
+    synchronized void unregisterConsumer(final QueueConsumer<?,E,Q,L> consumer) throws AMQException
     {
         if (consumer == null)
         {
@@ -494,9 +487,9 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
             synchronized (_consumerListeners)
             {
-                for(ConsumerRegistrationListener listener : _consumerListeners)
+                for(ConsumerRegistrationListener<Q> listener : _consumerListeners)
                 {
-                    listener.consumerRemoved(this, consumer);
+                    listener.consumerRemoved((Q)this, consumer);
                 }
             }
 
@@ -519,10 +512,10 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    public Collection<QueueConsumer> getConsumers()
+    public Collection<QueueConsumer<?,E,Q,L>> getConsumers()
     {
-        List<QueueConsumer> consumers = new ArrayList<QueueConsumer>();
-        QueueConsumerList.ConsumerNodeIterator iter = _consumerList.iterator();
+        List<QueueConsumer<?,E,Q,L>> consumers = new ArrayList<QueueConsumer<?,E,Q,L>>();
+        QueueConsumerList.ConsumerNodeIterator<E,Q,L> iter = _consumerList.iterator();
         while(iter.advance())
         {
             consumers.add(iter.getNode().getConsumer());
@@ -531,7 +524,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    public void addConsumerRegistrationListener(final ConsumerRegistrationListener listener)
+    public void addConsumerRegistrationListener(final ConsumerRegistrationListener<Q> listener)
     {
         synchronized (_consumerListeners)
         {
@@ -539,7 +532,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    public void removeConsumerRegistrationListener(final ConsumerRegistrationListener listener)
+    public void removeConsumerRegistrationListener(final ConsumerRegistrationListener<Q> listener)
     {
         synchronized (_consumerListeners)
         {
@@ -547,9 +540,9 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    public void resetSubPointersForGroups(QueueConsumer consumer, boolean clearAssignments)
+    public void resetSubPointersForGroups(QueueConsumer<?,E,Q,L> consumer, boolean clearAssignments)
     {
-        QueueEntry entry = _messageGroupManager.findEarliestAssignedAvailableEntry(consumer);
+        E entry = _messageGroupManager.findEarliestAssignedAvailableEntry(consumer);
         if(clearAssignments)
         {
             _messageGroupManager.clearAssignments(consumer);
@@ -557,11 +550,11 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
         if(entry != null)
         {
-            QueueConsumerList.ConsumerNodeIterator subscriberIter = _consumerList.iterator();
+            QueueConsumerList.ConsumerNodeIterator<E,Q,L> subscriberIter = _consumerList.iterator();
             // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
             while (subscriberIter.advance())
             {
-                QueueConsumer sub = subscriberIter.getNode().getConsumer();
+                QueueConsumer<?,E,Q,L> sub = subscriberIter.getNode().getConsumer();
 
                 // we don't make browsers send the same stuff twice
                 if (sub.seesRequeues())
@@ -599,11 +592,6 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    public int getBindingCountHigh()
-    {
-        return _bindingCountHigh.get();
-    }
-
     public void removeBinding(final Binding binding)
     {
         _bindings.remove(binding);
@@ -626,7 +614,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     // ------ Enqueue / Dequeue
 
-    public void enqueue(ServerMessage message, Action<MessageInstance<? extends Consumer>> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<? super MessageInstance<?, QueueConsumer<?,E,Q,L>>> action) throws AMQException
     {
         incrementQueueCount();
         incrementQueueSize(message);
@@ -634,8 +622,8 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         _totalMessagesReceived.incrementAndGet();
 
 
-        QueueEntry entry;
-        final QueueConsumer exclusiveSub = _exclusiveSubscriber;
+        E entry;
+        final QueueConsumer<?,E,Q,L> exclusiveSub = _exclusiveSubscriber;
         entry = _entries.add(message);
 
         if(action != null || (exclusiveSub == null  && _queueRunner.isIdle()))
@@ -645,8 +633,8 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             iterate over consumers and if any is at the end of the queue and can deliver this message, then deliver the message
 
              */
-            QueueConsumerList.ConsumerNode node = _consumerList.getMarkedNode();
-            QueueConsumerList.ConsumerNode nextNode = node.findNext();
+            QueueConsumerList.ConsumerNode<E,Q,L> node = _consumerList.getMarkedNode();
+            QueueConsumerList.ConsumerNode<E,Q,L> nextNode = node.findNext();
             if (nextNode == null)
             {
                 nextNode = _consumerList.getHead().findNext();
@@ -682,7 +670,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
                 else
                 {
                     // if consumer at end, and active, offer
-                    QueueConsumer sub = nextNode.getConsumer();
+                    QueueConsumer<?,E,Q,L> sub = nextNode.getConsumer();
                     deliverToConsumer(sub, entry);
                 }
                 nextNode = nextNode.findNext();
@@ -714,7 +702,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    private void deliverToConsumer(final QueueConsumer sub, final QueueEntry entry)
+    private void deliverToConsumer(final QueueConsumer<?,E,Q,L> sub, final E entry)
             throws AMQException
     {
 
@@ -746,7 +734,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    private boolean assign(final QueueConsumer sub, final QueueEntry entry)
+    private boolean assign(final QueueConsumer<?,E,Q,L> sub, final E entry)
     {
         if(_messageGroupManager == null)
         {
@@ -760,7 +748,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    private boolean mightAssign(final QueueConsumer sub, final QueueEntry entry)
+    private boolean mightAssign(final QueueConsumer<?,E,Q,L> sub, final E entry)
     {
         if(_messageGroupManager == null || !sub.acquires())
         {
@@ -770,7 +758,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return (assigned == null) || (assigned == sub);
     }
 
-    protected void checkConsumersNotAheadOfDelivery(final QueueEntry entry)
+    protected void checkConsumersNotAheadOfDelivery(final E entry)
     {
         // This method is only required for queues which mess with ordering
         // Simple Queues don't :-)
@@ -804,7 +792,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         getAtomicQueueCount().incrementAndGet();
     }
 
-    private void deliverMessage(final QueueConsumer sub, final QueueEntry entry, boolean batch)
+    private void deliverMessage(final QueueConsumer<?,E,Q,L> sub, final E entry, boolean batch)
             throws AMQException
     {
         setLastSeenEntry(sub, entry);
@@ -815,18 +803,18 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         sub.send(entry, batch);
     }
 
-    private boolean consumerReadyAndHasInterest(final QueueConsumer sub, final QueueEntry entry) throws AMQException
+    private boolean consumerReadyAndHasInterest(final QueueConsumer<?,E,Q,L> sub, final E entry) throws AMQException
     {
         return sub.hasInterest(entry) && (getNextAvailableEntry(sub) == entry);
     }
 
 
-    private void setLastSeenEntry(final QueueConsumer sub, final QueueEntry entry)
+    private void setLastSeenEntry(final QueueConsumer<?,E,Q,L> sub, final E entry)
     {
-        QueueContext subContext = sub.getQueueContext();
+        QueueContext<E,Q,L> subContext = sub.getQueueContext();
         if (subContext != null)
         {
-            QueueEntry releasedEntry = subContext.getReleasedEntry();
+            E releasedEntry = subContext.getReleasedEntry();
 
             QueueContext._lastSeenUpdater.set(subContext, entry);
             if(releasedEntry == entry)
@@ -836,13 +824,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    private void updateSubRequeueEntry(final QueueConsumer sub, final QueueEntry entry)
+    private void updateSubRequeueEntry(final QueueConsumer<?,E,Q,L> sub, final E entry)
     {
 
-        QueueContext subContext = sub.getQueueContext();
+        QueueContext<E,Q,L> subContext = sub.getQueueContext();
         if(subContext != null)
         {
-            QueueEntry oldEntry;
+            E oldEntry;
 
             while((oldEntry  = subContext.getReleasedEntry()) == null || oldEntry.compareTo(entry) > 0)
             {
@@ -854,13 +842,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    public void requeue(QueueEntry entry)
+    public void requeue(E entry)
     {
-        QueueConsumerList.ConsumerNodeIterator subscriberIter = _consumerList.iterator();
+        QueueConsumerList.ConsumerNodeIterator<E,Q,L> subscriberIter = _consumerList.iterator();
         // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
         while (subscriberIter.advance() && entry.isAvailable())
         {
-            QueueConsumer sub = subscriberIter.getNode().getConsumer();
+            QueueConsumer<?,E,Q,L> sub = subscriberIter.getNode().getConsumer();
 
             // we don't make browsers send the same stuff twice
             if (sub.seesRequeues())
@@ -873,7 +861,8 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    public void dequeue(QueueEntry entry, Consumer sub)
+    @Override
+    public void dequeue(E entry)
     {
         decrementQueueCount();
         decrementQueueSize(entry);
@@ -886,7 +875,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    private void decrementQueueSize(final QueueEntry entry)
+    private void decrementQueueSize(final E entry)
     {
         final ServerMessage message = entry.getMessage();
         long size = message.getSize();
@@ -905,7 +894,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         _dequeueCount.incrementAndGet();
     }
 
-    public boolean resend(final QueueEntry entry, final Consumer consumer) throws AMQException
+    public boolean resend(final E entry, final QueueConsumer<?,E,Q,L> consumer) throws AMQException
     {
         /* TODO : This is wrong as the consumer may be suspended, we should instead change the state of the message
                   entry to resend and move back the consumer pointer. */
@@ -915,7 +904,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         {
             if (!consumer.isClosed())
             {
-                deliverMessage((QueueConsumer) consumer, entry, false);
+                deliverMessage(consumer, entry, false);
                 return true;
             }
             else
@@ -981,11 +970,11 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     public long getOldestMessageArrivalTime()
     {
-        QueueEntry entry = getOldestQueueEntry();
+        E entry = getOldestQueueEntry();
         return entry == null ? Long.MAX_VALUE : entry.getMessage().getArrivalTime();
     }
 
-    protected QueueEntry getOldestQueueEntry()
+    protected E getOldestQueueEntry()
     {
         return _entries.next(_entries.getHead());
     }
@@ -995,13 +984,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return _deleted.get();
     }
 
-    public List<QueueEntry> getMessagesOnTheQueue()
+    public List<E> getMessagesOnTheQueue()
     {
-        ArrayList<QueueEntry> entryList = new ArrayList<QueueEntry>();
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        ArrayList<E> entryList = new ArrayList<E>();
+        QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
         while (queueListIterator.advance())
         {
-            QueueEntry node = queueListIterator.getNode();
+            E node = queueListIterator.getNode();
             if (node != null && !node.isDeleted())
             {
                 entryList.add(node);
@@ -1011,7 +1000,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    public void stateChanged(QueueConsumer sub, QueueConsumer.State oldState, QueueConsumer.State newState)
+    public void stateChanged(QueueConsumer<?,E,Q,L> sub, QueueConsumer.State oldState, QueueConsumer.State newState)
     {
         if (oldState == QueueConsumer.State.ACTIVE && newState != QueueConsumer.State.ACTIVE)
         {
@@ -1029,7 +1018,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    public int compareTo(final AMQQueue o)
+    public int compareTo(final Q o)
     {
         return _name.compareTo(o.getName());
     }
@@ -1049,7 +1038,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return _exclusiveSubscriber != null;
     }
 
-    private void setExclusiveSubscriber(QueueConsumer exclusiveSubscriber)
+    private void setExclusiveSubscriber(QueueConsumer<?,E,Q,L> exclusiveSubscriber)
     {
         _exclusiveSubscriber = exclusiveSubscriber;
     }
@@ -1060,32 +1049,32 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     }
 
     /** Used to track bindings to exchanges so that on deletion they can easily be cancelled. */
-    protected QueueEntryList getEntries()
+    protected L getEntries()
     {
         return _entries;
     }
 
-    protected QueueConsumerList getConsumerList()
+    protected QueueConsumerList<E,Q,L> getConsumerList()
     {
         return _consumerList;
     }
 
 
-    public static interface QueueEntryFilter
+    public static interface QueueEntryFilter<E extends QueueEntry>
     {
-        public boolean accept(QueueEntry entry);
+        public boolean accept(E entry);
 
         public boolean filterComplete();
     }
 
 
 
-    public List<QueueEntry> getMessagesOnTheQueue(final long fromMessageId, final long toMessageId)
+    public List<E> getMessagesOnTheQueue(final long fromMessageId, final long toMessageId)
     {
-        return getMessagesOnTheQueue(new QueueEntryFilter()
+        return getMessagesOnTheQueue(new QueueEntryFilter<E>()
         {
 
-            public boolean accept(QueueEntry entry)
+            public boolean accept(E entry)
             {
                 final long messageId = entry.getMessage().getMessageNumber();
                 return messageId >= fromMessageId && messageId <= toMessageId;
@@ -1098,13 +1087,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         });
     }
 
-    public QueueEntry getMessageOnTheQueue(final long messageId)
+    public E getMessageOnTheQueue(final long messageId)
     {
-        List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
+        List<E> entries = getMessagesOnTheQueue(new QueueEntryFilter<E>()
         {
             private boolean _complete;
 
-            public boolean accept(QueueEntry entry)
+            public boolean accept(E entry)
             {
                 _complete = entry.getMessage().getMessageNumber() == messageId;
                 return _complete;
@@ -1118,13 +1107,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return entries.isEmpty() ? null : entries.get(0);
     }
 
-    public List<QueueEntry> getMessagesOnTheQueue(QueueEntryFilter filter)
+    public List<E> getMessagesOnTheQueue(QueueEntryFilter<E> filter)
     {
-        ArrayList<QueueEntry> entryList = new ArrayList<QueueEntry>();
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        ArrayList<E> entryList = new ArrayList<E>();
+        QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
         while (queueListIterator.advance() && !filter.filterComplete())
         {
-            QueueEntry node = queueListIterator.getNode();
+            E node = queueListIterator.getNode();
             if (!node.isDeleted() && filter.accept(node))
             {
                 entryList.add(node);
@@ -1134,13 +1123,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    public void visit(final QueueEntryVisitor visitor)
+    public void visit(final QueueEntryVisitor<E> visitor)
     {
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
 
         while(queueListIterator.advance())
         {
-            QueueEntry node = queueListIterator.getNode();
+            E node = queueListIterator.getNode();
 
             if(!node.isDeleted())
             {
@@ -1157,17 +1146,17 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
      *
      * The 'queue position' index starts from 1. Using 0 in 'from' will be ignored and continue from 1.
      * Using 0 in the 'to' field will return an empty list regardless of the 'from' value.
-     * @param fromPosition
-     * @param toPosition
-     * @return
+     * @param fromPosition first message position
+     * @param toPosition last message position
+     * @return list of messages
      */
-    public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition)
+    public List<E> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition)
     {
-        return getMessagesOnTheQueue(new QueueEntryFilter()
+        return getMessagesOnTheQueue(new QueueEntryFilter<E>()
                                         {
                                             private long position = 0;
 
-                                            public boolean accept(QueueEntry entry)
+                                            public boolean accept(E entry)
                                             {
                                                 position++;
                                                 return (position >= fromPosition) && (position <= toPosition);
@@ -1196,12 +1185,12 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     // TODO - now only used by the tests
     public void deleteMessageFromTop()
     {
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
         boolean noDeletes = true;
 
         while (noDeletes && queueListIterator.advance())
         {
-            QueueEntry node = queueListIterator.getNode();
+            E node = queueListIterator.getNode();
             if (node.acquire())
             {
                 dequeueEntry(node);
@@ -1224,14 +1213,14 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             throw new AMQSecurityException("Permission denied: queue " + getName());
         }
 
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
         long count = 0;
 
         ServerTransaction txn = new LocalTransaction(getVirtualHost().getMessageStore());
 
         while (queueListIterator.advance())
         {
-            QueueEntry node = queueListIterator.getNode();
+            E node = queueListIterator.getNode();
             if (node.acquire())
             {
                 dequeueEntry(node, txn);
@@ -1248,13 +1237,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return count;
     }
 
-    private void dequeueEntry(final QueueEntry node)
+    private void dequeueEntry(final E node)
     {
         ServerTransaction txn = new AutoCommitTransaction(getVirtualHost().getMessageStore());
         dequeueEntry(node, txn);
     }
 
-    private void dequeueEntry(final QueueEntry node, ServerTransaction txn)
+    private void dequeueEntry(final E node, ServerTransaction txn)
     {
         txn.dequeue(this, node.getMessage(),
                     new ServerTransaction.Action()
@@ -1283,7 +1272,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
     }
 
     // TODO list all thrown exceptions
-    public int delete() throws AMQSecurityException, AMQException
+    public int delete() throws AMQException
     {
         // Check access
         if (!_virtualHost.getSecurityManager().authoriseDelete(this))
@@ -1313,10 +1302,10 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             }
 
 
-            List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
+            List<E> entries = getMessagesOnTheQueue(new QueueEntryFilter<E>()
             {
 
-                public boolean accept(QueueEntry entry)
+                public boolean accept(E entry)
                 {
                     return entry.acquire();
                 }
@@ -1330,7 +1319,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             ServerTransaction txn = new LocalTransaction(getVirtualHost().getMessageStore());
 
 
-            for(final QueueEntry entry : entries)
+            for(final E entry : entries)
             {
                 // TODO log requeues with a post enqueue action
                 int requeues = entry.routeToAlternate(null, txn);
@@ -1435,7 +1424,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    public void deliverAsync(QueueConsumer sub)
+    public void deliverAsync(QueueConsumer<?,E,Q,L> sub)
     {
         if(_exclusiveSubscriber == null)
         {
@@ -1449,7 +1438,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     }
 
-    void flushConsumer(QueueConsumer sub) throws AMQException
+    void flushConsumer(QueueConsumer<?,E,Q,L> sub) throws AMQException
     {
         // Access control
         if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
@@ -1459,7 +1448,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         flushConsumer(sub, Long.MAX_VALUE);
     }
 
-    boolean flushConsumer(QueueConsumer sub, long iterations) throws AMQException
+    boolean flushConsumer(QueueConsumer<?,E,Q,L> sub, long iterations) throws AMQException
     {
         boolean atTail = false;
         final boolean keepSendLockHeld = iterations <=  SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
@@ -1480,8 +1469,8 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
                         sub.getSendLock();
                     }
 
-                    atTail = attemptDelivery((QueueConsumer)sub, true);
-                    if (atTail && getNextAvailableEntry((QueueConsumer)sub) == null)
+                    atTail = attemptDelivery(sub, true);
+                    if (atTail && getNextAvailableEntry(sub) == null)
                     {
                         queueEmpty = true;
                     }
@@ -1532,12 +1521,12 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
      * Looks up the next node for the consumer and attempts to deliver it.
      *
      *
-     * @param sub
-     * @param batch
+     * @param sub the consumer
+     * @param batch true if processing can be batched
      * @return true if we have completed all possible deliveries for this sub.
      * @throws AMQException
      */
-    private boolean attemptDelivery(QueueConsumer sub, boolean batch) throws AMQException
+    private boolean attemptDelivery(QueueConsumer<?,E,Q,L> sub, boolean batch) throws AMQException
     {
         boolean atTail = false;
 
@@ -1545,7 +1534,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         if (subActive)
         {
 
-            QueueEntry node  = getNextAvailableEntry(sub);
+            E node  = getNextAvailableEntry(sub);
 
             if (node != null && node.isAvailable())
             {
@@ -1582,11 +1571,11 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     protected void advanceAllConsumers() throws AMQException
     {
-        QueueConsumerList.ConsumerNodeIterator consumerNodeIterator = _consumerList.iterator();
+        QueueConsumerList.ConsumerNodeIterator<E,Q,L> consumerNodeIterator = _consumerList.iterator();
         while (consumerNodeIterator.advance())
         {
-            QueueConsumerList.ConsumerNode subNode = consumerNodeIterator.getNode();
-            QueueConsumer sub = subNode.getConsumer();
+            QueueConsumerList.ConsumerNode<E,Q,L> subNode = consumerNodeIterator.getNode();
+            QueueConsumer<?,E,Q,L> sub = subNode.getConsumer();
             if(sub.acquires())
             {
                 getNextAvailableEntry(sub);
@@ -1598,16 +1587,16 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    private QueueEntry getNextAvailableEntry(final QueueConsumer sub)
+    private E getNextAvailableEntry(final QueueConsumer<?,E,Q,L> sub)
             throws AMQException
     {
-        QueueContext context = sub.getQueueContext();
+        QueueContext<E,Q,L> context = sub.getQueueContext();
         if(context != null)
         {
-            QueueEntry lastSeen = context.getLastSeenEntry();
-            QueueEntry releasedNode = context.getReleasedEntry();
+            E lastSeen = context.getLastSeenEntry();
+            E releasedNode = context.getReleasedEntry();
 
-            QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
+            E node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
 
             boolean expired = false;
             while (node != null && (!node.isAvailable() || (expired = node.expired()) || !sub.hasInterest(node) ||
@@ -1639,12 +1628,12 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         }
     }
 
-    public boolean isEntryAheadOfConsumer(QueueEntry entry, QueueConsumer sub)
+    public boolean isEntryAheadOfConsumer(E entry, QueueConsumer<?,E,Q,L> sub)
     {
-        QueueContext context = sub.getQueueContext();
+        QueueContext<E,Q,L> context = sub.getQueueContext();
         if(context != null)
         {
-            QueueEntry releasedNode = context.getReleasedEntry();
+            E releasedNode = context.getReleasedEntry();
             return releasedNode != null && releasedNode.compareTo(entry) < 0;
         }
         else
@@ -1681,7 +1670,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
      */
     public long processQueue(QueueRunner runner) throws AMQException
     {
-        long stateChangeCount = Long.MIN_VALUE;
+        long stateChangeCount;
         long previousStateChangeCount = Long.MIN_VALUE;
         long rVal = Long.MIN_VALUE;
         boolean deliveryIncomplete = true;
@@ -1716,11 +1705,11 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             boolean allConsumersDone = true;
             boolean consumerDone;
 
-            QueueConsumerList.ConsumerNodeIterator consumerNodeIterator = _consumerList.iterator();
+            QueueConsumerList.ConsumerNodeIterator<E,Q,L> consumerNodeIterator = _consumerList.iterator();
             //iterate over the subscribers and try to advance their pointer
             while (consumerNodeIterator.advance())
             {
-                QueueConsumer sub = consumerNodeIterator.getNode().getConsumer();
+                QueueConsumer<?,E,Q,L> sub = consumerNodeIterator.getNode().getConsumer();
                 sub.getSendLock();
 
                     try
@@ -1802,11 +1791,11 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
 
     public void checkMessageStatus() throws AMQException
     {
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
 
         while (queueListIterator.advance())
         {
-            QueueEntry node = queueListIterator.getNode();
+            E node = queueListIterator.getNode();
             // Only process nodes that are not currently deleted and not dequeued
             if (!node.isDeleted())
             {
@@ -1953,12 +1942,12 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return _notificationChecks;
     }
 
-    private final class QueueEntryListener implements StateChangeListener<MessageInstance<QueueConsumer>, QueueEntry.State>
+    private final class QueueEntryListener implements StateChangeListener<E, QueueEntry.State>
     {
 
-        private final QueueConsumer _sub;
+        private final QueueConsumer<?,E,Q,L> _sub;
 
-        public QueueEntryListener(final QueueConsumer sub)
+        public QueueEntryListener(final QueueConsumer<?,E,Q,L> sub)
         {
             _sub = sub;
         }
@@ -1974,7 +1963,7 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
             return System.identityHashCode(_sub);
         }
 
-        public void stateChanged(MessageInstance entry, QueueEntry.State oldSate, QueueEntry.State newState)
+        public void stateChanged(E entry, QueueEntry.State oldSate, QueueEntry.State newState)
         {
             entry.removeStateChangeListener(this);
             deliverAsync(_sub);
@@ -2082,13 +2071,13 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return _unackedMsgBytes.get();
     }
 
-    public void decrementUnackedMsgCount(QueueEntry queueEntry)
+    public void decrementUnackedMsgCount(E queueEntry)
     {
         _unackedMsgCount.decrementAndGet();
         _unackedMsgBytes.addAndGet(-queueEntry.getSize());
     }
 
-    private void incrementUnackedMsgCount(QueueEntry entry)
+    private void incrementUnackedMsgCount(E entry)
     {
         _unackedMsgCount.incrementAndGet();
         _unackedMsgBytes.addAndGet(entry.getSize());
@@ -2159,10 +2148,10 @@ public class SimpleAMQQueue implements AMQQueue<QueueConsumer>,
         return (String) _arguments.get(Queue.DESCRIPTION);
     }
 
-    public final int send(final ServerMessage message,
+    public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
                               final InstanceProperties instanceProperties,
                               final ServerTransaction txn,
-                              final Action<MessageInstance<? extends Consumer>> postEnqueueAction)
+                              final Action<? super MessageInstance<?, ? extends Consumer>> postEnqueueAction)
     {
             txn.enqueue(this,message, new ServerTransaction.Action()
             {

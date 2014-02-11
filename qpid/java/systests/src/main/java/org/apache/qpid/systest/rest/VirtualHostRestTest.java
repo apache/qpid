@@ -37,7 +37,6 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -527,7 +526,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         queueData.put(Queue.DURABLE, Boolean.TRUE);
         if (queueType != null)
         {
-            queueData.put(Queue.TYPE, queueType);
+            queueData.put(Queue.QUEUE_TYPE, queueType);
         }
         if (attributes != null)
         {

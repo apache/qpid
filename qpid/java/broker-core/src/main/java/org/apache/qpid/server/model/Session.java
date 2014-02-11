@@ -51,8 +51,6 @@ public interface Session extends ConfiguredObject
                                                              XA_TRANSACTION_BRANCH_SUSPENDS));
 
 
-    public static final String ID = "id";
-    public static final String NAME = "name";
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";

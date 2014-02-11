@@ -29,9 +29,7 @@ public interface Port extends ConfiguredObject
 {
     String CREATED                              = "created";
     String DURABLE                              = "durable";
-    String ID                                   = "id";
     String LIFETIME_POLICY                      = "lifetimePolicy";
-    String NAME                                 = "name";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
     String UPDATED                              = "updated";

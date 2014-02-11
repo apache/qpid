@@ -22,7 +22,7 @@ package org.apache.qpid.server.queue;
 import junit.framework.Assert;
 
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.SortedQueueEntryImpl.Colour;
+import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
 
 /**
  * Test extension of SortedQueueEntryList that provides data structure validation tests.
@@ -30,22 +30,28 @@ import org.apache.qpid.server.queue.SortedQueueEntryImpl.Colour;
  */
 public class SelfValidatingSortedQueueEntryList extends SortedQueueEntryList
 {
-    public SelfValidatingSortedQueueEntryList(AMQQueue queue, String propertyName)
+    public SelfValidatingSortedQueueEntryList(SortedQueue queue, String propertyName)
     {
         super(queue, propertyName);
     }
 
+    @Override
+    public SortedQueue getQueue()
+    {
+        return super.getQueue();
+    }
+
     @Override /** Overridden to automatically check queue properties before and after. */
-    public SortedQueueEntryImpl add(final ServerMessage message)
+    public SortedQueueEntry add(final ServerMessage message)
     {
         assertQueueProperties(); //before add
-        final SortedQueueEntryImpl result = super.add(message);
+        final SortedQueueEntry result = super.add(message);
         assertQueueProperties(); //after add
         return result;
     }
 
     @Override /** Overridden to automatically check queue properties before and after. */
-    public void entryDeleted(SortedQueueEntryImpl entry)
+    public void entryDeleted(SortedQueueEntry entry)
     {
         assertQueueProperties(); //before delete
         super.entryDeleted(entry);
@@ -73,7 +79,7 @@ public class SelfValidatingSortedQueueEntryList extends SortedQueueEntryList
         assertTreeIntegrity(getRoot());
     }
 
-    public void assertTreeIntegrity(final SortedQueueEntryImpl node)
+    public void assertTreeIntegrity(final SortedQueueEntry node)
     {
         if(node == null)
         {
@@ -109,7 +115,7 @@ public class SelfValidatingSortedQueueEntryList extends SortedQueueEntryList
         assertLeavesSameBlackPath(getRoot());
     }
 
-    public int assertLeavesSameBlackPath(final SortedQueueEntryImpl node)
+    public int assertLeavesSameBlackPath(final SortedQueueEntry node)
     {
         if(node == null)
         {
@@ -133,7 +139,7 @@ public class SelfValidatingSortedQueueEntryList extends SortedQueueEntryList
         assertChildrenOfRedAreBlack(getRoot());
     }
 
-    public void assertChildrenOfRedAreBlack(final SortedQueueEntryImpl node)
+    public void assertChildrenOfRedAreBlack(final SortedQueueEntry node)
     {
         if(node == null)
         {

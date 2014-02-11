@@ -21,8 +21,14 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -30,7 +36,20 @@ import static org.mockito.Mockito.when;
 public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
 {
 
-    private SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
+    private OrderedQueueEntryList queueEntryList;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        mockLogging();
+
+        StandardQueue queue = new StandardQueue(UUID.randomUUID(), "SimpleQueueEntryImplTest", false, null,false, false, mock(VirtualHost.class),null);
+
+        queueEntryList = queue.getEntries();
+
+        super.setUp();
+    }
+
 
     public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException
     {

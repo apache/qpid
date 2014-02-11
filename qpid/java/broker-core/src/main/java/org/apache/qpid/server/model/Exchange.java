@@ -25,6 +25,22 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+@AmqpManagement(
+        attributes = {
+                Exchange.ID,
+                Exchange.NAME,
+                Exchange.STATE,
+                Exchange.DURABLE,
+                Exchange.LIFETIME_POLICY,
+                Exchange.TIME_TO_LIVE,
+                Exchange.CREATED,
+                Exchange.UPDATED,
+                Exchange.ALTERNATE_EXCHANGE,
+                Exchange.TYPE
+        },
+        operations = {}
+)
+
 public interface Exchange extends ConfiguredObject
 {
     String BINDING_COUNT = "bindingCount";
@@ -47,9 +63,7 @@ public interface Exchange extends ConfiguredObject
 
     String CREATED                              = "created";
     String DURABLE                              = "durable";
-    String ID                                   = "id";
     String LIFETIME_POLICY                      = "lifetimePolicy";
-    String NAME                                 = "name";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
     String UPDATED                              = "updated";

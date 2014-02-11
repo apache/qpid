@@ -25,6 +25,40 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
+@AmqpManagement(
+        attributes = {
+                Queue.ID,
+                Queue.NAME,
+                Queue.DESCRIPTION,
+                Queue.STATE,
+                Queue.DURABLE,
+                Queue.LIFETIME_POLICY,
+                Queue.TIME_TO_LIVE,
+                Queue.CREATED,
+                Queue.UPDATED,
+                Queue.QUEUE_TYPE,
+                Queue.ALTERNATE_EXCHANGE,
+                Queue.EXCLUSIVE,
+                Queue.OWNER,
+                Queue.NO_LOCAL,
+                Queue.LVQ_KEY,
+                Queue.SORT_KEY,
+                Queue.MESSAGE_GROUP_KEY,
+                Queue.MESSAGE_GROUP_SHARED_GROUPS,
+                Queue.MAXIMUM_DELIVERY_ATTEMPTS,
+                Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES,
+                Queue.QUEUE_FLOW_RESUME_SIZE_BYTES,
+                Queue.QUEUE_FLOW_STOPPED,
+                Queue.ALERT_THRESHOLD_MESSAGE_AGE,
+                Queue.ALERT_THRESHOLD_MESSAGE_SIZE,
+                Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+                Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                Queue.ALERT_REPEAT_GAP,
+                Queue.PRIORITIES
+        },
+        operations = {}
+)
+
 public interface Queue extends ConfiguredObject
 {
     public static final String BINDING_COUNT = "bindingCount";
@@ -69,9 +103,7 @@ public interface Queue extends ConfiguredObject
 
 
 
-    public static final String ID = "id";
     public static final String DESCRIPTION = "description";
-    public static final String NAME = "name";
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
@@ -98,7 +130,7 @@ public interface Queue extends ConfiguredObject
     public static final String QUEUE_FLOW_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
     public static final String QUEUE_FLOW_STOPPED = "queueFlowStopped";
     public static final String SORT_KEY = "sortKey";
-    public static final String TYPE = "type";
+    public static final String QUEUE_TYPE = "queueType";
     public static final String PRIORITIES = "priorities";
 
     public static final String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
@@ -118,7 +150,7 @@ public interface Queue extends ConfiguredObject
                                   TIME_TO_LIVE,
                                   CREATED,
                                   UPDATED,
-                                  TYPE,
+                                  QUEUE_TYPE,
                                   ALTERNATE_EXCHANGE,
                                   EXCLUSIVE,
                                   OWNER,
