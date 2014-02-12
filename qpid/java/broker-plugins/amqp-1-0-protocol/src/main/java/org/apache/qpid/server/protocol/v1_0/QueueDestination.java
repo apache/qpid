@@ -24,22 +24,21 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import org.apache.qpid.server.txn.ServerTransaction;
 
-public class QueueDestination implements SendingDestination, ReceivingDestination
+public class QueueDestination extends MessageSourceDestination implements SendingDestination, ReceivingDestination
 {
     private static final Logger _logger = Logger.getLogger(QueueDestination.class);
     private static final Accepted ACCEPTED = new Accepted();
     private static final Outcome[] OUTCOMES = new Outcome[] { ACCEPTED };
 
 
-    private AMQQueue _queue;
-
     public QueueDestination(AMQQueue queue)
     {
-        _queue = queue;
+        super(queue);
     }
 
     public Outcome[] getOutcomes()
@@ -52,7 +51,7 @@ public class QueueDestination implements SendingDestination, ReceivingDestinatio
 
         try
         {
-            txn.enqueue(_queue,message, new ServerTransaction.Action()
+            txn.enqueue(getQueue(),message, new ServerTransaction.Action()
             {
 
 
@@ -60,8 +59,7 @@ public class QueueDestination implements SendingDestination, ReceivingDestinatio
                 {
                     try
                     {
-
-                        _queue.enqueue(message);
+                        getQueue().enqueue(message,null);
                     }
                     catch (Exception e)
                     {
@@ -93,7 +91,7 @@ public class QueueDestination implements SendingDestination, ReceivingDestinatio
 
     public AMQQueue getQueue()
     {
-        return _queue;
+        return (AMQQueue) super.getQueue();
     }
 
 }

@@ -46,7 +46,7 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -55,15 +55,16 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.DistributedTransaction;
@@ -77,6 +78,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.SuspendAndFailDtxException;
 import org.apache.qpid.server.txn.TimeoutDtxException;
 import org.apache.qpid.server.txn.UnknownDtxBranchException;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
@@ -104,14 +106,7 @@ public class ServerSession extends Session
     private final AtomicBoolean _blocking = new AtomicBoolean(false);
     private ChannelLogSubject _logSubject;
     private final AtomicInteger _outstandingCredit = new AtomicInteger(UNLIMITED_CREDIT);
-    private final BaseQueue.PostEnqueueAction _checkCapacityAction = new BaseQueue.PostEnqueueAction()
-    {
-        @Override
-        public void onEnqueue(final QueueEntry entry)
-        {
-            entry.getQueue().checkCapacity(ServerSession.this);
-        }
-    };
+    private final CheckCapacityAction _checkCapacityAction = new CheckCapacityAction();
 
     public static interface MessageDispositionChangeListener
     {
@@ -126,12 +121,6 @@ public class ServerSession extends Session
 
     }
 
-    public static interface Task
-    {
-        public void doTask(ServerSession session);
-    }
-
-
     private final SortedMap<Integer, MessageDispositionChangeListener> _messageDispositionListenerMap =
             new ConcurrentSkipListMap<Integer, MessageDispositionChangeListener>();
 
@@ -142,9 +131,9 @@ public class ServerSession extends Session
     private final AtomicLong _txnRejects = new AtomicLong(0);
     private final AtomicLong _txnCount = new AtomicLong(0);
 
-    private Map<String, Subscription_0_10> _subscriptions = new ConcurrentHashMap<String, Subscription_0_10>();
+    private Map<String, ConsumerTarget_0_10> _subscriptions = new ConcurrentHashMap<String, ConsumerTarget_0_10>();
 
-    private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
+    private final List<Action<ServerSession>> _taskList = new CopyOnWriteArrayList<Action<ServerSession>>();
 
     private final TransactionTimeoutHelper _transactionTimeoutHelper;
 
@@ -194,7 +183,7 @@ public class ServerSession extends Session
 
     public int enqueue(final MessageTransferMessage message,
                        final InstanceProperties instanceProperties,
-                       final Exchange exchange)
+                       final MessageDestination exchange)
     {
         if(_outstandingCredit.get() != UNLIMITED_CREDIT
                 && _outstandingCredit.decrementAndGet() == (Integer.MAX_VALUE - PRODUCER_CREDIT_TOPUP_THRESHOLD))
@@ -386,9 +375,9 @@ public class ServerSession extends Session
         }
         _messageDispositionListenerMap.clear();
 
-        for (Task task : _taskList)
+        for (Action<ServerSession> task : _taskList)
         {
-            task.doTask(this);
+            task.performAction(this);
         }
 
         LogMessage operationalLoggingMessage = _forcedCloseLogMessage.get();
@@ -405,9 +394,9 @@ public class ServerSession extends Session
         // Broker shouldn't block awaiting close - thus do override this method to do nothing
     }
 
-    public void acknowledge(final Subscription_0_10 sub, final QueueEntry entry)
+    public void acknowledge(final ConsumerTarget_0_10 sub, final MessageInstance entry)
     {
-        _transaction.dequeue(entry.getQueue(), entry.getMessage(),
+        _transaction.dequeue(entry.getOwningResource(), entry.getMessage(),
                              new ServerTransaction.Action()
                              {
 
@@ -426,42 +415,26 @@ public class ServerSession extends Session
                              });
     }
 
-    public Collection<Subscription_0_10> getSubscriptions()
+    public Collection<ConsumerTarget_0_10> getSubscriptions()
     {
         return _subscriptions.values();
     }
 
-    public void register(String destination, Subscription_0_10 sub)
+    public void register(String destination, ConsumerTarget_0_10 sub)
     {
         _subscriptions.put(destination == null ? NULL_DESTINATION : destination, sub);
     }
 
-    public Subscription_0_10 getSubscription(String destination)
+    public ConsumerTarget_0_10 getSubscription(String destination)
     {
         return _subscriptions.get(destination == null ? NULL_DESTINATION : destination);
     }
 
-    public void unregister(Subscription_0_10 sub)
+    public void unregister(ConsumerTarget_0_10 sub)
     {
         _subscriptions.remove(sub.getName());
-        try
-        {
-            sub.getSendLock();
-            AMQQueue queue = sub.getQueue();
-            if(queue != null)
-            {
-                queue.unregisterSubscription(sub);
-            }
-        }
-        catch (AMQException e)
-        {
-            // TODO
-            _logger.error("Failed to unregister subscription :" + e.getMessage(), e);
-        }
-        finally
-        {
-            sub.releaseSendLock();
-        }
+        sub.close();
+
     }
 
     public boolean isTransactional()
@@ -638,12 +611,12 @@ public class ServerSession extends Session
         return getConnection().getAuthorizedSubject();
     }
 
-    public void addSessionCloseTask(Task task)
+    public void addSessionCloseTask(Action<ServerSession> task)
     {
         _taskList.add(task);
     }
 
-    public void removeSessionCloseTask(Task task)
+    public void removeSessionCloseTask(Action<ServerSession> task)
     {
         _taskList.remove(task);
     }
@@ -829,8 +802,8 @@ public class ServerSession extends Session
 
     void unregisterSubscriptions()
     {
-        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
-        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        final Collection<ConsumerTarget_0_10> subscriptions = getSubscriptions();
+        for (ConsumerTarget_0_10 subscription_0_10 : subscriptions)
         {
             unregister(subscription_0_10);
         }
@@ -838,8 +811,8 @@ public class ServerSession extends Session
 
     void stopSubscriptions()
     {
-        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
-        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        final Collection<ConsumerTarget_0_10> subscriptions = getSubscriptions();
+        for (ConsumerTarget_0_10 subscription_0_10 : subscriptions)
         {
             subscription_0_10.stop();
         }
@@ -848,56 +821,12 @@ public class ServerSession extends Session
 
     public void receivedComplete()
     {
-        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
-        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        final Collection<ConsumerTarget_0_10> subscriptions = getSubscriptions();
+        for (ConsumerTarget_0_10 subscription_0_10 : subscriptions)
         {
             subscription_0_10.flushCreditState(false);
         }
         awaitCommandCompletion();
-    }
-
-    private class PostEnqueueAction implements ServerTransaction.Action
-    {
-
-        private final MessageReference<MessageTransferMessage> _reference;
-        private final List<? extends BaseQueue> _queues;
-        private final boolean _transactional;
-
-        public PostEnqueueAction(List<? extends BaseQueue> queues, MessageTransferMessage message, final boolean transactional)
-        {
-            _reference = message.newReference();
-            _transactional = transactional;
-            _queues = queues;
-        }
-
-        public void postCommit()
-        {
-            for(int i = 0; i < _queues.size(); i++)
-            {
-                try
-                {
-                    BaseQueue queue = _queues.get(i);
-                    queue.enqueue(_reference.getMessage(), _transactional, null);
-                    if(queue instanceof AMQQueue)
-                    {
-                        ((AMQQueue)queue).checkCapacity(ServerSession.this);
-                    }
-
-                }
-                catch (AMQException e)
-                {
-                    // TODO
-                    throw new RuntimeException(e);
-                }
-            }
-            _reference.release();
-        }
-
-        public void onRollback()
-        {
-            // NO-OP
-            _reference.release();
-        }
     }
 
     public int getUnacknowledgedMessageCount()
@@ -999,4 +928,16 @@ public class ServerSession extends Session
         return getId().compareTo(o.getId());
     }
 
+    private class CheckCapacityAction<C extends Consumer> implements Action<MessageInstance<?,C>>
+    {
+        @Override
+        public void performAction(final MessageInstance<?,C> entry)
+        {
+            TransactionLogResource queue = entry.getOwningResource();
+            if(queue instanceof CapacityChecker)
+            {
+                ((CapacityChecker)queue).checkCapacity(ServerSession.this);
+            }
+        }
+    }
 }

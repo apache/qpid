@@ -537,6 +537,8 @@ public:
     inline virtual void instr_incr_outstanding_aio_cnt() {}
     inline virtual void instr_decr_outstanding_aio_cnt() {}
 
+    static std::string str2hexnum(const std::string& str);
+
 protected:
     static bool _init;
     static bool init_statics();

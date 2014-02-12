@@ -677,7 +677,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         queueData.put(Queue.DURABLE, Boolean.TRUE);
         if (queueType != null)
         {
-            queueData.put(Queue.TYPE, queueType);
+            queueData.put(Queue.QUEUE_TYPE, queueType);
         }
         if (attributes != null)
         {

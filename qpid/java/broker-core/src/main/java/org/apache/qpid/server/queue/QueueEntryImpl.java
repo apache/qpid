@@ -26,11 +26,15 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
 
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -40,13 +44,13 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public abstract class QueueEntryImpl implements QueueEntry
+public abstract class QueueEntryImpl<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> implements QueueEntry<E,Q,QueueConsumer<?,E,Q,L>>
 {
     private static final Logger _log = Logger.getLogger(QueueEntryImpl.class);
 
-    private final QueueEntryList _queueEntryList;
+    private final L _queueEntryList;
 
-    private MessageReference _message;
+    private final MessageReference _message;
 
     private Set<Long> _rejectedBy = null;
 
@@ -59,7 +63,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         (QueueEntryImpl.class, EntryState.class, "_state");
 
 
-    private volatile Set<StateChangeListener> _stateChangeListeners;
+    private volatile Set<StateChangeListener<? super E, State>> _stateChangeListeners;
 
     private static final
         AtomicReferenceFieldUpdater<QueueEntryImpl, Set>
@@ -86,14 +90,14 @@ public abstract class QueueEntryImpl implements QueueEntry
     private boolean _deliveredToConsumer;
 
 
-    public QueueEntryImpl(QueueEntryList<?> queueEntryList)
+    public QueueEntryImpl(L queueEntryList)
     {
         this(queueEntryList,null,Long.MIN_VALUE);
         _state = DELETED_STATE;
     }
 
 
-    public QueueEntryImpl(QueueEntryList<?> queueEntryList, ServerMessage message, final long entryId)
+    public QueueEntryImpl(L queueEntryList, ServerMessage message, final long entryId)
     {
         _queueEntryList = queueEntryList;
 
@@ -103,7 +107,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         populateInstanceProperties();
     }
 
-    public QueueEntryImpl(QueueEntryList<?> queueEntryList, ServerMessage message)
+    public QueueEntryImpl(L queueEntryList, ServerMessage message)
     {
         _queueEntryList = queueEntryList;
         _message = message == null ? null :  message.newReference();
@@ -134,7 +138,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return _entryId;
     }
 
-    public AMQQueue getQueue()
+    public Q getQueue()
     {
         return _queueEntryList.getQueue();
     }
@@ -183,7 +187,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public boolean acquire()
     {
-        return acquire(NON_SUBSCRIPTION_ACQUIRED_STATE);
+        return acquire(NON_CONSUMER_ACQUIRED_STATE);
     }
 
     private boolean acquire(final EntryState state)
@@ -198,7 +202,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return acquired;
     }
 
-    public boolean acquire(Subscription sub)
+    public boolean acquire(QueueConsumer<?,E,Q,L> sub)
     {
         final boolean acquired = acquire(sub.getOwningState());
         if(acquired)
@@ -208,17 +212,17 @@ public abstract class QueueEntryImpl implements QueueEntry
         return acquired;
     }
 
-    public boolean acquiredBySubscription()
+    public boolean acquiredByConsumer()
     {
 
-        return (_state instanceof SubscriptionAcquiredState);
+        return (_state instanceof ConsumerAcquiredState);
     }
 
-    public boolean isAcquiredBy(Subscription subscription)
+    public boolean isAcquiredBy(QueueConsumer consumer)
     {
         EntryState state = _state;
-        return state instanceof SubscriptionAcquiredState
-               && ((SubscriptionAcquiredState)state).getSubscription() == subscription;
+        return state instanceof ConsumerAcquiredState
+               && ((ConsumerAcquiredState)state).getConsumer() == consumer;
     }
 
     public void release()
@@ -228,19 +232,14 @@ public abstract class QueueEntryImpl implements QueueEntry
         if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, AVAILABLE_STATE))
         {
 
-            if(state instanceof SubscriptionAcquiredState)
+            if(state instanceof ConsumerAcquiredState)
             {
-                getQueue().decrementUnackedMsgCount(this);
-                Subscription subscription = ((SubscriptionAcquiredState)state).getSubscription();
-                if (subscription != null)
-                {
-                    subscription.releaseQueueEntry(this);
-                }
+                getQueue().decrementUnackedMsgCount((E) this);
             }
 
             if(!getQueue().isDeleted())
             {
-                getQueue().requeue(this);
+                getQueue().requeue((E)this);
                 if(_stateChangeListeners != null)
                 {
                     notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
@@ -265,12 +264,12 @@ public abstract class QueueEntryImpl implements QueueEntry
         return Boolean.TRUE.equals(_instanceProperties.getProperty(InstanceProperties.Property.REDELIVERED));
     }
 
-    public Subscription getDeliveredSubscription()
+    public QueueConsumer getDeliveredConsumer()
     {
         EntryState state = _state;
-        if (state instanceof SubscriptionAcquiredState)
+        if (state instanceof ConsumerAcquiredState)
         {
-            return ((SubscriptionAcquiredState) state).getSubscription();
+            return (QueueConsumer) ((ConsumerAcquiredState) state).getConsumer();
         }
         else
         {
@@ -280,16 +279,16 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public void reject()
     {
-        Subscription subscription = getDeliveredSubscription();
+        QueueConsumer consumer = getDeliveredConsumer();
 
-        if (subscription != null)
+        if (consumer != null)
         {
             if (_rejectedBy == null)
             {
                 _rejectedBy = new HashSet<Long>();
             }
 
-            _rejectedBy.add(subscription.getSubscriptionID());
+            _rejectedBy.add(consumer.getId());
         }
         else
         {
@@ -297,12 +296,12 @@ public abstract class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public boolean isRejectedBy(long subscriptionId)
+    public boolean isRejectedBy(QueueConsumer consumer)
     {
 
-        if (_rejectedBy != null) // We have subscriptions that rejected this message
+        if (_rejectedBy != null) // We have consumers that rejected this message
         {
-            return _rejectedBy.contains(subscriptionId);
+            return _rejectedBy.contains(consumer.getId());
         }
         else // This message hasn't been rejected yet.
         {
@@ -316,15 +315,12 @@ public abstract class QueueEntryImpl implements QueueEntry
 
         if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, DEQUEUED_STATE))
         {
-            Subscription s = null;
-            if (state instanceof SubscriptionAcquiredState)
+            if (state instanceof ConsumerAcquiredState)
             {
-                getQueue().decrementUnackedMsgCount(this);
-                s = ((SubscriptionAcquiredState) state).getSubscription();
-                s.onDequeue(this);
+                getQueue().decrementUnackedMsgCount((E) this);
             }
 
-            getQueue().dequeue(this,s);
+            getQueue().dequeue((E)this);
             if(_stateChangeListeners != null)
             {
                 notifyStateChange(state.getState() , QueueEntry.State.DEQUEUED);
@@ -336,9 +332,9 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     private void notifyStateChange(final State oldState, final State newState)
     {
-        for(StateChangeListener l : _stateChangeListeners)
+        for(StateChangeListener<? super E, State> l : _stateChangeListeners)
         {
-            l.stateChanged(this, oldState, newState);
+            l.stateChanged((E)this, oldState, newState);
         }
     }
 
@@ -348,7 +344,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
-            _queueEntryList.entryDeleted(this);
+            _queueEntryList.entryDeleted((E)this);
             onDelete();
             _message.release();
 
@@ -367,44 +363,49 @@ public abstract class QueueEntryImpl implements QueueEntry
         dispose();
     }
 
-    public int routeToAlternate(final BaseQueue.PostEnqueueAction action, ServerTransaction txn)
+    public int routeToAlternate(final Action<? super MessageInstance<?, ? extends Consumer>> action, ServerTransaction txn)
     {
         final AMQQueue currentQueue = getQueue();
         Exchange alternateExchange = currentQueue.getAlternateExchange();
         boolean autocommit =  txn == null;
+        int enqueues;
+
+        if(autocommit)
+        {
+            txn = new LocalTransaction(getQueue().getVirtualHost().getMessageStore());
+        }
+
         if (alternateExchange != null)
         {
-            if(autocommit)
-            {
-                txn = new LocalTransaction(getQueue().getVirtualHost().getMessageStore());
-            }
-
-            int enqueues = alternateExchange.send(getMessage(), getInstanceProperties(), txn, action);
-
-            txn.dequeue(currentQueue, getMessage(), new ServerTransaction.Action()
-            {
-                public void postCommit()
-                {
-                    delete();
-                }
-
-                public void onRollback()
-                {
-
-                }
-            });
-
-            if(autocommit)
-            {
-                txn.commit();
-            }
-            return enqueues;
-
+            enqueues = alternateExchange.send(getMessage(),
+                                              getInstanceProperties(),
+                                              txn,
+                                              action);
         }
         else
         {
-            return 0;
+            enqueues = 0;
         }
+
+        txn.dequeue(currentQueue, getMessage(), new ServerTransaction.Action()
+        {
+            public void postCommit()
+            {
+                delete();
+            }
+
+            public void onRollback()
+            {
+
+            }
+        });
+
+        if(autocommit)
+        {
+            txn.commit();
+        }
+
+        return enqueues;
     }
 
     public boolean isQueueDeleted()
@@ -412,21 +413,21 @@ public abstract class QueueEntryImpl implements QueueEntry
         return getQueue().isDeleted();
     }
 
-    public void addStateChangeListener(StateChangeListener listener)
+    public void addStateChangeListener(StateChangeListener<? super E,State> listener)
     {
-        Set<StateChangeListener> listeners = _stateChangeListeners;
+        Set<StateChangeListener<? super E, State>> listeners = _stateChangeListeners;
         if(listeners == null)
         {
-            _listenersUpdater.compareAndSet(this, null, new CopyOnWriteArraySet<StateChangeListener>());
+            _listenersUpdater.compareAndSet(this, null, new CopyOnWriteArraySet<StateChangeListener<? super E, State>>());
             listeners = _stateChangeListeners;
         }
 
         listeners.add(listener);
     }
 
-    public boolean removeStateChangeListener(StateChangeListener listener)
+    public boolean removeStateChangeListener(StateChangeListener<? super E, State> listener)
     {
-        Set<StateChangeListener> listeners = _stateChangeListeners;
+        Set<StateChangeListener<? super E, State>> listeners = _stateChangeListeners;
         if(listeners != null)
         {
             return listeners.remove(listener);
@@ -436,9 +437,9 @@ public abstract class QueueEntryImpl implements QueueEntry
     }
 
 
-    public int compareTo(final QueueEntry o)
+    public int compareTo(final E o)
     {
-        QueueEntryImpl other = (QueueEntryImpl)o;
+        E other = o;
         return getEntryId() > other.getEntryId() ? 1 : getEntryId() < other.getEntryId() ? -1 : 0;
     }
 
@@ -446,7 +447,7 @@ public abstract class QueueEntryImpl implements QueueEntry
     {
     }
 
-    public QueueEntryList getQueueEntryList()
+    public L getQueueEntryList()
     {
         return _queueEntryList;
     }
@@ -459,6 +460,12 @@ public abstract class QueueEntryImpl implements QueueEntry
     public int getDeliveryCount()
     {
         return _deliveryCount;
+    }
+
+    @Override
+    public int getMaximumDeliveryCount()
+    {
+        return getQueue().getMaximumDeliveryCount();
     }
 
     public void incrementDeliveryCount()
@@ -483,6 +490,23 @@ public abstract class QueueEntryImpl implements QueueEntry
                 "_entryId=" + _entryId +
                 ", _state=" + _state +
                 '}';
+    }
+
+    @Override
+    public boolean resend() throws AMQException
+    {
+        QueueConsumer<?,E,Q,L> sub = getDeliveredConsumer();
+        if(sub != null)
+        {
+            return sub.resend((E)this);
+        }
+        return false;
+    }
+
+    @Override
+    public TransactionLogResource getOwningResource()
+    {
+        return getQueue();
     }
 
     private static class EntryInstanceProperties implements InstanceProperties

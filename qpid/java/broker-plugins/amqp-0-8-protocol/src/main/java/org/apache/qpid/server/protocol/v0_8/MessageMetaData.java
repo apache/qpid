@@ -105,7 +105,7 @@ public class MessageMetaData implements StorableMessageMetaData
     }
 
 
-    public int writeToBuffer(int offset, ByteBuffer dest)
+    public int writeToBuffer(ByteBuffer dest)
     {
         int oldPosition = dest.position();
         try

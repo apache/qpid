@@ -26,19 +26,20 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.protocol.CapacityChecker;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue
+public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, C extends Consumer>
+        extends Comparable<Q>, ExchangeReferrer, BaseQueue<C>, MessageSource<C,Q>, CapacityChecker, MessageDestination
 {
-    String getName();
 
     public interface NotificationListener
     {
@@ -65,45 +66,20 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     long getTotalEnqueueCount();
 
-    public interface Context
-    {
-        QueueEntry getLastSeenEntry();
-    }
-
     void setNoLocal(boolean b);
 
     boolean isAutoDelete();
 
     String getOwner();
-    AuthorizationHolder getAuthorizationHolder();
-    void setAuthorizationHolder(AuthorizationHolder principalHolder);
-
-    void setExclusiveOwningSession(AMQSessionModel owner);
-    AMQSessionModel getExclusiveOwningSession();
 
     VirtualHost getVirtualHost();
-
-    void registerSubscription(final Subscription subscription, final boolean exclusive) throws AMQException;
-
-    void unregisterSubscription(final Subscription subscription) throws AMQException;
-
-    Collection<Subscription> getConsumers();
-
-    interface SubscriptionRegistrationListener
-    {
-        void subscriptionRegistered(AMQQueue queue, Subscription subscription);
-        void subscriptionUnregistered(AMQQueue queue, Subscription subscription);
-    }
-
-    void addSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
-    void removeSubscriptionRegistrationListener(SubscriptionRegistrationListener listener);
 
 
     int getConsumerCount();
 
     int getActiveConsumerCount();
 
-    boolean hasExclusiveSubscriber();
+    boolean hasExclusiveConsumer();
 
     boolean isUnused();
 
@@ -111,12 +87,8 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     int getMessageCount();
 
-    int getUndeliveredMessageCount();
-
 
     long getQueueDepth();
-
-    long getReceivedMessageCount();
 
     long getOldestMessageArrivalTime();
 
@@ -124,28 +96,26 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     int delete() throws AMQException;
 
-    void requeue(QueueEntry entry);
+    void requeue(E entry);
 
-    void dequeue(QueueEntry entry, Subscription sub);
+    void dequeue(E entry);
 
-    void decrementUnackedMsgCount(QueueEntry queueEntry);
+    void decrementUnackedMsgCount(E queueEntry);
 
-    boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
+    boolean resend(final E entry, final C consumer) throws AMQException;
 
-    void addQueueDeleteTask(final Task task);
-    void removeQueueDeleteTask(final Task task);
+    void addQueueDeleteTask(Action<AMQQueue> task);
+    void removeQueueDeleteTask(Action<AMQQueue> task);
 
 
 
-    List<QueueEntry> getMessagesOnTheQueue();
-
-    List<QueueEntry> getMessagesOnTheQueue(long fromMessageId, long toMessageId);
+    List<E> getMessagesOnTheQueue();
 
     List<Long> getMessagesOnTheQueue(int num);
 
     List<Long> getMessagesOnTheQueue(int num, int offset);
 
-    QueueEntry getMessageOnTheQueue(long messageId);
+    E getMessageOnTheQueue(long messageId);
 
     /**
      * Returns a list of QueEntries from a given range of queue positions, eg messages 5 to 10 on the queue.
@@ -156,9 +126,9 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
      * @param toPosition
      * @return
      */
-    public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
+    public List<E> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
-    void visit(QueueEntryVisitor visitor);
+    void visit(QueueEntryVisitor<E> visitor);
 
 
     long getMaximumMessageSize();
@@ -209,15 +179,9 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     Set<NotificationCheck> getNotificationChecks();
 
-    void flushSubscription(final Subscription sub) throws AMQException;
-
-    void deliverAsync(final Subscription sub);
-
     void deliverAsync();
 
     void stop();
-
-    boolean isExclusive();
 
     Exchange getAlternateExchange();
 
@@ -225,56 +189,6 @@ public interface AMQQueue extends Comparable<AMQQueue>, ExchangeReferrer, Transa
 
     Collection<String> getAvailableAttributes();
     Object getAttribute(String attrName);
-
-    void checkCapacity(AMQSessionModel channel);
-
-    /**
-     * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
-     * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create a subscription, because an exclusive subscription already exists.
-     * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
-     * @todo Move to top level, used outside this class.
-     */
-    static final class ExistingExclusiveSubscription extends AMQException
-    {
-
-        public ExistingExclusiveSubscription()
-        {
-            super("");
-        }
-    }
-
-    /**
-     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusive subscription, as a subscription
-     * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create an exclusive subscription, as a subscription already exists.
-     * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
-     * @todo Move to top level, used outside this class.
-     */
-    static final class ExistingSubscriptionPreventsExclusive extends AMQException
-    {
-        public ExistingSubscriptionPreventsExclusive()
-        {
-            super("");
-        }
-    }
-
-    static interface Task
-    {
-        public void doTask(AMQQueue queue) throws AMQException;
-    }
 
     void configure(QueueConfiguration config);
 

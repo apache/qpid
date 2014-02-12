@@ -119,7 +119,7 @@ public class VirtualHostConfigRecoveryHandler implements
         }
         for(Transaction.Record record : enqueues)
         {
-            final AMQQueue queue = _virtualHost.getQueue(record.getQueue().getId());
+            final AMQQueue queue = _virtualHost.getQueue(record.getResource().getId());
             if(queue != null)
             {
                 final long messageId = record.getMessage().getMessageNumber();
@@ -141,7 +141,7 @@ public class VirtualHostConfigRecoveryHandler implements
                             try
                             {
 
-                                queue.enqueue(message, true, null);
+                                queue.enqueue(message, null);
                                 ref.release();
                             }
                             catch (AMQException e)
@@ -173,13 +173,13 @@ public class VirtualHostConfigRecoveryHandler implements
                 StringBuilder xidString = xidAsString(id);
                 CurrentActor.get().message(_logSubject,
                                            TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
-                                                                                      record.getQueue().getId().toString()));
+                                                                                      record.getResource().getId().toString()));
 
             }
         }
         for(Transaction.Record record : dequeues)
         {
-            final AMQQueue queue = _virtualHost.getQueue(record.getQueue().getId());
+            final AMQQueue queue = _virtualHost.getQueue(record.getResource().getId());
             if(queue != null)
             {
                 final long messageId = record.getMessage().getMessageNumber();
@@ -223,7 +223,7 @@ public class VirtualHostConfigRecoveryHandler implements
                 StringBuilder xidString = xidAsString(id);
                 CurrentActor.get().message(_logSubject,
                                            TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
-                                                                                      record.getQueue().getId().toString()));
+                                                                                      record.getResource().getId().toString()));
             }
 
         }
@@ -292,7 +292,7 @@ public class VirtualHostConfigRecoveryHandler implements
                         count = 0;
                     }
 
-                    queue.enqueue(message);
+                    queue.enqueue(message,null);
 
                     _queueRecoveries.put(queueName, ++count);
                 }
@@ -312,9 +312,21 @@ public class VirtualHostConfigRecoveryHandler implements
                         new TransactionLogResource()
                         {
                             @Override
+                            public String getName()
+                            {
+                                return "<<UNKNOWN>>";
+                            }
+
+                            @Override
                             public UUID getId()
                             {
                                 return queueId;
+                            }
+
+                            @Override
+                            public boolean isDurable()
+                            {
+                                return false;
                             }
                         };
                 txn.dequeueMessage(mockQueue, new DummyMessage(messageId));

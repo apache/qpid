@@ -33,7 +33,7 @@ org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testUnsubscribeWhenUsing
 // 0-10 and 0-9 connections dont generate the exact same logging due to protocol differences
 org.apache.qpid.server.logging.ChannelLoggingTest#testChannelStartsFlowStopped
 org.apache.qpid.server.logging.ChannelLoggingTest#testChannelStartConsumerFlowStarted
-org.apache.qpid.server.logging.SubscriptionLoggingTest#testSubscriptionSuspend
+org.apache.qpid.server.logging.ConsumerLoggingTest#testSubscriptionSuspend
 org.apache.qpid.server.logging.ChannelLoggingTest#testChannelClosedOnQueueArgumentsMismatch
 
 // 0-10 is not supported by the MethodRegistry

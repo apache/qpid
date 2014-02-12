@@ -16,35 +16,35 @@
   limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-project</artifactId>
-    <version>0.26-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
   <artifactId>qpid-perftests-visualisation-jfc</artifactId>
+  <version>0.28-SNAPSHOT</version>
+  <name>Qpid Performance Tests Visualisation JFC</name>
+  <description>Performance testing visualisation using JFreeChart</description>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-perftests</artifactId>
-      <version>0.26-SNAPSHOT</version>
-      <scope>compile</scope>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j-version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.derby</groupId>
       <artifactId>derby</artifactId>
-      <version>10.8.2.2</version>
       <scope>runtime</scope>
     </dependency>
 
@@ -52,14 +52,14 @@
     <dependency>
       <groupId>net.sourceforge.csvjdbc</groupId>
       <artifactId>csvjdbc</artifactId>
-      <version>1.0.8</version>
+      <version>${csvjdbc-version}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>jfree</groupId>
       <artifactId>jfreechart</artifactId>
-      <version>1.0.13</version>
+      <version>${jfreechart-version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -67,7 +67,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-test-utils</artifactId>
-      <version>0.26-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -109,4 +109,17 @@
     </plugins>
   </build>
 
+  <repositories>
+    <repository>
+      <id>csvjdbc.releases</id>
+      <url>http://csvjdbc.sourceforge.net/maven2</url>
+      <layout>default</layout>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>

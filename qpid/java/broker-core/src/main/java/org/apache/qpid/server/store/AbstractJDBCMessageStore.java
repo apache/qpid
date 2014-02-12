@@ -1078,7 +1078,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                     stmt.setString(4, "E");
                     for(Transaction.Record record : enqueues)
                     {
-                        stmt.setString(5, record.getQueue().getId().toString());
+                        stmt.setString(5, record.getResource().getId().toString());
                         stmt.setLong(6, record.getMessage().getMessageNumber());
                         stmt.executeUpdate();
                     }
@@ -1089,7 +1089,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                     stmt.setString(4, "D");
                     for(Transaction.Record record : dequeues)
                     {
-                        stmt.setString(5, record.getQueue().getId().toString());
+                        stmt.setString(5, record.getResource().getId().toString());
                         stmt.setLong(6, record.getMessage().getMessageNumber());
                         stmt.executeUpdate();
                     }
@@ -1212,7 +1212,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             buf.position(1);
             buf = buf.slice();
 
-            metaData.writeToBuffer(0, buf);
+            metaData.writeToBuffer(buf);
             ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
             try
             {
@@ -1384,7 +1384,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
 
         @Override
-        public TransactionLogResource getQueue()
+        public TransactionLogResource getResource()
         {
             return this;
         }
@@ -1414,9 +1414,21 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
 
         @Override
+        public String getName()
+        {
+            return _queueId.toString();
+        }
+
+        @Override
         public UUID getId()
         {
             return _queueId;
+        }
+
+        @Override
+        public boolean isDurable()
+        {
+            return true;
         }
     }
 

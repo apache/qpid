@@ -29,6 +29,9 @@ import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageNode;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -48,6 +51,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     String getName();
 
     AMQQueue getQueue(String name);
+    MessageSource getMessageSource(String name);
 
     AMQQueue getQueue(UUID id);
 
@@ -74,6 +78,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
             throws AMQException;
 
     void removeExchange(Exchange exchange, boolean force) throws AMQException;
+
+    MessageDestination getMessageDestination(String name);
 
     Exchange getExchange(String name);
     Exchange getExchange(UUID id);

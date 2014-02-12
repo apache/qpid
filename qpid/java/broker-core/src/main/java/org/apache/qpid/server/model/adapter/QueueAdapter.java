@@ -26,16 +26,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
-import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -47,10 +46,12 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.MapValueConverter;
 
-final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.SubscriptionRegistrationListener, AMQQueue.NotificationListener
+final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter implements Queue,
+                                                            MessageSource.ConsumerRegistrationListener<Q>,
+                                                            AMQQueue.NotificationListener
 {
     @SuppressWarnings("serial")
     static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
@@ -66,25 +67,26 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         put(DESCRIPTION, String.class);
     }});
 
-    private final AMQQueue _queue;
+    private final AMQQueue<?,Q,?> _queue;
+
     private final Map<Binding, BindingAdapter> _bindingAdapters =
             new HashMap<Binding, BindingAdapter>();
-    private Map<org.apache.qpid.server.subscription.Subscription, ConsumerAdapter> _consumerAdapters =
-            new HashMap<org.apache.qpid.server.subscription.Subscription, ConsumerAdapter>();
+    private final Map<Consumer, ConsumerAdapter> _consumerAdapters =
+            new HashMap<Consumer, ConsumerAdapter>();
 
 
     private final VirtualHostAdapter _vhost;
     private QueueStatisticsAdapter _statistics;
     private QueueNotificationListener _queueNotificationListener;
 
-    public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue queue)
+    public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue<?,Q,?> queue)
     {
         super(queue.getId(), virtualHostAdapter.getTaskExecutor());
         _vhost = virtualHostAdapter;
         addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
 
         _queue = queue;
-        _queue.addSubscriptionRegistrationListener(this);
+        _queue.addConsumerRegistrationListener(this);
         populateConsumers();
         _statistics = new QueueStatisticsAdapter(queue);
         _queue.setNotificationListener(this);
@@ -124,21 +126,20 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
 
     private void populateConsumers()
     {
-        Collection<org.apache.qpid.server.subscription.Subscription> actualSubscriptions = _queue.getConsumers();
+        Collection<? extends Consumer> actualConsumers = _queue.getConsumers();
 
         synchronized (_consumerAdapters)
         {
-            Iterator<org.apache.qpid.server.subscription.Subscription> iter = _consumerAdapters.keySet().iterator();
-            for(org.apache.qpid.server.subscription.Subscription subscription : actualSubscriptions)
+            for(Consumer consumer : actualConsumers)
             {
-                if(!_consumerAdapters.containsKey(subscription))
+                if(!_consumerAdapters.containsKey(consumer))
                 {
-                    SessionAdapter sessionAdapter = getSessionAdapter(subscription.getSessionModel());
-                    ConsumerAdapter adapter = new ConsumerAdapter(this, sessionAdapter, subscription);
-                    _consumerAdapters.put(subscription, adapter);
+                    SessionAdapter sessionAdapter = getSessionAdapter(consumer.getSessionModel());
+                    ConsumerAdapter adapter = new ConsumerAdapter(this, sessionAdapter, consumer);
+                    _consumerAdapters.put(consumer, adapter);
                     if (sessionAdapter != null)
                     { // Register ConsumerAdapter with the SessionAdapter.
-                        sessionAdapter.subscriptionRegistered(subscription, adapter);
+                        sessionAdapter.consumerRegistered(consumer, adapter);
                     }
                 }
             }
@@ -153,11 +154,11 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
     }
 
-    public Collection<Consumer> getConsumers()
+    public Collection<org.apache.qpid.server.model.Consumer> getConsumers()
     {
         synchronized (_consumerAdapters)
         {
-            return new ArrayList<Consumer>(_consumerAdapters.values());
+            return new ArrayList<org.apache.qpid.server.model.Consumer>(_consumerAdapters.values());
         }
 
     }
@@ -321,7 +322,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
             {
                 // TODO
             }
-            else if(TYPE.equals(name))
+            else if(QUEUE_TYPE.equals(name))
             {
                 // TODO
             }
@@ -396,9 +397,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(LVQ_KEY.equals(name))
         {
-            if(_queue instanceof ConflationQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof ConflationQueue)
             {
-                return ((ConflationQueue)_queue).getConflationKey();
+                return ((ConflationQueue)queue).getConflationKey();
             }
         }
         else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
@@ -427,22 +429,24 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(SORT_KEY.equals(name))
         {
-            if(_queue instanceof SortedQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof SortedQueue)
             {
-                return ((SortedQueue)_queue).getSortedPropertyName();
+                return ((SortedQueue)queue).getSortedPropertyName();
             }
         }
-        else if(TYPE.equals(name))
+        else if(QUEUE_TYPE.equals(name))
         {
-            if(_queue instanceof SortedQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof SortedQueue)
             {
                 return "sorted";
             }
-            if(_queue instanceof ConflationQueue)
+            if(queue instanceof ConflationQueue)
             {
                 return "lvq";
             }
-            if(_queue instanceof AMQPriorityQueue)
+            if(queue instanceof PriorityQueue)
             {
                 return "priority";
             }
@@ -486,9 +490,10 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
         else if(PRIORITIES.equals(name))
         {
-            if(_queue instanceof AMQPriorityQueue)
+            AMQQueue queue = _queue;
+            if(queue instanceof PriorityQueue)
             {
-                return ((AMQPriorityQueue)_queue).getPriorities();
+                return ((PriorityQueue)queue).getPriorities();
             }
         }
         return super.getAttribute(name);
@@ -502,7 +507,7 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        if(clazz == Consumer.class)
+        if(clazz == org.apache.qpid.server.model.Consumer.class)
         {
             return (Collection<C>) getConsumers();
         }
@@ -587,19 +592,19 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         return _queue;
     }
 
-    public void subscriptionRegistered(final AMQQueue queue, final Subscription subscription)
+    public void consumerAdded(final AMQQueue queue, final Consumer consumer)
     {
         ConsumerAdapter adapter = null;
         synchronized (_consumerAdapters)
         {
-            if(!_consumerAdapters.containsKey(subscription))
+            if(!_consumerAdapters.containsKey(consumer))
             {
-                SessionAdapter sessionAdapter = getSessionAdapter(subscription.getSessionModel());
-                adapter = new ConsumerAdapter(this, sessionAdapter, subscription);
-                _consumerAdapters.put(subscription, adapter);
+                SessionAdapter sessionAdapter = getSessionAdapter(consumer.getSessionModel());
+                adapter = new ConsumerAdapter(this, sessionAdapter, consumer);
+                _consumerAdapters.put(consumer, adapter);
                 if (sessionAdapter != null)
                 { // Register ConsumerAdapter with the SessionAdapter.
-                    sessionAdapter.subscriptionRegistered(subscription, adapter);
+                    sessionAdapter.consumerRegistered(consumer, adapter);
                 }
             }
         }
@@ -609,20 +614,20 @@ final class QueueAdapter extends AbstractAdapter implements Queue, AMQQueue.Subs
         }
     }
 
-    public void subscriptionUnregistered(final AMQQueue queue, final Subscription subscription)
+    public void consumerRemoved(final AMQQueue queue, final Consumer consumer)
     {
         ConsumerAdapter adapter = null;
 
         synchronized (_consumerAdapters)
         {
-            adapter = _consumerAdapters.remove(subscription);
+            adapter = _consumerAdapters.remove(consumer);
         }
         if(adapter != null)
         {
-            SessionAdapter sessionAdapter = getSessionAdapter(subscription.getSessionModel());
+            SessionAdapter sessionAdapter = getSessionAdapter(consumer.getSessionModel());
             if (sessionAdapter != null)
             { // Unregister ConsumerAdapter with the SessionAdapter.
-                sessionAdapter.subscriptionUnregistered(subscription);
+                sessionAdapter.consumerUnregistered(consumer);
             }
             childRemoved(adapter);
         }

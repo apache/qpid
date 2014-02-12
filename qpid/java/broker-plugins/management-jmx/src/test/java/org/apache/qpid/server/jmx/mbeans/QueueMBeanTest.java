@@ -127,7 +127,7 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testQueueType() throws Exception
     {
-        assertAttribute("queueType", QUEUE_TYPE, Queue.TYPE);
+        assertAttribute("queueType", QUEUE_TYPE, Queue.QUEUE_TYPE);
     }
 
     public void testMaximumDeliveryCount() throws Exception

@@ -16,29 +16,31 @@
   limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-project</artifactId>
-    <version>0.26-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
   <artifactId>qpid-broker-plugins-jdbc-provider-bone</artifactId>
+  <version>0.28-SNAPSHOT</version>
+  <name>Qpid JDBC Message Store Connection Pooling Plug-in</name>
+  <description>JDBC Message Store Connection Pooling broker plug-in using BoneCP</description>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-broker-core</artifactId>
-      <version>0.26-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.jolbox</groupId>
       <artifactId>bonecp</artifactId>
-      <version>0.7.1.RELEASE</version>
-      <scope>compile</scope>
       <exclusions>
         <exclusion>
           <!-- exclude and specify a fixed version below -->
@@ -51,7 +53,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>14.0.1</version>
       <scope>runtime</scope>
     </dependency>
 

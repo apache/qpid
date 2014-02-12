@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicRejectBody;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -65,7 +66,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
 
         long deliveryTag = body.getDeliveryTag();
 
-        QueueEntry message = channel.getUnacknowledgedMessageMap().get(deliveryTag);
+        MessageInstance message = channel.getUnacknowledgedMessageMap().get(deliveryTag);
 
         if (message == null)
         {
@@ -73,16 +74,6 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
         }
         else
         {
-            if (message.isQueueDeleted())
-            {
-                _logger.warn("Message's Queue has already been purged, dropping message");
-                message = channel.getUnacknowledgedMessageMap().remove(deliveryTag);
-                if(message != null)
-                {
-                    message.delete();
-                }
-                return;
-            }
 
             if (message.getMessage() == null)
             {
@@ -98,41 +89,43 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
                               " on channel:" + channel.debugIdentity());
             }
 
-            message.reject();
-
             if (body.getRequeue())
             {
-                channel.requeue(deliveryTag);
-
                 //this requeue represents a message rejected from the pre-dispatch queue
                 //therefore we need to amend the delivery counter.
                 message.decrementDeliveryCount();
+
+                channel.requeue(deliveryTag);
             }
             else
             {
-                 final boolean maxDeliveryCountEnabled = channel.isMaxDeliveryCountEnabled(deliveryTag);
-                 _logger.debug("maxDeliveryCountEnabled: " + maxDeliveryCountEnabled + " deliveryTag " + deliveryTag);
-                 if (maxDeliveryCountEnabled)
-                 {
-                     final boolean deliveredTooManyTimes = channel.isDeliveredTooManyTimes(deliveryTag);
-                     _logger.debug("deliveredTooManyTimes: " + deliveredTooManyTimes + " deliveryTag " + deliveryTag);
-                     if (deliveredTooManyTimes)
-                     {
-                         channel.deadLetter(body.getDeliveryTag());
-                     }
-                     else
-                     {
-                         //this requeue represents a message rejected because of a recover/rollback that we
-                         //are not ready to DLQ. We rely on the reject command to resend from the unacked map
-                         //and therefore need to increment the delivery counter so we cancel out the effect
-                         //of the AMQChannel#resend() decrement.
-                         message.incrementDeliveryCount();
-                     }
-                 }
-                 else
-                 {
-                     channel.deadLetter(body.getDeliveryTag());
-                 }
+                // Since the Java client abuses the reject flag for requeing after rollback, we won't set reject here
+                // as it would prevent redelivery
+                // message.reject();
+
+                final boolean maxDeliveryCountEnabled = channel.isMaxDeliveryCountEnabled(deliveryTag);
+                _logger.debug("maxDeliveryCountEnabled: " + maxDeliveryCountEnabled + " deliveryTag " + deliveryTag);
+                if (maxDeliveryCountEnabled)
+                {
+                    final boolean deliveredTooManyTimes = channel.isDeliveredTooManyTimes(deliveryTag);
+                    _logger.debug("deliveredTooManyTimes: " + deliveredTooManyTimes + " deliveryTag " + deliveryTag);
+                    if (deliveredTooManyTimes)
+                    {
+                        channel.deadLetter(body.getDeliveryTag());
+                    }
+                    else
+                    {
+                        //this requeue represents a message rejected because of a recover/rollback that we
+                        //are not ready to DLQ. We rely on the reject command to resend from the unacked map
+                        //and therefore need to increment the delivery counter so we cancel out the effect
+                        //of the AMQChannel#resend() decrement.
+                        message.incrementDeliveryCount();
+                    }
+                }
+                else
+                {
+                    channel.requeue(deliveryTag);
+                }
             }
         }
     }

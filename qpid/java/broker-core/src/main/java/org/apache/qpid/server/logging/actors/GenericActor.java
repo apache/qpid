@@ -42,6 +42,24 @@ public class GenericActor extends AbstractActor
         _defaultMessageLogger = defaultMessageLogger;
     }
 
+    public GenericActor(final String logSubject)
+    {
+        this(new LogSubject()
+        {
+            @Override
+            public String toLogString()
+            {
+                return logSubject;
+            }
+        });
+    }
+
+
+    public GenericActor(LogSubject logSubject)
+    {
+        this(logSubject, CurrentActor.get().getRootMessageLogger());
+    }
+
     public GenericActor(LogSubject logSubject, RootMessageLogger rootLogger)
     {
         super(rootLogger);
@@ -51,6 +69,11 @@ public class GenericActor extends AbstractActor
     public String getLogMessage()
     {
         return _logSubject.toLogString();
+    }
+
+    public LogSubject getLogSubject()
+    {
+        return _logSubject;
     }
 
     public static LogActor getInstance(final String logMessage, RootMessageLogger rootLogger)

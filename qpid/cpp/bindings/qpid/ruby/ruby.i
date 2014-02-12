@@ -34,86 +34,86 @@
     }
     catch(qpid::messaging::ConnectionError& error) {
       static VALUE merror = rb_define_class("ConnectionError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::TransportFailure& error) {
       static VALUE merror = rb_define_class("TransportFailure", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::TransactionAborted& error) {
       static VALUE merror = rb_define_class("TransactionAborted", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::TransactionError& error) {
       static VALUE merror = rb_define_class("TransactionError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::UnauthorizedAccess& error) {
       static VALUE merror = rb_define_class("UnauthorizedAccess", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::SessionError& error) {
       static VALUE merror = rb_define_class("SessionError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::TargetCapacityExceeded& error) {
       static VALUE merror = rb_define_class("TargetCapacityExceeded", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::SendError& error) {
       static VALUE merror = rb_define_class("SendError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::SenderError& error) {
       static VALUE merror = rb_define_class("SenderError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::NoMessageAvailable& error) {
       static VALUE merror = rb_define_class("NoMessageAvailable", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::FetchError& error) {
       static VALUE merror = rb_define_class("FetchError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::ReceiverError& error) {
       static VALUE merror = rb_define_class("ReceiverError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::InvalidOptionString& error) {
       static VALUE merror = rb_define_class("InvalidOptionString", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::KeyError& error) {
       static VALUE merror = rb_define_class("KeyError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::AssertionFailed& error) {
       static VALUE merror = rb_define_class("AssertionFailed", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::NotFound& error) {
       static VALUE merror = rb_define_class("NotFound", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::ResolutionError& error) {
       static VALUE merror = rb_define_class("ResolutionError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::MalformedAddress& error) {
       static VALUE merror = rb_define_class("MalformedAddress", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::AddressError& error) {
       static VALUE merror = rb_define_class("AddressError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::LinkError& error) {
       static VALUE merror = rb_define_class("LinkError", eMessagingError);
-      rb_raise(merror, error.what());
+      rb_raise(merror, "%s", error.what());
     }
     catch(qpid::messaging::MessagingException& error) {
-        rb_raise(eMessagingError, error.what());
+        rb_raise(eMessagingError, "%s", error.what());
     }
 }
 

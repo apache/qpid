@@ -20,7 +20,6 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +39,7 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
@@ -327,8 +326,8 @@ public class MessageServlet extends AbstractServlet
                                    : entry.isAcquired()
                                              ? "Acquired"
                                              : "");
-        final Subscription deliveredSubscription = entry.getDeliveredSubscription();
-        object.put("deliveredTo", deliveredSubscription == null ? null : deliveredSubscription.getSubscriptionID());
+        final Consumer deliveredConsumer = entry.getDeliveredConsumer();
+        object.put("deliveredTo", deliveredConsumer == null ? null : deliveredConsumer.getId());
         ServerMessage message = entry.getMessage();
 
         if(message != null)

@@ -121,6 +121,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
         bool timestampRcvMsgs;
         sys::Duration linkMaintenanceInterval;
         sys::Duration linkHeartbeatInterval;
+        uint32_t dtxDefaultTimeout; // Default timeout of a DTX transaction
+        uint32_t dtxMaxTimeout;     // Maximal timeout of a DTX transaction
         uint32_t maxNegotiateTime;  // Max time in ms for connection with no negotiation
         std::string fedTag;
 

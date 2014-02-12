@@ -32,6 +32,7 @@ import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.Session;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -169,7 +170,8 @@ public class RollbackOrderTest extends QpidBrokerTestCase
         //Start the session now so we
         _connection.start();
 
-        count.await();
+        count.await(10l, TimeUnit.SECONDS);
+        assertEquals("Not all message received.  Count should be 0.", 0, count.getCount());
 
         for (Exception e : exceptions)
         {

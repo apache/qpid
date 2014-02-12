@@ -38,7 +38,7 @@ public class VirtualHostMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "VHT-1001", expected);
     }
 
-    public void testSubscriptionClosed()
+    public void testVirtualhostClosed()
     {
         _logMessage = VirtualHostMessages.CLOSED();
         List<Object> log = performLog();

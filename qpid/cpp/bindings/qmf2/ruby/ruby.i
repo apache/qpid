@@ -30,7 +30,7 @@
     }
     catch (qpid::types::Exception& mex) {
         static VALUE qmferror = rb_define_class("QmfError", rb_eStandardError);
-        rb_raise(qmferror, mex.what());
+        rb_raise(qmferror, "%s", mex.what());
     }
 }
 

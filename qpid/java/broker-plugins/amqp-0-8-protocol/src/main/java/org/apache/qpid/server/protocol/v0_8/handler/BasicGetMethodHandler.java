@@ -24,26 +24,30 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.MessageOnlyCreditManager;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.v0_8.ConsumerTarget_0_8;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.subscription.ClientDeliveryMethod;
-import org.apache.qpid.server.subscription.RecordDeliveryMethod;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.protocol.v0_8.SubscriptionFactoryImpl;
+import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
+import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.EnumSet;
 
 public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetBody>
 {
@@ -124,50 +128,79 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
 
         final FlowCreditManager singleMessageCredit = new MessageOnlyCreditManager(1L);
 
-        final ClientDeliveryMethod getDeliveryMethod = new ClientDeliveryMethod()
-        {
-
-            @Override
-            public void deliverToClient(final Subscription sub, final ServerMessage message, final
-                                        InstanceProperties props, final long deliveryTag)
-            throws AMQException
-            {
-                singleMessageCredit.useCreditForMessage(message.getSize());
-                session.getProtocolOutputConverter().writeGetOk(message,
-                                                                props,
-                                                                channel.getChannelId(),
-                                                                deliveryTag,
-                                                                queue.getMessageCount());
-
-
-            }
-        };
+        final GetDeliveryMethod getDeliveryMethod =
+                new GetDeliveryMethod(singleMessageCredit, session, channel, queue);
         final RecordDeliveryMethod getRecordMethod = new RecordDeliveryMethod()
         {
 
-            public void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+            public void recordMessageDelivery(final Consumer sub, final MessageInstance entry, final long deliveryTag)
             {
                 channel.addUnacknowledgedMessage(entry, deliveryTag, null);
             }
         };
 
-        Subscription sub;
+        ConsumerTarget_0_8 target;
+        EnumSet<Consumer.Option> options = EnumSet.of(Consumer.Option.TRANSIENT, Consumer.Option.ACQUIRES,
+                                                          Consumer.Option.SEES_REQUEUES);
         if(acks)
         {
-            sub = SubscriptionFactoryImpl.INSTANCE.createSubscription(channel, session, null, acks, null, false, singleMessageCredit, getDeliveryMethod, getRecordMethod);
+
+            target = ConsumerTarget_0_8.createAckTarget(channel,
+                                                        AMQShortString.EMPTY_STRING, null,
+                                                        singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
         else
         {
-            sub = SubscriptionFactoryImpl.INSTANCE.createBasicGetNoAckSubscription(channel, session, null, null, false, singleMessageCredit, getDeliveryMethod, getRecordMethod);
+            target = ConsumerTarget_0_8.createGetNoAckTarget(channel,
+                                                          AMQShortString.EMPTY_STRING, null,
+                                                          singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
 
-        queue.registerSubscription(sub,false);
-        queue.flushSubscription(sub);
-        queue.unregisterSubscription(sub);
-        return(!singleMessageCredit.hasCredit());
+        Consumer sub = queue.addConsumer(target, null, AMQMessage.class, "", options);
+        sub.flush();
+        sub.close();
+        return(getDeliveryMethod.hasDeliveredMessage());
 
 
     }
 
 
+    private static class GetDeliveryMethod implements ClientDeliveryMethod
+    {
+
+        private final FlowCreditManager _singleMessageCredit;
+        private final AMQProtocolSession _session;
+        private final AMQChannel _channel;
+        private final AMQQueue _queue;
+        private boolean _deliveredMessage;
+
+        public GetDeliveryMethod(final FlowCreditManager singleMessageCredit,
+                                 final AMQProtocolSession session,
+                                 final AMQChannel channel, final AMQQueue queue)
+        {
+            _singleMessageCredit = singleMessageCredit;
+            _session = session;
+            _channel = channel;
+            _queue = queue;
+        }
+
+        @Override
+        public void deliverToClient(final Consumer sub, final ServerMessage message,
+                                    final InstanceProperties props, final long deliveryTag) throws AMQException
+        {
+            _singleMessageCredit.useCreditForMessage(message.getSize());
+            _session.getProtocolOutputConverter().writeGetOk(message,
+                                                            props,
+                                                            _channel.getChannelId(),
+                                                            deliveryTag,
+                                                            _queue.getMessageCount());
+
+            _deliveredMessage = true;
+        }
+
+        public boolean hasDeliveredMessage()
+        {
+            return _deliveredMessage;
+        }
+    }
 }

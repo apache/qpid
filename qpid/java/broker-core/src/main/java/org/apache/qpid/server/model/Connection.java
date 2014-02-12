@@ -24,6 +24,32 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+@AmqpManagement(
+        attributes = {
+                Connection.ID,
+                Connection.NAME,
+                Connection.STATE,
+                Connection.DURABLE,
+                Connection.LIFETIME_POLICY,
+                Connection.TIME_TO_LIVE,
+                Connection.CREATED,
+                Connection.UPDATED,
+                Connection.CLIENT_ID,
+                Connection.CLIENT_VERSION,
+                Connection.INCOMING,
+                Connection.LOCAL_ADDRESS,
+                Connection.PRINCIPAL,
+                Connection.PROPERTIES,
+                Connection.REMOTE_ADDRESS,
+                Connection.REMOTE_PROCESS_NAME,
+                Connection.REMOTE_PROCESS_PID,
+                Connection.SESSION_COUNT_LIMIT,
+                Connection.TRANSPORT,
+                Connection.PORT
+        },
+        operations = {},
+        creatable = false
+)
 public interface Connection extends ConfiguredObject
 {
 
@@ -59,8 +85,6 @@ public interface Connection extends ConfiguredObject
 
                             // Attributes
 
-    public static final String ID = "id";
-    public static final String NAME = "name";
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";

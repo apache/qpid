@@ -51,6 +51,12 @@
     <artifact name="qpid-broker-plugins-access-control" type="jar.asc" ext="jar.asc"/>
     <artifact name="qpid-broker-plugins-access-control" type="source" ext="jar" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-access-control" type="source.asc" ext="jar.asc" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-management-amqp" type="pom" ext="pom"/>
+    <artifact name="qpid-broker-plugins-management-amqp" type="pom.asc" ext="pom.asc"/>
+    <artifact name="qpid-broker-plugins-management-amqp" type="jar" ext="jar"/>
+    <artifact name="qpid-broker-plugins-management-amqp" type="jar.asc" ext="jar.asc"/>
+    <artifact name="qpid-broker-plugins-management-amqp" type="source" ext="jar" e:classifier="sources"/>
+    <artifact name="qpid-broker-plugins-management-amqp" type="source.asc" ext="jar.asc" e:classifier="sources"/>
     <artifact name="qpid-broker-plugins-management-http" type="pom" ext="pom"/>
     <artifact name="qpid-broker-plugins-management-http" type="pom.asc" ext="pom.asc"/>
     <artifact name="qpid-broker-plugins-management-http" type="jar" ext="jar"/>

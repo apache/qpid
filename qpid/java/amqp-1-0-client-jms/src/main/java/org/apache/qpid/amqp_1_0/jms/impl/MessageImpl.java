@@ -75,6 +75,7 @@ public abstract class MessageImpl implements Message
     private boolean _isFromQueue;
     private boolean _isFromTopic;
     private long _expiration;
+    private DestinationImpl _replyTo;
 
     protected MessageImpl(Header header,
                           MessageAnnotations messageAnnotations,
@@ -182,11 +183,12 @@ public abstract class MessageImpl implements Message
 
     public DestinationImpl getJMSReplyTo() throws JMSException
     {
-        return toDestination(getReplyTo(), splitCommaSeparateSet((String) getMessageAnnotation(REPLY_TO_TYPE)));
+        return _replyTo != null ? _replyTo : toDestination(getReplyTo(), splitCommaSeparateSet((String) getMessageAnnotation(REPLY_TO_TYPE)));
     }
 
     public void setJMSReplyTo(Destination destination) throws NonAMQPDestinationException
     {
+        _replyTo = (DestinationImpl) destination;
         if( destination==null )
         {
             setReplyTo(null);
@@ -194,9 +196,16 @@ public abstract class MessageImpl implements Message
         }
         else
         {
-            DecodedDestination dd = toDecodedDestination(destination);
-            setReplyTo(dd.getAddress());
-            messageAnnotationMap().put(REPLY_TO_TYPE, join(",", dd.getAttributes()));
+            if(_replyTo.getLocalTerminus() != null)
+            {
+                setReplyTo(_replyTo.getLocalTerminus());
+            }
+            else
+            {
+                DecodedDestination dd = toDecodedDestination(destination);
+                setReplyTo(dd.getAddress());
+                messageAnnotationMap().put(REPLY_TO_TYPE, join(",", dd.getAttributes()));
+            }
         }
     }
 

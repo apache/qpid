@@ -278,7 +278,7 @@ class Broker(Popen):
         cmd += ["--log-to-stderr=no"]
 
         # Add default --log-enable arguments unless args already has --log arguments.
-        if not next((l for l in args if l.startswith("--log")), None):
+        if not [l for l in args if l.startswith("--log")]:
             args += ["--log-enable=info+"]
 
         if test_store: cmd += ["--load-module", BrokerTest.test_store_lib,

@@ -741,7 +741,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
             buf.position(1);
             buf = buf.slice();
 
-            metaData.writeToBuffer(0, buf);
+            metaData.writeToBuffer(buf);
             output.writeInt(bodySize);
             output.writeFast(underlying);
         }

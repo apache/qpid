@@ -120,7 +120,7 @@
             }
             }
         } catch (qpid::types::Exception& ex) {
-            Perl_croak(aTHX_ ex.what());
+          Perl_croak(aTHX_ "%s", ex.what());
         }
 
         if (!result)

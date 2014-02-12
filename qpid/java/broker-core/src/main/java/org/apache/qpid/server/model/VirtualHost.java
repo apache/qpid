@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
@@ -30,6 +31,43 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+
+@AmqpManagement(
+        attributes = {
+                VirtualHost.ID,
+                VirtualHost.NAME,
+                VirtualHost.TYPE,
+                VirtualHost.STATE,
+                VirtualHost.DURABLE,
+                VirtualHost.LIFETIME_POLICY,
+                VirtualHost.TIME_TO_LIVE,
+                VirtualHost.CREATED,
+                VirtualHost.UPDATED,
+                VirtualHost.SUPPORTED_EXCHANGE_TYPES,
+                VirtualHost.SUPPORTED_QUEUE_TYPES,
+                VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED,
+                VirtualHost.HOUSEKEEPING_CHECK_PERIOD,
+                VirtualHost.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS,
+                VirtualHost.QUEUE_FLOW_CONTROL_SIZE_BYTES,
+                VirtualHost.QUEUE_FLOW_RESUME_SIZE_BYTES,
+                VirtualHost.CONFIG_STORE_TYPE,
+                VirtualHost.CONFIG_STORE_PATH,
+                VirtualHost.STORE_TYPE,
+                VirtualHost.STORE_PATH,
+                VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
+                VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
+                VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
+                VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
+                VirtualHost.QUEUE_ALERT_REPEAT_GAP,
+                VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
+                VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE,
+                VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+                VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                VirtualHost.CONFIG_PATH
+            },
+        operations = {},
+        managesChildren = true
+)
 
 public interface VirtualHost extends ConfiguredObject
 {
@@ -81,9 +119,7 @@ public interface VirtualHost extends ConfiguredObject
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String CREATED                              = "created";
     String DURABLE                              = "durable";
-    String ID                                   = "id";
     String LIFETIME_POLICY                      = "lifetimePolicy";
-    String NAME                                 = "name";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
     String TYPE                                 = "type";
@@ -152,11 +188,11 @@ public interface VirtualHost extends ConfiguredObject
 
     public static interface Transaction
     {
-        void dequeue(QueueEntry entry);
+        void dequeue(MessageInstance entry);
 
-        void copy(QueueEntry entry, Queue queue);
+        void copy(MessageInstance entry, Queue queue);
 
-        void move(QueueEntry entry, Queue queue);
+        void move(MessageInstance entry, Queue queue);
 
     }
 

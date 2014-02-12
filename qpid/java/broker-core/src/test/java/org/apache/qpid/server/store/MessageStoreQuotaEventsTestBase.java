@@ -158,6 +158,12 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         return _transactionResource;
     }
 
+    @Override
+    public boolean isDurable()
+    {
+        return true;
+    }
+
     private static class TestMessage implements EnqueueableMessage
     {
         private final StoredMessage<?> _handle;

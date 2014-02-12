@@ -16,47 +16,56 @@
   limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
     <version>12</version>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.apache.qpid</groupId>
-  <artifactId>qpid-project</artifactId>
-  <version>0.26-SNAPSHOT</version>
+  <artifactId>qpid-parent</artifactId>
+  <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <!-- ###### TODO ######
-    - Add the Excludes files, log4j config, etc test resources to a module (qpid-test-utils?) which can be
-      used (extracted?) by the others to prevent them having to reference outside their directly for the files.
-        - Fix what the systests/perftests do to copy the test-profiles dir to the necessary location.
-        - Fix the log4j configuration property to work with all the modules.
-    - Fix the version numbers in all the modules.
-    - Decide on a final name for this parent module, qpid-project isnt necessarily appropriate given it doesnt encompass the whole project.
-    - Test deploying the modules to a local Nexus instance (by overriding the repo properties locally).
-      - Ensure we dont deploy modules we aren't already doing so, it will make changing them later less of a pain for everyone.
-    - Figure out dependency setup for optional bdbstore tests.
-    - Add the other test profiles, e.g. derby and other protocols.
-    - Generate HTML reports of the test results
-      - Decide on how to handle the surefire report target re-running the tests (there is a report-only task that doesnt, provided as a workaround)
-    - Add LICENCE, NOTICE, README files to the binary assemblies.
-    - Complete setting properties for all the dependency version numbers from the modules.
-    - Use dependancy management sections to control the version numbers?
-    - Align the XML in the pom files consistently, fix whitepsace errors.
+  <name>Qpid</name>
+  <url>http://qpid.apache.org</url>
+  <description>Apache Qpid™ makes messaging tools that speak AMQP and support many languages and platforms.  AMQP is an open internet protocol for reliably sending and receiving messages. It makes it possible for everyone to build a diverse, coherent messaging ecosystem.</description>
 
-    === Once the Ant build is removed ===
-    - Move all the resources to be in the /src/foo/resources folders.
-    - Make qpidversion.properties in common be a filtered resource instead of generated.
-      - Get rid of the antrun-plugin execution in common, directly invoke the required java elements.
-      - Do the above in the generate-sources-common profile instead of current default config.
-    - Get rid of the antrun-plugin execution in broker-core, directly invoke the required java elements.
-    - Fix the tests not to be dependant on the working dir being the java dir.
-    - Fix the tests not to be dependant on the test config/output dirs being children of qpid.home.
-      - Remove the QBTC output file mechanics, rely on Surefire to do it?
-    - JUnit test profiles instead of Exludes files?
-  -->
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/QPID</url>
+  </issueManagement>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/view/M-R/view/Qpid/</url>
+  </ciManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>Apache Qpid Users</name>
+      <subscribe>users-subscribe@qpid.apache.org</subscribe>
+      <unsubscribe>users-unsubscribe@qpid.apache.org</unsubscribe>
+      <post>users@qpid.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/qpid-users/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Apache Qpid Developers</name>
+      <subscribe>dev-subscribe@qpid.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@qpid.apache.org</unsubscribe>
+      <post>dev@qpid.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/qpid-dev/</archive>
+    </mailingList>
+  </mailingLists>
+
+  <scm>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/qpid/trunk/qpid/java</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/qpid/trunk/qpid/java</developerConnection>
+    <url>http://svn.apache.org/viewvc/qpid/trunk/qpid/java</url>
+  </scm>
+
   <prerequisites>
     <maven>3.0.0</maven>
   </prerequisites>
@@ -64,12 +73,39 @@
   <properties>
     <!-- dependency version numbers -->
     <dojo-version>1.9.1</dojo-version>
+    <log4j-version>1.2.16</log4j-version>
+    <slf4j-version>1.6.4</slf4j-version>
+    <jetty-version>8.1.14.v20131031</jetty-version>
+    <jackson-version>1.9.1</jackson-version>
+    <bdb-version>5.0.97</bdb-version>
+    <gson-version>2.0</gson-version>
+    <guava-version>14.0.1</guava-version>
+    <bonecp-version>0.7.1.RELEASE</bonecp-version>
+    <commons-beanutils-version>1.8.3</commons-beanutils-version>
+    <commons-cli-version>1.2</commons-cli-version>
+    <commons-codec-version>1.6</commons-codec-version>
+    <commons-collections-version>3.2.1</commons-collections-version>
+    <commons-configuration-version>1.8</commons-configuration-version>
+    <commons-digester-version>1.8.1</commons-digester-version>
+    <commons-lang-version>2.6</commons-lang-version>
+    <commons-logging-version>1.1.1</commons-logging-version>
+    <geronimo-jms-version>1.0</geronimo-jms-version>
+    <geronimo-gta-version>1.1.1</geronimo-gta-version>
+    <geronimo-servlet-version>1.0</geronimo-servlet-version>
+    <geronimo-j2ee-connector-version>2.0.0</geronimo-j2ee-connector-version>
+    <geronimo-ejb-version>1.0.1</geronimo-ejb-version>
+    <geronimo-kernel-version>2.2.1</geronimo-kernel-version>
+    <xalan-version>2.7.0</xalan-version>
+    <bcel-version>5.2</bcel-version>
+    <velocity-version>1.4</velocity-version>
+    <derby-version>10.8.2.2</derby-version>
+    <jython-version>2.5.3</jython-version>
+    <csvjdbc-version>1.0.8</csvjdbc-version>
+    <jfreechart-version>1.0.13</jfreechart-version>
 
     <!-- test dependency version numbers -->
     <junit-version>3.8.1</junit-version>
     <mockito-version>1.9.0</mockito-version>
-    <log4j-version>1.2.16</log4j-version>
-    <slf4j-version>1.6.4</slf4j-version>
 
     <!-- plugin version numbers -->
     <maven-antrun-plugin-version>1.7</maven-antrun-plugin-version>
@@ -105,7 +141,7 @@
     <java.target>1.6</java.target>
 
     <!-- enforcer plugin config properties -->
-    <supported-test-profiles-regex>(java-mms.0-9-1|java-mms.0-10)</supported-test-profiles-regex>
+    <supported-test-profiles-regex>(java-mms.0-9-1|java-mms.0-10|java-bdb.0-10)</supported-test-profiles-regex>
 
     <!-- test properties -->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
@@ -120,30 +156,13 @@
     <profile.excludes>${profile.excludes.java-mms.0-10}</profile.excludes>
   </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit-version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>${mockito-version}</version>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
-
   <modules>
+    <module>amqp-1-0-common</module>
     <module>amqp-1-0-client</module>
     <module>amqp-1-0-client-jms</module>
     <module>amqp-1-0-client-websocket</module>
-    <module>amqp-1-0-common</module>
-    <module>broker</module>
     <module>broker-core</module>
+    <module>broker</module>
     <module>broker-plugins/access-control</module>
     <module>broker-plugins/amqp-0-8-protocol</module>
     <module>broker-plugins/amqp-0-10-protocol</module>
@@ -154,6 +173,7 @@
     <module>broker-plugins/derby-store</module>
     <module>broker-plugins/jdbc-provider-bone</module>
     <module>broker-plugins/jdbc-store</module>
+    <module>broker-plugins/management-amqp</module>
     <module>broker-plugins/management-http</module>
     <module>broker-plugins/management-jmx</module>
     <module>broker-plugins/memory-store</module>
@@ -177,32 +197,263 @@
     <module>bdbstore/systests</module>
   </modules>
 
-  <repositories>
-    <!-- For the BDB JE dependency of the optional bdbstore plugin modules-->
-    <repository>
-      <id>oracle.releases</id>
-      <url>http://download.oracle.com/maven</url>
-      <layout>default</layout>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <!-- For the CSVJDBC dependency of the optional perftests-visualistion-jfc module-->
-    <repository>
-      <id>csvjdbc.releases</id>
-      <url>http://csvjdbc.sourceforge.net/maven2</url>
-      <layout>default</layout>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit-version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+        <version>${mockito-version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>${log4j-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>${slf4j-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+        <version>${jetty-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-websocket</artifactId>
+        <version>${jetty-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-servlet</artifactId>
+        <version>${jetty-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.codehaus.jackson</groupId>
+        <artifactId>jackson-core-asl</artifactId>
+        <version>${jackson-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.codehaus.jackson</groupId>
+        <artifactId>jackson-mapper-asl</artifactId>
+        <version>${jackson-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.dojotoolkit</groupId>
+        <artifactId>dojo</artifactId>
+        <version>${dojo-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.sleepycat</groupId>
+        <artifactId>je</artifactId>
+        <version>${bdb-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-beanutils</groupId>
+        <artifactId>commons-beanutils-core</artifactId>
+        <version>${commons-beanutils-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-digester</groupId>
+        <artifactId>commons-digester</artifactId>
+        <version>${commons-digester-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-lang</groupId>
+        <artifactId>commons-lang</artifactId>
+        <version>${commons-lang-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-cli</groupId>
+        <artifactId>commons-cli</artifactId>
+        <version>${commons-cli-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>${commons-codec-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-collections</groupId>
+        <artifactId>commons-collections</artifactId>
+        <version>${commons-collections-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-configuration</groupId>
+        <artifactId>commons-configuration</artifactId>
+        <version>${commons-configuration-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>${commons-logging-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-jms_1.1_spec</artifactId>
+        <version>${geronimo-jms-version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-jta_1.1_spec</artifactId>
+        <version>${geronimo-gta-version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+          <groupId>org.apache.geronimo.specs</groupId>
+          <artifactId>geronimo-servlet_3.0_spec</artifactId>
+          <version>${geronimo-servlet-version}</version>
+          <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-j2ee-connector_1.5_spec</artifactId>
+        <version>${geronimo-j2ee-connector-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-ejb_3.0_spec</artifactId>
+        <version>${geronimo-ejb-version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.geronimo.framework</groupId>
+        <artifactId>geronimo-kernel</artifactId>
+        <version>${geronimo-kernel-version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>xalan</groupId>
+        <artifactId>xalan</artifactId>
+        <version>${xalan-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.bcel</groupId>
+        <artifactId>bcel</artifactId>
+        <version>${bcel-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>velocity</groupId>
+        <artifactId>velocity</artifactId>
+        <version>${velocity-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>velocity</groupId>
+        <artifactId>velocity-dep</artifactId>
+        <version>${velocity-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.derby</groupId>
+        <artifactId>derby</artifactId>
+        <version>${derby-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.jolbox</groupId>
+        <artifactId>bonecp</artifactId>
+        <version>${bonecp-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>${gson-version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+    </dependencies>
+  </dependencyManagement>
 
   <build>
     <pluginManagement>
@@ -497,41 +748,6 @@
     </plugins>
   </build>
 
-  <description>
-    Apache Qpid™ makes messaging tools that speak AMQP and support many languages and platforms.
-    AMQP is an open internet protocol for reliably sending and receiving messages. It makes it possible for everyone to build a diverse, coherent messaging ecosystem.
-  </description>
-
-  <url>http://qpid.apache.org</url>
-
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/QPID</url>
-  </issueManagement>
-
-  <mailingLists>
-    <mailingList>
-      <name>Apache Qpid Users</name>
-      <subscribe>users-subscribe@qpid.apache.org</subscribe>
-      <unsubscribe>users-unsubscribe@qpid.apache.org</unsubscribe>
-      <post>users@qpid.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/qpid-users/</archive>
-    </mailingList>
-    <mailingList>
-      <name>Apache Qpid Developers</name>
-      <subscribe>dev-subscribe@qpid.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@qpid.apache.org</unsubscribe>
-      <post>dev@qpid.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/qpid-dev/</archive>
-    </mailingList>
-  </mailingLists>
-
-  <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/qpid/trunk/qpid</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/qpid/trunk/qpid</developerConnection>
-    <url>http://svn.apache.org/viewvc/qpid/</url>
-  </scm>
-
   <reporting>
     <plugins>
       <plugin>
@@ -547,6 +763,21 @@
       </plugin>
     </plugins>
   </reporting>
+
+  <repositories>
+    <!-- For the BDB JE dependency of the optional bdbstore plugin modules-->
+    <repository>
+      <id>oracle.releases</id>
+      <url>http://download.oracle.com/maven</url>
+      <layout>default</layout>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
   <profiles>
     <profile>
@@ -599,6 +830,35 @@
               <systemPropertyVariables>
                 <broker.version>v0_9_1</broker.version>
                 <qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</qpid.broker_default_amqp_protocol_excludes>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>java-bdb.0-10</id>
+      <activation>
+        <property>
+          <name>profile</name>
+          <value>java-bdb.0-10</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>java-bdb.0-10</profile>
+        <profile.excludes>JavaExcludes JavaPersistentExcludes Java010Excludes JavaBDBExcludes</profile.excludes>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <broker.version>v0_10</broker.version>
+                <qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</qpid.broker_default_amqp_protocol_excludes>
+                <broker.persistent>true</broker.persistent>
+                <messagestore.class.name>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</messagestore.class.name>
               </systemPropertyVariables>
             </configuration>
           </plugin>

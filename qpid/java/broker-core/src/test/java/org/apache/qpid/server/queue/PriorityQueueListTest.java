@@ -26,12 +26,16 @@ import static org.mockito.Mockito.when;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.Collections;
+import java.util.UUID;
 
 public class PriorityQueueListTest extends QpidTestCase
 {
     private static final byte[] PRIORITIES = {4, 5, 5, 4};
-    PriorityQueueList _list = new PriorityQueueList(null, 10);
+    PriorityQueueList _list;
 
     private QueueEntry _priority4message1;
     private QueueEntry _priority4message2;
@@ -41,6 +45,17 @@ public class PriorityQueueListTest extends QpidTestCase
     protected void setUp()
     {
         QueueEntry[] entries = new QueueEntry[PRIORITIES.length];
+
+        PriorityQueue queue = new PriorityQueue(UUID.randomUUID(),
+                                                getName(),
+                                                false,
+                                                null,
+                                                false,
+                                                false,
+                                                mock(VirtualHost.class),
+                                                Collections.<String,Object>emptyMap(),
+                                                10);
+        _list = queue.getEntries();
 
         for (int i = 0; i < PRIORITIES.length; i++)
         {

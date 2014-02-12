@@ -30,6 +30,16 @@ class QlsRecordError(QlsError):
         QlsError.__init__(self)
         self.file_header = file_header
         self.record = record
+    def get_expected_fro(self):
+        return self.file_header.first_record_offset
+    def get_file_number(self):
+        return self.file_header.file_num
+    def get_queue_name(self):
+        return self.file_header.queue_name
+    def get_record_id(self):
+        return self.record.record_id
+    def get_record_offset(self):
+        return self.record.file_offset
     def __str__(self):
         return 'queue="%s" file_id=0x%x record_offset=0x%x record_id=0x%x' % \
             (self.file_header.queue_name, self.file_header.file_num, self.record.file_offset, self.record.record_id)

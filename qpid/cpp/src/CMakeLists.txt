@@ -460,6 +460,8 @@ if (BUILD_SSL)
   if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set (sslcommon_SOURCES
          qpid/sys/windows/SslAsynchIO.cpp
+         qpid/sys/windows/SslCredential.cpp
+         qpid/sys/windows/SslCredential.h
          qpid/sys/windows/util.cpp
          qpid/sys/windows/util.h
     )

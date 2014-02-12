@@ -282,8 +282,8 @@ public class ServerConnectionDelegate extends ServerDelegate
     private void stopAllSubscriptions(Connection conn, SessionDetach dtc)
     {
         final ServerSession ssn = (ServerSession) conn.getSession(dtc.getChannel());
-        final Collection<Subscription_0_10> subs = ssn.getSubscriptions();
-        for (Subscription_0_10 subscription_0_10 : subs)
+        final Collection<ConsumerTarget_0_10> subs = ssn.getSubscriptions();
+        for (ConsumerTarget_0_10 subscription_0_10 : subs)
         {
             subscription_0_10.stop();
         }

@@ -48,11 +48,10 @@ import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.queue.AMQPriorityQueue;
+import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
+import org.apache.qpid.server.queue.StandardQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -574,9 +573,9 @@ public class MessageStoreTest extends QpidTestCase
 
         if (usePriority)
         {
-            assertEquals("Queue is no longer a Priority Queue", AMQPriorityQueue.class, queue.getClass());
+            assertEquals("Queue is no longer a Priority Queue", PriorityQueue.class, queue.getClass());
             assertEquals("Priority Queue does not have set priorities",
-                    DEFAULT_PRIORTY_LEVEL, ((AMQPriorityQueue) queue).getPriorities());
+                    DEFAULT_PRIORTY_LEVEL, ((PriorityQueue) queue).getPriorities());
         }
         else if (lastValueQueue)
         {
@@ -585,7 +584,7 @@ public class MessageStoreTest extends QpidTestCase
         }
         else
         {
-            assertEquals("Queue is not 'simple'", SimpleAMQQueue.class, queue.getClass());
+            assertEquals("Queue is not 'simple'", StandardQueue.class, queue.getClass());
         }
 
         assertEquals("Queue owner is not as expected", queueOwner, queue.getOwner());

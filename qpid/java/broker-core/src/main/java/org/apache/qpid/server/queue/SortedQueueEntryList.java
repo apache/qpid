@@ -21,37 +21,37 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.SortedQueueEntryImpl.Colour;
+import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
 
 /**
  * A sorted implementation of QueueEntryList.
  * Uses the red/black tree algorithm specified in "Introduction to Algorithms".
  * ISBN-10: 0262033844
  * ISBN-13: 978-0262033848
- * @see http://en.wikipedia.org/wiki/Red-black_tree
+ * see http://en.wikipedia.org/wiki/Red-black_tree
  */
-public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl>
+public class SortedQueueEntryList implements SimpleQueueEntryList<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
 {
-    private final SortedQueueEntryImpl _head;
-    private SortedQueueEntryImpl _root;
+    private final SortedQueueEntry _head;
+    private SortedQueueEntry _root;
     private long _entryId = Long.MIN_VALUE;
     private final Object _lock = new Object();
-    private final AMQQueue _queue;
+    private final SortedQueue _queue;
     private final String _propertyName;
 
-    public SortedQueueEntryList(final AMQQueue queue, final String propertyName)
+    public SortedQueueEntryList(final SortedQueue queue, final String propertyName)
     {
         _queue = queue;
-        _head = new SortedQueueEntryImpl(this);
+        _head = new SortedQueueEntry(this);
         _propertyName = propertyName;
     }
 
-    public AMQQueue getQueue()
+    public SortedQueue getQueue()
     {
         return _queue;
     }
 
-    public SortedQueueEntryImpl add(final ServerMessage message)
+    public SortedQueueEntry add(final ServerMessage message)
     {
         synchronized(_lock)
         {
@@ -62,7 +62,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
                 key = val.toString();
             }
 
-            final SortedQueueEntryImpl entry = new SortedQueueEntryImpl(this,message, ++_entryId);
+            final SortedQueueEntry entry = new SortedQueueEntry(this,message, ++_entryId);
             entry.setKey(key);
 
             insert(entry);
@@ -75,9 +75,9 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
      * Red Black Tree insert implementation.
      * @param entry the entry to insert.
      */
-    private void insert(final SortedQueueEntryImpl entry)
+    private void insert(final SortedQueueEntry entry)
     {
-        SortedQueueEntryImpl node = _root;
+        SortedQueueEntry node;
         if((node = _root) == null)
         {
             _root = entry;
@@ -87,7 +87,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         }
         else
         {
-            SortedQueueEntryImpl parent = null;
+            SortedQueueEntry parent = null;
             while(node != null)
             {
                 parent = node;
@@ -105,7 +105,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
             if(entry.compareTo(parent) < 0)
             {
                 parent.setLeft(entry);
-                final SortedQueueEntryImpl prev = parent.getPrev();
+                final SortedQueueEntry prev = parent.getPrev();
                 entry.setNext(parent);
                 prev.setNext(entry);
                 entry.setPrev(prev);
@@ -115,7 +115,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
             {
                 parent.setRight(entry);
 
-                final SortedQueueEntryImpl next = parent.getNextValidEntry();
+                final SortedQueueEntry next = parent.getNextValidEntry();
                 entry.setNext(next);
                 parent.setNext(entry);
 
@@ -130,15 +130,15 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         insertFixup(entry);
     }
 
-    private void insertFixup(SortedQueueEntryImpl entry)
+    private void insertFixup(SortedQueueEntry entry)
     {
         while(isParentColour(entry, Colour.RED))
         {
-            final SortedQueueEntryImpl grandparent = nodeGrandparent(entry);
+            final SortedQueueEntry grandparent = nodeGrandparent(entry);
 
             if(nodeParent(entry) == leftChild(grandparent))
             {
-                final SortedQueueEntryImpl y = rightChild(grandparent);
+                final SortedQueueEntry y = rightChild(grandparent);
                 if(isNodeColour(y, Colour.RED))
                 {
                     setColour(nodeParent(entry), Colour.BLACK);
@@ -160,7 +160,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
             }
             else
             {
-                final SortedQueueEntryImpl y = leftChild(grandparent);
+                final SortedQueueEntry y = leftChild(grandparent);
                 if(isNodeColour(y, Colour.RED))
                 {
                     setColour(nodeParent(entry), Colour.BLACK);
@@ -184,11 +184,11 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         _root.setColour(Colour.BLACK);
     }
 
-    private void leftRotate(final SortedQueueEntryImpl entry)
+    private void leftRotate(final SortedQueueEntry entry)
     {
         if(entry != null)
         {
-            final SortedQueueEntryImpl rightChild = rightChild(entry);
+            final SortedQueueEntry rightChild = rightChild(entry);
             entry.setRight(rightChild.getLeft());
             if(entry.getRight() != null)
             {
@@ -212,11 +212,11 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         }
     }
 
-    private void rightRotate(final SortedQueueEntryImpl entry)
+    private void rightRotate(final SortedQueueEntry entry)
     {
         if(entry != null)
         {
-            final SortedQueueEntryImpl leftChild = leftChild(entry);
+            final SortedQueueEntry leftChild = leftChild(entry);
             entry.setLeft(leftChild.getRight());
             if(entry.getLeft() != null)
             {
@@ -240,7 +240,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         }
     }
 
-    private void setColour(final SortedQueueEntryImpl node, final Colour colour)
+    private void setColour(final SortedQueueEntry node, final Colour colour)
     {
         if(node != null)
         {
@@ -248,45 +248,45 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         }
     }
 
-    private SortedQueueEntryImpl leftChild(final SortedQueueEntryImpl node)
+    private SortedQueueEntry leftChild(final SortedQueueEntry node)
     {
         return node == null ? null : node.getLeft();
     }
 
-    private SortedQueueEntryImpl rightChild(final SortedQueueEntryImpl node)
+    private SortedQueueEntry rightChild(final SortedQueueEntry node)
     {
         return node == null ? null : node.getRight();
     }
 
-    private SortedQueueEntryImpl nodeParent(final SortedQueueEntryImpl node)
+    private SortedQueueEntry nodeParent(final SortedQueueEntry node)
     {
         return node == null ? null : node.getParent();
     }
 
-    private SortedQueueEntryImpl nodeGrandparent(final SortedQueueEntryImpl node)
+    private SortedQueueEntry nodeGrandparent(final SortedQueueEntry node)
     {
         return nodeParent(nodeParent(node));
     }
 
-    private boolean isParentColour(final SortedQueueEntryImpl node, final SortedQueueEntryImpl.Colour colour)
+    private boolean isParentColour(final SortedQueueEntry node, final SortedQueueEntry.Colour colour)
     {
 
         return node != null && isNodeColour(node.getParent(), colour);
     }
 
-    protected boolean isNodeColour(final SortedQueueEntryImpl node, final SortedQueueEntryImpl.Colour colour)
+    protected boolean isNodeColour(final SortedQueueEntry node, final SortedQueueEntry.Colour colour)
     {
         return (node == null ? Colour.BLACK : node.getColour()) == colour;
     }
 
-    public SortedQueueEntryImpl next(final SortedQueueEntryImpl node)
+    public SortedQueueEntry next(final SortedQueueEntry node)
     {
         synchronized(_lock)
         {
             if(node.isDeleted() && _head != node)
             {
-                SortedQueueEntryImpl current = _head;
-                SortedQueueEntryImpl next;
+                SortedQueueEntry current = _head;
+                SortedQueueEntry next;
                 while(current != null)
                 {
                     next = current.getNextValidEntry();
@@ -308,22 +308,22 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         }
     }
 
-    public QueueEntryIterator<SortedQueueEntryImpl> iterator()
+    public QueueEntryIterator<SortedQueueEntry,SortedQueue,SortedQueueEntryList,QueueConsumer<?,SortedQueueEntry,SortedQueue,SortedQueueEntryList>> iterator()
     {
         return new QueueEntryIteratorImpl(_head);
     }
 
-    public SortedQueueEntryImpl getHead()
+    public SortedQueueEntry getHead()
     {
         return _head;
     }
 
-    protected SortedQueueEntryImpl getRoot()
+    protected SortedQueueEntry getRoot()
     {
         return _root;
     }
 
-    public void entryDeleted(final SortedQueueEntryImpl entry)
+    public void entryDeleted(final SortedQueueEntry entry)
     {
         synchronized(_lock)
         {
@@ -336,20 +336,20 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
 
             // Then deal with the easy doubly linked list deletion (need to do
             // this after the swap as the swap uses next
-            final SortedQueueEntryImpl prev = entry.getPrev();
+            final SortedQueueEntry prev = entry.getPrev();
             if(prev != null)
             {
                 prev.setNext(entry.getNextValidEntry());
             }
 
-            final SortedQueueEntryImpl next = entry.getNextValidEntry();
+            final SortedQueueEntry next = entry.getNextValidEntry();
             if(next != null)
             {
                 next.setPrev(prev);
             }
 
             // now deal with splicing
-            final SortedQueueEntryImpl chosenChild;
+            final SortedQueueEntry chosenChild;
 
             if(leftChild(entry) != null)
             {
@@ -428,14 +428,14 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
     /**
      * Swaps the position of the node in the tree with it's successor
      * (that is the node with the next highest key)
-     * @param entry
+     * @param entry the entry to be swapped with its successor
      */
-    private void swapWithSuccessor(final SortedQueueEntryImpl entry)
+    private void swapWithSuccessor(final SortedQueueEntry entry)
     {
-        final SortedQueueEntryImpl next = entry.getNextValidEntry();
-        final SortedQueueEntryImpl nextParent = next.getParent();
-        final SortedQueueEntryImpl nextLeft = next.getLeft();
-        final SortedQueueEntryImpl nextRight = next.getRight();
+        final SortedQueueEntry next = entry.getNextValidEntry();
+        final SortedQueueEntry nextParent = next.getParent();
+        final SortedQueueEntry nextLeft = next.getLeft();
+        final SortedQueueEntry nextRight = next.getRight();
         final Colour nextColour = next.getColour();
 
         // Special case - the successor is the right child of the node
@@ -530,7 +530,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         }
     }
 
-    private void deleteFixup(SortedQueueEntryImpl entry)
+    private void deleteFixup(SortedQueueEntry entry)
     {
         int i = 0;
         while(entry != null && entry != _root
@@ -545,7 +545,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
 
             if(entry == leftChild(nodeParent(entry)))
             {
-                SortedQueueEntryImpl rightSibling = rightChild(nodeParent(entry));
+                SortedQueueEntry rightSibling = rightChild(nodeParent(entry));
                 if(isNodeColour(rightSibling, Colour.RED))
                 {
                     setColour(rightSibling, Colour.BLACK);
@@ -578,7 +578,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
             }
             else
             {
-                SortedQueueEntryImpl leftSibling = leftChild(nodeParent(entry));
+                SortedQueueEntry leftSibling = leftChild(nodeParent(entry));
                 if(isNodeColour(leftSibling, Colour.RED))
                 {
                     setColour(leftSibling, Colour.BLACK);
@@ -613,16 +613,16 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         setColour(entry, Colour.BLACK);
     }
 
-    private Colour getColour(final SortedQueueEntryImpl x)
+    private Colour getColour(final SortedQueueEntry x)
     {
         return x == null ? null : x.getColour();
     }
 
-    public class QueueEntryIteratorImpl implements QueueEntryIterator<SortedQueueEntryImpl>
+    public class QueueEntryIteratorImpl implements QueueEntryIterator<SortedQueueEntry,SortedQueue,SortedQueueEntryList,QueueConsumer<?,SortedQueueEntry,SortedQueue,SortedQueueEntryList>>
     {
-        private SortedQueueEntryImpl _lastNode;
+        private SortedQueueEntry _lastNode;
 
-        public QueueEntryIteratorImpl(final SortedQueueEntryImpl startNode)
+        public QueueEntryIteratorImpl(final SortedQueueEntry startNode)
         {
             _lastNode = startNode;
         }
@@ -632,7 +632,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
             return next(_lastNode) == null;
         }
 
-        public SortedQueueEntryImpl getNode()
+        public SortedQueueEntry getNode()
         {
             return _lastNode;
         }
@@ -641,7 +641,7 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         {
             if(!atTail())
             {
-                SortedQueueEntryImpl nextNode = next(_lastNode);
+                SortedQueueEntry nextNode = next(_lastNode);
                 while(nextNode.isDeleted() && next(nextNode) != null)
                 {
                     nextNode = next(nextNode);

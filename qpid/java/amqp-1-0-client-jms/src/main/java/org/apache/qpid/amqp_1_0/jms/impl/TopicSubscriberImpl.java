@@ -19,6 +19,7 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import java.util.Map;
+import java.util.UUID;
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import org.apache.qpid.amqp_1_0.client.AcknowledgeMode;
@@ -67,7 +68,9 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
         try
         {
             String address = getSession().toAddress(getDestination());
-            Receiver receiver = getSession().getClientSession().createReceiver(address,
+            String targetAddress = getDestination().getLocalTerminus() != null ? getDestination().getLocalTerminus() : UUID.randomUUID().toString();
+
+            Receiver receiver = getSession().getClientSession().createReceiver(address, targetAddress,
                                                                                StdDistMode.COPY, AcknowledgeMode.ALO,
                                                                                getLinkName(), isDurable(), getFilters(),
                                                                                null);

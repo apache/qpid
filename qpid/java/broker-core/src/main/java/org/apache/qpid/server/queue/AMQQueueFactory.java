@@ -288,11 +288,11 @@ public class AMQQueueFactory implements QueueFactory
         }
         else if(priorities > 1)
         {
-            q = new AMQPriorityQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments, priorities);
+            q = new PriorityQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments, priorities);
         }
         else
         {
-            q = new SimpleAMQQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments);
+            q = new StandardQueue(id, queueName, durable, owner, autoDelete, exclusive, _virtualHost, arguments);
         }
 
         q.setDeleteOnNoConsumers(deleteOnNoConsumer);

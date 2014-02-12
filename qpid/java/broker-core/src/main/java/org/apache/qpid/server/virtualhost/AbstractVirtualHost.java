@@ -52,8 +52,13 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.message.MessageNode;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
@@ -105,8 +110,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     private final DtxRegistry _dtxRegistry;
     private final AMQQueueFactory _queueFactory;
-
-    private final org.apache.qpid.server.model.VirtualHost _virtualHost;
+    private final SystemNodeRegistry _systemNodeRegistry = new SystemNodeRegistry();
+    private final org.apache.qpid.server.model.VirtualHost _model;
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
 
@@ -124,6 +129,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     private volatile boolean _blocked;
     private volatile State _state = State.INITIALISING;
     private volatile ScheduledThreadPoolExecutor _houseKeepingTasks;
+
+    private final Map<String, MessageDestination> _systemNodeDestinations =
+            Collections.synchronizedMap(new HashMap<String,MessageDestination>());
+
+    private final Map<String, MessageSource> _systemNodeSources =
+            Collections.synchronizedMap(new HashMap<String,MessageSource>());
+
 
     public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                StatisticsGatherer brokerStatisticsGatherer,
@@ -146,6 +158,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         _vhostConfig = hostConfig;
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
+        _model = virtualHost;
 
         _id = UUIDGenerator.generateVhostUUID(_name);
 
@@ -162,7 +175,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _exchangeRegistry = new DefaultExchangeRegistry(this, _queueRegistry);
 
-        _virtualHost = virtualHost;
+        registerSystemNodes();
 
         initialiseStatistics();
 
@@ -179,7 +192,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
             try
             {
-                initialiseStorage(_vhostConfig, _virtualHost);
+                initialiseStorage(_vhostConfig, _model);
 
                 getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
                 getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
@@ -203,6 +216,16 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     public void quiesce()
     {
         setState(State.QUIESCED);
+    }
+
+    private void registerSystemNodes()
+    {
+        QpidServiceLoader<SystemNodeCreator> qpidServiceLoader = new QpidServiceLoader<SystemNodeCreator>();
+        Iterable<SystemNodeCreator> factories = qpidServiceLoader.instancesOf(SystemNodeCreator.class);
+        for(SystemNodeCreator creator : factories)
+        {
+            creator.register(_systemNodeRegistry);
+        }
     }
 
     abstract protected void initialiseStorage(VirtualHostConfiguration hostConfig,
@@ -494,6 +517,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
+    public MessageSource getMessageSource(final String name)
+    {
+        MessageSource systemSource = _systemNodeSources.get(name);
+        return systemSource == null ? getQueue(name) : systemSource;
+    }
+
+    @Override
     public AMQQueue getQueue(UUID id)
     {
         return _queueRegistry.getQueue(id);
@@ -575,6 +605,14 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                     arguments);
         }
 
+    }
+
+
+    @Override
+    public MessageDestination getMessageDestination(final String name)
+    {
+        MessageDestination destination = _systemNodeDestinations.get(name);
+        return destination == null ? getExchange(name) : destination;
     }
 
     @Override
@@ -690,7 +728,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     protected void passivate(String reason)
     {
-        _virtualHost.removeChangeListener(this);
+        _model.removeChangeListener(this);
         removeHouseKeepingTasks();
 
         //Stop Connections
@@ -907,7 +945,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         try
         {
             initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
-            _virtualHost.addChangeListener(this);
+            _model.addChangeListener(this);
             finalState = State.ACTIVE;
         }
         finally
@@ -1059,4 +1097,44 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         }
     }
 
+    private class SystemNodeRegistry implements SystemNodeCreator.SystemNodeRegistry
+    {
+        @Override
+        public void registerSystemNode(final MessageNode node)
+        {
+            if(node instanceof MessageDestination)
+            {
+                _systemNodeDestinations.put(node.getName(), (MessageDestination) node);
+            }
+            if(node instanceof MessageSource)
+            {
+                _systemNodeSources.put(node.getName(), (MessageSource)node);
+            }
+        }
+
+        @Override
+        public void removeSystemNode(final MessageNode node)
+        {
+            if(node instanceof MessageDestination)
+            {
+                _systemNodeDestinations.remove(node.getName());
+            }
+            if(node instanceof MessageSource)
+            {
+                _systemNodeSources.remove(node.getName());
+            }
+        }
+
+        @Override
+        public VirtualHost getVirtualHost()
+        {
+            return AbstractVirtualHost.this;
+        }
+
+        @Override
+        public org.apache.qpid.server.model.VirtualHost getVirtualHostModel()
+        {
+            return _model;
+        }
+    }
 }

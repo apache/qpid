@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v1_0;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,16 +43,7 @@ import org.apache.qpid.amqp_1_0.type.DeliveryState;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
-import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
-import org.apache.qpid.amqp_1_0.type.messaging.ExactSubjectFilter;
-import org.apache.qpid.amqp_1_0.type.messaging.Filter;
-import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
-import org.apache.qpid.amqp_1_0.type.messaging.Modified;
-import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
-import org.apache.qpid.amqp_1_0.type.messaging.Released;
-import org.apache.qpid.amqp_1_0.type.messaging.Source;
-import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
-import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
+import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
@@ -64,11 +56,14 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryStateHandler
@@ -78,18 +73,22 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     private VirtualHost _vhost;
     private SendingDestination _destination;
 
-    private Subscription_1_0 _subscription;
+    private Consumer _consumer;
+    private ConsumerTarget_1_0 _target;
+
     private boolean _draining;
-    private final Map<Binary, QueueEntry> _unsettledMap =
-            new HashMap<Binary, QueueEntry>();
+    private final Map<Binary, MessageInstance> _unsettledMap =
+            new HashMap<Binary, MessageInstance>();
 
     private final ConcurrentHashMap<Binary, UnsettledAction> _unsettledActionMap =
             new ConcurrentHashMap<Binary, UnsettledAction>();
     private volatile SendingLinkAttachment _linkAttachment;
     private TerminusDurability _durability;
-    private List<QueueEntry> _resumeFullTransfers = new ArrayList<QueueEntry>();
+    private List<MessageInstance> _resumeFullTransfers = new ArrayList<MessageInstance>();
     private List<Binary> _resumeAcceptedTransfers = new ArrayList<Binary>();
     private Runnable _closeAction;
+    private final MessageSource _queue;
+
 
     public SendingLink_1_0(final SendingLinkAttachment linkAttachment,
                            final VirtualHost vhost,
@@ -103,23 +102,21 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         _durability = source.getDurable();
         linkAttachment.setDeliveryStateHandler(this);
         QueueDestination qd = null;
-        AMQQueue queue = null;
 
+        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
 
 
         boolean noLocal = false;
         JMSSelectorFilter messageFilter = null;
 
-        if(destination instanceof QueueDestination)
+        if(destination instanceof MessageSourceDestination)
         {
-            queue = ((QueueDestination) _destination).getQueue();
+            _queue = ((MessageSourceDestination) _destination).getQueue();
 
-            if(queue.getAvailableAttributes().contains("topic"))
+            if(_queue instanceof AMQQueue && ((AMQQueue)_queue).getAvailableAttributes().contains("topic"))
             {
                 source.setDistributionMode(StdDistMode.COPY);
             }
-
-            qd = (QueueDestination) destination;
 
             Map<Symbol,Filter> filters = source.getFilter();
 
@@ -167,7 +164,13 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             }
             source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-            _subscription = new Subscription_1_0(this, qd, source.getDistributionMode() != StdDistMode.COPY);
+            _target = new ConsumerTarget_1_0(this, source.getDistributionMode() != StdDistMode.COPY);
+            if(source.getDistributionMode() != StdDistMode.COPY)
+            {
+                options.add(Consumer.Option.ACQUIRES);
+                options.add(Consumer.Option.SEES_REQUEUES);
+            }
+
         }
         else if(destination instanceof ExchangeDestination)
         {
@@ -199,7 +202,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     name = UUID.randomUUID().toString();
                 }
 
-                queue = _vhost.getQueue(name);
+                AMQQueue queue = _vhost.getQueue(name);
                 Exchange exchange = exchangeDestination.getExchange();
 
                 if(queue == null)
@@ -299,9 +302,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                         }
                     }
                 }
+                _queue = queue;
                 source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
-                exchange.addBinding(binding,queue,null);
+                exchange.addBinding(binding, queue,null);
                 source.setDistributionMode(StdDistMode.COPY);
 
                 if(!isDurable)
@@ -309,10 +313,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     final String queueName = name;
                     final AMQQueue tempQueue = queue;
 
-                    final Connection_1_0.Task deleteQueueTask =
-                                            new Connection_1_0.Task()
+                    final Action<Connection_1_0> deleteQueueTask =
+                                            new Action<Connection_1_0>()
                                             {
-                                                public void doTask(Connection_1_0 session)
+                                                public void performAction(Connection_1_0 session)
                                                 {
                                                     if (_vhost.getQueue(queueName) == tempQueue)
                                                     {
@@ -331,9 +335,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                                     getSession().getConnection().addConnectionCloseTask(deleteQueueTask);
 
-                                    queue.addQueueDeleteTask(new AMQQueue.Task()
+                                    queue.addQueueDeleteTask(new Action<AMQQueue>()
                                     {
-                                        public void doTask(AMQQueue queue)
+                                        public void performAction(AMQQueue queue)
                                         {
                                             getSession().getConnection().removeConnectionCloseTask(deleteQueueTask);
                                         }
@@ -347,31 +351,52 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             catch (AMQSecurityException e)
             {
                 _logger.error("Security error", e);
+                throw new RuntimeException(e);
             }
             catch (AMQInternalException e)
             {
                 _logger.error("Internal error", e);
+                throw new RuntimeException(e);
             }
             catch (AMQException e)
             {
                 _logger.error("Error", e);
+                throw new RuntimeException(e);
             }
-            _subscription = new Subscription_1_0(this, qd, true);
+
+
+            _target = new ConsumerTarget_1_0(this, true);
+            options.add(Consumer.Option.ACQUIRES);
+            options.add(Consumer.Option.SEES_REQUEUES);
 
         }
-
-        if(_subscription != null)
+        else
         {
-            _subscription.setNoLocal(noLocal);
-            if(messageFilter!=null)
+            throw new RuntimeException("Unknown destination type");
+        }
+
+        if(_target != null)
+        {
+            if(noLocal)
             {
-                _subscription.setFilters(new SimpleFilterManager(messageFilter));
+                options.add(Consumer.Option.NO_LOCAL);
             }
 
             try
             {
-
-                queue.registerSubscription(_subscription, false);
+                final String name;
+                if(getEndpoint().getTarget() instanceof Target)
+                {
+                    Target target = (Target) getEndpoint().getTarget();
+                    name = target.getAddress() == null ? getEndpoint().getName() : target.getAddress();
+                }
+                else
+                {
+                    name = getEndpoint().getName();
+                }
+                _consumer = _queue.addConsumer(_target,
+                                               messageFilter == null ? null : new SimpleFilterManager(messageFilter),
+                                               Message_1_0.class, name, options);
             }
             catch (AMQException e)
             {
@@ -394,12 +419,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         // if not durable or close
         if(!TerminusDurability.UNSETTLED_STATE.equals(_durability))
         {
-            AMQQueue queue = _subscription.getQueue();
 
             try
             {
 
-                queue.unregisterSubscription(_subscription);
+                _consumer.close();
 
             }
             catch (AMQException e)
@@ -426,7 +450,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             {
                 try
                 {
-                    queue.getVirtualHost().removeQueue(queue);
+                    _vhost.removeQueue((AMQQueue)_queue);
                 }
                 catch(AMQException e)
                 {
@@ -443,7 +467,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         else if(detach == null || detach.getError() != null)
         {
             _linkAttachment = null;
-            _subscription.flowStateChanged();
+            _target.flowStateChanged();
         }
         else
         {
@@ -491,7 +515,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         }
         if(_resumeAcceptedTransfers.isEmpty())
         {
-            _subscription.flowStateChanged();
+            _target.flowStateChanged();
         }
 
     }
@@ -531,7 +555,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         }
     }
 
-    public void addUnsettled(Binary tag, UnsettledAction unsettledAction, QueueEntry queueEntry)
+    public void addUnsettled(Binary tag, UnsettledAction unsettledAction, MessageInstance queueEntry)
     {
         _unsettledActionMap.put(tag,unsettledAction);
         if(getTransactionId() == null)
@@ -593,9 +617,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public synchronized void setLinkAttachment(SendingLinkAttachment linkAttachment)
     {
 
-        if(_subscription.isActive())
+        if(_consumer.isActive())
         {
-            _subscription.suspend();
+            _target.suspend();
         }
 
         _linkAttachment = linkAttachment;
@@ -603,14 +627,14 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         SendingLinkEndpoint endpoint = linkAttachment.getEndpoint();
         endpoint.setDeliveryStateHandler(this);
         Map initialUnsettledMap = endpoint.getInitialUnsettledMap();
-        Map<Binary, QueueEntry> unsettledCopy = new HashMap<Binary, QueueEntry>(_unsettledMap);
+        Map<Binary, MessageInstance> unsettledCopy = new HashMap<Binary, MessageInstance>(_unsettledMap);
         _resumeAcceptedTransfers.clear();
         _resumeFullTransfers.clear();
 
-        for(Map.Entry<Binary, QueueEntry> entry : unsettledCopy.entrySet())
+        for(Map.Entry<Binary, MessageInstance> entry : unsettledCopy.entrySet())
         {
             Binary deliveryTag = entry.getKey();
-            final QueueEntry queueEntry = entry.getValue();
+            final MessageInstance queueEntry = entry.getValue();
             if(initialUnsettledMap == null || !initialUnsettledMap.containsKey(deliveryTag))
             {
                 queueEntry.setRedelivered();
@@ -624,7 +648,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 if(outcome instanceof Accepted)
                 {
                     AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getMessageStore());
-                    if(_subscription.acquires())
+                    if(_consumer.acquires())
                     {
                         txn.dequeue(Collections.singleton(queueEntry),
                                 new ServerTransaction.Action()
@@ -644,7 +668,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 else if(outcome instanceof Released)
                 {
                     AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getMessageStore());
-                    if(_subscription.acquires())
+                    if(_consumer.acquires())
                     {
                         txn.dequeue(Collections.singleton(queueEntry),
                                 new ServerTransaction.Action()
@@ -678,9 +702,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
     public Map getUnsettledOutcomeMap()
     {
-        Map<Binary, QueueEntry> unsettled = new HashMap<Binary, QueueEntry>(_unsettledMap);
+        Map<Binary, MessageInstance> unsettled = new HashMap<Binary, MessageInstance>(_unsettledMap);
 
-        for(Map.Entry<Binary, QueueEntry> entry : unsettled.entrySet())
+        for(Map.Entry<Binary, MessageInstance> entry : unsettled.entrySet())
         {
             entry.setValue(null);
         }
@@ -691,5 +715,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public void setCloseAction(Runnable action)
     {
         _closeAction = action;
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _vhost;
     }
 }

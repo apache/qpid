@@ -73,7 +73,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
             output.writeInt(records.length);
             for(Transaction.Record record : records)
             {
-                UUID id = record.getQueue().getId();
+                UUID id = record.getResource().getId();
                 output.writeLong(id.getMostSignificantBits());
                 output.writeLong(id.getLeastSignificantBits());
                 output.writeLong(record.getMessage().getMessageNumber());
@@ -93,7 +93,7 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
             _queueId = queueId;
         }
 
-        public TransactionLogResource getQueue()
+        public TransactionLogResource getResource()
         {
             return this;
         }
@@ -119,9 +119,21 @@ public class PreparedTransactionBinding extends TupleBinding<PreparedTransaction
         }
 
         @Override
+        public String getName()
+        {
+            return _queueId.toString();
+        }
+
+        @Override
         public UUID getId()
         {
             return _queueId;
+        }
+
+        @Override
+        public boolean isDurable()
+        {
+            return true;
         }
     }
 }

@@ -148,6 +148,8 @@ Broker::Options::Options(const std::string& name) :
     timestampRcvMsgs(false),    // set the 0.10 timestamp delivery property
     linkMaintenanceInterval(2*sys::TIME_SEC),
     linkHeartbeatInterval(120*sys::TIME_SEC),
+    dtxDefaultTimeout(60),      // 60s
+    dtxMaxTimeout(3600),        // 3600s
     maxNegotiateTime(10000)     // 10s
 {
     int c = sys::SystemInfo::concurrency();
@@ -192,6 +194,8 @@ Broker::Options::Options(const std::string& name) :
          "Interval to check link health and re-connect  if need be")
         ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"),
          "Heartbeat interval for a federation link")
+        ("dtx-default-timeout", optValue(dtxDefaultTimeout, "SECONDS"), "Default timeout for DTX transaction before aborting it")
+        ("dtx-max-timeout", optValue(dtxMaxTimeout, "SECONDS"), "Maximum allowed timeout for DTX transaction. A value of zero disables maximum timeout limit checks and allows arbitrarily large timeout settings.")
         ("max-negotiate-time", optValue(maxNegotiateTime, "MILLISECONDS"), "Maximum time a connection can take to send the initial protocol negotiation")
         ("federation-tag", optValue(fedTag, "NAME"), "Override the federation tag")
         ;
@@ -224,7 +228,7 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges(this),
     links(this),
     factory(new SecureConnectionFactory(*this)),
-    dtxManager(*timer.get()),
+    dtxManager(*timer.get(), getOptions().dtxDefaultTimeout),
     sessionManager(
         qpid::SessionState::Configuration(
             conf.replayFlushLimit*1024, // convert kb to bytes.

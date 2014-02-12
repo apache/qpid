@@ -24,15 +24,23 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -171,6 +179,8 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
+
+
     public boolean isDurable()
     {
         return false;
@@ -202,32 +212,67 @@ public class MockAMQQueue implements AMQQueue
         return _virtualhost;
     }
 
+    @Override
+    public boolean resend(final QueueEntry entry, final Consumer consumer) throws AMQException
+    {
+        return false;
+    }
+
+    @Override
+    public void addQueueDeleteTask(final Action task)
+    {
+
+    }
+
+    @Override
+    public void enqueue(final ServerMessage message, final Action action) throws AMQException
+    {
+
+    }
+
+    @Override
+    public int compareTo(final Object o)
+    {
+        return 0;
+    }
+
+    @Override
+    public Consumer addConsumer(final ConsumerTarget target,
+                                final FilterManager filters,
+                                final Class messageClass,
+                                final String consumerName,
+                                final EnumSet options) throws AMQException
+    {
+        return new QueueConsumer(filters, messageClass, options.contains(Consumer.Option.ACQUIRES),
+                                 options.contains(Consumer.Option.SEES_REQUEUES), consumerName,
+                                 options.contains(Consumer.Option.TRANSIENT), target );
+    }
+
+
     public String getName()
     {
         return _name;
     }
 
-    public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
+    public  int send(final ServerMessage message,
+                     final InstanceProperties instanceProperties,
+                     final ServerTransaction txn,
+                     final Action postEnqueueAction)
     {
-
+        return 0;
     }
 
-    public void unregisterSubscription(Subscription subscription) throws AMQException
-    {
-
-    }
-
-    public Collection<Subscription> getConsumers()
+    public Collection<QueueConsumer> getConsumers()
     {
         return Collections.emptyList();
     }
 
-    public void addSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    public void addConsumerRegistrationListener(final ConsumerRegistrationListener listener)
     {
 
     }
 
-    public void removeSubscriptionRegistrationListener(final SubscriptionRegistrationListener listener)
+    public void removeConsumerRegistrationListener(final ConsumerRegistrationListener listener)
     {
 
     }
@@ -242,7 +287,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public boolean hasExclusiveSubscriber()
+    public boolean hasExclusiveConsumer()
     {
         return false;
     }
@@ -293,50 +338,39 @@ public class MockAMQQueue implements AMQQueue
        return getMessageCount();
     }
 
-    public void enqueue(ServerMessage message) throws AMQException
-    {
-    }
-
-    public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
-    {
-    }
-
-
-    public void enqueue(ServerMessage message, boolean sync, PostEnqueueAction action) throws AMQException
-    {
-    }
 
     public void requeue(QueueEntry entry)
     {
     }
 
-    public void requeue(QueueEntryImpl storeContext, Subscription subscription)
+    public void dequeue(QueueEntry entry)
     {
     }
 
-    public void dequeue(QueueEntry entry, Subscription sub)
-    {
-    }
-
-    public boolean resend(QueueEntry entry, Subscription subscription) throws AMQException
+    public boolean resend(QueueEntry entry, QueueConsumer consumer) throws AMQException
     {
         return false;
     }
 
-    public void addQueueDeleteTask(Task task)
+    @Override
+    public void removeQueueDeleteTask(final Action task)
     {
+
     }
 
-    public void removeQueueDeleteTask(final Task task)
+    @Override
+    public void decrementUnackedMsgCount(final QueueEntry queueEntry)
     {
+
     }
 
-    public List<QueueEntry> getMessagesOnTheQueue()
+    @Override
+    public List getMessagesOnTheQueue()
     {
         return null;
     }
 
-    public List<QueueEntry> getMessagesOnTheQueue(long fromMessageId, long toMessageId)
+    public List getMessagesOnTheQueue(long fromMessageId, long toMessageId)
     {
         return null;
     }
@@ -356,7 +390,7 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public List<QueueEntry> getMessagesRangeOnTheQueue(long fromPosition, long toPosition)
+    public List getMessagesRangeOnTheQueue(long fromPosition, long toPosition)
     {
         return null;
     }
@@ -427,12 +461,12 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void flushSubscription(Subscription sub) throws AMQException
+    public void flushConsumer(Consumer sub) throws AMQException
     {
 
     }
 
-    public void deliverAsync(Subscription sub)
+    public void deliverAsync(Consumer sub)
     {
 
     }
@@ -563,10 +597,6 @@ public class MockAMQQueue implements AMQQueue
         return 0;
     }
 
-    public void decrementUnackedMsgCount(QueueEntry queueEntry)
-    {
-
-    }
 
     public long getUnackedMessageCount()
     {
@@ -610,4 +640,5 @@ public class MockAMQQueue implements AMQQueue
     {
         return null;
     }
+
 }

@@ -77,7 +77,11 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         {
             try
             {
-                _sender = _session.getClientSession().createSender(_session.toAddress(_destination), new Session.SourceConfigurator()
+                final String sourceName = _destination.getLocalTerminus() != null
+                        ? _destination.getLocalTerminus()
+                        : UUID.randomUUID().toString();
+
+                _sender = _session.getClientSession().createSender(sourceName, _session.toAddress(_destination), new Session.SourceConfigurator()
                 {
                     public void configureSource(final Source source)
                     {

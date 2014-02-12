@@ -108,8 +108,6 @@ class BrokerReplicator : public broker::Exchange,
     typedef void (BrokerReplicator::*DispatchFunction)(types::Variant::Map&);
     typedef qpid::sys::unordered_map<std::string, DispatchFunction> EventDispatchMap;
 
-    typedef qpid::sys::unordered_map<std::string, QueueReplicatorPtr> QueueReplicatorMap;
-
     class UpdateTracker;
     class ErrorListener;
 
@@ -152,7 +150,7 @@ class BrokerReplicator : public broker::Exchange,
     void deleteQueue(const std::string& name, bool purge=true);
     void deleteExchange(const std::string& name);
 
-    void disconnectedQueueReplicator(boost::shared_ptr<broker::Exchange>);
+    void disconnectedQueueReplicator(const boost::shared_ptr<QueueReplicator>&);
     void disconnected();
 
     void setMembership(const types::Variant::List&); // Set membership from list.

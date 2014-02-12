@@ -29,6 +29,7 @@ import java.util.Map;
 
 import java.util.Set;
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -46,7 +47,7 @@ public class DurableConfigurationStoreHelper
                                                                                                   Queue.EXCLUSIVE,
                                                                                                   Queue.ALTERNATE_EXCHANGE));
 
-    public static void updateQueue(DurableConfigurationStore store, AMQQueue queue) throws AMQStoreException
+    public static void updateQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue) throws AMQStoreException
     {
         Map<String, Object> attributesMap = new LinkedHashMap<String, Object>();
         attributesMap.put(Queue.NAME, queue.getName());
@@ -71,7 +72,7 @@ public class DurableConfigurationStoreHelper
         store.update(queue.getId(), QUEUE, attributesMap);
     }
 
-    public static void createQueue(DurableConfigurationStore store, AMQQueue queue)
+    public static void createQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue)
             throws AMQStoreException
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();

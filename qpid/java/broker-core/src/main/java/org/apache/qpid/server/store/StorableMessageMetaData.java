@@ -29,7 +29,7 @@ public interface StorableMessageMetaData
 
     int getStorableSize();
 
-    int writeToBuffer(int offsetInMetaData, ByteBuffer dest);
+    int writeToBuffer(ByteBuffer dest);
 
     int getContentSize();
 

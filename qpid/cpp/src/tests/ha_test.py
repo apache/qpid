@@ -137,7 +137,7 @@ class HaBroker(Broker):
                  "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
         # Add default --log-enable arguments unless args already has --log arguments.
-        if not next((l for l in args if l.startswith("--log")), None):
+        if not [l for l in args if l.startswith("--log")]:
             args += ["--log-enable=info+", "--log-enable=debug+:ha::"]
         if ha_replicate is not None:
             args += [ "--ha-replicate=%s"%ha_replicate ]

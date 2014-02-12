@@ -34,6 +34,7 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -53,16 +54,8 @@ public class Connection_1_0 implements ConnectionEventListener
     private final Collection<Session_1_0> _sessions = Collections.synchronizedCollection(new ArrayList<Session_1_0>());
     private final Object _reference = new Object();
 
-
-
-    public static interface Task
-    {
-        public void doTask(Connection_1_0 connection);
-    }
-
-
-    private List<Task> _closeTasks =
-            Collections.synchronizedList(new ArrayList<Task>());
+    private List<Action<Connection_1_0>> _closeTasks =
+            Collections.synchronizedList(new ArrayList<Action<Connection_1_0>>());
 
 
 
@@ -98,26 +91,26 @@ public class Connection_1_0 implements ConnectionEventListener
         _sessions.remove(session);
     }
 
-    void removeConnectionCloseTask(final Task task)
+    void removeConnectionCloseTask(final Action<Connection_1_0> task)
     {
         _closeTasks.remove( task );
     }
 
-    void addConnectionCloseTask(final Task task)
+    void addConnectionCloseTask(final Action<Connection_1_0> task)
     {
         _closeTasks.add( task );
     }
 
     public void closeReceived()
     {
-        List<Task> taskCopy;
+        List<Action<Connection_1_0>> taskCopy;
         synchronized (_closeTasks)
         {
-            taskCopy = new ArrayList<Task>(_closeTasks);
+            taskCopy = new ArrayList<Action<Connection_1_0>>(_closeTasks);
         }
-        for(Task task : taskCopy)
+        for(Action<Connection_1_0> task : taskCopy)
         {
-            task.doTask(this);
+            task.performAction(this);
         }
         synchronized (_closeTasks)
         {

@@ -22,20 +22,20 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.message.MessageInstance;
 
 class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
 {
     private static final Logger _logger = Logger.getLogger(ImplicitAcceptDispositionChangeListener.class);
 
 
-    private final QueueEntry _entry;
-    private Subscription_0_10 _sub;
+    private final MessageInstance _entry;
+    private ConsumerTarget_0_10 _target;
 
-    public ImplicitAcceptDispositionChangeListener(QueueEntry entry, Subscription_0_10 subscription_0_10)
+    public ImplicitAcceptDispositionChangeListener(MessageInstance entry, ConsumerTarget_0_10 target)
     {
         _entry = entry;
-        _sub = subscription_0_10;
+        _target = target;
     }
 
     public void onAccept()
@@ -45,9 +45,9 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        if(_entry.isAcquiredBy(_sub))
+        if(_entry.isAcquiredBy(_target.getConsumer()))
         {
-            getSubscription().release(_entry, setRedelivered);
+            _target.release(_entry, setRedelivered);
         }
         else
         {
@@ -57,9 +57,9 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        if(_entry.isAcquiredBy(_sub))
+        if(_entry.isAcquiredBy(_target.getConsumer()))
         {
-            getSubscription().reject(_entry);
+            _target.reject(_entry);
         }
         else
         {
@@ -70,19 +70,15 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        boolean acquired = _entry.acquire(getSubscription());
+        boolean acquired = _entry.acquire(_target.getConsumer());
         if(acquired)
         {
-            getSubscription().recordUnacknowledged(_entry);
+            _target.recordUnacknowledged(_entry);
         }
         return acquired;
 
     }
 
-    public Subscription_0_10 getSubscription()
-    {
-        return _sub;
-    }
 
 
 }

@@ -26,8 +26,6 @@ import java.util.Collections;
 
 public interface ReplicationNode extends ConfiguredObject
 {
-    String ID                                   = "id";
-    String NAME                                 = "name";
     String STATE                                = "state";
     String CREATED                              = "created";
     String DURABLE                              = "durable";

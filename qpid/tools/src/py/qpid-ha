@@ -133,12 +133,10 @@ class SetCmd(Command):
         Command.__init__(self, "set", "Set HA configuration settings")
         self.add("--brokers-url", "<url>", "string", "URL with address of each broker in the cluster. Used by brokers to connect to each other.")
         self.add("--public-url", "<url>", "string", "URL advertised to clients to connect to the cluster. May be a list or a VIP.")
-        self.add("--backups", "<n>", "int", "Expect <n> backups to be running"),
 
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         if (opts.brokers_url): qmf_broker._method("setBrokersUrl", {"url":opts.brokers_url}, HA_BROKER)
         if (opts.public_url): qmf_broker._method("setPublicUrl", {"url":opts.public_url}, HA_BROKER)
-        if (opts.backups): qmf_broker._method("setExpectedBackups", {"expectedBackups":opts.backups}, HA_BROKER)
 
 SetCmd()
 
@@ -151,7 +149,6 @@ class QueryCmd(Command):
         for x in [("Status:", hb.status),
                   ("Brokers URL:", hb.brokersUrl),
                   ("Public URL:", hb.publicUrl),
-                  ("Expected Backups:", hb.expectedBackups),
                   ("Replicate: ", hb.replicateDefault)
                   ]:
             print "%-20s %s"%(x[0], x[1])
