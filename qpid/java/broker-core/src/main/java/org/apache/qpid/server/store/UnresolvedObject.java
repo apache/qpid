@@ -24,5 +24,5 @@ public interface UnresolvedObject<T>
 {
     public UnresolvedDependency[] getUnresolvedDependencies();
 
-    T resolve();
+    T resolve() throws RecoveryAbortException;
 }

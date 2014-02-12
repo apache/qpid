@@ -35,19 +35,39 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.TestFileUtils;
 
 public class VirtualHostRecovererTest extends TestCase
 {
+
+    private Broker _broker;
+
+    @Override
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        BrokerTestHelper.setUp();
+        _broker = BrokerTestHelper.createBrokerMock();
+        when(_broker.getVirtualHostRegistry()).thenReturn(mock(VirtualHostRegistry.class));
+    }
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        BrokerTestHelper.tearDown();
+    }
+
     public void testCreate()
     {
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
-        Broker parent = mock(Broker.class);
-        when(parent.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
-        when(parent.getSecurityManager()).thenReturn(securityManager);
+        when(_broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
+        when(_broker.getSecurityManager()).thenReturn(securityManager);
 
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -58,7 +78,7 @@ public class VirtualHostRecovererTest extends TestCase
         attributes.put(VirtualHost.CONFIG_PATH, file.getAbsolutePath());
         when(entry.getAttributes()).thenReturn(attributes);
 
-        VirtualHost host = recoverer.create(null, entry, parent);
+        VirtualHost host = recoverer.create(null, entry, _broker);
 
         assertNotNull("Null is returned", host);
         assertEquals("Unexpected name", getName(), host.getName());
@@ -69,9 +89,9 @@ public class VirtualHostRecovererTest extends TestCase
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
-        Broker parent = mock(Broker.class);
-        when(parent.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
-        when(parent.getSecurityManager()).thenReturn(securityManager);
+
+        when(_broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
+        when(_broker.getSecurityManager()).thenReturn(securityManager);
 
         VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -81,7 +101,7 @@ public class VirtualHostRecovererTest extends TestCase
         attributes.put(VirtualHost.STORE_TYPE, "TESTMEMORY");
         when(entry.getAttributes()).thenReturn(attributes);
 
-        VirtualHost host = recoverer.create(null, entry, parent);
+        VirtualHost host = recoverer.create(null, entry, _broker);
 
         assertNotNull("Null is returned", host);
         assertEquals("Unexpected name", getName(), host.getName());

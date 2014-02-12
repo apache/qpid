@@ -387,7 +387,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
 
                 ConfiguredObjectRecord configuredObject = new ConfiguredObjectBinding(id).entryToObject(value);
-                LOGGER.debug("Recovering configuredObject : " + configuredObject);// TODO: remove this
                 crh.configuredObject(configuredObject.getId(),configuredObject.getType(),configuredObject.getAttributes());
             }
 
@@ -781,17 +780,21 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 status = getConfiguredObjectsDb().put(txn, key, newValue);
                 if (status != OperationStatus.SUCCESS)
                 {
-                    throw new AMQStoreException("Error updating queue details within the store: " + status);
+                    throw new AMQStoreException("Error updating configuration details within the store: " + status);
                 }
             }
             else if (status != OperationStatus.NOTFOUND)
             {
-                throw new AMQStoreException("Error finding queue details within the store: " + status);
+                throw new AMQStoreException("Error finding configuration details within the store: " + status);
             }
         }
         catch (DatabaseException e)
         {
-            throw _environmentFacade.handleDatabaseException("Error updating queue details within the store: " + e,e);
+            if (txn != null)
+            {
+                abortTransactionIgnoringException("Error updating configuration details within the store: " + e.getMessage(), txn);
+            }
+            throw _environmentFacade.handleDatabaseException("Error updating configuration details within the store: " + e,e);
         }
     }
 

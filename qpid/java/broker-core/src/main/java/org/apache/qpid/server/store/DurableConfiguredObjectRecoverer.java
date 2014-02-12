@@ -27,7 +27,7 @@ public interface DurableConfiguredObjectRecoverer
 {
     public void load(final DurableConfigurationRecoverer durableConfigurationRecoverer,
                      final UUID id,
-                     final Map<String, Object> attributes);
+                     final Map<String, Object> attributes) throws RecoveryAbortException;
 
     public String getType();
 }

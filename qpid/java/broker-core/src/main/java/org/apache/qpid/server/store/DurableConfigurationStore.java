@@ -28,7 +28,6 @@ import org.apache.qpid.server.model.VirtualHost;
 
 public interface DurableConfigurationStore
 {
-
     public static interface Source
     {
         DurableConfigurationStore getDurableConfigurationStore();

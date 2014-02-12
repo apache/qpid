@@ -20,12 +20,14 @@ package org.apache.qpid.server.store.berkeleydb;
  *
  */
 
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -94,7 +96,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
         // Make the virtualhost model object a replication group listener
         ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) _messageStore.getEnvironmentFacade();
-        environmentFacade.setReplicationGroupListener((ReplicationGroupListener) virtualHost);
+        environmentFacade.setReplicationGroupListener(getReplicationGroupListener());
         environmentFacade.setStateChangeListener(new BDBHAMessageStoreStateChangeListener());
     }
 
@@ -133,6 +135,13 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         return _messageStore;
     }
 
+    @Override
+    public UUID getId()
+    {
+        //TODO: a temporary approach untill we change the broker model to have Nodes as Broker children
+        return UUIDGenerator.generateVhostUUID(((ReplicatedEnvironmentFacade) _messageStore.getEnvironmentFacade()).getGroupName());
+    }
+
     private final class AfterInitialisationListener implements EventListener
     {
         public void event(Event event)
@@ -156,12 +165,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                      * is documented as exceptionally rare..
                      */
 
-                getConnectionRegistry().close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
-                removeHouseKeepingTasks();
-
-                getQueueRegistry().stopAllAndUnregisterMBeans();
-                getExchangeRegistry().clearAndUnregisterMbeans();
-                getDtxRegistry().close();
+                passivate(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
 
                 finalState = State.PASSIVE;
             }
@@ -265,6 +269,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         {
             try
             {
+                //TODO: move this this into the store method passivate()
                 if (_messageStore._stateManager.isNotInState(org.apache.qpid.server.store.State.INITIALISED))
                 {
                     _messageStore._stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);

@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,8 +30,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.util.FileUtils;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 public class ReplicationNodeRestTest extends QpidRestTestCase
 {

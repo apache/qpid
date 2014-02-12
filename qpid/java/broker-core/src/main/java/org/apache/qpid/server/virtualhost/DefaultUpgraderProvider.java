@@ -63,7 +63,6 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 currentUpgrader = addUpgrader(currentUpgrader, new Version1Upgrader());
             case 2:
                 currentUpgrader = addUpgrader(currentUpgrader, new Version2Upgrader());
-
             case CURRENT_CONFIG_VERSION:
                 currentUpgrader = addUpgrader(currentUpgrader, new NullUpgrader(recoverer));
                 break;

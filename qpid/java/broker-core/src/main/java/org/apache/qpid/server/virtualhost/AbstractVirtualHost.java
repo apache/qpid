@@ -30,11 +30,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -47,6 +50,8 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -56,18 +61,21 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.RecoveryAbortException;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
 
-public abstract class AbstractVirtualHost implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
+public abstract class AbstractVirtualHost implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener, ConfigurationChangeListener
 {
     private static final Logger _logger = Logger.getLogger(AbstractVirtualHost.class);
 
@@ -78,8 +86,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     private final UUID _id;
 
     private final long _createTime = System.currentTimeMillis();
-
-    private final ScheduledThreadPoolExecutor _houseKeepingTasks;
 
     private final VirtualHostRegistry _virtualHostRegistry;
 
@@ -100,12 +106,24 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     private final DtxRegistry _dtxRegistry;
     private final AMQQueueFactory _queueFactory;
 
-    private volatile State _state = State.INITIALISING;
-
-    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final org.apache.qpid.server.model.VirtualHost _virtualHost;
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
-    private boolean _blocked;
+
+    private final AtomicReference<VirtualHostAttributeRecoveryListener> _virtualHostAttributeRecoveryListener = new AtomicReference<VirtualHostAttributeRecoveryListener>();
+    private final AtomicReference<ReplicationGroupListener> _replicationGroupListener = new AtomicReference<ReplicationGroupListener>();
+
+    /**
+     * Flag indicating whether virtual host is still active, for instance,
+     * it can be in QUIESCED state but the connections, queues, etc could be still open.
+     * Thus, it all active objects needs to be shutdown on close
+     */
+    private final AtomicBoolean _active = new AtomicBoolean();
+
+    private volatile StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private volatile boolean _blocked;
+    private volatile State _state = State.INITIALISING;
+    private volatile ScheduledThreadPoolExecutor _houseKeepingTasks;
 
     public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                StatisticsGatherer brokerStatisticsGatherer,
@@ -131,15 +149,10 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _id = UUIDGenerator.generateVhostUUID(_name);
 
-        CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
-
         _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"), _name);
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
-
-        _houseKeepingTasks = new ScheduledThreadPoolExecutor(_vhostConfig.getHouseKeepingThreadCount());
-
 
         _queueRegistry = new DefaultQueueRegistry(this);
 
@@ -149,12 +162,47 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _exchangeRegistry = new DefaultExchangeRegistry(this, _queueRegistry);
 
+        _virtualHost = virtualHost;
+
         initialiseStatistics();
 
-        initialiseStorage(hostConfig, virtualHost);
+        CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
+    }
 
-        getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
-        getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+    @Override
+    public void activate() throws Exception
+    {
+        State currentState = getState();
+        if (_active.compareAndSet(false, true))
+        {
+            _houseKeepingTasks = new ScheduledThreadPoolExecutor(_vhostConfig.getHouseKeepingThreadCount());
+
+            try
+            {
+                initialiseStorage(_vhostConfig, _virtualHost);
+
+                getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+                getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+            }
+            catch(RecoveryAbortException e)
+            {
+                _logger.warn("Activation is aborted due to : " + e.getMessage());
+                return;
+            }
+        }
+        else
+        {
+            if ( currentState == State.QUIESCED)
+            {
+                setState(State.ACTIVE);
+            }
+        }
+    }
+
+    @Override
+    public void quiesce()
+    {
+        setState(State.QUIESCED);
     }
 
     abstract protected void initialiseStorage(VirtualHostConfiguration hostConfig,
@@ -196,6 +244,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     protected void shutdownHouseKeeping()
     {
+        if (_houseKeepingTasks == null)
+        {
+            return;
+        }
+
         _houseKeepingTasks.shutdown();
 
         try
@@ -634,22 +687,34 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         return _securityManager;
     }
 
-    public void close()
+
+    protected void passivate(String reason)
     {
+        _virtualHost.removeChangeListener(this);
+        removeHouseKeepingTasks();
+
         //Stop Connections
-        _connectionRegistry.close();
+        _connectionRegistry.close(reason);
         _queueRegistry.stopAllAndUnregisterMBeans();
         _dtxRegistry.close();
-        closeStorage();
-        shutdownHouseKeeping();
 
         // clear exchange objects
         _exchangeRegistry.clearAndUnregisterMbeans();
+    }
+
+    public void close()
+    {
+        if (_active.compareAndSet(true, false))
+        {
+            passivate(IConnectionRegistry.BROKER_SHUTDOWN_REPLY_TEXT);
+            closeStorage();
+            shutdownHouseKeeping();
+        }
 
         _state = State.STOPPED;
-
         CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
+
 
     protected void closeStorage()
     {
@@ -842,6 +907,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         try
         {
             initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
+            _virtualHost.addChangeListener(this);
             finalState = State.ACTIVE;
         }
         finally
@@ -862,6 +928,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     protected Map<String, DurableConfiguredObjectRecoverer> getDurableConfigurationRecoverers()
     {
         DurableConfiguredObjectRecoverer[] recoverers = {
+          new VirtualHostRecoverer(this, getVirtualHostAttributeRecoveryListener()),
           new QueueRecoverer(this, getExchangeRegistry(), _queueFactory),
           new ExchangeRecoverer(getExchangeRegistry(), getExchangeFactory()),
           new BindingRecoverer(this, getExchangeRegistry())
@@ -873,6 +940,70 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             recovererMap.put(recoverer.getType(), recoverer);
         }
         return recovererMap;
+    }
+
+    @Override
+    public void setVirtualHostAttributeRecoveryListener(VirtualHostAttributeRecoveryListener listener)
+    {
+        if (!_virtualHostAttributeRecoveryListener.compareAndSet(null, listener))
+        {
+            throw new IllegalStateException("Attribute recovery listener is already set on virtual host " + getName());
+        }
+    }
+
+    protected VirtualHostAttributeRecoveryListener getVirtualHostAttributeRecoveryListener()
+    {
+        return _virtualHostAttributeRecoveryListener.get();
+    }
+
+    @Override
+    public void setReplicationGroupListener(ReplicationGroupListener listener)
+    {
+        if (!_replicationGroupListener.compareAndSet(null, listener))
+        {
+            throw new IllegalStateException("Replication group listener is already set on virtual host " + getName());
+        }
+    }
+
+    protected ReplicationGroupListener getReplicationGroupListener()
+    {
+        return _replicationGroupListener.get();
+    }
+
+    @Override
+    public void stateChanged(ConfiguredObject object, org.apache.qpid.server.model.State oldState, org.apache.qpid.server.model.State newState)
+    {
+        // no-op
+    }
+
+    @Override
+    public void childAdded(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no-op
+    }
+
+    @Override
+    public void childRemoved(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no-op
+    }
+
+    @Override
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
+    {
+        DurableConfigurationStore durableConfigurationStore = getDurableConfigurationStore();
+        if (durableConfigurationStore != null)
+        {
+            try
+            {
+                ConfiguredObjectRecord record = new ConfiguredObjectRecord(getId(), org.apache.qpid.server.model.VirtualHost.class.getSimpleName(), Collections.singletonMap(attributeName, newAttributeValue));
+                durableConfigurationStore.update(true, record);
+            }
+            catch (AMQStoreException e)
+            {
+                _logger.error("Can save virtual host attribute " + attributeName + " value " + newAttributeValue, e);
+            }
+        }
     }
 
     private class VirtualHostHouseKeepingTask extends HouseKeepingTask
@@ -927,4 +1058,5 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             }
         }
     }
+
 }

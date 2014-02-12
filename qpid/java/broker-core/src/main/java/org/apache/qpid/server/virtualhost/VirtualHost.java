@@ -32,6 +32,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -93,6 +94,14 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     void addVirtualHostListener(VirtualHostListener listener);
 
     void close();
+
+    void activate() throws Exception;
+
+    void quiesce();
+
+    void setVirtualHostAttributeRecoveryListener(VirtualHostAttributeRecoveryListener listener);
+
+    void setReplicationGroupListener(ReplicationGroupListener listener);
 
     UUID getId();
 

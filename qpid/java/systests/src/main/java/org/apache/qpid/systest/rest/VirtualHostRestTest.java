@@ -23,10 +23,17 @@ package org.apache.qpid.systest.rest;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.servlet.http.HttpServletResponse;
 
@@ -35,9 +42,9 @@ import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -493,6 +500,149 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Asserts.assertQueue(queueName, "standard", queue, queueAttributes);
         Asserts.assertQueue(queueName, "standard", queue, null);
+    }
+
+    public void testConnectionToVirtualHostInQuiescedState() throws Exception
+    {
+        Connection connection = getConnection();
+        assertProducingConsuming(connection);
+
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.QUIESCED.name());
+        int status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT", attributes);
+        assertEquals("Unexpected http status", 200, status);
+
+        Map<String, Object> hostAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
+        assertEquals("Unexpected state", State.QUIESCED.name(), hostAttributes.get(VirtualHost.STATE));
+
+        assertProducingConsuming(connection);
+
+        try
+        {
+            getConnection();
+            fail("A new connection to the QUIESCED virtual host should fail");
+        }
+        catch(JMSException e)
+        {
+            // pass
+        }
+
+        // test that operations to create exchange and queue are working for existing connection
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        String queueName = getTestQueueName() + 1;
+        String exchangeName = getTestName();
+        Destination destination = session.createQueue("direct://"  +exchangeName + "//" + queueName);
+        MessageConsumer consumer = session.createConsumer(destination);
+        sendMessage(session, destination, 1);
+        connection.start();
+        Message m1 = consumer.receive(RECEIVE_TIMEOUT);
+        assertNotNull("Message 1 is not received", m1);
+        assertEquals("Unexpected first message received", 0, m1.getIntProperty(INDEX));
+        session.commit();
+
+        Map<String, Object> queueAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        assertEquals("Unexpected queue name", queueName, queueAttributes.get(Queue.NAME));
+
+        Map<String, Object> exchangeAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/" + exchangeName);
+        assertEquals("Unexpected exchange name", exchangeName, exchangeAttributes.get(VirtualHost.NAME));
+
+        attributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.ACTIVE.name());
+        status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT", attributes);
+        assertEquals("Unexpected http status", 200, status);
+
+        Connection connection2 = getConnection();
+        assertProducingConsuming(connection2);
+    }
+
+    public void testConnectionToVirtualHostInStoppedState() throws Exception
+    {
+        Connection connection = getConnection();
+        assertProducingConsuming(connection);
+
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.STOPPED.name());
+        int status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT", attributes);
+        assertEquals("Unexpected http status", 200, status);
+
+        Map<String, Object> hostAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
+        assertEquals("Unexpected state", State.STOPPED.name(), hostAttributes.get(VirtualHost.STATE));
+
+        try
+        {
+            connection.createSession(true, Session.SESSION_TRANSACTED);
+            fail("Connection should be closed");
+        }
+        catch(IllegalStateException e)
+        {
+            // pass
+        }
+
+        try
+        {
+            getConnection();
+            fail("A new connection to the STOPPED virtual host should fail");
+        }
+        catch(JMSException e)
+        {
+            // pass
+        }
+
+        attributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.ACTIVE.name());
+        status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT", attributes);
+        assertEquals("Unexpected http status", 200, status);
+
+        Connection connection2 = getConnection();
+        assertProducingConsuming(connection2);
+    }
+
+    public void testRestartStoppedVirtualHost() throws Exception
+    {
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.STOPPED.name());
+        int status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT", attributes);
+        assertEquals("Unexpected http status", 200, status);
+
+        Map<String, Object> hostAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
+        assertEquals("Unexpected state", State.STOPPED.name(), hostAttributes.get(VirtualHost.STATE));
+
+        restartBroker();
+
+        hostAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
+        assertEquals("Unexpected state after restart", State.STOPPED.name(), hostAttributes.get(VirtualHost.STATE));
+
+        status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT",  Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.ACTIVE.name()));
+        assertEquals("Unexpected http status on state change to ACTIVE", 200, status);
+
+        Connection connection = getConnection();
+        assertProducingConsuming(connection);
+    }
+
+    public void testRestartQuiescedVirtualHost() throws Exception
+    {
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.QUIESCED.name());
+        int status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT", attributes);
+        assertEquals("Unexpected http status", 200, status);
+
+        Map<String, Object> hostAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
+        assertEquals("Unexpected state", State.QUIESCED.name(), hostAttributes.get(VirtualHost.STATE));
+
+        restartBroker();
+
+        hostAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
+        assertEquals("Unexpected state after restart", State.QUIESCED.name(), hostAttributes.get(VirtualHost.STATE));
+
+        status = getRestTestHelper().submitRequest("/rest/virtualhost/test", "PUT",  Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.ACTIVE.name()));
+        assertEquals("Unexpected http status on state change to ACTIVE", 200, status);
+
+        Connection connection = getConnection();
+        assertProducingConsuming(connection);
+    }
+
+    public void testDeleteVirtualHost() throws Exception
+    {
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.DELETED.name());
+        int status = getRestTestHelper().submitRequest("/rest/virtualhost/" + TEST2_VIRTUALHOST, "PUT", attributes);
+        assertEquals("Unexpected http status", 200, status);
+
+        List<Map<String, Object>> hostAttributes = getRestTestHelper().getJsonAsList("/rest/virtualhost/" + TEST2_VIRTUALHOST);
+        assertTrue("Virtual host should be deleted", hostAttributes.isEmpty());
     }
 
     private void createExchange(String exchangeName, String exchangeType) throws IOException

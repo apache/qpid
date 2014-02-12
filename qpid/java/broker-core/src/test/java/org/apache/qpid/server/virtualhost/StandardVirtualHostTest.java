@@ -27,10 +27,8 @@ import static org.mockito.Mockito.when;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -266,10 +264,18 @@ public class StandardVirtualHostTest extends QpidTestCase
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(vhostName, config, broker);
-        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration,
-                mock(org.apache.qpid.server.model.VirtualHost.class));
-        _virtualHostRegistry.registerVirtualHost(host);
+        return createVirtualHost(configuration);
+    }
 
+    private VirtualHost createVirtualHost(VirtualHostConfiguration configuration) throws Exception
+    {
+        org.apache.qpid.server.model.VirtualHost virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
+        when(virtualHost.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_TYPE))).thenReturn(
+                TestMemoryMessageStore.TYPE);
+        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry,
+                mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration, virtualHost);
+        _virtualHostRegistry.registerVirtualHost(host);
+        host.activate();
         return host;
     }
 
@@ -366,11 +372,6 @@ public class StandardVirtualHostTest extends QpidTestCase
 
         Configuration config = new PropertiesConfiguration();
         VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
-        final org.apache.qpid.server.model.VirtualHost virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
-        when(virtualHost.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_TYPE))).thenReturn(TestMemoryMessageStore.TYPE);
-        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration,
-                virtualHost);
-        _virtualHostRegistry.registerVirtualHost(host);
-        return host;
+        return createVirtualHost(configuration);
     }
 }

@@ -111,6 +111,7 @@ public class BrokerTestHelper
         {
             virtualHostRegistry.registerVirtualHost(host);
         }
+        host.activate();
         return host;
     }
 

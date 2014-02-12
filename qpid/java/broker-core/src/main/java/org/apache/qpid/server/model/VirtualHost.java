@@ -173,9 +173,11 @@ public interface VirtualHost extends ConfiguredObject
      */
     SecurityManager getSecurityManager();
 
+    //TODO: remove this unused method
     MessageStore getMessageStore();
 
     String getType();
 
     TaskExecutor getTaskExecutor();
+
 }

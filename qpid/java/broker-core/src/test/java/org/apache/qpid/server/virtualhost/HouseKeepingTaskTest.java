@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -30,6 +33,16 @@ import java.util.concurrent.CountDownLatch;
 
 public class HouseKeepingTaskTest extends QpidTestCase
 {
+    private static final String HOUSE_KEEPING_TASK_TEST_VHOST = "HouseKeepingTaskTestVhost";
+    private VirtualHost _host;
+
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _host = mock(VirtualHost.class);
+        when(_host.getName()).thenReturn(HOUSE_KEEPING_TASK_TEST_VHOST);
+    }
+
     /**
      * Tests that the abstract HouseKeepingTask properly cleans up any LogActor
      * it adds to the CurrentActor stack by verifying the CurrentActor set
@@ -45,7 +58,7 @@ public class HouseKeepingTaskTest extends QpidTestCase
         assertEquals("Expected LogActor was not returned", testActor, CurrentActor.get());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        HouseKeepingTask testTask = new HouseKeepingTask(new MockVirtualHost("HouseKeepingTaskTestVhost"))
+        HouseKeepingTask testTask = new HouseKeepingTask(_host)
         {
             @Override
             public void execute()
@@ -73,11 +86,9 @@ public class HouseKeepingTaskTest extends QpidTestCase
 
         String originalThreadName = Thread.currentThread().getName();
 
-        String vhostName = "HouseKeepingTaskTestVhost";
+        String expectedThreadNameDuringExecution = HOUSE_KEEPING_TASK_TEST_VHOST + ":" + "ThreadNameRememberingTask";
 
-        String expectedThreadNameDuringExecution = vhostName + ":" + "ThreadNameRememberingTask";
-
-        ThreadNameRememberingTask testTask = new ThreadNameRememberingTask(new MockVirtualHost(vhostName));
+        ThreadNameRememberingTask testTask = new ThreadNameRememberingTask(_host);
 
         testTask.run();
 

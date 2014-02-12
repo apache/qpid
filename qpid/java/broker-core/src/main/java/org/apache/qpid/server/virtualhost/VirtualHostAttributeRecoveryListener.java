@@ -20,13 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-public enum State
+import java.util.Map;
+
+public interface VirtualHostAttributeRecoveryListener
 {
-    INITIALISING,
-    ACTIVE,
-    PASSIVE,
-    STOPPED,
-    /** Terminal state that signifies the virtual host has experienced an unexpected condition. */
-    ERRORED,
-    QUIESCED
+    public void attributesRecovered(Map<String, Object> attributes);
 }

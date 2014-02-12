@@ -18,15 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost;
+package org.apache.qpid.server.store;
 
-public enum State
+@SuppressWarnings("serial")
+public class RecoveryAbortException extends RuntimeException
 {
-    INITIALISING,
-    ACTIVE,
-    PASSIVE,
-    STOPPED,
-    /** Terminal state that signifies the virtual host has experienced an unexpected condition. */
-    ERRORED,
-    QUIESCED
+
+    public RecoveryAbortException(String message)
+    {
+        super(message);
+    }
+
+    public RecoveryAbortException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
 }
