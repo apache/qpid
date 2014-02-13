@@ -191,7 +191,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
     private final AddMessageDispositionListenerAction _postIdSettingAction;
 
-    public void send(final MessageInstance entry, boolean batch) throws AMQException
+    public void send(final MessageInstance entry, boolean batch)
     {
         ServerMessage serverMsg = entry.getMessage();
 

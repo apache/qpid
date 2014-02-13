@@ -66,10 +66,6 @@ class SubFlushRunner implements Runnable
                 CurrentActor.set(_sub.getLogActor());
                 complete = getQueue().flushConsumer(_sub, ITERATIONS);
             }
-            catch (AMQException e)
-            {
-                _logger.error("Exception during asynchronous delivery by " + toString(), e);
-            }
             catch (final TransportException transe)
             {
                 final String errorMessage = "Problem during asynchronous delivery by " + toString();

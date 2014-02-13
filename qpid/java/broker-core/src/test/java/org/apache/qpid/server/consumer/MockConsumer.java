@@ -153,7 +153,7 @@ public class MockConsumer implements ConsumerTarget
     {
     }
 
-    public void send(MessageInstance entry, boolean batch) throws AMQException
+    public void send(MessageInstance entry, boolean batch)
     {
         if (messages.contains(entry))
         {
@@ -205,7 +205,7 @@ public class MockConsumer implements ConsumerTarget
     }
 
 
-    public void queueEmpty() throws AMQException
+    public void queueEmpty()
     {
     }
 

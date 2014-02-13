@@ -186,7 +186,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
 
         @Override
         public void deliverToClient(final Consumer sub, final ServerMessage message,
-                                    final InstanceProperties props, final long deliveryTag) throws AMQException
+                                    final InstanceProperties props, final long deliveryTag)
         {
             _singleMessageCredit.useCreditForMessage(message.getSize());
             _session.getProtocolOutputConverter().writeGetOk(message,

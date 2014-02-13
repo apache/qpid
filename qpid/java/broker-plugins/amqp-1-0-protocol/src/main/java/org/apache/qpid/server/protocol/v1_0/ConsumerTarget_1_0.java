@@ -112,7 +112,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         }
     }
 
-    public void send(MessageInstance entry, boolean batch) throws AMQException
+    public void send(MessageInstance entry, boolean batch)
     {
         // TODO
         send(entry);
@@ -123,7 +123,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         // TODO
     }
 
-    public void send(final MessageInstance queueEntry) throws AMQException
+    public void send(final MessageInstance queueEntry)
     {
         ServerMessage serverMessage = queueEntry.getMessage();
         Message_1_0 message;

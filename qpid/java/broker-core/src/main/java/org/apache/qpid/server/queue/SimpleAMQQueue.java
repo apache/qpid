@@ -793,7 +793,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     private void deliverMessage(final QueueConsumer<?,E,Q,L> sub, final E entry, boolean batch)
-            throws AMQException
     {
         setLastSeenEntry(sub, entry);
 
@@ -894,7 +893,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         _dequeueCount.incrementAndGet();
     }
 
-    public boolean resend(final E entry, final QueueConsumer<?,E,Q,L> consumer) throws AMQException
+    public boolean resend(final E entry, final QueueConsumer<?,E,Q,L> consumer)
     {
         /* TODO : This is wrong as the consumer may be suspended, we should instead change the state of the message
                   entry to resend and move back the consumer pointer. */
@@ -1438,17 +1437,13 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    void flushConsumer(QueueConsumer<?,E,Q,L> sub) throws AMQException
+    void flushConsumer(QueueConsumer<?,E,Q,L> sub)
     {
-        // Access control
-        if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
-        {
-            throw new AMQSecurityException("Permission denied: " + getName());
-        }
+
         flushConsumer(sub, Long.MAX_VALUE);
     }
 
-    boolean flushConsumer(QueueConsumer<?,E,Q,L> sub, long iterations) throws AMQException
+    boolean flushConsumer(QueueConsumer<?,E,Q,L> sub, long iterations)
     {
         boolean atTail = false;
         final boolean keepSendLockHeld = iterations <=  SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
@@ -1524,9 +1519,8 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
      * @param sub the consumer
      * @param batch true if processing can be batched
      * @return true if we have completed all possible deliveries for this sub.
-     * @throws AMQException
      */
-    private boolean attemptDelivery(QueueConsumer<?,E,Q,L> sub, boolean batch) throws AMQException
+    private boolean attemptDelivery(QueueConsumer<?,E,Q,L> sub, boolean batch)
     {
         boolean atTail = false;
 
@@ -1569,7 +1563,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         return atTail || !subActive;
     }
 
-    protected void advanceAllConsumers() throws AMQException
+    protected void advanceAllConsumers()
     {
         QueueConsumerList.ConsumerNodeIterator<E,Q,L> consumerNodeIterator = _consumerList.iterator();
         while (consumerNodeIterator.advance())
@@ -1588,7 +1582,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     private E getNextAvailableEntry(final QueueConsumer<?,E,Q,L> sub)
-            throws AMQException
     {
         QueueContext<E,Q,L> context = sub.getQueueContext();
         if(context != null)

@@ -161,7 +161,7 @@ class ManagementNodeConsumer implements Consumer
     }
 
     @Override
-    public void flush() throws AMQException
+    public void flush()
     {
 
     }
@@ -185,10 +185,6 @@ class ManagementNodeConsumer implements Consumer
             {
                 _queue.add(responseEntry);
             }
-        }
-        catch (AMQException e)
-        {
-            e.printStackTrace();
         }
         finally
         {
@@ -229,10 +225,6 @@ class ManagementNodeConsumer implements Consumer
                     break;
                 }
             }
-        }
-        catch (AMQException e)
-        {
-            throw new RuntimeException(e);
         }
         finally
         {

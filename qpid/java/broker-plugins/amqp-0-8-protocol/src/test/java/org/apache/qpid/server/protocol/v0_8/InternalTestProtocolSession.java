@@ -99,7 +99,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
                             MessageContentSource msgContent,
                             int channelId,
                             int replyCode,
-                            AMQShortString replyText) throws AMQException
+                            AMQShortString replyText)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -145,7 +145,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     public void writeDeliver(final ServerMessage msg,
                              final InstanceProperties props, int channelId,
                              long deliveryTag,
-                             AMQShortString consumerTag) throws AMQException
+                             AMQShortString consumerTag)
     {
         _deliveryCount.incrementAndGet();
 
@@ -175,7 +175,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
                            final InstanceProperties props,
                            int channelId,
                            long deliveryTag,
-                           int queueSize) throws AMQException
+                           int queueSize)
     {
     }
 
@@ -246,7 +246,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
         @Override
         public void deliverToClient(Consumer sub, ServerMessage message,
-                                    InstanceProperties props, long deliveryTag) throws AMQException
+                                    InstanceProperties props, long deliveryTag)
         {
             _deliveryCount.incrementAndGet();
 

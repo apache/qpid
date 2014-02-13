@@ -49,13 +49,13 @@ public interface ConsumerTarget
 
     AMQSessionModel getSessionModel();
 
-    void send(MessageInstance entry, boolean batch) throws AMQException;
+    void send(MessageInstance entry, boolean batch);
 
     void flushBatched();
 
     void queueDeleted();
 
-    void queueEmpty() throws AMQException;
+    void queueEmpty();
 
     boolean allocateCredit(ServerMessage msg);
 

@@ -77,5 +77,5 @@ public interface Consumer
 
     String getName();
 
-    void flush() throws AMQException;
+    void flush();
 }
