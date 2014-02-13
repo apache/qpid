@@ -217,7 +217,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
              * @param entry
              * @param batch
              */
-            public void send(MessageInstance entry, boolean batch) throws AMQException
+            public void send(MessageInstance entry, boolean batch)
             {
                 super.send(entry, batch);
                 latch.countDown();

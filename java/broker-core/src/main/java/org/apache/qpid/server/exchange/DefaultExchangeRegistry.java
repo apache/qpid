@@ -102,39 +102,37 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
-    public void unregisterExchange(String name, boolean inUse) throws AMQException
+    public boolean unregisterExchange(String name, boolean inUse) throws AMQException
     {
         final Exchange exchange = _exchangeMap.get(name);
-        if (exchange == null)
+        if (exchange != null)
         {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Unknown exchange " + name, null);
-        }
 
-        if (!_host.getSecurityManager().authoriseDelete(exchange))
-        {
-            throw new AMQSecurityException();
-        }
-
-        // TODO: check inUse argument
-
-        Exchange e = _exchangeMap.remove(name);
-        if (e != null)
-        {
-            e.close();
-
-            synchronized (_listeners)
+            if (!_host.getSecurityManager().authoriseDelete(exchange))
             {
-                for(RegistryChangeListener listener : _listeners)
-                {
-                    listener.exchangeUnregistered(exchange);
-                }
+                throw new AMQSecurityException();
             }
 
+            // TODO: check inUse argument
+
+            Exchange e = _exchangeMap.remove(name);
+            // if it is null then it was removed by another thread at the same time, we can ignore
+            if (e != null)
+            {
+                e.close();
+
+                synchronized (_listeners)
+                {
+                    for(RegistryChangeListener listener : _listeners)
+                    {
+                        listener.exchangeUnregistered(exchange);
+                    }
+                }
+
+            }
         }
-        else
-        {
-            throw new AMQException("Unknown exchange " + name);
-        }
+        return exchange != null;
+
     }
 
     public Collection<Exchange> getExchanges()

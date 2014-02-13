@@ -29,7 +29,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -886,10 +885,6 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 virtualHost.removeExchange(exchange, !method.getIfUnused());
             }
-        }
-        catch (ExchangeInUseException e)
-        {
-            exception(session, method, ExecutionErrorCode.PRECONDITION_FAILED, "Exchange in use");
         }
         catch (ExchangeIsAlternateException e)
         {

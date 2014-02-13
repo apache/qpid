@@ -40,10 +40,9 @@ public interface ExchangeRegistry
      * Unregister an exchange
      * @param exchange name of the exchange to delete
      * @param ifUnused if true, do NOT delete the exchange if it is in use (has queues bound to it)
-     * @throws ExchangeInUseException when the exchange cannot be deleted because it is in use
      * @throws AMQException
      */
-    void unregisterExchange(String exchange, boolean ifUnused)  throws ExchangeInUseException, AMQException;
+    boolean unregisterExchange(String exchange, boolean ifUnused)  throws AMQException;
 
     void clearAndUnregisterMbeans();
 

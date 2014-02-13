@@ -241,7 +241,7 @@ class QueueConsumer<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q
         _target.restoreCredit(queueEntry.getMessage());
     }
 
-    void queueEmpty() throws AMQException
+    void queueEmpty()
     {
         _target.queueEmpty();
     }
@@ -295,12 +295,12 @@ class QueueConsumer<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q
 
 
     @Override
-    public final void flush() throws AMQException
+    public final void flush()
     {
         getQueue().flushConsumer(this);
     }
 
-    boolean resend(final E entry) throws AMQException
+    boolean resend(final E entry)
     {
         return getQueue().resend(entry, this);
     }
@@ -460,14 +460,10 @@ class QueueConsumer<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q
         return _deliveredCount.longValue();
     }
 
-    final void send(final E entry, final boolean batch) throws AMQException
+    final void send(final E entry, final boolean batch)
     {
         _deliveredCount.incrementAndGet();
         ServerMessage message = entry.getMessage();
-        if(message == null)
-        {
-            throw new AMQException("message was null!");
-        }
         _deliveredBytes.addAndGet(message.getSize());
         _target.send(entry, batch);
     }

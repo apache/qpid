@@ -28,5 +28,5 @@ import org.apache.qpid.server.consumer.Consumer;
 public interface ClientDeliveryMethod
 {
     void deliverToClient(final Consumer sub, final ServerMessage message, final InstanceProperties props,
-                         final long deliveryTag) throws AMQException;
+                         final long deliveryTag);
 }

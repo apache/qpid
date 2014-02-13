@@ -1670,7 +1670,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         @Override
         public void deliverToClient(final Consumer sub, final ServerMessage message,
                                     final InstanceProperties props, final long deliveryTag)
-                throws AMQException
         {
             registerMessageDelivered(message.getSize());
             _protocolOutputConverter.writeDeliver(message,

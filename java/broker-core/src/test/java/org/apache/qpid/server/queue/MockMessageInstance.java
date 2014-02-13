@@ -71,7 +71,7 @@ public class MockMessageInstance implements MessageInstance<MockMessageInstance,
 
     }
 
-    public boolean expired() throws AMQException
+    public boolean expired()
     {
         return false;
     }
@@ -128,7 +128,7 @@ public class MockMessageInstance implements MessageInstance<MockMessageInstance,
     }
 
     @Override
-    public boolean resend() throws AMQException
+    public boolean resend()
     {
         return false;
     }

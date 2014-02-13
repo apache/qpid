@@ -499,14 +499,8 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
             {
                 QueueEntryImpl entry = (QueueEntryImpl) object;
                 entry.setRedelivered();
-                try
-                {
-                    _consumer.resend(entry);
-                }
-                catch (AMQException e)
-                {
-                    fail("Exception thrown: " + e.getMessage());
-                }
+                _consumer.resend(entry);
+
             }
         });
 

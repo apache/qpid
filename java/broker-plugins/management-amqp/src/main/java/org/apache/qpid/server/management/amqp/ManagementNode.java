@@ -1111,7 +1111,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
         @Override
-        public boolean expired() throws AMQException
+        public boolean expired()
         {
             return false;
         }
@@ -1167,7 +1167,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
         @Override
-        public boolean resend() throws AMQException
+        public boolean resend()
         {
             return false;
         }

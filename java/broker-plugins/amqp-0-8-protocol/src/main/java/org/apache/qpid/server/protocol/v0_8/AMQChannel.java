@@ -1228,23 +1228,16 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                                     @Override
                                     public void postCommit()
                                     {
-                                        try
-                                        {
-                                            final
-                                            ProtocolOutputConverter outputConverter =
+                                        final ProtocolOutputConverter outputConverter =
                                                     _session.getProtocolOutputConverter();
 
-                                            outputConverter.writeReturn(message.getMessagePublishInfo(),
-                                                                        message.getContentHeaderBody(),
-                                                                        message,
-                                                                        _channelId,
-                                                                        AMQConstant.NO_CONSUMERS.getCode(),
-                                                                        IMMEDIATE_DELIVERY_REPLY_TEXT);
-                                        }
-                                        catch (AMQException e)
-                                        {
-                                            throw new RuntimeException(e);
-                                        }
+                                        outputConverter.writeReturn(message.getMessagePublishInfo(),
+                                                                    message.getContentHeaderBody(),
+                                                                    message,
+                                                                    _channelId,
+                                                                    AMQConstant.NO_CONSUMERS.getCode(),
+                                                                    IMMEDIATE_DELIVERY_REPLY_TEXT);
+
                                     }
 
                                     @Override
@@ -1354,23 +1347,14 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
         public void postCommit()
         {
-            try
-            {
-                AMQMessage message = _reference.getMessage();
-                _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
-                                                              message.getContentHeaderBody(),
-                                                              message,
-                                                              _channelId,
-                                                              _errorCode.getCode(),
-                                                              AMQShortString.validValueOf(_description));
-                _reference.release();
-            }
-            catch (AMQException e)
-            {
-                //TODO
-                throw new RuntimeException(e);
-            }
-
+            AMQMessage message = _reference.getMessage();
+            _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
+                                                          message.getContentHeaderBody(),
+                                                          message,
+                                                          _channelId,
+                                                          _errorCode.getCode(),
+                                                          AMQShortString.validValueOf(_description));
+            _reference.release();
         }
 
         public void onRollback()
