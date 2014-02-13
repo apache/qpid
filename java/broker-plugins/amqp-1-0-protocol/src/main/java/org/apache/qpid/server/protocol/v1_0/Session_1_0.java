@@ -37,7 +37,7 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
@@ -362,6 +362,11 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                                         //TODO
                                         _logger.error("Error removing queue from vhost", e);
                                     }
+                                    catch (QpidSecurityException e)
+                                    {
+                                        //TODO
+                                        _logger.error("Error removing queue from vhost", e);
+                                    }
                                 }
                             }
                         };
@@ -391,7 +396,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
 
             }
         }
-        catch (AMQSecurityException e)
+        catch (QpidSecurityException e)
         {
             //TODO
             _logger.error("Security error", e);

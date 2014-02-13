@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -56,6 +56,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -381,13 +382,13 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                                      final FilterManager filters,
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
-                                     EnumSet<Consumer.Option> optionSet) throws AMQException
+                                     EnumSet<Consumer.Option> optionSet) throws AMQException, QpidSecurityException
     {
 
         // Access control
         if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
         {
-            throw new AMQSecurityException("Permission denied");
+            throw new QpidSecurityException("Permission denied");
         }
 
 
@@ -502,7 +503,14 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                     _logger.info("Auto-deleting queue:" + this);
                 }
 
-                getVirtualHost().removeQueue(this);
+                try
+                {
+                    getVirtualHost().removeQueue(this);
+                }
+                catch (QpidSecurityException e)
+                {
+                    throw new ConnectionScopedRuntimeException("Auto delete queue unable to delete itself", e);
+                }
 
                 // we need to manually fire the event to the removed consumer (which was the last one left for this
                 // queue. This is because the delete method uses the consumer set which has just been cleared
@@ -1169,7 +1177,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    public void purge(final long request) throws AMQException
+    public void purge(final long request) throws AMQException, QpidSecurityException
     {
         clear(request);
     }
@@ -1199,17 +1207,17 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         }
     }
 
-    public long clearQueue() throws AMQException
+    public long clearQueue() throws AMQException, QpidSecurityException
     {
         return clear(0l);
     }
 
-    private long clear(final long request) throws AMQSecurityException
+    private long clear(final long request) throws QpidSecurityException
     {
         //Perform ACLs
         if (!getVirtualHost().getSecurityManager().authorisePurge(this))
         {
-            throw new AMQSecurityException("Permission denied: queue " + getName());
+            throw new QpidSecurityException("Permission denied: queue " + getName());
         }
 
         QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
@@ -1271,12 +1279,12 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     // TODO list all thrown exceptions
-    public int delete() throws AMQException
+    public int delete() throws AMQException, QpidSecurityException
     {
         // Check access
         if (!_virtualHost.getSecurityManager().authoriseDelete(this))
         {
-            throw new AMQSecurityException("Permission denied: " + getName());
+            throw new QpidSecurityException("Permission denied: " + getName());
         }
 
         if (!_deleted.getAndSet(true))

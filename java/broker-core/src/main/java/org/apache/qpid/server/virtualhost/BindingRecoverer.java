@@ -31,9 +31,11 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<Binding>
 {
@@ -121,6 +123,12 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             catch (AMQException e)
             {
                 throw new RuntimeException(e);
+            }
+            catch (QpidSecurityException e)
+            {
+                throw new ServerScopedRuntimeException("Security Exception thrown when recovering. The recovery " +
+                                                       "thread should not be bound by permissions, this is likely " +
+                                                       "a programming error.",e);
             }
         }
 

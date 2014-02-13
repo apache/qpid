@@ -45,6 +45,7 @@ import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
 import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
 import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.EnumSet;
@@ -106,14 +107,22 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                     }
                 }
 
-                if (!performGet(queue,protocolConnection, channel, !body.getNoAck()))
+                try
                 {
-                    MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
-                    // TODO - set clusterId
-                    BasicGetEmptyBody responseBody = methodRegistry.createBasicGetEmptyBody(null);
+                    if (!performGet(queue,protocolConnection, channel, !body.getNoAck()))
+                    {
+                        MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+                        // TODO - set clusterId
+                        BasicGetEmptyBody responseBody = methodRegistry.createBasicGetEmptyBody(null);
 
 
-                    protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+                        protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+                    }
+                }
+                catch (QpidSecurityException e)
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
+                                                      e.getMessage());
                 }
             }
         }
@@ -123,7 +132,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                                      final AMQProtocolSession session,
                                      final AMQChannel channel,
                                      final boolean acks)
-            throws AMQException
+            throws AMQException, QpidSecurityException
     {
 
         final FlowCreditManager singleMessageCredit = new MessageOnlyCreditManager(1L);

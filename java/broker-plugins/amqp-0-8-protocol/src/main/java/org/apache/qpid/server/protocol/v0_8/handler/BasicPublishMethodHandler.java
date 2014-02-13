@@ -34,6 +34,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class BasicPublishMethodHandler implements StateAwareMethodListener<BasicPublishBody>
@@ -88,7 +89,14 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
 
             MessagePublishInfo info = session.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
             info.setExchange(exchangeName);
-            channel.setPublishFrame(info, exch);
+            try
+            {
+                channel.setPublishFrame(info, exch);
+            }
+            catch (QpidSecurityException e)
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+            }
         }
     }
 

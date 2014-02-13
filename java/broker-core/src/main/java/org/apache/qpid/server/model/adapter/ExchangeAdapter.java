@@ -29,7 +29,7 @@ import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
@@ -147,7 +147,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
                 return binding == null ? null : _bindingAdapters.get(binding);
             }
         }
-        catch(AMQSecurityException e)
+        catch(QpidSecurityException e)
         {
             throw new AccessControlException(e.toString());
         }
@@ -170,6 +170,10 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         catch(AMQException e)
         {
             throw new IllegalStateException(e);
+        }
+        catch (QpidSecurityException e)
+        {
+            throw new AccessControlException(e.toString());
         }
     }
 

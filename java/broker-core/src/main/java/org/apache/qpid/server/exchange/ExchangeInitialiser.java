@@ -23,12 +23,15 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ExchangeInitialiser
 {
-    public void initialise(ExchangeFactory factory, ExchangeRegistry registry, DurableConfigurationStore store) throws AMQException
+    public void initialise(ExchangeFactory factory, ExchangeRegistry registry, DurableConfigurationStore store)
+            throws AMQException
     {
         for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
         {
@@ -38,16 +41,25 @@ public class ExchangeInitialiser
     }
 
     private void define(ExchangeRegistry r, ExchangeFactory f,
-                        String name, String type, DurableConfigurationStore store) throws AMQException
+                        String name, String type, DurableConfigurationStore store)
+            throws AMQException
     {
-        if(r.getExchange(name)== null)
+        try
         {
-            Exchange exchange = f.createExchange(name, type, true, false);
-            r.registerExchange(exchange);
-            if(exchange.isDurable())
+            if(r.getExchange(name)== null)
             {
-                DurableConfigurationStoreHelper.createExchange(store, exchange);
+                Exchange exchange = f.createExchange(name, type, true, false);
+                r.registerExchange(exchange);
+                if(exchange.isDurable())
+                {
+                    DurableConfigurationStoreHelper.createExchange(store, exchange);
+                }
             }
+        }
+        catch (QpidSecurityException e)
+        {
+            throw new ServerScopedRuntimeException("Security Exception when attempting to initialise exchanges - " +
+                                                   "this is likely a programming error", e);
         }
     }
 }

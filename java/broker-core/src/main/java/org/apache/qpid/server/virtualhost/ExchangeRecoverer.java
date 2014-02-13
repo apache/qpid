@@ -27,9 +27,11 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<Exchange>
 {
@@ -84,6 +86,12 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
             catch (AMQException e)
             {
                 throw new RuntimeException("Error recovering exchange uuid " + id + " name " + exchangeName, e);
+            }
+            catch (QpidSecurityException e)
+            {
+                throw new ServerScopedRuntimeException("Security Exception thrown when recovering. The recovery " +
+                                                       "thread should not be bound by permissions, this is likely " +
+                                                       "a programming error.",e);
             }
         }
 

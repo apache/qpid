@@ -23,7 +23,7 @@ package org.apache.qpid.server.queue;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 
 public interface QueueFactory
 {
@@ -34,7 +34,7 @@ public interface QueueFactory
                          boolean autoDelete,
                          boolean exclusive,
                          boolean deleteOnNoConsumer,
-                         Map<String, Object> arguments) throws AMQSecurityException, AMQException;
+                         Map<String, Object> arguments) throws QpidSecurityException, AMQException;
 
     AMQQueue restoreQueue(UUID id,
                           String queueName,
@@ -42,6 +42,6 @@ public interface QueueFactory
                           boolean autoDelete,
                           boolean exclusive,
                           boolean deleteOnNoConsumer,
-                          Map<String, Object> arguments) throws AMQSecurityException, AMQException;
+                          Map<String, Object> arguments) throws QpidSecurityException, AMQException;
 
 }

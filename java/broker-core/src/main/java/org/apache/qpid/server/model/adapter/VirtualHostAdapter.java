@@ -66,6 +66,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -378,6 +379,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new IllegalArgumentException(e);
         }
+        catch (QpidSecurityException e)
+        {
+            throw new AccessControlException(e.toString());
+        }
     }
 
     public Queue createQueue(Map<String, Object> attributes)
@@ -470,6 +475,10 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         catch(AMQException e)
         {
             throw new IllegalArgumentException(e);
+        }
+        catch (QpidSecurityException e)
+        {
+            throw new AccessControlException(e.toString());
         }
 
     }

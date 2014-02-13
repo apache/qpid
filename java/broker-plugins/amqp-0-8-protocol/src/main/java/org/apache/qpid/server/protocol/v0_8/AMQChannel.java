@@ -29,7 +29,7 @@ import java.util.concurrent.locks.Lock;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
@@ -262,13 +262,13 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         return _channelId;
     }
 
-    public void setPublishFrame(MessagePublishInfo info, final MessageDestination e) throws AMQSecurityException
+    public void setPublishFrame(MessagePublishInfo info, final MessageDestination e) throws QpidSecurityException
     {
         String routingKey = info.getRoutingKey() == null ? null : info.getRoutingKey().asString();
         SecurityManager securityManager = getVirtualHost().getSecurityManager();
         if (!securityManager.authorisePublish(info.isImmediate(), routingKey, e.getName()))
         {
-            throw new AMQSecurityException("Permission denied: " + e.getName());
+            throw new QpidSecurityException("Permission denied: " + e.getName());
         }
         _currentMessage = new IncomingMessage(info);
         _currentMessage.setMessageDestination(e);
@@ -515,7 +515,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      * @throws AMQException                  if something goes wrong
      */
     public AMQShortString consumeFromSource(AMQShortString tag, MessageSource source, boolean acks,
-                                            FieldTable filters, boolean exclusive, boolean noLocal) throws AMQException
+                                            FieldTable filters, boolean exclusive, boolean noLocal)
+            throws AMQException, QpidSecurityException
     {
         if (tag == null)
         {
@@ -584,6 +585,11 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
             throw e;
         }
         catch (RuntimeException e)
+        {
+            _tag2SubscriptionTargetMap.remove(tag);
+            throw e;
+        }
+        catch (QpidSecurityException e)
         {
             _tag2SubscriptionTargetMap.remove(tag);
             throw e;

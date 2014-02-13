@@ -21,6 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.security.QpidSecurityException;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -42,7 +43,7 @@ public interface ExchangeRegistry
      * @param ifUnused if true, do NOT delete the exchange if it is in use (has queues bound to it)
      * @throws AMQException
      */
-    boolean unregisterExchange(String exchange, boolean ifUnused)  throws AMQException;
+    boolean unregisterExchange(String exchange, boolean ifUnused) throws AMQException, QpidSecurityException;
 
     void clearAndUnregisterMbeans();
 

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -183,7 +183,7 @@ public class AMQQueueFactory implements QueueFactory
                                  boolean autoDelete,
                                  boolean exclusive,
                                  boolean deleteOnNoConsumer,
-                                 Map<String, Object> arguments) throws AMQSecurityException, AMQException
+                                 Map<String, Object> arguments) throws QpidSecurityException, AMQException
     {
         return createOrRestoreQueue(id, queueName, true, owner, autoDelete, exclusive, deleteOnNoConsumer, arguments, false);
 
@@ -201,7 +201,7 @@ public class AMQQueueFactory implements QueueFactory
                                 boolean autoDelete,
                                 boolean exclusive,
                                 boolean deleteOnNoConsumer,
-                                Map<String, Object> arguments) throws AMQSecurityException, AMQException
+                                Map<String, Object> arguments) throws QpidSecurityException, AMQException
     {
         return createOrRestoreQueue(id, queueName, durable, owner, autoDelete, exclusive, deleteOnNoConsumer, arguments, true);
     }
@@ -214,7 +214,7 @@ public class AMQQueueFactory implements QueueFactory
                                           boolean exclusive,
                                           boolean deleteOnNoConsumer,
                                           Map<String, Object> arguments,
-                                          boolean createInStore) throws AMQSecurityException, AMQException
+                                          boolean createInStore) throws QpidSecurityException, AMQException
     {
         if (id == null)
         {
@@ -391,7 +391,7 @@ public class AMQQueueFactory implements QueueFactory
         return q;
     }
 
-    public AMQQueue createAMQQueueImpl(QueueConfiguration config) throws AMQException
+    public AMQQueue createAMQQueueImpl(QueueConfiguration config) throws AMQException, QpidSecurityException
     {
         String queueName = config.getName();
 

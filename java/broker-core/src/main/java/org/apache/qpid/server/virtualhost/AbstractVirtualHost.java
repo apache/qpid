@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -292,7 +292,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
 
-    protected void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
+    protected void initialiseModel(VirtualHostConfiguration config)
+            throws ConfigurationException, AMQException, QpidSecurityException
     {
         _logger.debug("Loading configuration for virtualhost: " + config.getName());
 
@@ -314,14 +315,15 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         }
     }
 
-    private void configureExchange(ExchangeConfiguration exchangeConfiguration) throws AMQException
+    private void configureExchange(ExchangeConfiguration exchangeConfiguration)
+            throws AMQException, QpidSecurityException
     {
         boolean durable = exchangeConfiguration.getDurable();
         boolean autodelete = exchangeConfiguration.getAutoDelete();
         try
         {
-            Exchange newExchange = createExchange(null, exchangeConfiguration.getName(), exchangeConfiguration.getType(), durable, autodelete,
-                    null);
+            Exchange newExchange = createExchange(null, exchangeConfiguration.getName(),
+                                                  exchangeConfiguration.getType(), durable, autodelete, null);
         }
         catch(ExchangeExistsException e)
         {
@@ -330,7 +332,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     }
 
-    private void configureQueue(QueueConfiguration queueConfiguration) throws AMQException, ConfigurationException
+    private void configureQueue(QueueConfiguration queueConfiguration)
+            throws AMQException, ConfigurationException, QpidSecurityException
     {
         AMQQueue queue = _queueFactory.createAMQQueueImpl(queueConfiguration);
         String queueName = queue.getName();
@@ -380,7 +383,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     }
 
-    private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey, Map<String,Object> arguments) throws AMQException
+    private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey, Map<String,Object> arguments)
+            throws AMQException, QpidSecurityException
     {
         if (_logger.isInfoEnabled())
         {
@@ -487,7 +491,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public int removeQueue(AMQQueue queue) throws AMQException
+    public int removeQueue(AMQQueue queue) throws AMQException, QpidSecurityException
     {
         synchronized (getQueueRegistry())
         {
@@ -511,7 +515,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                 boolean autoDelete,
                                 boolean exclusive,
                                 boolean deleteOnNoConsumer,
-                                Map<String, Object> arguments) throws AMQException
+                                Map<String, Object> arguments) throws AMQException, QpidSecurityException
     {
 
         if (queueName == null)
@@ -529,7 +533,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                                        owner))
         {
             String description = "Permission denied: queue-name '" + queueName + "'";
-            throw new AMQSecurityException(description);
+            throw new QpidSecurityException(description);
         }
 
         synchronized (_queueRegistry)
@@ -603,7 +607,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                    boolean durable,
                                    boolean autoDelete,
                                    String alternateExchangeName)
-            throws AMQException
+            throws AMQException, QpidSecurityException
     {
         synchronized (_exchangeRegistry)
         {
@@ -649,7 +653,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public void removeExchange(Exchange exchange, boolean force) throws AMQException
+    public void removeExchange(Exchange exchange, boolean force) throws AMQException, QpidSecurityException
     {
         if(exchange.hasReferrers())
         {

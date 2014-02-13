@@ -30,6 +30,7 @@ import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -94,7 +95,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     boolean isDeleted();
 
-    int delete() throws AMQException;
+    int delete() throws AMQException, QpidSecurityException;
 
     void requeue(E entry);
 
@@ -169,7 +170,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     void deleteMessageFromTop();
 
-    long clearQueue() throws AMQException;
+    long clearQueue() throws AMQException, QpidSecurityException;
 
     /**
      * Checks the status of messages on the queue, purging expired ones, firing age related alerts etc.
