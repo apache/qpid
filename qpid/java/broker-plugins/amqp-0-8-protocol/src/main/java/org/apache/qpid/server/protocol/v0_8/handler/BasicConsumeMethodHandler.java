@@ -35,6 +35,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class BasicConsumeMethodHandler implements StateAwareMethodListener<BasicConsumeBody>
@@ -174,6 +175,13 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                                                    "Cannot subscribe to queue "
                                                    + queue.getName()
                                                    + " exclusively as it already has a consumer");
+                }
+                catch (QpidSecurityException e)
+                {
+                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
+                                                   "Cannot subscribe to queue "
+                                                   + queue.getName()
+                                                   + " permission denied");
                 }
 
             }

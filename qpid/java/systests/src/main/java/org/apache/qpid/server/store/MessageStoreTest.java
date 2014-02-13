@@ -51,6 +51,7 @@ import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.queue.StandardQueue;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -630,7 +631,7 @@ public class MessageStoreTest extends QpidTestCase
 
     }
 
-    private void createAllQueues()
+    private void createAllQueues() throws Exception
     {
         //Register Durable Priority Queue
         createQueue(durablePriorityQueueName, true, true, false, false);
@@ -651,7 +652,7 @@ public class MessageStoreTest extends QpidTestCase
         createQueue(queueName, false, false, false, false);
     }
 
-    private void createAllTopicQueues()
+    private void createAllTopicQueues() throws Exception
     {
         //Register Durable Priority Queue
         createQueue(durablePriorityTopicQueueName, true, true, false, false);
@@ -667,6 +668,7 @@ public class MessageStoreTest extends QpidTestCase
     }
 
     private void createQueue(String queueName, boolean usePriority, boolean durable, boolean exclusive, boolean lastValueQueue)
+            throws Exception
     {
 
         Map<String,Object> queueArguments = null;
@@ -689,22 +691,16 @@ public class MessageStoreTest extends QpidTestCase
         AMQQueue queue = null;
 
         //Ideally we would be able to use the QueueDeclareHandler here.
-        try
-        {
-            queue = getVirtualHost().createQueue(UUIDGenerator.generateRandomUUID(), queueName, durable, queueOwner, false, exclusive,
-                    false, queueArguments);
+        queue = getVirtualHost().createQueue(UUIDGenerator.generateRandomUUID(), queueName, durable, queueOwner, false, exclusive,
+                false, queueArguments);
 
-            validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
+        validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
 
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+
 
     }
 
-    private Map<String, Exchange> createExchanges()
+    private Map<String, Exchange> createExchanges() throws Exception
     {
         Map<String, Exchange> exchanges = new HashMap<String, Exchange>();
 
@@ -718,18 +714,11 @@ public class MessageStoreTest extends QpidTestCase
         return exchanges;
     }
 
-    private Exchange createExchange(ExchangeType<?> type, String name, boolean durable)
+    private Exchange createExchange(ExchangeType<?> type, String name, boolean durable) throws Exception
     {
         Exchange exchange = null;
 
-        try
-        {
-            exchange = getVirtualHost().createExchange(null, name, type.getType(), durable, false, null);
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        exchange = getVirtualHost().createExchange(null, name, type.getType(), durable, false, null);
 
         return exchange;
     }

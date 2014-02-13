@@ -27,6 +27,7 @@ import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.AuthorizationHolder;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.TransactionLogResource;
 
 import java.util.Collection;
@@ -36,7 +37,8 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
 {
     <T extends ConsumerTarget> C addConsumer(T target, FilterManager filters,
                          Class<? extends ServerMessage> messageClass,
-                         String consumerName, EnumSet<Consumer.Option> options) throws AMQException;
+                         String consumerName, EnumSet<Consumer.Option> options)
+            throws AMQException, QpidSecurityException;
 
     Collection<C> getConsumers();
 

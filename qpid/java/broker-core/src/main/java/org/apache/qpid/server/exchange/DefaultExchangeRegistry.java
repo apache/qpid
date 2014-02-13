@@ -22,9 +22,8 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -102,7 +101,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
-    public boolean unregisterExchange(String name, boolean inUse) throws AMQException
+    public boolean unregisterExchange(String name, boolean inUse) throws AMQException, QpidSecurityException
     {
         final Exchange exchange = _exchangeMap.get(name);
         if (exchange != null)
@@ -110,7 +109,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
             if (!_host.getSecurityManager().authoriseDelete(exchange))
             {
-                throw new AMQSecurityException();
+                throw new QpidSecurityException();
             }
 
             // TODO: check inUse argument

@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.*;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -177,6 +178,10 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         catch(AMQException e)
         {
             throw new IllegalStateException(e);
+        }
+        catch (QpidSecurityException e)
+        {
+            throw new AccessControlException(e.toString());
         }
     }
 

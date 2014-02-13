@@ -42,6 +42,7 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -300,6 +301,10 @@ public class ServerSessionDelegate extends SessionDelegate
                     catch (AMQException e)
                     {
                         exception(session, method, e, "Cannot subscribe to queue '" + queueName + "' with destination '" + destination);
+                    }
+                    catch (QpidSecurityException e)
+                    {
+                        exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                     }
                 }
             }
@@ -786,6 +791,10 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 exception(session, method, e, "Cannot declare exchange '" + exchangeName);
             }
+            catch (QpidSecurityException e)
+            {
+                exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+            }
 
 
         }
@@ -898,6 +907,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, e, "Cannot delete exchange '" + method.getExchange() );
         }
+        catch (QpidSecurityException e)
+        {
+            exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+        }
     }
 
     private boolean nameNullOrEmpty(String name)
@@ -992,6 +1005,10 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         exception(session, method, e, "Cannot add binding '" + method.getBindingKey());
                     }
+                    catch (QpidSecurityException e)
+                    {
+                        exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+                    }
                 }
                 else
                 {
@@ -1044,6 +1061,10 @@ public class ServerSessionDelegate extends SessionDelegate
                 catch (AMQException e)
                 {
                     exception(session, method, e, "Cannot remove binding '" + method.getBindingKey());
+                }
+                catch (QpidSecurityException e)
+                {
+                    exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                 }
             }
         }
@@ -1272,6 +1293,10 @@ public class ServerSessionDelegate extends SessionDelegate
                                 {
                                     exception(session, method, e, "Cannot delete '" + method.getQueue());
                                 }
+                                catch (QpidSecurityException e)
+                                {
+                                    exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+                                }
                             }
                         };
                     final ServerSession s = (ServerSession) session;
@@ -1323,6 +1348,10 @@ public class ServerSessionDelegate extends SessionDelegate
             catch (AMQException e)
             {
                 exception(session, method, e, "Cannot declare queue '" + queueName);
+            }
+            catch (QpidSecurityException e)
+            {
+                exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
             }
         }
     }
@@ -1401,6 +1430,10 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         exception(session, method, e, "Cannot delete queue '" + queueName);
                     }
+                    catch (QpidSecurityException e)
+                    {
+                        exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+                    }
                 }
             }
         }
@@ -1431,6 +1464,10 @@ public class ServerSessionDelegate extends SessionDelegate
                 catch (AMQException e)
                 {
                     exception(session, method, e, "Cannot purge queue '" + queueName);
+                }
+                catch (QpidSecurityException e)
+                {
+                    exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                 }
             }
         }

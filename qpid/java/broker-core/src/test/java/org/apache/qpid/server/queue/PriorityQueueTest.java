@@ -49,7 +49,7 @@ public class PriorityQueueTest extends SimpleAMQQueueTestBase
         super.setUp();
     }
 
-    public void testPriorityOrdering() throws AMQException, InterruptedException
+    public void testPriorityOrdering() throws Exception, InterruptedException
     {
 
         // Enqueue messages in order

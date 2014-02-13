@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -498,7 +498,7 @@ public class RestServlet extends AbstractServlet
 
     private void setResponseStatus(HttpServletResponse response, RuntimeException e) throws IOException
     {
-        if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+        if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
         {
             if (LOGGER.isDebugEnabled())
             {

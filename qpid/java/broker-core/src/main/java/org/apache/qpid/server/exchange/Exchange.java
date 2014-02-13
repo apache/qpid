@@ -22,7 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -70,25 +70,25 @@ public interface Exchange extends ExchangeReferrer, MessageDestination
 
 
     boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws AMQSecurityException, AMQInternalException;
+            throws QpidSecurityException, AMQInternalException;
 
     boolean replaceBinding(UUID id, String bindingKey,
                            AMQQueue queue,
                            Map<String, Object> arguments)
-                    throws AMQSecurityException, AMQInternalException;
+                    throws QpidSecurityException, AMQInternalException;
 
     void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
                         Map<String, Object> argumentMap)
-                    throws AMQSecurityException, AMQInternalException;
+                    throws QpidSecurityException, AMQInternalException;
 
-    void removeBinding(Binding b) throws AMQSecurityException, AMQInternalException;
+    void removeBinding(Binding b) throws QpidSecurityException, AMQInternalException;
 
     Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-                    throws AMQSecurityException, AMQInternalException;
+                    throws QpidSecurityException, AMQInternalException;
 
     Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
 
-    void close() throws AMQException;
+    void close() throws QpidSecurityException, AMQInternalException;
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments

@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
@@ -329,6 +329,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                                             //TODO
                                                             _logger.error("Error removing queue", e);
                                                         }
+                                                        catch (QpidSecurityException e)
+                                                        {
+                                                            //TODO
+                                                            _logger.error("Error removing queue", e);
+                                                        }
                                                     }
                                                 }
                                             };
@@ -348,7 +353,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                 qd = new QueueDestination(queue);
             }
-            catch (AMQSecurityException e)
+            catch (QpidSecurityException e)
             {
                 _logger.error("Security error", e);
                 throw new RuntimeException(e);
@@ -399,6 +404,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                                Message_1_0.class, name, options);
             }
             catch (AMQException e)
+            {
+                //TODO
+                _logger.error("Error registering subscription", e);
+            }
+            catch (QpidSecurityException e)
             {
                 //TODO
                 _logger.error("Error registering subscription", e);
@@ -455,7 +465,12 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 catch(AMQException e)
                 {
                     //TODO
-                    _logger.error("Error removing queue", e);
+                    _logger.error("Error registering subscription", e);
+                }
+                catch (QpidSecurityException e)
+                {
+                    //TODO
+                    _logger.error("Error registering subscription", e);
                 }
             }
 

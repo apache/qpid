@@ -32,6 +32,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -111,7 +112,15 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                                                       "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
                 }
 
-                int purged = virtualHost.removeQueue(queue);
+                int purged = 0;
+                try
+                {
+                    purged = virtualHost.removeQueue(queue);
+                }
+                catch (QpidSecurityException e)
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                }
 
                 MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                 QueueDeleteOkBody responseBody = methodRegistry.createQueueDeleteOkBody(purged);

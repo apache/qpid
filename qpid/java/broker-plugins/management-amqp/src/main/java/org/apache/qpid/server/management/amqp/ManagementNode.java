@@ -21,7 +21,7 @@
 package org.apache.qpid.server.management.amqp;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.FilterManager;
@@ -373,7 +373,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                         }
                         catch(RuntimeException e)
                         {
-                            if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+                            if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
                             {
                                 response = createFailureResponse(message, STATUS_CODE_FORBIDDEN, e.getMessage());
                             }
@@ -478,7 +478,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
         catch(RuntimeException e)
         {
-            if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+            if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
             {
                 responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_FORBIDDEN);
             }
@@ -516,7 +516,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             }
             catch(RuntimeException e)
             {
-                if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+                if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
                 {
                     return createFailureResponse(requestMessage, STATUS_CODE_FORBIDDEN, e.getMessage());
                 }

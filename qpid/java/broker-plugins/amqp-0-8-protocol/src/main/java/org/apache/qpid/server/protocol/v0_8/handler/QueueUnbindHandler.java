@@ -38,6 +38,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindBody>
@@ -105,7 +106,14 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         }
         else
         {
-            exch.removeBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(body.getArguments()));
+            try
+            {
+                exch.removeBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(body.getArguments()));
+            }
+            catch (QpidSecurityException e)
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+            }
         }
 
 

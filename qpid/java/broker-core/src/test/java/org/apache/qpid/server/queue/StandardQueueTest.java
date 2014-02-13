@@ -144,7 +144,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
     /**
      * Tests that entry in dequeued state are not enqueued and not delivered to consumer
      */
-    public void testEnqueueDequeuedEntry()
+    public void testEnqueueDequeuedEntry() throws Exception
     {
         // create a queue where each even entry is considered a dequeued
         SimpleAMQQueue queue = new DequeuedQueue(UUIDGenerator.generateRandomUUID(), "test", false,
@@ -153,19 +153,12 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
         MockConsumer consumer = new MockConsumer();
 
         // register consumer
-        try
-        {
-            queue.addConsumer(consumer,
-                              null,
-                              createMessage(-1l).getClass(),
-                              "test",
-                              EnumSet.of(Consumer.Option.ACQUIRES,
-                                         Consumer.Option.SEES_REQUEUES));
-        }
-        catch (AMQException e)
-        {
-            fail("Failure to register consumer:" + e.getMessage());
-        }
+        queue.addConsumer(consumer,
+                          null,
+                          createMessage(-1l).getClass(),
+                          "test",
+                          EnumSet.of(Consumer.Option.ACQUIRES,
+                                     Consumer.Option.SEES_REQUEUES));
 
         // put test messages into a queue
         putGivenNumberOfMessages(queue, 4);
@@ -183,7 +176,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
      * Tests whether dequeued entry is sent to subscriber in result of
      * invocation of {@link SimpleAMQQueue#processQueue(QueueRunner)}
      */
-    public void testProcessQueueWithDequeuedEntry()
+    public void testProcessQueueWithDequeuedEntry() throws Exception
     {
         // total number of messages to send
         int messageNumber = 4;
@@ -224,29 +217,23 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
             }
         };
 
-        try
-        {
-            // subscribe
-            testQueue.addConsumer(consumer,
-                                  null,
-                                  entries.get(0).getMessage().getClass(),
-                                  "test",
-                                  EnumSet.of(Consumer.Option.ACQUIRES,
-                                             Consumer.Option.SEES_REQUEUES));
+        // subscribe
+        testQueue.addConsumer(consumer,
+                              null,
+                              entries.get(0).getMessage().getClass(),
+                              "test",
+                              EnumSet.of(Consumer.Option.ACQUIRES,
+                                         Consumer.Option.SEES_REQUEUES));
 
-            // process queue
-            testQueue.processQueue(new QueueRunner(testQueue)
-            {
-                public void run()
-                {
-                    // do nothing
-                }
-            });
-        }
-        catch (AMQException e)
+        // process queue
+        testQueue.processQueue(new QueueRunner(testQueue)
         {
-            fail("Failure to process queue:" + e.getMessage());
-        }
+            public void run()
+            {
+                // do nothing
+            }
+        });
+
         // wait up to 1 minute for message receipt
         try
         {

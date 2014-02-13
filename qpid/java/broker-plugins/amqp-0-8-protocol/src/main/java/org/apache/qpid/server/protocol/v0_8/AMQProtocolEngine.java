@@ -46,7 +46,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
@@ -627,12 +627,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             {
                 _logger.info(e.getMessage() + " whilst processing:" + methodBody);
                 closeConnection(channelId, e);
-            }
-            catch (AMQSecurityException e)
-            {
-                AMQConnectionException ce = evt.getMethod().getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
-                _logger.info(e.getMessage() + " whilst processing:" + methodBody);
-                closeConnection(channelId, ce);
             }
         }
         catch (Exception e)

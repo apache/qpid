@@ -177,7 +177,7 @@ public class AckTest extends QpidTestCase
      * Tests that the acknowledgements are correctly associated with a channel and
      * order is preserved when acks are enabled
      */
-    public void testAckChannelAssociationTest() throws AMQException
+    public void testAckChannelAssociationTest() throws Exception
     {
         _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
                                                                  DEFAULT_CONSUMER_TAG,
@@ -206,7 +206,7 @@ public class AckTest extends QpidTestCase
     /**
      * Tests that in no-ack mode no messages are retained
      */
-    public void testNoAckMode() throws AMQException
+    public void testNoAckMode() throws Exception
     {
         // false arg means no acks expected
         _subscriptionTarget = ConsumerTarget_0_8.createNoAckTarget(_channel,
@@ -231,7 +231,7 @@ public class AckTest extends QpidTestCase
     /**
      * Tests that in no-ack mode no messages are retained
      */
-    public void testPersistentNoAckMode() throws AMQException
+    public void testPersistentNoAckMode() throws Exception
     {
         // false arg means no acks expected
 
@@ -255,7 +255,7 @@ public class AckTest extends QpidTestCase
      * Tests that a single acknowledgement is handled correctly (i.e multiple flag not
      * set case)
      */
-    public void testSingleAckReceivedTest() throws AMQException
+    public void testSingleAckReceivedTest() throws Exception
     {
 
         _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
@@ -292,7 +292,7 @@ public class AckTest extends QpidTestCase
      * Tests that a single acknowledgement is handled correctly (i.e multiple flag not
      * set case)
      */
-    public void testMultiAckReceivedTest() throws AMQException
+    public void testMultiAckReceivedTest() throws Exception
     {
 
         _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
@@ -326,7 +326,7 @@ public class AckTest extends QpidTestCase
     /**
      * Tests that a multiple acknowledgement is handled correctly. When ack'ing all pending msgs.
      */
-    public void testMultiAckAllReceivedTest() throws AMQException
+    public void testMultiAckAllReceivedTest() throws Exception
     {
 
         _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel,
