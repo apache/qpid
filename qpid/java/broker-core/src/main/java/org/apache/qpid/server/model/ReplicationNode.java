@@ -24,6 +24,37 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+@AmqpManagement(
+        attributes = {
+                ReplicationNode.ID,
+                ReplicationNode.NAME,
+                ReplicationNode.TYPE,
+                ReplicationNode.STATE,
+                ReplicationNode.DESIRED_STATE,
+                ReplicationNode.DURABLE,
+                ReplicationNode.LIFETIME_POLICY,
+                ReplicationNode.TIME_TO_LIVE,
+                ReplicationNode.CREATED,
+                ReplicationNode.UPDATED,
+                ReplicationNode.GROUP_NAME,
+                ReplicationNode.HOST_PORT,
+                ReplicationNode.HELPER_HOST_PORT,
+                ReplicationNode.DURABILITY,
+                ReplicationNode.COALESCING_SYNC,
+                ReplicationNode.DESIGNATED_PRIMARY,
+                ReplicationNode.PRIORITY,
+                ReplicationNode.QUORUM_OVERRIDE,
+                ReplicationNode.ROLE,
+                ReplicationNode.JOIN_TIME,
+                ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID,
+                ReplicationNode.PARAMETERS,
+                ReplicationNode.REPLICATION_PARAMETERS,
+                ReplicationNode.STORE_PATH
+            },
+        operations = {},
+        managesChildren = false
+)
+
 public interface ReplicationNode extends ConfiguredObject
 {
     String STATE                                = "state";
@@ -84,6 +115,7 @@ public interface ReplicationNode extends ConfiguredObject
                             NAME,
                             TYPE,
                             STATE,
+                            DESIRED_STATE,
                             DURABLE,
                             LIFETIME_POLICY,
                             TIME_TO_LIVE,

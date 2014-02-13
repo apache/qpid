@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import static org.apache.qpid.server.model.ReplicationNode.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -44,10 +39,6 @@ import org.apache.qpid.server.model.ReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.replication.ReplicationGroupListener;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
-import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNode;
-import org.apache.qpid.server.store.berkeleydb.replication.RemoteReplicationNodeFactory;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -83,7 +74,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
     private VirtualHost _virtualHost = mock(VirtualHost.class);
 
-    private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = new ReplicatedEnvironmentFacadeFactory.RemoteReplicationNodeFactoryImpl(_virtualHost);
+    private RemoteReplicationNodeFactory _remoteReplicationNodeFactory = new DefaultRemoteReplicationNodeFactory(_virtualHost);
 
     public void setUp() throws Exception
     {
@@ -577,9 +568,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         assertTrue("Node deleting is undetected by the environment facade", nodeRemovedLatch.await(WAIT_STATE_CHANGE_TIMEOUT, TimeUnit.SECONDS));
         assertEquals("Unexpected node is deleted", node, removedNodeRef.get());
-
-        //TODO: need a way to shut down the remote environment when the corresponding remote node is deleted.
-        // It is unclear whether it is possible
     }
 
     public void testCloseStateTransitions() throws Exception
@@ -616,8 +604,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private ReplicatedEnvironmentFacade addNode(String nodeName, String nodeHostPort, boolean designatedPrimary,
             State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
-        LocalReplicationNode node = createReplicationNodeMock(nodeName, nodeHostPort, designatedPrimary);
-        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(node, _remoteReplicationNodeFactory);
+        ReplicatedEnvironmentConfiguration config = createReplicatedEnvironmentConfiguration(nodeName, nodeHostPort, designatedPrimary);
+        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config, _remoteReplicationNodeFactory);
         ref.setReplicationGroupListener(replicationGroupListener);
         ref.setStateChangeListener(stateChangeListener);
         _nodes.put(nodeName, ref);
@@ -638,36 +626,24 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         return dbConfig;
     }
 
-    private LocalReplicationNode createReplicationNodeMock(String nodeName, String nodeHostPort, boolean designatedPrimary)
+    private ReplicatedEnvironmentConfiguration createReplicatedEnvironmentConfiguration(String nodeName, String nodeHostPort, boolean designatedPrimary)
     {
-        LocalReplicationNode node =  mock(LocalReplicationNode.class);
-        when(node.getAttribute(NAME)).thenReturn(nodeName);
+        ReplicatedEnvironmentConfiguration node = mock(ReplicatedEnvironmentConfiguration.class);
         when(node.getName()).thenReturn(nodeName);
-        when(node.getAttribute(HOST_PORT)).thenReturn(nodeHostPort);
-        when(node.getAttribute(DESIGNATED_PRIMARY)).thenReturn(designatedPrimary);
-        when(node.getAttribute(QUORUM_OVERRIDE)).thenReturn(TEST_ELECTABLE_GROUP_OVERRIDE);
-        when(node.getAttribute(PRIORITY)).thenReturn(TEST_PRIORITY);
-        when(node.getAttribute(GROUP_NAME)).thenReturn(TEST_GROUP_NAME);
-        when(node.getAttribute(HELPER_HOST_PORT)).thenReturn(TEST_NODE_HELPER_HOST_PORT);
-        when(node.getAttribute(DURABILITY)).thenReturn(TEST_DURABILITY);
-        when(node.getAttribute(COALESCING_SYNC)).thenReturn(TEST_COALESCING_SYNC);
-
-        // TODO REF contract with LRN is too complicated.
-        when(node.getActualAttribute(HOST_PORT)).thenReturn(nodeHostPort);
-        when(node.getActualAttribute(DESIGNATED_PRIMARY)).thenReturn(designatedPrimary);
-        when(node.getActualAttribute(QUORUM_OVERRIDE)).thenReturn(TEST_ELECTABLE_GROUP_OVERRIDE);
-        when(node.getActualAttribute(PRIORITY)).thenReturn(TEST_PRIORITY);
-        when(node.getActualAttribute(GROUP_NAME)).thenReturn(TEST_GROUP_NAME);
-        when(node.getActualAttribute(HELPER_HOST_PORT)).thenReturn(TEST_NODE_HELPER_HOST_PORT);
-        when(node.getActualAttribute(DURABILITY)).thenReturn(TEST_DURABILITY);
-        when(node.getActualAttribute(COALESCING_SYNC)).thenReturn(TEST_COALESCING_SYNC);
+        when(node.getHostPort()).thenReturn(nodeHostPort);
+        when(node.isDesignatedPrimary()).thenReturn(designatedPrimary);
+        when(node.getQuorumOverride()).thenReturn(TEST_ELECTABLE_GROUP_OVERRIDE);
+        when(node.getPriority()).thenReturn(TEST_PRIORITY);
+        when(node.getGroupName()).thenReturn(TEST_GROUP_NAME);
+        when(node.getHelperHostPort()).thenReturn(TEST_NODE_HELPER_HOST_PORT);
+        when(node.getDurability()).thenReturn(TEST_DURABILITY);
+        when(node.isCoalescingSync()).thenReturn(TEST_COALESCING_SYNC);
 
         Map<String, String> repConfig = new HashMap<String, String>();
         repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
         repConfig.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
-        when(node.getActualAttribute(REPLICATION_PARAMETERS)).thenReturn(repConfig);
-
-        when(node.getAttribute(STORE_PATH)).thenReturn(new File(_storePath, nodeName).getAbsolutePath());
+        when(node.getReplicationParameters()).thenReturn(repConfig);
+        when(node.getStorePath()).thenReturn(new File(_storePath, nodeName).getAbsolutePath());
         return node;
     }
 }

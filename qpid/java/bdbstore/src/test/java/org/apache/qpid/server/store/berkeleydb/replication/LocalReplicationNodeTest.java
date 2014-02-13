@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -33,7 +35,9 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -47,6 +51,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
     private VirtualHost _virtualHost;
     private TaskExecutor _taskExecutor;
     private ReplicatedEnvironmentFacade _facade;
+    private NodeReplicatedEnvironmentFacadeFactory _factory;
 
     @Override
     public void setUp() throws Exception
@@ -56,6 +61,8 @@ public class LocalReplicationNodeTest extends QpidTestCase
         when(_taskExecutor.isTaskExecutorThread()).thenReturn(true);
         _virtualHost = mock(VirtualHost.class);
         _facade = mock(ReplicatedEnvironmentFacade.class);
+        _factory = mock(NodeReplicatedEnvironmentFacadeFactory.class);
+        when(_factory.createReplicatedEnvironmentFacade(any(ReplicatedEnvironmentConfiguration.class), any(RemoteReplicationNodeFactory.class))).thenReturn(_facade);
     }
 
     @Override
@@ -68,7 +75,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
     {
         Map<String, Object> attributes = createValidAttributes();
 
-        LocalReplicationNode node = new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor);
+        LocalReplicationNode node = new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor, _factory);
 
         assertNodeAttributes(attributes, node);
 
@@ -89,7 +96,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
             incompleteAttributes.remove(name);
             try
             {
-                new LocalReplicationNode(_id, incompleteAttributes, _virtualHost, _taskExecutor);
+                new LocalReplicationNode(_id, incompleteAttributes, _virtualHost, _taskExecutor, _factory);
                 fail("Node creation should fails when attribute " + name + " is missed");
             }
             catch(IllegalConfigurationException e)
@@ -114,7 +121,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
                 invalidAttributes.put(name, INVALID_VALUE);
                 try
                 {
-                    new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor);
+                    new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor, _factory);
                     fail("Node creation should fails when attribute " + name + " is invalid");
                 }
                 catch(IllegalConfigurationException e)
@@ -132,14 +139,31 @@ public class LocalReplicationNodeTest extends QpidTestCase
         attributes.put(ReplicationNode.COALESCING_SYNC, false);
         attributes.put(ReplicationNode.DESIGNATED_PRIMARY, true);
 
-        LocalReplicationNode node = new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor);
+        LocalReplicationNode node = new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor, _factory);
 
         assertNodeAttributes(attributes, node);
     }
 
+    public void testCreateLocalReplicationNodeWithCoalescingSyncAndSyncDurabilityPolicyThrowsException()
+    {
+        Map<String, Object> attributes = createValidAttributes();
+        attributes.put(ReplicationNode.DURABILITY, "SYNC,SYNC,NONE");
+        attributes.put(ReplicationNode.COALESCING_SYNC, true);
+
+        try
+        {
+            new LocalReplicationNode(_id, attributes, _virtualHost, _taskExecutor, _factory);
+            fail("Exception is expected");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            // pass
+        }
+    }
+
     public void testGetValuesFromReplicatedEnvironmentFacade()
     {
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
 
         assertNull("Unexpected role attribute", node.getAttribute(ReplicationNode.ROLE));
         assertNull("Unexpected join time attribute", node.getAttribute(ReplicationNode.JOIN_TIME));
@@ -162,7 +186,7 @@ public class LocalReplicationNodeTest extends QpidTestCase
         when(_facade.getPriority()).thenReturn(priority);
         when(_facade.getElectableGroupSizeOverride()).thenReturn(quorumOverride);
 
-        node.setReplicatedEnvironmentFacade(_facade);
+        node.attainDesiredState();
         assertEquals("Unexpected role attribute", masterState, node.getAttribute(ReplicationNode.ROLE));
         assertEquals("Unexpected join time attribute", joinTime, node.getAttribute(ReplicationNode.JOIN_TIME));
         assertEquals("Unexpected last transaction id attribute", lastKnowTransactionId, node.getAttribute(ReplicationNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID));
@@ -172,8 +196,8 @@ public class LocalReplicationNodeTest extends QpidTestCase
 
     public void testSetDesignatedPrimary() throws Exception
     {
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
-        node.setReplicatedEnvironmentFacade(_facade);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
 
         node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.DESIGNATED_PRIMARY, true));
 
@@ -185,8 +209,8 @@ public class LocalReplicationNodeTest extends QpidTestCase
 
     public void testSetPriority() throws Exception
     {
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
-        node.setReplicatedEnvironmentFacade(_facade);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
         node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.PRIORITY, 100));
 
         verify(_facade).setPriority(100);
@@ -194,8 +218,8 @@ public class LocalReplicationNodeTest extends QpidTestCase
 
     public void testSetQuorumOverride() throws Exception
     {
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
-        node.setReplicatedEnvironmentFacade(_facade);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
 
         node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.QUORUM_OVERRIDE, 10));
 
@@ -206,8 +230,8 @@ public class LocalReplicationNodeTest extends QpidTestCase
     {
         when(_facade.getNodeState()).thenReturn(ReplicatedEnvironment.State.REPLICA.name());
 
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
-        node.setReplicatedEnvironmentFacade(_facade);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
 
         node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.ROLE, ReplicatedEnvironment.State.MASTER.name()));
 
@@ -218,8 +242,8 @@ public class LocalReplicationNodeTest extends QpidTestCase
     {
         when(_facade.getNodeState()).thenReturn(ReplicatedEnvironment.State.REPLICA.name());
 
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
-        node.setReplicatedEnvironmentFacade(_facade);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
 
         try
         {
@@ -236,8 +260,8 @@ public class LocalReplicationNodeTest extends QpidTestCase
     {
         when(_facade.getNodeState()).thenReturn(ReplicatedEnvironment.State.MASTER.name());
 
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
-        node.setReplicatedEnvironmentFacade(_facade);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
 
         try
         {
@@ -271,9 +295,149 @@ public class LocalReplicationNodeTest extends QpidTestCase
         }
     }
 
+    public void testSetDesiredStateToActive()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        assertEquals("Unexpected state", State.INITIALISING, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.INITIALISING, State.ACTIVE);
+        assertEquals("Unexpected state", State.ACTIVE, node.getAttribute(ReplicationNode.STATE));
+        verify(_factory).createReplicatedEnvironmentFacade(any(ReplicatedEnvironmentConfiguration.class), any(RemoteReplicationNodeFactory.class));
+    }
+
+    public void testSetDesiredStateToStopped()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        assertEquals("Unexpected state", State.INITIALISING, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.INITIALISING, State.ACTIVE);
+        assertEquals("Unexpected state", State.ACTIVE, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.ACTIVE, State.STOPPED);
+        assertEquals("Unexpected state", State.STOPPED, node.getAttribute(ReplicationNode.STATE));
+        verify(_facade).close();
+    }
+
+    public void testSetDesiredStateFromInitialisingToDeleted()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        assertEquals("Unexpected state", State.INITIALISING, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.INITIALISING, State.DELETED);
+        assertEquals("Unexpected state", State.DELETED, node.getAttribute(ReplicationNode.STATE));
+        verifyNoMoreInteractions(_factory);
+        verifyNoMoreInteractions(_facade);
+    }
+
+    public void testSetDesiredStateFromStoppedToDeleted()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        assertEquals("Unexpected state", State.INITIALISING, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.INITIALISING, State.ACTIVE);
+        assertEquals("Unexpected state", State.ACTIVE, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.ACTIVE, State.STOPPED);
+        assertEquals("Unexpected state", State.STOPPED, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.STOPPED, State.DELETED);
+        assertEquals("Unexpected state", State.DELETED, node.getAttribute(ReplicationNode.STATE));
+    }
+
+    public void testSetDesiredStateFromActiveToDeleted()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        assertEquals("Unexpected state", State.INITIALISING, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.INITIALISING, State.ACTIVE);
+        assertEquals("Unexpected state", State.ACTIVE, node.getAttribute(ReplicationNode.STATE));
+        node.setDesiredState(State.ACTIVE, State.DELETED);
+        assertEquals("Unexpected state", State.DELETED, node.getAttribute(ReplicationNode.STATE));
+        verify(_facade).close();
+    }
+
+    public void testSetDesiredStateToQuiescedIsUnsupported()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        try
+        {
+            node.setDesiredState(State.INITIALISING, State.QUIESCED);
+            fail("Exception is not thrown");
+        }
+        catch(IllegalStateTransitionException e)
+        {
+            // pass
+        }
+    }
+
+    public void testSetDesiredStateToUnavailableIsUnsupported()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        try
+        {
+            node.setDesiredState(State.INITIALISING, State.UNAVAILABLE);
+            fail("Exception is not thrown");
+        }
+        catch(IllegalStateTransitionException e)
+        {
+            // pass
+        }
+    }
+
+    public void testSetDesiredStateToErroredIsUnsupported()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        try
+        {
+            node.setDesiredState(State.INITIALISING, State.ERRORED);
+            fail("Exception is not thrown");
+        }
+        catch(IllegalStateTransitionException e)
+        {
+            // pass
+        }
+    }
+
+    public void testSetDesiredStateToInitialisingIsUnsupported()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
+        try
+        {
+            node.setDesiredState(State.ACTIVE, State.INITIALISING);
+            fail("Exception is not thrown");
+        }
+        catch(IllegalStateTransitionException e)
+        {
+            // pass
+        }
+    }
+
+    public void testSetAttributesDesiredStateToStopped()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
+
+        assertEquals("Unexpected state", State.ACTIVE, node.getAttribute(ReplicationNode.STATE));
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.DESIRED_STATE, State.STOPPED));
+        assertEquals("Unexpected state", State.STOPPED, node.getAttribute(ReplicationNode.STATE));
+    }
+
+    public void testSetAttributesDesiredStateFromInitialisingToActive()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        assertEquals("Unexpected state", State.INITIALISING, node.getAttribute(ReplicationNode.STATE));
+
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.DESIRED_STATE, State.ACTIVE));
+        assertEquals("Unexpected state", State.ACTIVE, node.getAttribute(ReplicationNode.STATE));
+    }
+
+    public void testSetAttributesDesiredStateFromStoppedToActive()
+    {
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
+        node.attainDesiredState();
+        node.setDesiredState(State.ACTIVE, State.STOPPED);
+
+        assertEquals("Unexpected state", State.STOPPED, node.getAttribute(ReplicationNode.STATE));
+        node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.DESIRED_STATE, State.ACTIVE));
+        assertEquals("Unexpected state", State.ACTIVE, node.getAttribute(ReplicationNode.STATE));
+    }
+
     private void assertSetAttributesThrowsException(String attributeName, Object attributeValue)
     {
-        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor);
+        LocalReplicationNode node = new LocalReplicationNode(_id, createValidAttributes(), _virtualHost, _taskExecutor, _factory);
 
         try
         {

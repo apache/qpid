@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import static org.apache.qpid.server.model.VirtualHost.ID;
-
 import java.io.File;
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
@@ -53,6 +51,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
@@ -91,7 +90,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostListener;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
 
-public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener, ReplicationGroupListener, VirtualHostAttributeRecoveryListener
+public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener, ReplicationGroupListener, VirtualHostAttributeRecoveryListener, ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
 
@@ -1414,19 +1413,21 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @Override
     public void onReplicationNodeRecovered(ReplicationNode node)
     {
-        //TODO: should we be adding ConfigurationChangeListener to node?
+        node.addChangeListener(this);
         _replicationNodes.add(node);
     }
 
     @Override
     public void onReplicationNodeAddedToGroup(ReplicationNode node)
     {
+        node.addChangeListener(this);
         _replicationNodes.add(node);
     }
 
     @Override
     public void onReplicationNodeRemovedFromGroup(ReplicationNode node)
     {
+        node.removeChangeListener(this);
         _replicationNodes.remove(node);
     }
 
@@ -1468,11 +1469,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 throw new IllegalStateException("Replication node cannot be created because virtual host already contains replication node");
             }
             node = factory.createInstance(UUIDGenerator.generateReplicationNodeId(groupName, nodeName), attributes, this);
-            node.attainDesiredState();
-
+            node.addChangeListener(this);
             _replicationNodes.add(node);
         }
-        //TODO: make VirtualHost a ConfigurationChangeListener and add it to node to listen for delete events
         return node;
     }
 
@@ -1496,6 +1495,46 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     public void attributesRecovered(Map<String, Object> attributes)
     {
         changeAttributes(attributes);
+    }
+
+    @Override
+    public void stateChanged(ConfiguredObject object, State oldState, State newState)
+    {
+        if (object instanceof ReplicationNode)
+        {
+            ReplicationNode node = (ReplicationNode)object;
+            if (newState == State.DELETED)
+            {
+                node.removeChangeListener(this);
+                if (node.isLocal())
+                {
+                    setDesiredState(getActualState(), State.DELETED);
+                }
+                else
+                {
+                    _replicationNodes.remove(node);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void childAdded(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no-op
+    }
+
+    @Override
+    public void childRemoved(ConfiguredObject object, ConfiguredObject child)
+    {
+        // no-op
+    }
+
+    @Override
+    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue,
+            Object newAttributeValue)
+    {
+        // no-op
     }
 
 }

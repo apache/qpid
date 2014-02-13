@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.ReplicationNode;
@@ -133,6 +134,23 @@ public class ReplicationNodeRestTest extends QpidRestTestCase
         assertEquals("Update with unchanged attribute should succeed", 200, responseCode);
     }
 
+    public void testLocalNodeDeletionCausesVirtualHostDeletion() throws Exception
+    {
+        int responseCode = getRestTestHelper().submitRequest(_hostRestUrl, "PUT", Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.ACTIVE));
+        assertEquals("Unexpected response code for virtual host update status", 200, responseCode);
+
+        waitForVirtualHostActivation();
+
+        responseCode = getRestTestHelper().submitRequest(_nodeRestUrl, "PUT", Collections.<String, Object>singletonMap(ReplicationNode.DESIRED_STATE, State.DELETED));
+        assertEquals("Deletion should succeed", 200, responseCode);
+
+        List<Map<String, Object>> nodeAttributes = getRestTestHelper().getJsonAsList(_nodeRestUrl);
+        assertTrue("Node has not been deleted", nodeAttributes.isEmpty());
+
+        List<Map<String, Object>> hostAttributes = getRestTestHelper().getJsonAsList(_hostRestUrl);
+        assertTrue("Virtual host has not been deleted", hostAttributes.isEmpty());
+    }
+
     private void assertReplicationNodeSetAttribute(String attributeName, Object initialValue,
             Object newValueBeforeHostActivation, Object newValueAfterHostActivation) throws Exception
     {
@@ -165,5 +183,21 @@ public class ReplicationNodeRestTest extends QpidRestTestCase
             nodeAttributes = getRestTestHelper().getJsonAsSingletonList(_nodeRestUrl);
         }
         assertEquals("Unexpected attribute " + attributeName, newValue, nodeAttributes.get(attributeName));
+    }
+
+    private Map<String, Object> waitForVirtualHostActivation() throws Exception
+    {
+        Map<String, Object> hostDetails = null;
+        long startTime = System.currentTimeMillis();
+        boolean isActive = false;
+        do
+        {
+            hostDetails = getRestTestHelper().getJsonAsSingletonList(_hostRestUrl);
+            isActive = hostDetails.get(VirtualHost.STATE).equals(State.ACTIVE.name());
+            Thread.sleep(100l);
+        }
+        while(!isActive && System.currentTimeMillis() - startTime < 5000 );
+        assertTrue("Unexpected virtual host state:" + hostDetails.get(VirtualHost.STATE), isActive);
+        return hostDetails;
     }
 }

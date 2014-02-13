@@ -35,6 +35,7 @@ import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.berkeleydb.replication.LocalReplicationNode;
+import org.apache.qpid.server.store.berkeleydb.replication.NodeReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -153,7 +154,7 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
 
         Broker broker = virtualHost.getParent(Broker.class);
         UUID uuid = UUIDGenerator.generateReplicationNodeId(groupName, nodeName);
-        return new LocalReplicationNode(uuid, attributes, virtualHost, broker.getTaskExecutor());
+        return new LocalReplicationNode(uuid, attributes, virtualHost, broker.getTaskExecutor(), new NodeReplicatedEnvironmentFacadeFactory());
     }
 
 }

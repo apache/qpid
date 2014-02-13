@@ -48,7 +48,7 @@ public class LocalReplicationNodeFactory implements ReplicationNodeFactory
         {
             throw new IllegalStateException("Cannot find the broker among virtual host parents");
         }
-        return new LocalReplicationNode(id, attributes, virtualHost, broker.getTaskExecutor());
+        return new LocalReplicationNode(id, attributes, virtualHost, broker.getTaskExecutor(), new NodeReplicatedEnvironmentFacadeFactory());
     }
 
 }

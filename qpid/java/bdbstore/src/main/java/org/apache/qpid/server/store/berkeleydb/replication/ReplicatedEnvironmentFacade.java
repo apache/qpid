@@ -20,18 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import static org.apache.qpid.server.model.ReplicationNode.COALESCING_SYNC;
-import static org.apache.qpid.server.model.ReplicationNode.DESIGNATED_PRIMARY;
-import static org.apache.qpid.server.model.ReplicationNode.DURABILITY;
-import static org.apache.qpid.server.model.ReplicationNode.GROUP_NAME;
-import static org.apache.qpid.server.model.ReplicationNode.HELPER_HOST_PORT;
-import static org.apache.qpid.server.model.ReplicationNode.HOST_PORT;
-import static org.apache.qpid.server.model.ReplicationNode.PARAMETERS;
-import static org.apache.qpid.server.model.ReplicationNode.PRIORITY;
-import static org.apache.qpid.server.model.ReplicationNode.QUORUM_OVERRIDE;
-import static org.apache.qpid.server.model.ReplicationNode.REPLICATION_PARAMETERS;
-import static org.apache.qpid.server.model.ReplicationNode.STORE_PATH;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -94,18 +82,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 {
     public static final String GROUP_CHECK_INTERVAL_PROPERTY_NAME = "qpid.bdb.ha.group_check_interval";
     public static final String MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.master_transfer_interval";
+    public static final String DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.db_ping_socket_timeout";
 
     private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
+
     private static final long DEFAULT_GROUP_CHECK_INTERVAL = 1000l;
-    private static final long GROUP_CHECK_INTERVAL = Long.getLong(GROUP_CHECK_INTERVAL_PROPERTY_NAME, DEFAULT_GROUP_CHECK_INTERVAL);
-
     private static final int DEFAULT_MASTER_TRANSFER_TIMEOUT = 1000 * 60;
-
-    public static final int MASTER_TRANSFER_TIMEOUT = Integer.getInteger(MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME, DEFAULT_MASTER_TRANSFER_TIMEOUT);
-
-    public static final String DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.db_ping_socket_timeout";
     private static final int DEFAULT_DB_PING_SOCKET_TIMEOUT = 1000;
 
+    private static final long GROUP_CHECK_INTERVAL = Long.getLong(GROUP_CHECK_INTERVAL_PROPERTY_NAME, DEFAULT_GROUP_CHECK_INTERVAL);
+    private static final int MASTER_TRANSFER_TIMEOUT = Integer.getInteger(MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME, DEFAULT_MASTER_TRANSFER_TIMEOUT);
     private static final int DB_PING_SOCKET_TIMEOUT = Integer.getInteger(DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, DEFAULT_DB_PING_SOCKET_TIMEOUT);
 
     @SuppressWarnings("serial")
@@ -147,8 +133,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public static final String TYPE = "BDB-HA";
 
-
-    private final LocalReplicationNode _replicationNode;
+    private final ReplicatedEnvironmentConfiguration _configuration;
     private final Durability _durability;
     private final Boolean _coalescingSync;
     private final String _prettyGroupNodeName;
@@ -164,11 +149,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
 
     private volatile ReplicatedEnvironment _environment;
-    private long _joinTime;
+    private volatile long _joinTime;
 
-    public ReplicatedEnvironmentFacade(LocalReplicationNode replicationNode, RemoteReplicationNodeFactory remoteReplicationNodeFactory)
+    public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration, RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
-        _environmentDirectory = new File((String)replicationNode.getAttribute(STORE_PATH));
+        _environmentDirectory = new File(configuration.getStorePath());
         if (!_environmentDirectory.exists())
         {
             if (!_environmentDirectory.mkdirs())
@@ -178,11 +163,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
         }
 
-        _replicationNode = replicationNode;
+        _configuration = configuration;
 
-        _durability = Durability.parse((String)_replicationNode.getAttribute(DURABILITY));
-        _coalescingSync = (Boolean)_replicationNode.getAttribute(COALESCING_SYNC);
-        _prettyGroupNodeName = (String)_replicationNode.getAttribute(GROUP_NAME) + ":" + _replicationNode.getName();
+        _durability = Durability.parse(_configuration.getDurability());
+        _coalescingSync = _configuration.isCoalescingSync();
+        _prettyGroupNodeName = _configuration.getGroupName() + ":" + _configuration.getName();
 
         // we relay on this executor being single-threaded as we need to restart and mutate the environment in one thread
         _environmentJobExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Environment-" + _prettyGroupNodeName));
@@ -404,22 +389,22 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public String getGroupName()
     {
-        return (String)_replicationNode.getAttribute(GROUP_NAME);
+        return (String)_configuration.getGroupName();
     }
 
     public String getNodeName()
     {
-        return _replicationNode.getName();
+        return _configuration.getName();
     }
 
     public String getHostPort()
     {
-        return (String)_replicationNode.getAttribute(HOST_PORT);
+        return (String)_configuration.getHostPort();
     }
 
     public String getHelperHostPort()
     {
-        return (String)_replicationNode.getAttribute(HELPER_HOST_PORT);
+        return (String)_configuration.getHelperHostPort();
     }
 
     public String getDurability()
@@ -466,7 +451,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         });
     }
 
-    private void setDesignatedPrimaryInternal(final boolean isPrimary)
+    void setDesignatedPrimaryInternal(final boolean isPrimary)
     {
         try
         {
@@ -509,7 +494,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         });
     }
 
-    private void setPriorityInternal(int priority)
+    void setPriorityInternal(int priority)
     {
         try
         {
@@ -552,7 +537,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         });
     }
 
-    private void setElectableGroupSizeOverrideInternal(int electableGroupOverride)
+    void setElectableGroupSizeOverrideInternal(int electableGroupOverride)
     {
         try
         {
@@ -691,11 +676,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
         //TODO: refactor this into a method on LocalReplicationNode
-        String hostPort = (String)_replicationNode.getAttribute(org.apache.qpid.server.model.ReplicationNode.HOST_PORT);
+        String hostPort = _configuration.getHostPort();
         String[] tokens = hostPort.split(":");
         helpers.add(new InetSocketAddress(tokens[0], Integer.parseInt(tokens[1])));
 
-        return new ReplicationGroupAdmin((String)_replicationNode.getAttribute(GROUP_NAME), helpers);
+        return new ReplicationGroupAdmin(_configuration.getGroupName(), helpers);
     }
 
     private void closeEnvironment()
@@ -798,24 +783,23 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    @SuppressWarnings("unchecked")
     private ReplicatedEnvironment createEnvironment(boolean createEnvironmentInSeparateThread)
     {
-        String groupName = (String)_replicationNode.getActualAttribute(GROUP_NAME);
-        String helperHostPort = (String)_replicationNode.getActualAttribute(HELPER_HOST_PORT);
-        String hostPort = (String)_replicationNode.getActualAttribute(HOST_PORT);
-        Map<String, String> environmentParameters = (Map<String, String>)_replicationNode.getActualAttribute(PARAMETERS);
-        Map<String, String> replicationEnvironmentParameters = (Map<String, String>)_replicationNode.getActualAttribute(REPLICATION_PARAMETERS);
-        Boolean designatedPrimary = (Boolean)_replicationNode.getActualAttribute(DESIGNATED_PRIMARY);
-        Integer priority = (Integer)_replicationNode.getActualAttribute(PRIORITY);
-        Integer quorumOverride = (Integer)_replicationNode.getActualAttribute(QUORUM_OVERRIDE);
+        String groupName = _configuration.getGroupName();
+        String helperHostPort = _configuration.getHelperHostPort();
+        String hostPort = _configuration.getHostPort();
+        Map<String, String> environmentParameters = _configuration.getParameters();
+        Map<String, String> replicationEnvironmentParameters = _configuration.getReplicationParameters();
+        boolean designatedPrimary = _configuration.isDesignatedPrimary();
+        int priority = _configuration.getPriority();
+        int quorumOverride = _configuration.getQuorumOverride();
 
         if (LOGGER.isInfoEnabled())
         {
             LOGGER.info("Creating environment");
             LOGGER.info("Environment path " + _environmentDirectory.getAbsolutePath());
             LOGGER.info("Group name " + groupName);
-            LOGGER.info("Node name " + _replicationNode.getName());
+            LOGGER.info("Node name " + _configuration.getName());
             LOGGER.info("Node host port " + hostPort);
             LOGGER.info("Helper host port " + helperHostPort);
             LOGGER.info("Durability " + _durability);
@@ -836,7 +820,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             environmentSettings.putAll(environmentParameters);
         }
 
-        ReplicationConfig replicationConfig = new ReplicationConfig(groupName, _replicationNode.getName(), hostPort);
+        ReplicationConfig replicationConfig = new ReplicationConfig(groupName, _configuration.getName(), hostPort);
         replicationConfig.setHelperHosts(helperHostPort);
         replicationConfig.setDesignatedPrimary(designatedPrimary);
         replicationConfig.setNodePriority(priority);
@@ -953,7 +937,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             throw new IllegalArgumentException("Node cannot be null");
         }
-        return new DbPing(repNode, (String)_replicationNode.getAttribute(GROUP_NAME), DB_PING_SOCKET_TIMEOUT).getNodeState();
+        return new DbPing(repNode, (String)_configuration.getGroupName(), DB_PING_SOCKET_TIMEOUT).getNodeState();
     }
 
     // For testing only
@@ -967,7 +951,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         @Override
         public void run()
         {
-            String groupName = (String)_replicationNode.getAttribute(GROUP_NAME);
+            String groupName = _configuration.getGroupName();
             if (LOGGER.isDebugEnabled())
             {
                 LOGGER.debug("Checking for changes in the group " + groupName);
@@ -1066,11 +1050,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     }
                     catch (ExecutionException e)
                     {
-                        LOGGER.warn("Cannot update node state for group " + (String)_replicationNode.getAttribute(GROUP_NAME), e.getCause());
+                        LOGGER.warn("Cannot update node state for group " + _configuration.getGroupName(), e.getCause());
                     }
                     catch (TimeoutException e)
                     {
-                        LOGGER.warn("Timeout whilst updating node state for group " + (String)_replicationNode.getAttribute(GROUP_NAME));
+                        LOGGER.warn("Timeout whilst updating node state for group " + _configuration.getGroupName());
                         future.cancel(true);
                     }
                 }

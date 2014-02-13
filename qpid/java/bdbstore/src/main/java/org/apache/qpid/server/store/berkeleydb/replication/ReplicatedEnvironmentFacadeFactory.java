@@ -22,16 +22,12 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.util.Collection;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.ReplicationNode;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
 
-import com.sleepycat.je.Durability;
-import com.sleepycat.je.Durability.SyncPolicy;
-
-//TODO: Should LocalReplicationNode implement EnvironmentFacadeFactory instead of having this class?
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
 
@@ -41,49 +37,24 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
         Collection<ReplicationNode> replicationNodes = virtualHost.getChildren(ReplicationNode.class);
         if (replicationNodes == null || replicationNodes.size() != 1)
         {
-            throw new IllegalStateException("Expected exactly one replication node but got " + (replicationNodes==null ? 0 :replicationNodes.size()) + " nodes");
+            throw new IllegalStateException("Expected exactly one replication node but got "
+                    + (replicationNodes == null ? 0 : replicationNodes.size()) + " nodes");
         }
         ReplicationNode localNode = replicationNodes.iterator().next();
         if (!(localNode instanceof LocalReplicationNode))
         {
             throw new IllegalStateException("Cannot find local replication node among virtual host nodes");
         }
-        LocalReplicationNode localReplicationNode = (LocalReplicationNode)localNode;
+        LocalReplicationNode localReplicationNode = (LocalReplicationNode) localNode;
+        localReplicationNode.attainDesiredState();
 
-        String durability = (String)localNode.getAttribute(ReplicationNode.DURABILITY);
-        Boolean coalescingSync = (Boolean)localNode.getAttribute(ReplicationNode.COALESCING_SYNC);
-
-        if (coalescingSync && Durability.parse(durability).getLocalSync() == SyncPolicy.SYNC)
+        if (localReplicationNode.getActualState() == State.ACTIVE)
         {
-            throw new IllegalConfigurationException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
-                    + "! Please set highAvailability.coalescingSync to false in store configuration.");
+            return localReplicationNode.getReplicatedEnvironmentFacade();
         }
 
-        ReplicatedEnvironmentFacade facade =  new ReplicatedEnvironmentFacade(localReplicationNode, new RemoteReplicationNodeFactoryImpl(virtualHost));
-        localReplicationNode.setReplicatedEnvironmentFacade(facade);
-        return facade;
-    }
+        throw new IllegalStateException("Cannot create environment facade as the replication node is not in the right state");
 
-    static class RemoteReplicationNodeFactoryImpl implements RemoteReplicationNodeFactory
-    {
-        private VirtualHost _virtualHost;
-
-        public RemoteReplicationNodeFactoryImpl(VirtualHost virtualHost)
-        {
-            _virtualHost = virtualHost;
-        }
-
-        @Override
-        public RemoteReplicationNode create(com.sleepycat.je.rep.ReplicationNode replicationNode, ReplicatedEnvironmentFacade environmentFacade)
-        {
-            return new RemoteReplicationNode(replicationNode, _virtualHost, _virtualHost.getTaskExecutor(), environmentFacade);
-        }
-
-        @Override
-        public long getRemoteNodeMonitorInterval()
-        {
-            return (Long)_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_INTERVAL);
-        }
     }
 
     @Override
