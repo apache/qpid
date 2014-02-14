@@ -186,7 +186,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
 
     @Override
-    public void create(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
+    public void create(UUID id, String type, Map<String, Object> attributes) throws StoreException
     {
         doPreDelay("create");
         _durableConfigurationStore.create(id, type, attributes);
@@ -194,7 +194,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void remove(UUID id, String type) throws AMQStoreException
+    public void remove(UUID id, String type) throws StoreException
     {
         doPreDelay("remove");
         _durableConfigurationStore.remove(id, type);
@@ -202,7 +202,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
     {
         doPreDelay("remove");
         UUID[] removed = _durableConfigurationStore.removeConfiguredObjects(objects);
@@ -211,7 +211,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
+    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
     {
         doPreDelay("update");
         _durableConfigurationStore.update(id, type, attributes);
@@ -219,7 +219,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(ConfiguredObjectRecord... records) throws StoreException
     {
         doPreDelay("update");
         _durableConfigurationStore.update(records);
@@ -227,7 +227,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         doPreDelay("update");
         _durableConfigurationStore.update(createIfNecessary, records);

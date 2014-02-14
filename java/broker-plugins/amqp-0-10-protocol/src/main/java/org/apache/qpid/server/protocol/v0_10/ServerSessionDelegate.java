@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.store.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.HeadersExchange;
@@ -558,9 +558,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
         }
-        catch(AMQStoreException e)
+        catch(StoreException e)
         {
             exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+            throw e;
         }
     }
 
@@ -626,9 +627,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
         }
-        catch(AMQStoreException e)
+        catch(StoreException e)
         {
             exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+            throw e;
         }
     }
 
@@ -667,9 +669,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_STATE, e.getMessage());
         }
-        catch(AMQStoreException e)
+        catch(StoreException e)
         {
             exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, e.getMessage());
+            throw e;
         }
     }
 

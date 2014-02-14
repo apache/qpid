@@ -37,7 +37,7 @@ import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.store.StoreException;
 
 public class StoreConfigurationChangeListener implements ConfigurationChangeListener
 {
@@ -149,7 +149,7 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
 
         if (interfaces.size() == 0)
         {
-            throw new ServerScopedRuntimeException("Can not identify the configured object type");
+            throw new StoreException("Can not identify the configured object type");
         }
 
         if (interfaces.size() == 1)
@@ -186,7 +186,7 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
         }
         else
         {
-            throw new ServerScopedRuntimeException("Can not identify the configured object type as an it implements"
+            throw new StoreException("Can not identify the configured object type as an it implements"
                     + " more than one configured object interfaces: " + interfaces);
         }
 

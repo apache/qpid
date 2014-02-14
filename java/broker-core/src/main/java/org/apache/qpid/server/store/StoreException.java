@@ -20,28 +20,22 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
-/**
- * StoreException is a specific type of internal error relating to errors in the message store, such as {@link java.sql.SQLException}.
- */
-public class AMQStoreException extends Exception
+public class StoreException extends ServerScopedRuntimeException
 {
-    /** serialVersionUID */
-    private static final long serialVersionUID = 2859681947490637496L;
-
-    /**
-     * Creates an exception with an optional message and optional underlying cause.
-     *
-     * @param msg The exception message. May be null if not to be set.
-     * @param cause The underlying cause of the exception. May be null if not to be set.
-     */
-    public AMQStoreException(String msg, Throwable cause)
+    public StoreException(final String message)
     {
-        super(((msg == null) ? "Store error" : msg), cause);
+        super(message);
     }
-    
-    public AMQStoreException(String msg) 
+
+    public StoreException(final String message, final Throwable cause)
     {
-        this(msg, null);
+        super(message, cause);
+    }
+
+    public StoreException(final Throwable cause)
+    {
+        super(cause);
     }
 }

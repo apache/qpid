@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.qpid.server.store.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.transport.Xid;
 
@@ -117,7 +117,7 @@ public class DtxRegistry
     }
 
     public synchronized void commit(Xid id, boolean onePhase)
-            throws IncorrectDtxStateException, UnknownDtxBranchException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+            throws IncorrectDtxStateException, UnknownDtxBranchException, StoreException, RollbackOnlyDtxException, TimeoutDtxException
     {
         DtxBranch branch = getBranch(id);
         if(branch != null)
@@ -164,7 +164,7 @@ public class DtxRegistry
 
     public synchronized void prepare(Xid id)
             throws UnknownDtxBranchException,
-            IncorrectDtxStateException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+            IncorrectDtxStateException, StoreException, RollbackOnlyDtxException, TimeoutDtxException
     {
         DtxBranch branch = getBranch(id);
         if(branch != null)
@@ -207,7 +207,7 @@ public class DtxRegistry
     public synchronized void rollback(Xid id)
             throws IncorrectDtxStateException,
             UnknownDtxBranchException,
-            AMQStoreException, TimeoutDtxException
+            StoreException, TimeoutDtxException
     {
 
         DtxBranch branch = getBranch(id);

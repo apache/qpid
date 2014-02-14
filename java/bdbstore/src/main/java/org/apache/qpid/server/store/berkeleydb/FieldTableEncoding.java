@@ -25,7 +25,7 @@ import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.je.DatabaseException;
 
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.store.StoreException;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -56,7 +56,7 @@ public class FieldTableEncoding
             }
             catch (IOException e)
             {
-                throw new ServerScopedRuntimeException(e);
+                throw new StoreException(e);
             }
 
         }

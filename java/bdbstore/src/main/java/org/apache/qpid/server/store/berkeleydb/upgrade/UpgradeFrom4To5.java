@@ -40,6 +40,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
@@ -54,7 +55,6 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class UpgradeFrom4To5 extends AbstractStoreUpgrade
 {
@@ -254,7 +254,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
                         }
                         else
                         {
-                            throw new ServerScopedRuntimeException("Unable is aborted!");
+                            throw new StoreException("Unable is aborted!");
                         }
                     }
                 }

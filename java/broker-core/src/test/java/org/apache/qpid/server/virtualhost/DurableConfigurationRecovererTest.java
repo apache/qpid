@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.apache.qpid.server.store.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
@@ -404,7 +404,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         assertEquals(customExchange, _vhost.getQueue(queueId).getAlternateExchange());
     }
 
-    private void verifyCorrectUpdates(final ConfiguredObjectRecord[] expected) throws AMQStoreException
+    private void verifyCorrectUpdates(final ConfiguredObjectRecord[] expected) throws StoreException
     {
         doAnswer(new Answer()
         {

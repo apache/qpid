@@ -38,7 +38,6 @@ import java.util.UUID;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -75,7 +74,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         Object storePathAttr = virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
         if(!(storePathAttr instanceof String))
         {
-            throw new ServerScopedRuntimeException("Cannot determine path for configuration storage");
+            throw new StoreException("Cannot determine path for configuration storage");
         }
         _directoryName = (String) storePathAttr;
         _configFileName = _name + ".json";
@@ -94,7 +93,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 }
                 catch (IOException e)
                 {
-                    throw new ServerScopedRuntimeException("Could not write configuration file " + newFile, e);
+                    throw new StoreException("Could not write configuration file " + newFile, e);
                 }
             }
             else
@@ -126,14 +125,14 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             if(!toFile.delete())
             {
-                throw new ServerScopedRuntimeException("Cannot delete file " + toFile.getAbsolutePath());
+                throw new StoreException("Cannot delete file " + toFile.getAbsolutePath());
             }
         }
         File fromFile = new File(_directoryName, fromFileName);
 
         if(!fromFile.renameTo(toFile))
         {
-            throw new ServerScopedRuntimeException("Cannot rename file " + fromFile.getAbsolutePath() + " to " + toFile.getAbsolutePath());
+            throw new StoreException("Cannot rename file " + fromFile.getAbsolutePath() + " to " + toFile.getAbsolutePath());
         }
     }
 
@@ -158,7 +157,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
         catch (IOException ioe)
         {
-            throw new ServerScopedRuntimeException("Cannot create the lock file " + lockFile.getName(), ioe);
+            throw new StoreException("Cannot create the lock file " + lockFile.getName(), ioe);
         }
         catch(OverlappingFileLockException e)
         {
@@ -167,7 +166,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
         if(_fileLock == null)
         {
-            throw new ServerScopedRuntimeException("Cannot get lock on file " + lockFile.getAbsolutePath() + ". Is another instance running?");
+            throw new StoreException("Cannot get lock on file " + lockFile.getAbsolutePath() + ". Is another instance running?");
         }
     }
 
@@ -180,18 +179,18 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             {
                 if(!dir.canWrite())
                 {
-                    throw new ServerScopedRuntimeException("Configuration path " + directoryName + " exists, but is not writable");
+                    throw new StoreException("Configuration path " + directoryName + " exists, but is not writable");
                 }
 
             }
             else
             {
-                throw new ServerScopedRuntimeException("Configuration path " + directoryName + " exists, but is not a directory");
+                throw new StoreException("Configuration path " + directoryName + " exists, but is not a directory");
             }
         }
         else if(!dir.mkdirs())
         {
-            throw new ServerScopedRuntimeException("Cannot create directory " + directoryName);
+            throw new StoreException("Cannot create directory " + directoryName);
         }
     }
 
@@ -231,15 +230,15 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
         catch (JsonMappingException e)
         {
-            throw new ServerScopedRuntimeException("Cannot parse the configuration file " + configFile, e);
+            throw new StoreException("Cannot parse the configuration file " + configFile, e);
         }
         catch (JsonParseException e)
         {
-            throw new ServerScopedRuntimeException("Cannot parse the configuration file " + configFile, e);
+            throw new StoreException("Cannot parse the configuration file " + configFile, e);
         }
         catch (IOException e)
         {
-            throw new ServerScopedRuntimeException("Could not load the configuration file " + configFile, e);
+            throw new StoreException("Could not load the configuration file " + configFile, e);
         }
 
     }
@@ -312,15 +311,16 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public synchronized void create(final UUID id, final String type, final Map<String, Object> attributes) throws AMQStoreException
+    public synchronized void create(final UUID id, final String type, final Map<String, Object> attributes) throws
+                                                                                                            StoreException
     {
         if(_objectsById.containsKey(id))
         {
-            throw new AMQStoreException("Object with id " + id + " already exists");
+            throw new StoreException("Object with id " + id + " already exists");
         }
         else if(!CLASS_NAME_MAPPING.containsKey(type))
         {
-            throw new AMQStoreException("Cannot create object of unknown type " + type);
+            throw new StoreException("Cannot create object of unknown type " + type);
         }
         else
         {
@@ -377,7 +377,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
         catch (IOException e)
         {
-            throw new ServerScopedRuntimeException("Cannot save to store", e);
+            throw new StoreException("Cannot save to store", e);
         }
     }
 
@@ -423,13 +423,13 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void remove(final UUID id, final String type) throws AMQStoreException
+    public void remove(final UUID id, final String type) throws StoreException
     {
         removeConfiguredObjects(id);
     }
 
     @Override
-    public synchronized UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    public synchronized UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
     {
         List<UUID> removedIds = new ArrayList<UUID>();
         for(UUID id : objects)
@@ -446,20 +446,21 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void update(final UUID id, final String type, final Map<String, Object> attributes) throws AMQStoreException
+    public void update(final UUID id, final String type, final Map<String, Object> attributes) throws
+                                                                                               StoreException
     {
         update(false, new ConfiguredObjectRecord(id, type, attributes));
     }
 
     @Override
-    public void update(final ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(final ConfiguredObjectRecord... records) throws StoreException
     {
         update(false, records);
     }
 
     @Override
     public void update(final boolean createIfNecessary, final ConfiguredObjectRecord... records)
-            throws AMQStoreException
+            throws StoreException
     {
         for(ConfiguredObjectRecord record : records)
         {
@@ -471,18 +472,18 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 final ConfiguredObjectRecord existingRecord = _objectsById.get(id);
                 if(!type.equals(existingRecord.getType()))
                 {
-                    throw new AMQStoreException("Cannot change the type of record " + id + " from type "
+                    throw new StoreException("Cannot change the type of record " + id + " from type "
                                                 + existingRecord.getType() + " to type " + type);
                 }
             }
             else if(!createIfNecessary)
             {
-                throw new AMQStoreException("Cannot update record with id " + id
+                throw new StoreException("Cannot update record with id " + id
                                         + " of type " + type + " as it does not exist");
             }
             else if(!CLASS_NAME_MAPPING.containsKey(type))
             {
-                throw new AMQStoreException("Cannot update record of unknown type " + type);
+                throw new StoreException("Cannot update record of unknown type " + type);
             }
         }
         for(ConfiguredObjectRecord record : records)

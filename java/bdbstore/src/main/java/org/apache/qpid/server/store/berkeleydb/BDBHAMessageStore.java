@@ -35,7 +35,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -65,7 +65,6 @@ import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMessageStore
 {
@@ -154,7 +153,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
         if (_coalescingSync && _durability.getLocalSync() == SyncPolicy.SYNC)
         {
-            throw new ServerScopedRuntimeException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
+            throw new StoreException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
@@ -171,7 +170,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         }
         else
         {
-            throw new ServerScopedRuntimeException("BDB HA configuration key not found. Please specify configuration attribute: "
+            throw new StoreException("BDB HA configuration key not found. Please specify configuration attribute: "
                                                             + attributeName);
         }
     }
@@ -350,7 +349,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         return members;
     }
 
-    public void removeNodeFromGroup(String nodeName)  throws AMQStoreException
+    public void removeNodeFromGroup(String nodeName)  throws StoreException
     {
         try
         {
@@ -358,15 +357,15 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         }
         catch (OperationFailureException ofe)
         {
-            throw new AMQStoreException("Failed to remove '" + nodeName + "' from group. " + ofe.getMessage(), ofe);
+            throw new StoreException("Failed to remove '" + nodeName + "' from group. " + ofe.getMessage(), ofe);
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Failed to remove '" + nodeName + "' from group. " + e.getMessage(), e);
+            throw new StoreException("Failed to remove '" + nodeName + "' from group. " + e.getMessage(), e);
         }
     }
 
-    public void setDesignatedPrimary(boolean isPrimary) throws AMQStoreException
+    public void setDesignatedPrimary(boolean isPrimary) throws StoreException
     {
         try
         {
@@ -385,7 +384,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Failed to set '" + _nodeName + "' as designated primary for group. " + e.getMessage(), e);
+            throw new StoreException("Failed to set '" + _nodeName + "' as designated primary for group. " + e.getMessage(), e);
         }
     }
 
@@ -394,7 +393,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         return (ReplicatedEnvironment)getEnvironment();
     }
 
-    public void updateAddress(String nodeName, String newHostName, int newPort) throws AMQStoreException
+    public void updateAddress(String nodeName, String newHostName, int newPort) throws StoreException
     {
         try
         {
@@ -402,12 +401,12 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         }
         catch (OperationFailureException ofe)
         {
-            throw new AMQStoreException("Failed to update address for '" + nodeName +
+            throw new StoreException("Failed to update address for '" + nodeName +
                                         "' with new host " + newHostName + " and new port " + newPort + ". " + ofe.getMessage(), ofe);
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Failed to update address for '" + nodeName +
+            throw new StoreException("Failed to update address for '" + nodeName +
                                         "' with new host " + newHostName + " and new port " + newPort + ". " + e.getMessage(),  e);
         }
     }
@@ -455,7 +454,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                 }
                 catch (InterruptedException e)
                 {
-                    throw new ServerScopedRuntimeException(e);
+                    throw new StoreException(e);
                 }
             }
         }

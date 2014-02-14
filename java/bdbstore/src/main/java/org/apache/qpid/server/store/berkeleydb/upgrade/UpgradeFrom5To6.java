@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
 import org.apache.qpid.server.util.MapJsonSerializer;
@@ -61,7 +62,6 @@ import com.sleepycat.je.Environment;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Transaction;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class UpgradeFrom5To6 extends AbstractStoreUpgrade
 {
@@ -242,7 +242,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                     return;
                 case ABORT:
                     _logger.error(message);
-                    throw new ServerScopedRuntimeException("Unable to upgrade message " + messageId);
+                    throw new StoreException("Unable to upgrade message " + messageId);
                 }
 
             }
@@ -596,7 +596,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         OperationStatus status = database.put(txn, key, value);
         if (status != OperationStatus.SUCCESS)
         {
-            throw new ServerScopedRuntimeException("Cannot add record into " + database.getDatabaseName() + ":" + status);
+            throw new StoreException("Cannot add record into " + database.getDatabaseName() + ":" + status);
         }
     }
 
