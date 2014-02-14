@@ -42,6 +42,7 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutor
 {
@@ -51,6 +52,11 @@ public class TaskExecutor
     private volatile Thread _taskThread;
     private final AtomicReference<State> _state;
     private volatile ExecutorService _executor;
+
+    public static interface Task<X> extends Callable<X>
+    {
+        X call();
+    }
 
     public TaskExecutor()
     {
@@ -122,17 +128,17 @@ public class TaskExecutor
         }
     }
 
-    Future<?> submit(Callable<?> task)
+    <T> Future<T> submit(Task<T> task)
     {
         checkState();
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Submitting task: " + task);
         }
-        Future<?> future = null;
+        Future<T> future = null;
         if (isTaskExecutorThread())
         {
-            Object result = executeTaskAndHandleExceptions(task);
+            T result = executeTask(task);
             return new ImmediateFuture(result);
         }
         else
@@ -142,16 +148,16 @@ public class TaskExecutor
         return future;
     }
 
-    public Object submitAndWait(Callable<?> task) throws CancellationException
+    public <T> T submitAndWait(Task<T> task) throws CancellationException
     {
         try
         {
-            Future<?> future = submit(task);
+            Future<T> future = submit(task);
             return future.get();
         }
         catch (InterruptedException e)
         {
-            throw new RuntimeException("Task execution was interrupted: " + task, e);
+            throw new ServerScopedRuntimeException("Task execution was interrupted: " + task, e);
         }
         catch (ExecutionException e)
         {
@@ -162,7 +168,7 @@ public class TaskExecutor
             }
             else if (cause instanceof Exception)
             {
-                throw new RuntimeException("Failed to execute user task: " + task, cause);
+                throw new ServerScopedRuntimeException("Failed to execute user task: " + task, cause);
             }
             else if (cause instanceof Error)
             {
@@ -170,7 +176,7 @@ public class TaskExecutor
             }
             else
             {
-                throw new RuntimeException("Failed to execute user task: " + task, cause);
+                throw new ServerScopedRuntimeException("Failed to execute user task: " + task, cause);
             }
         }
     }
@@ -188,29 +194,13 @@ public class TaskExecutor
         }
     }
 
-    private Object executeTaskAndHandleExceptions(Callable<?> userTask)
-    {
-        try
-        {
-            return executeTask(userTask);
-        }
-        catch (Exception e)
-        {
-            if (e instanceof RuntimeException)
-            {
-                throw (RuntimeException) e;
-            }
-            throw new RuntimeException("Failed to execute user task: " + userTask, e);
-        }
-    }
-
-    private Object executeTask(Callable<?> userTask) throws Exception
+    private <T> T executeTask(Task<T> userTask)
     {
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Performing task " + userTask);
         }
-        Object result = userTask.call();
+        T result = userTask.call();
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Task " + userTask + " is performed successfully with result:" + result);
@@ -218,14 +208,14 @@ public class TaskExecutor
         return result;
     }
 
-    private class CallableWrapper implements Callable<Object>
+    private class CallableWrapper<T> implements Task<T>
     {
-        private Callable<?> _userTask;
+        private Task<T> _userTask;
         private Subject _securityManagerSubject;
         private LogActor _actor;
         private Subject _contextSubject;
 
-        public CallableWrapper(Callable<?> userWork)
+        public CallableWrapper(Task<T> userWork)
         {
             _userTask = userWork;
             _securityManagerSubject = SecurityManager.getThreadSubject();
@@ -234,20 +224,20 @@ public class TaskExecutor
         }
 
         @Override
-        public Object call() throws Exception
+        public T call()
         {
             SecurityManager.setThreadSubject(_securityManagerSubject);
             CurrentActor.set(_actor);
 
             try
             {
-                Object result = null;
+                T result = null;
                 try
                 {
-                    result = Subject.doAs(_contextSubject, new PrivilegedExceptionAction<Object>()
+                    result = Subject.doAs(_contextSubject, new PrivilegedExceptionAction<T>()
                     {
                         @Override
-                        public Object run() throws Exception
+                        public T run() throws Exception
                         {
                             return executeTask(_userTask);
                         }
@@ -255,7 +245,15 @@ public class TaskExecutor
                 }
                 catch (PrivilegedActionException e)
                 {
-                    throw e.getException();
+                    Exception underlying =  e.getException();
+                    if(underlying instanceof RuntimeException)
+                    {
+                        throw (RuntimeException)underlying;
+                    }
+                    else
+                    {
+                        throw new ServerScopedRuntimeException(e);
+                    }
                 }
                 return result;
             }
@@ -281,11 +279,11 @@ public class TaskExecutor
         }
     }
 
-    private class ImmediateFuture implements Future<Object>
+    private class ImmediateFuture<T> implements Future<T>
     {
-        private Object _result;
+        private T _result;
 
-        public ImmediateFuture(Object result)
+        public ImmediateFuture(T result)
         {
             super();
             this._result = result;
@@ -310,13 +308,13 @@ public class TaskExecutor
         }
 
         @Override
-        public Object get()
+        public T get()
         {
             return _result;
         }
 
         @Override
-        public Object get(long timeout, TimeUnit unit)
+        public T get(long timeout, TimeUnit unit)
         {
             return get();
         }

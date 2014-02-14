@@ -30,9 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
@@ -64,7 +62,9 @@ import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryStateHandler
 {
@@ -324,7 +324,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                                         {
                                                             _vhost.removeQueue(tempQueue);
                                                         }
-                                                        catch (AMQException e)
+                                                        catch (QpidSecurityException e)
                                                         {
                                                             //TODO
                                                             _logger.error("Error removing queue", e);
@@ -348,20 +348,15 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                 qd = new QueueDestination(queue);
             }
-            catch (AMQSecurityException e)
+            catch (QpidSecurityException e)
             {
                 _logger.error("Security error", e);
-                throw new RuntimeException(e);
+                throw new ConnectionScopedRuntimeException(e);
             }
-            catch (AMQInternalException e)
+            catch (QueueExistsException e)
             {
-                _logger.error("Internal error", e);
-                throw new RuntimeException(e);
-            }
-            catch (AMQException e)
-            {
-                _logger.error("Error", e);
-                throw new RuntimeException(e);
+                _logger.error("A randomly generated temporary queue name collided with an existing queue",e);
+                throw new ConnectionScopedRuntimeException(e);
             }
 
 
@@ -372,7 +367,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         }
         else
         {
-            throw new RuntimeException("Unknown destination type");
+            throw new ConnectionScopedRuntimeException("Unknown destination type");
         }
 
         if(_target != null)
@@ -398,10 +393,21 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                                                messageFilter == null ? null : new SimpleFilterManager(messageFilter),
                                                Message_1_0.class, name, options);
             }
-            catch (AMQException e)
+            catch (QpidSecurityException e)
             {
                 //TODO
-                _logger.error("Error registering subscription", e);
+                _logger.info("Error registering subscription", e);
+                throw new ConnectionScopedRuntimeException(e);
+            }
+            catch (MessageSource.ExistingExclusiveConsumer e)
+            {
+                _logger.info("Cannot add a consumer to the destination as there is already an exclusive consumer");
+                throw new ConnectionScopedRuntimeException(e);
+            }
+            catch (MessageSource.ExistingConsumerPreventsExclusive e)
+            {
+                _logger.info("Cannot add an exclusive consumer to the destination as there is already a consumer");
+                throw new ConnectionScopedRuntimeException(e);
             }
         }
 
@@ -419,18 +425,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         // if not durable or close
         if(!TerminusDurability.UNSETTLED_STATE.equals(_durability))
         {
-
-            try
-            {
-
-                _consumer.close();
-
-            }
-            catch (AMQException e)
-            {
-                //TODO
-                _logger.error("Error unregistering subscription", e);
-            }
+            _consumer.close();
 
             Modified state = new Modified();
             state.setDeliveryFailed(true);
@@ -452,10 +447,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 {
                     _vhost.removeQueue((AMQQueue)_queue);
                 }
-                catch(AMQException e)
+                catch (QpidSecurityException e)
                 {
                     //TODO
-                    _logger.error("Error removing queue", e);
+                    _logger.error("Error registering subscription", e);
                 }
             }
 

@@ -40,6 +40,7 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreConstants;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.FileUtils;
 
 /**
@@ -99,7 +100,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         return "bigint";
     }
 
-    protected void doClose() throws SQLException
+    protected void doClose()
     {
         try
         {
@@ -117,7 +118,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
             else
             {
                 getLogger().error("Exception whilst shutting down the store: " + e);
-                throw e;
+                throw new StoreException("Error closing message store", e);
             }
         }
     }
@@ -307,7 +308,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
                 catch (SQLException e)
                 {
                     closeConnection(conn);
-                    throw new RuntimeException("Exception while processing store size change", e);
+                    throw new StoreException("Exception while processing store size change", e);
                 }
             }
         }
@@ -359,7 +360,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         catch (SQLException e)
         {
             closeConnection(conn);
-            throw new RuntimeException("Error reducing on disk size", e);
+            throw new StoreException("Error reducing on disk size", e);
         }
         finally
         {
@@ -407,7 +408,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         catch (SQLException e)
         {
             closeConnection(conn);
-            throw new RuntimeException("Error establishing on disk size", e);
+            throw new StoreException("Error establishing on disk size", e);
         }
         finally
         {

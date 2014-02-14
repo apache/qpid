@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -41,9 +40,9 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
 
     public String getClientID();
 
-    public void close() throws AMQException;
+    public void close();
 
-    public void close(AMQConstant cause, String message) throws AMQException;
+    public void close(AMQConstant cause, String message);
 
     public LogSubject getLogSubject();
 
@@ -62,7 +61,7 @@ public interface AMQSessionModel extends Comparable<AMQSessionModel>
      * @param idleWarn time in milliseconds before alerting on idle transaction
      * @param idleClose time in milliseconds before closing connection with idle transaction
      */
-    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException;
+    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose);
 
     void block(AMQQueue queue);
 

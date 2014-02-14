@@ -28,8 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.message.MessageSource;
@@ -45,6 +43,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.*;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -174,9 +173,9 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         {
             _queue.getVirtualHost().removeQueue(_queue);
         }
-        catch(AMQException e)
+        catch (QpidSecurityException e)
         {
-            throw new IllegalStateException(e);
+            throw new AccessControlException(e.toString());
         }
     }
 
@@ -338,15 +337,8 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         {
             if (_queue.isDurable())
             {
-                try
-                {
-                    DurableConfigurationStoreHelper.updateQueue(_queue.getVirtualHost().getDurableConfigurationStore(),
-                            _queue);
-                }
-                catch (AMQStoreException e)
-                {
-                    throw new IllegalStateException(e);
-                }
+                DurableConfigurationStoreHelper.updateQueue(_queue.getVirtualHost().getDurableConfigurationStore(),
+                        _queue);
             }
         }
     }

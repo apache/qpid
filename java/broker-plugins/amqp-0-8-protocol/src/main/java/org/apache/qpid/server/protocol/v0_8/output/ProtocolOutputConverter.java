@@ -49,21 +49,19 @@ public interface ProtocolOutputConverter
     void writeDeliver(final ServerMessage msg,
                       final InstanceProperties props, int channelId,
                       long deliveryTag,
-                      AMQShortString consumerTag)
-            throws AMQException;
+                      AMQShortString consumerTag);
 
     void writeGetOk(final ServerMessage msg,
                     final InstanceProperties props,
                     int channelId,
                     long deliveryTag,
-                    int queueSize) throws AMQException;
+                    int queueSize);
 
     byte getProtocolMinorVersion();
 
     byte getProtocolMajorVersion();
 
-    void writeReturn(MessagePublishInfo messagePublishInfo, ContentHeaderBody header, MessageContentSource msgContent,  int channelId, int replyCode, AMQShortString replyText)
-                    throws AMQException;
+    void writeReturn(MessagePublishInfo messagePublishInfo, ContentHeaderBody header, MessageContentSource msgContent,  int channelId, int replyCode, AMQShortString replyText);
 
     void writeFrame(AMQDataBlock block);
 }

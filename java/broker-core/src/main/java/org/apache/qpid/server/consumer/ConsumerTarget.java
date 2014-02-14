@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.consumer;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -49,13 +48,13 @@ public interface ConsumerTarget
 
     AMQSessionModel getSessionModel();
 
-    void send(MessageInstance entry, boolean batch) throws AMQException;
+    void send(MessageInstance entry, boolean batch);
 
     void flushBatched();
 
     void queueDeleted();
 
-    void queueEmpty() throws AMQException;
+    void queueEmpty();
 
     boolean allocateCredit(ServerMessage msg);
 

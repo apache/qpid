@@ -18,35 +18,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol.v0_8.state;
+package org.apache.qpid.server.security;
 
-import org.apache.qpid.AMQException;
-
-/**
- * @todo Not an AMQP exception as no status code.
- *
- * @todo Not used! Delete.
- */
-public class IllegalStateTransitionException extends AMQException
+public class QpidSecurityException extends Exception
 {
-    private AMQState _originalState;
-
-    private Class _frame;
-
-    public IllegalStateTransitionException(AMQState originalState, Class frame)
+    public QpidSecurityException()
     {
-        super("No valid state transition defined for receiving frame " + frame + " from state " + originalState);
-        _originalState = originalState;
-        _frame = frame;
     }
 
-    public AMQState getOriginalState()
+    public QpidSecurityException(final String message)
     {
-        return _originalState;
+        super(message);
     }
 
-    public Class getFrameClass()
+    public QpidSecurityException(final String message, final Throwable cause)
     {
-        return _frame;
+        super(message, cause);
+    }
+
+    public QpidSecurityException(final Throwable cause)
+    {
+        super(cause);
     }
 }

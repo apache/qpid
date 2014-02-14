@@ -369,7 +369,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 Error error = new Error();
                 error.setCondition(ConnectionError.CONNECTION_FORCED);
                 error.setDescription("Connection close sent before connection was opened");
-                connectionError(error);
+                close(error);
                 break;
             case OPEN:
                 _state = ConnectionState.CLOSE_RECEIVED;
@@ -386,7 +386,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         notifyAll();
     }
 
-    protected synchronized void connectionError(Error error)
+    public synchronized void close(Error error)
     {
         Close close = new Close();
         close.setError(error);
@@ -476,7 +476,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 error.setDescription("BEGIN received on channel " + channel + " with given remote-channel "
                                      + begin.getRemoteChannel() + " which is outside the valid range of 0 to "
                                      + _channelMax + ".");
-                connectionError(error);
+                close(error);
                 return;
             }
             if (endpoint != null)
@@ -498,7 +498,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                     final Error error = new Error();
                     error.setCondition(ConnectionError.FRAMING_ERROR);
                     error.setDescription("BEGIN received on channel " + channel + " which is already in use.");
-                    connectionError(error);
+                    close(error);
                 }
             }
             else
@@ -507,7 +507,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 error.setCondition(ConnectionError.FRAMING_ERROR);
                 error.setDescription("BEGIN received on channel " + channel + " with given remote-channel "
                                      + begin.getRemoteChannel() + " which is not known as a begun session.");
-                connectionError(error);
+                close(error);
             }
 
 
@@ -547,7 +547,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 final Error error = new Error();
                 error.setCondition(ConnectionError.FRAMING_ERROR);
                 error.setDescription("BEGIN received on channel " + channel + " which is already in use.");
-                connectionError(error);
+                close(error);
             }
 
         }

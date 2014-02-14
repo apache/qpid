@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.server;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -41,7 +40,7 @@ public class TransactionTimeoutHelper
         _closeAction = closeAction;
     }
 
-    public void checkIdleOrOpenTimes(ServerTransaction transaction, long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
+    public void checkIdleOrOpenTimes(ServerTransaction transaction, long openWarn, long openClose, long idleWarn, long idleClose)
     {
         if (transaction.isTransactional())
         {
@@ -70,7 +69,7 @@ public class TransactionTimeoutHelper
      */
     private boolean logAndCloseIfNecessary(final long timeSoFar,
             final long warnTimeout, final long closeTimeout,
-            final LogMessage warnMessage, final String closeMessage) throws AMQException
+            final LogMessage warnMessage, final String closeMessage)
     {
         if (isTimedOut(timeSoFar, warnTimeout))
         {
@@ -96,7 +95,7 @@ public class TransactionTimeoutHelper
 
     public interface CloseAction
     {
-        void doTimeoutAction(String reason) throws AMQException;
+        void doTimeoutAction(String reason);
     }
 
 }

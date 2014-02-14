@@ -47,6 +47,7 @@ import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.transport.TransportProvider;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
 public class AmqpPortAdapter extends PortAdapter
@@ -187,7 +188,7 @@ public class AmqpPortAdapter extends PortAdapter
         }
         catch (GeneralSecurityException e)
         {
-            throw new RuntimeException("Unable to create SSLContext for key or trust store", e);
+            throw new ServerScopedRuntimeException("Unable to create SSLContext for key or trust store", e);
         }
     }
 

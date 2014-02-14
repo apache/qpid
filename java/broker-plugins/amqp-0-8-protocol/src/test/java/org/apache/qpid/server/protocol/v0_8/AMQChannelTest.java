@@ -61,7 +61,7 @@ public class AMQChannelTest extends QpidTestCase
                     MessageContentSource msgContent,
                     int channelId,
                     int replyCode,
-                    AMQShortString replyText) throws AMQException
+                    AMQShortString replyText)
                     {
                         _replies.put(replyCode, replyText.asString());
                     }

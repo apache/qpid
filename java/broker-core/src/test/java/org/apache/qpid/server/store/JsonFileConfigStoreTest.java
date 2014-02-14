@@ -25,10 +25,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.apache.qpid.AMQStoreException;
+
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.InOrder;
 
@@ -82,7 +83,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.configureConfigStore(_virtualHost, _recoveryHandler);
             fail("Store should not successfully configure if there is no path set");
         }
-        catch (AMQStoreException e)
+        catch (ServerScopedRuntimeException e)
         {
             // pass
         }
@@ -97,7 +98,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.configureConfigStore(_virtualHost, _recoveryHandler);
             fail("Store should not successfully configure if there is an invalid path set");
         }
-        catch (AMQStoreException e)
+        catch (ServerScopedRuntimeException e)
         {
             // pass
         }
@@ -197,7 +198,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.create(UUID.randomUUID(), "wibble", Collections.<String, Object>emptyMap());
             fail("Should not be able to create instance of type wibble");
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             // pass
         }
@@ -213,7 +214,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.create(id, "Exchange", Collections.<String, Object>emptyMap());
             fail("Should not be able to create two objects with same id");
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             // pass
         }
@@ -233,7 +234,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.update(id, "Exchange", Collections.<String, Object>emptyMap());
             fail("Should not be able to update object to different type");
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             // pass
         }
@@ -250,7 +251,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             secondStore.configureConfigStore(_virtualHost, _recoveryHandler);
             fail("Should not be able to open a second store with the same path");
         }
-        catch(AMQStoreException e)
+        catch(ServerScopedRuntimeException e)
         {
             // pass
         }

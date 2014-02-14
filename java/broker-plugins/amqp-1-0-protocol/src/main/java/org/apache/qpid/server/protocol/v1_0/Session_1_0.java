@@ -36,8 +36,7 @@ import org.apache.qpid.amqp_1_0.type.transaction.TxnCapability;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 
 import org.apache.qpid.amqp_1_0.type.transport.Error;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
@@ -51,7 +50,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 import java.util.*;
 
@@ -357,7 +358,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
                                     {
                                         _vhost.removeQueue(tempQueue);
                                     }
-                                    catch (AMQException e)
+                                    catch (QpidSecurityException e)
                                     {
                                         //TODO
                                         _logger.error("Error removing queue from vhost", e);
@@ -391,15 +392,16 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
 
             }
         }
-        catch (AMQSecurityException e)
+        catch (QpidSecurityException e)
         {
             //TODO
-            _logger.error("Security error", e);
+            _logger.info("Security error", e);
+            throw new ConnectionScopedRuntimeException(e);
         }
-        catch (AMQException e)
+        catch (QueueExistsException e)
         {
-            //TODO
-            _logger.error("Error", e);
+            _logger.error("A temporary queue was created with a name which collided with an existing queue name");
+            throw new ConnectionScopedRuntimeException(e);
         }
 
         return queue;
@@ -485,14 +487,14 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     }
 
     @Override
-    public void close() throws AMQException
+    public void close()
     {
         // TODO - required for AMQSessionModel / management initiated closing
     }
 
 
     @Override
-    public void close(AMQConstant cause, String message) throws AMQException
+    public void close(AMQConstant cause, String message)
     {
         // TODO - required for AMQSessionModel
     }
@@ -504,7 +506,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel, LogSu
     }
 
     @Override
-    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
+    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose)
     {
         // TODO - required for AMQSessionModel / long running transaction detection
     }

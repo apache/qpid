@@ -18,23 +18,31 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugins;
+package org.apache.qpid.server.util;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.log4j.Logger;
 
-public class QueueExistsException extends AMQException
+public class ServerScopedRuntimeException extends RuntimeException
 {
-    private final AMQQueue _existing;
+    private static final Logger LOGGER = Logger.getLogger(ServerScopedRuntimeException.class);
 
-    public QueueExistsException(String name, AMQQueue existing)
+    public ServerScopedRuntimeException(final String message)
     {
-        super(name);
-        _existing = existing;
+        super(message);
+        LOGGER.error(message);
+
     }
 
-    public AMQQueue getExistingQueue()
+    public ServerScopedRuntimeException(final String message, final Throwable cause)
     {
-        return _existing;
+        super(message, cause);
+        LOGGER.error(message, cause);
     }
+
+    public ServerScopedRuntimeException(final Throwable cause)
+    {
+        super(cause);
+        LOGGER.error("Exception occurred", cause);
+    }
+
 }

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
@@ -210,7 +211,7 @@ public class SaslServlet extends AbstractServlet
         }
         if (!saslAuthEnabled)
         {
-            throw new RuntimeException("Sasl authentication disabled.");
+            throw new ConnectionScopedRuntimeException("Sasl authentication disabled.");
         }
     }
 

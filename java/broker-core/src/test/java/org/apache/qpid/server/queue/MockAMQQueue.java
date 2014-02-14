@@ -20,20 +20,17 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
-import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -213,7 +210,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     @Override
-    public boolean resend(final QueueEntry entry, final Consumer consumer) throws AMQException
+    public boolean resend(final QueueEntry entry, final Consumer consumer)
     {
         return false;
     }
@@ -225,7 +222,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     @Override
-    public void enqueue(final ServerMessage message, final Action action) throws AMQException
+    public void enqueue(final ServerMessage message, final Action action)
     {
 
     }
@@ -241,7 +238,7 @@ public class MockAMQQueue implements AMQQueue
                                 final FilterManager filters,
                                 final Class messageClass,
                                 final String consumerName,
-                                final EnumSet options) throws AMQException
+                                final EnumSet options)
     {
         return new QueueConsumer(filters, messageClass, options.contains(Consumer.Option.ACQUIRES),
                                  options.contains(Consumer.Option.SEES_REQUEUES), consumerName,
@@ -332,7 +329,7 @@ public class MockAMQQueue implements AMQQueue
         return _deleted;
     }
 
-    public int delete() throws AMQException
+    public int delete()
     {
        _deleted = true;
        return getMessageCount();
@@ -345,11 +342,6 @@ public class MockAMQQueue implements AMQQueue
 
     public void dequeue(QueueEntry entry)
     {
-    }
-
-    public boolean resend(QueueEntry entry, QueueConsumer consumer) throws AMQException
-    {
-        return false;
     }
 
     @Override
@@ -451,7 +443,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
 
-    public void checkMessageStatus() throws AMQException
+    public void checkMessageStatus()
     {
 
     }
@@ -461,7 +453,7 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void flushConsumer(Consumer sub) throws AMQException
+    public void flushConsumer(Consumer sub)
     {
 
     }

@@ -25,10 +25,9 @@ import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.OperationStatus;
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 
 public class UpgradeFrom6To7 extends AbstractStoreUpgrade
 {
@@ -37,7 +36,6 @@ public class UpgradeFrom6To7 extends AbstractStoreUpgrade
 
     @Override
     public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, String virtualHostName)
-            throws DatabaseException, AMQStoreException
     {
         reportStarting(environment, 6);
         DatabaseConfig dbConfig = new DatabaseConfig();
@@ -55,7 +53,7 @@ public class UpgradeFrom6To7 extends AbstractStoreUpgrade
             OperationStatus status = versionDb.put(null, key, value);
             if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Error initialising config version: " + status);
+                throw new StoreException("Error initialising config version: " + status);
             }
         }
 

@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.management.amqp;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -127,7 +126,7 @@ class ManagementResponse implements MessageInstance<ManagementResponse,Managemen
     }
 
     @Override
-    public boolean expired() throws AMQException
+    public boolean expired()
     {
         return false;
     }
@@ -183,7 +182,7 @@ class ManagementResponse implements MessageInstance<ManagementResponse,Managemen
     }
 
     @Override
-    public boolean resend() throws AMQException
+    public boolean resend()
     {
         return false;
     }

@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -71,7 +70,7 @@ public class MockMessageInstance implements MessageInstance<MockMessageInstance,
 
     }
 
-    public boolean expired() throws AMQException
+    public boolean expired()
     {
         return false;
     }
@@ -128,7 +127,7 @@ public class MockMessageInstance implements MessageInstance<MockMessageInstance,
     }
 
     @Override
-    public boolean resend() throws AMQException
+    public boolean resend()
     {
         return false;
     }

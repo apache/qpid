@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -42,21 +43,27 @@ import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOutputHandler
 {
+    private static final org.apache.log4j.Logger
+            _logger = org.apache.log4j.Logger.getLogger(ProtocolEngine_1_0_0_SASL.class);
+
     private final Port _port;
     private final Transport _transport;
     private long _readBytes;
@@ -250,123 +257,165 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     public synchronized void received(ByteBuffer msg)
     {
-        _lastReadTime = System.currentTimeMillis();
-        if(RAW_LOGGER.isLoggable(Level.FINE))
+        try
         {
-            ByteBuffer dup = msg.duplicate();
-            byte[] data = new byte[dup.remaining()];
-            dup.get(data);
-            Binary bin = new Binary(data);
-            RAW_LOGGER.fine("RECV[" + getRemoteAddress() + "] : " + bin.toString());
-        }
-        _readBytes += msg.remaining();
-             switch(_state)
-             {
-                 case A:
-                     if(msg.hasRemaining())
-                     {
-                         msg.get();
-                     }
-                     else
-                     {
-                         break;
-                     }
-                 case M:
-                     if(msg.hasRemaining())
-                     {
-                         msg.get();
-                     }
-                     else
-                     {
-                         _state = State.M;
-                         break;
-                     }
+            _lastReadTime = System.currentTimeMillis();
+            if(RAW_LOGGER.isLoggable(Level.FINE))
+            {
+                ByteBuffer dup = msg.duplicate();
+                byte[] data = new byte[dup.remaining()];
+                dup.get(data);
+                Binary bin = new Binary(data);
+                RAW_LOGGER.fine("RECV[" + getRemoteAddress() + "] : " + bin.toString());
+            }
+            _readBytes += msg.remaining();
+            switch(_state)
+            {
+                case A:
+                    if (msg.hasRemaining())
+                    {
+                        msg.get();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                case M:
+                    if (msg.hasRemaining())
+                    {
+                        msg.get();
+                    }
+                    else
+                    {
+                        _state = State.M;
+                        break;
+                    }
 
-                 case Q:
-                     if(msg.hasRemaining())
-                     {
-                         msg.get();
-                     }
-                     else
-                     {
-                         _state = State.Q;
-                         break;
-                     }
-                 case P:
-                     if(msg.hasRemaining())
-                     {
-                         msg.get();
-                     }
-                     else
-                     {
-                         _state = State.P;
-                         break;
-                     }
-                 case PROTOCOL:
-                     if(msg.hasRemaining())
-                     {
-                         msg.get();
-                     }
-                     else
-                     {
-                         _state = State.PROTOCOL;
-                         break;
-                     }
-                 case MAJOR:
-                     if(msg.hasRemaining())
-                     {
-                         _major = msg.get();
-                     }
-                     else
-                     {
-                         _state = State.MAJOR;
-                         break;
-                     }
-                 case MINOR:
-                     if(msg.hasRemaining())
-                     {
-                         _minor = msg.get();
-                     }
-                     else
-                     {
-                         _state = State.MINOR;
-                         break;
-                     }
-                 case REVISION:
-                     if(msg.hasRemaining())
-                     {
-                         _revision = msg.get();
+                case Q:
+                    if (msg.hasRemaining())
+                    {
+                        msg.get();
+                    }
+                    else
+                    {
+                        _state = State.Q;
+                        break;
+                    }
+                case P:
+                    if (msg.hasRemaining())
+                    {
+                        msg.get();
+                    }
+                    else
+                    {
+                        _state = State.P;
+                        break;
+                    }
+                case PROTOCOL:
+                    if (msg.hasRemaining())
+                    {
+                        msg.get();
+                    }
+                    else
+                    {
+                        _state = State.PROTOCOL;
+                        break;
+                    }
+                case MAJOR:
+                    if (msg.hasRemaining())
+                    {
+                        _major = msg.get();
+                    }
+                    else
+                    {
+                        _state = State.MAJOR;
+                        break;
+                    }
+                case MINOR:
+                    if (msg.hasRemaining())
+                    {
+                        _minor = msg.get();
+                    }
+                    else
+                    {
+                        _state = State.MINOR;
+                        break;
+                    }
+                case REVISION:
+                    if (msg.hasRemaining())
+                    {
+                        _revision = msg.get();
 
-                         _state = State.FRAME;
-                     }
-                     else
-                     {
-                         _state = State.REVISION;
-                         break;
-                     }
-                 case FRAME:
-                     if(msg.hasRemaining())
-                     {
+                        _state = State.FRAME;
+                    }
+                    else
+                    {
+                        _state = State.REVISION;
+                        break;
+                    }
+                case FRAME:
+                    if (msg.hasRemaining())
+                    {
                         _frameHandler = _frameHandler.parse(msg);
-                     }
-             }
-
+                    }
+            }
+        }
+        catch(RuntimeException e)
+        {
+            exception(e);
+        }
      }
 
-    public void exception(Throwable t)
+    public void exception(Throwable throwable)
     {
-        t.printStackTrace();
+        if (throwable instanceof IOException)
+        {
+            _logger.info("IOException caught in " + this + ", connection closed implicitly: " + throwable);
+        }
+        else
+        {
+
+            try
+            {
+                final Error err = new Error();
+                err.setCondition(AmqpError.INTERNAL_ERROR);
+                err.setDescription(throwable.getMessage());
+                _conn.close(err);
+                close();
+            }
+            catch(TransportException e)
+            {
+                _logger.info("Error when handling exception",e);
+            }
+            finally
+            {
+                if(throwable instanceof java.lang.Error)
+                {
+                    throw (java.lang.Error) throwable;
+                }
+                if(throwable instanceof ServerScopedRuntimeException)
+                {
+                    throw (ServerScopedRuntimeException) throwable;
+                }
+            }
+        }
     }
 
     public void closed()
     {
-        // todo
-        _conn.inputClosed();
-        if (_conn != null && _conn.getConnectionEventListener() != null)
+        try
         {
-            ((Connection_1_0) _conn.getConnectionEventListener()).closed();
+            // todo
+            _conn.inputClosed();
+            if (_conn != null && _conn.getConnectionEventListener() != null)
+            {
+                ((Connection_1_0) _conn.getConnectionEventListener()).closed();
+            }
         }
-
+        catch(RuntimeException e)
+        {
+            exception(e);
+        }
     }
 
     public long getCreateTime()

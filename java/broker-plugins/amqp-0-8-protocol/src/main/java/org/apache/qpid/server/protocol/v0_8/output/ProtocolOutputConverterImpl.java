@@ -68,7 +68,6 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                              final InstanceProperties props, int channelId,
                              long deliveryTag,
                              AMQShortString consumerTag)
-            throws AMQException
     {
         final AMQMessage msg = convertToAMQMessage(m);
         final boolean isRedelivered = Boolean.TRUE.equals(props.getProperty(InstanceProperties.Property.REDELIVERED));
@@ -95,13 +94,11 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
     private void writeMessageDelivery(AMQMessage message, int channelId, AMQBody deliverBody)
-            throws AMQException
     {
         writeMessageDelivery(message, message.getContentHeaderBody(), channelId, deliverBody);
     }
 
     private void writeMessageDelivery(MessageContentSource message, ContentHeaderBody contentHeaderBody, int channelId, AMQBody deliverBody)
-            throws AMQException
     {
 
 
@@ -193,7 +190,7 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                            final InstanceProperties props,
                            int channelId,
                            long deliveryTag,
-                           int queueSize) throws AMQException
+                           int queueSize)
     {
         AMQBody deliver = createEncodedGetOkBody(msg, props, deliveryTag, queueSize);
         writeMessageDelivery(convertToAMQMessage(msg), channelId, deliver);
@@ -204,7 +201,6 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                              boolean isRedelivered,
                                              final long deliveryTag,
                                              final AMQShortString consumerTag)
-            throws AMQException
     {
 
         final AMQShortString exchangeName;
@@ -282,7 +278,6 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
     private AMQBody createEncodedGetOkBody(ServerMessage msg, InstanceProperties props, long deliveryTag, int queueSize)
-            throws AMQException
     {
         final AMQShortString exchangeName;
         final AMQShortString routingKey;
@@ -316,7 +311,7 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
     private AMQBody createEncodedReturnFrame(MessagePublishInfo messagePublishInfo,
                                              int replyCode,
-                                             AMQShortString replyText) throws AMQException
+                                             AMQShortString replyText)
     {
 
         BasicReturnBody basicReturnBody =
@@ -330,7 +325,6 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
     public void writeReturn(MessagePublishInfo messagePublishInfo, ContentHeaderBody header, MessageContentSource message, int channelId, int replyCode, AMQShortString replyText)
-            throws AMQException
     {
 
         AMQBody returnFrame = createEncodedReturnFrame(messagePublishInfo, replyCode, replyText);

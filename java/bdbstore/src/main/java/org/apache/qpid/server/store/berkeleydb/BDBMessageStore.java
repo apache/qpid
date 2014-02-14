@@ -23,8 +23,8 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
 
 import com.sleepycat.je.DatabaseException;
@@ -46,7 +46,7 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     private CommitThreadWrapper _commitThreadWrapper;
 
     @Override
-    protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath, String name) throws DatabaseException
     {
         super.setupStore(storePath, name);
 
@@ -79,9 +79,16 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     }
 
     @Override
-    protected void closeInternal() throws Exception
+    protected void closeInternal()
     {
-        _commitThreadWrapper.stopCommitThread();
+        try
+        {
+            _commitThreadWrapper.stopCommitThread();
+        }
+        catch (InterruptedException e)
+        {
+            throw new StoreException(e);
+        }
 
         super.closeInternal();
     }

@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -98,7 +96,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
     }
 
-    private void delegateVhostQueueCreation() throws AMQException
+    private void delegateVhostQueueCreation() throws Exception
     {
         final ArgumentCaptor<UUID> id = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<String> queueName = ArgumentCaptor.forClass(String.class);
@@ -152,7 +150,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         }).when(_queueRegistry).registerQueue(capturedQueue.capture());
     }
 
-    private void mockExchangeCreation() throws AMQException
+    private void mockExchangeCreation() throws Exception
     {
         final ArgumentCaptor<UUID> idCapture = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<String> exchangeNameCapture = ArgumentCaptor.forClass(String.class);
@@ -260,9 +258,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
     /**
      * Tests that setting the {@link QueueArgumentsConverter#X_QPID_DLQ_ENABLED} argument true does
      * cause the alternate exchange to be set and DLQ to be produced.
-     * @throws AMQException
      */
-    public void testDeadLetterQueueEnabled() throws AMQException
+    public void testDeadLetterQueueEnabled() throws Exception
     {
         Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
 
@@ -303,7 +300,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
     /**
      * Tests that the deadLetterQueues/maximumDeliveryCount settings from the configuration
      * are not applied to the DLQ itself.
-     * @throws AMQException
      */
     public void testDeadLetterQueueDoesNotInheritDLQorMDCSettings() throws Exception
     {
@@ -349,9 +345,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
     /**
      * Tests that setting the {@link QueueArgumentsConverter#X_QPID_DLQ_ENABLED} argument false does not
      * result in the alternate exchange being set and DLQ being created.
-     * @throws AMQException
      */
-    public void testDeadLetterQueueDisabled() throws AMQException
+    public void testDeadLetterQueueDisabled() throws Exception
     {
         Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) false);
 
@@ -384,9 +379,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
      * Tests that setting the {@link QueueArgumentsConverter#X_QPID_DLQ_ENABLED} argument true but
      * creating an auto-delete queue, does not result in the alternate exchange
      * being set and DLQ being created.
-     * @throws AMQException
      */
-    public void testDeadLetterQueueNotCreatedForAutodeleteQueues() throws AMQException
+    public void testDeadLetterQueueNotCreatedForAutodeleteQueues() throws Exception
     {
         Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
 

@@ -21,9 +21,7 @@
 package org.apache.qpid.server.message;
 
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -65,7 +63,7 @@ public interface MessageInstance<M extends MessageInstance<M,C>, C extends Consu
 
     boolean getDeliveredToConsumer();
 
-    boolean expired() throws AMQException;
+    boolean expired();
 
     boolean acquire(C sub);
 
@@ -201,7 +199,7 @@ public interface MessageInstance<M extends MessageInstance<M,C>, C extends Consu
 
     void release();
 
-    boolean resend() throws AMQException;
+    boolean resend();
 
     void delete();
 

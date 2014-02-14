@@ -23,7 +23,6 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.transport.TransportException;
 
@@ -65,10 +64,6 @@ class SubFlushRunner implements Runnable
             {
                 CurrentActor.set(_sub.getLogActor());
                 complete = getQueue().flushConsumer(_sub, ITERATIONS);
-            }
-            catch (AMQException e)
-            {
-                _logger.error("Exception during asynchronous delivery by " + toString(), e);
             }
             catch (final TransportException transe)
             {

@@ -29,6 +29,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
@@ -106,7 +107,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
         }
         catch(OpenDataException e)
         {
-            throw new RuntimeException("Unexpected Error creating ArrayType", e);
+            throw new ServerScopedRuntimeException("Unexpected Error creating ArrayType", e);
         }
     }
     

@@ -84,40 +84,40 @@ public class AcknowledgeTest extends QpidTestCase
         return _queue;
     }
 
-    public void testTransactionalSingleAck() throws AMQException
+    public void testTransactionalSingleAck() throws Exception
     {
         getChannel().setLocalTransactional();
         runMessageAck(1, 1, 1, false, 0);
     }
 
-    public void testTransactionalMultiAck() throws AMQException
+    public void testTransactionalMultiAck() throws Exception
     {
         getChannel().setLocalTransactional();
         runMessageAck(10, 1, 5, true, 5);
     }
 
-    public void testTransactionalAckAll() throws AMQException
+    public void testTransactionalAckAll() throws Exception
     {
         getChannel().setLocalTransactional();
         runMessageAck(10, 1, 0, true, 0);
     }
 
-    public void testNonTransactionalSingleAck() throws AMQException
+    public void testNonTransactionalSingleAck() throws Exception
     {
         runMessageAck(1, 1, 1, false, 0);
     }
 
-    public void testNonTransactionalMultiAck() throws AMQException
+    public void testNonTransactionalMultiAck() throws Exception
     {
         runMessageAck(10, 1, 5, true, 5);
     }
 
-    public void testNonTransactionalAckAll() throws AMQException
+    public void testNonTransactionalAckAll() throws Exception
     {
         runMessageAck(10, 1, 0, true, 0);
     }
 
-    protected void runMessageAck(int sendMessageCount, long firstDeliveryTag, long acknowledgeDeliveryTag, boolean acknowledgeMultiple, int remainingUnackedMessages) throws AMQException
+    protected void runMessageAck(int sendMessageCount, long firstDeliveryTag, long acknowledgeDeliveryTag, boolean acknowledgeMultiple, int remainingUnackedMessages) throws Exception
     {
         //Check store is empty
         checkStoreContents(0);

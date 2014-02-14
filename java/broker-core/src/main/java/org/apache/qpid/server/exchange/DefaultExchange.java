@@ -27,9 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.consumer.Consumer;
@@ -43,8 +41,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -74,7 +70,7 @@ public class DefaultExchange implements Exchange
                            VirtualHost host,
                            String name,
                            boolean durable,
-                           boolean autoDelete) throws AMQException
+                           boolean autoDelete)
     {
         _id = id;
         _virtualHost = host;
@@ -124,36 +120,36 @@ public class DefaultExchange implements Exchange
 
     @Override
     public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws AMQSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
-        throw new AMQSecurityException("Cannot add bindings to the default exchange");
+        throw new QpidSecurityException("Cannot add bindings to the default exchange");
     }
 
     @Override
     public boolean replaceBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws AMQSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
-        throw new AMQSecurityException("Cannot replace bindings on the default exchange");
+        throw new QpidSecurityException("Cannot replace bindings on the default exchange");
     }
 
     @Override
     public void restoreBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> argumentMap)
-            throws AMQSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         _logger.warn("Bindings to the default exchange should not be stored in the configuration store");
     }
 
     @Override
-    public void removeBinding(Binding b) throws AMQSecurityException, AMQInternalException
+    public void removeBinding(Binding b) throws QpidSecurityException
     {
-        throw new AMQSecurityException("Cannot remove bindings to the default exchange");
+        throw new QpidSecurityException("Cannot remove bindings to the default exchange");
     }
 
     @Override
     public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws AMQSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
-        throw new AMQSecurityException("Cannot remove bindings to the default exchange");
+        throw new QpidSecurityException("Cannot remove bindings to the default exchange");
     }
 
     @Override
@@ -201,7 +197,7 @@ public class DefaultExchange implements Exchange
     }
 
     @Override
-    public void close() throws AMQException
+    public void close()
     {
         if(_closed.compareAndSet(false,true))
         {
@@ -357,11 +353,6 @@ public class DefaultExchange implements Exchange
                     try
                     {
                         q.enqueue(message, postEnqueueAction);
-                    }
-                    catch (AMQException e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
                     }
                     finally
                     {

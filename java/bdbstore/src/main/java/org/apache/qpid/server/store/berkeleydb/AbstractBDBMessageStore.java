@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -157,7 +157,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _eventManager.addEventListener(eventListener, events);
     }
 
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
     {
         _stateManager.attainState(State.INITIALISING);
 
@@ -166,7 +166,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         if(_stateManager.isInState(State.INITIAL))
         {
@@ -181,14 +181,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         completeInitialisation();
     }
 
-    private void completeInitialisation() throws Exception
+    private void completeInitialisation()
     {
         configure(_virtualHost);
 
         _stateManager.attainState(State.INITIALISED);
     }
 
-    public synchronized void activate() throws Exception
+    public synchronized void activate()
     {
         // check if acting as a durable config store, but not a message store
         if(_stateManager.isInState(State.INITIALISING))
@@ -228,12 +228,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    public void configure(VirtualHost virtualHost) throws Exception
+    public void configure(VirtualHost virtualHost)
     {
         configure(virtualHost, _messageRecoveryHandler != null);
     }
 
-    public void configure(VirtualHost virtualHost, boolean isMessageStore) throws Exception
+    public void configure(VirtualHost virtualHost, boolean isMessageStore)
     {
         String name = virtualHost.getName();
         final String defaultPath = System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name;
@@ -327,9 +327,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * This is required if you do not want to perform recovery of the store data
      *
-     * @throws AMQStoreException if the store is not in the correct state
+     * @throws org.apache.qpid.server.store.StoreException if the store is not in the correct state
      */
-    void startWithNoRecover() throws AMQStoreException
+    void startWithNoRecover() throws StoreException
     {
         _stateManager.attainState(State.INITIALISING);
         _stateManager.attainState(State.INITIALISED);
@@ -337,7 +337,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _stateManager.attainState(State.ACTIVE);
     }
 
-    protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath, String name)
     {
         _environment = createEnvironment(storePath);
 
@@ -387,7 +387,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @throws Exception If the close fails.
      */
-    public void close() throws Exception
+    public void close()
     {
         if (_closed.compareAndSet(false, true))
         {
@@ -397,7 +397,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
     }
 
-    protected void closeInternal() throws Exception
+    protected void closeInternal()
     {
         if (_messageMetaDataDb != null)
         {
@@ -472,7 +472,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
 
-    private void recoverConfig(ConfigurationRecoveryHandler recoveryHandler) throws AMQStoreException
+    private void recoverConfig(ConfigurationRecoveryHandler recoveryHandler)
     {
         try
         {
@@ -488,12 +488,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
+            throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
         }
 
     }
 
-    private void updateConfigVersion(int newConfigVersion) throws AMQStoreException
+    private void updateConfigVersion(int newConfigVersion) throws StoreException
     {
         Cursor cursor = null;
         try
@@ -510,7 +510,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 OperationStatus status = cursor.put(key, value);
                 if (status != OperationStatus.SUCCESS)
                 {
-                    throw new AMQStoreException("Error setting config version: " + status);
+                    throw new StoreException("Error setting config version: " + status);
                 }
             }
             cursor.close();
@@ -524,7 +524,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     }
 
-    private int getConfigVersion() throws AMQStoreException
+    private int getConfigVersion() throws StoreException
     {
         Cursor cursor = null;
         try
@@ -543,7 +543,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             OperationStatus status = _configVersionDb.put(null, key, value);
             if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Error initialising config version: " + status);
+                throw new StoreException("Error initialising config version: " + status);
             }
             return 0;
         }
@@ -706,7 +706,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         dtxrh.completeDtxRecordRecovery();
     }
 
-    public void removeMessage(long messageId, boolean sync) throws AMQStoreException
+    public void removeMessage(long messageId, boolean sync) throws StoreException
     {
 
         boolean complete = false;
@@ -818,11 +818,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 }
                 catch (DatabaseException e1)
                 {
-                    throw new AMQStoreException("Error aborting transaction " + e1, e1);
+                    throw new StoreException("Error aborting transaction " + e1, e1);
                 }
             }
 
-            throw new AMQStoreException("Error removing message with id " + messageId + " from database: " + e.getMessage(), e);
+            throw new StoreException("Error removing message with id " + messageId + " from database: " + e.getMessage(), e);
         }
         finally
         {
@@ -835,14 +835,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 }
                 catch (DatabaseException e1)
                 {
-                    throw new AMQStoreException("Error aborting transaction " + e1, e1);
+                    throw new StoreException("Error aborting transaction " + e1, e1);
                 }
             }
         }
     }
 
     @Override
-    public void create(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
+    public void create(UUID id, String type, Map<String, Object> attributes) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
@@ -852,7 +852,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
     @Override
-    public void remove(UUID id, String type) throws AMQStoreException
+    public void remove(UUID id, String type) throws StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -861,12 +861,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         OperationStatus status = removeConfiguredObject(null, id);
         if (status == OperationStatus.NOTFOUND)
         {
-            throw new AMQStoreException("Configured object of type " + type + " with id " + id + " not found");
+            throw new StoreException("Configured object of type " + type + " with id " + id + " not found");
         }
     }
 
     @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects) throws AMQStoreException
+    public UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
     {
         com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
         Collection<UUID> removed = new ArrayList<UUID>(objects.length);
@@ -883,17 +883,17 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
     @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
+    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
     {
         update(false, id, type, attributes, null);
     }
 
-    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(ConfiguredObjectRecord... records) throws StoreException
     {
         update(false, records);
     }
 
-    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
         for(ConfiguredObjectRecord record : records)
@@ -903,7 +903,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         txn.commit();
     }
 
-    private void update(boolean createIfNecessary, UUID id, String type, Map<String, Object> attributes, com.sleepycat.je.Transaction txn) throws AMQStoreException
+    private void update(boolean createIfNecessary, UUID id, String type, Map<String, Object> attributes, com.sleepycat.je.Transaction txn) throws
+                                                                                                                                           StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -930,17 +931,17 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 status = _configuredObjectsDb.put(txn, key, newValue);
                 if (status != OperationStatus.SUCCESS)
                 {
-                    throw new AMQStoreException("Error updating queue details within the store: " + status);
+                    throw new StoreException("Error updating queue details within the store: " + status);
                 }
             }
             else if (status != OperationStatus.NOTFOUND)
             {
-                throw new AMQStoreException("Error finding queue details within the store: " + status);
+                throw new StoreException("Error finding queue details within the store: " + status);
             }
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error updating queue details within the store: " + e,e);
+            throw new StoreException("Error updating queue details within the store: " + e,e);
         }
     }
 
@@ -951,10 +952,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      * @param queue     The the queue to place the message on.
      * @param messageId The message to enqueue.
      *
-     * @throws AMQStoreException If the operation fails for any reason.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason.
      */
     public void enqueueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
-                               long messageId) throws AMQStoreException
+                               long messageId) throws StoreException
     {
 
         DatabaseEntry key = new DatabaseEntry();
@@ -977,7 +978,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         catch (DatabaseException e)
         {
             LOGGER.error("Failed to enqueue: " + e.getMessage(), e);
-            throw new AMQStoreException("Error writing enqueued message with id " + messageId + " for queue "
+            throw new StoreException("Error writing enqueued message with id " + messageId + " for queue "
                     + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + queue.getId()
                     + " to database", e);
         }
@@ -990,10 +991,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      * @param queue     The queue to take the message from.
      * @param messageId The message to dequeue.
      *
-     * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
     public void dequeueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
-                               long messageId) throws AMQStoreException
+                               long messageId) throws StoreException
     {
 
         DatabaseEntry key = new DatabaseEntry();
@@ -1013,12 +1014,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             OperationStatus status = _deliveryDb.delete(tx, key);
             if (status == OperationStatus.NOTFOUND)
             {
-                throw new AMQStoreException("Unable to find message with id " + messageId + " on queue "
+                throw new StoreException("Unable to find message with id " + messageId + " on queue "
                         + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + id);
             }
             else if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Unable to remove message with id " + messageId + " on queue"
+                throw new StoreException("Unable to remove message with id " + messageId + " on queue"
                         + (queue instanceof AMQQueue ? ((AMQQueue) queue).getName() + " with id " : "") + id);
             }
 
@@ -1036,7 +1037,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             LOGGER.error("Failed to dequeue message " + messageId + ": " + e.getMessage(), e);
             LOGGER.error(tx);
 
-            throw new AMQStoreException("Error accessing database while dequeuing message: " + e.getMessage(), e);
+            throw new StoreException("Error accessing database while dequeuing message: " + e.getMessage(), e);
         }
     }
 
@@ -1046,7 +1047,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                            byte[] globalId,
                            byte[] branchId,
                            org.apache.qpid.server.store.Transaction.Record[] enqueues,
-                           org.apache.qpid.server.store.Transaction.Record[] dequeues) throws AMQStoreException
+                           org.apache.qpid.server.store.Transaction.Record[] dequeues) throws StoreException
     {
         DatabaseEntry key = new DatabaseEntry();
         Xid xid = new Xid(format, globalId, branchId);
@@ -1065,12 +1066,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         catch (DatabaseException e)
         {
             LOGGER.error("Failed to write xid: " + e.getMessage(), e);
-            throw new AMQStoreException("Error writing xid to database", e);
+            throw new StoreException("Error writing xid to database", e);
         }
     }
 
     private void removeXid(com.sleepycat.je.Transaction txn, long format, byte[] globalId, byte[] branchId)
-            throws AMQStoreException
+            throws StoreException
     {
         DatabaseEntry key = new DatabaseEntry();
         Xid xid = new Xid(format, globalId, branchId);
@@ -1085,11 +1086,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             OperationStatus status = _xidDb.delete(txn, key);
             if (status == OperationStatus.NOTFOUND)
             {
-                throw new AMQStoreException("Unable to find xid");
+                throw new StoreException("Unable to find xid");
             }
             else if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Unable to remove xid");
+                throw new StoreException("Unable to remove xid");
             }
 
         }
@@ -1099,7 +1100,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             LOGGER.error("Failed to remove xid ", e);
             LOGGER.error(txn);
 
-            throw new AMQStoreException("Error accessing database while removing xid: " + e.getMessage(), e);
+            throw new StoreException("Error accessing database while removing xid: " + e.getMessage(), e);
         }
     }
 
@@ -1108,13 +1109,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @param tx The transaction to commit all operations for.
      *
-     * @throws AMQStoreException If the operation fails for any reason.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason.
      */
-    private StoreFuture commitTranImpl(final com.sleepycat.je.Transaction tx, boolean syncCommit) throws AMQStoreException
+    private StoreFuture commitTranImpl(final com.sleepycat.je.Transaction tx, boolean syncCommit) throws
+                                                                                                  StoreException
     {
         if (tx == null)
         {
-            throw new AMQStoreException("Fatal internal error: transactional is null at commitTran");
+            throw new StoreException("Fatal internal error: transactional is null at commitTran");
         }
 
         StoreFuture result;
@@ -1130,7 +1132,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error commit tx: " + e.getMessage(), e);
+            throw new StoreException("Error commit tx: " + e.getMessage(), e);
         }
 
         return result;
@@ -1141,9 +1143,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @param tx The transaction to abandon.
      *
-     * @throws AMQStoreException If the operation fails for any reason.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason.
      */
-    public void abortTran(final com.sleepycat.je.Transaction tx) throws AMQStoreException
+    public void abortTran(final com.sleepycat.je.Transaction tx) throws StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -1156,7 +1158,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error aborting transaction: " + e.getMessage(), e);
+            throw new StoreException("Error aborting transaction: " + e.getMessage(), e);
         }
     }
 
@@ -1167,7 +1169,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @return a list of message ids for messages enqueued for a particular queue
      */
-    List<Long> getEnqueuedMessages(UUID queueId) throws AMQStoreException
+    List<Long> getEnqueuedMessages(UUID queueId) throws StoreException
     {
         Cursor cursor = null;
         try
@@ -1203,7 +1205,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Database error: " + e.getMessage(), e);
+            throw new StoreException("Database error: " + e.getMessage(), e);
         }
         finally
         {
@@ -1215,7 +1217,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 }
                 catch (DatabaseException e)
                 {
-                    throw new AMQStoreException("Error closing cursor: " + e.getMessage(), e);
+                    throw new StoreException("Error closing cursor: " + e.getMessage(), e);
                 }
             }
         }
@@ -1239,10 +1241,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      * @param offset          The offset of the data chunk in the message.
      * @param contentBody     The content of the data chunk.
      *
-     * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
     protected void addContent(final com.sleepycat.je.Transaction tx, long messageId, int offset,
-                                      ByteBuffer contentBody) throws AMQStoreException
+                                      ByteBuffer contentBody) throws StoreException
     {
         DatabaseEntry key = new DatabaseEntry();
         LongBinding.longToEntry(messageId, key);
@@ -1254,7 +1256,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             OperationStatus status = _messageContentDb.put(tx, key, value);
             if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Error adding content for message id " + messageId + ": " + status);
+                throw new StoreException("Error adding content for message id " + messageId + ": " + status);
             }
 
             if (LOGGER.isDebugEnabled())
@@ -1265,7 +1267,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error writing AMQMessage with id " + messageId + " to database: " + e.getMessage(), e);
+            throw new StoreException("Error writing AMQMessage with id " + messageId + " to database: " + e.getMessage(), e);
         }
     }
 
@@ -1276,11 +1278,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      * @param messageId       The message to store the data for.
      * @param messageMetaData The message meta data to store.
      *
-     * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
     private void storeMetaData(final com.sleepycat.je.Transaction tx, long messageId,
                                StorableMessageMetaData messageMetaData)
-            throws AMQStoreException
+            throws StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -1305,7 +1307,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error writing message metadata with id " + messageId + " to database: " + e.getMessage(), e);
+            throw new StoreException("Error writing message metadata with id " + messageId + " to database: " + e.getMessage(), e);
         }
     }
 
@@ -1316,9 +1318,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @return The message meta data.
      *
-     * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public StorableMessageMetaData getMessageMetaData(long messageId) throws AMQStoreException
+    public StorableMessageMetaData getMessageMetaData(long messageId) throws StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -1336,7 +1338,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             OperationStatus status = _messageMetaDataDb.get(null, key, value, LockMode.READ_UNCOMMITTED);
             if (status != OperationStatus.SUCCESS)
             {
-                throw new AMQStoreException("Metadata not found for message with id " + messageId);
+                throw new StoreException("Metadata not found for message with id " + messageId);
             }
 
             StorableMessageMetaData mdd = messageBinding.entryToObject(value);
@@ -1345,7 +1347,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error reading message metadata for message with id " + messageId + ": " + e.getMessage(), e);
+            throw new StoreException("Error reading message metadata for message with id " + messageId + ": " + e.getMessage(), e);
         }
     }
 
@@ -1359,9 +1361,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @return The number of bytes inserted into the destination
      *
-     * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public int getContent(long messageId, int offset, ByteBuffer dst) throws AMQStoreException
+    public int getContent(long messageId, int offset, ByteBuffer dst) throws StoreException
     {
         DatabaseEntry contentKeyEntry = new DatabaseEntry();
         LongBinding.longToEntry(messageId, contentKeyEntry);
@@ -1385,7 +1387,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 int size = dataAsBytes.length;
                 if (offset > size)
                 {
-                    throw new RuntimeException("Offset " + offset + " is greater than message size " + size
+                    throw new StoreException("Offset " + offset + " is greater than message size " + size
                             + " for message id " + messageId + "!");
 
                 }
@@ -1402,7 +1404,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error getting AMQMessage with id " + messageId + " to database: " + e.getMessage(), e);
+            throw new StoreException("Error getting AMQMessage with id " + messageId + " to database: " + e.getMessage(), e);
         }
     }
 
@@ -1445,9 +1447,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      * Makes the specified configured object persistent.
      *
      * @param configuredObject     Details of the configured object to store.
-     * @throws AMQStoreException If the operation fails for any reason.
+     * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason.
      */
-    private void storeConfiguredObjectEntry(ConfiguredObjectRecord configuredObject) throws AMQStoreException
+    private void storeConfiguredObjectEntry(ConfiguredObjectRecord configuredObject) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
@@ -1465,19 +1467,19 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 OperationStatus status = _configuredObjectsDb.put(null, key, value);
                 if (status != OperationStatus.SUCCESS)
                 {
-                    throw new AMQStoreException("Error writing configured object " + configuredObject + " to database: "
+                    throw new StoreException("Error writing configured object " + configuredObject + " to database: "
                             + status);
                 }
             }
             catch (DatabaseException e)
             {
-                throw new AMQStoreException("Error writing configured object " + configuredObject
+                throw new StoreException("Error writing configured object " + configuredObject
                         + " to database: " + e.getMessage(), e);
             }
         }
     }
 
-    private OperationStatus removeConfiguredObject(Transaction tx, UUID id) throws AMQStoreException
+    private OperationStatus removeConfiguredObject(Transaction tx, UUID id) throws StoreException
     {
 
         LOGGER.debug("Removing configured object: " + id);
@@ -1490,7 +1492,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error deleting of configured object with id " + id + " from database", e);
+            throw new StoreException("Error deleting of configured object with id " + id + " from database", e);
         }
     }
 
@@ -1531,14 +1533,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             StorableMessageMetaData metaData = _metaDataRef.get();
             if(metaData == null)
             {
-                try
-                {
-                    metaData = AbstractBDBMessageStore.this.getMessageMetaData(_messageId);
-                }
-                catch (AMQStoreException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                metaData = AbstractBDBMessageStore.this.getMessageMetaData(_messageId);
                 _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
             }
 
@@ -1583,15 +1578,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             }
             else
             {
-                try
-                {
-                    return AbstractBDBMessageStore.this.getContent(_messageId, offsetInMessage, dst);
-                }
-                catch (AMQStoreException e)
-                {
-                    // TODO maybe should throw a checked exception, or at least log before throwing
-                    throw new RuntimeException(e);
-                }
+                return AbstractBDBMessageStore.this.getContent(_messageId, offsetInMessage, dst);
             }
         }
 
@@ -1625,16 +1612,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 }
                 catch(DatabaseException e)
                 {
-                    throw new RuntimeException(e);
-                }
-                catch (AMQStoreException e)
-                {
-                    throw new RuntimeException(e);
-                }
-                catch (RuntimeException e)
-                {
-                    LOGGER.error("RuntimeException during store", e);
-                    throw e;
+                    throw new StoreException(e);
                 }
                 finally
                 {
@@ -1658,17 +1636,9 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
         public void remove()
         {
-            try
-            {
-                int delta = getMetaData().getContentSize();
-                AbstractBDBMessageStore.this.removeMessage(_messageId, false);
-                storedSizeChange(-delta);
-
-            }
-            catch (AMQStoreException e)
-            {
-                throw new RuntimeException(e);
-            }
+            int delta = getMetaData().getContentSize();
+            AbstractBDBMessageStore.this.removeMessage(_messageId, false);
+            storedSizeChange(-delta);
         }
 
         private boolean stored()
@@ -1693,11 +1663,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 LOGGER.error("Exception during transaction begin, closing store environment.", e);
                 closeEnvironmentSafely();
 
-                throw new RuntimeException("Exception during transaction begin, store environment closed.", e);
+                throw new StoreException("Exception during transaction begin, store environment closed.", e);
             }
         }
 
-        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             if(message.getStoredMessage() instanceof StoredBDBMessage)
             {
@@ -1709,35 +1679,36 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             AbstractBDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
         }
 
-        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             AbstractBDBMessageStore.this.dequeueMessage(_txn, queue, message.getMessageNumber());
         }
 
-        public void commitTran() throws AMQStoreException
+        public void commitTran()
         {
             AbstractBDBMessageStore.this.commitTranImpl(_txn, true);
             AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
         }
 
-        public StoreFuture commitTranAsync() throws AMQStoreException
+        public StoreFuture commitTranAsync()
         {
             AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
             return AbstractBDBMessageStore.this.commitTranImpl(_txn, false);
         }
 
-        public void abortTran() throws AMQStoreException
+        public void abortTran()
         {
             AbstractBDBMessageStore.this.abortTran(_txn);
         }
 
-        public void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException
+        public void removeXid(long format, byte[] globalId, byte[] branchId)
         {
             AbstractBDBMessageStore.this.removeXid(_txn, format, globalId, branchId);
+
         }
 
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues,
-                              Record[] dequeues) throws AMQStoreException
+                              Record[] dequeues)
         {
             AbstractBDBMessageStore.this.recordXid(_txn, format, globalId, branchId, enqueues, dequeues);
         }

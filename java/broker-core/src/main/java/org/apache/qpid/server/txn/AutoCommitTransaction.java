@@ -22,13 +22,10 @@ package org.apache.qpid.server.txn;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -95,11 +92,6 @@ public class AutoCommitTransaction implements ServerTransaction
             postTransactionAction.postCommit();
             postTransactionAction = null;
         }
-        catch (AMQException e)
-        {
-            _logger.error("Error during message dequeue", e);
-            throw new RuntimeException("Error during message dequeue", e);
-        }
         finally
         {
             rollbackIfNecessary(postTransactionAction, txn);
@@ -140,13 +132,7 @@ public class AutoCommitTransaction implements ServerTransaction
             }
             postTransactionAction.postCommit();
             postTransactionAction = null;
-        }
-        catch (AMQException e)
-        {
-            _logger.error("Error during message dequeues", e);
-            throw new RuntimeException("Error during message dequeues", e);
-        }
-        finally
+        }finally
         {
             rollbackIfNecessary(postTransactionAction, txn);
         }
@@ -173,11 +159,6 @@ public class AutoCommitTransaction implements ServerTransaction
             }
             postTransactionAction.postCommit();
             postTransactionAction = null;
-        }
-        catch (AMQException e)
-        {
-            _logger.error("Error during message enqueue", e);
-            throw new RuntimeException("Error during message enqueue", e);
         }
         finally
         {
@@ -225,13 +206,7 @@ public class AutoCommitTransaction implements ServerTransaction
             postTransactionAction = null;
 
 
-        }
-        catch (AMQException e)
-        {
-            _logger.error("Error during message enqueues", e);
-            throw new RuntimeException("Error during message enqueues", e);
-        }
-        finally
+        }finally
         {
             rollbackIfNecessary(postTransactionAction, txn);
         }
@@ -261,17 +236,7 @@ public class AutoCommitTransaction implements ServerTransaction
     {
         if (txn != null)
         {
-            try
-            {
-                txn.abortTran();
-            }
-            catch (AMQStoreException e)
-            {
-                _logger.error("Abort transaction failed", e);
-                // Deliberate decision not to re-throw this exception.  Rationale:  we can only reach here if a previous
-                // TransactionLog method has ended in Exception.  If we were to re-throw here, we would prevent
-                // our caller from receiving the original exception (which is likely to be more revealing of the underlying error).
-            }
+            txn.abortTran();
         }
         if (postTransactionAction != null)
         {

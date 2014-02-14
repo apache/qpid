@@ -28,13 +28,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -44,6 +42,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionCloseCode;
@@ -52,7 +51,6 @@ import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.network.NetworkConnection;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
@@ -199,7 +197,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         _onOpenTask = task;
     }
 
-    public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
+    public void closeSession(AMQSessionModel session, AMQConstant cause, String message)
     {
         ExecutionException ex = new ExecutionException();
         ExecutionErrorCode code = ExecutionErrorCode.INTERNAL_ERROR;
@@ -215,12 +213,32 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         ex.setDescription(message);
         ((ServerSession)session).invoke(ex);
 
-        ((ServerSession)session).close(cause, message);
+        session.close(cause, message);
     }
 
     public LogSubject getLogSubject()
     {
-        return (LogSubject) this;
+        return this;
+    }
+
+    @Override
+    public void exception(final Throwable t)
+    {
+        try
+        {
+            super.exception(t);
+        }
+        finally
+        {
+            if(t instanceof Error)
+            {
+                throw (Error) t;
+            }
+            if(t instanceof ServerScopedRuntimeException)
+            {
+                throw (ServerScopedRuntimeException) t;
+            }
+        }
     }
 
     @Override
@@ -294,7 +312,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         return _actor;
     }
 
-    public void close(AMQConstant cause, String message) throws AMQException
+    public void close(AMQConstant cause, String message)
     {
         closeSubscriptions();
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;

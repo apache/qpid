@@ -48,7 +48,7 @@ public class MapJsonSerializer
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Failure to serialize map:" + attributeMap, e);
+            throw new ConnectionScopedRuntimeException("Failure to serialize map:" + attributeMap, e);
         }
         return stringWriter.toString();
     }
@@ -62,7 +62,7 @@ public class MapJsonSerializer
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Failure to deserialize json:" + json, e);
+            throw new ConnectionScopedRuntimeException("Failure to deserialize json:" + json, e);
         }
         return attributesMap;
     }

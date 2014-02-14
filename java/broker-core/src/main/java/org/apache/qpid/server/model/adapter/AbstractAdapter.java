@@ -131,7 +131,7 @@ public abstract class AbstractAdapter implements ConfiguredObject
         }
         else
         {
-            return (State)_taskExecutor.submitAndWait(new ChangeStateTask(this, currentState, desiredState));
+            return _taskExecutor.submitAndWait(new ChangeStateTask(this, currentState, desiredState));
         }
     }
 

@@ -28,6 +28,7 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -144,9 +145,13 @@ class WebSocketProvider implements AcceptingTransport
         {
             _server.start();
         }
+        catch(RuntimeException e)
+        {
+            throw e;
+        }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new ServerScopedRuntimeException(e);
         }
 
     }

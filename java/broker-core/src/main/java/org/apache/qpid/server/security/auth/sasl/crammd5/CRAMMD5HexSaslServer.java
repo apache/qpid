@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.sasl.crammd5;
 
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
+
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
@@ -60,7 +62,7 @@ public class CRAMMD5HexSaslServer implements SaslServer
             }
         }
 
-        throw new RuntimeException("No default SaslServer found for mechanism:" + "CRAM-MD5");
+        throw new ServerScopedRuntimeException("No default SaslServer found for mechanism:" + "CRAM-MD5");
     }
 
     public String getMechanismName()

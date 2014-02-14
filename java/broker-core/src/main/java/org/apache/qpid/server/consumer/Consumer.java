@@ -21,11 +21,7 @@
 package org.apache.qpid.server.consumer;
 
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.util.StateChangeListener;
 
 public interface Consumer
 {
@@ -64,7 +60,7 @@ public interface Consumer
 
     boolean seesRequeues();
 
-    void close() throws AMQException;
+    void close();
 
     boolean trySendLock();
 
@@ -77,5 +73,5 @@ public interface Consumer
 
     String getName();
 
-    void flush() throws AMQException;
+    void flush();
 }

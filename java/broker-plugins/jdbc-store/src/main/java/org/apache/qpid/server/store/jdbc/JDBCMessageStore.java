@@ -30,11 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
 
@@ -252,7 +252,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     }
 
     @Override
-    protected void doClose() throws AMQStoreException
+    protected void doClose()
     {
         while(!_transactions.isEmpty())
         {
@@ -265,7 +265,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         }
         catch (SQLException e)
         {
-            throw new AMQStoreException("Unable to close connection provider ", e);
+            throw new StoreException("Unable to close connection provider ", e);
         }
     }
 
@@ -430,7 +430,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         }
 
         @Override
-        public void commitTran() throws AMQStoreException
+        public void commitTran()
         {
             try
             {
@@ -443,7 +443,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         }
 
         @Override
-        public StoreFuture commitTranAsync() throws AMQStoreException
+        public StoreFuture commitTranAsync()
         {
             try
             {
@@ -456,7 +456,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         }
 
         @Override
-        public void abortTran() throws AMQStoreException
+        public void abortTran()
         {
             try
             {

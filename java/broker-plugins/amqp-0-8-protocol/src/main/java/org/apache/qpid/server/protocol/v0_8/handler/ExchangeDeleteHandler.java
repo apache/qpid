@@ -26,10 +26,10 @@ import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -73,11 +73,6 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
 
             session.writeFrame(responseBody.generateFrame(channelId));
         }
-        catch (ExchangeInUseException e)
-        {
-            throw body.getChannelException(AMQConstant.IN_USE, "Exchange in use");
-            // TODO: sort out consistent channel close mechanism that does all clean up etc.
-        }
 
         catch (ExchangeIsAlternateException e)
         {
@@ -87,6 +82,10 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         catch (RequiredExchangeException e)
         {
             throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange '"+body.getExchange()+"' cannot be deleted");
+        }
+        catch (QpidSecurityException e)
+        {
+            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
         }
     }
 }

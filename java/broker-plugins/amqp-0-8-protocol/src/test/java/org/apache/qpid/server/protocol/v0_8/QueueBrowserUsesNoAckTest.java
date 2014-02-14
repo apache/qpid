@@ -85,7 +85,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         return _queue;
     }
 
-    public void testQueueBrowserUsesNoAck() throws AMQException
+    public void testQueueBrowserUsesNoAck() throws Exception
     {
         int sendMessageCount = 2;
         int prefetch = 1;
@@ -136,7 +136,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageCount());
     }
 
-    private AMQShortString browse(AMQChannel channel, AMQQueue queue) throws AMQException
+    private AMQShortString browse(AMQChannel channel, AMQQueue queue) throws Exception
     {
         FieldTable filters = new FieldTable();
         filters.put(AMQPFilterTypes.NO_CONSUME.getValue(), true);

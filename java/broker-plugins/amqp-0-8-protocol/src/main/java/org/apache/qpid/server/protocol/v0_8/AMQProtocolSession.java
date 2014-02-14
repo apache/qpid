@@ -71,7 +71,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
 
     public static interface Task
     {
-        public void doTask(AMQProtocolSession session) throws AMQException;
+        public void doTask(AMQProtocolSession session);
     }
 
     /**
@@ -152,7 +152,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     void initHeartbeats(int delay);
 
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
-    void closeSession() throws AMQException;
+    void closeSession();
 
     void closeProtocolSession();
 

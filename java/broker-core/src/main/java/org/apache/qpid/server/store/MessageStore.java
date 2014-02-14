@@ -41,9 +41,9 @@ public interface MessageStore
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
     void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                               TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception;
+                               TransactionLogRecoveryHandler tlogRecoveryHandler);
 
-    void activate() throws Exception;
+    void activate();
 
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
 
@@ -62,7 +62,7 @@ public interface MessageStore
      *
      * @throws Exception If the close fails.
      */
-    void close() throws Exception;
+    void close();
 
     void addEventListener(EventListener eventListener, Event... events);
 

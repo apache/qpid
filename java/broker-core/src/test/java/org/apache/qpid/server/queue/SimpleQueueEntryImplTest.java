@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -51,7 +47,7 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
     }
 
 
-    public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException
+    public QueueEntryImpl getQueueEntryImpl(int msgId)
     {
         ServerMessage message = mock(ServerMessage.class);
         when(message.getMessageNumber()).thenReturn((long)msgId);

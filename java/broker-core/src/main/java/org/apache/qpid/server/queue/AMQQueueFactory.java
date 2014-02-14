@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -35,8 +35,13 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
+import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public class AMQQueueFactory implements QueueFactory
 {
@@ -183,7 +188,7 @@ public class AMQQueueFactory implements QueueFactory
                                  boolean autoDelete,
                                  boolean exclusive,
                                  boolean deleteOnNoConsumer,
-                                 Map<String, Object> arguments) throws AMQSecurityException, AMQException
+                                 Map<String, Object> arguments) throws QpidSecurityException
     {
         return createOrRestoreQueue(id, queueName, true, owner, autoDelete, exclusive, deleteOnNoConsumer, arguments, false);
 
@@ -201,7 +206,7 @@ public class AMQQueueFactory implements QueueFactory
                                 boolean autoDelete,
                                 boolean exclusive,
                                 boolean deleteOnNoConsumer,
-                                Map<String, Object> arguments) throws AMQSecurityException, AMQException
+                                Map<String, Object> arguments) throws QpidSecurityException
     {
         return createOrRestoreQueue(id, queueName, durable, owner, autoDelete, exclusive, deleteOnNoConsumer, arguments, true);
     }
@@ -214,7 +219,7 @@ public class AMQQueueFactory implements QueueFactory
                                           boolean exclusive,
                                           boolean deleteOnNoConsumer,
                                           Map<String, Object> arguments,
-                                          boolean createInStore) throws AMQSecurityException, AMQException
+                                          boolean createInStore) throws QpidSecurityException
     {
         if (id == null)
         {
@@ -339,6 +344,18 @@ public class AMQQueueFactory implements QueueFactory
                 // We're ok if the exchange already exists
                 dlExchange = e.getExistingExchange();
             }
+            catch (ReservedExchangeNameException e)
+            {
+                throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
+            }
+            catch (AMQUnknownExchangeType e)
+            {
+                throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
+            }
+            catch (UnknownExchangeException e)
+            {
+                throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
+            }
 
             AMQQueue dlQueue = null;
 
@@ -353,8 +370,19 @@ public class AMQQueueFactory implements QueueFactory
                     args.put(Queue.CREATE_DLQ_ON_CREATION, false);
                     args.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0);
 
-                    dlQueue = _virtualHost.createQueue(UUIDGenerator.generateQueueUUID(dlQueueName, _virtualHost.getName()), dlQueueName, true, owner, false, exclusive,
-                            false, args);
+                    try
+                    {
+                        dlQueue = _virtualHost.createQueue(UUIDGenerator.generateQueueUUID(dlQueueName, _virtualHost.getName()), dlQueueName, true, owner, false, exclusive,
+                                false, args);
+                    }
+                    catch (QueueExistsException e)
+                    {
+                        throw new ServerScopedRuntimeException("Attempt to create a queue failed because the " +
+                                                               "queue already exists, however this occurred within " +
+                                                               "a block where the queue existence had previously been " +
+                                                               "checked, and no queue creation should have been " +
+                                                               "possible from another thread", e);
+                    }
                 }
             }
 
@@ -391,7 +419,7 @@ public class AMQQueueFactory implements QueueFactory
         return q;
     }
 
-    public AMQQueue createAMQQueueImpl(QueueConfiguration config) throws AMQException
+    public AMQQueue createAMQQueueImpl(QueueConfiguration config) throws QpidSecurityException
     {
         String queueName = config.getName();
 

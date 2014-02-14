@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
@@ -349,7 +348,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private AMQQueue createTestQueue(String queueName,
                                      String queueOwner,
                                      boolean exclusive,
-                                     final Map<String, Object> arguments) throws AMQStoreException
+                                     final Map<String, Object> arguments) throws StoreException
     {
         return createTestQueue(queueName, queueOwner, exclusive, null, arguments);
     }
@@ -358,7 +357,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
                                      String queueOwner,
                                      boolean exclusive,
                                      Exchange alternateExchange,
-                                     final Map<String, Object> arguments) throws AMQStoreException
+                                     final Map<String, Object> arguments) throws StoreException
     {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getName()).thenReturn(queueName);

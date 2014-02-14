@@ -21,10 +21,8 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -60,7 +58,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _queueRegistry = queueRegistry;
     }
 
-    public void initialise(ExchangeFactory exchangeFactory) throws AMQException
+    public void initialise(ExchangeFactory exchangeFactory)
     {
         //create 'standard' exchanges:
         new ExchangeInitialiser().initialise(exchangeFactory, this, getDurableConfigurationStore());
@@ -79,7 +77,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _host.getDurableConfigurationStore();
     }
 
-    public void registerExchange(Exchange exchange) throws AMQException
+    public void registerExchange(Exchange exchange)
     {
         _exchangeMap.put(exchange.getName(), exchange);
         synchronized (_listeners)
@@ -102,39 +100,37 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
-    public void unregisterExchange(String name, boolean inUse) throws AMQException
+    public boolean unregisterExchange(String name, boolean inUse) throws QpidSecurityException
     {
         final Exchange exchange = _exchangeMap.get(name);
-        if (exchange == null)
+        if (exchange != null)
         {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Unknown exchange " + name, null);
-        }
 
-        if (!_host.getSecurityManager().authoriseDelete(exchange))
-        {
-            throw new AMQSecurityException();
-        }
-
-        // TODO: check inUse argument
-
-        Exchange e = _exchangeMap.remove(name);
-        if (e != null)
-        {
-            e.close();
-
-            synchronized (_listeners)
+            if (!_host.getSecurityManager().authoriseDelete(exchange))
             {
-                for(RegistryChangeListener listener : _listeners)
-                {
-                    listener.exchangeUnregistered(exchange);
-                }
+                throw new QpidSecurityException();
             }
 
+            // TODO: check inUse argument
+
+            Exchange e = _exchangeMap.remove(name);
+            // if it is null then it was removed by another thread at the same time, we can ignore
+            if (e != null)
+            {
+                e.close();
+
+                synchronized (_listeners)
+                {
+                    for(RegistryChangeListener listener : _listeners)
+                    {
+                        listener.exchangeUnregistered(exchange);
+                    }
+                }
+
+            }
         }
-        else
-        {
-            throw new AMQException("Unknown exchange " + name);
-        }
+        return exchange != null;
+
     }
 
     public Collection<Exchange> getExchanges()

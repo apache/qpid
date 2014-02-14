@@ -41,6 +41,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
@@ -146,6 +147,10 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         catch (AMQException e)
         {
             throw body.getChannelException(AMQConstant.CHANNEL_ERROR, e.toString());
+        }
+        catch (QpidSecurityException e)
+        {
+            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
         }
 
         if (_log.isInfoEnabled())

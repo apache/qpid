@@ -28,8 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -56,6 +55,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -381,13 +381,13 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                                      final FilterManager filters,
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
-                                     EnumSet<Consumer.Option> optionSet) throws AMQException
+                                     EnumSet<Consumer.Option> optionSet) throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive, QpidSecurityException
     {
 
         // Access control
         if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
         {
-            throw new AMQSecurityException("Permission denied");
+            throw new QpidSecurityException("Permission denied");
         }
 
 
@@ -459,7 +459,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    synchronized void unregisterConsumer(final QueueConsumer<?,E,Q,L> consumer) throws AMQException
+    synchronized void unregisterConsumer(final QueueConsumer<?,E,Q,L> consumer)
     {
         if (consumer == null)
         {
@@ -502,7 +502,14 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                     _logger.info("Auto-deleting queue:" + this);
                 }
 
-                getVirtualHost().removeQueue(this);
+                try
+                {
+                    getVirtualHost().removeQueue(this);
+                }
+                catch (QpidSecurityException e)
+                {
+                    throw new ConnectionScopedRuntimeException("Auto delete queue unable to delete itself", e);
+                }
 
                 // we need to manually fire the event to the removed consumer (which was the last one left for this
                 // queue. This is because the delete method uses the consumer set which has just been cleared
@@ -614,7 +621,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     // ------ Enqueue / Dequeue
 
-    public void enqueue(ServerMessage message, Action<? super MessageInstance<?, QueueConsumer<?,E,Q,L>>> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<? super MessageInstance<?, QueueConsumer<?,E,Q,L>>> action)
     {
         incrementQueueCount();
         incrementQueueSize(message);
@@ -703,7 +710,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     private void deliverToConsumer(final QueueConsumer<?,E,Q,L> sub, final E entry)
-            throws AMQException
     {
 
         if(sub.trySendLock())
@@ -793,7 +799,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     private void deliverMessage(final QueueConsumer<?,E,Q,L> sub, final E entry, boolean batch)
-            throws AMQException
     {
         setLastSeenEntry(sub, entry);
 
@@ -803,7 +808,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         sub.send(entry, batch);
     }
 
-    private boolean consumerReadyAndHasInterest(final QueueConsumer<?,E,Q,L> sub, final E entry) throws AMQException
+    private boolean consumerReadyAndHasInterest(final QueueConsumer<?,E,Q,L> sub, final E entry)
     {
         return sub.hasInterest(entry) && (getNextAvailableEntry(sub) == entry);
     }
@@ -894,7 +899,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         _dequeueCount.incrementAndGet();
     }
 
-    public boolean resend(final E entry, final QueueConsumer<?,E,Q,L> consumer) throws AMQException
+    public boolean resend(final E entry, final QueueConsumer<?,E,Q,L> consumer)
     {
         /* TODO : This is wrong as the consumer may be suspended, we should instead change the state of the message
                   entry to resend and move back the consumer pointer. */
@@ -1170,7 +1175,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    public void purge(final long request) throws AMQException
+    public void purge(final long request) throws QpidSecurityException
     {
         clear(request);
     }
@@ -1200,17 +1205,17 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         }
     }
 
-    public long clearQueue() throws AMQException
+    public long clearQueue() throws QpidSecurityException
     {
         return clear(0l);
     }
 
-    private long clear(final long request) throws AMQSecurityException
+    private long clear(final long request) throws QpidSecurityException
     {
         //Perform ACLs
         if (!getVirtualHost().getSecurityManager().authorisePurge(this))
         {
-            throw new AMQSecurityException("Permission denied: queue " + getName());
+            throw new QpidSecurityException("Permission denied: queue " + getName());
         }
 
         QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
@@ -1272,12 +1277,12 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     // TODO list all thrown exceptions
-    public int delete() throws AMQException
+    public int delete() throws QpidSecurityException
     {
         // Check access
         if (!_virtualHost.getSecurityManager().authoriseDelete(this))
         {
-            throw new AMQSecurityException("Permission denied: " + getName());
+            throw new QpidSecurityException("Permission denied: " + getName());
         }
 
         if (!_deleted.getAndSet(true))
@@ -1438,17 +1443,13 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    void flushConsumer(QueueConsumer<?,E,Q,L> sub) throws AMQException
+    void flushConsumer(QueueConsumer<?,E,Q,L> sub)
     {
-        // Access control
-        if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
-        {
-            throw new AMQSecurityException("Permission denied: " + getName());
-        }
+
         flushConsumer(sub, Long.MAX_VALUE);
     }
 
-    boolean flushConsumer(QueueConsumer<?,E,Q,L> sub, long iterations) throws AMQException
+    boolean flushConsumer(QueueConsumer<?,E,Q,L> sub, long iterations)
     {
         boolean atTail = false;
         final boolean keepSendLockHeld = iterations <=  SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
@@ -1524,9 +1525,8 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
      * @param sub the consumer
      * @param batch true if processing can be batched
      * @return true if we have completed all possible deliveries for this sub.
-     * @throws AMQException
      */
-    private boolean attemptDelivery(QueueConsumer<?,E,Q,L> sub, boolean batch) throws AMQException
+    private boolean attemptDelivery(QueueConsumer<?,E,Q,L> sub, boolean batch)
     {
         boolean atTail = false;
 
@@ -1569,7 +1569,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         return atTail || !subActive;
     }
 
-    protected void advanceAllConsumers() throws AMQException
+    protected void advanceAllConsumers()
     {
         QueueConsumerList.ConsumerNodeIterator<E,Q,L> consumerNodeIterator = _consumerList.iterator();
         while (consumerNodeIterator.advance())
@@ -1588,7 +1588,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     private E getNextAvailableEntry(final QueueConsumer<?,E,Q,L> sub)
-            throws AMQException
     {
         QueueContext<E,Q,L> context = sub.getQueueContext();
         if(context != null)
@@ -1666,9 +1665,8 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
      * ends the current instance
      *
      * @param runner the Runner to schedule
-     * @throws AMQException
      */
-    public long processQueue(QueueRunner runner) throws AMQException
+    public long processQueue(QueueRunner runner)
     {
         long stateChangeCount;
         long previousStateChangeCount = Long.MIN_VALUE;
@@ -1789,7 +1787,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    public void checkMessageStatus() throws AMQException
+    public void checkMessageStatus()
     {
         QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
 
@@ -2101,7 +2099,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     /**
      * Checks if there is any notification to send to the listeners
      */
-    private void checkForNotification(ServerMessage<?> msg) throws AMQException
+    private void checkForNotification(ServerMessage<?> msg)
     {
         final Set<NotificationCheck> notificationChecks = getNotificationChecks();
         final AMQQueue.NotificationListener listener = _notificationListener;
@@ -2162,11 +2160,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                     try
                     {
                         SimpleAMQQueue.this.enqueue(message, postEnqueueAction);
-                    }
-                    catch (AMQException e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
                     }
                     finally
                     {

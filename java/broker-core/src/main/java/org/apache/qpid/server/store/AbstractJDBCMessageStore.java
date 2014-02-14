@@ -43,8 +43,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
@@ -177,7 +175,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler)
     {
         _stateManager.attainState(State.INITIALISING);
         _configRecoveryHandler = configRecoveryHandler;
@@ -187,7 +185,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         if(_stateManager.isInState(State.INITIAL))
         {
@@ -201,7 +199,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         completeInitialisation();
     }
 
-    private void completeInitialisation() throws ClassNotFoundException, SQLException, AMQStoreException
+    private void completeInitialisation()
     {
         commonConfiguration();
 
@@ -209,7 +207,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
         if(_stateManager.isInState(State.INITIALISING))
         {
@@ -224,12 +222,28 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         if(_messageRecoveryHandler != null)
         {
-            recoverMessages(_messageRecoveryHandler);
+            try
+            {
+                recoverMessages(_messageRecoveryHandler);
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error encountered when restoring message data from " +
+                                                       "persistent store ", e);
+            }
         }
         if(_tlogRecoveryHandler != null)
         {
-            TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
-            recoverXids(dtxrh);
+            try
+            {
+                TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
+                recoverXids(dtxrh);
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error encountered when restoring distributed transaction " +
+                                                       "data from persistent store ", e);
+            }
 
         }
 
@@ -237,14 +251,24 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     private void commonConfiguration()
-            throws ClassNotFoundException, SQLException, AMQStoreException
     {
-        implementationSpecificConfiguration(_virtualHost.getName(), _virtualHost);
-        createOrOpenDatabase();
-        upgradeIfNecessary();
+        try
+        {
+            implementationSpecificConfiguration(_virtualHost.getName(), _virtualHost);
+            createOrOpenDatabase();
+            upgradeIfNecessary();
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new StoreException("Unable to configure message store ", e);
+        }
+        catch (SQLException e)
+        {
+            throw new StoreException("Unable to configure message store ", e);
+        }
     }
 
-    protected void upgradeIfNecessary() throws SQLException, AMQStoreException
+    protected void upgradeIfNecessary() throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -258,7 +282,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 {
                     if(!rs.next())
                     {
-                        throw new AMQStoreException(DB_VERSION_TABLE_NAME + " does not contain the database version");
+                        throw new StoreException(DB_VERSION_TABLE_NAME + " does not contain the database version");
                     }
                     int version = rs.getInt(1);
                     switch (version)
@@ -268,7 +292,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         case DB_VERSION:
                             return;
                         default:
-                            throw new AMQStoreException("Unknown database version: " + version);
+                            throw new StoreException("Unknown database version: " + version);
                     }
                 }
                 finally
@@ -591,7 +615,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    protected void recoverConfiguration(ConfigurationRecoveryHandler recoveryHandler) throws AMQException
+    protected void recoverConfiguration(ConfigurationRecoveryHandler recoveryHandler)
     {
         try
         {
@@ -602,7 +626,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (SQLException e)
         {
-            throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
+            throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
         }
     }
 
@@ -668,7 +692,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         if (_closed.compareAndSet(false, true))
         {
@@ -681,7 +705,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
 
-    protected abstract void doClose() throws Exception;
+    protected abstract void doClose();
 
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
@@ -756,14 +780,14 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (SQLException e)
         {
-            throw new RuntimeException("Error removing message with id " + messageId + " from database: " + e.getMessage(), e);
+            throw new StoreException("Error removing message with id " + messageId + " from database: " + e.getMessage(), e);
         }
 
     }
 
 
     @Override
-    public void create(UUID id, String type, Map<String,Object> attributes) throws AMQStoreException
+    public void create(UUID id, String type, Map<String,Object> attributes) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
@@ -773,17 +797,17 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void remove(UUID id, String type) throws AMQStoreException
+    public void remove(UUID id, String type) throws StoreException
     {
         int results = removeConfiguredObject(id);
         if (results == 0)
         {
-            throw new AMQStoreException(type + " with id " + id + " not found");
+            throw new StoreException(type + " with id " + id + " not found");
         }
     }
 
     @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException
+    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
@@ -852,7 +876,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     protected abstract Connection getConnection() throws SQLException;
 
-    private byte[] convertStringMapToBytes(final Map<String, String> arguments) throws AMQStoreException
+    private byte[] convertStringMapToBytes(final Map<String, String> arguments) throws StoreException
     {
         byte[] argumentBytes;
         if(arguments == null)
@@ -877,7 +901,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             catch (IOException e)
             {
                 // This should never happen
-                throw new AMQStoreException(e.getMessage(), e);
+                throw new StoreException(e.getMessage(), e);
             }
             argumentBytes = bos.toByteArray();
         }
@@ -890,7 +914,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         return new JDBCTransaction();
     }
 
-    public void enqueueMessage(ConnectionWrapper connWrapper, final TransactionLogResource queue, Long messageId) throws AMQStoreException
+    public void enqueueMessage(ConnectionWrapper connWrapper, final TransactionLogResource queue, Long messageId) throws
+                                                                                                                  StoreException
     {
         Connection conn = connWrapper.getConnection();
 
@@ -927,13 +952,14 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         catch (SQLException e)
         {
             getLogger().error("Failed to enqueue: " + e.getMessage(), e);
-            throw new AMQStoreException("Error writing enqueued message with id " + messageId + " for queue " + (queue instanceof AMQQueue ? ((AMQQueue)queue).getName() : "" ) + " with id " + queue.getId()
+            throw new StoreException("Error writing enqueued message with id " + messageId + " for queue " + (queue instanceof AMQQueue ? ((AMQQueue)queue).getName() : "" ) + " with id " + queue.getId()
                 + " to database", e);
         }
 
     }
 
-    public void dequeueMessage(ConnectionWrapper connWrapper, final TransactionLogResource  queue, Long messageId) throws AMQStoreException
+    public void dequeueMessage(ConnectionWrapper connWrapper, final TransactionLogResource  queue, Long messageId) throws
+                                                                                                                   StoreException
     {
 
         Connection conn = connWrapper.getConnection();
@@ -952,7 +978,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
                 if(results != 1)
                 {
-                    throw new AMQStoreException("Unable to find message with id " + messageId + " on queue " + (queue instanceof AMQQueue ? ((AMQQueue)queue).getName() : "" )
+                    throw new StoreException("Unable to find message with id " + messageId + " on queue " + (queue instanceof AMQQueue ? ((AMQQueue)queue).getName() : "" )
                            + " with id " + queue.getId());
                 }
 
@@ -973,14 +999,14 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         catch (SQLException e)
         {
             getLogger().error("Failed to dequeue: " + e.getMessage(), e);
-            throw new AMQStoreException("Error deleting enqueued message with id " + messageId + " for queue " + (queue instanceof AMQQueue ? ((AMQQueue)queue).getName() : "" )
+            throw new StoreException("Error deleting enqueued message with id " + messageId + " for queue " + (queue instanceof AMQQueue ? ((AMQQueue)queue).getName() : "" )
                     + " with id " + queue.getId() + " from database", e);
         }
 
     }
 
     private void removeXid(ConnectionWrapper connWrapper, long format, byte[] globalId, byte[] branchId)
-            throws AMQStoreException
+            throws StoreException
     {
         Connection conn = connWrapper.getConnection();
 
@@ -999,7 +1025,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
                 if(results != 1)
                 {
-                    throw new AMQStoreException("Unable to find message with xid");
+                    throw new StoreException("Unable to find message with xid");
                 }
             }
             finally
@@ -1025,13 +1051,13 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         catch (SQLException e)
         {
             getLogger().error("Failed to dequeue: " + e.getMessage(), e);
-            throw new AMQStoreException("Error deleting enqueued message with xid", e);
+            throw new StoreException("Error deleting enqueued message with xid", e);
         }
 
     }
 
     private void recordXid(ConnectionWrapper connWrapper, long format, byte[] globalId, byte[] branchId,
-                           Transaction.Record[] enqueues, Transaction.Record[] dequeues) throws AMQStoreException
+                           Transaction.Record[] enqueues, Transaction.Record[] dequeues) throws StoreException
     {
         Connection conn = connWrapper.getConnection();
 
@@ -1092,7 +1118,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         catch (SQLException e)
         {
             getLogger().error("Failed to enqueue: " + e.getMessage(), e);
-            throw new AMQStoreException("Error writing xid ", e);
+            throw new StoreException("Error writing xid ", e);
         }
 
     }
@@ -1118,7 +1144,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
 
-    public void commitTran(ConnectionWrapper connWrapper) throws AMQStoreException
+    public void commitTran(ConnectionWrapper connWrapper) throws StoreException
     {
 
         try
@@ -1135,7 +1161,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (SQLException e)
         {
-            throw new AMQStoreException("Error commit tx: " + e.getMessage(), e);
+            throw new StoreException("Error commit tx: " + e.getMessage(), e);
         }
         finally
         {
@@ -1143,17 +1169,17 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    public StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws AMQStoreException
+    public StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws StoreException
     {
         commitTran(connWrapper);
         return StoreFuture.IMMEDIATE_FUTURE;
     }
 
-    public void abortTran(ConnectionWrapper connWrapper) throws AMQStoreException
+    public void abortTran(ConnectionWrapper connWrapper) throws StoreException
     {
         if (connWrapper == null)
         {
-            throw new AMQStoreException("Fatal internal error: transactional context is empty at abortTran");
+            throw new StoreException("Fatal internal error: transactional context is empty at abortTran");
         }
 
         if (getLogger().isDebugEnabled())
@@ -1169,7 +1195,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (SQLException e)
         {
-            throw new AMQStoreException("Error aborting transaction: " + e.getMessage(), e);
+            throw new StoreException("Error aborting transaction: " + e.getMessage(), e);
         }
 
     }
@@ -1208,7 +1234,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
                 if(result == 0)
                 {
-                    throw new RuntimeException("Unable to add meta data for message " +messageId);
+                    throw new StoreException("Unable to add meta data for message " +messageId);
                 }
             }
             finally
@@ -1533,7 +1559,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                     }
                     else
                     {
-                        throw new RuntimeException("Meta data not found for message with id " + messageId);
+                        throw new StoreException("Meta data not found for message with id " + messageId);
                     }
                 }
                 finally
@@ -1579,7 +1605,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         catch (SQLException e)
         {
             closeConnection(conn);
-            throw new RuntimeException("Error adding content for message " + messageId + ": " + e.getMessage(), e);
+            throw new StoreException("Error adding content for message " + messageId + ": " + e.getMessage(), e);
         }
         finally
         {
@@ -1611,7 +1637,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
                 if (offset > size)
                 {
-                    throw new RuntimeException("Offset " + offset + " is greater than message size " + size
+                    throw new StoreException("Offset " + offset + " is greater than message size " + size
                             + " for message id " + messageId + "!");
 
                 }
@@ -1630,7 +1656,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (SQLException e)
         {
-            throw new RuntimeException("Error retrieving content from offset " + offset + " for message " + messageId + ": " + e.getMessage(), e);
+            throw new StoreException("Error retrieving content from offset " + offset + " for message " + messageId + ": " + e.getMessage(), e);
         }
         finally
         {
@@ -1662,12 +1688,12 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
             catch (SQLException e)
             {
-                throw new RuntimeException(e);
+                throw new StoreException(e);
             }
         }
 
         @Override
-        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             final StoredMessage storedMessage = message.getStoredMessage();
             if(storedMessage instanceof StoredJDBCMessage)
@@ -1678,50 +1704,49 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 }
                 catch (SQLException e)
                 {
-                    throw new AMQStoreException("Exception on enqueuing message " + _messageId, e);
+                    throw new StoreException("Exception on enqueuing message into message store" + _messageId, e);
                 }
             }
             _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
             AbstractJDBCMessageStore.this.enqueueMessage(_connWrapper, queue, message.getMessageNumber());
+
         }
 
         @Override
-        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             AbstractJDBCMessageStore.this.dequeueMessage(_connWrapper, queue, message.getMessageNumber());
-
         }
 
         @Override
-        public void commitTran() throws AMQStoreException
+        public void commitTran()
         {
             AbstractJDBCMessageStore.this.commitTran(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
         }
 
         @Override
-        public StoreFuture commitTranAsync() throws AMQStoreException
+        public StoreFuture commitTranAsync()
         {
-            final StoreFuture storeFuture = AbstractJDBCMessageStore.this.commitTranAsync(_connWrapper);
+            StoreFuture storeFuture = AbstractJDBCMessageStore.this.commitTranAsync(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
             return storeFuture;
         }
 
         @Override
-        public void abortTran() throws AMQStoreException
+        public void abortTran()
         {
             AbstractJDBCMessageStore.this.abortTran(_connWrapper);
         }
 
         @Override
-        public void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException
+        public void removeXid(long format, byte[] globalId, byte[] branchId)
         {
             AbstractJDBCMessageStore.this.removeXid(_connWrapper, format, globalId, branchId);
         }
 
         @Override
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
-                throws AMQStoreException
         {
             AbstractJDBCMessageStore.this.recordXid(_connWrapper, format, globalId, branchId, enqueues, dequeues);
         }
@@ -1770,7 +1795,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 }
                 catch (SQLException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new StoreException(e);
                 }
                 _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
             }
@@ -1856,7 +1881,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 {
                     getLogger().debug("Error when trying to flush message " + _messageId + " to store: " + e);
                 }
-                throw new RuntimeException(e);
+                throw new StoreException(e);
             }
             finally
             {
@@ -1938,7 +1963,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         _eventManager.addEventListener(eventListener, events);
     }
 
-    private void insertConfiguredObject(ConfiguredObjectRecord configuredObject) throws AMQStoreException
+    private void insertConfiguredObject(ConfiguredObjectRecord configuredObject) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
@@ -1998,24 +2023,24 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
             catch (JsonMappingException e)
             {
-                throw new AMQStoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
+                throw new StoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
             }
             catch (JsonGenerationException e)
             {
-                throw new AMQStoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
+                throw new StoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
             }
             catch (IOException e)
             {
-                throw new AMQStoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
+                throw new StoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
             }
             catch (SQLException e)
             {
-                throw new AMQStoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
+                throw new StoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
             }
         }
     }
 
-    private int removeConfiguredObject(UUID id) throws AMQStoreException
+    private int removeConfiguredObject(UUID id) throws StoreException
     {
         int results = 0;
         try
@@ -2032,12 +2057,12 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (SQLException e)
         {
-            throw new AMQStoreException("Error deleting of configured object with id " + id + " from database: " + e.getMessage(), e);
+            throw new StoreException("Error deleting of configured object with id " + id + " from database: " + e.getMessage(), e);
         }
         return results;
     }
 
-    public UUID[] removeConfiguredObjects(UUID... objects) throws AMQStoreException
+    public UUID[] removeConfiguredObjects(UUID... objects) throws StoreException
     {
         Collection<UUID> removed = new ArrayList<UUID>(objects.length);
         try
@@ -2061,7 +2086,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (SQLException e)
         {
-            throw new AMQStoreException("Error deleting of configured objects " + Arrays.asList(objects) + " from database: " + e.getMessage(), e);
+            throw new StoreException("Error deleting of configured objects " + Arrays.asList(objects) + " from database: " + e.getMessage(), e);
         }
         return removed.toArray(new UUID[removed.size()]);
     }
@@ -2081,7 +2106,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         return results;
     }
 
-    private void updateConfiguredObject(final ConfiguredObjectRecord configuredObject) throws AMQStoreException
+    private void updateConfiguredObject(final ConfiguredObjectRecord configuredObject) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
@@ -2099,18 +2124,18 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
             catch (SQLException e)
             {
-                throw new AMQStoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
             }
         }
     }
 
     @Override
-    public void update(ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(ConfiguredObjectRecord... records) throws StoreException
     {
         update(false, records);
     }
 
-    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.ACTIVATING))
         {
@@ -2132,7 +2157,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
             catch (SQLException e)
             {
-                throw new AMQStoreException("Error updating configured objects in database: " + e.getMessage(), e);
+                throw new StoreException("Error updating configured objects in database: " + e.getMessage(), e);
             }
 
         }
@@ -2142,7 +2167,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private void updateConfiguredObject(ConfiguredObjectRecord configuredObject,
                                         boolean createIfNecessary,
                                         Connection conn)
-            throws SQLException, AMQStoreException
+            throws SQLException, StoreException
     {
             PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
             try
@@ -2209,15 +2234,15 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
             catch (JsonMappingException e)
             {
-                throw new AMQStoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
             }
             catch (JsonGenerationException e)
             {
-                throw new AMQStoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
             }
             catch (IOException e)
             {
-                throw new AMQStoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
             }
             finally
             {
@@ -2226,7 +2251,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    private ConfiguredObjectRecord loadConfiguredObject(final UUID id) throws AMQStoreException
+    private ConfiguredObjectRecord loadConfiguredObject(final UUID id) throws StoreException
     {
         ConfiguredObjectRecord result = null;
         try
@@ -2266,28 +2291,29 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
         catch (JsonMappingException e)
         {
-            throw new AMQStoreException("Error loading of configured object with id " + id + " from database: "
+            throw new StoreException("Error loading of configured object with id " + id + " from database: "
                             + e.getMessage(), e);
         }
         catch (JsonParseException e)
         {
-            throw new AMQStoreException("Error loading of configured object with id " + id + " from database: "
+            throw new StoreException("Error loading of configured object with id " + id + " from database: "
                                 + e.getMessage(), e);
         }
         catch (IOException e)
         {
-            throw new AMQStoreException("Error loading of configured object with id " + id + " from database: "
+            throw new StoreException("Error loading of configured object with id " + id + " from database: "
                             + e.getMessage(), e);
         }
         catch (SQLException e)
         {
-            throw new AMQStoreException("Error loading of configured object with id " + id + " from database: "
+            throw new StoreException("Error loading of configured object with id " + id + " from database: "
                     + e.getMessage(), e);
         }
         return result;
     }
 
-    private void loadConfiguredObjects(ConfigurationRecoveryHandler recoveryHandler) throws SQLException, AMQStoreException
+    private void loadConfiguredObjects(ConfigurationRecoveryHandler recoveryHandler) throws SQLException,
+                                                                                            StoreException
     {
         Connection conn = newAutoCommitConnection();
 
@@ -2311,15 +2337,15 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 }
                 catch (JsonMappingException e)
                 {
-                    throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
+                    throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
                 }
                 catch (JsonParseException e)
                 {
-                    throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
+                    throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
                 }
                 catch (IOException e)
                 {
-                    throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
+                    throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
                 }
                 finally
                 {

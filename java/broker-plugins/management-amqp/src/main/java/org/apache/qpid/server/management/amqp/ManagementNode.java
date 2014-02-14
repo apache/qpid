@@ -20,8 +20,7 @@
  */
 package org.apache.qpid.server.management.amqp;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.FilterManager;
@@ -373,7 +372,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                         }
                         catch(RuntimeException e)
                         {
-                            if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+                            if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
                             {
                                 response = createFailureResponse(message, STATUS_CODE_FORBIDDEN, e.getMessage());
                             }
@@ -478,7 +477,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
         catch(RuntimeException e)
         {
-            if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+            if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
             {
                 responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_FORBIDDEN);
             }
@@ -516,7 +515,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             }
             catch(RuntimeException e)
             {
-                if (e instanceof AccessControlException || e.getCause() instanceof AMQSecurityException)
+                if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
                 {
                     return createFailureResponse(requestMessage, STATUS_CODE_FORBIDDEN, e.getMessage());
                 }
@@ -940,7 +939,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                                 final FilterManager filters,
                                 final Class<? extends ServerMessage> messageClass,
                                 final String consumerName,
-                                final EnumSet<Consumer.Option> options) throws AMQException
+                                final EnumSet<Consumer.Option> options)
     {
 
         final ManagementNodeConsumer managementNodeConsumer = new ManagementNodeConsumer(consumerName,this, target);
@@ -1111,7 +1110,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
         @Override
-        public boolean expired() throws AMQException
+        public boolean expired()
         {
             return false;
         }
@@ -1167,7 +1166,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
         @Override
-        public boolean resend() throws AMQException
+        public boolean resend()
         {
             return false;
         }

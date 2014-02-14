@@ -35,6 +35,7 @@ import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.io.ByteArrayOutputStream;
@@ -99,7 +100,7 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
             catch (IOException e)
             {
                 // This *really* shouldn't happen as we're not doing any I/O
-                throw new RuntimeException("I/O exception when writing to byte array", e);
+                throw new ConnectionScopedRuntimeException("I/O exception when writing to byte array", e);
             }
 
             // should really associate this channelId to the session
@@ -123,7 +124,7 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
             catch (IOException e)
             {
                 // This *really* shouldn't happen as we're not doing any I/O
-                throw new RuntimeException("I/O exception when writing to byte array", e);
+                throw new ConnectionScopedRuntimeException("I/O exception when writing to byte array", e);
             }
 
             // should really associate this channelId to the session

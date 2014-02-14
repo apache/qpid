@@ -37,15 +37,13 @@ import javax.management.openmbean.TabularData;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
-import org.apache.qpid.server.store.berkeleydb.jmx.BDBHAMessageStoreManagerMBean;
-import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {
@@ -170,7 +168,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testRemoveNodeFromReplicationGroupWithError() throws Exception
     {
-        doThrow(new AMQStoreException("mocked exception")).when(_store).removeNodeFromGroup(TEST_NODE_NAME);
+        doThrow(new StoreException("mocked exception")).when(_store).removeNodeFromGroup(TEST_NODE_NAME);
 
         try
         {
@@ -192,7 +190,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testSetAsDesignatedPrimaryWithError() throws Exception
     {
-        doThrow(new AMQStoreException("mocked exception")).when(_store).setDesignatedPrimary(true);
+        doThrow(new StoreException("mocked exception")).when(_store).setDesignatedPrimary(true);
 
         try
         {

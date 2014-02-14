@@ -33,6 +33,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBody>
@@ -103,10 +104,18 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
                                                       "Queue is exclusive, but not created on this Connection.");
                 }
 
-                long purged = queue.clearQueue();
+            long purged = 0;
+            try
+            {
+                purged = queue.clearQueue();
+            }
+            catch (QpidSecurityException e)
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+            }
 
 
-                if(!body.getNowait())
+            if(!body.getNowait())
                 {
                     channel.sync();
                     MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();

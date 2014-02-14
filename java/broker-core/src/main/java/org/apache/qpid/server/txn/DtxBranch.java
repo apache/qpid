@@ -28,10 +28,9 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -147,15 +146,7 @@ public class DtxBranch
                     }
 
                     setState(State.TIMEDOUT);
-                    try
-                    {
-                        rollback();
-                    }
-                    catch (AMQStoreException e)
-                    {
-                        _logger.error("Unexpected error when attempting to rollback DtxBranch "+ _xid + " due to timeout", e);
-                        throw new RuntimeException(e);
-                    }
+                    rollback();
                 }
             });
         }
@@ -227,7 +218,7 @@ public class DtxBranch
         return false;
     }
 
-    public void prepare() throws AMQStoreException
+    public void prepare() throws StoreException
     {
         if(_logger.isDebugEnabled())
         {
@@ -245,7 +236,7 @@ public class DtxBranch
         prePrepareTransaction();
     }
 
-    public synchronized void rollback() throws AMQStoreException
+    public synchronized void rollback() throws StoreException
     {
         if(_logger.isDebugEnabled())
         {
@@ -287,7 +278,7 @@ public class DtxBranch
         _postTransactionActions.clear();
     }
 
-    public void commit() throws AMQStoreException
+    public void commit() throws StoreException
     {
         if(_logger.isDebugEnabled())
         {
@@ -328,7 +319,7 @@ public class DtxBranch
         _postTransactionActions.clear();
     }
 
-    public void prePrepareTransaction() throws AMQStoreException
+    public void prePrepareTransaction() throws StoreException
     {
         _transaction = _store.newTransaction();
 
@@ -400,15 +391,8 @@ public class DtxBranch
     {
         if(_transaction != null)
         {
-            try
-            {
-                _state = null;
-                _transaction.abortTran();
-            }
-            catch(AMQStoreException e)
-            {
-                _logger.error("Error while closing DtxBranch " + _xid, e);
-            }
+            _state = null;
+            _transaction.abortTran();
         }
     }
 }

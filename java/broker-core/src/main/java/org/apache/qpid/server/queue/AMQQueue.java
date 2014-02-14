@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -30,6 +29,7 @@ import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -94,7 +94,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     boolean isDeleted();
 
-    int delete() throws AMQException;
+    int delete() throws QpidSecurityException;
 
     void requeue(E entry);
 
@@ -102,7 +102,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     void decrementUnackedMsgCount(E queueEntry);
 
-    boolean resend(final E entry, final C consumer) throws AMQException;
+    boolean resend(final E entry, final C consumer);
 
     void addQueueDeleteTask(Action<AMQQueue> task);
     void removeQueueDeleteTask(Action<AMQQueue> task);
@@ -169,13 +169,12 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     void deleteMessageFromTop();
 
-    long clearQueue() throws AMQException;
+    long clearQueue() throws QpidSecurityException;
 
     /**
      * Checks the status of messages on the queue, purging expired ones, firing age related alerts etc.
-     * @throws AMQException
      */
-    void checkMessageStatus() throws AMQException;
+    void checkMessageStatus();
 
     Set<NotificationCheck> getNotificationChecks();
 

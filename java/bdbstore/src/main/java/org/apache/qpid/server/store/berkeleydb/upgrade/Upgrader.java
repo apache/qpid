@@ -24,7 +24,7 @@ import com.sleepycat.je.Cursor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
@@ -34,7 +34,6 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
-import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 
 public class Upgrader
@@ -50,7 +49,7 @@ public class Upgrader
         _virtualHostName = virtualHostName;
     }
 
-    public void upgradeIfNecessary() throws AMQStoreException
+    public void upgradeIfNecessary()
     {
         boolean isEmpty = _environment.getDatabaseNames().isEmpty();
         DatabaseConfig dbConfig = new DatabaseConfig();
@@ -76,7 +75,7 @@ public class Upgrader
             int version = getSourceVersion(versionDb);
             if(version > AbstractBDBMessageStore.VERSION)
             {
-                throw new AMQStoreException("Database version " + version
+                throw new StoreException("Database version " + version
                                             + " is higher than the most recent known version: "
                                             + AbstractBDBMessageStore.VERSION);
             }
@@ -125,7 +124,6 @@ public class Upgrader
     }
 
     void performUpgradeFromVersion(int sourceVersion, Database versionDb)
-            throws AMQStoreException
     {
         while(sourceVersion != AbstractBDBMessageStore.VERSION)
         {
@@ -138,7 +136,7 @@ public class Upgrader
         }
     }
 
-    void upgrade(final int fromVersion, final int toVersion) throws AMQStoreException
+    void upgrade(final int fromVersion, final int toVersion)
     {
         try
         {
@@ -152,27 +150,27 @@ public class Upgrader
         }
         catch (ClassNotFoundException e)
         {
-            throw new AMQStoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
+            throw new StoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
                                         + toVersion, e);
         }
         catch (NoSuchMethodException e)
         {
-            throw new AMQStoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
+            throw new StoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
                                         + toVersion, e);
         }
         catch (InvocationTargetException e)
         {
-            throw new AMQStoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
+            throw new StoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
                                         + toVersion, e);
         }
         catch (InstantiationException e)
         {
-            throw new AMQStoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
+            throw new StoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
                                         + toVersion, e);
         }
         catch (IllegalAccessException e)
         {
-            throw new AMQStoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
+            throw new StoreException("Unable to upgrade BDB data store from version " + fromVersion + " to version"
                                         + toVersion, e);
         }
     }

@@ -26,6 +26,7 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.util.DbBackup;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.FileUtils;
 
@@ -249,7 +250,7 @@ public class BDBBackup
 
             if (fileSet.length == 0)
             {
-                throw new RuntimeException("There are no BDB log files to backup in the " + fromdir + " directory.");
+                throw new StoreException("There are no BDB log files to backup in the " + fromdir + " directory.");
             }
 
             for (int i = 0; i < fileSet.length; i++)
@@ -272,7 +273,7 @@ public class BDBBackup
                             catch (IOException ioEx)
                             {
                                 // Rethrow this as a runtime exception, as something strange has happened.
-                                throw new RuntimeException(ioEx);
+                                throw new StoreException(ioEx);
                             }
                         }
                     }
@@ -292,7 +293,7 @@ public class BDBBackup
             long now = System.currentTimeMillis();
             if ((now - start) > TIMEOUT)
             {
-                throw new RuntimeException("Hot backup script failed to complete in " + (TIMEOUT / 1000) + " seconds.");
+                throw new StoreException("Hot backup script failed to complete in " + (TIMEOUT / 1000) + " seconds.");
             }
         }
 
@@ -311,7 +312,7 @@ public class BDBBackup
                 Throwable cause = re.getCause();
                 if ((cause != null) && (cause instanceof IOException))
                 {
-                    throw new RuntimeException(re.getMessage() + " fromDir:" + fromdir + " toDir:" + toDirFile, cause);
+                    throw new StoreException(re.getMessage() + " fromDir:" + fromdir + " toDir:" + toDirFile, cause);
                 }
                 else
                 {
@@ -329,7 +330,7 @@ public class BDBBackup
             catch (IOException e)
             {
                 // Rethrow this as a runtime exception, as something strange has happened.
-                throw new RuntimeException(e);
+                throw new StoreException(e);
             }
         }
 

@@ -26,15 +26,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueFactory;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQQueue>
 {
@@ -125,9 +126,11 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
                             false, queueArgumentsMap);
                 }
             }
-            catch (AMQException e)
+            catch (QpidSecurityException e)
             {
-                throw new RuntimeException("Error recovering queue uuid " + _id + " name " + queueName, e);
+                throw new ServerScopedRuntimeException("Security Exception thrown when recovering. The recovery " +
+                                                       "thread should not be bound by permissions, this is likely " +
+                                                       "a programming error.",e);
             }
             return _queue;
         }

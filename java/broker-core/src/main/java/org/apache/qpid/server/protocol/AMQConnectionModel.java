@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Port;
@@ -37,9 +36,8 @@ public interface AMQConnectionModel extends StatisticsGatherer
      *
      * @param cause
      * @param message
-     * @throws org.apache.qpid.AMQException
      */
-    public void close(AMQConstant cause, String message) throws AMQException;
+    public void close(AMQConstant cause, String message);
 
     public void block();
 
@@ -51,9 +49,8 @@ public interface AMQConnectionModel extends StatisticsGatherer
      * @param session
      * @param cause
      * @param message
-     * @throws org.apache.qpid.AMQException
      */
-    public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException;
+    public void closeSession(AMQSessionModel session, AMQConstant cause, String message);
 
     public long getConnectionId();
 

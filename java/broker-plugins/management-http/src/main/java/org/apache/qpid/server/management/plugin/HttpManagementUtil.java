@@ -50,6 +50,7 @@ import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class HttpManagementUtil
@@ -138,7 +139,7 @@ public class HttpManagementUtil
             }
             catch (PrivilegedActionException e)
             {
-                throw new RuntimeException("Unable to perform access check", e);
+                throw new ServerScopedRuntimeException("Unable to perform access check", e);
             }
         }
         finally

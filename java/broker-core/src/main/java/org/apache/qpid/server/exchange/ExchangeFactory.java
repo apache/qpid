@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.security.QpidSecurityException;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -34,9 +34,12 @@ public interface ExchangeFactory
 
     Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes();
 
-    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
+    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
+            throws AMQUnknownExchangeType, QpidSecurityException;
 
-    Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
-    Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete) throws AMQException;
+    Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete) throws AMQUnknownExchangeType,
+                                                                                                               QpidSecurityException;
+    Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete)
+            throws AMQUnknownExchangeType, QpidSecurityException;
 
 }

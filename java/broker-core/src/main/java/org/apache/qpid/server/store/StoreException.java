@@ -18,34 +18,24 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.server.store;
 
-import java.util.UUID;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-public class HeadersExchangeType implements ExchangeType<HeadersExchange>
+public class StoreException extends ServerScopedRuntimeException
 {
-    @Override
-    public String getType()
+    public StoreException(final String message)
     {
-        return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
+        super(message);
     }
 
-    public HeadersExchange newInstance(UUID id, VirtualHost host, String name, boolean durable,
-                                       boolean autoDelete)
+    public StoreException(final String message, final Throwable cause)
     {
-        HeadersExchange exch = new HeadersExchange();
-
-        exch.initialise(id, host, name, durable, autoDelete);
-        return exch;
+        super(message, cause);
     }
 
-    public String getDefaultExchangeName()
+    public StoreException(final Throwable cause)
     {
-
-        return ExchangeDefaults.HEADERS_EXCHANGE_NAME;
+        super(cause);
     }
 }

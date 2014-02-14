@@ -24,19 +24,18 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
+
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageDestination;
-import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -58,7 +57,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     Collection<AMQQueue> getQueues();
 
-    int removeQueue(AMQQueue queue) throws AMQException;
+    int removeQueue(AMQQueue queue) throws QpidSecurityException;
 
     AMQQueue createQueue(UUID id,
                          String queueName,
@@ -67,7 +66,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
                          boolean autoDelete,
                          boolean exclusive,
                          boolean deleteOnNoConsumer,
-                         Map<String, Object> arguments) throws AMQException;
+                         Map<String, Object> arguments) throws QueueExistsException, QpidSecurityException;
 
 
     Exchange createExchange(UUID id,
@@ -76,9 +75,11 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
                             boolean durable,
                             boolean autoDelete,
                             String alternateExchange)
-            throws AMQException;
+            throws QpidSecurityException, ExchangeExistsException, ReservedExchangeNameException,
+                   UnknownExchangeException, AMQUnknownExchangeType;
 
-    void removeExchange(Exchange exchange, boolean force) throws AMQException;
+    void removeExchange(Exchange exchange, boolean force) throws QpidSecurityException, ExchangeIsAlternateException,
+                                                                 RequiredExchangeException;
 
     MessageDestination getMessageDestination(String name);
 

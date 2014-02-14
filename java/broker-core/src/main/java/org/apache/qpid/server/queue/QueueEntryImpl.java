@@ -22,7 +22,6 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -158,7 +157,7 @@ public abstract class QueueEntryImpl<E extends QueueEntryImpl<E,Q,L>, Q extends 
         return _deliveredToConsumer;
     }
 
-    public boolean expired() throws AMQException
+    public boolean expired()
     {
         ServerMessage message = getMessage();
         if(message != null)
@@ -493,7 +492,7 @@ public abstract class QueueEntryImpl<E extends QueueEntryImpl<E,Q,L>, Q extends 
     }
 
     @Override
-    public boolean resend() throws AMQException
+    public boolean resend()
     {
         QueueConsumer<?,E,Q,L> sub = getDeliveredConsumer();
         if(sub != null)

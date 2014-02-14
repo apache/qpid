@@ -40,7 +40,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
@@ -66,6 +66,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -75,12 +76,13 @@ import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostListener;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener
 {
@@ -374,9 +376,13 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new IllegalArgumentException("Alternate Exchange with name '" + e.getExchangeName() + "' does not exist");
         }
-        catch(AMQException e)
+        catch(AMQUnknownExchangeType e)
         {
             throw new IllegalArgumentException(e);
+        }
+        catch (QpidSecurityException e)
+        {
+            throw new AccessControlException(e.toString());
         }
     }
 
@@ -467,9 +473,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new IllegalArgumentException("Queue with name "+name+" already exists");
         }
-        catch(AMQException e)
+        catch (QpidSecurityException e)
         {
-            throw new IllegalArgumentException(e);
+            throw new AccessControlException(e.toString());
         }
 
     }
@@ -791,14 +797,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                 {
                     public void postCommit()
                     {
-                        try
-                        {
-                            toQueue.enqueue(message, null);
-                        }
-                        catch(AMQException e)
-                        {
-                            throw new RuntimeException(e);
-                        }
+                        toQueue.enqueue(message, null);
                     }
 
                     public void onRollback()
@@ -820,14 +819,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
                                     public void postCommit()
                                     {
-                                        try
-                                        {
-                                            toQueue.enqueue(message, null);
-                                        }
-                                        catch (AMQException e)
-                                        {
-                                            throw new RuntimeException(e);
-                                        }
+                                        toQueue.enqueue(message, null);
                                     }
 
                                     public void onRollback()
@@ -1139,9 +1131,9 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                                                          this);
             }
         }
-        catch (Exception e)
+        catch (ConfigurationException e)
         {
-           throw new RuntimeException("Failed to create virtual host " + virtualHostName, e);
+            throw new ServerScopedRuntimeException("Failed to create virtual host " + virtualHostName, e);
         }
 
         virtualHostRegistry.registerVirtualHost(_virtualHost);

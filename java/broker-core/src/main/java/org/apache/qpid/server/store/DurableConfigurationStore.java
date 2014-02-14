@@ -23,7 +23,6 @@ package org.apache.qpid.server.store;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.VirtualHost;
 
 public interface DurableConfigurationStore
@@ -44,9 +43,8 @@ public interface DurableConfigurationStore
      *
      * @param virtualHost
      * @param recoveryHandler  Handler to be called as the store recovers on start up
-     * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception;
+    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler);
 
 
     /**
@@ -56,9 +54,9 @@ public interface DurableConfigurationStore
      * @param type The type of the object to persist
      * @param attributes the attributes of the object to persist
      *
-     * @throws AMQStoreException If the operation fails for any reason.
+     * @throws StoreException If the operation fails for any reason.
      */
-    void create(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException;
+    void create(UUID id, String type, Map<String, Object> attributes) throws StoreException;
 
     /**
      * Removes the specified persistent configured object.
@@ -66,11 +64,11 @@ public interface DurableConfigurationStore
      * @param id The id of the object to remove.
      * @param type The type of the object to remove
      *
-     * @throws AMQStoreException If the operation fails for any reason.
+     * @throws StoreException If the operation fails for any reason.
      */
-    void remove(UUID id, String type) throws AMQStoreException;
+    void remove(UUID id, String type) throws StoreException;
 
-    public UUID[] removeConfiguredObjects(UUID... objects) throws AMQStoreException;
+    public UUID[] removeConfiguredObjects(UUID... objects) throws StoreException;
 
 
     /**
@@ -81,13 +79,13 @@ public interface DurableConfigurationStore
      * @param type The type of the object to update
      * @param attributes the updated attributes
      *
-     * @throws AMQStoreException If the operation fails for any reason.
+     * @throws StoreException If the operation fails for any reason.
      */
-    void update(UUID id, String type, Map<String, Object> attributes) throws AMQStoreException;
+    void update(UUID id, String type, Map<String, Object> attributes) throws StoreException;
 
 
-    public void update(ConfiguredObjectRecord... records) throws AMQStoreException;
-    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws AMQStoreException;
+    public void update(ConfiguredObjectRecord... records) throws StoreException;
+    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
 
 
     void close() throws Exception;

@@ -114,7 +114,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public void send(MessageInstance entry, boolean batch) throws AMQException
+        public void send(MessageInstance entry, boolean batch)
         {
             // We don't decrement the reference here as we don't want to consume the message
             // but we do want to send it to the client.
@@ -177,7 +177,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public void send(MessageInstance entry, boolean batch) throws AMQException
+        public void send(MessageInstance entry, boolean batch)
         {
             // if we do not need to wait for client acknowledgements
             // we can decrement the reference count immediately.
@@ -293,7 +293,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public void send(MessageInstance entry, boolean batch) throws AMQException
+        public void send(MessageInstance entry, boolean batch)
         {
 
 
@@ -505,7 +505,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     }
 
     protected void sendToClient(final ServerMessage message, final InstanceProperties props, final long deliveryTag)
-            throws AMQException
     {
         _deliveryMethod.deliverToClient(getConsumer(), message, props, deliveryTag);
 
@@ -524,7 +523,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         converter.confirmConsumerAutoClose(getChannel().getChannelId(), getConsumerTag());
     }
 
-    public void queueEmpty() throws AMQException
+    public void queueEmpty()
     {
         if (isAutoClose())
         {

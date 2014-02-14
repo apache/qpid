@@ -18,21 +18,31 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.util;
 
-package org.apache.qpid.server.store;
+import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
-
-/**
- * NOTE: this class currently extends AMQException but
- * we should be using AMQExceptions internally in the code base for Protocol errors hence
- * the message store interface should throw a different super class which this should be
- * moved to reflect
- */
-public class MessageStoreClosedException extends AMQException
+public class ConnectionScopedRuntimeException extends RuntimeException
 {
-    public MessageStoreClosedException()
+    private static final Logger LOGGER = Logger.getLogger(ConnectionScopedRuntimeException.class);
+
+
+    public ConnectionScopedRuntimeException(final String message)
     {
-        super("Message store closed");
+        super(message);
+        LOGGER.error(message);
     }
+
+    public ConnectionScopedRuntimeException(final String message, final Throwable cause)
+    {
+        super(message, cause);
+        LOGGER.error(message,cause);
+    }
+
+    public ConnectionScopedRuntimeException(final Throwable cause)
+    {
+        super(cause);
+        LOGGER.error("Exception occurred", cause);
+    }
+
 }

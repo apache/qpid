@@ -26,8 +26,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -138,18 +136,8 @@ public class VirtualHostConfigRecoveryHandler implements
 
                         public void postCommit()
                         {
-                            try
-                            {
-
-                                queue.enqueue(message, null);
-                                ref.release();
-                            }
-                            catch (AMQException e)
-                            {
-                                _logger.error("Unable to enqueue message " + message.getMessageNumber() + " into " +
-                                              "queue " + queue.getName() + " (from XA transaction)", e);
-                                throw new RuntimeException(e);
-                            }
+                            queue.enqueue(message, null);
+                            ref.release();
                         }
 
                         public void onRollback()
@@ -228,17 +216,8 @@ public class VirtualHostConfigRecoveryHandler implements
 
         }
 
-        try
-        {
-            branch.setState(DtxBranch.State.PREPARED);
-            branch.prePrepareTransaction();
-        }
-        catch (AMQStoreException e)
-        {
-            _logger.error("Unexpected database exception when attempting to prepare a recovered XA transaction " +
-                          xidAsString(id), e);
-            throw new RuntimeException(e);
-        }
+        branch.setState(DtxBranch.State.PREPARED);
+        branch.prePrepareTransaction();
     }
 
     private static StringBuilder xidAsString(Xid id)
@@ -269,74 +248,66 @@ public class VirtualHostConfigRecoveryHandler implements
     public void queueEntry(final UUID queueId, long messageId)
     {
         AMQQueue queue = _virtualHost.getQueue(queueId);
-        try
+        if(queue != null)
         {
-            if(queue != null)
+            String queueName = queue.getName();
+            ServerMessage message = _recoveredMessages.get(messageId);
+            _unusedMessages.remove(messageId);
+
+            if(message != null)
             {
-                String queueName = queue.getName();
-                ServerMessage message = _recoveredMessages.get(messageId);
-                _unusedMessages.remove(messageId);
 
-                if(message != null)
+
+                if (_logger.isDebugEnabled())
                 {
-
-
-                    if (_logger.isDebugEnabled())
-                    {
-                        _logger.debug("On recovery, delivering " + message.getMessageNumber() + " to " + queueName);
-                    }
-
-                    Integer count = _queueRecoveries.get(queueName);
-                    if (count == null)
-                    {
-                        count = 0;
-                    }
-
-                    queue.enqueue(message,null);
-
-                    _queueRecoveries.put(queueName, ++count);
+                    _logger.debug("On recovery, delivering " + message.getMessageNumber() + " to " + queueName);
                 }
-                else
+
+                Integer count = _queueRecoveries.get(queueName);
+                if (count == null)
                 {
-                    _logger.warn("Message id " + messageId + " referenced in log as enqueued in queue " + queueName + " is unknown, entry will be discarded");
-                    Transaction txn = _store.newTransaction();
-                    txn.dequeueMessage(queue, new DummyMessage(messageId));
-                    txn.commitTranAsync();
+                    count = 0;
                 }
+
+                queue.enqueue(message,null);
+
+                _queueRecoveries.put(queueName, ++count);
             }
             else
             {
-                _logger.warn("Message id " + messageId + " in log references queue with id " + queueId + " which is not in the configuration, entry will be discarded");
+                _logger.warn("Message id " + messageId + " referenced in log as enqueued in queue " + queueName + " is unknown, entry will be discarded");
                 Transaction txn = _store.newTransaction();
-                TransactionLogResource mockQueue =
-                        new TransactionLogResource()
-                        {
-                            @Override
-                            public String getName()
-                            {
-                                return "<<UNKNOWN>>";
-                            }
-
-                            @Override
-                            public UUID getId()
-                            {
-                                return queueId;
-                            }
-
-                            @Override
-                            public boolean isDurable()
-                            {
-                                return false;
-                            }
-                        };
-                txn.dequeueMessage(mockQueue, new DummyMessage(messageId));
+                txn.dequeueMessage(queue, new DummyMessage(messageId));
                 txn.commitTranAsync();
             }
-
         }
-        catch(AMQException e)
+        else
         {
-            throw new RuntimeException(e);
+            _logger.warn("Message id " + messageId + " in log references queue with id " + queueId + " which is not in the configuration, entry will be discarded");
+            Transaction txn = _store.newTransaction();
+            TransactionLogResource mockQueue =
+                    new TransactionLogResource()
+                    {
+                        @Override
+                        public String getName()
+                        {
+                            return "<<UNKNOWN>>";
+                        }
+
+                        @Override
+                        public UUID getId()
+                        {
+                            return queueId;
+                        }
+
+                        @Override
+                        public boolean isDurable()
+                        {
+                            return false;
+                        }
+                    };
+            txn.dequeueMessage(mockQueue, new DummyMessage(messageId));
+            txn.commitTranAsync();
         }
     }
 

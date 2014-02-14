@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQFrameDecodingException;
@@ -41,6 +40,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
@@ -53,7 +53,6 @@ import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
 
@@ -75,45 +74,25 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
 
     private static final Logger _logger = Logger.getLogger(UpgradeFrom4To5.class);
 
-    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, String virtualHostName) throws DatabaseException, AMQStoreException
+    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, String virtualHostName)
     {
         Transaction transaction = null;
-        try
-        {
-            reportStarting(environment, 4);
+        reportStarting(environment, 4);
 
-            transaction = environment.beginTransaction(null, null);
+        transaction = environment.beginTransaction(null, null);
 
-            // find all queues which are bound to a topic exchange and which have a colon in their name
-            final List<AMQShortString> potentialDurableSubs = findPotentialDurableSubscriptions(environment, transaction);
+        // find all queues which are bound to a topic exchange and which have a colon in their name
+        final List<AMQShortString> potentialDurableSubs = findPotentialDurableSubscriptions(environment, transaction);
 
-            Set<String> existingQueues = upgradeQueues(environment, handler, potentialDurableSubs, transaction);
-            upgradeQueueBindings(environment, handler, potentialDurableSubs, transaction);
-            Set<Long> messagesToDiscard = upgradeDelivery(environment, existingQueues, handler, transaction);
-            upgradeContent(environment, handler, messagesToDiscard, transaction);
-            upgradeMetaData(environment, handler, messagesToDiscard, transaction);
-            renameRemainingDatabases(environment, handler, transaction);
-            transaction.commit();
+        Set<String> existingQueues = upgradeQueues(environment, handler, potentialDurableSubs, transaction);
+        upgradeQueueBindings(environment, handler, potentialDurableSubs, transaction);
+        Set<Long> messagesToDiscard = upgradeDelivery(environment, existingQueues, handler, transaction);
+        upgradeContent(environment, handler, messagesToDiscard, transaction);
+        upgradeMetaData(environment, handler, messagesToDiscard, transaction);
+        renameRemainingDatabases(environment, handler, transaction);
+        transaction.commit();
 
-            reportFinished(environment, 5);
-
-        }
-        catch (Exception e)
-        {
-            transaction.abort();
-            if (e instanceof DatabaseException)
-            {
-                throw (DatabaseException) e;
-            }
-            else if (e instanceof AMQStoreException)
-            {
-                throw (AMQStoreException) e;
-            }
-            else
-            {
-                throw new AMQStoreException("Unexpected exception", e);
-            }
-        }
+        reportFinished(environment, 5);
     }
 
     private void upgradeQueueBindings(Environment environment, UpgradeInteractionHandler handler, final List<AMQShortString> potentialDurableSubs,
@@ -275,7 +254,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
                         }
                         else
                         {
-                            throw new RuntimeException("Unable is aborted!");
+                            throw new StoreException("Unable is aborted!");
                         }
                     }
                 }

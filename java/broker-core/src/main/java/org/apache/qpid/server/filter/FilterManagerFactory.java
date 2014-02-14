@@ -22,8 +22,6 @@ package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
@@ -43,7 +41,7 @@ public class FilterManagerFactory
 
     //TODO move to a common class so it can be referred to from client code.
 
-    public static FilterManager createManager(Map<String,Object> filters) throws AMQException
+    public static FilterManager createManager(Map<String,Object> filters) throws AMQInvalidArgumentException
     {
         FilterManager manager = null;
 

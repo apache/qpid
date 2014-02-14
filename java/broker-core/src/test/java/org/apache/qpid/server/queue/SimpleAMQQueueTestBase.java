@@ -34,9 +34,8 @@ import java.util.EnumSet;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessageHeader;
@@ -100,7 +99,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         }
     }
 
-    public void testCreateQueue() throws AMQException
+    public void testCreateQueue() throws Exception
     {
         _queue.stop();
         try
@@ -129,7 +128,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         assertEquals("Virtual host was wrong", _virtualHost, _queue.getVirtualHost());
     }
 
-    public void testBinding() throws AMQSecurityException, AMQInternalException
+    public void testBinding() throws QpidSecurityException
     {
         _exchange.addBinding(_routingKey, _queue, Collections.EMPTY_MAP);
 
@@ -150,7 +149,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
 
     }
 
-    public void testRegisterConsumerThenEnqueueMessage() throws AMQException
+    public void testRegisterConsumerThenEnqueueMessage() throws Exception
     {
         ServerMessage messageA = createMessage(new Long(24));
 
@@ -188,7 +187,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
 
     }
 
-    public void testEnqueueMessageThenRegisterConsumer() throws AMQException, InterruptedException
+    public void testEnqueueMessageThenRegisterConsumer() throws Exception, InterruptedException
     {
         ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA, null);
@@ -420,7 +419,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
                    consumer2.getQueueContext().getReleasedEntry());
     }
 
-    public void testExclusiveConsumer() throws AMQException
+    public void testExclusiveConsumer() throws Exception
     {
         ServerMessage messageA = createMessage(new Long(24));
         // Check adding an exclusive consumer adds it to the queue
@@ -456,7 +455,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
                                           Consumer.Option.SEES_REQUEUES));
 
         }
-        catch (AMQException e)
+        catch (MessageSource.ExistingExclusiveConsumer e)
         {
            ex = e;
         }
@@ -476,7 +475,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
                                                EnumSet.of(Consumer.Option.EXCLUSIVE));
 
         }
-        catch (AMQException e)
+        catch (MessageSource.ExistingConsumerPreventsExclusive e)
         {
            ex = e;
         }
@@ -499,14 +498,8 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
             {
                 QueueEntryImpl entry = (QueueEntryImpl) object;
                 entry.setRedelivered();
-                try
-                {
-                    _consumer.resend(entry);
-                }
-                catch (AMQException e)
-                {
-                    fail("Exception thrown: " + e.getMessage());
-                }
+                _consumer.resend(entry);
+
             }
         });
 
@@ -837,7 +830,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
      * Tests that all messages including dequeued one are deleted from the queue
      * on invocation of {@link SimpleAMQQueue#clearQueue()}
      */
-    public void testClearQueueWithDequeuedEntry()
+    public void testClearQueueWithDequeuedEntry() throws Exception
     {
         int messageNumber = 4;
         int dequeueMessageIndex = 1;
@@ -849,14 +842,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         dequeueMessage(_queue, dequeueMessageIndex);
 
         // clean queue
-        try
-        {
-            _queue.clearQueue();
-        }
-        catch (AMQException e)
-        {
-            fail("Failure to clear queue:" + e.getMessage());
-        }
+        _queue.clearQueue();
 
         // get queue entries
         List<E> entries = _queue.getMessagesOnTheQueue();
@@ -942,23 +928,11 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         {
             // Create message
             ServerMessage message = null;
-            try
-            {
-                message = createMessage((long)i);
-            }
-            catch (AMQException e)
-            {
-                fail("Failure to create a test message:" + e.getMessage());
-            }
+            message = createMessage((long)i);
+
             // Put message on queue
-            try
-            {
-                queue.enqueue(message,null);
-            }
-            catch (AMQException e)
-            {
-                fail("Failure to put message on queue:" + e.getMessage());
-            }
+            queue.enqueue(message,null);
+
         }
         try
         {
@@ -1037,7 +1011,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
     }
 
 
-    protected ServerMessage createMessage(Long id) throws AMQException
+    protected ServerMessage createMessage(Long id)
     {
         AMQMessageHeader header = mock(AMQMessageHeader.class);
         when(header.getMessageId()).thenReturn(String.valueOf(id));

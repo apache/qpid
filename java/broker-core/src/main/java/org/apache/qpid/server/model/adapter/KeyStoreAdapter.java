@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
@@ -195,7 +196,7 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
             catch (KeyStoreException e)
             {
                 // key store should be initialized above
-                throw new RuntimeException("Key store has not been initialized", e);
+                throw new ServerScopedRuntimeException("Key store has not been initialized", e);
             }
             if (cert == null)
             {

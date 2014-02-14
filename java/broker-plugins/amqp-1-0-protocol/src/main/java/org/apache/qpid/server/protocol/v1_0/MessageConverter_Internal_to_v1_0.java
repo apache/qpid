@@ -31,6 +31,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Data;
 import org.apache.qpid.amqp_1_0.type.messaging.Header;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 import org.apache.qpid.server.message.internal.InternalMessage;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -132,7 +133,7 @@ public class MessageConverter_Internal_to_v1_0 extends MessageConverter_to_1_0<I
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new ConnectionScopedRuntimeException(e);
             }
         }
     }

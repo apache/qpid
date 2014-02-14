@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.AuthorizationHolder;
+import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.TransactionLogResource;
 
 import java.util.Collection;
@@ -36,7 +35,8 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
 {
     <T extends ConsumerTarget> C addConsumer(T target, FilterManager filters,
                          Class<? extends ServerMessage> messageClass,
-                         String consumerName, EnumSet<Consumer.Option> options) throws AMQException;
+                         String consumerName, EnumSet<Consumer.Option> options)
+            throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive, QpidSecurityException;
 
     Collection<C> getConsumers();
 
@@ -68,12 +68,10 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
      * <tr><th> Responsibilities <th> Collaborations
      * <tr><td> Represent failure to create a consumer, because an exclusive consumer already exists.
      * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
+     *     *
      * @todo Move to top level, used outside this class.
      */
-    static final class ExistingExclusiveConsumer extends AMQException
+    static final class ExistingExclusiveConsumer extends Exception
     {
 
         public ExistingExclusiveConsumer()
@@ -90,12 +88,10 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
      * <tr><th> Responsibilities <th> Collaborations
      * <tr><td> Represent failure to create an exclusive consumer, as a consumer already exists.
      * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
+     *     *
      * @todo Move to top level, used outside this class.
      */
-    static final class ExistingConsumerPreventsExclusive extends AMQException
+    static final class ExistingConsumerPreventsExclusive extends Exception
     {
         public ExistingConsumerPreventsExclusive()
         {

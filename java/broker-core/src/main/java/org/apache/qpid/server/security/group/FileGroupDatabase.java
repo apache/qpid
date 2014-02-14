@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * A group database that reads/writes the following file format:
@@ -181,7 +182,7 @@ public class FileGroupDatabase implements GroupDatabase
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Unable to persist change to file " + _groupFile);
+                throw new ServerScopedRuntimeException("Unable to persist change to file " + _groupFile);
             }
         }
     }

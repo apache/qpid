@@ -24,7 +24,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 
-public final class SetAttributeTask implements Callable<Object>
+public final class SetAttributeTask implements TaskExecutor.Task<Object>
 {
     private ConfiguredObject _object;
     private String _attributeName;

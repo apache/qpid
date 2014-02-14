@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
@@ -46,6 +45,7 @@ import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -112,7 +112,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         }
     }
 
-    public void send(MessageInstance entry, boolean batch) throws AMQException
+    public void send(MessageInstance entry, boolean batch)
     {
         // TODO
         send(entry);
@@ -123,7 +123,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         // TODO
     }
 
-    public void send(final MessageInstance queueEntry) throws AMQException
+    public void send(final MessageInstance queueEntry)
     {
         ServerMessage serverMessage = queueEntry.getMessage();
         Message_1_0 message;
@@ -187,7 +187,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
             catch (AmqpErrorException e)
             {
                 //TODO
-                throw new RuntimeException(e);
+                throw new ConnectionScopedRuntimeException(e);
             }
 
             Header header = new Header();

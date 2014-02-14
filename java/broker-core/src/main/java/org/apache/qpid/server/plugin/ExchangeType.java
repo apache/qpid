@@ -22,7 +22,6 @@ package org.apache.qpid.server.plugin;
 
 import java.util.UUID;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -31,7 +30,7 @@ public interface ExchangeType<T extends Exchange> extends Pluggable
     public String getType();
 
     public T newInstance(UUID id, VirtualHost host, String name,
-                         boolean durable, boolean autoDelete) throws AMQException;
+                         boolean durable, boolean autoDelete);
 
     public String getDefaultExchangeName();
 }

@@ -23,9 +23,6 @@ package org.apache.qpid.server.queue;
 import java.util.Collections;
 import junit.framework.AssertionFailedError;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
@@ -36,7 +33,6 @@ import java.util.EnumSet;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.consumer.Consumer;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PriorityQueueTest extends SimpleAMQQueueTestBase
@@ -49,7 +45,7 @@ public class PriorityQueueTest extends SimpleAMQQueueTestBase
         super.setUp();
     }
 
-    public void testPriorityOrdering() throws AMQException, InterruptedException
+    public void testPriorityOrdering() throws Exception, InterruptedException
     {
 
         // Enqueue messages in order
@@ -102,7 +98,7 @@ public class PriorityQueueTest extends SimpleAMQQueueTestBase
 
     }
 
-    protected ServerMessage createMessage(Long id, byte i) throws AMQException
+    protected ServerMessage createMessage(Long id, byte i)
     {
 
         ServerMessage msg = super.createMessage(id);
@@ -111,7 +107,7 @@ public class PriorityQueueTest extends SimpleAMQQueueTestBase
         return msg;
     }
 
-    protected ServerMessage createMessage(Long id) throws AMQException
+    protected ServerMessage createMessage(Long id)
     {
         return createMessage(id, (byte) 0);
     }

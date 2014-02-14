@@ -18,29 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid;
+package org.apache.qpid.server.virtualhost;
 
-/**
- * StoreException is a specific type of internal error relating to errors in the message store, such as {@link java.sql.SQLException}.
- */
-public class AMQStoreException extends AMQInternalException
+import org.apache.qpid.server.queue.AMQQueue;
+
+public class QueueExistsException extends Exception
 {
-    /** serialVersionUID */
-    private static final long serialVersionUID = 2859681947490637496L;
+    private final AMQQueue _existing;
 
-    /**
-     * Creates an exception with an optional message and optional underlying cause.
-     *
-     * @param msg The exception message. May be null if not to be set.
-     * @param cause The underlying cause of the exception. May be null if not to be set.
-     */
-    public AMQStoreException(String msg, Throwable cause)
+    public QueueExistsException(String name, AMQQueue existing)
     {
-        super(((msg == null) ? "Store error" : msg), cause);
+        super(name);
+        _existing = existing;
     }
-    
-    public AMQStoreException(String msg) 
+
+    public AMQQueue getExistingQueue()
     {
-        this(msg, null);
+        return _existing;
     }
 }

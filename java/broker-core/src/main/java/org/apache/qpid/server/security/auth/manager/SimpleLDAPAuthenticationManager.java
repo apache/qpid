@@ -20,6 +20,9 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.Hashtable;
 
@@ -49,6 +52,7 @@ import org.apache.qpid.server.security.auth.manager.ldap.AbstractLDAPSSLSocketFa
 import org.apache.qpid.server.security.auth.manager.ldap.LDAPSSLSocketFactoryGenerator;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StringUtil;
 import org.apache.qpid.ssl.SSLContextFactory;
 
@@ -267,11 +271,22 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
                 sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, _trustStore.getTrustManagers(), null);
             }
-            catch (Exception e)
+            catch (NoSuchAlgorithmException e)
             {
                 _logger.error("Exception creating SSLContext", e);
-                throw new RuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
+                throw new ServerScopedRuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
             }
+            catch (KeyManagementException e)
+            {
+                _logger.error("Exception creating SSLContext", e);
+                throw new ServerScopedRuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
+            }
+            catch (GeneralSecurityException e)
+            {
+                _logger.error("Exception creating SSLContext", e);
+                throw new ServerScopedRuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
+            }
+
             Class<? extends AbstractLDAPSSLSocketFactory> clazz = LDAPSSLSocketFactoryGenerator.createSubClass(clazzName, sslContext.getSocketFactory());
             if (_logger.isDebugEnabled())
             {
@@ -295,7 +310,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         }
         catch (NamingException e)
         {
-            throw new RuntimeException("Unable to establish anonymous connection to the ldap server at " + _providerSearchURL, e);
+            throw new ServerScopedRuntimeException("Unable to establish anonymous connection to the ldap server at " + _providerSearchURL, e);
         }
         finally
         {
