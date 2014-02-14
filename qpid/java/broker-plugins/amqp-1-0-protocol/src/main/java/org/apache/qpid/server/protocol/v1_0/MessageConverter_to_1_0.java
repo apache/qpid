@@ -39,6 +39,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.typedmessage.TypedBytesContentReader;
@@ -140,11 +141,11 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
                 }
                 catch (TypedBytesFormatException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);
                 }
                 catch (EOFException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);
                 }
             }
             return new AmqpValue(list);

@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.management.amqp;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
@@ -940,7 +939,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                                 final FilterManager filters,
                                 final Class<? extends ServerMessage> messageClass,
                                 final String consumerName,
-                                final EnumSet<Consumer.Option> options) throws AMQException
+                                final EnumSet<Consumer.Option> options)
     {
 
         final ManagementNodeConsumer managementNodeConsumer = new ManagementNodeConsumer(consumerName,this, target);

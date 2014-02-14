@@ -21,7 +21,6 @@ package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -39,7 +38,7 @@ public abstract class QueueEntryListTestBase<E extends QueueEntry<E,Q,C>, Q exte
     public abstract L getTestList(boolean newList);
     public abstract long getExpectedFirstMsgId();
     public abstract int getExpectedListLength();
-    public abstract ServerMessage getTestMessageToAdd() throws AMQException;
+    public abstract ServerMessage getTestMessageToAdd();
 
     public void testGetQueue()
     {
@@ -52,9 +51,8 @@ public abstract class QueueEntryListTestBase<E extends QueueEntry<E,Q,C>, Q exte
      * Test to add a message with properties specific to the queue type.
      * @see QueueEntryListTestBase#getTestList()
      * @see QueueEntryListTestBase#getTestMessageToAdd()
-     * @throws AMQException
      */
-    public void testAddSpecificMessage() throws AMQException
+    public void testAddSpecificMessage()
     {
         final L list = getTestList();
         list.add(getTestMessageToAdd());
@@ -73,9 +71,8 @@ public abstract class QueueEntryListTestBase<E extends QueueEntry<E,Q,C>, Q exte
      * Test to add a generic mock message.
      * @see QueueEntryListTestBase#getTestList()
      * @see QueueEntryListTestBase#getExpectedListLength()
-     * @throws AMQException
      */
-    public void testAddGenericMessage() throws AMQException
+    public void testAddGenericMessage()
     {
         final L list = getTestList();
         final ServerMessage message = createServerMessage(666l);

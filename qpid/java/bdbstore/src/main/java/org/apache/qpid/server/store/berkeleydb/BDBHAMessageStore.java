@@ -35,7 +35,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.AMQStoreException;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -65,6 +65,7 @@ import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMessageStore
 {
@@ -122,7 +123,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     private Map<String, String> _repConfig;
 
     @Override
-    public void configure(VirtualHost virtualHost) throws Exception
+    public void configure(VirtualHost virtualHost)
     {
         //Mandatory configuration
         _groupName = getValidatedStringAttribute(virtualHost, "haGroupName");
@@ -153,7 +154,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
         if (_coalescingSync && _durability.getLocalSync() == SyncPolicy.SYNC)
         {
-            throw new ConfigurationException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
+            throw new ServerScopedRuntimeException("Coalescing sync cannot be used with master sync policy " + SyncPolicy.SYNC
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
@@ -162,7 +163,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
 
     private String getValidatedStringAttribute(org.apache.qpid.server.model.VirtualHost virtualHost, String attributeName)
-            throws ConfigurationException
     {
         Object attrValue = virtualHost.getAttribute(attributeName);
         if(attrValue != null)
@@ -171,7 +171,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         }
         else
         {
-            throw new ConfigurationException("BDB HA configuration key not found. Please specify configuration attribute: "
+            throw new ServerScopedRuntimeException("BDB HA configuration key not found. Please specify configuration attribute: "
                                                             + attributeName);
         }
     }
@@ -206,7 +206,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
 
     @Override
-    protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath, String name) throws DatabaseException
     {
         super.setupStore(storePath, name);
 
@@ -261,7 +261,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         super.configureMessageStore(virtualHost, messageRecoveryHandler, tlogRecoveryHandler);
 
@@ -271,7 +271,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     }
 
     @Override
-    public synchronized void activate() throws Exception
+    public synchronized void activate()
     {
         // Before proceeding, perform a log flush with an fsync
         getEnvironment().flushLog(true);
@@ -441,7 +441,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     }
 
     @Override
-    protected void closeInternal() throws Exception
+    protected void closeInternal()
     {
         substituteNoOpStateChangeListenerOn(getReplicatedEnvironment());
 
@@ -449,7 +449,14 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         {
             if(_coalescingSync)
             {
-                _commitThreadWrapper.stopCommitThread();
+                try
+                {
+                    _commitThreadWrapper.stopCommitThread();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new ServerScopedRuntimeException(e);
+                }
             }
         }
         finally
@@ -507,7 +514,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
         private final Executor _executor = Executors.newSingleThreadExecutor();
 
         @Override
-        public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
+        public void stateChange(StateChangeEvent stateChangeEvent)
         {
             com.sleepycat.je.rep.ReplicatedEnvironment.State state = stateChangeEvent.getState();
 
@@ -645,7 +652,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     {
         @Override
         public void stateChange(StateChangeEvent stateChangeEvent)
-                throws RuntimeException
         {
         }
     }

@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;

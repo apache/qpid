@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 
@@ -79,7 +78,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
                     logs.get(0).toString().contains("/ch:"));
     }
 
-    public void testConnectionLoggingOff() throws Exception, AMQException
+    public void testConnectionLoggingOff() throws Exception
     {
         setStatusUpdatesEnabled(false);
 

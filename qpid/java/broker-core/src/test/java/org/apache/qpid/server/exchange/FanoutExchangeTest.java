@@ -33,8 +33,6 @@ import java.util.Set;
 import java.util.UUID;
 import junit.framework.TestCase;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.logging.LogActor;
@@ -54,7 +52,7 @@ public class FanoutExchangeTest extends TestCase
     private FanoutExchange _exchange;
     private VirtualHost _virtualHost;
 
-    public void setUp() throws AMQException
+    public void setUp()
     {
         CurrentActor.setDefault(mock(LogActor.class));
 
@@ -85,28 +83,28 @@ public class FanoutExchangeTest extends TestCase
         assertFalse("calling isBound(AMQQueue) with null queue should return false", _exchange.isBound((AMQQueue) null));
     }
 
-    public void testIsBoundStringMapAMQQueue() throws QpidSecurityException, AMQInternalException
+    public void testIsBoundStringMapAMQQueue() throws QpidSecurityException
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
                 _exchange.isBound("matters", null, queue));
     }
 
-    public void testIsBoundStringAMQQueue() throws QpidSecurityException, AMQInternalException
+    public void testIsBoundStringAMQQueue() throws QpidSecurityException
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
                 _exchange.isBound("matters", queue));
     }
 
-    public void testIsBoundAMQQueue() throws QpidSecurityException, AMQInternalException
+    public void testIsBoundAMQQueue() throws QpidSecurityException
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
                 _exchange.isBound(queue));
     }
 
-    private AMQQueue bindQueue() throws QpidSecurityException, AMQInternalException
+    private AMQQueue bindQueue() throws QpidSecurityException
     {
         AMQQueue queue = mockQueue();
         _exchange.addBinding("matters", queue, null);

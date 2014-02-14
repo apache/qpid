@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
@@ -126,10 +125,6 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
                     _queue = _queueFactory.restoreQueue(_id, queueName, owner, false, exclusive,
                             false, queueArgumentsMap);
                 }
-            }
-            catch (AMQException e)
-            {
-                throw new RuntimeException("Error recovering queue uuid " + _id + " name " + queueName, e);
             }
             catch (QpidSecurityException e)
             {

@@ -22,7 +22,6 @@ package org.apache.qpid.server.logging.actors;
 
 import org.apache.commons.configuration.ConfigurationException;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
@@ -66,10 +65,9 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
      * And then finally validates that removing the Connection actor results
      * in there being no actors set.
      *
-     * @throws AMQException
      * @throws org.apache.commons.configuration.ConfigurationException
      */
-    public void testLIFO() throws AMQException, ConfigurationException
+    public void testLIFO() throws ConfigurationException
     {
         assertTrue("Unexpected actor: " + CurrentActor.get(), CurrentActor.get() instanceof TestLogActor);
         AMQPConnectionActor connectionActor = new AMQPConnectionActor(getConnection(),

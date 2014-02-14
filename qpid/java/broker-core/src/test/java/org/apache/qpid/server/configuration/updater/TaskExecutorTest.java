@@ -42,6 +42,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutorTest extends TestCase
 {
@@ -90,7 +91,7 @@ public class TaskExecutorTest extends TestCase
             {
                 try
                 {
-                    Future<?> f = _executor.submit(new NeverEndingCallable(waitForCallLatch));
+                    Future<Void> f = _executor.submit(new NeverEndingCallable(waitForCallLatch));
                     submitLatch.countDown();
                     f.get();
                 }
@@ -100,7 +101,14 @@ public class TaskExecutorTest extends TestCase
                     {
                         e = (Exception) e.getCause();
                     }
-                    submitExceptions.add(e);
+                    if(e instanceof RuntimeException && e.getCause() instanceof Exception)
+                    {
+                        submitExceptions.add((Exception)e.getCause());
+                    }
+                    else
+                    {
+                        submitExceptions.add(e);
+                    }
                 }
             }
         };
@@ -133,10 +141,10 @@ public class TaskExecutorTest extends TestCase
     public void testSubmitAndWait() throws Exception
     {
         _executor.start();
-        Object result = _executor.submitAndWait(new Callable<String>()
+        Object result = _executor.submitAndWait(new TaskExecutor.Task<Object>()
         {
             @Override
-            public String call() throws Exception
+            public String call()
             {
                 return "DONE";
             }
@@ -186,11 +194,11 @@ public class TaskExecutorTest extends TestCase
         _executor.start();
         try
         {
-            _executor.submitAndWait(new Callable<Void>()
+            _executor.submitAndWait(new TaskExecutor.Task<Object>()
             {
 
                 @Override
-                public Void call() throws Exception
+                public Void call()
                 {
                     throw exception;
                 }
@@ -200,29 +208,6 @@ public class TaskExecutorTest extends TestCase
         catch (Exception e)
         {
             assertEquals("Unexpected exception", exception, e);
-        }
-    }
-
-    public void testSubmitAndWaitPassesOriginalCheckedException()
-    {
-        final Exception exception = new Exception();
-        _executor.start();
-        try
-        {
-            _executor.submitAndWait(new Callable<Void>()
-            {
-
-                @Override
-                public Void call() throws Exception
-                {
-                    throw exception;
-                }
-            });
-            fail("Exception is expected");
-        }
-        catch (Exception e)
-        {
-            assertEquals("Unexpected exception", exception, e.getCause());
         }
     }
 
@@ -238,10 +223,10 @@ public class TaskExecutorTest extends TestCase
         {
             CurrentActor.set(actor);
             SecurityManager.setThreadSubject(subject);
-            _executor.submitAndWait(new Callable<Void>()
+            _executor.submitAndWait(new TaskExecutor.Task<Object>()
             {
                 @Override
-                public Void call() throws Exception
+                public Void call()
                 {
                     taskLogActor.set(CurrentActor.get());
                     taskSubject.set(SecurityManager.getThreadSubject());
@@ -258,16 +243,16 @@ public class TaskExecutorTest extends TestCase
         assertEquals("Unexpected security manager subject", subject, taskSubject.get());
     }
 
-    private class SubjectRetriever implements Callable<Subject>
+    private class SubjectRetriever implements TaskExecutor.Task<Subject>
     {
         @Override
-        public Subject call() throws Exception
+        public Subject call()
         {
             return Subject.getSubject(AccessController.getContext());
         }
     }
 
-    private class NeverEndingCallable implements Callable<Void>
+    private class NeverEndingCallable implements TaskExecutor.Task<Void>
     {
         private CountDownLatch _waitLatch;
 
@@ -278,7 +263,7 @@ public class TaskExecutorTest extends TestCase
         }
 
         @Override
-        public Void call() throws Exception
+        public Void call()
         {
             if (_waitLatch != null)
             {
@@ -288,7 +273,14 @@ public class TaskExecutorTest extends TestCase
             // wait forever
             synchronized (this)
             {
-                this.wait();
+                try
+                {
+                    this.wait();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new ServerScopedRuntimeException(e);
+                }
             }
             return null;
         }

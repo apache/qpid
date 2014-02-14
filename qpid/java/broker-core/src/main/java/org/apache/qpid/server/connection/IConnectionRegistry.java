@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.connection;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 
 import java.util.List;
@@ -33,7 +31,7 @@ public interface IConnectionRegistry
 
     public void initialise();
 
-    public void close() throws AMQException;
+    public void close();
 
     public void close(String replyText);
 

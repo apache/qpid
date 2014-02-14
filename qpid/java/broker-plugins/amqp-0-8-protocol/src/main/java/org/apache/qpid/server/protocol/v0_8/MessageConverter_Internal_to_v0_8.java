@@ -29,6 +29,7 @@ import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.codec.BBEncoder;
 
@@ -236,7 +237,7 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new ConnectionScopedRuntimeException(e);
             }
         }
     }

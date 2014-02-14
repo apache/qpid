@@ -20,7 +20,6 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -112,7 +111,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
     }
 
     @Override
-    public ServerMessage getTestMessageToAdd() throws AMQException
+    public ServerMessage getTestMessageToAdd()
     {
         ServerMessage msg = mock(ServerMessage.class);
         when(msg.getMessageNumber()).thenReturn(1l);

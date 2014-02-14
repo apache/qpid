@@ -23,6 +23,7 @@ package org.apache.qpid.server.message.internal;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.util.ByteBufferInputStream;
 
 import java.io.IOException;
@@ -51,11 +52,11 @@ public class InternalMessageMetaDataType implements MessageMetaDataType<Internal
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Cannot decode message header");
+            throw new ConnectionScopedRuntimeException("Unexpected IO Exception on operation in memory", e);
         }
         catch (ClassNotFoundException e)
         {
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException("Unexpected exception when reading meta data, check classpath",e);
         }
 
     }

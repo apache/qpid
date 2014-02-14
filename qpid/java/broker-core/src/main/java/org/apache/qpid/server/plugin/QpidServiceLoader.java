@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * Simple facade over a {@link ServiceLoader} to instantiate all configured implementations of an interface.
@@ -59,7 +60,7 @@ public class QpidServiceLoader<C extends Pluggable>
 
         if(atLeastOne && serviceImplementations.isEmpty())
         {
-            throw new RuntimeException("At least one implementation of " + clazz + " expected");
+            throw new ServerScopedRuntimeException("At least one implementation of " + clazz + " expected");
         }
 
         if(_logger.isDebugEnabled())

@@ -43,6 +43,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 public class MessageMetaData_1_0 implements StorableMessageMetaData
 {
@@ -394,7 +395,7 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
                 catch (AmqpErrorException e)
                 {
                     //TODO
-                    throw new RuntimeException(e);
+                    throw new ConnectionScopedRuntimeException(e);
                 }
 
             }

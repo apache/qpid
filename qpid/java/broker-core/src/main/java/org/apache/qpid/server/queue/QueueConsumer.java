@@ -21,7 +21,6 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -41,7 +40,6 @@ import java.text.MessageFormat;
 import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -149,15 +147,7 @@ class QueueConsumer<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q
 
         if(newState == ConsumerTarget.State.CLOSED && oldState != newState && !_closed.get())
         {
-            try
-            {
-                close();
-            }
-            catch (AMQException e)
-            {
-                _logger.error("Unable to remove to remove consumer", e);
-                throw new RuntimeException(e);
-            }
+            close();
         }
         final StateChangeListener<? super QueueConsumer<T,E,Q,L>, State> stateListener = getStateListener();
         if(stateListener != null)
@@ -202,7 +192,7 @@ class QueueConsumer<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q
     }
 
     @Override
-    public void close() throws AMQException
+    public void close()
     {
         if(_closed.compareAndSet(false,true))
         {

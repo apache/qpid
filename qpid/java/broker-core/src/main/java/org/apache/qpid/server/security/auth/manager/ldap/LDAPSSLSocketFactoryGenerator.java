@@ -42,6 +42,7 @@ import org.apache.bcel.generic.InstructionFactory;
 import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * This class provides a single method, {@link #createSubClass(String, SSLSocketFactory)}.  This creates a
@@ -214,19 +215,19 @@ public class LDAPSSLSocketFactoryGenerator
         }
         catch (IllegalArgumentException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
         catch (IllegalAccessException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
         catch (NoSuchFieldException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
         catch (SecurityException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
     }
 
@@ -252,19 +253,19 @@ public class LDAPSSLSocketFactoryGenerator
         }
         catch (NoSuchFieldException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
         catch (SecurityException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
         catch (IllegalArgumentException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
         catch (IllegalAccessException e)
         {
-            throw new RuntimeException(exceptionMessage, e);
+            throw new ServerScopedRuntimeException(exceptionMessage, e);
         }
     }
 

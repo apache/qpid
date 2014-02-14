@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 
 public interface Transaction
@@ -32,40 +31,35 @@ public interface Transaction
      *
      * @param queue     The queue to place the message on.
      * @param message
-     * @throws org.apache.qpid.AMQStoreException If the operation fails for any reason.
      */
-    void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException;
+    void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message);
 
     /**
      * Extracts a message from a specified queue, in a given transactional context.
      *
      * @param queue     The queue to place the message on.
      * @param message The message to dequeue.
-     * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException;
+    void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message);
 
 
     /**
      * Commits all operations performed within a given transactional context.
      *
-     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void commitTran() throws AMQStoreException;
+    void commitTran();
 
     /**
      * Commits all operations performed within a given transactional context.
      *
-     * @throws AMQStoreException If the operation fails for any reason.
      */
-    StoreFuture commitTranAsync() throws AMQStoreException;
+    StoreFuture commitTranAsync();
 
     /**
      * Abandons all operations performed within a given transactional context.
      *
-     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void abortTran() throws AMQStoreException;
+    void abortTran();
 
 
     public static interface Record
@@ -74,8 +68,8 @@ public interface Transaction
         EnqueueableMessage getMessage();
     }
 
-    void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException;
+    void removeXid(long format, byte[] globalId, byte[] branchId);
 
-    void recordXid(long format, byte[] globalId, byte[] branchId, Transaction.Record[] enqueues, Transaction.Record[] dequeues)
-            throws AMQStoreException;
+    void recordXid(long format, byte[] globalId, byte[] branchId, Transaction.Record[] enqueues,
+                   Transaction.Record[] dequeues);
 }

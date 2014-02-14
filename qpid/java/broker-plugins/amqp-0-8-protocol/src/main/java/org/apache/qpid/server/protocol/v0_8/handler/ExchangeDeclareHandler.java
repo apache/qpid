@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
@@ -38,6 +38,7 @@ import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ExchangeDeclareHandler implements StateAwareMethodListener<ExchangeDeclareBody>
@@ -128,6 +129,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             catch (QpidSecurityException e)
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+            }
+            catch (UnknownExchangeException e)
+            {
+                // note - since 0-8/9/9-1 can't set the alt. exchange this exception should never occur
+                throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown alternate exchange",e);
             }
         }
 

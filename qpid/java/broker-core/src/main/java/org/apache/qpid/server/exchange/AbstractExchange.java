@@ -22,8 +22,6 @@ package org.apache.qpid.server.exchange;
 
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.consumer.Consumer;
@@ -113,7 +111,6 @@ public abstract class AbstractExchange implements Exchange
                            String name,
                            boolean durable,
                            boolean autoDelete)
-            throws AMQException
     {
         _virtualHost = host;
         _name = name;
@@ -137,7 +134,7 @@ public abstract class AbstractExchange implements Exchange
         return _autoDelete;
     }
 
-    public void close() throws QpidSecurityException, AMQInternalException
+    public void close() throws QpidSecurityException
     {
 
         if(_closed.compareAndSet(false,true))
@@ -457,19 +454,17 @@ public abstract class AbstractExchange implements Exchange
 
                 public void postCommit()
                 {
-                    for(int i = 0; i < baseQueues.length; i++)
+                    try
                     {
-                        try
+                        for(int i = 0; i < baseQueues.length; i++)
                         {
                             baseQueues[i].enqueue(message, postEnqueueAction);
                         }
-                        catch (AMQException e)
-                        {
-                            // TODO
-                            throw new RuntimeException(e);
-                        }
                     }
-                    _reference.release();
+                    finally
+                    {
+                        _reference.release();
+                    }
                 }
 
                 public void onRollback()
@@ -531,7 +526,7 @@ public abstract class AbstractExchange implements Exchange
 
     @Override
     public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         return makeBinding(null, bindingKey, queue, arguments, false, false);
     }
@@ -540,7 +535,7 @@ public abstract class AbstractExchange implements Exchange
     public boolean replaceBinding(final UUID id, final String bindingKey,
                                   final AMQQueue queue,
                                   final Map<String, Object> arguments)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         return makeBinding(id, bindingKey, queue, arguments, false, true);
     }
@@ -548,20 +543,20 @@ public abstract class AbstractExchange implements Exchange
     @Override
     public void restoreBinding(final UUID id, final String bindingKey, final AMQQueue queue,
                                final Map<String, Object> argumentMap)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         makeBinding(id, bindingKey,queue, argumentMap,true, false);
     }
 
     @Override
-    public void removeBinding(final Binding b) throws QpidSecurityException, AMQInternalException
+    public void removeBinding(final Binding b) throws QpidSecurityException
     {
         removeBinding(b.getBindingKey(), b.getQueue(), b.getArguments());
     }
 
     @Override
     public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         assert queue != null;
 
@@ -627,7 +622,7 @@ public abstract class AbstractExchange implements Exchange
                                 AMQQueue queue,
                                 Map<String, Object> arguments,
                                 boolean restore,
-                                boolean force) throws QpidSecurityException, AMQInternalException
+                                boolean force) throws QpidSecurityException
     {
         assert queue != null;
 
@@ -695,7 +690,7 @@ public abstract class AbstractExchange implements Exchange
 
         }
 
-        public void onClose(final Exchange exchange) throws QpidSecurityException, AMQInternalException
+        public void onClose(final Exchange exchange) throws QpidSecurityException
         {
             removeBinding(this);
         }

@@ -52,8 +52,6 @@ public class AMQStateManager implements AMQMethodListener
     /** The current state */
     private AMQState _currentState;
 
-    private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
-
     public AMQStateManager(Broker broker, AMQProtocolSession protocolSession)
     {
         _broker = broker;
@@ -72,30 +70,17 @@ public class AMQStateManager implements AMQMethodListener
         return _broker;
     }
 
-    public AMQState getCurrentState()
-    {
-        return _currentState;
-    }
-
-    public void changeState(AMQState newState) throws AMQException
+    public void changeState(AMQState newState)
     {
         _logger.debug("State changing to " + newState + " from old state " + _currentState);
         final AMQState oldState = _currentState;
         _currentState = newState;
 
-        for (StateListener l : _stateListeners)
-        {
-            l.stateChanged(oldState, newState);
-        }
     }
 
     public void error(Exception e)
     {
         _logger.error("State manager received error notification[Current State:" + _currentState + "]: " + e, e);
-        for (StateListener l : _stateListeners)
-        {
-            l.error(e);
-        }
     }
 
     public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws AMQException
@@ -119,28 +104,6 @@ public class AMQStateManager implements AMQMethodListener
 
         return body.execute(dispatcher, channelId);
 
-    }
-
-    private <B extends AMQMethodBody> void checkChannel(AMQMethodEvent<B> evt, AMQProtocolSession protocolSession)
-        throws AMQException
-    {
-        if ((evt.getChannelId() != 0) && !(evt.getMethod() instanceof ChannelOpenBody)
-                && (protocolSession.getChannel(evt.getChannelId()) == null)
-                && !protocolSession.channelAwaitingClosure(evt.getChannelId()))
-        {
-            throw evt.getMethod().getChannelNotFoundException(evt.getChannelId());
-        }
-    }
-
-    public void addStateListener(StateListener listener)
-    {
-        _logger.debug("Adding state listener");
-        _stateListeners.add(listener);
-    }
-
-    public void removeStateListener(StateListener listener)
-    {
-        _stateListeners.remove(listener);
     }
 
     public VirtualHostRegistry getVirtualHostRegistry()

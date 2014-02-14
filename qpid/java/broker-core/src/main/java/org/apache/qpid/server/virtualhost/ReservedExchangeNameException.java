@@ -19,9 +19,7 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-import org.apache.qpid.AMQException;
-
-public class ReservedExchangeNameException extends AMQException
+public class ReservedExchangeNameException extends Exception
 {
     private final String _name;
 

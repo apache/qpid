@@ -34,21 +34,17 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.security.QpidSecurityException;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
 import java.util.UUID;
-import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {
@@ -131,7 +127,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                         final AMQQueue q = queue;
                         final AMQProtocolSession.Task sessionCloseTask = new AMQProtocolSession.Task()
                         {
-                            public void doTask(AMQProtocolSession session) throws AMQException
+                            public void doTask(AMQProtocolSession session)
                             {
                                 q.setExclusiveOwningSession(null);
                             }
@@ -219,7 +215,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                                    QueueDeclareBody body,
                                    final VirtualHost virtualHost,
                                    final AMQProtocolSession session)
-            throws AMQException, QpidSecurityException
+            throws AMQException, QpidSecurityException, QueueExistsException
     {
 
         final boolean durable = body.getDurable();
@@ -241,7 +237,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             final AMQProtocolSession.Task deleteQueueTask =
                     new AMQProtocolSession.Task()
                     {
-                        public void doTask(AMQProtocolSession session) throws AMQException
+                        public void doTask(AMQProtocolSession session)
                         {
                             if (virtualHost.getQueue(queueName.toString()) == queue)
                             {

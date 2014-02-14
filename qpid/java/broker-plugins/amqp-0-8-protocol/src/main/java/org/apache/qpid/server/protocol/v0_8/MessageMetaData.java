@@ -22,6 +22,8 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import java.util.Collection;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -32,6 +34,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.util.ByteBufferOutputStream;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.util.ByteBufferInputStream;
 
 import java.io.DataInputStream;
@@ -132,7 +135,7 @@ public class MessageMetaData implements StorableMessageMetaData
         catch (IOException e)
         {
             // This shouldn't happen as we are not actually using anything that can throw an IO Exception
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException(e);
         }
 
         return dest.position()-oldPosition;
@@ -196,17 +199,21 @@ public class MessageMetaData implements StorableMessageMetaData
                         };
                 return new MessageMetaData(publishBody, chb, arrivalTime);
             }
-            catch (AMQException e)
-            {
-                throw new RuntimeException(e);
-            }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new ConnectionScopedRuntimeException(e);
+            }
+            catch (AMQProtocolVersionException e)
+            {
+                throw new ConnectionScopedRuntimeException(e);
+            }
+            catch (AMQFrameDecodingException e)
+            {
+                throw new ConnectionScopedRuntimeException(e);
             }
 
         }
-    };
+    }
 
     public AMQMessageHeader getMessageHeader()
     {

@@ -19,7 +19,7 @@
  *
  */
 
-package org.apache.qpid;
+package org.apache.qpid.server.exchange;
 
 /**
  * AMQUnknownExchangeType represents coding error where unknown exchange type requested from exchange factory.
@@ -29,15 +29,13 @@ package org.apache.qpid;
  * <tr><td> Represents unknown exchange type request.
  * <tr><td>
  *
- * @todo Not an AMQP exception as no status code.
- *
  * @todo Represent coding error, where unknown exchange type is requested by passing a string parameter. Use a type safe
  *       enum for the exchange type, or replace with IllegalArgumentException. Should be runtime.
  */
-public class AMQUnknownExchangeType extends AMQException
+public class AMQUnknownExchangeType extends Exception
 {
     public AMQUnknownExchangeType(String message, Throwable cause)
     {
-        super(null, message, cause);
+        super(message, cause);
     }
 }

@@ -46,7 +46,7 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
                                          StatisticsGatherer brokerStatisticsGatherer,
                                          org.apache.qpid.server.security.SecurityManager parentSecurityManager,
                                          VirtualHostConfiguration hostConfig,
-                                         org.apache.qpid.server.model.VirtualHost virtualHost) throws Exception
+                                         org.apache.qpid.server.model.VirtualHost virtualHost)
     {
         return new StandardVirtualHost(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
     }

@@ -25,11 +25,11 @@ import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.server.store.AMQStoreException;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.HeadersExchange;
+import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
@@ -66,7 +66,7 @@ import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.plugins.QueueExistsException;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 import org.apache.qpid.transport.*;
 
 import java.nio.ByteBuffer;
@@ -253,7 +253,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         filterManager = FilterManagerFactory.createManager(method.getArguments());
                     }
-                    catch (AMQException amqe)
+                    catch (AMQInvalidArgumentException amqe)
                     {
                         exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "Exception Creating FilterManager");
                         return;
@@ -297,10 +297,6 @@ public class ServerSessionDelegate extends SessionDelegate
                     catch (AMQQueue.ExistingConsumerPreventsExclusive exclusive)
                     {
                         exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an existing consumer - can't subscribe exclusively");
-                    }
-                    catch (AMQException e)
-                    {
-                        exception(session, method, e, "Cannot subscribe to queue '" + queueName + "' with destination '" + destination);
                     }
                     catch (QpidSecurityException e)
                     {
@@ -435,15 +431,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
-
-            try
-            {
-                sub.flush();
-            }
-            catch (AMQException e)
-            {
-                exception(session, method, e, "Cannot flush subscription '" + destination);
-            }
+            sub.flush();
         }
     }
 
@@ -787,10 +775,6 @@ public class ServerSessionDelegate extends SessionDelegate
                                     + " to " + method.getAlternateExchange() +".");
                 }
             }
-            catch (AMQException e)
-            {
-                exception(session, method, e, "Cannot declare exchange '" + exchangeName);
-            }
             catch (QpidSecurityException e)
             {
                 exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
@@ -799,26 +783,6 @@ public class ServerSessionDelegate extends SessionDelegate
 
         }
 
-    }
-
-    // TODO decouple AMQException and AMQConstant error codes
-    private void exception(Session session, Method method, AMQException exception, String message)
-    {
-        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-        if (exception.getErrorCode() != null)
-        {
-            try
-            {
-                errorCode = ExecutionErrorCode.get(exception.getErrorCode().getCode());
-            }
-            catch (IllegalArgumentException iae)
-            {
-                // ignore, already set to INTERNAL_ERROR
-            }
-        }
-        String description = message + "': " + exception.getMessage();
-
-        exception(session, method, errorCode, description);
     }
 
     private void exception(Session session, Method method, ExecutionErrorCode errorCode, String description)
@@ -902,10 +866,6 @@ public class ServerSessionDelegate extends SessionDelegate
         catch (RequiredExchangeException e)
         {
             exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Exchange '"+method.getExchange()+"' cannot be deleted");
-        }
-        catch (AMQException e)
-        {
-            exception(session, method, e, "Cannot delete exchange '" + method.getExchange() );
         }
         catch (QpidSecurityException e)
         {
@@ -1001,10 +961,6 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         exchange.addBinding(method.getBindingKey(), queue, method.getArguments());
                     }
-                    catch (AMQException e)
-                    {
-                        exception(session, method, e, "Cannot add binding '" + method.getBindingKey());
-                    }
                     catch (QpidSecurityException e)
                     {
                         exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
@@ -1057,10 +1013,6 @@ public class ServerSessionDelegate extends SessionDelegate
                 try
                 {
                     exchange.removeBinding(method.getBindingKey(), queue, null);
-                }
-                catch (AMQException e)
-                {
-                    exception(session, method, e, "Cannot remove binding '" + method.getBindingKey());
                 }
                 catch (QpidSecurityException e)
                 {
@@ -1289,10 +1241,6 @@ public class ServerSessionDelegate extends SessionDelegate
                                 {
                                     virtualHost.removeQueue(q);
                                 }
-                                catch (AMQException e)
-                                {
-                                    exception(session, method, e, "Cannot delete '" + method.getQueue());
-                                }
                                 catch (QpidSecurityException e)
                                 {
                                     exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
@@ -1344,10 +1292,6 @@ public class ServerSessionDelegate extends SessionDelegate
 
                     exception(session, method, errorCode, description);
                 }
-            }
-            catch (AMQException e)
-            {
-                exception(session, method, e, "Cannot declare queue '" + queueName);
             }
             catch (QpidSecurityException e)
             {
@@ -1426,10 +1370,6 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         virtualHost.removeQueue(queue);
                     }
-                    catch (AMQException e)
-                    {
-                        exception(session, method, e, "Cannot delete queue '" + queueName);
-                    }
                     catch (QpidSecurityException e)
                     {
                         exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
@@ -1460,10 +1400,6 @@ public class ServerSessionDelegate extends SessionDelegate
                 try
                 {
                     queue.clearQueue();
-                }
-                catch (AMQException e)
-                {
-                    exception(session, method, e, "Cannot purge queue '" + queueName);
                 }
                 catch (QpidSecurityException e)
                 {

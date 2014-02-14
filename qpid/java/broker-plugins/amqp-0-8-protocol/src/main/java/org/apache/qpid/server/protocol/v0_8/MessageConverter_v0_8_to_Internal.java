@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.typedmessage.TypedBytesContentReader;
@@ -124,11 +125,11 @@ public class MessageConverter_v0_8_to_Internal implements MessageConverter<AMQMe
                 }
                 catch (TypedBytesFormatException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);
                 }
                 catch (EOFException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);
                 }
             }
             return list;

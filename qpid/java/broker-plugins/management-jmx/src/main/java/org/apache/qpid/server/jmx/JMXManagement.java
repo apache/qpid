@@ -54,6 +54,7 @@ import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class JMXManagement extends AbstractPluginAdapter implements ConfigurationChangeListener
 {
@@ -110,7 +111,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
             }
             catch (Exception e)
             {
-                throw new RuntimeException("Couldn't start JMX management", e);
+                throw new ServerScopedRuntimeException("Couldn't start JMX management", e);
             }
             return true;
         }

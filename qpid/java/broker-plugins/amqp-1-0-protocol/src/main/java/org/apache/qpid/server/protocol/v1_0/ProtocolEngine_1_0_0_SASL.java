@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -40,8 +41,11 @@ import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.Container;
 import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.ErrorCondition;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ServerProtocolEngine;
@@ -51,12 +55,16 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOutputHandler
 {
+    private static final org.apache.log4j.Logger
+            _logger = org.apache.log4j.Logger.getLogger(ProtocolEngine_1_0_0_SASL.class);
+
     private final Port _port;
     private final Transport _transport;
     private long _readBytes;
@@ -353,9 +361,35 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
      }
 
-    public void exception(Throwable t)
+    public void exception(Throwable throwable)
     {
-        t.printStackTrace();
+        if (throwable instanceof IOException)
+        {
+            _logger.info("IOException caught in " + this + ", connection closed implicitly: " + throwable);
+        }
+        else
+        {
+
+            try
+            {
+                final Error err = new Error();
+                err.setCondition(AmqpError.INTERNAL_ERROR);
+                err.setDescription(throwable.getMessage());
+                _conn.close(err);
+                close();
+            }
+            finally
+            {
+                if(throwable instanceof java.lang.Error)
+                {
+                    throw (java.lang.Error) throwable;
+                }
+                if(throwable instanceof ServerScopedRuntimeException)
+                {
+                    throw (ServerScopedRuntimeException) throwable;
+                }
+            }
+        }
     }
 
     public void closed()

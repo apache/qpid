@@ -22,7 +22,6 @@ package org.apache.qpid.server.exchange;
 
 import java.util.UUID;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -36,7 +35,7 @@ public class HeadersExchangeType implements ExchangeType<HeadersExchange>
     }
 
     public HeadersExchange newInstance(UUID id, VirtualHost host, String name, boolean durable,
-                                       boolean autoDelete) throws AMQException
+                                       boolean autoDelete)
     {
         HeadersExchange exch = new HeadersExchange();
 

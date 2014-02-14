@@ -41,7 +41,7 @@ public interface VirtualHostFactory extends Pluggable
                                   StatisticsGatherer brokerStatisticsGatherer,
                                   SecurityManager parentSecurityManager,
                                   VirtualHostConfiguration hostConfig,
-                                  org.apache.qpid.server.model.VirtualHost virtualHost) throws Exception;
+                                  org.apache.qpid.server.model.VirtualHost virtualHost);
 
     void validateAttributes(Map<String, Object> attributes);
 

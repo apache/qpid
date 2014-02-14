@@ -21,7 +21,6 @@
 
 package org.apache.qpid.server.consumer;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.Filterable;
@@ -243,7 +242,7 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public void close() throws AMQException
+        public void close()
         {
         }
 
@@ -255,7 +254,7 @@ public class MockConsumer implements ConsumerTarget
 
         @Override
         public void checkTransactionStatus(long openWarn, long openClose,
-                long idleWarn, long idleClose) throws AMQException
+                long idleWarn, long idleClose)
         {
         }
 
@@ -340,7 +339,7 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public void close(AMQConstant cause, String message) throws AMQException
+        public void close(AMQConstant cause, String message)
         {
         }
     }
@@ -394,13 +393,12 @@ public class MockConsumer implements ConsumerTarget
 
         @Override
         public void close(AMQConstant cause, String message)
-                throws AMQException
         {
         }
 
         @Override
         public void closeSession(AMQSessionModel session, AMQConstant cause,
-                String message) throws AMQException
+                String message)
         {
         }
 

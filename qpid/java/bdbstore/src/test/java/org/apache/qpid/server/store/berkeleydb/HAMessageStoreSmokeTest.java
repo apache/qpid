@@ -21,6 +21,7 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import static org.mockito.Mockito.mock;
@@ -36,7 +37,7 @@ public class HAMessageStoreSmokeTest extends QpidTestCase
             _store.configure(mock(VirtualHost.class));
             fail("Expected an exception to be thrown");
         }
-        catch (ConfigurationException ce)
+        catch (ServerScopedRuntimeException ce)
         {
             assertTrue(ce.getMessage().contains("BDB HA configuration key not found"));
         }

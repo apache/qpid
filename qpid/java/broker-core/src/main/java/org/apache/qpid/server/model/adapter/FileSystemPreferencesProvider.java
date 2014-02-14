@@ -246,7 +246,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
                     _store.open();
                     return true;
                 }
-                catch (Exception e)
+                catch (RuntimeException e)
                 {
                     _state.compareAndSet(State.ACTIVE, State.ERRORED);
                     Broker broker = getAuthenticationProvider().getParent(Broker.class);
@@ -256,7 +256,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
                     }
                     else
                     {
-                        throw new RuntimeException(e);
+                        throw e;
                     }
                 }
             }

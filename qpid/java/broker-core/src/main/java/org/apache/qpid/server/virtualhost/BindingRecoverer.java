@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -119,10 +118,6 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
                     _exchange.restoreBinding(_bindingId, _bindingName, _queue, _bindingArgumentsMap);
                 }
                 return _exchange.getBinding(_bindingName, _queue, _bindingArgumentsMap);
-            }
-            catch (AMQException e)
-            {
-                throw new RuntimeException(e);
             }
             catch (QpidSecurityException e)
             {

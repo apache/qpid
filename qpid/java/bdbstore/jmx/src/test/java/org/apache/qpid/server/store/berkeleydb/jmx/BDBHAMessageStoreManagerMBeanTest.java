@@ -37,15 +37,13 @@ import javax.management.openmbean.TabularData;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.AMQStoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
-import org.apache.qpid.server.store.berkeleydb.jmx.BDBHAMessageStoreManagerMBean;
-import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {

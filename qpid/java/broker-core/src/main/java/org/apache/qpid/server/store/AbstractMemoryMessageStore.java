@@ -22,7 +22,7 @@ package org.apache.qpid.server.store;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.qpid.AMQStoreException;
+
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 
@@ -35,28 +35,28 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     private static final Transaction IN_MEMORY_TRANSACTION = new Transaction()
     {
         @Override
-        public StoreFuture commitTranAsync() throws AMQStoreException
+        public StoreFuture commitTranAsync()
         {
             return StoreFuture.IMMEDIATE_FUTURE;
         }
 
         @Override
-        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
         }
 
         @Override
-        public void dequeueMessage(TransactionLogResource  queue, EnqueueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource  queue, EnqueueableMessage message)
         {
         }
 
         @Override
-        public void commitTran() throws AMQStoreException
+        public void commitTran()
         {
         }
 
         @Override
-        public void abortTran() throws AMQStoreException
+        public void abortTran()
         {
         }
 
@@ -80,14 +80,14 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
     {
         _stateManager.attainState(State.INITIALISING);
     }
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         if(_stateManager.isInState(State.INITIAL))
         {
@@ -97,7 +97,7 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
 
         if(_stateManager.isInState(State.INITIALISING))
@@ -131,7 +131,7 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         if (_closed.compareAndSet(false, true))
         {

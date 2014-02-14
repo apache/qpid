@@ -20,32 +20,29 @@
  */
 package org.apache.qpid.server.util;
 
+import org.apache.log4j.Logger;
+
 public class ConnectionScopedRuntimeException extends RuntimeException
 {
-    public ConnectionScopedRuntimeException()
-    {
-    }
+    private static final Logger LOGGER = Logger.getLogger(ConnectionScopedRuntimeException.class);
+
 
     public ConnectionScopedRuntimeException(final String message)
     {
         super(message);
+        LOGGER.error(message);
     }
 
     public ConnectionScopedRuntimeException(final String message, final Throwable cause)
     {
         super(message, cause);
+        LOGGER.error(message,cause);
     }
 
     public ConnectionScopedRuntimeException(final Throwable cause)
     {
         super(cause);
+        LOGGER.error("Exception occurred", cause);
     }
 
-    public ConnectionScopedRuntimeException(final String message,
-                                            final Throwable cause,
-                                            final boolean enableSuppression,
-                                            final boolean writableStackTrace)
-    {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }

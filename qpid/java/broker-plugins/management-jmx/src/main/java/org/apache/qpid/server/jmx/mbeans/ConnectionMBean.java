@@ -40,6 +40,7 @@ import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection> implements ManagedConnection
 {
@@ -60,7 +61,7 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
         catch (JMException ex)
         {
             // This is not expected to ever occur.
-            throw new RuntimeException("Got JMException in static initializer.", ex);
+            throw new ServerScopedRuntimeException("Got JMException in static initializer.", ex);
         }
     }
 

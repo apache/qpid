@@ -22,7 +22,6 @@ package org.apache.qpid.server.protocol.v1_0;
 
 import java.text.MessageFormat;
 import java.util.Collection;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEventListener;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
@@ -152,7 +151,7 @@ public class Connection_1_0 implements ConnectionEventListener
         private volatile boolean _stopped;
 
         @Override
-        public void close(AMQConstant cause, String message) throws AMQException
+        public void close(AMQConstant cause, String message)
         {
             _conn.close();
         }
@@ -170,7 +169,7 @@ public class Connection_1_0 implements ConnectionEventListener
         }
 
         @Override
-        public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
+        public void closeSession(AMQSessionModel session, AMQConstant cause, String message)
         {
             // TODO
         }

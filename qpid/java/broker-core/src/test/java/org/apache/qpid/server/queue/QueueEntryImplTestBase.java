@@ -20,7 +20,6 @@ package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
@@ -48,7 +47,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
     protected QueueEntryImpl _queueEntry2;
     protected QueueEntryImpl _queueEntry3;
 
-    public abstract QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException;
+    public abstract QueueEntryImpl getQueueEntryImpl(int msgId);
 
     public abstract void testCompareTo();
 

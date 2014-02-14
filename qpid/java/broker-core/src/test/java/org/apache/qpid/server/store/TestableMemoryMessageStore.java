@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -56,29 +55,29 @@ public class TestableMemoryMessageStore extends TestMemoryMessageStore
     private class TestableTransaction implements Transaction
     {
         @Override
-        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             getMessages().put(message.getMessageNumber(), (AMQQueue)queue);
         }
 
         @Override
-        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             getMessages().remove(message.getMessageNumber());
         }
 
         @Override
-        public void commitTran() throws AMQStoreException
+        public void commitTran()
         {
         }
 
         @Override
-        public StoreFuture commitTranAsync() throws AMQStoreException
+        public StoreFuture commitTranAsync()
         {
             return StoreFuture.IMMEDIATE_FUTURE;
         }
 
-        public void abortTran() throws AMQStoreException
+        public void abortTran()
         {
         }
 

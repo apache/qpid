@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -54,7 +55,7 @@ public class HashedUser implements PasswordPrincipal
         }
         catch (UnsupportedEncodingException e)
         {
-            throw new RuntimeException("MD5 encoding not supported, even though the Java standard requires it",e);
+            throw new ServerScopedRuntimeException("MD5 encoding not supported, even though the Java standard requires it",e);
         }
 
         Base64 b64 = new Base64();
@@ -86,7 +87,7 @@ public class HashedUser implements PasswordPrincipal
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new RuntimeException("MD5 not supported although Java compliance requires it");
+            throw new ServerScopedRuntimeException("MD5 not supported although Java compliance requires it");
         }
 
         for (byte b : data)

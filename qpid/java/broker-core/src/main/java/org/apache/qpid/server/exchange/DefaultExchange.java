@@ -27,8 +27,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.Binding;
@@ -72,7 +70,7 @@ public class DefaultExchange implements Exchange
                            VirtualHost host,
                            String name,
                            boolean durable,
-                           boolean autoDelete) throws AMQException
+                           boolean autoDelete)
     {
         _id = id;
         _virtualHost = host;
@@ -122,34 +120,34 @@ public class DefaultExchange implements Exchange
 
     @Override
     public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         throw new QpidSecurityException("Cannot add bindings to the default exchange");
     }
 
     @Override
     public boolean replaceBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         throw new QpidSecurityException("Cannot replace bindings on the default exchange");
     }
 
     @Override
     public void restoreBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> argumentMap)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         _logger.warn("Bindings to the default exchange should not be stored in the configuration store");
     }
 
     @Override
-    public void removeBinding(Binding b) throws QpidSecurityException, AMQInternalException
+    public void removeBinding(Binding b) throws QpidSecurityException
     {
         throw new QpidSecurityException("Cannot remove bindings to the default exchange");
     }
 
     @Override
     public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         throw new QpidSecurityException("Cannot remove bindings to the default exchange");
     }
@@ -355,11 +353,6 @@ public class DefaultExchange implements Exchange
                     try
                     {
                         q.enqueue(message, postEnqueueAction);
-                    }
-                    catch (AMQException e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
                     }
                     finally
                     {

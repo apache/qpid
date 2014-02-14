@@ -29,6 +29,7 @@ import java.util.concurrent.locks.Lock;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -81,6 +82,7 @@ import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TransportException;
 
@@ -186,9 +188,16 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, new CloseAction()
         {
             @Override
-            public void doTimeoutAction(String reason) throws AMQException
+            public void doTimeoutAction(String reason)
             {
-                closeConnection(reason);
+                try
+                {
+                    closeConnection(reason);
+                }
+                catch (AMQException e)
+                {
+                    throw new ConnectionScopedRuntimeException(e);
+                }
             }
         });
     }
@@ -516,7 +525,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      */
     public AMQShortString consumeFromSource(AMQShortString tag, MessageSource source, boolean acks,
                                             FieldTable filters, boolean exclusive, boolean noLocal)
-            throws AMQException, QpidSecurityException
+            throws AMQException, QpidSecurityException, MessageSource.ExistingConsumerPreventsExclusive,
+                   MessageSource.ExistingExclusiveConsumer, AMQInvalidArgumentException
     {
         if (tag == null)
         {
@@ -579,17 +589,22 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
                                       AMQShortString.toString(tag),
                                       options);
         }
-        catch (AMQException e)
-        {
-            _tag2SubscriptionTargetMap.remove(tag);
-            throw e;
-        }
-        catch (RuntimeException e)
-        {
-            _tag2SubscriptionTargetMap.remove(tag);
-            throw e;
-        }
         catch (QpidSecurityException e)
+        {
+            _tag2SubscriptionTargetMap.remove(tag);
+            throw e;
+        }
+        catch (MessageSource.ExistingExclusiveConsumer e)
+        {
+            _tag2SubscriptionTargetMap.remove(tag);
+            throw e;
+        }
+        catch (MessageSource.ExistingConsumerPreventsExclusive e)
+        {
+            _tag2SubscriptionTargetMap.remove(tag);
+            throw e;
+        }
+        catch (AMQInvalidArgumentException e)
         {
             _tag2SubscriptionTargetMap.remove(tag);
             throw e;
@@ -601,9 +616,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      * Unsubscribe a consumer from a queue.
      * @param consumerTag
      * @return true if the consumerTag had a mapped queue that could be unregistered.
-     * @throws AMQException
      */
-    public boolean unsubscribeConsumer(AMQShortString consumerTag) throws AMQException
+    public boolean unsubscribeConsumer(AMQShortString consumerTag)
     {
 
         ConsumerTarget_0_8 target = _tag2SubscriptionTargetMap.remove(consumerTag);
@@ -622,16 +636,14 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
 
     /**
      * Called from the protocol session to close this channel and clean up. T
-     *
-     * @throws AMQException if there is an error during closure
      */
     @Override
-    public void close() throws AMQException
+    public void close()
     {
         close(null, null);
     }
 
-    public void close(AMQConstant cause, String message) throws AMQException
+    public void close(AMQConstant cause, String message)
     {
         if(!_closing.compareAndSet(false, true))
         {
@@ -651,17 +663,13 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         {
             requeue();
         }
-        catch (AMQException e)
-        {
-            _logger.error("Caught AMQException whilst attempting to requeue:" + e);
-        }
         catch (TransportException e)
         {
             _logger.error("Caught TransportException whilst attempting to requeue:" + e);
         }
     }
 
-    private void unsubscribeAllConsumers() throws AMQException
+    private void unsubscribeAllConsumers()
     {
         if (_logger.isInfoEnabled())
         {
@@ -724,9 +732,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      * Called to attempt re-delivery all outstanding unacknowledged messages on the channel. May result in delivery to
      * this same channel or to other subscribers.
      *
-     * @throws org.apache.qpid.AMQException if the requeue fails
      */
-    public void requeue() throws AMQException
+    public void requeue()
     {
         // we must create a new map since all the messages will get a new delivery tag when they are redelivered
         Collection<MessageInstance> messagesToBeDelivered = _unacknowledgedMessageMap.cancelAllMessages();
@@ -756,9 +763,8 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
      *
      * @param deliveryTag The message to requeue
      *
-     * @throws AMQException If something goes wrong.
      */
-    public void requeue(long deliveryTag) throws AMQException
+    public void requeue(long deliveryTag)
     {
         MessageInstance unacked = _unacknowledgedMessageMap.remove(deliveryTag);
 
@@ -1455,7 +1461,7 @@ public class AMQChannel implements AMQSessionModel, AsyncAutoCommitTransaction.F
         return getProtocolSession().getVirtualHost();
     }
 
-    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
+    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose)
     {
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, openWarn, openClose, idleWarn, idleClose);
     }

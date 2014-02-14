@@ -28,6 +28,7 @@ import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.log4j.LoggingFacadeException;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
@@ -314,7 +315,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         catch (OpenDataException ode)
         {
             // Should not happen
-            throw new RuntimeException(ode);
+            throw new ConnectionScopedRuntimeException(ode);
         }
     }
 

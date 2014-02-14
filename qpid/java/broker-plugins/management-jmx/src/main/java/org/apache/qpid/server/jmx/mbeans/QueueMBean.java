@@ -57,6 +57,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.NotificationCheck;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
@@ -109,7 +110,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
         catch (OpenDataException e)
         {
-            throw new RuntimeException(e);
+            throw new ServerScopedRuntimeException(e);
         }
     }
 

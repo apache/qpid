@@ -28,6 +28,7 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 {
@@ -49,7 +50,7 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
         {
             if(!_storeFile.delete())
             {
-                throw new RuntimeException("Unable to overwrite existing configuration store file as requested: " + storeLocation);
+                throw new ServerScopedRuntimeException("Unable to overwrite existing configuration store file as requested: " + storeLocation);
             }
         }
 

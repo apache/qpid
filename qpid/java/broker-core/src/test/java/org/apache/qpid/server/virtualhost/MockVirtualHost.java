@@ -23,7 +23,6 @@ package org.apache.qpid.server.virtualhost;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.Exchange;
@@ -147,7 +146,7 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public int removeQueue(AMQQueue queue) throws AMQException
+    public int removeQueue(AMQQueue queue)
     {
         return 0;
     }
@@ -160,7 +159,7 @@ public class MockVirtualHost implements VirtualHost
                                 boolean autoDelete,
                                 boolean exclusive,
                                 boolean deleteOnNoConsumer,
-                                Map<String, Object> arguments) throws AMQException
+                                Map<String, Object> arguments)
     {
         return null;
     }
@@ -171,13 +170,13 @@ public class MockVirtualHost implements VirtualHost
                                    String type,
                                    boolean durable,
                                    boolean autoDelete,
-                                   String alternateExchange) throws AMQException
+                                   String alternateExchange)
     {
         return null;
     }
 
     @Override
-    public void removeExchange(Exchange exchange, boolean force) throws AMQException
+    public void removeExchange(Exchange exchange, boolean force)
     {
     }
 

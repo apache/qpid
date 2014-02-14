@@ -26,7 +26,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 
-public final class CreateChildTask implements Callable<ConfiguredObject>
+public final class CreateChildTask implements TaskExecutor.Task<ConfiguredObject>
 {
     private ConfiguredObject _object;
     private Class<? extends ConfiguredObject> _childClass;

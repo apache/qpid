@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
@@ -109,14 +108,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
 
     public void delete()
     {
-        try
-        {
-            _connection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
-        }
-        catch(AMQException e)
-        {
-            throw new IllegalStateException(e);
-        }
+        _connection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
     public String getName()

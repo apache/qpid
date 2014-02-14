@@ -21,7 +21,6 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -59,7 +58,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _queueRegistry = queueRegistry;
     }
 
-    public void initialise(ExchangeFactory exchangeFactory) throws AMQException
+    public void initialise(ExchangeFactory exchangeFactory)
     {
         //create 'standard' exchanges:
         new ExchangeInitialiser().initialise(exchangeFactory, this, getDurableConfigurationStore());
@@ -78,7 +77,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _host.getDurableConfigurationStore();
     }
 
-    public void registerExchange(Exchange exchange) throws AMQException
+    public void registerExchange(Exchange exchange)
     {
         _exchangeMap.put(exchange.getName(), exchange);
         synchronized (_listeners)
@@ -101,7 +100,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
-    public boolean unregisterExchange(String name, boolean inUse) throws AMQException, QpidSecurityException
+    public boolean unregisterExchange(String name, boolean inUse) throws QpidSecurityException
     {
         final Exchange exchange = _exchangeMap.get(name);
         if (exchange != null)

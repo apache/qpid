@@ -21,6 +21,7 @@
 package org.apache.qpid.server.message.internal;
 
 import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -87,7 +88,7 @@ public class InternalMessageMetaData implements StorableMessageMetaData
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException("Unexpected IO Exception on in memory operation", e);
         }
     }
 

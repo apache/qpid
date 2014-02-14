@@ -36,7 +36,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -45,7 +44,6 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
@@ -59,11 +57,11 @@ import com.sleepycat.je.Cursor;
 import com.sleepycat.je.CursorConfig;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Transaction;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class UpgradeFrom5To6 extends AbstractStoreUpgrade
 {
@@ -121,7 +119,6 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
      * in "CONFIGURED_OBJECTS" table.
      */
     public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, String virtualHostName)
-            throws DatabaseException, AMQStoreException
     {
         reportStarting(environment, 5);
         upgradeMessages(environment, handler);
@@ -131,61 +128,21 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     }
 
     private void upgradeConfiguredObjectsAndDependencies(Environment environment, UpgradeInteractionHandler handler, String virtualHostName)
-            throws AMQStoreException
     {
         Transaction transaction = null;
-        try
-        {
-            transaction = environment.beginTransaction(null, null);
-            upgradeConfiguredObjects(environment, handler, transaction, virtualHostName);
-            upgradeQueueEntries(environment, transaction, virtualHostName);
-            upgradeXidEntries(environment, transaction, virtualHostName);
-            transaction.commit();
-        }
-        catch (Exception e)
-        {
-            transaction.abort();
-            if (e instanceof DatabaseException)
-            {
-                throw (DatabaseException) e;
-            }
-            else if (e instanceof AMQStoreException)
-            {
-                throw (AMQStoreException) e;
-            }
-            else
-            {
-                throw new AMQStoreException("Unexpected exception", e);
-            }
-        }
+        transaction = environment.beginTransaction(null, null);
+        upgradeConfiguredObjects(environment, handler, transaction, virtualHostName);
+        upgradeQueueEntries(environment, transaction, virtualHostName);
+        upgradeXidEntries(environment, transaction, virtualHostName);
+        transaction.commit();
     }
 
     private void upgradeMessages(final Environment environment, final UpgradeInteractionHandler handler)
-            throws AMQStoreException
     {
         Transaction transaction = null;
-        try
-        {
-            transaction = environment.beginTransaction(null, null);
-            upgradeMessages(environment, handler, transaction);
-            transaction.commit();
-        }
-        catch (Exception e)
-        {
-            transaction.abort();
-            if (e instanceof DatabaseException)
-            {
-                throw (DatabaseException) e;
-            }
-            else if (e instanceof AMQStoreException)
-            {
-                throw (AMQStoreException) e;
-            }
-            else
-            {
-                throw new AMQStoreException("Unexpected exception", e);
-            }
-        }
+        transaction = environment.beginTransaction(null, null);
+        upgradeMessages(environment, handler, transaction);
+        transaction.commit();
     }
 
     private void renameDatabases(Environment environment, Transaction transaction)
@@ -207,7 +164,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     }
 
     private void upgradeMessages(final Environment environment, final UpgradeInteractionHandler handler,
-            final Transaction transaction) throws AMQStoreException
+            final Transaction transaction)
     {
         _logger.info("Message Contents");
         if (environment.getDatabaseNames().contains(OLD_CONTENT_DB_NAME))
@@ -285,7 +242,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
                     return;
                 case ABORT:
                     _logger.error(message);
-                    throw new RuntimeException("Unable to upgrade message " + messageId);
+                    throw new ServerScopedRuntimeException("Unable to upgrade message " + messageId);
                 }
 
             }
@@ -356,7 +313,6 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
     }
 
     private void upgradeConfiguredObjects(Environment environment, UpgradeInteractionHandler handler, Transaction transaction, String virtualHostName)
-            throws AMQStoreException
     {
         upgradeQueues(environment, transaction, virtualHostName);
         upgradeExchanges(environment, transaction, virtualHostName);
@@ -640,7 +596,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         OperationStatus status = database.put(txn, key, value);
         if (status != OperationStatus.SUCCESS)
         {
-            throw new RuntimeException("Cannot add record into " + database.getDatabaseName() + ":" + status);
+            throw new ServerScopedRuntimeException("Cannot add record into " + database.getDatabaseName() + ":" + status);
         }
     }
 

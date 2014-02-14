@@ -40,6 +40,7 @@ import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -214,7 +215,16 @@ public abstract class AbstractServlet extends HttpServlet
             catch (PrivilegedActionException e)
             {
                 LOGGER.error("Unable to perform action", e);
-                throw new RuntimeException(e.getCause());
+                Throwable cause = e.getCause();
+                if(cause instanceof RuntimeException)
+                {
+                    throw (RuntimeException)cause;
+                }
+                if(cause instanceof Error)
+                {
+                    throw (Error)cause;
+                }
+                throw new ConnectionScopedRuntimeException(e.getCause());
             }
             finally
             {
@@ -255,7 +265,7 @@ public abstract class AbstractServlet extends HttpServlet
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Failed to send error response code " + errorCode, e);
+            throw new ConnectionScopedRuntimeException("Failed to send error response code " + errorCode, e);
         }
     }
 

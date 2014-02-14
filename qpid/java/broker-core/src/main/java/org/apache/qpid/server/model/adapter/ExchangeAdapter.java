@@ -27,8 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -41,6 +39,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 
 final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apache.qpid.server.exchange.Exchange.BindingListener
@@ -151,10 +150,6 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         {
             throw new AccessControlException(e.toString());
         }
-        catch(AMQInternalException e)
-        {
-            throw new IllegalStateException(e);
-        }
     }
 
     public void delete()
@@ -167,7 +162,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         {
             throw new UnsupportedOperationException("'" + getName() + "' is a reserved exchange and can't be deleted");
         }
-        catch(AMQException e)
+        catch(ExchangeIsAlternateException e)
         {
             throw new IllegalStateException(e);
         }

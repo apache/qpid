@@ -19,10 +19,9 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 
-public class ExchangeExistsException extends AMQException
+public class ExchangeExistsException extends Exception
 {
     private final Exchange _existing;
 

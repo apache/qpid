@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.management.amqp;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.internal.InternalMessage;
@@ -124,7 +123,7 @@ class ManagementNodeConsumer implements Consumer
     }
 
     @Override
-    public void close() throws AMQException
+    public void close()
     {
 
     }

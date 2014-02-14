@@ -139,28 +139,20 @@ public class AckTest extends QpidTestCase
             final StoredMessage storedMessage = _messageStore.addMessage(mmd);
             final AMQMessage message = new AMQMessage(storedMessage);
             ServerTransaction txn = new AutoCommitTransaction(_messageStore);
-            txn.enqueue(_queue, message, new ServerTransaction.Action() {
-                public void postCommit()
-                {
-                    try
-                    {
+            txn.enqueue(_queue, message,
+                        new ServerTransaction.Action()
+                        {
+                            public void postCommit()
+                            {
+                                _queue.enqueue(message,null);
+                            }
 
-                        _queue.enqueue(message,null);
-                    }
-                    catch (AMQException e)
-                    {
-                         throw new RuntimeException(e);
-                    }
-                }
+                            public void onRollback()
+                            {
+                                //To change body of implemented methods use File | Settings | File Templates.
+                            }
+                        });
 
-                public void onRollback()
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-            });
-
-            // we manually send the message to the subscription
-            //_subscription.send(new QueueEntry(_queue,msg), _queue);
         }
         try
         {
