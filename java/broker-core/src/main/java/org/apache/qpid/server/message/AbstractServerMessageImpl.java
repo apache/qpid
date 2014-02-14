@@ -22,6 +22,7 @@ package org.apache.qpid.server.message;
 
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -93,8 +94,8 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
         {
             if (count < 0)
             {
-                throw new RuntimeException("Reference count for message id " + debugIdentity()
-                                                  + " has gone below 0.");
+                throw new ServerScopedRuntimeException("Reference count for message id " + debugIdentity()
+                                                        + " has gone below 0.");
             }
         }
     }

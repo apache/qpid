@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import junit.framework.TestCase;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.logging.LogActor;
@@ -119,7 +118,7 @@ public class HeadersExchangeTest extends TestCase
     }
 
     private void bind(String bindingKey, Map<String, Object> arguments, AMQQueue q)
-            throws QpidSecurityException, AMQInternalException
+            throws QpidSecurityException
     {
         _exchange.addBinding(bindingKey,q,arguments);
     }

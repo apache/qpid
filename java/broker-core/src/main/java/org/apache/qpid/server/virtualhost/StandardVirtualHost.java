@@ -29,6 +29,7 @@ import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class StandardVirtualHost extends AbstractVirtualHost
 {
@@ -39,29 +40,47 @@ public class StandardVirtualHost extends AbstractVirtualHost
     StandardVirtualHost(VirtualHostRegistry virtualHostRegistry,
                         StatisticsGatherer brokerStatisticsGatherer,
                         org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                        VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
+                        VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
     {
         super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
     }
 
 
 
-    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
+    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
     {
         final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.STORE_TYPE);
         String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
         MessageStore  messageStore = null;
         if (storeType == null)
         {
-            final Class<?> clazz = Class.forName(hostConfig.getMessageStoreClass());
-            final Object o = clazz.newInstance();
-
-            if (!(o instanceof MessageStore))
+            try
             {
-                throw new ClassCastException(clazz + " does not implement " + MessageStore.class);
-            }
+                final Class<?> clazz = Class.forName(hostConfig.getMessageStoreClass());
+                final Object o = clazz.newInstance();
 
-            messageStore = (MessageStore) o;
+                if (!(o instanceof MessageStore))
+                {
+                    throw new ClassCastException(clazz + " does not implement " + MessageStore.class);
+                }
+
+                messageStore = (MessageStore) o;
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new ServerScopedRuntimeException("Failed to fina virtual host message store implementation, " +
+                                                       "check the classpath and the configuration", e);
+            }
+            catch (InstantiationException e)
+            {
+                throw new ServerScopedRuntimeException("Failed to initialise virtual host store, " +
+                                                       "check the configuration", e);
+            }
+            catch (IllegalAccessException e)
+            {
+                throw new ServerScopedRuntimeException("Failed to initialise virtual host store, " +
+                                                       "check the configuration", e);
+            }
         }
         else
         {
@@ -76,7 +95,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
         return messageStore;
     }
 
-    private DurableConfigurationStore initialiseConfigurationStore(VirtualHost virtualHost) throws Exception
+    private DurableConfigurationStore initialiseConfigurationStore(VirtualHost virtualHost)
     {
         DurableConfigurationStore configurationStore;
         final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.CONFIG_STORE_TYPE);
@@ -99,7 +118,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
     }
 
 
-    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
+    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
     {
         _messageStore = initialiseMessageStore(hostConfig, virtualHost);
 

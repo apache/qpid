@@ -25,6 +25,7 @@ import org.apache.qpid.server.message.AbstractServerMessageImpl;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.util.ByteBufferInputStream;
 
 import java.io.ByteArrayOutputStream;
@@ -69,11 +70,12 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException("Unexpected IO Exception in operation in memory", e);
         }
         catch (ClassNotFoundException e)
         {
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException("Object message contained an object which could not " +
+                                                       "be deserialized", e);
         }
     }
 
@@ -142,7 +144,7 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException("Unexpected IO Exception on operation in memory", e);
         }
     }
 
@@ -246,7 +248,7 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException("Unexpected IO Exception on operation in memory", e);
         }
     }
 

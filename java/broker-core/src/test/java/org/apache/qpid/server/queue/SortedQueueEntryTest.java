@@ -22,7 +22,6 @@ package org.apache.qpid.server.queue;
 import java.util.Collections;
 import java.util.UUID;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -56,7 +55,7 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
         super.setUp();
     }
 
-    public QueueEntryImpl getQueueEntryImpl(int msgId) throws AMQException
+    public QueueEntryImpl getQueueEntryImpl(int msgId)
     {
         final ServerMessage message = mock(ServerMessage.class);
         AMQMessageHeader hdr = mock(AMQMessageHeader.class);

@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;

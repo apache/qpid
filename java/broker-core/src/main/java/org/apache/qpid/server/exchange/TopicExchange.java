@@ -28,12 +28,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.exchange.topic.TopicNormalizer;
 import org.apache.qpid.server.exchange.topic.TopicParser;
+import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -41,6 +41,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 public class TopicExchange extends AbstractExchange
 {
@@ -252,7 +253,8 @@ public class TopicExchange extends AbstractExchange
         }
         catch (AMQInvalidArgumentException e)
         {
-            throw new RuntimeException(e);
+            // TODO - this seems incorrect, handling of invalid bindings should be propagated more cleanly
+            throw new ConnectionScopedRuntimeException(e);
         }
     }
 

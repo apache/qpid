@@ -23,7 +23,6 @@ package org.apache.qpid.server.store;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.model.VirtualHost;
 
 public interface DurableConfigurationStore
@@ -44,9 +43,8 @@ public interface DurableConfigurationStore
      *
      * @param virtualHost
      * @param recoveryHandler  Handler to be called as the store recovers on start up
-     * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception;
+    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler);
 
 
     /**

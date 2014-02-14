@@ -21,13 +21,13 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.NullMessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * Mock implementation of a (Store) Transaction allow its state to be observed.
@@ -60,12 +60,12 @@ class MockStoreTransaction implements Transaction
         return _state;
     }
 
-    public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+    public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
     {
         if (_throwExceptionOnQueueOp)
         {
             
-            throw new AMQStoreException("Mocked exception");
+            throw new ServerScopedRuntimeException("Mocked exception");
         }
         
         _numberOfEnqueuedMessages++;
@@ -81,27 +81,27 @@ class MockStoreTransaction implements Transaction
         return _numberOfEnqueuedMessages;
     }
 
-    public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+    public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
     {
         if (_throwExceptionOnQueueOp)
         {
-            throw new AMQStoreException("Mocked exception");
+            throw new ServerScopedRuntimeException("Mocked exception");
         }
         
         _numberOfDequeuedMessages++;
     }
 
-    public void commitTran() throws AMQStoreException
+    public void commitTran()
     {
         _state = TransactionState.COMMITTED;
     }
 
-    public StoreFuture commitTranAsync() throws AMQStoreException
+    public StoreFuture commitTranAsync()
     {
         throw new NotImplementedException();
     }
 
-    public void abortTran() throws AMQStoreException
+    public void abortTran()
     {
         _state = TransactionState.ABORTED;
     }

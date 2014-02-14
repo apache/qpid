@@ -31,6 +31,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 
 import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.ssl.SSLContextFactory;
 
 import javax.management.JMException;
@@ -134,7 +135,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
             catch (GeneralSecurityException e)
             {
-                throw new RuntimeException("Unable to create SSLContext for key store", e);
+                throw new ServerScopedRuntimeException("Unable to create SSLContext for key store", e);
             }
 
             CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStore.getName()));

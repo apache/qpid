@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.exchange;
 
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
@@ -31,7 +29,6 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 public class ExchangeInitialiser
 {
     public void initialise(ExchangeFactory factory, ExchangeRegistry registry, DurableConfigurationStore store)
-            throws AMQException
     {
         for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
         {
@@ -42,7 +39,6 @@ public class ExchangeInitialiser
 
     private void define(ExchangeRegistry r, ExchangeFactory f,
                         String name, String type, DurableConfigurationStore store)
-            throws AMQException
     {
         try
         {
@@ -60,6 +56,11 @@ public class ExchangeInitialiser
         {
             throw new ServerScopedRuntimeException("Security Exception when attempting to initialise exchanges - " +
                                                    "this is likely a programming error", e);
+        }
+        catch (AMQUnknownExchangeType e)
+        {
+            throw new ServerScopedRuntimeException("Unknown exchange type while attempting to initialise exchanges - " +
+                                                   "this is because necessary jar files are not on the classpath", e);
         }
     }
 }

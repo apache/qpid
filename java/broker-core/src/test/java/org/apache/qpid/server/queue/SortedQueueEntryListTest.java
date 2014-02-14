@@ -20,7 +20,6 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Collections;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -140,7 +139,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
         return 67L;
     }
 
-    public ServerMessage getTestMessageToAdd() throws AMQException
+    public ServerMessage getTestMessageToAdd()
     {
         return generateTestMessage(1, "test value");
     }
@@ -151,7 +150,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
         return _testQueue;
     }
 
-    private ServerMessage generateTestMessage(final long id, final String keyValue) throws AMQException
+    private ServerMessage generateTestMessage(final long id, final String keyValue)
     {
         final ServerMessage message = mock(ServerMessage.class);
         AMQMessageHeader hdr = mock(AMQMessageHeader.class);

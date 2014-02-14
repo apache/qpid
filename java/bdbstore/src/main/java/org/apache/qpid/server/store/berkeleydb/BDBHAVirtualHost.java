@@ -48,14 +48,13 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                      org.apache.qpid.server.security.SecurityManager parentSecurityManager,
                      VirtualHostConfiguration hostConfig,
                      VirtualHost virtualHost)
-            throws Exception
     {
         super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
     }
 
 
 
-    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost) throws Exception
+    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
     {
         _messageStore = new BDBHAMessageStore();
 
@@ -169,14 +168,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         @Override
         public void event(Event event)
         {
-            try
-            {
-                initialiseModel(getConfiguration());
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Failed to initialise virtual host after state change", e);
-            }
+            initialiseModel(getConfiguration());
         }
     }
 

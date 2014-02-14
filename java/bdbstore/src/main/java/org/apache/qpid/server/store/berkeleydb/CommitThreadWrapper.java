@@ -31,6 +31,7 @@ import com.sleepycat.je.CheckpointConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class CommitThreadWrapper
 {
@@ -139,7 +140,7 @@ public class CommitThreadWrapper
                 }
                 catch (InterruptedException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new ServerScopedRuntimeException(e);
                 }
             }
 

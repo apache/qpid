@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
 
@@ -138,7 +138,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         catch (AMQStoreException e)
         {
             // TODO better exception
-            throw new RuntimeException("Unable to update config store when upgrading");
+            throw new ServerScopedRuntimeException("Unable to update config store when upgrading");
         }
 
     }

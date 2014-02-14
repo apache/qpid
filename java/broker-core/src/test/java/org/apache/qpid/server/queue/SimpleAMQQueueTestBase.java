@@ -34,8 +34,7 @@ import java.util.EnumSet;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.exchange.DirectExchange;
@@ -129,7 +128,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         assertEquals("Virtual host was wrong", _virtualHost, _queue.getVirtualHost());
     }
 
-    public void testBinding() throws QpidSecurityException, AMQInternalException
+    public void testBinding() throws QpidSecurityException
     {
         _exchange.addBinding(_routingKey, _queue, Collections.EMPTY_MAP);
 
@@ -456,7 +455,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
                                           Consumer.Option.SEES_REQUEUES));
 
         }
-        catch (AMQException e)
+        catch (MessageSource.ExistingExclusiveConsumer e)
         {
            ex = e;
         }
@@ -476,7 +475,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
                                                EnumSet.of(Consumer.Option.EXCLUSIVE));
 
         }
-        catch (AMQException e)
+        catch (MessageSource.ExistingConsumerPreventsExclusive e)
         {
            ex = e;
         }
@@ -929,23 +928,11 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         {
             // Create message
             ServerMessage message = null;
-            try
-            {
-                message = createMessage((long)i);
-            }
-            catch (AMQException e)
-            {
-                fail("Failure to create a test message:" + e.getMessage());
-            }
+            message = createMessage((long)i);
+
             // Put message on queue
-            try
-            {
-                queue.enqueue(message,null);
-            }
-            catch (AMQException e)
-            {
-                fail("Failure to put message on queue:" + e.getMessage());
-            }
+            queue.enqueue(message,null);
+
         }
         try
         {
@@ -1024,7 +1011,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
     }
 
 
-    protected ServerMessage createMessage(Long id) throws AMQException
+    protected ServerMessage createMessage(Long id)
     {
         AMQMessageHeader header = mock(AMQMessageHeader.class);
         when(header.getMessageId()).thenReturn(String.valueOf(id));

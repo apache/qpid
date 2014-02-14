@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.consumer.MockConsumer;

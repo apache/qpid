@@ -28,13 +28,13 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Xid;
 
@@ -154,7 +154,7 @@ public class DtxBranch
                     catch (AMQStoreException e)
                     {
                         _logger.error("Unexpected error when attempting to rollback DtxBranch "+ _xid + " due to timeout", e);
-                        throw new RuntimeException(e);
+                        throw new ServerScopedRuntimeException(e);
                     }
                 }
             });
@@ -400,15 +400,8 @@ public class DtxBranch
     {
         if(_transaction != null)
         {
-            try
-            {
-                _state = null;
-                _transaction.abortTran();
-            }
-            catch(AMQStoreException e)
-            {
-                _logger.error("Error while closing DtxBranch " + _xid, e);
-            }
+            _state = null;
+            _transaction.abortTran();
         }
     }
 }

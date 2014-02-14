@@ -25,7 +25,6 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;

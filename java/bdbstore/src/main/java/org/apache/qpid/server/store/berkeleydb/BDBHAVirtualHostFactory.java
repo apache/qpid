@@ -48,7 +48,7 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
                                          StatisticsGatherer brokerStatisticsGatherer,
                                          org.apache.qpid.server.security.SecurityManager parentSecurityManager,
                                          VirtualHostConfiguration hostConfig,
-                                         org.apache.qpid.server.model.VirtualHost virtualHost) throws Exception
+                                         org.apache.qpid.server.model.VirtualHost virtualHost)
     {
         return new BDBHAVirtualHost(virtualHostRegistry,
                                     brokerStatisticsGatherer,

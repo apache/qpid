@@ -22,9 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.security.QpidSecurityException;
-import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -109,7 +107,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
     }
 
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
-            throws AMQException, QpidSecurityException
+            throws AMQUnknownExchangeType, QpidSecurityException
     {
 
         UUID id = UUIDGenerator.generateExchangeUUID(exchange, _host.getName());
@@ -117,7 +115,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
     }
 
     public Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete)
-            throws QpidSecurityException, AMQException
+            throws QpidSecurityException, AMQUnknownExchangeType
     {
         // Check access
         if (!_host.getSecurityManager().authoriseCreateExchange(autoDelete, durable, exchange, null, null, null, type))
@@ -138,7 +136,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
 
     @Override
     public Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete)
-            throws AMQException, QpidSecurityException
+            throws AMQUnknownExchangeType, QpidSecurityException
     {
         return createExchange(id, exchange, type, true, autoDelete);
     }

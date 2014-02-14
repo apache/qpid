@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
@@ -149,7 +150,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     }
 
                 }
-                catch (org.apache.qpid.AMQInvalidArgumentException ise)
+                catch (AMQInvalidArgumentException ise)
                 {
                     _logger.debug("Closing connection due to invalid selector");
 

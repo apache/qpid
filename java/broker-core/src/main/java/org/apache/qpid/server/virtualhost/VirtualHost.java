@@ -24,7 +24,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
-import org.apache.qpid.AMQException;
+
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
@@ -56,7 +57,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     Collection<AMQQueue> getQueues();
 
-    int removeQueue(AMQQueue queue) throws AMQException, QpidSecurityException;
+    int removeQueue(AMQQueue queue) throws QpidSecurityException;
 
     AMQQueue createQueue(UUID id,
                          String queueName,
@@ -65,7 +66,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
                          boolean autoDelete,
                          boolean exclusive,
                          boolean deleteOnNoConsumer,
-                         Map<String, Object> arguments) throws AMQException, QpidSecurityException;
+                         Map<String, Object> arguments) throws QueueExistsException, QpidSecurityException;
 
 
     Exchange createExchange(UUID id,
@@ -74,9 +75,11 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
                             boolean durable,
                             boolean autoDelete,
                             String alternateExchange)
-            throws AMQException, QpidSecurityException;
+            throws QpidSecurityException, ExchangeExistsException, ReservedExchangeNameException,
+                   UnknownExchangeException, AMQUnknownExchangeType;
 
-    void removeExchange(Exchange exchange, boolean force) throws AMQException, QpidSecurityException;
+    void removeExchange(Exchange exchange, boolean force) throws QpidSecurityException, ExchangeIsAlternateException,
+                                                                 RequiredExchangeException;
 
     MessageDestination getMessageDestination(String name);
 

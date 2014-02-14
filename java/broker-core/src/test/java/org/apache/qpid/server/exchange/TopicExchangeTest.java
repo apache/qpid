@@ -23,9 +23,7 @@ package org.apache.qpid.server.exchange;
 import java.util.List;
 import junit.framework.Assert;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -311,7 +309,7 @@ public class TopicExchangeTest extends QpidTestCase
 
     }
 
-    private int routeMessage(String routingKey, long messageNumber) throws AMQException
+    private int routeMessage(String routingKey, long messageNumber)
     {
         ServerMessage message = mock(ServerMessage.class);
         when(message.getRoutingKey()).thenReturn(routingKey);

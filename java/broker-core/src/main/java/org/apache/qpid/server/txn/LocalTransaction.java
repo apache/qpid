@@ -27,10 +27,8 @@ import org.apache.qpid.server.store.TransactionLogResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
 
@@ -110,11 +108,9 @@ public class LocalTransaction implements ServerTransaction
 
                 beginTranIfNecessary();
                 _transaction.dequeueMessage(queue, message);
-
             }
-            catch(AMQException e)
+            catch(RuntimeException e)
             {
-                _logger.error("Error during message dequeues", e);
                 tidyUpOnError(e);
             }
         }
@@ -143,17 +139,16 @@ public class LocalTransaction implements ServerTransaction
                     beginTranIfNecessary();
                     _transaction.dequeueMessage(queue, message);
                 }
-
             }
+
         }
-        catch(AMQException e)
+        catch(RuntimeException e)
         {
-            _logger.error("Error during message dequeues", e);
             tidyUpOnError(e);
         }
     }
 
-    private void tidyUpOnError(Exception e)
+    private void tidyUpOnError(RuntimeException e)
     {
         try
         {
@@ -168,32 +163,20 @@ public class LocalTransaction implements ServerTransaction
                     _transaction.abortTran();
                 }
             }
-            catch (Exception abortException)
-            {
-                _logger.error("Abort transaction failed while trying to handle previous error", abortException);
-            }
             finally
             {
-		        resetDetails();
+                resetDetails();
             }
         }
 
-        throw new RuntimeException(e);
+        throw e;
     }
-
     private void beginTranIfNecessary()
     {
 
         if(_transaction == null)
         {
-            try
-            {
-                _transaction = _transactionLog.newTransaction();
-            }
-            catch (Exception e)
-            {
-                tidyUpOnError(e);
-            }
+            _transaction = _transactionLog.newTransaction();
         }
     }
 
@@ -215,10 +198,8 @@ public class LocalTransaction implements ServerTransaction
                 beginTranIfNecessary();
                 _transaction.enqueueMessage(queue, message);
             }
-            catch (Exception e)
+            catch(RuntimeException e)
             {
-                _logger.error("Error during message enqueue", e);
-
                 tidyUpOnError(e);
             }
         }
@@ -245,14 +226,12 @@ public class LocalTransaction implements ServerTransaction
 
                         beginTranIfNecessary();
                         _transaction.enqueueMessage(queue, message);
+
                     }
                 }
-
             }
-            catch (Exception e)
+            catch(RuntimeException e)
             {
-                _logger.error("Error during message enqueue", e);
-
                 tidyUpOnError(e);
             }
         }
@@ -281,12 +260,10 @@ public class LocalTransaction implements ServerTransaction
 
             doPostTransactionActions();
         }
-        catch (Exception e)
+        catch(RuntimeException e)
         {
-            _logger.error("Failed to commit transaction", e);
-
             doRollbackActions();
-            throw new RuntimeException("Failed to commit transaction", e);
+            throw e;
         }
         finally
         {
@@ -348,14 +325,11 @@ public class LocalTransaction implements ServerTransaction
                                 {
                                     doPostTransactionActions();
                                     deferred.run();
-
                                 }
-                                catch (Exception e)
+                                catch (RuntimeException e)
                                 {
-                                    _logger.error("Failed to commit transaction", e);
-
                                     doRollbackActions();
-                                    throw new RuntimeException("Failed to commit transaction", e);
+                                    throw e;
                                 }
                                 finally
                                 {
@@ -371,7 +345,6 @@ public class LocalTransaction implements ServerTransaction
                 try
                 {
                     doPostTransactionActions();
-
                     deferred.run();
                 }
                 finally
@@ -382,9 +355,8 @@ public class LocalTransaction implements ServerTransaction
 
             return future;
         }
-        catch (Exception e)
+        catch (RuntimeException e)
         {
-            _logger.error("Failed to commit transaction", e);
             try
             {
                 doRollbackActions();
@@ -393,8 +365,9 @@ public class LocalTransaction implements ServerTransaction
             {
                 resetDetails();
             }
-            throw new RuntimeException("Failed to commit transaction", e);
+            throw e;
         }
+
     }
 
     private void doPostTransactionActions()
@@ -424,11 +397,6 @@ public class LocalTransaction implements ServerTransaction
             {
                 _transaction.abortTran();
             }
-        }
-        catch (AMQException e)
-        {
-            _logger.error("Failed to rollback transaction", e);
-            throw new RuntimeException("Failed to rollback transaction", e);
         }
         finally
         {

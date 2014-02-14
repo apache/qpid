@@ -25,7 +25,7 @@ import java.util.concurrent.Callable;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 
-public final class ChangeStateTask implements Callable<State>
+public final class ChangeStateTask implements TaskExecutor.Task<State>
 {
     private ConfiguredObject _object;
     private State _expectedState;

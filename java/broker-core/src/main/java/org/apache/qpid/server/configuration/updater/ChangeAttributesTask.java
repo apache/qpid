@@ -25,7 +25,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 
-public class ChangeAttributesTask implements Callable<Void>
+public class ChangeAttributesTask implements TaskExecutor.Task<Void>
 {
     private final Map<String, Object> _attributes;
     private final ConfiguredObject _object;
@@ -38,7 +38,7 @@ public class ChangeAttributesTask implements Callable<Void>
     }
 
     @Override
-    public Void call() throws Exception
+    public Void call()
     {
         _object.setAttributes(_attributes);
         return null;

@@ -554,8 +554,9 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 }
                 else
                 {
-                    //TODO? Silly interface on the PrincipalDatabase at fault
-                    throw new RuntimeException("Failed to create user");
+                    LOGGER.info("Failed to create user " + username + ". User already exists?");
+                    return null;
+
                 }
             }
 

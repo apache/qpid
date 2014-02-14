@@ -29,6 +29,7 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -63,7 +64,7 @@ public class ConfiguredObjectBinding extends TupleBinding<ConfiguredObjectRecord
         catch (IOException e)
         {
             //should never happen
-            throw new RuntimeException(e);
+            throw new ServerScopedRuntimeException(e);
         }
 
     }
@@ -79,15 +80,15 @@ public class ConfiguredObjectBinding extends TupleBinding<ConfiguredObjectRecord
         }
         catch (JsonMappingException e)
         {
-            throw new RuntimeException(e);
+            throw new ServerScopedRuntimeException(e);
         }
         catch (JsonGenerationException e)
         {
-            throw new RuntimeException(e);
+            throw new ServerScopedRuntimeException(e);
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new ServerScopedRuntimeException(e);
         }
     }
 

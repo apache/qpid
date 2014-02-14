@@ -38,6 +38,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.io.BufferedWriter;
@@ -111,9 +112,11 @@ public class StandardVirtualHostTest extends QpidTestCase
             createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
-        catch (ConfigurationException e)
+        catch (ServerScopedRuntimeException e)
         {
-            assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, e.getMessage());
+            Throwable cause = e.getCause();
+            assertNotNull(cause);
+            assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, cause.getMessage());
         }
     }
 
@@ -169,9 +172,11 @@ public class StandardVirtualHostTest extends QpidTestCase
             createVirtualHost(queueName, config);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
-        catch (ConfigurationException e)
+        catch (ServerScopedRuntimeException e)
         {
-            assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, e.getMessage());
+            Throwable cause = e.getCause();
+            assertNotNull(cause);
+            assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, cause.getMessage());
         }
     }
 

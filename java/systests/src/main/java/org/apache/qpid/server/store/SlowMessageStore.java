@@ -25,10 +25,10 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -48,7 +48,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
     // ***** MessageStore Interface.
 
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
     {
         _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
 
@@ -67,19 +67,34 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
         if (messageStoreClass != null)
         {
-            Class<?> clazz = Class.forName(messageStoreClass);
-
-            Object o = clazz.newInstance();
-
-            if (!(o instanceof MessageStore))
+            try
             {
-                throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
-                                             " does not.");
+                Class<?> clazz = Class.forName(messageStoreClass);
+
+                Object o = clazz.newInstance();
+
+                if (!(o instanceof MessageStore))
+                {
+                    throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
+                                                 " does not.");
+                }
+                _realStore = (MessageStore) o;
+                if(o instanceof DurableConfigurationStore)
+                {
+                    _durableConfigurationStore = (DurableConfigurationStore)o;
+                }
             }
-            _realStore = (MessageStore) o;
-            if(o instanceof DurableConfigurationStore)
+            catch (ClassNotFoundException e)
             {
-                _durableConfigurationStore = (DurableConfigurationStore)o;
+                throw new ServerScopedRuntimeException("Unable to find message store class", e);
+            }
+            catch (InstantiationException e)
+            {
+                throw new ServerScopedRuntimeException("Unable to initialise message store class", e);
+            }
+            catch (IllegalAccessException e)
+            {
+                throw new ServerScopedRuntimeException("Unable to access message store class", e);
             }
         }
         _durableConfigurationStore.configureConfigStore(virtualHost, recoveryHandler);
@@ -152,12 +167,12 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
 
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         _realStore.configureMessageStore(virtualHost, messageRecoveryHandler, tlogRecoveryHandler);
     }
 
-    public void close() throws Exception
+    public void close()
     {
         doPreDelay("close");
         _realStore.close();
@@ -258,7 +273,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
-                throws AMQStoreException
         {
             doPreDelay("enqueueMessage");
             _underlying.enqueueMessage(queue, message);
@@ -266,7 +280,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
-                throws AMQStoreException
         {
             doPreDelay("dequeueMessage");
             _underlying.dequeueMessage(queue, message);
@@ -274,7 +287,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         public void commitTran()
-                throws AMQStoreException
         {
             doPreDelay("commitTran");
             _underlying.commitTran();
@@ -282,7 +294,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         public StoreFuture commitTranAsync()
-                throws AMQStoreException
         {
             doPreDelay("commitTran");
             StoreFuture future = _underlying.commitTranAsync();
@@ -291,27 +302,25 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         }
 
         public void abortTran()
-                throws AMQStoreException
         {
             doPreDelay("abortTran");
             _underlying.abortTran();
             doPostDelay("abortTran");
         }
 
-        public void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException
+        public void removeXid(long format, byte[] globalId, byte[] branchId)
         {
             _underlying.removeXid(format, globalId, branchId);
         }
 
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
-                throws AMQStoreException
         {
             _underlying.recordXid(format, globalId, branchId, enqueues, dequeues);
         }
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
        _realStore.activate();
     }

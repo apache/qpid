@@ -28,13 +28,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import java.util.Set;
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.consumer.Consumer;
+
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class DurableConfigurationStoreHelper
 {
@@ -47,7 +47,7 @@ public class DurableConfigurationStoreHelper
                                                                                                   Queue.EXCLUSIVE,
                                                                                                   Queue.ALTERNATE_EXCHANGE));
 
-    public static void updateQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue) throws AMQStoreException
+    public static void updateQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue)
     {
         Map<String, Object> attributesMap = new LinkedHashMap<String, Object>();
         attributesMap.put(Queue.NAME, queue.getName());
@@ -69,11 +69,17 @@ public class DurableConfigurationStoreHelper
             }
         }
 
-        store.update(queue.getId(), QUEUE, attributesMap);
+        try
+        {
+            store.update(queue.getId(), QUEUE, attributesMap);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("A problem was encountered with the configuration store ", e);
+        }
     }
 
     public static void createQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue)
-            throws AMQStoreException
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Queue.NAME, queue.getName());
@@ -91,35 +97,60 @@ public class DurableConfigurationStoreHelper
                 attributesMap.put(attrName, queue.getAttribute(attrName));
             }
         }
-        store.create(queue.getId(), QUEUE,attributesMap);
+        try
+        {
+            store.create(queue.getId(), QUEUE, attributesMap);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("A problem was encountered with the configuration store ", e);
+        }
     }
 
-    public static void removeQueue(DurableConfigurationStore store, AMQQueue queue) throws AMQStoreException
+    public static void removeQueue(DurableConfigurationStore store, AMQQueue queue)
     {
-        store.remove(queue.getId(), QUEUE);
+        try
+        {
+            store.remove(queue.getId(), QUEUE);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("A problem was encountered with the configuration store ", e);
+        }
     }
 
     public static void createExchange(DurableConfigurationStore store, org.apache.qpid.server.exchange.Exchange exchange)
-            throws AMQStoreException
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Exchange.NAME, exchange.getName());
         attributesMap.put(Exchange.TYPE, exchange.getTypeName());
         attributesMap.put(Exchange.LIFETIME_POLICY, exchange.isAutoDelete() ? LifetimePolicy.AUTO_DELETE.name()
                 : LifetimePolicy.PERMANENT.name());
-        store.create(exchange.getId(), EXCHANGE, attributesMap);
+        try
+        {
+            store.create(exchange.getId(), EXCHANGE, attributesMap);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("A problem was encountered with the configuration store ", e);
+        }
 
     }
 
 
     public static void removeExchange(DurableConfigurationStore store, org.apache.qpid.server.exchange.Exchange exchange)
-            throws AMQStoreException
     {
-        store.remove(exchange.getId(), EXCHANGE);
+        try
+        {
+            store.remove(exchange.getId(), EXCHANGE);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("A problem was encountered with the configuration store ", e);
+        }
     }
 
     public static void createBinding(DurableConfigurationStore store, org.apache.qpid.server.binding.Binding binding)
-                throws AMQStoreException
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Binding.NAME, binding.getBindingKey());
@@ -130,14 +161,27 @@ public class DurableConfigurationStoreHelper
         {
             attributesMap.put(Binding.ARGUMENTS, arguments);
         }
-        store.create(binding.getId(), BINDING, attributesMap);
+        try
+        {
+            store.create(binding.getId(), BINDING, attributesMap);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("A problem was encountered with the configuration store ", e);
+        }
     }
 
 
     public static void removeBinding(DurableConfigurationStore store, org.apache.qpid.server.binding.Binding binding)
-                throws AMQStoreException
     {
-        store.remove(binding.getId(), BINDING);
+        try
+        {
+            store.remove(binding.getId(), BINDING);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("A problem was encountered with the configuration store ", e);
+        }
     }
 
 }

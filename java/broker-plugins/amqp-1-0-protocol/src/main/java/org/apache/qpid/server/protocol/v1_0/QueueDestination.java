@@ -49,37 +49,22 @@ public class QueueDestination extends MessageSourceDestination implements Sendin
     public Outcome send(final Message_1_0 message, ServerTransaction txn)
     {
 
-        try
+        txn.enqueue(getQueue(),message, new ServerTransaction.Action()
         {
-            txn.enqueue(getQueue(),message, new ServerTransaction.Action()
+
+
+            public void postCommit()
             {
+                getQueue().enqueue(message,null);
+            }
+
+            public void onRollback()
+            {
+                // NO-OP
+            }
+        });
 
 
-                public void postCommit()
-                {
-                    try
-                    {
-                        getQueue().enqueue(message,null);
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
-                    }
-
-                }
-
-                public void onRollback()
-                {
-                    // NO-OP
-                }
-            });
-        }
-        catch(Exception e)
-        {
-            _logger.error("Send error", e);
-            throw new RuntimeException(e);
-        }
         return ACCEPTED;
     }
 

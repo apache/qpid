@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.LogActor;
@@ -31,13 +30,13 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.*;
 
 import java.util.Collections;
@@ -507,7 +506,8 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
                 _creditManager = new WindowCreditManager(0l,0l);
                 break;
             default:
-                throw new RuntimeException("Unknown message flow mode: " + flowMode);
+                // this should never happen, as 0-10 is finalised and so the enum should never change
+                throw new ConnectionScopedRuntimeException("Unknown message flow mode: " + flowMode);
         }
         _flowMode = flowMode;
         updateState(State.ACTIVE, State.SUSPENDED);
@@ -532,7 +532,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         }
     }
 
-    public void flush() throws AMQException
+    public void flush()
     {
         flushCreditState(true);
         getConsumer().flush();

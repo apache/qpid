@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
@@ -382,7 +381,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                                      final FilterManager filters,
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
-                                     EnumSet<Consumer.Option> optionSet) throws AMQException, QpidSecurityException
+                                     EnumSet<Consumer.Option> optionSet) throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive, QpidSecurityException
     {
 
         // Access control
@@ -460,7 +459,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    synchronized void unregisterConsumer(final QueueConsumer<?,E,Q,L> consumer) throws AMQException
+    synchronized void unregisterConsumer(final QueueConsumer<?,E,Q,L> consumer)
     {
         if (consumer == null)
         {
@@ -622,7 +621,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     // ------ Enqueue / Dequeue
 
-    public void enqueue(ServerMessage message, Action<? super MessageInstance<?, QueueConsumer<?,E,Q,L>>> action) throws AMQException
+    public void enqueue(ServerMessage message, Action<? super MessageInstance<?, QueueConsumer<?,E,Q,L>>> action)
     {
         incrementQueueCount();
         incrementQueueSize(message);
@@ -711,7 +710,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     private void deliverToConsumer(final QueueConsumer<?,E,Q,L> sub, final E entry)
-            throws AMQException
     {
 
         if(sub.trySendLock())
@@ -810,7 +808,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         sub.send(entry, batch);
     }
 
-    private boolean consumerReadyAndHasInterest(final QueueConsumer<?,E,Q,L> sub, final E entry) throws AMQException
+    private boolean consumerReadyAndHasInterest(final QueueConsumer<?,E,Q,L> sub, final E entry)
     {
         return sub.hasInterest(entry) && (getNextAvailableEntry(sub) == entry);
     }
@@ -1177,7 +1175,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    public void purge(final long request) throws AMQException, QpidSecurityException
+    public void purge(final long request) throws QpidSecurityException
     {
         clear(request);
     }
@@ -1207,7 +1205,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         }
     }
 
-    public long clearQueue() throws AMQException, QpidSecurityException
+    public long clearQueue() throws QpidSecurityException
     {
         return clear(0l);
     }
@@ -1279,7 +1277,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     // TODO list all thrown exceptions
-    public int delete() throws AMQException, QpidSecurityException
+    public int delete() throws QpidSecurityException
     {
         // Check access
         if (!_virtualHost.getSecurityManager().authoriseDelete(this))
@@ -1667,9 +1665,8 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
      * ends the current instance
      *
      * @param runner the Runner to schedule
-     * @throws AMQException
      */
-    public long processQueue(QueueRunner runner) throws AMQException
+    public long processQueue(QueueRunner runner)
     {
         long stateChangeCount;
         long previousStateChangeCount = Long.MIN_VALUE;
@@ -1790,7 +1787,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    public void checkMessageStatus() throws AMQException
+    public void checkMessageStatus()
     {
         QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
 
@@ -2102,7 +2099,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     /**
      * Checks if there is any notification to send to the listeners
      */
-    private void checkForNotification(ServerMessage<?> msg) throws AMQException
+    private void checkForNotification(ServerMessage<?> msg)
     {
         final Set<NotificationCheck> notificationChecks = getNotificationChecks();
         final AMQQueue.NotificationListener listener = _notificationListener;
@@ -2163,11 +2160,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                     try
                     {
                         SimpleAMQQueue.this.enqueue(message, postEnqueueAction);
-                    }
-                    catch (AMQException e)
-                    {
-                        // TODO
-                        throw new RuntimeException(e);
                     }
                     finally
                     {

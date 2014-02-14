@@ -27,6 +27,7 @@ import org.apache.qpid.server.message.internal.InternalMessageMetaData;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -247,11 +248,11 @@ public class MessageConverter_v0_10_to_Internal implements MessageConverter<Mess
                 }
                 catch (TypedBytesFormatException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);
                 }
                 catch (EOFException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);  // TODO - Implement
                 }
             }
             return list;

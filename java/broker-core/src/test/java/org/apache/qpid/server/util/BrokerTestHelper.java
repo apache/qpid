@@ -30,7 +30,6 @@ import java.util.UUID;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -45,7 +44,6 @@ import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -55,6 +53,7 @@ import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public class BrokerTestHelper
 {
@@ -139,7 +138,7 @@ public class BrokerTestHelper
         return vhostConfig;
     }
 
-    public static AMQSessionModel createSession(int channelId, AMQConnectionModel connection) throws AMQException
+    public static AMQSessionModel createSession(int channelId, AMQConnectionModel connection)
     {
         AMQSessionModel session = mock(AMQSessionModel.class);
         when(session.getConnectionModel()).thenReturn(connection);
@@ -181,7 +180,7 @@ public class BrokerTestHelper
     }
 
     public static AMQQueue createQueue(String queueName, VirtualHost virtualHost)
-            throws AMQException, QpidSecurityException
+            throws QpidSecurityException, QueueExistsException
     {
         AMQQueue queue = virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, null,
                 false, false, false, Collections.<String, Object>emptyMap());

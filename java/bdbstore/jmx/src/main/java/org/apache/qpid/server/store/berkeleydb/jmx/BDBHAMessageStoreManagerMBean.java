@@ -36,7 +36,7 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.AMQStoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;

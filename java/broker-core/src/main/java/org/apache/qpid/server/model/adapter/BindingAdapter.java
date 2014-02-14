@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -147,10 +146,6 @@ final class BindingAdapter extends AbstractAdapter implements Binding
         catch(QpidSecurityException e)
         {
             throw new AccessControlException(e.getMessage());
-        }
-        catch(AMQInternalException e)
-        {
-            throw new IllegalStateException(e);
         }
     }
 

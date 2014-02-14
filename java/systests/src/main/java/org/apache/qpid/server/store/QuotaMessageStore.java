@@ -23,7 +23,6 @@ package org.apache.qpid.server.store;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.VirtualHost;
@@ -49,7 +48,6 @@ public class
 
     @Override
     public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
-            throws Exception
     {
         Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
         _persistentSizeHighThreshold = overfullAttr == null
@@ -76,13 +74,13 @@ public class
 
     @Override
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         _stateManager.attainState(State.INITIALISED);
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
         _stateManager.attainState(State.ACTIVATING);
         _stateManager.attainState(State.ACTIVE);
@@ -104,32 +102,32 @@ public class
             private AtomicLong _storeSizeIncrease = new AtomicLong();
 
             @Override
-            public StoreFuture commitTranAsync() throws AMQStoreException
+            public StoreFuture commitTranAsync()
             {
                 QuotaMessageStore.this.storedSizeChange(_storeSizeIncrease.intValue());
                 return StoreFuture.IMMEDIATE_FUTURE;
             }
 
             @Override
-            public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+            public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
             {
                 _storeSizeIncrease.addAndGet(((MessageContentSource)message).getSize());
             }
 
             @Override
-            public void dequeueMessage(TransactionLogResource  queue, EnqueueableMessage message) throws AMQStoreException
+            public void dequeueMessage(TransactionLogResource  queue, EnqueueableMessage message)
             {
                 _storeSizeIncrease.addAndGet(-((MessageContentSource)message).getSize());
             }
 
             @Override
-            public void commitTran() throws AMQStoreException
+            public void commitTran()
             {
                 QuotaMessageStore.this.storedSizeChange(_storeSizeIncrease.intValue());
             }
 
             @Override
-            public void abortTran() throws AMQStoreException
+            public void abortTran()
             {
             }
 
@@ -152,7 +150,7 @@ public class
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         if (_closed.compareAndSet(false, true))
         {

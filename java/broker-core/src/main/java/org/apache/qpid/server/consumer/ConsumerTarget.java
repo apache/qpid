@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.consumer;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;

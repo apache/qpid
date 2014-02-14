@@ -30,6 +30,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.messaging.Data;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.typedmessage.TypedBytesContentReader;
@@ -96,7 +97,7 @@ public class MessageConverter_v1_0_to_Internal implements MessageConverter<Messa
                 {
                     if(previousSection != null && (previousSection.getClass() != section.getClass() || section instanceof AmqpValue))
                     {
-                        throw new RuntimeException("Message is badly formed and has multiple body section which are not all Data or not all AmqpSequence");
+                        throw new ConnectionScopedRuntimeException("Message is badly formed and has multiple body section which are not all Data or not all AmqpSequence");
                     }
                     else
                     {
@@ -149,7 +150,7 @@ public class MessageConverter_v1_0_to_Internal implements MessageConverter<Messa
         }
         catch (AmqpErrorException e)
         {
-            throw new RuntimeException(e);
+            throw new ConnectionScopedRuntimeException(e);
         }
 
 
@@ -257,11 +258,11 @@ public class MessageConverter_v1_0_to_Internal implements MessageConverter<Messa
                 }
                 catch (TypedBytesFormatException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);
                 }
                 catch (EOFException e)
                 {
-                    throw new RuntimeException(e);  // TODO - Implement
+                    throw new ConnectionScopedRuntimeException(e);
                 }
             }
             return list;

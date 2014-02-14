@@ -26,8 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.TransportException;
 
 /**
@@ -70,9 +70,17 @@ public class QueueRunner implements Runnable
 
                 runAgain = _queue.processQueue(this);
             }
-            catch (final AMQException e)
+            catch (final ConnectionScopedRuntimeException e)
             {
-                _logger.error("Exception during asynchronous delivery by " + toString(), e);
+                final String errorMessage = "Problem during asynchronous delivery by " + toString();
+                if(_logger.isDebugEnabled())
+                {
+                    _logger.debug(errorMessage, e);
+                }
+                else
+                {
+                    _logger.info(errorMessage + ' ' + e.getMessage());
+                }
             }
             catch (final TransportException transe)
             {

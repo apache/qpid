@@ -28,8 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.message.MessageSource;
@@ -174,10 +172,6 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         try
         {
             _queue.getVirtualHost().removeQueue(_queue);
-        }
-        catch(AMQException e)
-        {
-            throw new IllegalStateException(e);
         }
         catch (QpidSecurityException e)
         {
@@ -343,15 +337,8 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         {
             if (_queue.isDurable())
             {
-                try
-                {
-                    DurableConfigurationStoreHelper.updateQueue(_queue.getVirtualHost().getDurableConfigurationStore(),
-                            _queue);
-                }
-                catch (AMQStoreException e)
-                {
-                    throw new IllegalStateException(e);
-                }
+                DurableConfigurationStoreHelper.updateQueue(_queue.getVirtualHost().getDurableConfigurationStore(),
+                        _queue);
             }
         }
     }

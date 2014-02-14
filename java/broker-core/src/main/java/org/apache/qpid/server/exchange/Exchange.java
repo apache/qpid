@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.MessageDestination;
@@ -35,8 +33,7 @@ import java.util.UUID;
 
 public interface Exchange extends ExchangeReferrer, MessageDestination
 {
-    void initialise(UUID id, VirtualHost host, String name, boolean durable, boolean autoDelete)
-            throws AMQException;
+    void initialise(UUID id, VirtualHost host, String name, boolean durable, boolean autoDelete);
 
 
     UUID getId();
@@ -70,25 +67,25 @@ public interface Exchange extends ExchangeReferrer, MessageDestination
 
 
     boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException, AMQInternalException;
+            throws QpidSecurityException;
 
     boolean replaceBinding(UUID id, String bindingKey,
                            AMQQueue queue,
                            Map<String, Object> arguments)
-                    throws QpidSecurityException, AMQInternalException;
+                    throws QpidSecurityException;
 
     void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
                         Map<String, Object> argumentMap)
-                    throws QpidSecurityException, AMQInternalException;
+                    throws QpidSecurityException;
 
-    void removeBinding(Binding b) throws QpidSecurityException, AMQInternalException;
+    void removeBinding(Binding b) throws QpidSecurityException;
 
     Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-                    throws QpidSecurityException, AMQInternalException;
+                    throws QpidSecurityException;
 
     Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
 
-    void close() throws QpidSecurityException, AMQInternalException;
+    void close() throws QpidSecurityException;
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments
@@ -96,7 +93,6 @@ public interface Exchange extends ExchangeReferrer, MessageDestination
      * @param arguments
      * @param queue
      * @return
-     * @throws AMQException
      */
 
     boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue);
@@ -106,7 +102,6 @@ public interface Exchange extends ExchangeReferrer, MessageDestination
      * @param bindingKey
      * @param queue
      * @return
-     * @throws AMQException
      */
 
     boolean isBound(String bindingKey, AMQQueue queue);
@@ -115,14 +110,12 @@ public interface Exchange extends ExchangeReferrer, MessageDestination
      * Determines whether a message is routing to any queue using a specific _routing key
      * @param bindingKey
      * @return
-     * @throws AMQException
      */
     boolean isBound(String bindingKey);
 
     /**
      * Returns true if this exchange has at least one binding associated with it.
      * @return
-     * @throws AMQException
      */
     boolean hasBindings();
 

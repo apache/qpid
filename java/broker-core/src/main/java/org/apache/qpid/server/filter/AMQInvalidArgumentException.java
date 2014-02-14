@@ -18,21 +18,26 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.filter;
 
-package org.apache.qpid.server.store;
-
-import org.apache.qpid.AMQException;
-
-/**
- * NOTE: this class currently extends AMQException but
- * we should be using AMQExceptions internally in the code base for Protocol errors hence
- * the message store interface should throw a different super class which this should be
- * moved to reflect
- */
-public class MessageStoreClosedException extends AMQException
+public class AMQInvalidArgumentException extends Exception
 {
-    public MessageStoreClosedException()
+    public AMQInvalidArgumentException(final Throwable cause)
     {
-        super("Message store closed");
+        super(cause);
+    }
+
+    public AMQInvalidArgumentException(final String message, final Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public AMQInvalidArgumentException(final String message)
+    {
+        super(message);
+    }
+
+    public AMQInvalidArgumentException()
+    {
     }
 }

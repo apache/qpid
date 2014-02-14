@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.store.AMQStoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -62,6 +62,7 @@ import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.util.FileUtils;
 
 public abstract class AbstractBDBMessageStore implements MessageStore, DurableConfigurationStore
@@ -157,7 +158,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _eventManager.addEventListener(eventListener, events);
     }
 
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler) throws Exception
+    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
     {
         _stateManager.attainState(State.INITIALISING);
 
@@ -166,7 +167,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
     public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws Exception
+                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
     {
         if(_stateManager.isInState(State.INITIAL))
         {
@@ -181,14 +182,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         completeInitialisation();
     }
 
-    private void completeInitialisation() throws Exception
+    private void completeInitialisation()
     {
         configure(_virtualHost);
 
         _stateManager.attainState(State.INITIALISED);
     }
 
-    public synchronized void activate() throws Exception
+    public synchronized void activate()
     {
         // check if acting as a durable config store, but not a message store
         if(_stateManager.isInState(State.INITIALISING))
@@ -228,12 +229,12 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    public void configure(VirtualHost virtualHost) throws Exception
+    public void configure(VirtualHost virtualHost)
     {
         configure(virtualHost, _messageRecoveryHandler != null);
     }
 
-    public void configure(VirtualHost virtualHost, boolean isMessageStore) throws Exception
+    public void configure(VirtualHost virtualHost, boolean isMessageStore)
     {
         String name = virtualHost.getName();
         final String defaultPath = System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name;
@@ -337,7 +338,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _stateManager.attainState(State.ACTIVE);
     }
 
-    protected void setupStore(File storePath, String name) throws DatabaseException, AMQStoreException
+    protected void setupStore(File storePath, String name)
     {
         _environment = createEnvironment(storePath);
 
@@ -387,7 +388,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
      *
      * @throws Exception If the close fails.
      */
-    public void close() throws Exception
+    public void close()
     {
         if (_closed.compareAndSet(false, true))
         {
@@ -397,7 +398,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
     }
 
-    protected void closeInternal() throws Exception
+    protected void closeInternal()
     {
         if (_messageMetaDataDb != null)
         {
@@ -472,7 +473,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
 
-    private void recoverConfig(ConfigurationRecoveryHandler recoveryHandler) throws AMQStoreException
+    private void recoverConfig(ConfigurationRecoveryHandler recoveryHandler)
     {
         try
         {
@@ -488,7 +489,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         catch (DatabaseException e)
         {
-            throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
+            throw new ServerScopedRuntimeException("Error recovering persistent state: " + e.getMessage(), e);
+        }
+        catch (AMQStoreException e)
+        {
+            throw new ServerScopedRuntimeException("Error recovering persistent state: " + e.getMessage(), e);
         }
 
     }
@@ -1385,7 +1390,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 int size = dataAsBytes.length;
                 if (offset > size)
                 {
-                    throw new RuntimeException("Offset " + offset + " is greater than message size " + size
+                    throw new ServerScopedRuntimeException("Offset " + offset + " is greater than message size " + size
                             + " for message id " + messageId + "!");
 
                 }
@@ -1537,7 +1542,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 }
                 catch (AMQStoreException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new ServerScopedRuntimeException(e);
                 }
                 _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
             }
@@ -1590,7 +1595,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 catch (AMQStoreException e)
                 {
                     // TODO maybe should throw a checked exception, or at least log before throwing
-                    throw new RuntimeException(e);
+                    throw new ServerScopedRuntimeException(e);
                 }
             }
         }
@@ -1625,16 +1630,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 }
                 catch(DatabaseException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new ServerScopedRuntimeException(e);
                 }
                 catch (AMQStoreException e)
                 {
-                    throw new RuntimeException(e);
-                }
-                catch (RuntimeException e)
-                {
-                    LOGGER.error("RuntimeException during store", e);
-                    throw e;
+                    throw new ServerScopedRuntimeException(e);
                 }
                 finally
                 {
@@ -1667,7 +1667,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             }
             catch (AMQStoreException e)
             {
-                throw new RuntimeException(e);
+                throw new ServerScopedRuntimeException(e);
             }
         }
 
@@ -1693,11 +1693,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 LOGGER.error("Exception during transaction begin, closing store environment.", e);
                 closeEnvironmentSafely();
 
-                throw new RuntimeException("Exception during transaction begin, store environment closed.", e);
+                throw new ServerScopedRuntimeException("Exception during transaction begin, store environment closed.", e);
             }
         }
 
-        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             if(message.getStoredMessage() instanceof StoredBDBMessage)
             {
@@ -1706,40 +1706,89 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
                 _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
             }
 
-            AbstractBDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
+            try
+            {
+                AbstractBDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
+            }
+            catch (AMQStoreException e)
+            {
+                throw new ServerScopedRuntimeException("A problem has been encountered with the message store", e);
+            }
         }
 
-        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
-            AbstractBDBMessageStore.this.dequeueMessage(_txn, queue, message.getMessageNumber());
+            try
+            {
+                AbstractBDBMessageStore.this.dequeueMessage(_txn, queue, message.getMessageNumber());
+            }
+            catch (AMQStoreException e)
+            {
+                throw new ServerScopedRuntimeException("A problem has been encountered with the message store", e);
+            }
         }
 
-        public void commitTran() throws AMQStoreException
+        public void commitTran()
         {
-            AbstractBDBMessageStore.this.commitTranImpl(_txn, true);
-            AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
+            try
+            {
+                AbstractBDBMessageStore.this.commitTranImpl(_txn, true);
+                AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new ServerScopedRuntimeException("A problem has been encountered with the message store", e);
+            }
         }
 
-        public StoreFuture commitTranAsync() throws AMQStoreException
+        public StoreFuture commitTranAsync()
         {
-            AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
-            return AbstractBDBMessageStore.this.commitTranImpl(_txn, false);
+            try
+            {
+                AbstractBDBMessageStore.this.storedSizeChange(_storeSizeIncrease);
+                return AbstractBDBMessageStore.this.commitTranImpl(_txn, false);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new ServerScopedRuntimeException("A problem has been encountered with the message store", e);
+            }
         }
 
-        public void abortTran() throws AMQStoreException
+        public void abortTran()
         {
-            AbstractBDBMessageStore.this.abortTran(_txn);
+            try
+            {
+                AbstractBDBMessageStore.this.abortTran(_txn);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new ServerScopedRuntimeException("A problem has been encountered with the message store", e);
+            }
         }
 
-        public void removeXid(long format, byte[] globalId, byte[] branchId) throws AMQStoreException
+        public void removeXid(long format, byte[] globalId, byte[] branchId)
         {
-            AbstractBDBMessageStore.this.removeXid(_txn, format, globalId, branchId);
+            try
+            {
+                AbstractBDBMessageStore.this.removeXid(_txn, format, globalId, branchId);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new ServerScopedRuntimeException("A problem has been encountered with the message store", e);
+            }
         }
 
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues,
-                              Record[] dequeues) throws AMQStoreException
+                              Record[] dequeues)
         {
-            AbstractBDBMessageStore.this.recordXid(_txn, format, globalId, branchId, enqueues, dequeues);
+            try
+            {
+                AbstractBDBMessageStore.this.recordXid(_txn, format, globalId, branchId, enqueues, dequeues);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new ServerScopedRuntimeException("A problem has been encountered with the message store", e);
+            }
         }
     }
 

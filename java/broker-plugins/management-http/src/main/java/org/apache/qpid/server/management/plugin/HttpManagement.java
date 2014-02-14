@@ -76,6 +76,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -181,7 +182,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Failed to start HTTP management on ports : " + httpPorts, e);
+            throw new ServerScopedRuntimeException("Failed to start HTTP management on ports : " + httpPorts, e);
         }
 
         CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
@@ -198,7 +199,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
             }
             catch (Exception e)
             {
-                throw new RuntimeException("Failed to stop HTTP management on ports : " + getHttpPorts(getBroker().getPorts()), e);
+                throw new ServerScopedRuntimeException("Failed to stop HTTP management on ports : " + getHttpPorts(getBroker().getPorts()), e);
             }
         }
 
@@ -310,7 +311,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
                 }
                 catch (GeneralSecurityException e)
                 {
-                    throw new RuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
+                    throw new ServerScopedRuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
                 }
                 connector = new SslSocketConnector(factory);
 
