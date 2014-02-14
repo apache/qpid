@@ -36,7 +36,7 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
@@ -189,7 +189,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         {
             _store.removeNodeFromGroup(nodeName);
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             LOGGER.error("Failed to remove node " + nodeName + " from group", e);
             throw new JMException(e.getMessage());
@@ -203,7 +203,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         {
             _store.setDesignatedPrimary(primary);
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             LOGGER.error("Failed to set node " + _store.getNodeName() + " as designated primary", e);
             throw new JMException(e.getMessage());
@@ -217,7 +217,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         {
             _store.updateAddress(nodeName, newHostName, newPort);
         }
-        catch(AMQStoreException e)
+        catch(StoreException e)
         {
             LOGGER.error("Failed to update address for node " + nodeName + " to " + newHostName + ":" + newPort, e);
             throw new JMException(e.getMessage());

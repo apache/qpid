@@ -198,7 +198,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.create(UUID.randomUUID(), "wibble", Collections.<String, Object>emptyMap());
             fail("Should not be able to create instance of type wibble");
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             // pass
         }
@@ -214,7 +214,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.create(id, "Exchange", Collections.<String, Object>emptyMap());
             fail("Should not be able to create two objects with same id");
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             // pass
         }
@@ -234,7 +234,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
             _store.update(id, "Exchange", Collections.<String, Object>emptyMap());
             fail("Should not be able to update object to different type");
         }
-        catch (AMQStoreException e)
+        catch (StoreException e)
         {
             // pass
         }

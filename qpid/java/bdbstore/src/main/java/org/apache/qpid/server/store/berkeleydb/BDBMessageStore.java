@@ -24,12 +24,12 @@ import java.io.File;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * BDBMessageStore implements a persistent {@link MessageStore} using the BDB high performance log.
@@ -87,7 +87,7 @@ public class BDBMessageStore extends AbstractBDBMessageStore
         }
         catch (InterruptedException e)
         {
-            throw new ServerScopedRuntimeException(e);
+            throw new StoreException(e);
         }
 
         super.closeInternal();

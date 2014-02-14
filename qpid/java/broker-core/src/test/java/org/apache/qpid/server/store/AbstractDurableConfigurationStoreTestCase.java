@@ -348,7 +348,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private AMQQueue createTestQueue(String queueName,
                                      String queueOwner,
                                      boolean exclusive,
-                                     final Map<String, Object> arguments) throws AMQStoreException
+                                     final Map<String, Object> arguments) throws StoreException
     {
         return createTestQueue(queueName, queueOwner, exclusive, null, arguments);
     }
@@ -357,7 +357,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
                                      String queueOwner,
                                      boolean exclusive,
                                      Exchange alternateExchange,
-                                     final Map<String, Object> arguments) throws AMQStoreException
+                                     final Map<String, Object> arguments) throws StoreException
     {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getName()).thenReturn(queueName);

@@ -34,9 +34,9 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * An implementation of a {@link org.apache.qpid.server.store.MessageStore} that uses a JDBC database as the persistence
@@ -265,7 +265,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         }
         catch (SQLException e)
         {
-            throw new ServerScopedRuntimeException("Unable to close connection provider ", e);
+            throw new StoreException("Unable to close connection provider ", e);
         }
     }
 

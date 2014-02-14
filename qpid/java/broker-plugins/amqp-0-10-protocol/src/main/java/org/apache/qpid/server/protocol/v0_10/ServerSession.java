@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
-import org.apache.qpid.server.store.AMQStoreException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
@@ -492,14 +492,14 @@ public class ServerSession extends Session
 
     public void prepareDtx(Xid xid)
             throws UnknownDtxBranchException,
-            IncorrectDtxStateException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+            IncorrectDtxStateException, StoreException, RollbackOnlyDtxException, TimeoutDtxException
     {
         getVirtualHost().getDtxRegistry().prepare(xid);
     }
 
     public void commitDtx(Xid xid, boolean onePhase)
             throws UnknownDtxBranchException,
-            IncorrectDtxStateException, AMQStoreException, RollbackOnlyDtxException, TimeoutDtxException
+            IncorrectDtxStateException, StoreException, RollbackOnlyDtxException, TimeoutDtxException
     {
         getVirtualHost().getDtxRegistry().commit(xid, onePhase);
     }
@@ -507,7 +507,7 @@ public class ServerSession extends Session
 
     public void rollbackDtx(Xid xid)
             throws UnknownDtxBranchException,
-            IncorrectDtxStateException, AMQStoreException, TimeoutDtxException
+            IncorrectDtxStateException, StoreException, TimeoutDtxException
     {
         getVirtualHost().getDtxRegistry().rollback(xid);
     }

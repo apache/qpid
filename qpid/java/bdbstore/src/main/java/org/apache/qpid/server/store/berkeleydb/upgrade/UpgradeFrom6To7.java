@@ -27,7 +27,7 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.OperationStatus;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.store.StoreException;
 
 public class UpgradeFrom6To7 extends AbstractStoreUpgrade
 {
@@ -53,7 +53,7 @@ public class UpgradeFrom6To7 extends AbstractStoreUpgrade
             OperationStatus status = versionDb.put(null, key, value);
             if (status != OperationStatus.SUCCESS)
             {
-                throw new ServerScopedRuntimeException("Error initialising config version: " + status);
+                throw new StoreException("Error initialising config version: " + status);
             }
         }
 

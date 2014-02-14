@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.AMQStoreException;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -46,7 +45,6 @@ import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.DtxBranch;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.Xid;
 import org.apache.qpid.transport.util.Functions;
 
@@ -218,17 +216,8 @@ public class VirtualHostConfigRecoveryHandler implements
 
         }
 
-        try
-        {
-            branch.setState(DtxBranch.State.PREPARED);
-            branch.prePrepareTransaction();
-        }
-        catch (AMQStoreException e)
-        {
-            _logger.error("Unexpected database exception when attempting to prepare a recovered XA transaction " +
-                          xidAsString(id), e);
-            throw new ServerScopedRuntimeException(e);
-        }
+        branch.setState(DtxBranch.State.PREPARED);
+        branch.prePrepareTransaction();
     }
 
     private static StringBuilder xidAsString(Xid id)

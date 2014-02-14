@@ -124,21 +124,13 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
             }
         }
 
-        try
+        if(!updates.isEmpty())
         {
-            if(!updates.isEmpty())
-            {
-                _store.update(true,updates.toArray(new ConfiguredObjectRecord[updates.size()]));
-            }
-            if(!deletes.isEmpty())
-            {
-                _store.removeConfiguredObjects(deletes.toArray(new UUID[deletes.size()]));
-            }
+            _store.update(true,updates.toArray(new ConfiguredObjectRecord[updates.size()]));
         }
-        catch (AMQStoreException e)
+        if(!deletes.isEmpty())
         {
-            // TODO better exception
-            throw new ServerScopedRuntimeException("Unable to update config store when upgrading");
+            _store.removeConfiguredObjects(deletes.toArray(new UUID[deletes.size()]));
         }
 
     }
