@@ -32,6 +32,8 @@ use qpid::messaging::Sender;
 use qpid::messaging::Session;
 use qpid::messaging::Connection;
 
+package qpid_messaging;
+
 1;
 
 __END__
