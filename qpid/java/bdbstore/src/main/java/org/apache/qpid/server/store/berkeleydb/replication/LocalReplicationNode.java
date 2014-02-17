@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -50,6 +51,7 @@ import com.sleepycat.je.rep.ReplicatedEnvironment;
 
 public class LocalReplicationNode extends AbstractAdapter implements ReplicationNode, ReplicatedEnvironmentConfiguration
 {
+    private static final Logger LOGGER = Logger.getLogger(LocalReplicationNode.class);
 
     private static final Durability DEFAULT_DURABILITY = new Durability(SyncPolicy.NO_SYNC, SyncPolicy.NO_SYNC,
             ReplicaAckPolicy.SIMPLE_MAJORITY);
@@ -266,10 +268,12 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             catch(IllegalStateException e)
             {
                 // ignore, as attribute value will be returned from actual/default attribute maps if present
+                LOGGER.debug("Exception on retrieving attribute from environment", e);
             }
             catch(DatabaseException e)
             {
                 // ignore, as attribute value will be returned from actual/default attribute maps if present
+                LOGGER.debug("Exception on retrieving attribute from environment", e);
             }
         }
         return super.getAttribute(attributeName);

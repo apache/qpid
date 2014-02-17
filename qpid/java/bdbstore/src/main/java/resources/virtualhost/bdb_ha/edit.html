@@ -1,0 +1,167 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<div class="dijitHidden">
+  <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Node'" id="editNodeDialog">
+      <form id="editNodeForm" method="post" data-dojo-type="dijit/form/Form">
+          <table class="tableContainer-table tableContainer-table-horiz">
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Path to store location*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" class="editNode-storePath"
+                          data-dojo-type="dijit/form/ValidationTextBox"
+                          data-dojo-props="
+                            name: 'storePath',
+                            placeHolder: '/path/to/message/store',
+                            required: true,
+                            missingMessage: 'A store path must be supplied',
+                            title: 'Enter path to the store folder'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Node Name*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" class="editNode-name"
+                            data-dojo-type="dijit/form/ValidationTextBox"
+                            data-dojo-props="
+                                name: 'nodeName',
+                                placeHolder: 'Node Name',
+                                required: true,
+                                missingMessage: 'A name must be supplied',
+                                title: 'Enter node name',
+                                pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Replication Group*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" class="editNode-groupName"
+                            data-dojo-type="dijit/form/ValidationTextBox"
+                            data-dojo-props="
+                                name: 'groupName',
+                                placeHolder: 'Group Name',
+                                required: true,
+                                missingMessage: 'A group name must be supplied',
+                                title: 'Enter group name',
+                                pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Node Address*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" class="editNode-hostPort"
+                            data-dojo-type="dijit/form/ValidationTextBox"
+                            data-dojo-props="
+                                name: 'hostPort',
+                                placeHolder: 'host:port',
+                                required: true,
+                                missingMessage: 'A Host and Port must be supplied',
+                                invalidMessage: 'Must be of the form host:port',
+                                title: 'Enter Host and Port name',
+                                pattern: '^([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Helper Address*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" class="editNode-helperHostPort"
+                            data-dojo-type="dijit/form/ValidationTextBox"
+                            data-dojo-props="
+                                name: 'helperHostPort',
+                                placeHolder: 'host:port',
+                                required: true,
+                                missingMessage: 'A Host and Port must be supplied',
+                                invalidMessage: 'Must be of the form host:port',
+                                title: 'Enter Helper Host and Port name',
+                                pattern: '^([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Durability: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" class="editNode-durability"
+                        data-dojo-type="dijit/form/ValidationTextBox"
+                        data-dojo-props="
+                            name: 'durability',
+                            placeHolder: 'NO_SYNC,NO_SYNC,SIMPLE_MAJORITY',
+                            required: false,
+                            missingMessage: 'A Host and Port must be supplied',
+                            title: 'Enter Helper Host and Port name',
+                            pattern: '^(SYN|NO_SYNC|WRITE_NO_SYNC),(SYN|NO_SYNC|WRITE_NO_SYNC),(SIMPLE_MAJORITY|ALL|NONE)*$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Coalesce local sync: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="checkbox" class="editNode-coalescingSync" checked="checked"
+                        data-dojo-type="dijit/form/CheckBox"
+                        data-dojo-props="
+                            name: 'coalescingSync',
+                            required: false,
+                            title: 'Enable coalescing sync mode for a better performance: when many transactions are synced to disk at the same time'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Designated Primary: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="checkbox" class="editNode-designatedPrimary" checked="checked"
+                            data-dojo-type="dijit/form/CheckBox"
+                            data-dojo-props="
+                                name: 'designatedPrimary',
+                                required: false,
+                                title: 'Designate node as primary. It is applicable only to 2-nodes cluster'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Priority of electing as a Master: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <div data-dojo-type="dojo/store/Memory" data-dojo-id="priorityStore"
+                        data-dojo-props="data: [
+                                                  {id: '0', name: 'Never'},
+                                                  {id: '1', name: 'Default', selected: '1'},
+                                                  {id: '2', name: 'Middle'},
+                                                  {id: '3', name: 'High'}
+                                               ]"></div>
+                    <input class="editNode-priority" data-dojo-type="dijit/form/FilteringSelect" value="1"
+                        data-dojo-props="
+                            name: 'priority',
+                            required: false,
+                            title: 'Select node priority for election as a Master',
+                            store: priorityStore,
+                            searchAttr: 'name'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Quorum override: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" class="editNode-quorumOverride"
+                        data-dojo-type="dijit/form/NumberSpinner" value="0"
+                        data-dojo-props="
+                            name: 'quorumOverride',
+                            required: false,
+                            title: 'Enter quorum override. 0 signifies simple majority',
+                            smallDelta:1,
+                            constraints:{min:0,max:10,places:0}" />
+                </td>
+            </tr>
+          </table>
+          <div class="dijitDialogPaneActionBar">
+              <button data-dojo-type="dijit/form/Button" id="editNode.saveButton" data-dojo-props="label: 'Save'" type="submit">Save</button>
+              <button data-dojo-type="dijit/form/Button" id="editNode.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+          </div>
+      </form>
+  </div>
+</div>

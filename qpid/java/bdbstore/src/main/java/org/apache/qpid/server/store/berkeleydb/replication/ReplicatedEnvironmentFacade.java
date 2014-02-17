@@ -419,6 +419,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public String getNodeState()
     {
+        if (_state.get() != State.OPEN)
+        {
+            return ReplicatedEnvironment.State.UNKNOWN.name();
+        }
         ReplicatedEnvironment.State state = _environment.getState();
         return state.toString();
     }
@@ -430,6 +434,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public boolean isDesignatedPrimary()
     {
+        if (_state.get() != State.OPEN)
+        {
+            throw new IllegalStateException("Environment facade is not opened");
+        }
         return _environment.getRepMutableConfig().getDesignatedPrimary();
     }
 
@@ -472,6 +480,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     int getPriority()
     {
+        if (_state.get() != State.OPEN)
+        {
+            throw new IllegalStateException("Environment facade is not opened");
+        }
         ReplicationMutableConfig repConfig = _environment.getRepMutableConfig();
         return repConfig.getNodePriority();
     }
@@ -515,6 +527,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     int getElectableGroupSizeOverride()
     {
+        if (_state.get() != State.OPEN)
+        {
+            throw new IllegalStateException("Environment facade is not opened");
+        }
         ReplicationMutableConfig repConfig = _environment.getRepMutableConfig();
         return repConfig.getElectableGroupSizeOverride();
     }
@@ -943,6 +959,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     // For testing only
     int getNumberOfElectableGroupMembers()
     {
+        if (_state.get() != State.OPEN)
+        {
+            throw new IllegalStateException("Environment facade is not opened");
+        }
         return _environment.getGroup().getElectableNodes().size();
     }
 

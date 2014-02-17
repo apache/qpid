@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.StoreFuture;
 
 import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
 
 public class CoalescingCommiter implements Committer
@@ -226,7 +227,11 @@ public class CoalescingCommiter implements Committer
                     startTime = System.currentTimeMillis();
                 }
 
-                _environmentFacade.getEnvironment().flushLog(true);
+                Environment environment = _environmentFacade.getEnvironment();
+                if (environment != null && environment.isValid())
+                {
+                    environment.flushLog(true);
+                }
 
                 if(LOGGER.isDebugEnabled())
                 {

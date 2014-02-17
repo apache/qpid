@@ -19,16 +19,20 @@
  *
  */
 define(["dojo/_base/xhr",
+        "dojo/_base/lang",
+        "dojo/_base/connect",
         "dojo/parser",
         "dojo/string",
         "dojox/html/entities",
         "dojo/query",
+        "dojo/json",
         "dijit/registry",
         "dojox/grid/EnhancedGrid",
         "qpid/common/UpdatableStore",
         "qpid/management/UserPreferences",
+        "qpid/management/virtualhost/bdb_ha/edit",
         "dojo/domReady!"],
-    function (xhr, parser, json, entities, query, registry, EnhancedGrid, UpdatableStore, UserPreferences) {
+    function (xhr, lang, connect, parser, json, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, nodeEditor) {
 
   var hostFields = ["desiredState", "quiesceOnMasterChange"];
 
@@ -36,8 +40,7 @@ define(["dojo/_base/xhr",
                     "coalescingSync", "designatedPrimary", "durability", "priority", "quorumOverride"];
 
   var buttons    = ["activateVirtualHostButton", "quiesceVirtualHostButton", "stopVirtualHostButton",
-                    "editVirtualHostButton", "activateNodeButton", "stopNodeButton","editNodeButton",
-                    "removeNodeButton", "transferMasterButton"];
+                    "editVirtualHostButton", "removeNodeButton"];
 
   function findNode(nodeClass, containerNode)
   {
@@ -73,6 +76,7 @@ define(["dojo/_base/xhr",
 
   BDBHA.prototype.update=function(data)
   {
+    this.data = data
     for(var i = 0; i < hostFields.length; i++)
     {
       var name = hostFields[i];
@@ -82,6 +86,8 @@ define(["dojo/_base/xhr",
     if (nodes && nodes.length>0)
     {
       var localNode = nodes[0];
+      this.stopNodeButton.set("disabled", localNode.state == "STOPPED");
+      this.activateNodeButton.set("disabled", localNode.state == "ACTIVE");
       for(var i = 0; i < nodeFields.length; i++)
       {
         var name = nodeFields[i];
@@ -115,6 +121,7 @@ define(["dojo/_base/xhr",
     this._initFields(hostFields, containerNode);
     this._initFields(nodeFields, containerNode);
 
+    var that = this;
     for(var i = 0; i < buttons.length; i++)
     {
       var buttonName = buttons[i];
@@ -124,21 +131,62 @@ define(["dojo/_base/xhr",
         var buttonWidget = registry.byNode(buttonNode);
         if (buttonWidget)
         {
-          this[buttonName] = buttonWidget;
-          var handler = this["_onClick_" + buttonName];
-          if (handler)
-          {
-            buttonWidget.on("click", function(evt){
-              handler(evt);
-            });
-          }
-          else
-          {
             buttonWidget.set("disabled", true);
-          }
         }
       }
     }
+
+    this.editNodeButton = registry.byNode(findNode("editNodeButton", containerNode));
+    this.editNodeButton.on("click", function(e){
+        var nodeName = null;
+        if (that.data.replicationnodes && that.data.replicationnodes.length > 0)
+        {
+            nodeName = that.data.replicationnodes[0].name;
+        }
+        nodeEditor.show(that.data.name, nodeName);
+    });
+
+    function changeNodeAttributes(nodeName, data)
+    {
+        var success = false;
+        var failureReason = "";
+        xhr.put({
+            url: "rest/replicationnode/" + encodeURIComponent(that.data.name) + "/" + encodeURIComponent(nodeName),
+            sync: true,
+            handleAs: "json",
+            headers: { "Content-Type": "application/json"},
+            putData: json.stringify(data),
+            load: function(x) {success = true; },
+            error: function(error) {success = false; failureReason = error;}
+        });
+        if (!success)
+        {
+            alert("Error:" + failureReason);
+        }
+    }
+
+    function changeStatus(newState)
+    {
+        if (confirm("Are you sure you would like to change node state to '" + newState + "'?"))
+        {
+            changeNodeAttributes(that.data.replicationnodes[0].name, {desiredState: newState});
+        }
+    }
+
+    this.stopNodeButton = registry.byNode(findNode("stopNodeButton", containerNode));
+    this.stopNodeButton.on("click", function(e){changeStatus("STOPPED");});
+    this.activateNodeButton = registry.byNode(findNode("activateNodeButton", containerNode));
+    this.activateNodeButton.on("click", function(e){changeStatus("ACTIVE");});
+    this.transferMasterButton = registry.byNode(findNode("transferMasterButton", containerNode));
+    this.transferMasterButton.on("click", function(e){
+        var data = that.membersGrid.grid.selection.getSelected();
+        if (data.length == 1 && confirm("Are you sure you would like to transfer mastership to node '" + data[0].name + "'?"))
+        {
+            changeNodeAttributes(data[0].name, {role: "MASTER"});
+            that.membersGrid.grid.selection.clear();
+        }
+    });
+    this.transferMasterButton.set("disabled", true);
 
     this.membersGrid = new UpdatableStore([],
         findNode("cluserNodes", containerNode),
@@ -157,6 +205,14 @@ define(["dojo/_base/xhr",
           }
         },
         EnhancedGrid, true );
+
+    var transferMasterToggler = function(rowIndex){
+        var data = that.membersGrid.grid.selection.getSelected();
+        var isButtonDisabled = data.length != 1 || data[0].role != "REPLICA";
+        that.transferMasterButton.set("disabled", isButtonDisabled);
+      };
+      connect.connect(this.membersGrid.grid.selection, 'onSelected',  transferMasterToggler);
+      connect.connect(this.membersGrid.grid.selection, 'onDeselected',  transferMasterToggler);
 
     this.parametersGrid = new UpdatableStore([],
         findNode("parameters", containerNode),
