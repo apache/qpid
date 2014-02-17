@@ -42,7 +42,6 @@ import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
-import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -70,7 +69,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     public static final String GET_ATTRIBUTES = "GET-ATTRIBUTES";
     public static final String GET_OPERATIONS = "GET-OPERATIONS";
     public static final String QUERY = "QUERY";
-    public static final String ENTITY_TYPES_HEADER = "entityTypes";
+    public static final String ENTITY_TYPE_HEADER = "entityType";
     public static final String STATUS_CODE_HEADER = "statusCode";
     public static final int STATUS_CODE_OK = 200;
     public static final String ATTRIBUTES_HEADER = "attributes";
@@ -636,7 +635,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
         else if(QUERY.equals(operation))
         {
-            responseMessage = performQuery(requestHeader, responseHeader);
+            responseMessage = performQuery(requestHeader, msg.getMessageBody(), responseHeader);
         }
         else
         {
@@ -650,9 +649,9 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     {
         final InternalMessage responseMessage;
         List<String> restriction;
-        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
+        if(requestHeader.containsHeader(ENTITY_TYPE_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
+            restriction = new ArrayList<String>(Collections.singletonList( (String)requestHeader.getHeader(ENTITY_TYPE_HEADER)));
         }
         else
         {
@@ -691,10 +690,10 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                                             final MutableMessageHeader responseHeader)
     {
         final InternalMessage responseMessage;
-        List<String> restriction;
-        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
+        String restriction;
+        if(requestHeader.containsHeader(ENTITY_TYPE_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
+            restriction = (String) requestHeader.getHeader(ENTITY_TYPE_HEADER);
         }
         else
         {
@@ -709,13 +708,18 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             entityMapCopy = new LinkedHashMap<String, ManagedEntityType>(_entityTypes);
         }
 
-        for(ManagedEntityType type : entityMapCopy.values())
+        if(restriction == null)
         {
-            if(restriction == null || restriction.contains(type.getName()))
+            for(ManagedEntityType type : entityMapCopy.values())
             {
                 responseMap.put(type.getName(), Arrays.asList(type.getAttributes()));
             }
         }
+        else if(entityMapCopy.containsKey(restriction))
+        {
+            responseMap.put(restriction, Arrays.asList(entityMapCopy.get(restriction).getAttributes()));
+        }
+
         responseMessage = InternalMessage.createMapMessage(_virtualHost.getMessageStore(), responseHeader, responseMap);
         return responseMessage;
     }
@@ -725,10 +729,10 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                                                  final MutableMessageHeader responseHeader)
     {
         final InternalMessage responseMessage;
-        List<String> restriction;
-        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
+        String restriction;
+        if(requestHeader.containsHeader(ENTITY_TYPE_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
+            restriction = (String) requestHeader.getHeader(ENTITY_TYPE_HEADER);
         }
         else
         {
@@ -743,19 +747,24 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             entityMapCopy = new LinkedHashMap<String, ManagedEntityType>(_entityTypes);
         }
 
-        for(ManagedEntityType type : entityMapCopy.values())
+        if(restriction == null)
         {
-            if(restriction == null || restriction.contains(type.getName()))
+            for(ManagedEntityType type : entityMapCopy.values())
             {
                 responseMap.put(type.getName(), Arrays.asList(type.getOperations()));
             }
+        }
+        else if(entityMapCopy.containsKey(restriction))
+        {
+            ManagedEntityType type = entityMapCopy.get(restriction);
+            responseMap.put(type.getName(), Arrays.asList(type.getOperations()));
         }
         responseMessage = InternalMessage.createMapMessage(_virtualHost.getMessageStore(), responseHeader, responseMap);
         return responseMessage;
     }
 
     private InternalMessage performQuery(final InternalMessageHeader requestHeader,
-                                         final MutableMessageHeader responseHeader)
+                                         final Object messageBody, final MutableMessageHeader responseHeader)
     {
         final InternalMessage responseMessage;
         List<String> restriction;
@@ -763,10 +772,11 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         int offset;
         int count;
 
-        if(requestHeader.containsHeader(ENTITY_TYPES_HEADER))
+        if(requestHeader.containsHeader(ENTITY_TYPE_HEADER))
         {
-            restriction = (List<String>) requestHeader.getHeader(ENTITY_TYPES_HEADER);
-            responseHeader.setHeader(ENTITY_TYPES_HEADER, restriction);
+            restriction = new ArrayList<String>(Collections.singletonList((String) requestHeader.getHeader(
+                    ENTITY_TYPE_HEADER)));
+            responseHeader.setHeader(ENTITY_TYPE_HEADER, restriction);
         }
         else
         {
@@ -774,9 +784,9 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
 
-        if(requestHeader.containsHeader(ATTRIBUTES_HEADER))
+        if(messageBody instanceof List && !((List)messageBody).isEmpty())
         {
-            attributes = (List<String>) requestHeader.getHeader(ATTRIBUTES_HEADER);
+            attributes = (List<String>) messageBody;
         }
         else
         {
@@ -818,8 +828,8 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         responseHeader.setHeader(ATTRIBUTES_HEADER, attributes);
 
         responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_OK);
-        List<List<Object>> responseList = new ArrayList<List<Object>>();
-
+        List<List<? extends Object>> responseList = new ArrayList<List<? extends Object>>();
+        responseList.add(attributes);
         int rowNo = 0;
         for(String type : restriction)
         {
@@ -855,7 +865,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                             }
                             responseList.add(Arrays.asList(attrValue));
                         }
-                        if(responseList.size()==count)
+                        if(responseList.size()==count+1)
                         {
                             break;
                         }
@@ -863,7 +873,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                 }
             }
 
-            if(responseList.size()==count)
+            if(responseList.size()==count+1)
             {
                 break;
             }
