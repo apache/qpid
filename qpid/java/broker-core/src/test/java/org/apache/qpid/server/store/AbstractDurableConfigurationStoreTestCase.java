@@ -32,6 +32,7 @@ import static org.mockito.Mockito.times;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,6 +41,7 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -143,7 +145,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         verify(_recoveryHandler).configuredObject(eq(_exchangeId), eq(EXCHANGE),
                 eq(map( org.apache.qpid.server.model.Exchange.NAME, getName(),
                         org.apache.qpid.server.model.Exchange.TYPE, getName()+"Type",
-                        org.apache.qpid.server.model.Exchange.LIFETIME_POLICY, LifetimePolicy.AUTO_DELETE.toString())));
+                        org.apache.qpid.server.model.Exchange.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS.name())));
     }
 
     private Map<String,Object> map(Object... vals)
@@ -220,7 +222,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         Map<String, Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
-        queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
+        queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
         verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
@@ -240,7 +242,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
-        queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
+        queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
         queueAttributes.putAll(attributes);
 
         verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
@@ -258,7 +260,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         Map<String, Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
-        queueAttributes.put(Queue.EXCLUSIVE, Boolean.TRUE);
+        queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
         verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
@@ -292,8 +294,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
 
         queueAttributes.put(Queue.NAME, getName());
-        queueAttributes.put(Queue.OWNER, getName()+"Owner");
-        queueAttributes.put(Queue.EXCLUSIVE, Boolean.FALSE);
         queueAttributes.putAll(attributes);
 
         verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
@@ -320,8 +320,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
 
         queueAttributes.put(Queue.NAME, getName());
-        queueAttributes.put(Queue.OWNER, getName()+"Owner");
-        queueAttributes.put(Queue.EXCLUSIVE, Boolean.FALSE);
         queueAttributes.putAll(attributes);
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
@@ -361,13 +359,19 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getName()).thenReturn(queueName);
-        when(queue.getOwner()).thenReturn(queueOwner);
         when(queue.isExclusive()).thenReturn(exclusive);
         when(queue.getId()).thenReturn(_queueId);
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
-        if(arguments != null && !arguments.isEmpty())
+        final Map<String,Object> attributes = arguments == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(arguments);
+        attributes.put(Queue.NAME, queueName);
+        if(exclusive)
         {
-            when(queue.getAvailableAttributes()).thenReturn(arguments.keySet());
+            when(queue.getOwner()).thenReturn(queueOwner);
+
+            attributes.put(Queue.OWNER, queueOwner);
+            attributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER);
+        }
+            when(queue.getAvailableAttributes()).thenReturn(attributes.keySet());
             final ArgumentCaptor<String> requestedAttribute = ArgumentCaptor.forClass(String.class);
             when(queue.getAttribute(requestedAttribute.capture())).then(
                     new Answer()
@@ -377,10 +381,9 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
                         public Object answer(final InvocationOnMock invocation) throws Throwable
                         {
                             String attrName = requestedAttribute.getValue();
-                            return arguments.get(attrName);
+                            return attributes.get(attrName);
                         }
                     });
-        }
 
         return queue;
     }

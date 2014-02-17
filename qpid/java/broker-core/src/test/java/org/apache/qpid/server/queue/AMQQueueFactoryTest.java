@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.queue;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,9 +40,10 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -98,33 +94,19 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
     private void delegateVhostQueueCreation() throws Exception
     {
-        final ArgumentCaptor<UUID> id = ArgumentCaptor.forClass(UUID.class);
-        final ArgumentCaptor<String> queueName = ArgumentCaptor.forClass(String.class);
-        final ArgumentCaptor<Boolean> durable = ArgumentCaptor.forClass(Boolean.class);
-        final ArgumentCaptor<String> owner = ArgumentCaptor.forClass(String.class);
-        final ArgumentCaptor<Boolean> autoDelete = ArgumentCaptor.forClass(Boolean.class);
-        final ArgumentCaptor<Boolean> exclusive = ArgumentCaptor.forClass(Boolean.class);
-        final ArgumentCaptor<Boolean> deleteOnNoConsumer = ArgumentCaptor.forClass(Boolean.class);
-        final ArgumentCaptor<Map> arguments = ArgumentCaptor.forClass(Map.class);
 
-        when(_virtualHost.createQueue(id.capture(), queueName.capture(), durable.capture(), owner.capture(),
-                autoDelete.capture(), exclusive.capture(), deleteOnNoConsumer.capture(), arguments.capture())).then(
+        final ArgumentCaptor<Map> attributes = ArgumentCaptor.forClass(Map.class);
+
+        when(_virtualHost.createQueue(any(AMQSessionModel.class), attributes.capture())).then(
                 new Answer<AMQQueue>()
                 {
                     @Override
                     public AMQQueue answer(InvocationOnMock invocation) throws Throwable
                     {
-                        return _queueFactory.createQueue(id.getValue(),
-                                queueName.getValue(),
-                                durable.getValue(),
-                                owner.getValue(),
-                                autoDelete.getValue(),
-                                exclusive.getValue(),
-                                deleteOnNoConsumer.getValue(),
-                                arguments.getValue());
+                        return _queueFactory.createQueue(null, attributes.getValue());
                     }
                 }
-        );
+            );
     }
 
     private void mockQueueRegistry()
@@ -217,17 +199,14 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
     public void testPriorityQueueRegistration() throws Exception
     {
-        Map<String,Object> attributes = Collections.singletonMap(Queue.PRIORITIES, (Object) 5);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, "testPriorityQueue");
+
+        attributes.put(Queue.PRIORITIES, 5);
 
 
-        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
-                "testPriorityQueue",
-                false,
-                "owner",
-                false,
-                false,
-                false,
-                attributes);
+        AMQQueue queue = _queueFactory.createQueue(null, attributes);
 
         assertEquals("Queue not a priority queue", PriorityQueue.class, queue.getClass());
         verifyQueueRegistered("testPriorityQueue");
@@ -240,10 +219,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
         String queueName = getName();
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, "owner", false,
-                false,
-                false,
-                null);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, queueName);
+
+
+        AMQQueue queue = _queueFactory.createQueue(null, attributes);
         assertEquals("Queue not a simple queue", StandardQueue.class, queue.getClass());
         verifyQueueRegistered(queueName);
 
@@ -261,7 +242,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
      */
     public void testDeadLetterQueueEnabled() throws Exception
     {
-        Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
 
         String queueName = "testDeadLetterQueueEnabled";
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
@@ -270,14 +250,13 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
-                queueName,
-                false,
-                "owner",
-                false,
-                false,
-                false,
-                attributes);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+
+        AMQQueue queue = _queueFactory.createQueue(null, attributes);
 
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
@@ -314,14 +293,11 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
-                queueName,
-                false,
-                "owner",
-                false,
-                false,
-                false,
-                null);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, queueName);
+
+        AMQQueue queue = _queueFactory.createQueue(null, attributes);
 
         assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryCount());
         Exchange altExchange = queue.getAlternateExchange();
@@ -348,7 +324,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
      */
     public void testDeadLetterQueueDisabled() throws Exception
     {
-        Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) false);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+
 
         String queueName = "testDeadLetterQueueDisabled";
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
@@ -357,14 +334,11 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
-        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
-                queueName,
-                false,
-                "owner",
-                false,
-                false,
-                false,
-                attributes);
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, false);
+
+        AMQQueue queue = _queueFactory.createQueue(null, attributes);
 
         assertNull("Queue should not have an alternate exchange as DLQ is disabled", queue.getAlternateExchange());
         assertNull("The alternate exchange should still not exist", _virtualHost.getExchange(dlExchangeName));
@@ -382,7 +356,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
      */
     public void testDeadLetterQueueNotCreatedForAutodeleteQueues() throws Exception
     {
-        Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
 
         String queueName = "testDeadLetterQueueNotCreatedForAutodeleteQueues";
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
@@ -391,16 +364,18 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not exist", _virtualHost.getExchange(dlExchangeName));
 
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, queueName);
+
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+        attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
+
         //create an autodelete queue
-        AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
-                queueName,
-                false,
-                "owner",
-                true,
-                false,
-                false,
-                attributes);
-        assertTrue("Queue should be autodelete", queue.isAutoDelete());
+        AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        assertEquals("Queue should be autodelete",
+                     LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS,
+                     queue.getLifetimePolicy());
 
         //ensure that the autodelete property overrides the request to enable DLQ
         assertNull("Queue should not have an alternate exchange as queue is autodelete", queue.getAlternateExchange());
@@ -417,16 +392,13 @@ public class AMQQueueFactoryTest extends QpidTestCase
      */
     public void testMaximumDeliveryCount() throws Exception
     {
-        Map<String,Object> attributes = Collections.singletonMap(Queue.MAXIMUM_DELIVERY_ATTEMPTS, (Object) 5);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, "testMaximumDeliveryCount");
 
-        final AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
-                "testMaximumDeliveryCount",
-                false,
-                "owner",
-                false,
-                false,
-                false,
-                attributes);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, (Object) 5);
+
+        final AMQQueue queue = _queueFactory.createQueue(null, attributes);
 
         assertNotNull("The queue was not registered as expected ", queue);
         assertEquals("Maximum delivery count not as expected", 5, queue.getMaximumDeliveryCount());
@@ -440,14 +412,11 @@ public class AMQQueueFactoryTest extends QpidTestCase
      */
     public void testMaximumDeliveryCountDefault() throws Exception
     {
-        final AMQQueue queue = _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(),
-                "testMaximumDeliveryCount",
-                false,
-                "owner",
-                false,
-                false,
-                false,
-                null);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, "testMaximumDeliveryCountDefault");
+
+        final AMQQueue queue = _queueFactory.createQueue(null, attributes);
 
         assertNotNull("The queue was not registered as expected ", queue);
         assertEquals("Maximum delivery count not as expected", 0, queue.getMaximumDeliveryCount());
@@ -462,15 +431,16 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
         try
         {
-            _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), null, false, "owner", true, false,
-                    false,
-                    null);
+            Map<String,Object> attributes = new HashMap<String, Object>();
+            attributes.put(Queue.ID, UUID.randomUUID());
+
+            _queueFactory.createQueue(null, attributes);
             fail("queue with null name can not be created!");
         }
         catch (Exception e)
         {
             assertTrue(e instanceof IllegalArgumentException);
-            assertEquals("Queue name must not be null", e.getMessage());
+            assertEquals("Value for attribute name is not found", e.getMessage());
         }
     }
 
@@ -486,9 +456,14 @@ public class AMQQueueFactoryTest extends QpidTestCase
             // change DLQ name to make its length bigger than exchange name
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLE");
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQUEUE");
-            Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
-            _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
-                    false, false, false, attributes);
+
+            Map<String,Object> attributes = new HashMap<String, Object>();
+            attributes.put(Queue.ID, UUID.randomUUID());
+            attributes.put(Queue.NAME, queueName);
+
+            attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+
+            _queueFactory.createQueue(null, attributes);
             fail("queue with DLQ name having more than 255 characters can not be created!");
         }
         catch (Exception e)
@@ -511,9 +486,14 @@ public class AMQQueueFactoryTest extends QpidTestCase
             // change DLQ name to make its length bigger than exchange name
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, "_DLEXCHANGE");
             setTestSystemProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, "_DLQ");
-            Map<String,Object> attributes = Collections.singletonMap(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
-            _queueFactory.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, "owner",
-                    false, false, false, attributes);
+
+            Map<String,Object> attributes = new HashMap<String, Object>();
+            attributes.put(Queue.ID, UUID.randomUUID());
+            attributes.put(Queue.NAME, queueName);
+
+            attributes.put(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
+
+            _queueFactory.createQueue(null, attributes);
             fail("queue with DLE name having more than 255 characters can not be created!");
         }
         catch (Exception e)
@@ -528,6 +508,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
 
         Map<String,String> arguments = new HashMap<String, String>();
+
         arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"mykey");
         arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
 

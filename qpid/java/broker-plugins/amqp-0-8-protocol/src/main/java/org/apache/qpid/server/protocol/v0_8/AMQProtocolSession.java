@@ -37,12 +37,14 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 
-public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, AuthorizationHolder, AMQConnectionModel
+public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
+        extends AMQVersionAwareProtocolSession, AuthorizationHolder, AMQConnectionModel<T,AMQChannel<T>>
 {
     long getSessionID();
 
@@ -69,11 +71,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
      */
     SocketAddress getLocalAddress();
 
-    public static interface Task
-    {
-        public void doTask(AMQProtocolSession session);
-    }
-
     /**
      * Get the context key associated with this session. Context key is described in the AMQ protocol specification (RFC
      * 6).
@@ -98,7 +95,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
      *
      * @return null if no channel exists, the channel otherwise
      */
-    AMQChannel getChannel(int channelId);
+    AMQChannel<T> getChannel(int channelId);
 
     /**
      * Associate a channel with this session.
@@ -106,7 +103,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
      * @param channel the channel to associate with this session. It is an error to associate the same channel with more
      *                than one session but this is not validated.
      */
-    void addChannel(AMQChannel channel) throws AMQException;
+    void addChannel(AMQChannel<T> channel) throws AMQException;
 
     /**
      * Close a specific channel. This will remove any resources used by the channel, including: <ul><li>any queue
@@ -185,10 +182,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
 
     void setVirtualHost(VirtualHost virtualHost) throws AMQException;
 
-    void addSessionCloseTask(Task task);
-
-    void removeSessionCloseTask(Task task);
-
     public ProtocolOutputConverter getProtocolOutputConverter();
 
     void setAuthorizedSubject(Subject authorizedSubject);
@@ -209,11 +202,11 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
 
     void setMaximumNumberOfChannels(Long value);
 
-    void commitTransactions(AMQChannel channel) throws AMQException;
+    void commitTransactions(AMQChannel<T> channel) throws AMQException;
 
-    void rollbackTransactions(AMQChannel channel) throws AMQException;
+    void rollbackTransactions(AMQChannel<T> channel) throws AMQException;
 
-    List<AMQChannel> getChannels();
+    List<AMQChannel<T>> getChannels();
 
     void mgmtCloseChannel(int channelId);
 

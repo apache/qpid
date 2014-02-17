@@ -22,22 +22,32 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Map;
-import java.util.UUID;
 
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ConflationQueue extends SimpleAMQQueue<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>
 {
-    protected ConflationQueue(UUID id,
-                              String name,
-                              boolean durable,
-                              String owner,
-                              boolean autoDelete,
-                              boolean exclusive,
-                              VirtualHost virtualHost,
-                              Map<String, Object> args, String conflationKey)
+    public static final String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
+
+
+    protected ConflationQueue(VirtualHost virtualHost,
+                              final AMQSessionModel creatingSession, Map<String, Object> attributes)
     {
-        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, new ConflationQueueList.Factory(conflationKey), args);
+        super(virtualHost, creatingSession, attributes, entryList(attributes));
+    }
+
+    private static ConflationQueueList.Factory entryList(final Map<String, Object> attributes)
+    {
+
+        String conflationKey = MapValueConverter.getStringAttribute(Queue.LVQ_KEY,
+                                                                    attributes,
+                                                                    DEFAULT_LVQ_KEY);
+
+        // conflation key can still be null if it was present in the map with a null value
+        return new ConflationQueueList.Factory(conflationKey == null ? DEFAULT_LVQ_KEY : conflationKey);
     }
 
     public String getConflationKey()

@@ -35,8 +35,10 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -333,14 +335,26 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public int compareTo(AMQSessionModel o)
+        public void close(AMQConstant cause, String message)
         {
-            return getId().compareTo(o.getId());
         }
 
         @Override
-        public void close(AMQConstant cause, String message)
+        public void addDeleteTask(final Action task)
         {
+
+        }
+
+        @Override
+        public void removeDeleteTask(final Action task)
+        {
+
+        }
+
+        @Override
+        public int compareTo(final Object o)
+        {
+            return 0;
         }
     }
 
@@ -431,12 +445,6 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public String getUserName()
-        {
-            return null;
-        }
-
-        @Override
         public boolean isSessionNameUnique(byte[] name)
         {
             return false;
@@ -455,6 +463,12 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
+        public String getRemoteContainerName()
+        {
+            return null;
+        }
+
+        @Override
         public String getClientVersion()
         {
             return null;
@@ -467,7 +481,7 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public String getPrincipalAsString()
+        public Principal getAuthorizedPrincipal()
         {
             return null;
         }
@@ -511,6 +525,18 @@ public class MockConsumer implements ConsumerTarget
         public String getVirtualHostName()
         {
             return null;
+        }
+
+        @Override
+        public void addDeleteTask(final Action task)
+        {
+
+        }
+
+        @Override
+        public void removeDeleteTask(final Action task)
+        {
+
         }
     }
 }

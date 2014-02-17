@@ -31,15 +31,7 @@ import java.util.Map;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFinder;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.QueueNotificationListener;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.*;
@@ -62,7 +54,6 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         put(QUEUE_FLOW_CONTROL_SIZE_BYTES, Long.class);
         put(QUEUE_FLOW_RESUME_SIZE_BYTES, Long.class);
         put(MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
-        put(EXCLUSIVE, Boolean.class);
         put(DESCRIPTION, String.class);
     }});
 
@@ -208,7 +199,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
 
     public LifetimePolicy getLifetimePolicy()
     {
-        return _queue.isAutoDelete() ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
+        return _queue.getLifetimePolicy();
     }
 
     public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
@@ -274,9 +265,33 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
             }
             else if(EXCLUSIVE.equals(name))
             {
-                Boolean exclusiveFlag = (Boolean) desired;
-                _queue.setExclusive(exclusiveFlag);
+                ExclusivityPolicy desiredPolicy;
+                if(desired == null)
+                {
+                    desiredPolicy = ExclusivityPolicy.NONE;
+                }
+                else if(desired instanceof  ExclusivityPolicy)
+                {
+                    desiredPolicy = (ExclusivityPolicy)desired;
+                }
+                else if (desired instanceof String)
+                {
+                    desiredPolicy = ExclusivityPolicy.valueOf((String)desired);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Cannot set " + Queue.EXCLUSIVE + " property to type " + desired.getClass().getName());
+                }
+                try
+                {
+                    _queue.setExclusivityPolicy(desiredPolicy);
+                }
+                catch (MessageSource.ExistingConsumerPreventsExclusive existingConsumerPreventsExclusive)
+                {
+                    throw new IllegalArgumentException("Unable to set exclusivity policy to " + desired + " as an existing combinations of consumers prevents this");
+                }
                 return true;
+
             }
             else if(MESSAGE_GROUP_KEY.equals(name))
             {
@@ -376,7 +391,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         }
         else if(EXCLUSIVE.equals(name))
         {
-            return _queue.isExclusive();
+            return _queue.getAttribute(Queue.EXCLUSIVE);
         }
         else if(MESSAGE_GROUP_KEY.equals(name))
         {
@@ -458,7 +473,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         }
         else if(LIFETIME_POLICY.equals(name))
         {
-            return _queue.isAutoDelete() ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
+            return _queue.getLifetimePolicy();
         }
         else if(NAME.equals(name))
         {

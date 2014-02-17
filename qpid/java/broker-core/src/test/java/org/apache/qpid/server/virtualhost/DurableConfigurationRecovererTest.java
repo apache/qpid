@@ -46,6 +46,7 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
@@ -117,14 +118,11 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
 
 
-        final ArgumentCaptor<UUID> idArg = ArgumentCaptor.forClass(UUID.class);
-        final ArgumentCaptor<String> queueArg = ArgumentCaptor.forClass(String.class);
-        final ArgumentCaptor<Map> argsArg = ArgumentCaptor.forClass(Map.class);
+        final ArgumentCaptor<Map> attributesArg = ArgumentCaptor.forClass(Map.class);
 
         _queueFactory = mock(QueueFactory.class);
 
-        when(_queueFactory.restoreQueue(idArg.capture(), queueArg.capture(),
-                anyString(), anyBoolean(), anyBoolean(), anyBoolean(), argsArg.capture())).then(
+        when(_queueFactory.restoreQueue(attributesArg.capture())).then(
                 new Answer()
                 {
 
@@ -133,8 +131,9 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                     {
                         final AMQQueue queue = mock(AMQQueue.class);
 
-                        final String queueName = queueArg.getValue();
-                        final UUID queueId = idArg.getValue();
+                        final Map attributes = attributesArg.getValue();
+                        final String queueName = (String) attributes.get(Queue.NAME);
+                        final UUID queueId = MapValueConverter.getUUIDAttribute(Queue.ID, attributes);
 
                         when(queue.getName()).thenReturn(queueName);
                         when(queue.getId()).thenReturn(queueId);
@@ -153,10 +152,10 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                                         return null;
                                     }
                                 }
-                        ).when(queue).setAlternateExchange(altExchangeArg.capture());
+                                ).when(queue).setAlternateExchange(altExchangeArg.capture());
 
-                        Map args = argsArg.getValue();
-                        if(args.containsKey(Queue.ALTERNATE_EXCHANGE))
+                        Map args = attributes;
+                        if (args.containsKey(Queue.ALTERNATE_EXCHANGE))
                         {
                             final UUID exchangeId = UUID.fromString(args.get(Queue.ALTERNATE_EXCHANGE).toString());
                             final Exchange exchange = _exchangeRegistry.getExchange(exchangeId);
@@ -470,7 +469,6 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         {
             queue.put(Queue.ALTERNATE_EXCHANGE, alternateExchangeId.toString());
         }
-        queue.put(Queue.EXCLUSIVE, false);
 
         return queue;
 

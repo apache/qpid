@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
-import java.util.UUID;
 
 public abstract class OutOfOrderQueue<E extends QueueEntryImpl<E,Q,L>, Q extends OutOfOrderQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> extends SimpleAMQQueue<E,Q,L>
 {
 
-    protected OutOfOrderQueue(UUID id, String name, boolean durable,
-                              String owner, boolean autoDelete, boolean exclusive,
-                              VirtualHost virtualHost, QueueEntryListFactory<E,Q,L> entryListFactory, Map<String, Object> arguments)
+    protected OutOfOrderQueue(VirtualHost virtualHost,
+                              final AMQSessionModel creatingSession,
+                              Map<String, Object> attributes,
+                              QueueEntryListFactory<E, Q, L> entryListFactory)
     {
-        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, entryListFactory, arguments);
+        super(virtualHost, creatingSession, attributes, entryListFactory);
     }
 
     @Override

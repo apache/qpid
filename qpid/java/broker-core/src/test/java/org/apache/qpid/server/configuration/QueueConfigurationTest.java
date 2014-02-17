@@ -137,9 +137,6 @@ public class QueueConfigurationTest extends TestCase
         qConf = new QueueConfiguration("test", vhostConfig);
         assertEquals(2, qConf.getMaximumMessageAge());
 
-        // Check inherited value
-        qConf = new QueueConfiguration("test", _fullHostConf);
-        assertEquals(1, qConf.getMaximumMessageAge());
     }
 
     public void testGetMaximumQueueDepth() throws ConfigurationException
@@ -153,9 +150,6 @@ public class QueueConfigurationTest extends TestCase
         qConf = new QueueConfiguration("test", vhostConfig);
         assertEquals(2, qConf.getMaximumQueueDepth());
 
-        // Check inherited value
-        qConf = new QueueConfiguration("test", _fullHostConf);
-        assertEquals(1, qConf.getMaximumQueueDepth());
     }
 
     public void testGetMaximumMessageSize() throws ConfigurationException
@@ -169,9 +163,6 @@ public class QueueConfigurationTest extends TestCase
         qConf = new QueueConfiguration("test", vhostConfig);
         assertEquals(2, qConf.getMaximumMessageSize());
 
-        // Check inherited value
-        qConf = new QueueConfiguration("test", _fullHostConf);
-        assertEquals(1, qConf.getMaximumMessageSize());
     }
 
     public void testGetMaximumMessageCount() throws ConfigurationException
@@ -185,22 +176,11 @@ public class QueueConfigurationTest extends TestCase
         qConf = new QueueConfiguration("test", vhostConfig);
         assertEquals(2, qConf.getMaximumMessageCount());
 
-        // Check inherited value
-        qConf = new QueueConfiguration("test", _fullHostConf);
-        assertEquals(1, qConf.getMaximumMessageCount());
     }
 
     public void testGetMinimumAlertRepeatGap() throws Exception
     {
-        // set broker attribute ALERT_REPEAT_GAP to 10
-        when(_broker.getAttribute(Broker.QUEUE_ALERT_REPEAT_GAP)).thenReturn(10);
-
-        // check that broker level setting is available on queue configuration
         QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
-        assertEquals(10, qConf.getMinimumAlertRepeatGap());
-
-        // remove configuration for ALERT_REPEAT_GAP on broker level
-        when(_broker.getAttribute(Broker.QUEUE_ALERT_REPEAT_GAP)).thenReturn(null);
 
         // Check default value
         qConf = new QueueConfiguration("test", _emptyConf);
@@ -211,9 +191,6 @@ public class QueueConfigurationTest extends TestCase
         qConf = new QueueConfiguration("test", vhostConfig);
         assertEquals(2, qConf.getMinimumAlertRepeatGap());
 
-        // Check inherited value
-        qConf = new QueueConfiguration("test", _fullHostConf);
-        assertEquals(1, qConf.getMinimumAlertRepeatGap());
     }
 
     public void testSortQueueConfiguration() throws ConfigurationException

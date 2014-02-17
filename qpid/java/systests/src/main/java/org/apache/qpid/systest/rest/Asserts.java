@@ -31,16 +31,7 @@ import java.util.Map;
 import javax.jms.JMSException;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class Asserts
@@ -100,7 +91,8 @@ public class Asserts
         assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_TYPE, queueType, queueData.get(Queue.QUEUE_TYPE));
         if (expectedAttributes == null)
         {
-            assertEquals("Unexpected value of queue attribute " + Queue.EXCLUSIVE, Boolean.FALSE, queueData.get(Queue.EXCLUSIVE));
+            assertEquals("Unexpected value of queue attribute " + Queue.EXCLUSIVE,
+                         ExclusivityPolicy.NONE.name(), queueData.get(Queue.EXCLUSIVE));
             assertEquals("Unexpected value of queue attribute " + Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0,
                     queueData.get(Queue.MAXIMUM_DELIVERY_ATTEMPTS));
             assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 0,

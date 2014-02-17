@@ -201,7 +201,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
 
     public LifetimePolicy getLifetimePolicy()
     {
-        return _exchange.isAutoDelete() ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
+        return _exchange.isAutoDelete() ? LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS : LifetimePolicy.PERMANENT;
     }
 
     public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
@@ -330,7 +330,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         }
         else if(LIFETIME_POLICY.equals(name))
         {
-            return _exchange.isAutoDelete() ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
+            return _exchange.isAutoDelete() ? LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS : LifetimePolicy.PERMANENT;
         }
         else if(TIME_TO_LIVE.equals(name))
         {

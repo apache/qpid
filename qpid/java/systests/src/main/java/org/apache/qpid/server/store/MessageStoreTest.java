@@ -23,7 +23,7 @@ package org.apache.qpid.server.store;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.log4j.Logger;
@@ -41,6 +41,9 @@ import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
@@ -51,7 +54,6 @@ import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.queue.StandardQueue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -539,11 +541,10 @@ public class MessageStoreTest extends QpidTestCase
         }
     }
 
-    private void setQueueExclusivity(boolean exclusive) throws AMQException
+    private void setQueueExclusivity(boolean exclusive) throws MessageSource.ExistingConsumerPreventsExclusive
     {
         AMQQueue queue = getVirtualHost().getQueue(durableExclusiveQueueName);
-
-        queue.setExclusive(exclusive);
+        queue.setExclusivityPolicy(exclusive ? ExclusivityPolicy.CONTAINER : ExclusivityPolicy.NONE);
     }
 
     private void validateQueueExclusivityProperty(boolean expected)
@@ -587,7 +588,7 @@ public class MessageStoreTest extends QpidTestCase
             assertEquals("Queue is not 'simple'", StandardQueue.class, queue.getClass());
         }
 
-        assertEquals("Queue owner is not as expected", queueOwner, queue.getOwner());
+        assertEquals("Queue owner is not as expected", exclusive ? queueOwner : null, queue.getOwner());
         assertEquals("Queue durability is not as expected", durable, queue.isDurable());
         assertEquals("Queue exclusivity is not as expected", exclusive, queue.isExclusive());
     }
@@ -671,7 +672,7 @@ public class MessageStoreTest extends QpidTestCase
             throws Exception
     {
 
-        Map<String,Object> queueArguments = null;
+        Map<String,Object> queueArguments = new HashMap<String, Object>();
 
         if(usePriority || lastValueQueue)
         {
@@ -680,19 +681,27 @@ public class MessageStoreTest extends QpidTestCase
 
         if (usePriority)
         {
-            queueArguments = Collections.singletonMap(Queue.PRIORITIES, (Object) DEFAULT_PRIORTY_LEVEL);
+            queueArguments.put(Queue.PRIORITIES, DEFAULT_PRIORTY_LEVEL);
         }
 
         if (lastValueQueue)
         {
-            queueArguments = Collections.singletonMap(Queue.LVQ_KEY, (Object) LVQ_KEY);
+            queueArguments.put(Queue.LVQ_KEY, LVQ_KEY);
         }
 
+        queueArguments.put(Queue.ID, UUIDGenerator.generateRandomUUID());
+        queueArguments.put(Queue.NAME, queueName);
+        queueArguments.put(Queue.DURABLE, durable);
+        queueArguments.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+        queueArguments.put(Queue.EXCLUSIVE, exclusive ? ExclusivityPolicy.CONTAINER : ExclusivityPolicy.NONE);
+        if(exclusive && queueOwner != null)
+        {
+            queueArguments.put(Queue.OWNER, queueOwner);
+        }
         AMQQueue queue = null;
 
         //Ideally we would be able to use the QueueDeclareHandler here.
-        queue = getVirtualHost().createQueue(UUIDGenerator.generateRandomUUID(), queueName, durable, queueOwner, false, exclusive,
-                false, queueArguments);
+        queue = getVirtualHost().createQueue(null, queueArguments);
 
         validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
 

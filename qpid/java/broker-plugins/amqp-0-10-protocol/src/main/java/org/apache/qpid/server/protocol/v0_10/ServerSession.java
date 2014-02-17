@@ -78,6 +78,7 @@ import org.apache.qpid.server.txn.SuspendAndFailDtxException;
 import org.apache.qpid.server.txn.TimeoutDtxException;
 import org.apache.qpid.server.txn.UnknownDtxBranchException;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
@@ -88,7 +89,9 @@ import static org.apache.qpid.util.Serial.gt;
 
 public class ServerSession extends Session
         implements AuthorizationHolder,
-                   AMQSessionModel, LogSubject, AsyncAutoCommitTransaction.FutureRecorder
+                   AMQSessionModel<ServerSession,ServerConnection>, LogSubject, AsyncAutoCommitTransaction.FutureRecorder,
+                   Deletable<ServerSession>
+
 {
     private static final Logger _logger = LoggerFactory.getLogger(ServerSession.class);
 
@@ -132,7 +135,7 @@ public class ServerSession extends Session
 
     private Map<String, ConsumerTarget_0_10> _subscriptions = new ConcurrentHashMap<String, ConsumerTarget_0_10>();
 
-    private final List<Action<ServerSession>> _taskList = new CopyOnWriteArrayList<Action<ServerSession>>();
+    private final List<Action<? super ServerSession>> _taskList = new CopyOnWriteArrayList<Action<? super ServerSession>>();
 
     private final TransactionTimeoutHelper _transactionTimeoutHelper;
 
@@ -374,7 +377,7 @@ public class ServerSession extends Session
         }
         _messageDispositionListenerMap.clear();
 
-        for (Action<ServerSession> task : _taskList)
+        for (Action<? super ServerSession> task : _taskList)
         {
             task.performAction(this);
         }
@@ -610,12 +613,12 @@ public class ServerSession extends Session
         return getConnection().getAuthorizedSubject();
     }
 
-    public void addSessionCloseTask(Action<ServerSession> task)
+    public void addDeleteTask(Action<? super ServerSession> task)
     {
         _taskList.add(task);
     }
 
-    public void removeSessionCloseTask(Action<ServerSession> task)
+    public void removeDeleteTask(Action<? super ServerSession> task)
     {
         _taskList.remove(task);
     }
@@ -652,7 +655,7 @@ public class ServerSession extends Session
         return _id;
     }
 
-    public AMQConnectionModel getConnectionModel()
+    public ServerConnection getConnectionModel()
     {
         return getConnection();
     }
@@ -922,7 +925,7 @@ public class ServerSession extends Session
     }
 
     @Override
-    public int compareTo(AMQSessionModel o)
+    public int compareTo(ServerSession o)
     {
         return getId().compareTo(o.getId());
     }

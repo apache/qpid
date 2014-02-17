@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class MapValueConverter
 {
@@ -215,6 +216,13 @@ public class MapValueConverter
     {
         assertMandatoryAttribute(name, attributes);
         return getIntegerAttribute(name, attributes, null);
+    }
+
+    public static Long getLongAttribute(String name, Map<String,Object> attributes)
+    {
+        assertMandatoryAttribute(name, attributes);
+        Object obj = attributes.get(name);
+        return toLong(name, obj, null);
     }
 
     public static Long getLongAttribute(String name, Map<String,Object> attributes, Long defaultValue)
@@ -407,6 +415,43 @@ public class MapValueConverter
                     + "' into type " + classObject + " for attribute " + attributeName);
         }
         return (T) value;
+    }
+
+
+    public static UUID getUUIDAttribute(String name, Map<String, Object> attributes)
+    {
+        assertMandatoryAttribute(name, attributes);
+        return getUUIDAttribute(name, attributes, null);
+    }
+
+    public static UUID getUUIDAttribute(String name, Map<String,Object> attributes, UUID defaultVal)
+    {
+        final Object value = attributes.get(name);
+        return toUUID(value, defaultVal);
+    }
+
+    private static UUID toUUID(final Object value, final UUID defaultVal)
+    {
+        if(value == null)
+        {
+            return defaultVal;
+        }
+        else if(value instanceof UUID)
+        {
+            return (UUID)value;
+        }
+        else if(value instanceof String)
+        {
+            return UUID.fromString((String)value);
+        }
+        else if(value instanceof byte[])
+        {
+            return UUID.nameUUIDFromBytes((byte[])value);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Cannot convert " + value.getClass().getName() + " to UUID");
+        }
     }
 
 }

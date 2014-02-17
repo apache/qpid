@@ -29,6 +29,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -152,14 +153,7 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public AMQQueue createQueue(UUID id,
-                                String queueName,
-                                boolean durable,
-                                String owner,
-                                boolean autoDelete,
-                                boolean exclusive,
-                                boolean deleteOnNoConsumer,
-                                Map<String, Object> arguments)
+    public AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> arguments)
     {
         return null;
     }
@@ -313,5 +307,53 @@ public class MockVirtualHost implements VirtualHost
 
     public void unblock()
     {
+    }
+
+    @Override
+    public long getDefaultAlertThresholdMessageAge()
+    {
+        return 0;
+    }
+
+    @Override
+    public long getDefaultAlertThresholdMessageSize()
+    {
+        return 0;
+    }
+
+    @Override
+    public long getDefaultAlertThresholdQueueDepthMessages()
+    {
+        return 0;
+    }
+
+    @Override
+    public long getDefaultAlertThresholdQueueDepthBytes()
+    {
+        return 0;
+    }
+
+    @Override
+    public long getDefaultAlertRepeatGap()
+    {
+        return 0;
+    }
+
+    @Override
+    public long getDefaultQueueFlowControlSizeBytes()
+    {
+        return 0;
+    }
+
+    @Override
+    public long getDefaultQueueFlowResumeSizeBytes()
+    {
+        return 0;
+    }
+
+    @Override
+    public int getDefaultMaximumDeliveryAttempts()
+    {
+        return 0;
     }
 }

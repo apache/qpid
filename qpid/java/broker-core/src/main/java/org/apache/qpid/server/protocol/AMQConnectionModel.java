@@ -25,11 +25,13 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.util.Deletable;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
-public interface AMQConnectionModel extends StatisticsGatherer
+public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends AMQSessionModel<S,T>> extends StatisticsGatherer, Deletable<T>
 {
     /**
      * Close the underlying Connection
@@ -50,7 +52,7 @@ public interface AMQConnectionModel extends StatisticsGatherer
      * @param cause
      * @param message
      */
-    public void closeSession(AMQSessionModel session, AMQConstant cause, String message);
+    public void closeSession(S session, AMQConstant cause, String message);
 
     public long getConnectionId();
 
@@ -59,14 +61,12 @@ public interface AMQConnectionModel extends StatisticsGatherer
      *
      * @return a list of {@link AMQSessionModel}s
      */
-    public List<AMQSessionModel> getSessionModels();
+    public List<S> getSessionModels();
 
     /**
      * Return a {@link LogSubject} for the connection.
      */
     public LogSubject getLogSubject();
-
-    public String getUserName();
 
     public boolean isSessionNameUnique(byte[] name);
 
@@ -78,7 +78,7 @@ public interface AMQConnectionModel extends StatisticsGatherer
 
     String getClientProduct();
 
-    String getPrincipalAsString();
+    Principal getAuthorizedPrincipal();
 
     long getSessionCountLimit();
 
@@ -93,4 +93,6 @@ public interface AMQConnectionModel extends StatisticsGatherer
     boolean isStopped();
 
     String getVirtualHostName();
+
+    String getRemoteContainerName();
 }

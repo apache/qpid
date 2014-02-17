@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.model;
 
-public enum LifetimePolicy
+public enum ExclusivityPolicy
 {
-    PERMANENT,
-    DELETE_ON_CONNECTION_CLOSE,
-    DELETE_ON_SESSION_END,
-    DELETE_ON_NO_OUTBOUND_LINKS,
-    DELETE_ON_NO_LINKS,
-    IN_USE
+    NONE,
+    SESSION,
+    CONNECTION,
+    CONTAINER,
+    PRINCIPAL,
+    LINK
 }

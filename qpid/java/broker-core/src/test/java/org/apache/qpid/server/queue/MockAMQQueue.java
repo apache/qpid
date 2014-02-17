@@ -26,7 +26,10 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.consumer.Consumer;
@@ -58,6 +61,13 @@ public class MockAMQQueue implements AMQQueue
     public MockAMQQueue(String name)
     {
        _name = name;
+    }
+
+    @Override
+    public void setExclusivityPolicy(final ExclusivityPolicy desiredPolicy)
+            throws ExistingConsumerPreventsExclusive
+    {
+
     }
 
     public boolean getDeleteOnNoConsumers()
@@ -129,6 +139,12 @@ public class MockAMQQueue implements AMQQueue
     public long getTotalEnqueueCount()
     {
         return 0;
+    }
+
+    @Override
+    public LifetimePolicy getLifetimePolicy()
+    {
+        return null;
     }
 
     public int getBindingCountHigh()
@@ -216,7 +232,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     @Override
-    public void addQueueDeleteTask(final Action task)
+    public void addDeleteTask(final Action task)
     {
 
     }
@@ -345,7 +361,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     @Override
-    public void removeQueueDeleteTask(final Action task)
+    public void removeDeleteTask(final Action task)
     {
 
     }
@@ -474,6 +490,12 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public boolean isExclusive()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean verifySessionAccess(final AMQSessionModel session)
     {
         return false;
     }
