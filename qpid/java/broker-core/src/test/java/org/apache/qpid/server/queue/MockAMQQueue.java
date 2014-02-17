@@ -70,15 +70,6 @@ public class MockAMQQueue implements AMQQueue
 
     }
 
-    public boolean getDeleteOnNoConsumers()
-    {
-        return false;
-    }
-
-    public void setDeleteOnNoConsumers(boolean b)
-    {
-    }
-
     public void addBinding(final Binding binding)
     {
         _bindings.add(binding);
@@ -446,11 +437,6 @@ public class MockAMQQueue implements AMQQueue
     public long getMinimumAlertRepeatGap()
     {
         return 0;
-    }
-
-    public void deleteMessageFromTop()
-    {
-
     }
 
     public long clearQueue()

@@ -981,12 +981,6 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     }
 
     @Override
-    public boolean isExclusive()
-    {
-        return false;
-    }
-
-    @Override
     public boolean verifySessionAccess(final AMQSessionModel<?, ?> session)
     {
         return true;

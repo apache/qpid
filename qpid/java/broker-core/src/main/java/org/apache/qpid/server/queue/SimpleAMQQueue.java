@@ -170,7 +170,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     private boolean _noLocal;
 
     private final AtomicBoolean _overfull = new AtomicBoolean(false);
-    private boolean _deleteOnNoConsumers;
     private final CopyOnWriteArrayList<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
     private UUID _id;
     private final Map<String, Object> _arguments;
@@ -846,16 +845,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         }
     }
 
-    public boolean getDeleteOnNoConsumers()
-    {
-        return _deleteOnNoConsumers;
-    }
-
-    public void setDeleteOnNoConsumers(boolean b)
-    {
-        _deleteOnNoConsumers = b;
-    }
-
     public void addBinding(final Binding binding)
     {
         _bindings.add(binding);
@@ -1457,24 +1446,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     // ------ Management functions
-
-    // TODO - now only used by the tests
-    public void deleteMessageFromTop()
-    {
-        QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
-        boolean noDeletes = true;
-
-        while (noDeletes && queueListIterator.advance())
-        {
-            E node = queueListIterator.getNode();
-            if (node.acquire())
-            {
-                dequeueEntry(node);
-                noDeletes = false;
-            }
-
-        }
-    }
 
     public long clearQueue() throws QpidSecurityException
     {

@@ -45,8 +45,6 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
 
     void removeConsumerRegistrationListener(ConsumerRegistrationListener<S> listener);
 
-    boolean isExclusive();
-
     boolean verifySessionAccess(AMQSessionModel<?,?> session);
 
     interface ConsumerRegistrationListener<Q extends MessageSource<? extends Consumer,?>>

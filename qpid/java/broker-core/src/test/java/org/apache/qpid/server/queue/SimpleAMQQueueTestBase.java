@@ -795,38 +795,6 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         }
     }
 
-
-
-    /**
-     * Tests that dequeued message on the top is not accounted and next message
-     * is deleted from the queue on invocation of
-     * {@link SimpleAMQQueue#deleteMessageFromTop()}
-     */
-    public void testDeleteMessageFromTopWithDequeuedEntryOnTop()
-    {
-        int messageNumber = 4;
-        int dequeueMessageIndex = 0;
-
-        // put messages into a test queue
-        enqueueGivenNumberOfMessages(_queue, messageNumber);
-
-        // dequeue message on top
-        dequeueMessage(_queue, dequeueMessageIndex);
-
-        //delete message from top
-        _queue.deleteMessageFromTop();
-
-        //get queue entries
-        List<E> entries = _queue.getMessagesOnTheQueue();
-
-        // assert queue entries
-        assertNotNull("Null is returned from getMessagesOnTheQueue", entries);
-        assertEquals("Expected " + (messageNumber - 2) + " number of messages  but recieved " + entries.size(),
-                     messageNumber - 2, entries.size());
-        assertEquals("Expected first entry with id 2", 2l,
-                (entries.get(0).getMessage()).getMessageNumber());
-    }
-
     /**
      * Tests that all messages including dequeued one are deleted from the queue
      * on invocation of {@link SimpleAMQQueue#clearQueue()}

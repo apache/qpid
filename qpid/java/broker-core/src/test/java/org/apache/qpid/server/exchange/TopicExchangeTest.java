@@ -107,7 +107,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
         int queueCount = routeMessage("a.c",1l);
@@ -129,7 +129,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
@@ -139,7 +139,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
         int queueCount = routeMessage("a",2l);
@@ -160,7 +160,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
         routeMessage("a.b",1l);
@@ -169,7 +169,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
@@ -179,7 +179,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 2l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
         routeMessage("a",3l);
@@ -188,7 +188,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 3l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
@@ -210,7 +210,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 0l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
         routeMessage("a.c.b",1l);
@@ -219,7 +219,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
@@ -242,7 +242,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
         queueCount = routeMessage("a.b.c.b",2l);
@@ -256,7 +256,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 3l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
@@ -278,7 +278,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
@@ -299,7 +299,7 @@ public class TopicExchangeTest extends QpidTestCase
 
         Assert.assertEquals("Wrong message received", 1l, queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop();
+        queue.clearQueue();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
