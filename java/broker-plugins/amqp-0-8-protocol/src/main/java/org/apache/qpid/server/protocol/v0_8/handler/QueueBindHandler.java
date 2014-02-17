@@ -116,15 +116,6 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
         try
         {
-            if (queue.isExclusive() && !queue.isDurable())
-            {
-                AMQSessionModel session = queue.getExclusiveOwningSession();
-                if (session == null || session.getConnectionModel() != protocolConnection)
-                {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
-                }
-            }
 
             Map<String,Object> arguments = FieldTable.convertToMap(body.getArguments());
             String bindingKey = String.valueOf(routingKey);
@@ -143,10 +134,6 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
                     }
                 }
             }
-        }
-        catch (AMQException e)
-        {
-            throw body.getChannelException(AMQConstant.CHANNEL_ERROR, e.toString());
         }
         catch (QpidSecurityException e)
         {

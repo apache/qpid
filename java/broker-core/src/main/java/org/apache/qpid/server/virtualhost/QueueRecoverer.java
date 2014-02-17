@@ -104,13 +104,6 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
         public AMQQueue resolve()
         {
             String queueName = (String) _attributes.get(Queue.NAME);
-            String owner = (String) _attributes.get(Queue.OWNER);
-            boolean exclusive = (Boolean) _attributes.get(Queue.EXCLUSIVE);
-
-            Map<String, Object> queueArgumentsMap = new LinkedHashMap<String, Object>(_attributes);
-            queueArgumentsMap.remove(Queue.NAME);
-            queueArgumentsMap.remove(Queue.OWNER);
-            queueArgumentsMap.remove(Queue.EXCLUSIVE);
 
             try
             {
@@ -122,8 +115,9 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
 
                 if (_queue == null)
                 {
-                    _queue = _queueFactory.restoreQueue(_id, queueName, owner, false, exclusive,
-                            false, queueArgumentsMap);
+                    Map<String, Object> attributes = new LinkedHashMap<String, Object>(_attributes);
+                    attributes.put(Queue.ID, _id);
+                    _queue = _queueFactory.restoreQueue(attributes);
                 }
             }
             catch (QpidSecurityException e)

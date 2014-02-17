@@ -22,6 +22,8 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 
+import java.security.Principal;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,9 +45,12 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
+        final Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn(USER);
+
         _connection = mock(AMQConnectionModel.class);
         when(_connection.getConnectionId()).thenReturn(CONNECTION_ID);
-        when(_connection.getPrincipalAsString()).thenReturn(USER);
+        when(_connection.getAuthorizedPrincipal()).thenReturn(principal);
         when(_connection.getRemoteAddressString()).thenReturn("/"+IP_STRING);
         when(_connection.getVirtualHostName()).thenReturn(VHOST);
         _subject = new ConnectionLogSubject(_connection);

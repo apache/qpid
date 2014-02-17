@@ -39,6 +39,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.mockito.ArgumentCaptor;
 
 public class VirtualHostManagerMBeanTest extends TestCase
 {
@@ -68,8 +69,15 @@ public class VirtualHostManagerMBeanTest extends TestCase
     public void testCreateQueueWithNoOwner() throws Exception
     {
         _virtualHostManagerMBean.createNewQueue(TEST_QUEUE_NAME, null, true);
+        ArgumentCaptor<Map> argsCaptor = ArgumentCaptor.forClass(Map.class);
 
-        verify(_mockVirtualHost).createQueue(TEST_QUEUE_NAME, State.ACTIVE, true, false, LifetimePolicy.PERMANENT, 0, EMPTY_ARGUMENT_MAP);
+        verify(_mockVirtualHost).createQueue(argsCaptor.capture());
+
+        Map actualAttributes = argsCaptor.getValue();
+        assertEquals(TEST_QUEUE_NAME, actualAttributes.get(Queue.NAME));
+        assertEquals(Boolean.TRUE,actualAttributes.get(Queue.DURABLE));
+        assertEquals(null,actualAttributes.get(Queue.OWNER));
+
     }
 
     /**
@@ -79,9 +87,15 @@ public class VirtualHostManagerMBeanTest extends TestCase
     public void testCreateQueueWithOwnerMappedThroughToDescription() throws Exception
     {
         _virtualHostManagerMBean.createNewQueue(TEST_QUEUE_NAME, TEST_OWNER, true);
+        ArgumentCaptor<Map> argsCaptor = ArgumentCaptor.forClass(Map.class);
 
-        Map<String, Object> expectedArguments = Collections.singletonMap(Queue.DESCRIPTION, (Object)TEST_OWNER);
-        verify(_mockVirtualHost).createQueue(TEST_QUEUE_NAME, State.ACTIVE, true, false, LifetimePolicy.PERMANENT, 0, expectedArguments);
+        verify(_mockVirtualHost).createQueue(argsCaptor.capture());
+
+        Map actualAttributes = argsCaptor.getValue();
+        assertEquals(TEST_QUEUE_NAME,actualAttributes.get(Queue.NAME));
+        assertEquals(Boolean.TRUE,actualAttributes.get(Queue.DURABLE));
+        assertEquals(null,actualAttributes.get(Queue.OWNER));
+        assertEquals(TEST_OWNER, actualAttributes.get(Queue.DESCRIPTION));
     }
 
     public void testCreateQueueWithOwnerAndDescriptionDiscardsOwner() throws Exception
@@ -89,8 +103,15 @@ public class VirtualHostManagerMBeanTest extends TestCase
         Map<String, Object> arguments = Collections.singletonMap(QueueArgumentsConverter.X_QPID_DESCRIPTION, (Object)TEST_DESCRIPTION);
         _virtualHostManagerMBean.createNewQueue(TEST_QUEUE_NAME, TEST_OWNER, true, arguments);
 
-        Map<String, Object> expectedArguments = Collections.singletonMap(Queue.DESCRIPTION, (Object)TEST_DESCRIPTION);
-        verify(_mockVirtualHost).createQueue(TEST_QUEUE_NAME, State.ACTIVE, true, false, LifetimePolicy.PERMANENT, 0, expectedArguments);
+        ArgumentCaptor<Map> argsCaptor = ArgumentCaptor.forClass(Map.class);
+
+        verify(_mockVirtualHost).createQueue(argsCaptor.capture());
+
+        Map actualAttributes = argsCaptor.getValue();
+        assertEquals(TEST_QUEUE_NAME,actualAttributes.get(Queue.NAME));
+        assertEquals(Boolean.TRUE,actualAttributes.get(Queue.DURABLE));
+        assertEquals(null,actualAttributes.get(Queue.OWNER));
+        assertEquals(TEST_DESCRIPTION, actualAttributes.get(Queue.DESCRIPTION));
     }
 
     public void testDeleteQueue() throws Exception

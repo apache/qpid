@@ -130,7 +130,7 @@ public class ConsumerAdapter extends AbstractAdapter implements org.apache.qpid.
         }
         else if(LIFETIME_POLICY.equals(name))
         {
-            return LifetimePolicy.AUTO_DELETE;
+            return LifetimePolicy.DELETE_ON_SESSION_END;
         }
         else if(TIME_TO_LIVE.equals(name))
         {

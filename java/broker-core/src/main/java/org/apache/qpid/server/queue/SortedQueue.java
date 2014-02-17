@@ -21,11 +21,13 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class SortedQueue extends OutOfOrderQueue<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
 {
@@ -35,26 +37,24 @@ public class SortedQueue extends OutOfOrderQueue<SortedQueueEntry, SortedQueue, 
     private final Object _sortedQueueLock = new Object();
     private final String _sortedPropertyName;
 
-    protected SortedQueue(UUID id, final String name,
-                            final boolean durable, final String owner, final boolean autoDelete,
-                            final boolean exclusive, final VirtualHost virtualHost, Map<String, Object> arguments, String sortedPropertyName)
+    protected SortedQueue(VirtualHost virtualHost,
+                          final AMQSessionModel creatingSession,
+                          Map<String, Object> attributes,
+                          QueueEntryListFactory<SortedQueueEntry, SortedQueue, SortedQueueEntryList> factory)
     {
-        this(id, name, durable, owner, autoDelete, exclusive,
-             virtualHost, arguments, sortedPropertyName, new SortedQueueEntryListFactory(sortedPropertyName));
+        super(virtualHost, creatingSession, attributes, factory);
+        _sortedPropertyName = MapValueConverter.getStringAttribute(Queue.SORT_KEY,attributes);
     }
 
 
-    protected SortedQueue(UUID id, final String name,
-                          final boolean durable, final String owner, final boolean autoDelete,
-                          final boolean exclusive, final VirtualHost virtualHost,
-                          Map<String, Object> arguments,
-                          String sortedPropertyName,
-                          QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList> factory)
+    protected SortedQueue(VirtualHost virtualHost,
+                          final AMQSessionModel creatingSession, Map<String, Object> attributes)
     {
-        super(id, name, durable, owner, autoDelete, exclusive,
-              virtualHost, factory, arguments);
-        this._sortedPropertyName = sortedPropertyName;
+        this(virtualHost,
+             creatingSession, attributes,
+             new SortedQueueEntryListFactory(MapValueConverter.getStringAttribute(Queue.SORT_KEY, attributes)));
     }
+
 
 
     public String getSortedPropertyName()

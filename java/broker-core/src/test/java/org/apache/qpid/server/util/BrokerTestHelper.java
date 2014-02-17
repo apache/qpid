@@ -25,11 +25,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.SocketAddress;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -182,8 +184,10 @@ public class BrokerTestHelper
     public static AMQQueue createQueue(String queueName, VirtualHost virtualHost)
             throws QpidSecurityException, QueueExistsException
     {
-        AMQQueue queue = virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), queueName, false, null,
-                false, false, false, Collections.<String, Object>emptyMap());
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
+        attributes.put(Queue.NAME, queueName);
+        AMQQueue queue = virtualHost.createQueue(null, attributes);
         return queue;
     }
 

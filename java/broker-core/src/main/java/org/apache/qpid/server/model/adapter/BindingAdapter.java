@@ -170,7 +170,7 @@ final class BindingAdapter extends AbstractAdapter implements Binding
         }
         else if(LIFETIME_POLICY.equals(name))
         {
-            return _queue.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE || _exchange.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE ? LifetimePolicy.AUTO_DELETE : LifetimePolicy.PERMANENT;
+            return _queue.getLifetimePolicy() != LifetimePolicy.PERMANENT || _exchange.getLifetimePolicy() != LifetimePolicy.PERMANENT ? LifetimePolicy.IN_USE : LifetimePolicy.PERMANENT;
         }
         else if(TIME_TO_LIVE.equals(name))
         {

@@ -25,17 +25,20 @@ import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.consumer.MockConsumer;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static org.mockito.Mockito.mock;
 
 public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry, StandardQueue, StandardQueueEntryList>
 {
@@ -44,7 +47,12 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
     {
         try
         {
-            setQueue(new StandardQueue(UUIDGenerator.generateRandomUUID(), getQname(), false, getOwner(), false,false, null, getArguments()));
+            Map<String,Object> queueAttributes = new HashMap<String, Object>();
+            queueAttributes.put(Queue.ID, UUID.randomUUID());
+            queueAttributes.put(Queue.NAME, "testActiveConsumerCount");
+            queueAttributes.put(Queue.OWNER, "testOwner");
+
+            setQueue(new StandardQueue(null, null, queueAttributes));
             assertNull("Queue was created", getQueue());
         }
         catch (IllegalArgumentException e)
@@ -58,7 +66,13 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
     public void testAutoDeleteQueue() throws Exception
     {
         getQueue().stop();
-        setQueue(new StandardQueue(UUIDGenerator.generateRandomUUID(), getQname(), false, null, true, false, getVirtualHost(), Collections.<String,Object>emptyMap()));
+        Map<String,Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ID, UUID.randomUUID());
+        queueAttributes.put(Queue.NAME, getQname());
+        queueAttributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
+        final StandardQueue queue = new StandardQueue(getVirtualHost(), null, queueAttributes);
+
+        setQueue(queue);
         getQueue().setDeleteOnNoConsumers(true);
 
         ServerMessage message = createMessage(25l);
@@ -75,8 +89,12 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
 
     public void testActiveConsumerCount() throws Exception
     {
-        final StandardQueue queue = new StandardQueue(UUIDGenerator.generateRandomUUID(), "testActiveConsumerCount", false,
-                                                        "testOwner", false, false, getVirtualHost(), null);
+
+        Map<String,Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ID, UUID.randomUUID());
+        queueAttributes.put(Queue.NAME, "testActiveConsumerCount");
+        queueAttributes.put(Queue.OWNER, "testOwner");
+        final StandardQueue queue = new StandardQueue(getVirtualHost(), null, queueAttributes);
 
         //verify adding an active consumer increases the count
         final MockConsumer consumer1 = new MockConsumer();
@@ -145,8 +163,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
     public void testEnqueueDequeuedEntry() throws Exception
     {
         // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new DequeuedQueue(UUIDGenerator.generateRandomUUID(), "test", false,
-                                                  "testOwner", false, false, getVirtualHost(), null);
+        SimpleAMQQueue queue = new DequeuedQueue(getVirtualHost());
         // create a consumer
         MockConsumer consumer = new MockConsumer();
 
@@ -180,9 +197,11 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
         int messageNumber = 4;
         int dequeueMessageIndex = 1;
 
+        Map<String,Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ID, UUID.randomUUID());
+        queueAttributes.put(Queue.NAME, "test");
         // create queue with overridden method deliverAsync
-        StandardQueue testQueue = new StandardQueue(UUIDGenerator.generateRandomUUID(), "test",
-                                                    false, "testOwner", false, false, getVirtualHost(), null)
+        StandardQueue testQueue = new StandardQueue(getVirtualHost(), null, queueAttributes)
         {
             @Override
             public void deliverAsync(QueueConsumer sub)
@@ -249,16 +268,19 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
     private static class DequeuedQueue extends SimpleAMQQueue<DequeuedQueueEntry, DequeuedQueue, DequeuedQueueEntryList>
     {
 
-        public DequeuedQueue(final UUID id,
-                             final String queueName,
-                             final boolean durable,
-                             final String owner,
-                             final boolean autoDelete,
-                             final boolean exclusive,
-                             final VirtualHost virtualHost,
-                             final Map<String, Object> arguments)
+        public DequeuedQueue(VirtualHost virtualHost)
         {
-            super(id, queueName, durable, owner, autoDelete, exclusive, virtualHost, new DequeuedQueueEntryListFactory(), arguments);
+            super(virtualHost, null, attributes(), new DequeuedQueueEntryListFactory());
+        }
+
+        private static Map<String,Object> attributes()
+        {
+            Map<String,Object> attributes = new HashMap<String, Object>();
+            attributes.put(Queue.ID, UUID.randomUUID());
+            attributes.put(Queue.NAME, "test");
+            attributes.put(Queue.DURABLE, false);
+            attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+            return attributes;
         }
     }
     private static class DequeuedQueueEntryListFactory implements QueueEntryListFactory<DequeuedQueueEntry, DequeuedQueue, DequeuedQueueEntryList>

@@ -99,16 +99,6 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             {
                 final AMQShortString consumerTagName;
 
-                if (queue.isExclusive() && !queue.isDurable())
-                {
-                    AMQSessionModel session = queue.getExclusiveOwningSession();
-                    if (session == null || session.getConnectionModel() != protocolConnection)
-                    {
-                        throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                          "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
-                    }
-                }
-
                 if (body.getConsumerTag() != null)
                 {
                     consumerTagName = body.getConsumerTag().intern(false);
@@ -183,6 +173,13 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                                                    "Cannot subscribe to queue "
                                                    + queue.getName()
                                                    + " permission denied");
+                }
+                catch (MessageSource.ConsumerAccessRefused consumerAccessRefused)
+                {
+                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
+                                                   "Cannot subscribe to queue "
+                                                   + queue.getName()
+                                                   + " as it already has an incompatible exclusivity policy");
                 }
 
             }

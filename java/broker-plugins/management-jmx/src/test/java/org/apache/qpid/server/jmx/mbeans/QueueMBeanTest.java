@@ -40,6 +40,7 @@ import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.jmx.mbeans.QueueMBean.GetMessageVisitor;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Statistics;
@@ -154,7 +155,7 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testIsAutoDelete() throws Exception
     {
-        when(_mockQueue.getLifetimePolicy()).thenReturn(LifetimePolicy.AUTO_DELETE);
+        when(_mockQueue.getLifetimePolicy()).thenReturn(LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
         assertTrue(_queueMBean.isAutoDelete());
     }
 
@@ -224,22 +225,31 @@ public class QueueMBeanTest extends QpidTestCase
         testSetAttribute("flowResumeCapacity", Queue.QUEUE_FLOW_RESUME_SIZE_BYTES,1048576l , 2097152l);
     }
 
+
+    /**********  Other attributes **********/
+
+
     public void testIsExclusive() throws Exception
     {
-        assertAttribute("exclusive", Boolean.TRUE, Queue.EXCLUSIVE);
+        when(_mockQueue.getAttribute(Queue.EXCLUSIVE)).thenReturn(ExclusivityPolicy.CONTAINER);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "exclusive", true);
     }
 
     public void testIsNotExclusive() throws Exception
     {
-        assertAttribute("exclusive", Boolean.FALSE, Queue.EXCLUSIVE);
+        when(_mockQueue.getAttribute(Queue.EXCLUSIVE)).thenReturn(ExclusivityPolicy.NONE);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "exclusive", false);
     }
 
     public void testSetExclusive() throws Exception
     {
-        testSetAttribute("exclusive", Queue.EXCLUSIVE, Boolean.FALSE , Boolean.TRUE);
-    }
+        when(_mockQueue.getAttribute(Queue.EXCLUSIVE)).thenReturn(ExclusivityPolicy.NONE);
 
-    /**********  Other attributes **********/
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "exclusive", Boolean.TRUE);
+
+        verify(_mockQueue).setAttribute(Queue.EXCLUSIVE, ExclusivityPolicy.NONE, ExclusivityPolicy.CONTAINER);
+
+    }
 
     public void testGetAlternateExchange()
     {

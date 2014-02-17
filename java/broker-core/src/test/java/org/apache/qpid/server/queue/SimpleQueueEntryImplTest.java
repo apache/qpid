@@ -22,8 +22,11 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
@@ -38,8 +41,10 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
     public void setUp() throws Exception
     {
         mockLogging();
-
-        StandardQueue queue = new StandardQueue(UUID.randomUUID(), "SimpleQueueEntryImplTest", false, null,false, false, mock(VirtualHost.class),null);
+        Map<String,Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ID, UUID.randomUUID());
+        queueAttributes.put(Queue.NAME, "SimpleQueueEntryImplTest");
+        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
 
         queueEntryList = queue.getEntries();
 

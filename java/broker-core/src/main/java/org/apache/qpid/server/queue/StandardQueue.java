@@ -20,22 +20,16 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class StandardQueue extends SimpleAMQQueue<StandardQueueEntry,StandardQueue,StandardQueueEntryList>
 {
-    public StandardQueue(final UUID id,
-                         final String name,
-                         final boolean durable,
-                         final String owner,
-                         final boolean autoDelete,
-                         final boolean exclusive,
-                         final VirtualHost virtualHost,
-                         final Map<String, Object> arguments)
+    public StandardQueue(final VirtualHost virtualHost,
+                         final AMQSessionModel creatingSession, final Map<String, Object> arguments)
     {
-        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, new StandardQueueEntryList.Factory(), arguments);
+        super(virtualHost, creatingSession, arguments, new StandardQueueEntryList.Factory());
     }
 }

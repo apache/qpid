@@ -23,7 +23,6 @@ package org.apache.qpid.server.model.adapter;
 import java.io.File;
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,18 +57,16 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueType;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
@@ -356,7 +353,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                     name,
                     type,
                     durable,
-                    lifetime == LifetimePolicy.AUTO_DELETE,
+                    lifetime != null && lifetime != LifetimePolicy.PERMANENT,
                     alternateExchange);
             synchronized (_exchangeAdapters)
             {
@@ -389,7 +386,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     public Queue createQueue(Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        attributes = new HashMap<String, Object>(attributes);
+        checkVHostStateIsActive();
 
         if (attributes.containsKey(Queue.QUEUE_TYPE))
         {
@@ -405,7 +402,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             }
             if (queueType == QueueType.LVQ && attributes.get(Queue.LVQ_KEY) == null)
             {
-                attributes.put(Queue.LVQ_KEY, AMQQueueFactory.QPID_DEFAULT_LVQ_KEY);
+                attributes.put(Queue.LVQ_KEY, ConflationQueue.DEFAULT_LVQ_KEY);
             }
             else if (queueType == QueueType.PRIORITY && attributes.get(Queue.PRIORITIES) == null)
             {
@@ -417,51 +414,12 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
             }
         }
 
-        String         name     = MapValueConverter.getStringAttribute(Queue.NAME, attributes, null);
-        State          state    = MapValueConverter.getEnumAttribute(State.class, Queue.STATE, attributes, State.ACTIVE);
-        boolean        durable  = MapValueConverter.getBooleanAttribute(Queue.DURABLE, attributes, false);
-        LifetimePolicy lifetime = MapValueConverter.getEnumAttribute(LifetimePolicy.class, Queue.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
-        long           ttl      = MapValueConverter.getLongAttribute(Queue.TIME_TO_LIVE, attributes, 0l);
-        boolean        exclusive= MapValueConverter.getBooleanAttribute(Queue.EXCLUSIVE, attributes, false);
 
-        attributes.remove(Queue.NAME);
-        attributes.remove(Queue.STATE);
-        attributes.remove(Queue.DURABLE);
-        attributes.remove(Queue.LIFETIME_POLICY);
-        attributes.remove(Queue.TIME_TO_LIVE);
-
-        return createQueue(name, state, durable, exclusive, lifetime, ttl, attributes);
-    }
-
-    public Queue createQueue(final String name,
-                             final State initialState,
-                             final boolean durable,
-                             boolean exclusive,
-                             final LifetimePolicy lifetime,
-                             final long ttl,
-                             final Map<String, Object> attributes)
-            throws AccessControlException, IllegalArgumentException
-    {
-        checkVHostStateIsActive();
-
-        String owner = null;
-        if(exclusive)
-        {
-            Principal authenticatedPrincipal = AuthenticatedPrincipal.getOptionalAuthenticatedPrincipalFromSubject(SecurityManager.getThreadSubject());
-            if(authenticatedPrincipal != null)
-            {
-                owner = authenticatedPrincipal.getName();
-            }
-        }
-
-        final boolean autoDelete = lifetime == LifetimePolicy.AUTO_DELETE;
 
         try
         {
 
-            AMQQueue queue =
-                    _virtualHost.createQueue(UUIDGenerator.generateQueueUUID(name, _virtualHost.getName()), name,
-                            durable, owner, autoDelete, exclusive, autoDelete && exclusive, attributes);
+            AMQQueue queue = _virtualHost.createQueue(null, attributes);
 
             synchronized (_queueAdapters)
             {
@@ -471,14 +429,14 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
         catch(QueueExistsException qe)
         {
-            throw new IllegalArgumentException("Queue with name "+name+" already exists");
+            throw new IllegalArgumentException("Queue with name "+MapValueConverter.getStringAttribute(Queue.NAME,attributes)+" already exists");
         }
         catch (QpidSecurityException e)
         {
             throw new AccessControlException(e.toString());
         }
-
     }
+
 
     public String getName()
     {

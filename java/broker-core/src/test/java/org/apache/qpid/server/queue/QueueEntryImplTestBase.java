@@ -27,11 +27,13 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
@@ -199,8 +201,10 @@ public abstract class QueueEntryImplTestBase extends TestCase
     {
         int numberOfEntries = 5;
         QueueEntryImpl[] entries = new QueueEntryImpl[numberOfEntries];
-        StandardQueue queue = new StandardQueue(UUID.randomUUID(), getName(), false, null, false, false,
-                                                mock(VirtualHost.class), Collections.<String,Object>emptyMap());
+        Map<String,Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ID, UUID.randomUUID());
+        queueAttributes.put(Queue.NAME, getName());
+        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
         OrderedQueueEntryList queueEntryList = queue.getEntries();
 
         // create test entries

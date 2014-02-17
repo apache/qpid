@@ -22,25 +22,15 @@ package org.apache.qpid.server.queue;
 
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.QpidSecurityException;
 
 public interface QueueFactory
 {
-    AMQQueue createQueue(UUID id,
-                         String queueName,
-                         boolean durable,
-                         String owner,
-                         boolean autoDelete,
-                         boolean exclusive,
-                         boolean deleteOnNoConsumer,
+    AMQQueue createQueue(final AMQSessionModel creatingSession,
                          Map<String, Object> arguments) throws QpidSecurityException;
 
-    AMQQueue restoreQueue(UUID id,
-                          String queueName,
-                          String owner,
-                          boolean autoDelete,
-                          boolean exclusive,
-                          boolean deleteOnNoConsumer,
-                          Map<String, Object> arguments) throws QpidSecurityException;
+    AMQQueue restoreQueue(Map<String, Object> arguments) throws QpidSecurityException;
 
 }

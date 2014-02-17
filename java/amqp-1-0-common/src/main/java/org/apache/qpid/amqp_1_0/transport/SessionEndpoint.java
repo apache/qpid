@@ -153,19 +153,47 @@ public class SessionEndpoint
 
     public void end()
     {
-        end(null);
+        end(new End());
     }
 
-    public void end(final End end)
+    public void end(End end)
     {
         synchronized(getLock())
         {
             switch(_state)
             {
                 case BEGIN_SENT:
-                    _connection.sendEnd(getSendingChannel(), new End(), false);
+                    _connection.sendEnd(getSendingChannel(), end, false);
                     _state = SessionState.END_PIPE;
                     break;
+                case ACTIVE:
+                    detachLinks();
+                    short sendChannel = getSendingChannel();
+                    _connection.sendEnd(sendChannel, end, true);
+                    _state = SessionState.END_SENT;
+                    break;
+                default:
+                    sendChannel = getSendingChannel();
+                    End reply = new End();
+                    Error error = new Error();
+                    error.setCondition(AmqpError.ILLEGAL_STATE);
+                    error.setDescription("END called on Session which has not been opened");
+                    reply.setError(error);
+                    _connection.sendEnd(sendChannel, reply, true);
+                    break;
+
+
+            }
+            getLock().notifyAll();
+        }
+    }
+
+    public void receiveEnd(final End end)
+    {
+        synchronized(getLock())
+        {
+            switch(_state)
+            {
                 case END_SENT:
                     _state = SessionState.ENDED;
                     break;
@@ -174,7 +202,7 @@ public class SessionEndpoint
                     _sessionEventListener.remoteEnd(end);
                     short sendChannel = getSendingChannel();
                     _connection.sendEnd(sendChannel, new End(), true);
-                    _state = end == null ? SessionState.END_SENT : SessionState.ENDED;
+                    _state = SessionState.ENDED;
                     break;
                 default:
                     sendChannel = getSendingChannel();

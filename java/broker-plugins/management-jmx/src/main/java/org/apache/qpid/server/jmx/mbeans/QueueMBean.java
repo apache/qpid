@@ -50,6 +50,7 @@ import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
@@ -194,7 +195,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public boolean isAutoDelete()
     {
-        return _queue.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE;
+        return _queue.getLifetimePolicy() != LifetimePolicy.PERMANENT;
     }
 
     public Long getMaximumMessageAge()
@@ -264,12 +265,29 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public boolean isExclusive()
     {
-        return (Boolean) _queue.getAttribute(Queue.EXCLUSIVE);
+        final Object attribute = _queue.getAttribute(Queue.EXCLUSIVE);
+        return attribute != null && attribute != ExclusivityPolicy.NONE;
     }
 
     public void setExclusive(boolean exclusive)
     {
-        _queue.setAttribute(Queue.EXCLUSIVE, isExclusive(), exclusive);
+        if(exclusive)
+        {
+            Object currentValue = _queue.getAttribute(Queue.EXCLUSIVE);
+            if(currentValue == null || currentValue == ExclusivityPolicy.NONE)
+            {
+                _queue.setAttribute(Queue.EXCLUSIVE, currentValue, ExclusivityPolicy.CONTAINER);
+            }
+        }
+        else
+        {
+            Object currentValue = _queue.getAttribute(Queue.EXCLUSIVE);
+            if(currentValue != null && currentValue != ExclusivityPolicy.NONE)
+            {
+                _queue.setAttribute(Queue.EXCLUSIVE, currentValue, ExclusivityPolicy.NONE);
+            }
+        }
+
     }
 
     public void setAlternateExchange(String exchangeName) throws OperationsException

@@ -27,10 +27,13 @@ import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -38,8 +41,11 @@ import java.util.List;
 import java.util.Set;
 
 public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, C extends Consumer>
-        extends Comparable<Q>, ExchangeReferrer, BaseQueue<C>, MessageSource<C,Q>, CapacityChecker, MessageDestination
+        extends Comparable<Q>, ExchangeReferrer, BaseQueue<C>, MessageSource<C,Q>, CapacityChecker, MessageDestination,
+                Deletable<Q>
 {
+
+    void setExclusivityPolicy(ExclusivityPolicy desiredPolicy) throws ExistingConsumerPreventsExclusive;
 
     public interface NotificationListener
     {
@@ -66,9 +72,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     long getTotalEnqueueCount();
 
-    void setNoLocal(boolean b);
-
-    boolean isAutoDelete();
+    LifetimePolicy getLifetimePolicy();
 
     String getOwner();
 
@@ -103,11 +107,6 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
     void decrementUnackedMsgCount(E queueEntry);
 
     boolean resend(final E entry, final C consumer);
-
-    void addQueueDeleteTask(Action<AMQQueue> task);
-    void removeQueueDeleteTask(Action<AMQQueue> task);
-
-
 
     List<E> getMessagesOnTheQueue();
 
@@ -188,10 +187,6 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     Collection<String> getAvailableAttributes();
     Object getAttribute(String attrName);
-
-    void configure(QueueConfiguration config);
-
-    void setExclusive(boolean exclusive);
 
     /**
      * Gets the maximum delivery count.   If a message on this queue

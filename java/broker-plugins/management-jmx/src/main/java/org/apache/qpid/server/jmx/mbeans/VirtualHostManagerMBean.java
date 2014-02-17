@@ -181,8 +181,13 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
             throws IOException, JMException
     {
         final Map<String, Object> createArgs = processNewQueueArguments(queueName, owner, originalArguments);
-        getConfiguredObject().createQueue(queueName, State.ACTIVE, durable, false, LifetimePolicy.PERMANENT, 0l,
-                QueueArgumentsConverter.convertWireArgsToModel(createArgs));
+
+        final Map<String, Object> attributes = QueueArgumentsConverter.convertWireArgsToModel(createArgs);
+        attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.DURABLE, durable);
+        attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+
+        getConfiguredObject().createQueue(attributes);
     }
 
 

@@ -321,14 +321,7 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         MessageConsumer consumer;
         if(durableSub)
         {
-            if (isBroker010())
-            {
-                consumer = clientSession.createConsumer(clientSession.createQueue("clientid:" +getName() + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX));
-            }
-            else
-            {
-                consumer = clientSession.createDurableSubscriber(clientSession.createTopic(destName), getName() + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
-            }
+            consumer = clientSession.createConsumer(clientSession.createQueue("clientid:" +getName() + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX));
         }
         else
         {

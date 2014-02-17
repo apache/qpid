@@ -36,7 +36,8 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
     <T extends ConsumerTarget> C addConsumer(T target, FilterManager filters,
                          Class<? extends ServerMessage> messageClass,
                          String consumerName, EnumSet<Consumer.Option> options)
-            throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive, QpidSecurityException;
+            throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive, QpidSecurityException,
+                   ConsumerAccessRefused;
 
     Collection<C> getConsumers();
 
@@ -44,15 +45,9 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
 
     void removeConsumerRegistrationListener(ConsumerRegistrationListener<S> listener);
 
-    AuthorizationHolder getAuthorizationHolder();
-
-    void setAuthorizationHolder(AuthorizationHolder principalHolder);
-
-    void setExclusiveOwningSession(AMQSessionModel owner);
-
-    AMQSessionModel getExclusiveOwningSession();
-
     boolean isExclusive();
+
+    boolean verifySessionAccess(AMQSessionModel<?,?> session);
 
     interface ConsumerRegistrationListener<Q extends MessageSource<? extends Consumer,?>>
     {
@@ -76,7 +71,6 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
 
         public ExistingExclusiveConsumer()
         {
-            super("");
         }
     }
 
@@ -95,7 +89,15 @@ public interface MessageSource<C extends Consumer, S extends MessageSource<C,S>>
     {
         public ExistingConsumerPreventsExclusive()
         {
-            super("");
         }
     }
+
+    static final class ConsumerAccessRefused extends Exception
+    {
+        public ConsumerAccessRefused()
+        {
+        }
+    }
+
+
 }

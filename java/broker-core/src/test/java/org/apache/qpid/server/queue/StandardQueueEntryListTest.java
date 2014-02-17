@@ -22,9 +22,10 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,8 +46,11 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
     protected void setUp()
     {
         oldScavengeValue = System.setProperty(SCAVENGE_PROP, "9");
-        _testQueue = new StandardQueue(UUID.randomUUID(),getName(),false,null,false,false,mock(VirtualHost.class),
-                                       Collections.<String,Object>emptyMap());
+
+        Map<String,Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ID, UUID.randomUUID());
+        queueAttributes.put(Queue.NAME, getName());
+        _testQueue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
 
         _sqel = _testQueue.getEntries();
         for(int i = 1; i <= 100; i++)
@@ -86,9 +90,10 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
     {
         if(newList)
         {
-            StandardQueue queue =
-                    new StandardQueue(UUID.randomUUID(), getName(), false, null, false, false, mock(VirtualHost.class),
-                                      Collections.<String, Object>emptyMap());
+            Map<String,Object> queueAttributes = new HashMap<String, Object>();
+            queueAttributes.put(Queue.ID, UUID.randomUUID());
+            queueAttributes.put(Queue.NAME, getName());
+            StandardQueue queue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
 
             return queue.getEntries();
         }

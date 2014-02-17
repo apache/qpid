@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.configuration;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
@@ -43,7 +45,6 @@ public class QueueConfiguration extends AbstractConfiguration
 
         CompositeConfiguration mungedConf = new CompositeConfiguration();
         mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues.queue." + escapeTagName(name)));
-        mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues"));
 
         setConfiguration("virtualhosts.virtualhost.queues.queue", mungedConf);
     }
@@ -85,19 +86,33 @@ public class QueueConfiguration extends AbstractConfiguration
         return _vHostConfig;
     }
 
+    private boolean getDefaultedBoolean(String attribute)
+    {
+        final Configuration config = _vHostConfig.getConfig();
+        if(config.containsKey("queues."+attribute))
+        {
+            final boolean defaultValue = config.getBoolean("queues." + attribute);
+            return getBooleanValue(attribute, defaultValue);
+        }
+        else
+        {
+            return getBooleanValue(attribute);
+        }
+    }
+
     public boolean getDurable()
     {
-        return getBooleanValue("durable");
+        return getDefaultedBoolean("boolean");
     }
 
     public boolean getExclusive()
     {
-        return getBooleanValue("exclusive");
+        return getDefaultedBoolean("exclusive");
     }
 
     public boolean getAutoDelete()
     {
-        return getBooleanValue("autodelete");
+        return getDefaultedBoolean("autodelete");
     }
 
     public String getOwner()
@@ -107,17 +122,41 @@ public class QueueConfiguration extends AbstractConfiguration
 
     public boolean getPriority()
     {
-        return getBooleanValue("priority");
+        return getDefaultedBoolean("priority");
     }
 
     public int getPriorities()
     {
-        return getIntValue("priorities", -1);
+        final Configuration config = _vHostConfig.getConfig();
+
+        int defaultValue;
+        if(config.containsKey("queues.priorities"))
+        {
+            defaultValue = config.getInt("queues.priorities");
+        }
+        else
+        {
+            defaultValue = -1;
+        }
+        return getIntValue("priorities", defaultValue);
     }
 
     public String getExchange()
     {
-        return getStringValue("exchange", ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
+        final Configuration config = _vHostConfig.getConfig();
+
+        String defaultValue;
+
+        if(config.containsKey("queues.exchange"))
+        {
+            defaultValue = config.getString("queues.exchange");
+        }
+        else
+        {
+            defaultValue = "";
+        }
+
+        return getStringValue("exchange", defaultValue);
     }
 
     public List getRoutingKeys()
@@ -137,37 +176,37 @@ public class QueueConfiguration extends AbstractConfiguration
 
     public int getMaximumMessageAge()
     {
-        return getIntValue("maximumMessageAge", _vHostConfig.getMaximumMessageAge());
+        return getIntValue("maximumMessageAge");
     }
 
     public long getMaximumQueueDepth()
     {
-        return getLongValue("maximumQueueDepth", _vHostConfig.getMaximumQueueDepth());
+        return getLongValue("maximumQueueDepth");
     }
 
     public long getMaximumMessageSize()
     {
-        return getLongValue("maximumMessageSize", _vHostConfig.getMaximumMessageSize());
+        return getLongValue("maximumMessageSize");
     }
 
     public long getMaximumMessageCount()
     {
-        return getLongValue("maximumMessageCount", _vHostConfig.getMaximumMessageCount());
+        return getLongValue("maximumMessageCount");
     }
 
     public long getMinimumAlertRepeatGap()
     {
-        return getLongValue("minimumAlertRepeatGap", _vHostConfig.getMinimumAlertRepeatGap());
+        return getLongValue("minimumAlertRepeatGap");
     }
 
     public long getCapacity()
     {
-        return getLongValue("capacity", _vHostConfig.getCapacity());
+        return getLongValue("capacity");
     }
 
     public long getFlowResumeCapacity()
     {
-        return getLongValue("flowResumeCapacity", _vHostConfig.getFlowResumeCapacity());
+        return getLongValue("flowResumeCapacity");
     }
 
     public boolean isLVQ()

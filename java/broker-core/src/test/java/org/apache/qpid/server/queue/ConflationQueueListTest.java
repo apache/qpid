@@ -26,9 +26,11 @@ import junit.framework.TestCase;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class ConflationQueueListTest extends TestCase
@@ -46,8 +48,11 @@ public class ConflationQueueListTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _queue = new ConflationQueue(UUID.randomUUID(), getName(), false, null, false, false, mock(VirtualHost.class),
-                                     Collections.<String,Object>emptyMap(),CONFLATION_KEY);
+        Map<String,Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(Queue.ID, UUID.randomUUID());
+        queueAttributes.put(Queue.NAME, getName());
+        queueAttributes.put(Queue.LVQ_KEY, CONFLATION_KEY);
+        _queue = new ConflationQueue(mock(VirtualHost.class), null, queueAttributes);
         _list = _queue.getEntries();
     }
 

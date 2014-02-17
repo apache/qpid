@@ -109,7 +109,7 @@ public class QueueArgumentsConverter
             }
             if(wireArguments.containsKey(QPID_LAST_VALUE_QUEUE) && !wireArguments.containsKey(QPID_LAST_VALUE_QUEUE_KEY))
             {
-                modelArguments.put(Queue.LVQ_KEY, AMQQueueFactory.QPID_DEFAULT_LVQ_KEY);
+                modelArguments.put(Queue.LVQ_KEY, ConflationQueue.DEFAULT_LVQ_KEY);
             }
             if(wireArguments.containsKey(QPID_SHARED_MSG_GROUP))
             {

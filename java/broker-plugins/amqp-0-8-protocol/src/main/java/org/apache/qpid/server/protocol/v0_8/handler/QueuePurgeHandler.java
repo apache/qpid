@@ -96,9 +96,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         }
         else
         {
-                AMQSessionModel session = queue.getExclusiveOwningSession();
-
-                if (queue.isExclusive() && (session == null || session.getConnectionModel() != protocolConnection))
+                if (!queue.verifySessionAccess(channel))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Queue is exclusive, but not created on this Connection.");

@@ -130,9 +130,10 @@ public class QueueManagementTest extends QpidBrokerTestCase
 
     public void testExclusiveQueueHasJmsClientIdAsOwner() throws Exception
     {
-        Queue tmpQueue = _session.createTemporaryQueue();
+        final String subName = "testOwner";
+        _session.createDurableSubscriber(getTestTopic(), subName);
 
-        final String queueName = tmpQueue.getQueueName();
+        final String queueName = _connection.getClientID() + ":" + subName;
 
         final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
         assertNotNull(_connection.getClientID());

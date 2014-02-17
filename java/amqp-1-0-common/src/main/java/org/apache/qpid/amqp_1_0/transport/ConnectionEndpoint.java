@@ -563,7 +563,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         {
             _receivingSessions[channel] = null;
 
-            endpoint.end(end);
+            endpoint.receiveEnd(end);
         }
         else
         {
