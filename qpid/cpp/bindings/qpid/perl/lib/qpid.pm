@@ -19,4 +19,6 @@
 
 use qpid_messaging;
 
+package qpid;
+
 1;
