@@ -52,9 +52,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
         void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg);
     }
 
-    boolean getDeleteOnNoConsumers();
-
-    void setDeleteOnNoConsumers(boolean b);
+    boolean isExclusive();
 
     void addBinding(Binding binding);
 
@@ -165,8 +163,6 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
     void setFlowResumeCapacity(long flowResumeCapacity);
 
     boolean isOverfull();
-
-    void deleteMessageFromTop();
 
     long clearQueue() throws QpidSecurityException;
 

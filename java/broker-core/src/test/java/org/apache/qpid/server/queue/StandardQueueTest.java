@@ -73,7 +73,6 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
         final StandardQueue queue = new StandardQueue(getVirtualHost(), null, queueAttributes);
 
         setQueue(queue);
-        getQueue().setDeleteOnNoConsumers(true);
 
         ServerMessage message = createMessage(25l);
         QueueConsumer consumer =
