@@ -20,23 +20,31 @@
 */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class PriorityQueue extends OutOfOrderQueue<PriorityQueueList.PriorityQueueEntry, PriorityQueue, PriorityQueueList>
 {
-    protected PriorityQueue(UUID id,
-                            final String name,
-                            final boolean durable,
-                            final String owner,
-                            final boolean autoDelete,
-                            boolean exclusive,
-                            final VirtualHost virtualHost,
-                            Map<String, Object> arguments, int priorities)
+
+    public static final int DEFAULT_PRIORITY_LEVELS = 10;
+
+    protected PriorityQueue(VirtualHost virtualHost,
+                            final AMQSessionModel creatingSession,
+                            Map<String, Object> attributes)
     {
-        super(id, name, durable, owner, autoDelete, exclusive, virtualHost, new PriorityQueueList.Factory(priorities), arguments);
+        super(virtualHost, creatingSession, attributes, entryList(attributes));
+    }
+
+    private static PriorityQueueList.Factory entryList(final Map<String, Object> attributes)
+    {
+        final Integer priorities = MapValueConverter.getIntegerAttribute(Queue.PRIORITIES, attributes,
+                                                                         DEFAULT_PRIORITY_LEVELS);
+
+        return new PriorityQueueList.Factory(priorities);
     }
 
     public int getPriorities()

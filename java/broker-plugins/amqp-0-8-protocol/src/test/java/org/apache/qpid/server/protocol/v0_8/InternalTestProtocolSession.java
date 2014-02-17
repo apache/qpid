@@ -223,7 +223,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         //  Then the AMQMinaProtocolSession can join on the returning future without a NPE.
     }
 
-    public void closeSession(AMQSessionModel session, AMQConstant cause, String message)
+    public void closeSession(AMQChannel session, AMQConstant cause, String message)
     {
         super.closeSession(session, cause, message);
 

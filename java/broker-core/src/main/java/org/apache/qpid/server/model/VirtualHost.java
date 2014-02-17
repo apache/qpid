@@ -160,7 +160,7 @@ public interface VirtualHost extends ConfiguredObject
                             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
                             CONFIG_PATH));
 
-    int CURRENT_CONFIG_VERSION = 3;
+    int CURRENT_CONFIG_VERSION = 4;
 
     //children
     Collection<VirtualHostAlias> getAliases();
@@ -172,9 +172,8 @@ public interface VirtualHost extends ConfiguredObject
                             LifetimePolicy lifetime, long ttl, String type, Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException;
 
-    Queue createQueue(String name, State initialState, boolean durable,
-                      boolean exclusive, LifetimePolicy lifetime, long ttl, Map<String, Object> attributes)
-                    throws AccessControlException, IllegalArgumentException;
+    Queue createQueue(Map<String, Object> attributes)
+            throws AccessControlException, IllegalArgumentException;
 
     Collection<String> getExchangeTypes();
 

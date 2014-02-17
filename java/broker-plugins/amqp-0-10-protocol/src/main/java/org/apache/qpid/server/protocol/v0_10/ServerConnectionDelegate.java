@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -310,14 +311,18 @@ public class ServerConnectionDelegate extends ServerDelegate
     private boolean isSessionNameUnique(final byte[] name, final Connection conn)
     {
         final ServerConnection sconn = (ServerConnection) conn;
-        final String userId = sconn.getUserName();
+        final Principal authorizedPrincipal = sconn.getAuthorizedPrincipal();
+        final String userId = authorizedPrincipal == null ? "" : authorizedPrincipal.getName();
 
         final Iterator<AMQConnectionModel> connections =
                         ((ServerConnection)conn).getVirtualHost().getConnectionRegistry().getConnections().iterator();
         while(connections.hasNext())
         {
-            final AMQConnectionModel amqConnectionModel = (AMQConnectionModel) connections.next();
-            if (userId.equals(amqConnectionModel.getUserName()) && !amqConnectionModel.isSessionNameUnique(name))
+            final AMQConnectionModel amqConnectionModel = connections.next();
+            final String userName = amqConnectionModel.getAuthorizedPrincipal() == null
+                    ? ""
+                    : amqConnectionModel.getAuthorizedPrincipal().getName();
+            if (userId.equals(userName) && !amqConnectionModel.isSessionNameUnique(name))
             {
                 return false;
             }

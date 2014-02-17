@@ -21,10 +21,14 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SimpleAMQQueueThreadPoolTest extends QpidTestCase
 {
@@ -50,8 +54,10 @@ public class SimpleAMQQueueThreadPoolTest extends QpidTestCase
 
         try
         {
-            SimpleAMQQueue queue = (SimpleAMQQueue)
-                    test.createQueue(UUIDGenerator.generateRandomUUID(), "test", false, "owner", false, false, false, null);
+            Map<String,Object> attributes = new HashMap<String, Object>();
+            attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
+            attributes.put(Queue.NAME, "test");
+            AMQQueue queue = test.createQueue(null, attributes);
 
             assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
 

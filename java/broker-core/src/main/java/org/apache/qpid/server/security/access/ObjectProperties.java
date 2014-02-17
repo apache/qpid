@@ -27,6 +27,7 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.queue.AMQQueue;
 
 /**
@@ -139,8 +140,8 @@ public class ObjectProperties
     {
         setName(queue.getName());
 
-        put(Property.AUTO_DELETE, queue.isAutoDelete());
-        put(Property.TEMPORARY, queue.isAutoDelete());
+        put(Property.AUTO_DELETE, queue.getLifetimePolicy() != LifetimePolicy.PERMANENT);
+        put(Property.TEMPORARY, queue.getLifetimePolicy() != LifetimePolicy.PERMANENT);
         put(Property.DURABLE, queue.isDurable());
         put(Property.EXCLUSIVE, queue.isExclusive());
         if (queue.getAlternateExchange() != null)
@@ -151,10 +152,7 @@ public class ObjectProperties
         {
             put(Property.OWNER, queue.getOwner());
         }
-        else if (queue.getAuthorizationHolder() != null)
-        {
-            put(Property.OWNER, queue.getAuthorizationHolder().getAuthorizedPrincipal().getName());
-        }
+
     }
 
     public ObjectProperties(Exchange exch, AMQQueue queue, String routingKey)

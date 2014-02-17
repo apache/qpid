@@ -33,6 +33,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.QpidSecurityException;
@@ -59,14 +60,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     int removeQueue(AMQQueue queue) throws QpidSecurityException;
 
-    AMQQueue createQueue(UUID id,
-                         String queueName,
-                         boolean durable,
-                         String owner,
-                         boolean autoDelete,
-                         boolean exclusive,
-                         boolean deleteOnNoConsumer,
-                         Map<String, Object> arguments) throws QueueExistsException, QpidSecurityException;
+    AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> arguments) throws QueueExistsException, QpidSecurityException;
 
 
     Exchange createExchange(UUID id,
@@ -130,4 +124,20 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     public void block();
 
     public void unblock();
+
+    long getDefaultAlertThresholdMessageAge();
+
+    long getDefaultAlertThresholdMessageSize();
+
+    long getDefaultAlertThresholdQueueDepthMessages();
+
+    long getDefaultAlertThresholdQueueDepthBytes();
+
+    long getDefaultAlertRepeatGap();
+
+    long getDefaultQueueFlowControlSizeBytes();
+
+    long getDefaultQueueFlowResumeSizeBytes();
+
+    int getDefaultMaximumDeliveryAttempts();
 }

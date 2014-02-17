@@ -69,7 +69,7 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
             String exchangeType = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.TYPE);
             String lifeTimePolicy = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY);
             boolean autoDelete = lifeTimePolicy == null
-                                 || LifetimePolicy.valueOf(lifeTimePolicy) == LifetimePolicy.AUTO_DELETE;
+                                 || LifetimePolicy.valueOf(lifeTimePolicy) != LifetimePolicy.PERMANENT;
             try
             {
                 _exchange = _exchangeRegistry.getExchange(id);

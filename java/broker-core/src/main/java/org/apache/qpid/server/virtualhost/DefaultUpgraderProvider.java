@@ -42,6 +42,7 @@ import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
 
 public class DefaultUpgraderProvider implements UpgraderProvider
 {
+    public static final String EXCLUSIVE = "exclusive";
     private final ExchangeRegistry _exchangeRegistry;
     private final VirtualHost _virtualHost;
 
@@ -63,7 +64,8 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 currentUpgrader = addUpgrader(currentUpgrader, new Version1Upgrader());
             case 2:
                 currentUpgrader = addUpgrader(currentUpgrader, new Version2Upgrader());
-
+            case 3:
+                currentUpgrader = addUpgrader(currentUpgrader, new Version3Upgrader());
             case CURRENT_CONFIG_VERSION:
                 currentUpgrader = addUpgrader(currentUpgrader, new NullUpgrader(recoverer));
                 break;
@@ -262,5 +264,50 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 getNextUpgrader().complete();
             }
         }
+
+    /*
+     * Convert the storage of queue attribute exclusive to change exclusive from a boolean to an enum
+     * where exclusive was false it will now be "NONE", and where true it will now be "CONTAINER"
+     * ensure OWNER is null unless the exclusivity policy is CONTAINER
+     */
+    private class Version3Upgrader extends NonNullUpgrader
+    {
+
+        @Override
+        public void configuredObject(UUID id, String type, Map<String, Object> attributes)
+        {
+            if(Queue.class.getSimpleName().equals(type))
+            {
+                Map<String, Object> newAttributes = new LinkedHashMap<String, Object>(attributes);
+                if(attributes.get(EXCLUSIVE) instanceof Boolean)
+                {
+                    boolean isExclusive = (Boolean) attributes.get(EXCLUSIVE);
+                    newAttributes.put(EXCLUSIVE, isExclusive ? "CONTAINER" : "NONE");
+                    if(!isExclusive && attributes.containsKey("owner"))
+                    {
+                        newAttributes.remove("owner");
+                    }
+                }
+                else
+                {
+                    newAttributes.remove("owner");
+                }
+                if(!attributes.containsKey("durable"))
+                {
+                    newAttributes.put("durable","true");
+                }
+                attributes = newAttributes;
+                getUpdateMap().put(id, new ConfiguredObjectRecord(id,type,attributes));
+            }
+
+            getNextUpgrader().configuredObject(id,type,attributes);
+        }
+
+        @Override
+        public void complete()
+        {
+            getNextUpgrader().complete();
+        }
+    }
 
 }

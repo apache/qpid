@@ -18,14 +18,10 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.server.util;
 
-public enum LifetimePolicy
+public interface Deletable<T extends Deletable>
 {
-    PERMANENT,
-    DELETE_ON_CONNECTION_CLOSE,
-    DELETE_ON_SESSION_END,
-    DELETE_ON_NO_OUTBOUND_LINKS,
-    DELETE_ON_NO_LINKS,
-    IN_USE
+    void addDeleteTask(Action<? super T> task);
+    void removeDeleteTask(Action<? super T> task);
 }

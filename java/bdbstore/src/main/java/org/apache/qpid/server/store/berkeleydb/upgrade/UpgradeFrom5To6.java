@@ -568,7 +568,7 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Exchange.NAME, exchangeName);
         attributesMap.put(Exchange.TYPE, exchangeType);
-        attributesMap.put(Exchange.LIFETIME_POLICY, autoDelete ? LifetimePolicy.AUTO_DELETE.name()
+        attributesMap.put(Exchange.LIFETIME_POLICY, autoDelete ? "AUTO_DELETE"
                 : LifetimePolicy.PERMANENT.name());
         String json = _serializer.serialize(attributesMap);
         UpgradeConfiguredObjectRecord configuredObject = new UpgradeConfiguredObjectRecord(Exchange.class.getName(), json);

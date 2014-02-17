@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -191,7 +192,8 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         }
         else if(name.equals(PRINCIPAL))
         {
-            return _connection.getPrincipalAsString();
+            final Principal authorizedPrincipal = _connection.getAuthorizedPrincipal();
+            return authorizedPrincipal == null ? null : authorizedPrincipal.getName();
         }
         else if(name.equals(PROPERTIES))
         {

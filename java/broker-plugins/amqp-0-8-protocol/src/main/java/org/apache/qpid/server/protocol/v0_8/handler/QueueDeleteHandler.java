@@ -105,8 +105,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
             }
             else
             {
-                AMQSessionModel session = queue.getExclusiveOwningSession();
-                if (queue.isExclusive() && !queue.isDurable() && (session == null || session.getConnectionModel() != protocolConnection))
+                if (!queue.verifySessionAccess(channel))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");

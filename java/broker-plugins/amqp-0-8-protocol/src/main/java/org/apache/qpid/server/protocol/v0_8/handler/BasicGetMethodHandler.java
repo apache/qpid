@@ -98,15 +98,6 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             }
             else
             {
-                if (queue.isExclusive())
-                {
-                    AMQSessionModel session = queue.getExclusiveOwningSession();
-                    if (session == null || session.getConnectionModel() != protocolConnection)
-                    {
-                        throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                          "Queue is exclusive, but not created on this Connection.");
-                    }
-                }
 
                 try
                 {
@@ -136,6 +127,11 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                                                       "The GET request has been evaluated as an exclusive consumer, " +
                                                       "this is likely due to a programming error in the Qpid broker");
                 }
+                catch (MessageSource.ConsumerAccessRefused consumerAccessRefused)
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                      "Queue has an incompatible exclusivit policy");
+                }
             }
         }
     }
@@ -145,7 +141,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                                      final AMQChannel channel,
                                      final boolean acks)
             throws AMQException, QpidSecurityException, MessageSource.ExistingConsumerPreventsExclusive,
-                   MessageSource.ExistingExclusiveConsumer
+                   MessageSource.ExistingExclusiveConsumer, MessageSource.ConsumerAccessRefused
     {
 
         final FlowCreditManager singleMessageCredit = new MessageOnlyCreditManager(1L);

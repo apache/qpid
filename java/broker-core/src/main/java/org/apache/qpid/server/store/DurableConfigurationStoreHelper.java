@@ -42,17 +42,11 @@ public class DurableConfigurationStoreHelper
     private static final String BINDING = Binding.class.getSimpleName();
     private static final String EXCHANGE = Exchange.class.getSimpleName();
     private static final String QUEUE = Queue.class.getSimpleName();
-    private static final Set<String> QUEUE_ARGUMENTS_EXCLUDES = new HashSet<String>(Arrays.asList(Queue.NAME,
-                                                                                                  Queue.OWNER,
-                                                                                                  Queue.EXCLUSIVE,
-                                                                                                  Queue.ALTERNATE_EXCHANGE));
+    private static final Set<String> QUEUE_ARGUMENTS_EXCLUDES = new HashSet<String>(Arrays.asList(Queue.ALTERNATE_EXCHANGE));
 
     public static void updateQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue)
     {
         Map<String, Object> attributesMap = new LinkedHashMap<String, Object>();
-        attributesMap.put(Queue.NAME, queue.getName());
-        attributesMap.put(Queue.OWNER, queue.getOwner());
-        attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
 
         if (queue.getAlternateExchange() != null)
         {
@@ -75,9 +69,6 @@ public class DurableConfigurationStoreHelper
     public static void createQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue)
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
-        attributesMap.put(Queue.NAME, queue.getName());
-        attributesMap.put(Queue.OWNER, queue.getOwner());
-        attributesMap.put(Queue.EXCLUSIVE, queue.isExclusive());
         if (queue.getAlternateExchange() != null)
         {
             attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
@@ -103,7 +94,7 @@ public class DurableConfigurationStoreHelper
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Exchange.NAME, exchange.getName());
         attributesMap.put(Exchange.TYPE, exchange.getTypeName());
-        attributesMap.put(Exchange.LIFETIME_POLICY, exchange.isAutoDelete() ? LifetimePolicy.AUTO_DELETE.name()
+        attributesMap.put(Exchange.LIFETIME_POLICY, exchange.isAutoDelete() ? LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS.name()
                 : LifetimePolicy.PERMANENT.name());
 
         store.create(exchange.getId(), EXCHANGE, attributesMap);

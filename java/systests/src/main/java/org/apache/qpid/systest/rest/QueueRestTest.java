@@ -145,7 +145,6 @@ public class QueueRestTest extends QpidRestTestCase
         attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 40000);
         attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 50000);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
-        attributes.put(Queue.EXCLUSIVE, true);
 
         responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
         assertEquals("Setting of queue attribites should be allowed", 200, responseCode);
@@ -158,7 +157,6 @@ public class QueueRestTest extends QpidRestTestCase
         assertEquals("Unexpected " + Queue.ALERT_THRESHOLD_MESSAGE_SIZE, 30000, queueData.get(Queue.ALERT_THRESHOLD_MESSAGE_SIZE) );
         assertEquals("Unexpected " + Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 40000, queueData.get(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES) );
         assertEquals("Unexpected " + Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 50000, queueData.get(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES) );
-        assertEquals("Unexpected " + Queue.EXCLUSIVE, true, queueData.get(Queue.EXCLUSIVE) );
     }
 
     public void testPutCreateBinding() throws Exception
@@ -217,7 +215,7 @@ public class QueueRestTest extends QpidRestTestCase
 
         assertEquals("Unexpected binding attribute " + Consumer.NAME, "1", consumer.get(Consumer.NAME));
         assertEquals("Unexpected binding attribute " + Consumer.DURABLE, Boolean.FALSE, consumer.get(Consumer.DURABLE));
-        assertEquals("Unexpected binding attribute " + Consumer.LIFETIME_POLICY, LifetimePolicy.AUTO_DELETE.name(),
+        assertEquals("Unexpected binding attribute " + Consumer.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_SESSION_END.name(),
                 consumer.get(Consumer.LIFETIME_POLICY));
         assertEquals("Unexpected binding attribute " + Consumer.DISTRIBUTION_MODE, "MOVE",
                 consumer.get(Consumer.DISTRIBUTION_MODE));

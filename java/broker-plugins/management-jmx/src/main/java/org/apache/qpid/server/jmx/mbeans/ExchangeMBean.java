@@ -166,7 +166,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 
     public boolean isAutoDelete()
     {
-        return _exchange.getLifetimePolicy() == LifetimePolicy.AUTO_DELETE;
+        return _exchange.getLifetimePolicy() != LifetimePolicy.PERMANENT;
     }
 
     public TabularData bindings() throws IOException, JMException

@@ -26,17 +26,18 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.util.Deletable;
 
 /**
  * Session model interface.
  * Extends {@link Comparable} to allow objects to be inserted into a {@link ConcurrentSkipListSet}
  * when monitoring the blocking and blocking of queues/sessions in {@link AMQQueue}.
  */
-public interface AMQSessionModel extends Comparable<AMQSessionModel>
+public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQConnectionModel<C,T>> extends Comparable<T>, Deletable<T>
 {
     public UUID getId();
 
-    public AMQConnectionModel getConnectionModel();
+    public C getConnectionModel();
 
     public String getClientID();
 

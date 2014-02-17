@@ -78,3 +78,8 @@ org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchange
 
 // QPID-3396
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testExceptionWhenUserPassIsRequired
+
+// Non durable exclusive queues are exclusive to a connection (and thus auto-delete - or at least
+// not permanent), also their owner is not the container (client-id) but the connection
+org.apache.qpid.server.logging.TransientQueueLoggingTest#testQueueCreateDurableExclusive
+

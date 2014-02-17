@@ -29,12 +29,12 @@ import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.exchange.DirectExchange;
@@ -51,10 +51,6 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueueTestBase.class);
@@ -68,7 +64,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
     private DirectExchange _exchange;
     private MockConsumer _consumerTarget = new MockConsumer();
     private QueueConsumer _consumer;
-    private Map<String,Object> _arguments = null;
+    private Map<String,Object> _arguments = Collections.emptyMap();
 
     @Override
     public void setUp() throws Exception
@@ -78,8 +74,12 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
 
         _virtualHost = BrokerTestHelper.createVirtualHost(getClass().getName());
 
-        _queue = (Q) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), _qname, false, _owner,
-                false, false, false, _arguments);
+        Map<String,Object> attributes = new HashMap<String, Object>(_arguments);
+        attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
+        attributes.put(Queue.NAME, _qname);
+        attributes.put(Queue.OWNER, _owner);
+
+        _queue = (Q) _virtualHost.createQueue(null, attributes);
 
         _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
@@ -104,9 +104,10 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         _queue.stop();
         try
         {
-            _queue = (Q) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(), null,
-                                                                         false, _owner, false,
-                                                                         false, false, _arguments);
+            Map<String,Object> attributes = new HashMap<String, Object>(_arguments);
+            attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
+
+            _queue = (Q) _virtualHost.createQueue(null, attributes);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -115,10 +116,10 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
                             e.getMessage().contains("name"));
         }
 
-        _queue = (Q) _virtualHost.createQueue(UUIDGenerator.generateRandomUUID(),
-                                                                     "differentName", false,
-                                                                     _owner, false,
-                                                                     false, false, _arguments);
+        Map<String,Object> attributes = new HashMap<String, Object>(_arguments);
+        attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
+        attributes.put(Queue.NAME, "differentName");
+        _queue = (Q) _virtualHost.createQueue(null, attributes);
         assertNotNull("Queue was not created", _queue);
     }
 
@@ -1137,15 +1138,17 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
     {
         public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHost vhost)
         {
-            super(UUIDGenerator.generateRandomUUID(),
-                  "testQueue",
-                  false,
-                  "testOwner",
-                  false,
-                  false,
-                  vhost,
-                  factory,
-                  null);
+            super(vhost, null, attributes(), factory);
+        }
+
+        private static Map<String,Object> attributes()
+        {
+            Map<String,Object> attributes = new HashMap<String, Object>();
+            attributes.put(Queue.ID, UUID.randomUUID());
+            attributes.put(Queue.NAME, "test");
+            attributes.put(Queue.DURABLE, false);
+            attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+            return attributes;
         }
 
         @Override

@@ -20,11 +20,15 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import static org.mockito.Matchers.eq;
@@ -42,7 +46,15 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
     public void setUp() throws Exception
     {
         mockLogging();
-        SortedQueue queue = new SortedQueue(UUID.randomUUID(), getName(), false, null, false,false, mock(VirtualHost.class), null, "KEY", new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
+
+        Map<String,Object> attributes = new HashMap<String,Object>();
+        attributes.put(Queue.ID,UUID.randomUUID());
+        attributes.put(Queue.NAME, getName());
+        attributes.put(Queue.DURABLE, false);
+        attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+        attributes.put(Queue.SORT_KEY, "KEY");
+
+        SortedQueue queue = new SortedQueue(mock(VirtualHost.class), null, attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
         {
 
             @Override

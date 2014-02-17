@@ -46,7 +46,7 @@ public class ChannelLogSubject extends AbstractLogSubject
         AMQConnectionModel connection = session.getConnectionModel();
         setLogStringWithFormat(CHANNEL_FORMAT,
                                connection == null ? -1L : connection.getConnectionId(),
-                               (connection == null || connection.getPrincipalAsString() == null) ? "?" : connection.getPrincipalAsString(),
+                               (connection == null || connection.getAuthorizedPrincipal() == null) ? "?" : connection.getAuthorizedPrincipal().getName(),
                                (connection == null || connection.getRemoteAddressString() == null) ? "?" : connection.getRemoteAddressString(),
                                (connection == null || connection.getVirtualHostName() == null) ? "?" : connection.getVirtualHostName(),
                                session.getChannelId());

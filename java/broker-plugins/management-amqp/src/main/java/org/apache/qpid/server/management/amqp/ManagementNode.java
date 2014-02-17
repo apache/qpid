@@ -971,33 +971,15 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     }
 
     @Override
-    public AuthorizationHolder getAuthorizationHolder()
-    {
-        return null;
-    }
-
-    @Override
-    public void setAuthorizationHolder(final AuthorizationHolder principalHolder)
-    {
-
-    }
-
-    @Override
-    public void setExclusiveOwningSession(final AMQSessionModel owner)
-    {
-
-    }
-
-    @Override
-    public AMQSessionModel getExclusiveOwningSession()
-    {
-        return null;
-    }
-
-    @Override
     public boolean isExclusive()
     {
         return false;
+    }
+
+    @Override
+    public boolean verifySessionAccess(final AMQSessionModel<?, ?> session)
+    {
+        return true;
     }
 
     @Override
