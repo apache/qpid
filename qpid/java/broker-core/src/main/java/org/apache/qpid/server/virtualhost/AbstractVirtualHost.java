@@ -38,7 +38,6 @@ import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -73,7 +72,6 @@ import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -313,10 +311,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             {
                 configureExchange(config.getExchangeConfiguration(exchangeName));
             }
-            catch (QpidSecurityException e)
-            {
-                throw new ServerScopedRuntimeException("Could not configure exchange " + exchangeName, e);
-            }
             catch (UnknownExchangeException e)
             {
                 throw new ServerScopedRuntimeException("Could not configure exchange " + exchangeName, e);
@@ -344,15 +338,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             {
                 throw new ServerScopedRuntimeException("Could not configure queue " + queueName, e);
             }
-            catch (QpidSecurityException e)
-            {
-                throw new ServerScopedRuntimeException("Could not configure queue " + queueName, e);
-            }
         }
     }
 
     private void configureExchange(ExchangeConfiguration exchangeConfiguration)
-            throws QpidSecurityException, UnknownExchangeException, ReservedExchangeNameException,
+            throws UnknownExchangeException, ReservedExchangeNameException,
                    AMQUnknownExchangeType
     {
         boolean durable = exchangeConfiguration.getDurable();
@@ -370,7 +360,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     private void configureQueue(QueueConfiguration queueConfiguration)
-            throws ConfigurationException, QpidSecurityException
+            throws ConfigurationException
     {
         AMQQueue queue = _queueFactory.createAMQQueueImpl(queueConfiguration);
         String queueName = queue.getName();
@@ -421,7 +411,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey, Map<String,Object> arguments)
-            throws QpidSecurityException
     {
         if (_logger.isInfoEnabled())
         {
@@ -528,7 +517,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public int removeQueue(AMQQueue queue) throws QpidSecurityException
+    public int removeQueue(AMQQueue queue)
     {
         synchronized (getQueueRegistry())
         {
@@ -547,7 +536,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         }
     }
 
-    public AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> attributes) throws QpidSecurityException, QueueExistsException
+    public AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> attributes) throws QueueExistsException
     {
         // make a copy as we may augment (with an ID for example)
         attributes = new LinkedHashMap<String, Object>(attributes);
@@ -562,17 +551,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         String owner = MapValueConverter.getStringAttribute(Queue.OWNER, attributes, null);
 
         // Access check
-        if (!getSecurityManager().authoriseCreateQueue(autoDelete,
-                                                       durable,
-                                                       exclusive != null && exclusive != ExclusivityPolicy.NONE,
-                                                       null,
-                                                       null,
-                                                       queueName,
-                                                       owner))
-        {
-            String description = "Permission denied: queue-name '" + queueName + "'";
-            throw new QpidSecurityException(description);
-        }
+        getSecurityManager().authoriseCreateQueue(autoDelete,
+                                                  durable,
+                                                  exclusive != null && exclusive != ExclusivityPolicy.NONE,
+                                                  null,
+                                                  null,
+                                                  queueName,
+                                                  owner);
 
         synchronized (_queueRegistry)
         {
@@ -650,7 +635,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                    boolean durable,
                                    boolean autoDelete,
                                    String alternateExchangeName)
-            throws QpidSecurityException, ExchangeExistsException, ReservedExchangeNameException,
+            throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType
     {
         synchronized (_exchangeRegistry)
@@ -698,7 +683,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     @Override
     public void removeExchange(Exchange exchange, boolean force)
-            throws QpidSecurityException, ExchangeIsAlternateException, RequiredExchangeException
+            throws ExchangeIsAlternateException, RequiredExchangeException
     {
         if(exchange.hasReferrers())
         {

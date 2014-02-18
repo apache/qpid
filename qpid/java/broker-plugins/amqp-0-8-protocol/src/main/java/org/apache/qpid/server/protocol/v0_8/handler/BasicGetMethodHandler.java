@@ -38,7 +38,6 @@ import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.MessageOnlyCreditManager;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.ConsumerTarget_0_8;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -46,9 +45,9 @@ import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
 import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
 import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.security.AccessControlException;
 import java.util.EnumSet;
 
 public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetBody>
@@ -111,7 +110,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                         protocolConnection.writeFrame(responseBody.generateFrame(channelId));
                     }
                 }
-                catch (QpidSecurityException e)
+                catch (AccessControlException e)
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
                                                       e.getMessage());
@@ -140,7 +139,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                                      final AMQProtocolSession session,
                                      final AMQChannel channel,
                                      final boolean acks)
-            throws AMQException, QpidSecurityException, MessageSource.ExistingConsumerPreventsExclusive,
+            throws AMQException, MessageSource.ExistingConsumerPreventsExclusive,
                    MessageSource.ExistingExclusiveConsumer, MessageSource.ConsumerAccessRefused
     {
 

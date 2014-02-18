@@ -32,12 +32,12 @@ import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.security.AccessControlException;
 
 public class BasicConsumeMethodHandler implements StateAwareMethodListener<BasicConsumeBody>
 {
@@ -167,7 +167,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                                                    + queue.getName()
                                                    + " exclusively as it already has a consumer");
                 }
-                catch (QpidSecurityException e)
+                catch (AccessControlException e)
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "

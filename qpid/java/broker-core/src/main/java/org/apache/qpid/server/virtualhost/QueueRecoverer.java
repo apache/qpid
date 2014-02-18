@@ -31,11 +31,9 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueFactory;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQQueue>
 {
@@ -105,26 +103,17 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
         {
             String queueName = (String) _attributes.get(Queue.NAME);
 
-            try
+            _queue = _virtualHost.getQueue(_id);
+            if(_queue == null)
             {
-                _queue = _virtualHost.getQueue(_id);
-                if(_queue == null)
-                {
-                    _queue = _virtualHost.getQueue(queueName);
-                }
-
-                if (_queue == null)
-                {
-                    Map<String, Object> attributes = new LinkedHashMap<String, Object>(_attributes);
-                    attributes.put(Queue.ID, _id);
-                    _queue = _queueFactory.restoreQueue(attributes);
-                }
+                _queue = _virtualHost.getQueue(queueName);
             }
-            catch (QpidSecurityException e)
+
+            if (_queue == null)
             {
-                throw new ServerScopedRuntimeException("Security Exception thrown when recovering. The recovery " +
-                                                       "thread should not be bound by permissions, this is likely " +
-                                                       "a programming error.",e);
+                Map<String, Object> attributes = new LinkedHashMap<String, Object>(_attributes);
+                attributes.put(Queue.ID, _id);
+                _queue = _queueFactory.restoreQueue(attributes);
             }
             return _queue;
         }

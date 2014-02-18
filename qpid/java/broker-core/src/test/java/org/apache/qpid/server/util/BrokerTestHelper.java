@@ -46,7 +46,6 @@ import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -182,7 +181,7 @@ public class BrokerTestHelper
     }
 
     public static AMQQueue createQueue(String queueName, VirtualHost virtualHost)
-            throws QpidSecurityException, QueueExistsException
+            throws QueueExistsException
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());

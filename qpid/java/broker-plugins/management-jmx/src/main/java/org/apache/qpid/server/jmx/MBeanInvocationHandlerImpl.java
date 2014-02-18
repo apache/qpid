@@ -227,22 +227,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         }
 
         methodName = getMethodName(method, args);
-        if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
-        {
-            // Check for read-only method invocation permission
-            if (!security.authoriseMethod(Operation.ACCESS, type, methodName))
-            {
-                throw new SecurityException("Permission denied: Access " + methodName);
-            }
-        }
-        else
-        {
-            // Check for setting properties permission
-            if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
-            {
-                throw new SecurityException("Permission denied: Update " + methodName);
-            }
-        }
+        Operation operation = (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO) ? Operation.ACCESS : Operation.UPDATE;
+        security.authoriseMethod(operation, type, methodName);
 
         boolean oldAccessChecksDisabled = false;
         if(_managementRightsInferAllAccess)

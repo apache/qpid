@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.exchange;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySet;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,7 +31,6 @@ import java.util.Set;
 import java.util.UUID;
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -60,8 +57,6 @@ public class FanoutExchangeTest extends TestCase
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
-        when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), anyString())).thenReturn(true);
-        when(securityManager.authoriseUnbind(any(Exchange.class), anyString(), any(AMQQueue.class))).thenReturn(true);
 
         _exchange.initialise(UUID.randomUUID(), _virtualHost, "test", false, false);
     }
@@ -83,28 +78,28 @@ public class FanoutExchangeTest extends TestCase
         assertFalse("calling isBound(AMQQueue) with null queue should return false", _exchange.isBound((AMQQueue) null));
     }
 
-    public void testIsBoundStringMapAMQQueue() throws QpidSecurityException
+    public void testIsBoundStringMapAMQQueue()
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
                 _exchange.isBound("matters", null, queue));
     }
 
-    public void testIsBoundStringAMQQueue() throws QpidSecurityException
+    public void testIsBoundStringAMQQueue()
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
                 _exchange.isBound("matters", queue));
     }
 
-    public void testIsBoundAMQQueue() throws QpidSecurityException
+    public void testIsBoundAMQQueue()
     {
         AMQQueue queue = bindQueue();
         assertTrue("Should return true for a bound queue",
                 _exchange.isBound(queue));
     }
 
-    private AMQQueue bindQueue() throws QpidSecurityException
+    private AMQQueue bindQueue()
     {
         AMQQueue queue = mockQueue();
         _exchange.addBinding("matters", queue, null);

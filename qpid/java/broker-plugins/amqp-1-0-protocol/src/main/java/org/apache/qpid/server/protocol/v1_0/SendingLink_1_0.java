@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -33,7 +34,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
@@ -64,7 +64,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
@@ -312,11 +311,6 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                 qd = new QueueDestination(queue);
             }
-            catch (QpidSecurityException e)
-            {
-                _logger.error("Security error", e);
-                throw new ConnectionScopedRuntimeException(e);
-            }
             catch (QueueExistsException e)
             {
                 _logger.error("A randomly generated temporary queue name collided with an existing queue",e);
@@ -356,12 +350,6 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 _consumer = _queue.addConsumer(_target,
                                                messageFilter == null ? null : new SimpleFilterManager(messageFilter),
                                                Message_1_0.class, name, options);
-            }
-            catch (QpidSecurityException e)
-            {
-                //TODO
-                _logger.info("Error registering subscription", e);
-                throw new ConnectionScopedRuntimeException(e);
             }
             catch (MessageSource.ExistingExclusiveConsumer e)
             {
@@ -416,7 +404,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 {
                     _vhost.removeQueue((AMQQueue)_queue);
                 }
-                catch (QpidSecurityException e)
+                catch (AccessControlException e)
                 {
                     //TODO
                     _logger.error("Error registering subscription", e);

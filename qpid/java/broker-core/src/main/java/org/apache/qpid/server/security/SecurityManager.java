@@ -56,6 +56,7 @@ import static org.apache.qpid.server.security.access.Operation.UPDATE;
 
 import javax.security.auth.Subject;
 import java.net.SocketAddress;
+import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -289,20 +290,26 @@ public class SecurityManager implements ConfigurationChangeListener
         return true;
     }
 
-    public boolean authoriseBind(final Exchange exch, final AMQQueue queue, final String routingKey)
+    public void authoriseBind(final Exchange exch, final AMQQueue queue, final String routingKey)
     {
-        return checkAllPlugins(new AccessCheck()
+        boolean allowed =
+            checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(BIND, EXCHANGE, new ObjectProperties(exch, queue, routingKey));
             }
         });
+
+        if(!allowed)
+        {
+            throw new AccessControlException("Permission denied: binding " + routingKey);
+        }
     }
 
-    public boolean authoriseMethod(final Operation operation, final String componentName, final String methodName)
+    public void authoriseMethod(final Operation operation, final String componentName, final String methodName)
     {
-        return checkAllPlugins(new AccessCheck()
+        boolean allowed =  checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
@@ -316,132 +323,176 @@ public class SecurityManager implements ConfigurationChangeListener
                 return plugin.authorise(operation, METHOD, properties);
             }
         });
+        if(!allowed)
+        {
+            throw new AccessControlException("Permission denied: " + operation.name() + " " + methodName);
+        }
     }
 
-    public boolean accessManagement()
+    public void accessManagement()
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.access(ObjectType.MANAGEMENT, null);
             }
-        });
+        }))
+        {
+            throw new AccessControlException("User not authorised for management");
+        }
     }
 
-    public boolean accessVirtualhost(final String vhostname, final SocketAddress remoteAddress)
+    public void accessVirtualhost(final String vhostname, final SocketAddress remoteAddress)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.access(VIRTUALHOST, remoteAddress);
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: " + vhostname);
+        }
     }
 
-    public boolean authoriseConsume(final AMQQueue queue)
+    public void authoriseConsume(final AMQQueue queue)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CONSUME, QUEUE, new ObjectProperties(queue));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: consume from queue '" + queue.getName() + "'.");
+        }
     }
 
-    public boolean authoriseCreateExchange(final Boolean autoDelete, final Boolean durable, final String exchangeName,
-            final Boolean internal, final Boolean nowait, final Boolean passive, final String exchangeType)
+    public void authoriseCreateExchange(final Boolean autoDelete,
+                                        final Boolean durable,
+                                        final String exchangeName,
+                                        final Boolean internal,
+                                        final Boolean nowait,
+                                        final Boolean passive,
+                                        final String exchangeType)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CREATE, EXCHANGE, new ObjectProperties(autoDelete, durable, exchangeName,
                         internal, nowait, passive, exchangeType));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: exchange-name '" + exchangeName + "'");
+        }
     }
 
-    public boolean authoriseCreateQueue(final Boolean autoDelete, final Boolean durable, final Boolean exclusive,
+    public void authoriseCreateQueue(final Boolean autoDelete, final Boolean durable, final Boolean exclusive,
             final Boolean nowait, final Boolean passive, final String queueName, final String owner)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(! checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(CREATE, QUEUE, new ObjectProperties(autoDelete, durable, exclusive, nowait, passive, queueName, owner));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: queue-name '" + queueName + "'");
+        }
     }
 
-    public boolean authoriseDelete(final AMQQueue queue)
+    public void authoriseDelete(final AMQQueue queue)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(DELETE, QUEUE, new ObjectProperties(queue));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied, delete queue: " + queue.getName());
+        }
     }
 
 
-    public boolean authoriseUpdate(final AMQQueue queue)
+    public void authoriseUpdate(final AMQQueue queue)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(UPDATE, QUEUE, new ObjectProperties(queue));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: update queue: " + queue.getName());
+        }
     }
 
 
-    public boolean authoriseUpdate(final Exchange exchange)
+    public void authoriseUpdate(final Exchange exchange)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(UPDATE, EXCHANGE, new ObjectProperties(exchange.getName()));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: update exchange: " + exchange.getName());
+        }
     }
 
-    public boolean authoriseDelete(final Exchange exchange)
+    public void authoriseDelete(final Exchange exchange)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(! checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(DELETE, EXCHANGE, new ObjectProperties(exchange.getName()));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied, delete exchange: '" + exchange.getName() + "'");
+        }
     }
 
-    public boolean authoriseGroupOperation(final Operation operation, final String groupName)
+    public void authoriseGroupOperation(final Operation operation, final String groupName)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(operation, GROUP, new ObjectProperties(groupName));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Do not have permission" +
+                                             " to perform the " + operation + " on the group " + groupName);
+        }
     }
 
-    public boolean authoriseUserOperation(final Operation operation, final String userName)
+    public void authoriseUserOperation(final Operation operation, final String userName)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(! checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(operation, USER, new ObjectProperties(userName));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Do not have permission" +
+                                             " to perform the " + operation + " on the user " + userName);
+        }
     }
 
     private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _immediatePublishPropsCache
@@ -449,7 +500,7 @@ public class SecurityManager implements ConfigurationChangeListener
     private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _publishPropsCache
             = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();
 
-    public boolean authorisePublish(final boolean immediate, String routingKey, String exchangeName)
+    public void authorisePublish(final boolean immediate, String routingKey, String exchangeName)
     {
         if(routingKey == null)
         {
@@ -477,29 +528,38 @@ public class SecurityManager implements ConfigurationChangeListener
                 exchangeMap.put(routingKey, check);
             }
 
-        return checkAllPlugins(check);
+        if(!checkAllPlugins(check))
+        {
+            throw new AccessControlException("Permission denied, publish to: exchange-name '" + exchangeName + "'");
+        }
     }
 
-    public boolean authorisePurge(final AMQQueue queue)
+    public void authorisePurge(final AMQQueue queue)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(PURGE, QUEUE, new ObjectProperties(queue));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: queue " + queue.getName());
+        }
     }
 
-    public boolean authoriseUnbind(final Exchange exch, final String routingKey, final AMQQueue queue)
+    public void authoriseUnbind(final Exchange exch, final String routingKey, final AMQQueue queue)
     {
-        return checkAllPlugins(new AccessCheck()
+        if(! checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
                 return plugin.authorise(UNBIND, EXCHANGE, new ObjectProperties(exch, queue, routingKey));
             }
-        });
+        }))
+        {
+            throw new AccessControlException("Permission denied: unbinding " + routingKey);
+        }
     }
 
     public static boolean setAccessChecksDisabled(final boolean status)

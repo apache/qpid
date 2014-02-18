@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -66,26 +65,22 @@ public interface Exchange extends ExchangeReferrer, MessageDestination
     long getMsgReceives();
 
 
-    boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException;
+    boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
 
     boolean replaceBinding(UUID id, String bindingKey,
                            AMQQueue queue,
-                           Map<String, Object> arguments)
-                    throws QpidSecurityException;
+                           Map<String, Object> arguments);
 
     void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
-                        Map<String, Object> argumentMap)
-                    throws QpidSecurityException;
+                        Map<String, Object> argumentMap);
 
-    void removeBinding(Binding b) throws QpidSecurityException;
+    void removeBinding(Binding b);
 
-    Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-                    throws QpidSecurityException;
+    Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
 
     Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
 
-    void close() throws QpidSecurityException;
+    void close();
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments

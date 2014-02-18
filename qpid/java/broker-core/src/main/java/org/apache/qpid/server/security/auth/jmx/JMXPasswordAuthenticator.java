@@ -38,7 +38,6 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
     static final String SHOULD_HAVE_2_ELEMENTS = "User details should have 2 elements, username, password";
     static final String SHOULD_BE_NON_NULL = "Supplied username and password should be non-null";
     static final String INVALID_CREDENTIALS = "Invalid user details supplied";
-    static final String USER_NOT_AUTHORISED_FOR_MANAGEMENT = "User not authorised for management";
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
                         "Please ensure you are using an up to date management console to connect.";
 
@@ -121,10 +120,7 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
         SecurityManager.setThreadSubject(authenticatedSubject);
         try
         {
-            if (!_broker.getSecurityManager().accessManagement())
-            {
-                throw new SecurityException(USER_NOT_AUTHORISED_FOR_MANAGEMENT);
-            }
+            _broker.getSecurityManager().accessManagement();
         }
         finally
         {

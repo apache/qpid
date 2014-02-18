@@ -21,7 +21,6 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -51,11 +50,6 @@ public class ExchangeInitialiser
                     DurableConfigurationStoreHelper.createExchange(store, exchange);
                 }
             }
-        }
-        catch (QpidSecurityException e)
-        {
-            throw new ServerScopedRuntimeException("Security Exception when attempting to initialise exchanges - " +
-                                                   "this is likely a programming error", e);
         }
         catch (AMQUnknownExchangeType e)
         {

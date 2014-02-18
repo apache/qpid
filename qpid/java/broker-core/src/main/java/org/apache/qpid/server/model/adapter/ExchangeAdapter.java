@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFinder;
@@ -127,28 +126,21 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     {
         AMQQueue amqQueue = ((QueueAdapter)queue).getAMQQueue();
 
-        try
+        if(!_exchange.addBinding(bindingKey, amqQueue, bindingArguments))
         {
-            if(!_exchange.addBinding(bindingKey, amqQueue, bindingArguments))
-            {
-                Binding oldBinding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
+            Binding oldBinding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
 
-                Map<String, Object> oldArgs = oldBinding.getArguments();
-                if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
-                {
-                    _exchange.replaceBinding(oldBinding.getId(), bindingKey, amqQueue, bindingArguments);
-                }
-            }
-            Binding binding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
-
-            synchronized (_bindingAdapters)
+            Map<String, Object> oldArgs = oldBinding.getArguments();
+            if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
             {
-                return binding == null ? null : _bindingAdapters.get(binding);
+                _exchange.replaceBinding(oldBinding.getId(), bindingKey, amqQueue, bindingArguments);
             }
         }
-        catch(QpidSecurityException e)
+        Binding binding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
+
+        synchronized (_bindingAdapters)
         {
-            throw new AccessControlException(e.toString());
+            return binding == null ? null : _bindingAdapters.get(binding);
         }
     }
 
@@ -165,10 +157,6 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         catch(ExchangeIsAlternateException e)
         {
             throw new IllegalStateException(e);
-        }
-        catch (QpidSecurityException e)
-        {
-            throw new AccessControlException(e.toString());
         }
     }
 
@@ -384,19 +372,13 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     @Override
     protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
     {
-        if (!_vhost.getSecurityManager().authoriseUpdate(_exchange))
-        {
-            throw new AccessControlException("Setting of exchange attribute is denied");
-        }
+        _vhost.getSecurityManager().authoriseUpdate(_exchange);
     }
 
     @Override
     protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
     {
-        if (!_vhost.getSecurityManager().authoriseUpdate(_exchange))
-        {
-            throw new AccessControlException("Setting of exchange attributes is denied");
-        }
+        _vhost.getSecurityManager().authoriseUpdate(_exchange);
     }
 
     private class ExchangeStatistics implements Statistics

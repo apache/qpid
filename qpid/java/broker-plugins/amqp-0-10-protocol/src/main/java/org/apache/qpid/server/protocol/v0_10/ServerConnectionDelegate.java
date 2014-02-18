@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -195,12 +196,18 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             sconn.setVirtualHost(vhost);
 
-            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, sconn.getRemoteAddress()))
+            try
+            {
+                vhost.getSecurityManager().accessVirtualhost(vhostName, sconn.getRemoteAddress());
+            }
+            catch (AccessControlException e)
             {
                 sconn.setState(Connection.State.CLOSING);
-                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
+                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage()));
+                return;
             }
-            else if (vhost.getState() != State.ACTIVE)
+
+            if (vhost.getState() != State.ACTIVE)
             {
                 sconn.setState(Connection.State.CLOSING);
                 sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Virtual host '"+vhostName+"' is not active"));

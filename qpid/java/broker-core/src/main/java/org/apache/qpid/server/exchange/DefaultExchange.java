@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,7 +28,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.consumer.Consumer;
@@ -97,59 +97,55 @@ public class DefaultExchange implements Exchange
     @Override
     public long getByteDrops()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     @Override
     public long getByteReceives()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     @Override
     public long getMsgDrops()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     @Override
     public long getMsgReceives()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     @Override
     public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException
     {
-        throw new QpidSecurityException("Cannot add bindings to the default exchange");
+        throw new AccessControlException("Cannot add bindings to the default exchange");
     }
 
     @Override
     public boolean replaceBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException
     {
-        throw new QpidSecurityException("Cannot replace bindings on the default exchange");
+        throw new AccessControlException("Cannot replace bindings on the default exchange");
     }
 
     @Override
     public void restoreBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> argumentMap)
-            throws QpidSecurityException
     {
         _logger.warn("Bindings to the default exchange should not be stored in the configuration store");
     }
 
     @Override
-    public void removeBinding(Binding b) throws QpidSecurityException
+    public void removeBinding(Binding b)
     {
-        throw new QpidSecurityException("Cannot remove bindings to the default exchange");
+        throw new AccessControlException("Cannot remove bindings to the default exchange");
     }
 
     @Override
     public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException
     {
-        throw new QpidSecurityException("Cannot remove bindings to the default exchange");
+        throw new AccessControlException("Cannot remove bindings to the default exchange");
     }
 
     @Override

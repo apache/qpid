@@ -241,7 +241,11 @@ public class SaslServlet extends AbstractServlet
 
             Broker broker = getBroker();
             LogActor actor = HttpManagementUtil.getOrCreateAndCacheLogActor(request, broker);
-            if (!HttpManagementUtil.hasAccessToManagement(broker.getSecurityManager(), subject, actor))
+            try
+            {
+                HttpManagementUtil.assertManagementAccess(broker.getSecurityManager(), subject, actor);
+            }
+            catch(SecurityException e)
             {
                 sendError(response, HttpServletResponse.SC_FORBIDDEN);
                 return;

@@ -35,6 +35,8 @@ import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.security.AccessControlException;
+
 public class ConnectionOpenMethodHandler implements StateAwareMethodListener<ConnectionOpenBody>
 {
     private static final Logger _logger = Logger.getLogger(ConnectionOpenMethodHandler.class);
@@ -79,11 +81,16 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         else
         {
             // Check virtualhost access
-            if (!virtualHost.getSecurityManager().accessVirtualhost(virtualHostName, session.getRemoteAddress()))
+            try
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied: '" + virtualHost.getName() + "'");
+                virtualHost.getSecurityManager().accessVirtualhost(virtualHostName, session.getRemoteAddress());
             }
-            else if (virtualHost.getState() != State.ACTIVE)
+            catch (AccessControlException e)
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+            }
+
+             if (virtualHost.getState() != State.ACTIVE)
             {
                 throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active");
             }

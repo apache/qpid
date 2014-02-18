@@ -472,27 +472,17 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         @Override
         public boolean createUser(String username, String password, Map<String, String> attributes)
         {
-            if(getSecurityManager().authoriseUserOperation(Operation.CREATE, username))
-            {
-                return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
-            }
-            else
-            {
-                throw new AccessControlException("Do not have permission to create new user");
-            }
+            getSecurityManager().authoriseUserOperation(Operation.CREATE, username);
+            return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
+
         }
 
         @Override
         public void deleteUser(String username) throws AccountNotFoundException
         {
-            if(getSecurityManager().authoriseUserOperation(Operation.DELETE, username))
-            {
-                getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
-            }
-            else
-            {
-                throw new AccessControlException("Cannot delete user " + username);
-            }
+            getSecurityManager().authoriseUserOperation(Operation.DELETE, username);
+            getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
+
         }
 
         private SecurityManager getSecurityManager()
@@ -508,14 +498,10 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         @Override
         public void setPassword(String username, String password) throws AccountNotFoundException
         {
-            if(getSecurityManager().authoriseUserOperation(Operation.UPDATE, username))
-            {
-                getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
-            }
-            else
-            {
-                throw new AccessControlException("Do not have permission to set password");
-            }
+            getSecurityManager().authoriseUserOperation(Operation.UPDATE, username);
+
+            getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
+
         }
 
         @Override

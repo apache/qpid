@@ -27,15 +27,13 @@ import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.security.AccessControlException;
 
 public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -116,7 +114,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                 {
                     purged = virtualHost.removeQueue(queue);
                 }
-                catch (QpidSecurityException e)
+                catch (AccessControlException e)
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
                 }

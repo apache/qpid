@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import java.nio.ByteBuffer;
+import java.security.AccessControlException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,7 +34,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
@@ -50,7 +50,6 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
-import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
@@ -70,7 +69,6 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -279,14 +277,13 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         return _channelId;
     }
 
-    public void setPublishFrame(MessagePublishInfo info, final MessageDestination e) throws QpidSecurityException
+    public void setPublishFrame(MessagePublishInfo info, final MessageDestination e)
     {
         String routingKey = info.getRoutingKey() == null ? null : info.getRoutingKey().asString();
         SecurityManager securityManager = getVirtualHost().getSecurityManager();
-        if (!securityManager.authorisePublish(info.isImmediate(), routingKey, e.getName()))
-        {
-            throw new QpidSecurityException("Permission denied: " + e.getName());
-        }
+
+        securityManager.authorisePublish(info.isImmediate(), routingKey, e.getName());
+
         _currentMessage = new IncomingMessage(info);
         _currentMessage.setMessageDestination(e);
     }
@@ -533,7 +530,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
      */
     public AMQShortString consumeFromSource(AMQShortString tag, MessageSource source, boolean acks,
                                             FieldTable filters, boolean exclusive, boolean noLocal)
-            throws AMQException, QpidSecurityException, MessageSource.ExistingConsumerPreventsExclusive,
+            throws AMQException, MessageSource.ExistingConsumerPreventsExclusive,
                    MessageSource.ExistingExclusiveConsumer, AMQInvalidArgumentException,
                    MessageSource.ConsumerAccessRefused
     {
@@ -606,7 +603,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                                       AMQShortString.toString(tag),
                                       options);
         }
-        catch (QpidSecurityException e)
+        catch (AccessControlException e)
         {
             _tag2SubscriptionTargetMap.remove(tag);
             throw e;

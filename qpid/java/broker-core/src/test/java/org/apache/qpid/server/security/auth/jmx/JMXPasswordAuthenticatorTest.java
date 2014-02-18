@@ -22,11 +22,13 @@ package org.apache.qpid.server.security.auth.jmx;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.regex.Pattern;
 
@@ -47,6 +49,7 @@ import org.apache.qpid.server.security.SecurityManager;
  */
 public class JMXPasswordAuthenticatorTest extends TestCase
 {
+    static final String USER_NOT_AUTHORISED_FOR_MANAGEMENT = "User not authorised for management";
     private static final String USERNAME = "guest";
     private static final String PASSWORD = "password";
 
@@ -72,7 +75,6 @@ public class JMXPasswordAuthenticatorTest extends TestCase
     public void testAuthenticationSuccess()
     {
         when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySubjectCreator);
-        when(_securityManager.accessManagement()).thenReturn(true);
 
         Subject newSubject = _rmipa.authenticate(_credentials);
         assertSame("Subject must be unchanged", _loginSubject, newSubject);
@@ -100,7 +102,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
     public void testAuthorisationFailure()
     {
         when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySubjectCreator);
-        when(_securityManager.accessManagement()).thenReturn(false);
+        doThrow(new AccessControlException(USER_NOT_AUTHORISED_FOR_MANAGEMENT)).when(_securityManager).accessManagement();
 
         try
         {
@@ -110,7 +112,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Unexpected exception message",
-                    JMXPasswordAuthenticator.USER_NOT_AUTHORISED_FOR_MANAGEMENT, se.getMessage());
+                    USER_NOT_AUTHORISED_FOR_MANAGEMENT, se.getMessage());
         }
     }
 

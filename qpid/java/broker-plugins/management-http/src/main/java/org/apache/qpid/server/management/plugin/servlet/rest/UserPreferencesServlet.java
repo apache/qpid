@@ -64,11 +64,16 @@ public class UserPreferencesServlet extends AbstractServlet
     private void getUserPreferences(String authenticationProviderName, String userId, HttpServletResponse response)
             throws IOException
     {
-        if (!userPreferencesOperationAuthorized(userId))
+        try
+        {
+            assertUserPreferencesOperationAuthorized(userId);
+        }
+        catch (SecurityException e)
         {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Viewing of preferences is not allowed");
             return;
         }
+
         Map<String, Object> preferences = null;
         PreferencesProvider preferencesProvider = getPreferencesProvider(authenticationProviderName);
         if (preferencesProvider == null)
@@ -171,11 +176,16 @@ public class UserPreferencesServlet extends AbstractServlet
 
             String userId = elements[1];
 
-            if (!userPreferencesOperationAuthorized(userId))
+            try
+            {
+                assertUserPreferencesOperationAuthorized(userId);
+            }
+            catch (SecurityException e)
             {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "Deletion of preferences is not allowed");
                 return;
             }
+
             String providerName =  elements[0];
             Set<String> users = providerUsers.get(providerName);
 
@@ -226,8 +236,8 @@ public class UserPreferencesServlet extends AbstractServlet
         return provider;
     }
 
-    private boolean userPreferencesOperationAuthorized(String userId)
+    private void assertUserPreferencesOperationAuthorized(String userId)
     {
-        return getBroker().getSecurityManager().authoriseUserOperation(Operation.UPDATE, userId);
+        getBroker().getSecurityManager().authoriseUserOperation(Operation.UPDATE, userId);
     }
 }

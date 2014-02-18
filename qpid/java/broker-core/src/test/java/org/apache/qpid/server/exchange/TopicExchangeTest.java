@@ -34,7 +34,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -76,7 +75,7 @@ public class TopicExchangeTest extends QpidTestCase
         }
     }
 
-    private AMQQueue<?,?,?> createQueue(String name) throws QpidSecurityException, QueueExistsException
+    private AMQQueue<?,?,?> createQueue(String name) throws QueueExistsException
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());

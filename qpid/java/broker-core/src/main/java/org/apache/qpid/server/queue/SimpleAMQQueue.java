@@ -29,11 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -51,7 +49,6 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -60,7 +57,6 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -437,15 +433,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
             @Override
             public void performAction(final Deletable object)
             {
-                try
-                {
-                    getVirtualHost().removeQueue(SimpleAMQQueue.this);
-                }
-                catch (QpidSecurityException e)
-                {
-                    throw new ConnectionScopedRuntimeException("Unable to delete a queue even though the queue's " +
-                                                               "lifetime was tied to an object being deleted");
-                }
+                getVirtualHost().removeQueue(SimpleAMQQueue.this);
             }
         };
 
@@ -583,15 +571,12 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
                                      EnumSet<Consumer.Option> optionSet)
-            throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive, QpidSecurityException,
+            throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive,
                    ConsumerAccessRefused
     {
 
         // Access control
-        if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
-        {
-            throw new QpidSecurityException("Permission denied");
-        }
+        getVirtualHost().getSecurityManager().authoriseConsume(this);
 
 
         if (hasExclusiveConsumer())
@@ -777,14 +762,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                     _logger.info("Auto-deleting queue:" + this);
                 }
 
-                try
-                {
-                    getVirtualHost().removeQueue(this);
-                }
-                catch (QpidSecurityException e)
-                {
-                    throw new ConnectionScopedRuntimeException("Auto delete queue unable to delete itself", e);
-                }
+                getVirtualHost().removeQueue(this);
 
                 // we need to manually fire the event to the removed consumer (which was the last one left for this
                 // queue. This is because the delete method uses the consumer set which has just been cleared
@@ -1440,11 +1418,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    public void purge(final long request) throws QpidSecurityException
-    {
-        clear(request);
-    }
-
     public long getCreateTime()
     {
         return _createTime;
@@ -1452,18 +1425,15 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     // ------ Management functions
 
-    public long clearQueue() throws QpidSecurityException
+    public long clearQueue()
     {
         return clear(0l);
     }
 
-    private long clear(final long request) throws QpidSecurityException
+    private long clear(final long request)
     {
         //Perform ACLs
-        if (!getVirtualHost().getSecurityManager().authorisePurge(this))
-        {
-            throw new QpidSecurityException("Permission denied: queue " + getName());
-        }
+        getVirtualHost().getSecurityManager().authorisePurge(this);
 
         QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> queueListIterator = _entries.iterator();
         long count = 0;
@@ -1526,13 +1496,10 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     }
 
     // TODO list all thrown exceptions
-    public int delete() throws QpidSecurityException
+    public int delete()
     {
         // Check access
-        if (!_virtualHost.getSecurityManager().authoriseDelete(this))
-        {
-            throw new QpidSecurityException("Permission denied: " + getName());
-        }
+        _virtualHost.getSecurityManager().authoriseDelete(this);
 
         if (!_deleted.getAndSet(true))
         {

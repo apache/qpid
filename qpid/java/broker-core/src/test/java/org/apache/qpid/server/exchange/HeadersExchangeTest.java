@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import junit.framework.TestCase;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -43,7 +42,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -64,8 +62,6 @@ public class HeadersExchangeTest extends TestCase
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
-        when(securityManager.authoriseBind(any(Exchange.class), any(AMQQueue.class), anyString())).thenReturn(true);
-        when(securityManager.authoriseUnbind(any(Exchange.class), anyString(), any(AMQQueue.class))).thenReturn(true);
 
         _exchange.initialise(UUID.randomUUID(), _virtualHost, "test", false, false);
 
@@ -118,7 +114,6 @@ public class HeadersExchangeTest extends TestCase
     }
 
     private void bind(String bindingKey, Map<String, Object> arguments, AMQQueue q)
-            throws QpidSecurityException
     {
         _exchange.addBinding(bindingKey,q,arguments);
     }
