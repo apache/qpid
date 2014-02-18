@@ -670,6 +670,11 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         boolean exclusive =  optionSet.contains(Consumer.Option.EXCLUSIVE);
         boolean isTransient =  optionSet.contains(Consumer.Option.TRANSIENT);
 
+        if(exclusive && getConsumerCount() != 0)
+        {
+            throw new ExistingConsumerPreventsExclusive();
+        }
+
         QueueConsumer<T,E,Q,L> consumer = new QueueConsumer<T,E,Q,L>(filters, messageClass,
                                                          optionSet.contains(Consumer.Option.ACQUIRES),
                                                          optionSet.contains(Consumer.Option.SEES_REQUEUES),
