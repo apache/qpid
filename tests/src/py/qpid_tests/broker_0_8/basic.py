@@ -117,7 +117,7 @@ class BasicTests(TestBase):
         self.assertEqual(test_message, msg.content.body)
         consumerchannel.basic_ack(delivery_tag=msg.delivery_tag)
       finally:
-        publisherchannel.queue_delete(queue=queue_for_subscription)
+        consumerchannel.queue_delete(queue=queue_for_subscription)
         durable_subscription_client.close()
 
     def _declare_and_bind_exclusive_queue_on_topic_exchange(self, channel, queue, topic_name):
