@@ -28,7 +28,6 @@ import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -64,7 +63,7 @@ public class AMQQueueFactory implements QueueFactory
     }   
 
     @Override
-    public AMQQueue restoreQueue(Map<String, Object> attributes) throws QpidSecurityException
+    public AMQQueue restoreQueue(Map<String, Object> attributes)
     {
         return createOrRestoreQueue(null, attributes, false);
 
@@ -72,13 +71,13 @@ public class AMQQueueFactory implements QueueFactory
 
     @Override
     public AMQQueue createQueue(final AMQSessionModel creatingSession,
-                                Map<String, Object> attributes) throws QpidSecurityException
+                                Map<String, Object> attributes)
     {
         return createOrRestoreQueue(creatingSession, attributes, true);
     }
 
     private AMQQueue createOrRestoreQueue(final AMQSessionModel creatingSession, Map<String, Object> attributes,
-                                          boolean createInStore) throws QpidSecurityException
+                                          boolean createInStore)
     {
 
 
@@ -179,7 +178,7 @@ public class AMQQueueFactory implements QueueFactory
         return queue;
     }
 
-    private void createDLQ(final AMQQueue queue) throws QpidSecurityException
+    private void createDLQ(final AMQQueue queue)
     {
         final String queueName = queue.getName();
         final String dlExchangeName = getDeadLetterExchangeName(queueName);
@@ -256,7 +255,7 @@ public class AMQQueueFactory implements QueueFactory
         queue.setAlternateExchange(dlExchange);
     }
 
-    public AMQQueue createAMQQueueImpl(QueueConfiguration config) throws QpidSecurityException
+    public AMQQueue createAMQQueueImpl(QueueConfiguration config)
     {
 
         Map<String, Object> arguments = createQueueAttributesFromConfig(_virtualHost, config);

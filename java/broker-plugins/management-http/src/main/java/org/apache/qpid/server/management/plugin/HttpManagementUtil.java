@@ -48,7 +48,6 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
@@ -108,18 +107,16 @@ public class HttpManagementUtil
                 throw new SecurityException("Only authenticated users can access the management interface");
             }
             LogActor actor = createHttpManagementActor(broker, request);
-            if (hasAccessToManagement(broker.getSecurityManager(), subject, actor))
-            {
-                saveAuthorisedSubject(session, subject, actor);
-            }
-            else
-            {
-                throw new AccessControlException("Access to the management interface denied");
-            }
+
+            assertManagementAccess(broker.getSecurityManager(), subject, actor);
+
+            saveAuthorisedSubject(session, subject, actor);
+
+
         }
     }
 
-    public static boolean hasAccessToManagement(final SecurityManager securityManager, Subject subject, LogActor actor)
+    public static void assertManagementAccess(final SecurityManager securityManager, Subject subject, LogActor actor)
     {
         // TODO: We should eliminate SecurityManager.setThreadSubject in favour of Subject.doAs
         SecurityManager.setThreadSubject(subject); // Required for accessManagement check
@@ -128,12 +125,13 @@ public class HttpManagementUtil
         {
             try
             {
-                return Subject.doAs(subject, new PrivilegedExceptionAction<Boolean>()
+                Subject.doAs(subject, new PrivilegedExceptionAction<Void>()
                 {
                     @Override
-                    public Boolean run() throws Exception
+                    public Void run()
                     {
-                        return securityManager.accessManagement();
+                        securityManager.accessManagement();
+                        return null;
                     }
                 });
             }

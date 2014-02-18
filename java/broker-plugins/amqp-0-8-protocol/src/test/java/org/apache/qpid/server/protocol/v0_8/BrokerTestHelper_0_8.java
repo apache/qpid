@@ -26,7 +26,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -66,7 +65,7 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
     }
 
     public static void publishMessages(AMQChannel channel, int numberOfMessages, String queueName, String exchangeName)
-            throws AMQException, QpidSecurityException
+            throws AMQException
     {
         AMQShortString routingKey = new AMQShortString(queueName);
         AMQShortString exchangeNameAsShortString = new AMQShortString(exchangeName);

@@ -30,12 +30,12 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.security.AccessControlException;
 
 public class BasicPublishMethodHandler implements StateAwareMethodListener<BasicPublishBody>
 {
@@ -93,7 +93,7 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
             {
                 channel.setPublishFrame(info, exch);
             }
-            catch (QpidSecurityException e)
+            catch (AccessControlException e)
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
             }

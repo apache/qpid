@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -31,19 +30,16 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.TopicExchange;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.security.AccessControlException;
 import java.util.Map;
 
 public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
@@ -135,7 +131,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
                 }
             }
         }
-        catch (QpidSecurityException e)
+        catch (AccessControlException e)
         {
             throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
         }

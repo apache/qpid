@@ -209,16 +209,10 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         {
             String groupName = (String) attributes.get(Group.NAME);
 
-            if (getSecurityManager().authoriseGroupOperation(Operation.CREATE, groupName))
-            {
+            getSecurityManager().authoriseGroupOperation(Operation.CREATE, groupName);
                 _groupManager.createGroup(groupName);
                 return (C) new GroupAdapter(groupName, getTaskExecutor());
-            }
-            else
-            {
-                throw new AccessControlException("Do not have permission" +
-                		" to create new group");
-            }
+
         }
 
         throw new IllegalArgumentException(
@@ -487,16 +481,11 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             {
                 String memberName = (String) attributes.get(GroupMember.NAME);
 
-                if (getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group))
-                {
-                    _groupManager.addUserToGroup(memberName, _group);
-                    return (C) new GroupMemberAdapter(memberName, getTaskExecutor());
-                }
-                else
-                {
-                    throw new AccessControlException("Do not have permission" +
-                    		" to add new group member");
-                }
+                getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group);
+
+                _groupManager.addUserToGroup(memberName, _group);
+                return (C) new GroupMemberAdapter(memberName, getTaskExecutor());
+
             }
 
             throw new IllegalArgumentException(
@@ -530,15 +519,9 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         {
             if (desiredState == State.DELETED)
             {
-                if (getSecurityManager().authoriseGroupOperation(Operation.DELETE, _group))
-                {
-                    _groupManager.removeGroup(_group);
-                    return true;
-                }
-                else
-                {
-                    throw new AccessControlException("Do not have permission to delete group");
-                }
+                getSecurityManager().authoriseGroupOperation(Operation.DELETE, _group);
+                _groupManager.removeGroup(_group);
+                return true;
             }
 
             return false;
@@ -677,15 +660,11 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             {
                 if (desiredState == State.DELETED)
                 {
-                    if (getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group))
-                    {
-                        _groupManager.removeUserFromGroup(_memberName, _group);
-                        return true;
-                    }
-                    else
-                    {
-                        throw new AccessControlException("Do not have permission to remove group member");
-                    }
+                    getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group);
+
+                    _groupManager.removeUserFromGroup(_memberName, _group);
+                    return true;
+
                 }
                 return false;
             }

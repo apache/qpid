@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.management.amqp;
 
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.FilterManager;
@@ -369,16 +368,9 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                             }
                             response = performReadOperation(message, child);
                         }
-                        catch(RuntimeException e)
+                        catch(AccessControlException e)
                         {
-                            if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
-                            {
-                                response = createFailureResponse(message, STATUS_CODE_FORBIDDEN, e.getMessage());
-                            }
-                            else
-                            {
-                                throw e;
-                            }
+                            response = createFailureResponse(message, STATUS_CODE_FORBIDDEN, e.getMessage());
                         }
                     }
                     catch (ClassNotFoundException e)
@@ -474,17 +466,9 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             entity.setDesiredState(entity.getActualState(),State.DELETED);
             responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_NO_CONTENT);
         }
-        catch(RuntimeException e)
+        catch(AccessControlException e)
         {
-            if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
-            {
-                responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_FORBIDDEN);
-            }
-            else
-            {
-                throw e;
-            }
-
+            responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_FORBIDDEN);
         }
 
         return InternalMessage.createMapMessage(_virtualHost.getMessageStore(),responseHeader, Collections.emptyMap());
@@ -512,16 +496,9 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                 entity.setAttributes((Map)messageBody);
                 return performReadOperation(requestMessage, entity);
             }
-            catch(RuntimeException e)
+            catch(AccessControlException e)
             {
-                if (e instanceof AccessControlException || e.getCause() instanceof QpidSecurityException)
-                {
-                    return createFailureResponse(requestMessage, STATUS_CODE_FORBIDDEN, e.getMessage());
-                }
-                else
-                {
-                    throw e;
-                }
+                return createFailureResponse(requestMessage, STATUS_CODE_FORBIDDEN, e.getMessage());
             }
         }
         else
@@ -615,8 +592,8 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         final InternalMessageHeader requestHeader = msg.getMessageHeader();
         final MutableMessageHeader responseHeader = new MutableMessageHeader();
         responseHeader.setCorrelationId(requestHeader.getCorrelationId() == null
-                                            ? requestHeader.getMessageId()
-                                            : requestHeader.getCorrelationId());
+                                                ? requestHeader.getMessageId()
+                                                : requestHeader.getCorrelationId());
         responseHeader.setMessageId(UUID.randomUUID().toString());
 
 

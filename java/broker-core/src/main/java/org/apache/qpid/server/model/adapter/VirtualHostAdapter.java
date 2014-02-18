@@ -64,7 +64,6 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -377,10 +376,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         {
             throw new IllegalArgumentException(e);
         }
-        catch (QpidSecurityException e)
-        {
-            throw new AccessControlException(e.toString());
-        }
     }
 
     public Queue createQueue(Map<String, Object> attributes)
@@ -430,10 +425,6 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         catch(QueueExistsException qe)
         {
             throw new IllegalArgumentException("Queue with name "+MapValueConverter.getStringAttribute(Queue.NAME,attributes)+" already exists");
-        }
-        catch (QpidSecurityException e)
-        {
-            throw new AccessControlException(e.toString());
         }
     }
 

@@ -82,7 +82,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         }
         catch (SecurityException e)
         {
-            assertEquals("Cause message incorrect", "Permission denied: Update resetStatistics", e.getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: UPDATE resetStatistics", e.getMessage());
         }
 
         //try a vhost-level method
@@ -93,7 +93,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         }
         catch (Exception e)
         {
-            assertEquals("Cause message incorrect", "Permission denied: Update createNewQueue", e.getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: UPDATE createNewQueue", e.getMessage());
         }
 
         // Ensure that calls to MBeans outside the Qpid domain are not impeded.
@@ -143,7 +143,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         }
         catch (SecurityException e)
         {
-            assertEquals("Cause message incorrect", "Permission denied: Update createNewQueue", e.getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: UPDATE createNewQueue", e.getMessage());
         }
     }
 
@@ -237,7 +237,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         }
         catch (SecurityException e)
         {
-            assertEquals("Cause message incorrect", "Permission denied: Update createNewQueue", e.getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: UPDATE createNewQueue", e.getMessage());
         }
     }
 
@@ -262,7 +262,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         }
         catch (SecurityException e)
         {
-            assertEquals("Cause message incorrect", "Permission denied: Update resetStatistics", e.getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: UPDATE resetStatistics", e.getMessage());
         }
     }
 
@@ -289,7 +289,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         }
         catch (SecurityException e)
         {
-            assertEquals("Cause message incorrect", "Permission denied: Access getManagementApiMinorVersion", e.getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: ACCESS getManagementApiMinorVersion", e.getMessage());
         }
     }
 

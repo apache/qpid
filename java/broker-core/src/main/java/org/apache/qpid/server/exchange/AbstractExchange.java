@@ -22,7 +22,6 @@ package org.apache.qpid.server.exchange;
 
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.logging.LogSubject;
@@ -134,7 +133,7 @@ public abstract class AbstractExchange implements Exchange
         return _autoDelete;
     }
 
-    public void close() throws QpidSecurityException
+    public void close()
     {
 
         if(_closed.compareAndSet(false,true))
@@ -526,7 +525,6 @@ public abstract class AbstractExchange implements Exchange
 
     @Override
     public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException
     {
         return makeBinding(null, bindingKey, queue, arguments, false, false);
     }
@@ -535,7 +533,6 @@ public abstract class AbstractExchange implements Exchange
     public boolean replaceBinding(final UUID id, final String bindingKey,
                                   final AMQQueue queue,
                                   final Map<String, Object> arguments)
-            throws QpidSecurityException
     {
         return makeBinding(id, bindingKey, queue, arguments, false, true);
     }
@@ -543,20 +540,18 @@ public abstract class AbstractExchange implements Exchange
     @Override
     public void restoreBinding(final UUID id, final String bindingKey, final AMQQueue queue,
                                final Map<String, Object> argumentMap)
-            throws QpidSecurityException
     {
         makeBinding(id, bindingKey,queue, argumentMap,true, false);
     }
 
     @Override
-    public void removeBinding(final Binding b) throws QpidSecurityException
+    public void removeBinding(final Binding b)
     {
         removeBinding(b.getBindingKey(), b.getQueue(), b.getArguments());
     }
 
     @Override
     public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-            throws QpidSecurityException
     {
         assert queue != null;
 
@@ -569,14 +564,8 @@ public abstract class AbstractExchange implements Exchange
             arguments = Collections.emptyMap();
         }
 
-        // The default exchange bindings must reflect the existence of queues, allow
-        // all operations on it to succeed. It is up to the broker to prevent illegal
-        // attempts at binding to this exchange, not the ACLs.
         // Check access
-        if (!_virtualHost.getSecurityManager().authoriseUnbind(this, bindingKey, queue))
-        {
-            throw new QpidSecurityException("Permission denied: unbinding " + bindingKey);
-        }
+        _virtualHost.getSecurityManager().authoriseUnbind(this, bindingKey, queue);
 
         BindingImpl b = _bindingsMap.remove(new BindingImpl(null, bindingKey,queue,arguments));
 
@@ -622,7 +611,7 @@ public abstract class AbstractExchange implements Exchange
                                 AMQQueue queue,
                                 Map<String, Object> arguments,
                                 boolean restore,
-                                boolean force) throws QpidSecurityException
+                                boolean force)
     {
         assert queue != null;
 
@@ -636,10 +625,7 @@ public abstract class AbstractExchange implements Exchange
         }
 
         //Perform ACLs
-        if (!_virtualHost.getSecurityManager().authoriseBind(AbstractExchange.this, queue, bindingKey))
-        {
-            throw new QpidSecurityException("Permission denied: binding " + bindingKey);
-        }
+        _virtualHost.getSecurityManager().authoriseBind(AbstractExchange.this, queue, bindingKey);
 
         if (id == null)
         {
@@ -690,7 +676,7 @@ public abstract class AbstractExchange implements Exchange
 
         }
 
-        public void onClose(final Exchange exchange) throws QpidSecurityException
+        public void onClose(final Exchange exchange)
         {
             removeBinding(this);
         }

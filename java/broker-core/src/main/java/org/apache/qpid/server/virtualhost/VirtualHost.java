@@ -36,7 +36,6 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -58,9 +57,9 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     Collection<AMQQueue> getQueues();
 
-    int removeQueue(AMQQueue queue) throws QpidSecurityException;
+    int removeQueue(AMQQueue queue);
 
-    AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> arguments) throws QueueExistsException, QpidSecurityException;
+    AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> arguments) throws QueueExistsException;
 
 
     Exchange createExchange(UUID id,
@@ -69,10 +68,10 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
                             boolean durable,
                             boolean autoDelete,
                             String alternateExchange)
-            throws QpidSecurityException, ExchangeExistsException, ReservedExchangeNameException,
+            throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType;
 
-    void removeExchange(Exchange exchange, boolean force) throws QpidSecurityException, ExchangeIsAlternateException,
+    void removeExchange(Exchange exchange, boolean force) throws ExchangeIsAlternateException,
                                                                  RequiredExchangeException;
 
     MessageDestination getMessageDestination(String name);

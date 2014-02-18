@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.security.AccessControlException;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.UUID;
@@ -44,7 +45,6 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -61,7 +61,6 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.SuspendAndFailDtxException;
 import org.apache.qpid.server.txn.TimeoutDtxException;
 import org.apache.qpid.server.txn.UnknownDtxBranchException;
-import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
@@ -265,7 +264,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an existing consumer - can't subscribe exclusively");
                     }
-                    catch (QpidSecurityException e)
+                    catch (AccessControlException e)
                     {
                         exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                     }
@@ -291,11 +290,14 @@ public class ServerSessionDelegate extends SessionDelegate
 
         final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
 
-        if (!getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName()))
+        try
+        {
+            getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName());
+        }
+        catch (AccessControlException e)
         {
             ExecutionErrorCode errorCode = ExecutionErrorCode.UNAUTHORIZED_ACCESS;
-            String description = "Permission denied: exchange-name '" + exchange.getName() + "'";
-            exception(ssn, xfr, errorCode, description);
+            exception(ssn, xfr, errorCode, e.getMessage());
 
             return;
         }
@@ -749,7 +751,7 @@ public class ServerSessionDelegate extends SessionDelegate
                                     + " to " + method.getAlternateExchange() +".");
                 }
             }
-            catch (QpidSecurityException e)
+            catch (AccessControlException e)
             {
                 exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
             }
@@ -841,7 +843,7 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Exchange '"+method.getExchange()+"' cannot be deleted");
         }
-        catch (QpidSecurityException e)
+        catch (AccessControlException e)
         {
             exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
         }
@@ -935,7 +937,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         exchange.addBinding(method.getBindingKey(), queue, method.getArguments());
                     }
-                    catch (QpidSecurityException e)
+                    catch (AccessControlException e)
                     {
                         exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                     }
@@ -988,7 +990,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exchange.removeBinding(method.getBindingKey(), queue, null);
                 }
-                catch (QpidSecurityException e)
+                catch (AccessControlException e)
                 {
                     exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                 }
@@ -1236,7 +1238,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     exception(session, method, errorCode, description);
                 }
             }
-            catch (QpidSecurityException e)
+            catch (AccessControlException e)
             {
                 exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
             }
@@ -1309,7 +1311,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         virtualHost.removeQueue(queue);
                     }
-                    catch (QpidSecurityException e)
+                    catch (AccessControlException e)
                     {
                         exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                     }
@@ -1340,7 +1342,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     queue.clearQueue();
                 }
-                catch (QpidSecurityException e)
+                catch (AccessControlException e)
                 {
                     exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
                 }

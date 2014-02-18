@@ -29,10 +29,11 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.security.AccessControlException;
 
 public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeDeleteBody>
 {
@@ -83,7 +84,7 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         {
             throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange '"+body.getExchange()+"' cannot be deleted");
         }
-        catch (QpidSecurityException e)
+        catch (AccessControlException e)
         {
             throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
         }

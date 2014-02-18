@@ -21,7 +21,6 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -100,16 +99,13 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
-    public boolean unregisterExchange(String name, boolean inUse) throws QpidSecurityException
+    public boolean unregisterExchange(String name, boolean inUse)
     {
         final Exchange exchange = _exchangeMap.get(name);
         if (exchange != null)
         {
 
-            if (!_host.getSecurityManager().authoriseDelete(exchange))
-            {
-                throw new QpidSecurityException();
-            }
+            _host.getSecurityManager().authoriseDelete(exchange);
 
             // TODO: check inUse argument
 

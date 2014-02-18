@@ -35,7 +35,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessageHeader;
@@ -129,7 +128,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         assertEquals("Virtual host was wrong", _virtualHost, _queue.getVirtualHost());
     }
 
-    public void testBinding() throws QpidSecurityException
+    public void testBinding()
     {
         _exchange.addBinding(_routingKey, _queue, Collections.EMPTY_MAP);
 

@@ -19,6 +19,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -426,21 +427,22 @@ public class MessageServlet extends AbstractServlet
             // FIXME: added temporary authorization check until we introduce management layer
             // and review current ACL rules to have common rules for all management interfaces
             String methodName = isMoveTransaction? "moveMessages":"copyMessages";
-            if (isQueueUpdateMethodAuthorized(methodName, vhost))
-            {
-                final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
-                final List messageIds = new ArrayList((List) providedObject.get("messages"));
-                QueueEntryTransaction txn =
-                        isMoveTransaction
-                                ? new MoveTransaction(sourceQueue, messageIds, destinationQueue)
-                                : new CopyTransaction(sourceQueue, messageIds, destinationQueue);
-                vhost.executeTransaction(txn);
-                response.setStatus(HttpServletResponse.SC_OK);
-            }
-            else
-            {
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            }
+            authorizeMethod(methodName, vhost);
+
+
+            final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
+            final List messageIds = new ArrayList((List) providedObject.get("messages"));
+            QueueEntryTransaction txn =
+                    isMoveTransaction
+                            ? new MoveTransaction(sourceQueue, messageIds, destinationQueue)
+                            : new CopyTransaction(sourceQueue, messageIds, destinationQueue);
+            vhost.executeTransaction(txn);
+            response.setStatus(HttpServletResponse.SC_OK);
+
+        }
+        catch(AccessControlException e)
+        {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
         catch(RuntimeException e)
         {
@@ -470,22 +472,23 @@ public class MessageServlet extends AbstractServlet
 
         // FIXME: added temporary authorization check until we introduce management layer
         // and review current ACL rules to have common rules for all management interfaces
-        if (isQueueUpdateMethodAuthorized("deleteMessages", vhost))
+        try
         {
+            authorizeMethod("deleteMessages", vhost);
             vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
             response.setStatus(HttpServletResponse.SC_OK);
         }
-        else
+        catch (AccessControlException e)
         {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 
     }
 
-    private boolean isQueueUpdateMethodAuthorized(String methodName, VirtualHost host)
+    private void authorizeMethod(String methodName, VirtualHost host)
     {
         SecurityManager securityManager = host.getSecurityManager();
-        return securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName);
+        securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName);
     }
 
 }

@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
@@ -139,14 +138,7 @@ final class BindingAdapter extends AbstractAdapter implements Binding
 
     public void delete()
     {
-        try
-        {
-            _exchange.getExchange().removeBinding(_binding);
-        }
-        catch(QpidSecurityException e)
-        {
-            throw new AccessControlException(e.getMessage());
-        }
+        _exchange.getExchange().removeBinding(_binding);
     }
 
     @Override

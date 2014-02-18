@@ -40,10 +40,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.QpidSecurityException;
-import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.security.AccessControlException;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
@@ -149,7 +148,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 }
 
             }
-            catch (QpidSecurityException e)
+            catch (AccessControlException e)
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
             }
@@ -181,7 +180,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                                    QueueDeclareBody body,
                                    final VirtualHost virtualHost,
                                    final AMQProtocolSession session)
-            throws AMQException, QpidSecurityException, QueueExistsException
+            throws AMQException, QueueExistsException
     {
 
         final boolean durable = body.getDurable();

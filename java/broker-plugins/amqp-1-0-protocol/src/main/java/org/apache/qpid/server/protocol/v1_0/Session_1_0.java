@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.security.AccessControlException;
 import java.text.MessageFormat;
 
 import org.apache.log4j.Logger;
@@ -39,13 +40,11 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -380,7 +379,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
 
             final AMQQueue tempQueue = queue = _vhost.createQueue(this, attributes );
         }
-        catch (QpidSecurityException e)
+        catch (AccessControlException e)
         {
             //TODO
             _logger.info("Security error", e);

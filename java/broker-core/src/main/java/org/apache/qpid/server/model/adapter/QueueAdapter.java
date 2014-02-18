@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.*;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -160,14 +159,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
 
     public void delete()
     {
-        try
-        {
-            _queue.getVirtualHost().removeQueue(_queue);
-        }
-        catch (QpidSecurityException e)
-        {
-            throw new AccessControlException(e.toString());
-        }
+        _queue.getVirtualHost().removeQueue(_queue);
     }
 
     public String getName()
@@ -771,19 +763,13 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
     @Override
     protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
     {
-        if (!_vhost.getSecurityManager().authoriseUpdate(_queue))
-        {
-            throw new AccessControlException("Setting of queue attribute is denied");
-        }
+        _vhost.getSecurityManager().authoriseUpdate(_queue);
     }
 
     @Override
     protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
     {
-        if (!_vhost.getSecurityManager().authoriseUpdate(_queue))
-        {
-            throw new AccessControlException("Setting of queue attributes is denied");
-        }
+        _vhost.getSecurityManager().authoriseUpdate(_queue);
     }
 
     @Override

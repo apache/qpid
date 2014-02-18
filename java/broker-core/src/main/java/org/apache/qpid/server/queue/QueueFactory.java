@@ -21,16 +21,14 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.security.QpidSecurityException;
 
 public interface QueueFactory
 {
     AMQQueue createQueue(final AMQSessionModel creatingSession,
-                         Map<String, Object> arguments) throws QpidSecurityException;
+                         Map<String, Object> arguments);
 
-    AMQQueue restoreQueue(Map<String, Object> arguments) throws QpidSecurityException;
+    AMQQueue restoreQueue(Map<String, Object> arguments);
 
 }

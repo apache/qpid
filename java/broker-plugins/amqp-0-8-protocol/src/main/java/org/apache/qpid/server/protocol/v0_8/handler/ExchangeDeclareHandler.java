@@ -35,11 +35,12 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.QpidSecurityException;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.security.AccessControlException;
 
 public class ExchangeDeclareHandler implements StateAwareMethodListener<ExchangeDeclareBody>
 {
@@ -126,7 +127,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             {
                 throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + exchangeName,e);
             }
-            catch (QpidSecurityException e)
+            catch (AccessControlException e)
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
             }
