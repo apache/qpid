@@ -123,6 +123,8 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private Map _properties;
     private long _syncTimeout = DEFAULT_SYNC_TIMEOUT;
 
+    private String _localHostname;
+
     public ConnectionEndpoint(Container container, SaslServerProvider cbs)
     {
         _container = container;
@@ -334,6 +336,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                                  : _desiredMaxFrameSize).intValue();
 
         _remoteContainerId = open.getContainerId();
+        _localHostname = open.getHostname();
 
         if (open.getIdleTimeOut() != null)
         {
@@ -1040,6 +1043,12 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     {
         _remoteHostname = remoteHostname;
     }
+
+    public String getLocalHostname()
+    {
+        return _localHostname;
+    }
+
 
     public boolean isOpen()
     {

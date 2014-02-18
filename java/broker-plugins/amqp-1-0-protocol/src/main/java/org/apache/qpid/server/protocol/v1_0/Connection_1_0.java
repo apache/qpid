@@ -27,12 +27,14 @@ import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEventListener;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
 
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -47,6 +49,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 {
 
     private final Port _port;
+    private final Broker _broker;
     private VirtualHost _vhost;
     private final Transport _transport;
     private final ConnectionEndpoint _conn;
@@ -84,18 +87,18 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
 
 
-    public Connection_1_0(VirtualHost virtualHost,
+    public Connection_1_0(Broker broker,
                           ConnectionEndpoint conn,
                           long connectionId,
                           Port port,
                           Transport transport)
     {
-        _vhost = virtualHost;
+        _broker = broker;
         _port = port;
         _transport = transport;
         _conn = conn;
         _connectionId = connectionId;
-        _vhost.getConnectionRegistry().registerConnection(this);
+        //_vhost.getConnectionRegistry().registerConnection(this);
 
     }
 
@@ -152,65 +155,65 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
 
-        @Override
-        public void close(AMQConstant cause, String message)
-        {
-            _conn.close();
-        }
+    @Override
+    public void close(AMQConstant cause, String message)
+    {
+        _conn.close();
+    }
 
-        @Override
-        public void block()
-        {
-            // TODO
-        }
+    @Override
+    public void block()
+    {
+        // TODO
+    }
 
-        @Override
-        public void unblock()
-        {
-            // TODO
-        }
+    @Override
+    public void unblock()
+    {
+        // TODO
+    }
 
-        @Override
-        public void closeSession(Session_1_0 session, AMQConstant cause, String message)
-        {
-            session.close(cause, message);
-        }
+    @Override
+    public void closeSession(Session_1_0 session, AMQConstant cause, String message)
+    {
+        session.close(cause, message);
+    }
 
-        @Override
-        public long getConnectionId()
-        {
-            return _connectionId;
-        }
+    @Override
+    public long getConnectionId()
+    {
+        return _connectionId;
+    }
 
-        @Override
-        public List<Session_1_0> getSessionModels()
-        {
-            return new ArrayList<Session_1_0>(_sessions);
-        }
+    @Override
+    public List<Session_1_0> getSessionModels()
+    {
+        return new ArrayList<Session_1_0>(_sessions);
+    }
 
-        @Override
-        public LogSubject getLogSubject()
-        {
-            return _logSubject;
-        }
+    @Override
+    public LogSubject getLogSubject()
+    {
+        return _logSubject;
+    }
 
-        @Override
-        public boolean isSessionNameUnique(byte[] name)
-        {
-            return true;  // TODO
-        }
+    @Override
+    public boolean isSessionNameUnique(byte[] name)
+    {
+        return true;  // TODO
+    }
 
-        @Override
-        public String getRemoteAddressString()
-        {
-            return String.valueOf(_conn.getRemoteAddress());
-        }
+    @Override
+    public String getRemoteAddressString()
+    {
+        return String.valueOf(_conn.getRemoteAddress());
+    }
 
-        @Override
-        public String getClientId()
-        {
-            return _conn.getRemoteContainerId();
-        }
+    @Override
+    public String getClientId()
+    {
+        return _conn.getRemoteContainerId();
+    }
 
     @Override
     public String getRemoteContainerName()
@@ -219,123 +222,123 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
     @Override
-        public String getClientVersion()
-        {
-            return "";  //TODO
-        }
+    public String getClientVersion()
+    {
+        return "";  //TODO
+    }
 
-        @Override
-        public String getClientProduct()
-        {
-            return "";  //TODO
-        }
+    @Override
+    public String getClientProduct()
+    {
+        return "";  //TODO
+    }
 
-        public Principal getAuthorizedPrincipal()
-        {
-            return _conn.getUser();
-        }
+    public Principal getAuthorizedPrincipal()
+    {
+        return _conn.getUser();
+    }
 
-        @Override
-        public long getSessionCountLimit()
-        {
-            return 0;  // TODO
-        }
+    @Override
+    public long getSessionCountLimit()
+    {
+        return 0;  // TODO
+    }
 
-        @Override
-        public long getLastIoTime()
-        {
-            return 0;  // TODO
-        }
+    @Override
+    public long getLastIoTime()
+    {
+        return 0;  // TODO
+    }
 
-        @Override
-        public String getVirtualHostName()
-        {
-            return _vhost == null ? null : _vhost.getName();
-        }
+    @Override
+    public String getVirtualHostName()
+    {
+        return _vhost == null ? null : _vhost.getName();
+    }
 
-        @Override
-        public Port getPort()
-        {
-            return _port;
-        }
+    @Override
+    public Port getPort()
+    {
+        return _port;
+    }
 
-        @Override
-        public Transport getTransport()
-        {
-            return _transport;
-        }
+    @Override
+    public Transport getTransport()
+    {
+        return _transport;
+    }
 
-        @Override
-        public void stop()
-        {
-            _stopped = true;
-        }
+    @Override
+    public void stop()
+    {
+        _stopped = true;
+    }
 
-        @Override
-        public boolean isStopped()
-        {
-            return _stopped;
-        }
+    @Override
+    public boolean isStopped()
+    {
+        return _stopped;
+    }
 
-        @Override
-        public void initialiseStatistics()
-        {
-            _messageDeliveryStatistics = new StatisticsCounter("messages-delivered-" + getConnectionId());
-            _dataDeliveryStatistics = new StatisticsCounter("data-delivered-" + getConnectionId());
-            _messageReceiptStatistics = new StatisticsCounter("messages-received-" + getConnectionId());
-            _dataReceiptStatistics = new StatisticsCounter("data-received-" + getConnectionId());
-        }
+    @Override
+    public void initialiseStatistics()
+    {
+        _messageDeliveryStatistics = new StatisticsCounter("messages-delivered-" + getConnectionId());
+        _dataDeliveryStatistics = new StatisticsCounter("data-delivered-" + getConnectionId());
+        _messageReceiptStatistics = new StatisticsCounter("messages-received-" + getConnectionId());
+        _dataReceiptStatistics = new StatisticsCounter("data-received-" + getConnectionId());
+    }
 
-        @Override
-        public void registerMessageReceived(long messageSize, long timestamp)
-        {
-            _messageReceiptStatistics.registerEvent(1L, timestamp);
-            _dataReceiptStatistics.registerEvent(messageSize, timestamp);
-            _vhost.registerMessageReceived(messageSize,timestamp);
+    @Override
+    public void registerMessageReceived(long messageSize, long timestamp)
+    {
+        _messageReceiptStatistics.registerEvent(1L, timestamp);
+        _dataReceiptStatistics.registerEvent(messageSize, timestamp);
+        _vhost.registerMessageReceived(messageSize,timestamp);
 
-        }
+    }
 
-        @Override
-        public void registerMessageDelivered(long messageSize)
-        {
+    @Override
+    public void registerMessageDelivered(long messageSize)
+    {
 
-            _messageDeliveryStatistics.registerEvent(1L);
-            _dataDeliveryStatistics.registerEvent(messageSize);
-            _vhost.registerMessageDelivered(messageSize);
-        }
+        _messageDeliveryStatistics.registerEvent(1L);
+        _dataDeliveryStatistics.registerEvent(messageSize);
+        _vhost.registerMessageDelivered(messageSize);
+    }
 
-        @Override
-        public StatisticsCounter getMessageDeliveryStatistics()
-        {
-            return _messageDeliveryStatistics;
-        }
+    @Override
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messageDeliveryStatistics;
+    }
 
-        @Override
-        public StatisticsCounter getMessageReceiptStatistics()
-        {
-            return _messageReceiptStatistics;
-        }
+    @Override
+    public StatisticsCounter getMessageReceiptStatistics()
+    {
+        return _messageReceiptStatistics;
+    }
 
-        @Override
-        public StatisticsCounter getDataDeliveryStatistics()
-        {
-            return _dataDeliveryStatistics;
-        }
+    @Override
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDeliveryStatistics;
+    }
 
-        @Override
-        public StatisticsCounter getDataReceiptStatistics()
-        {
-            return _dataReceiptStatistics;
-        }
+    @Override
+    public StatisticsCounter getDataReceiptStatistics()
+    {
+        return _dataReceiptStatistics;
+    }
 
-        @Override
-        public void resetStatistics()
-        {
-            _dataDeliveryStatistics.reset();
-            _dataReceiptStatistics.reset();
-            _messageDeliveryStatistics.reset();
-            _messageReceiptStatistics.reset();
-        }
+    @Override
+    public void resetStatistics()
+    {
+        _dataDeliveryStatistics.reset();
+        _dataReceiptStatistics.reset();
+        _messageDeliveryStatistics.reset();
+        _messageReceiptStatistics.reset();
+    }
 
 
 
@@ -345,4 +348,24 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
 
+    public void frameReceived()
+    {
+        if(_vhost == null && _conn.isOpen())
+        {
+            String host = _conn.getLocalHostname();
+            if(host == null || host.trim().equals(""))
+            {
+                host = (String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST);
+            }
+            _vhost = _broker.getVirtualHostRegistry().getVirtualHost(host);
+            if(_vhost == null)
+            {
+                final Error err = new Error();
+                err.setCondition(AmqpError.NOT_FOUND);
+                err.setDescription("Unknown hostname " + _conn.getLocalHostname());
+                _conn.close(err);
+            }
+
+        }
+    }
 }
