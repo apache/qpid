@@ -416,7 +416,7 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
             }
             else
             {
-                return _properties.getMessageId().toString();
+                return _properties.getCorrelationId().toString();
             }
         }
 
@@ -427,13 +427,13 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
 
         public String getMessageId()
         {
-            if(_properties == null || _properties.getCorrelationId() == null)
+            if(_properties == null || _properties.getMessageId() == null)
             {
                 return null;
             }
             else
             {
-                return _properties.getCorrelationId().toString();
+                return _properties.getMessageId().toString();
             }
         }
 
@@ -557,6 +557,11 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         public String getSubject()
         {
             return _properties == null ? null : _properties.getSubject();
+        }
+
+        public String getTo()
+        {
+            return _properties == null ? null : _properties.getTo();
         }
     }
 
