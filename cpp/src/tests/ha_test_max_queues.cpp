@@ -30,7 +30,10 @@ using namespace qpid::client;
 using namespace std;
 
 int main(int argc, char** argv) {
-    assert(argc == 2);          // Expecing URL of broker as argv[1]
+    if (argc != 2) {
+        cerr << "Expecing URL of broker as argument" << endl;
+        exit(1);
+    }
     try {
         // We need to create a large number of queues quickly, so we
         // use the old API for it's asynchronous commands.
