@@ -73,7 +73,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private long _lastWriteTime;
     private final Broker _broker;
     private long _createTime = System.currentTimeMillis();
-    private ConnectionEndpoint _conn;
+    private ConnectionEndpoint _endpoint;
     private long _connectionId;
 
     private static final ByteBuffer HEADER =
@@ -113,6 +113,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private PrintWriter _out;
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
+    private Connection_1_0 _connection;
 
 
     static enum State {
@@ -181,9 +182,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         Container container = new Container(_broker.getId().toString());
 
-        VirtualHost virtualHost = _broker.getVirtualHostRegistry().getVirtualHost((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
         SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress());
-        _conn = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
+        _endpoint = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
 
         Map<Symbol,Object> serverProperties = new LinkedHashMap<Symbol, Object>();
         serverProperties.put(Symbol.valueOf(ServerPropertyNames.PRODUCT), QpidProperties.getProductName());
@@ -191,18 +191,19 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         serverProperties.put(Symbol.valueOf(ServerPropertyNames.QPID_BUILD), QpidProperties.getBuildVersion());
         serverProperties.put(Symbol.valueOf(ServerPropertyNames.QPID_INSTANCE_NAME), _broker.getName());
 
-        _conn.setProperties(serverProperties);
+        _endpoint.setProperties(serverProperties);
 
-        _conn.setRemoteAddress(getRemoteAddress());
-        _conn.setConnectionEventListener(new Connection_1_0(virtualHost, _conn, _connectionId, _port, _transport));
-        _conn.setFrameOutputHandler(this);
-        _conn.setSaslFrameOutput(this);
+        _endpoint.setRemoteAddress(getRemoteAddress());
+        _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport);
+        _endpoint.setConnectionEventListener(_connection);
+        _endpoint.setFrameOutputHandler(this);
+        _endpoint.setSaslFrameOutput(this);
 
-        _conn.setOnSaslComplete(new Runnable()
+        _endpoint.setOnSaslComplete(new Runnable()
         {
             public void run()
             {
-                if(_conn.isAuthenticated())
+                if (_endpoint.isAuthenticated())
                 {
                     _sender.send(PROTOCOL_HEADER.duplicate());
                     _sender.flush();
@@ -213,13 +214,13 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                 }
             }
         });
-        _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
-        _frameHandler = new SASLFrameHandler(_conn);
+        _frameWriter =  new FrameWriter(_endpoint.getDescribedTypeRegistry());
+        _frameHandler = new SASLFrameHandler(_endpoint);
 
         _sender.send(HEADER.duplicate());
         _sender.flush();
 
-        _conn.initiateSASL(subjectCreator.getMechanisms().split(" "));
+        _endpoint.initiateSASL(subjectCreator.getMechanisms().split(" "));
 
 
     }
@@ -357,6 +358,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                     if (msg.hasRemaining())
                     {
                         _frameHandler = _frameHandler.parse(msg);
+                        _connection.frameReceived();
                     }
             }
         }
@@ -380,7 +382,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                 final Error err = new Error();
                 err.setCondition(AmqpError.INTERNAL_ERROR);
                 err.setDescription(throwable.getMessage());
-                _conn.close(err);
+                _endpoint.close(err);
                 close();
             }
             catch(TransportException e)
@@ -406,10 +408,10 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         try
         {
             // todo
-            _conn.inputClosed();
-            if (_conn != null && _conn.getConnectionEventListener() != null)
+            _endpoint.inputClosed();
+            if (_endpoint != null && _endpoint.getConnectionEventListener() != null)
             {
-                ((Connection_1_0) _conn.getConnectionEventListener()).closed();
+                ((Connection_1_0) _endpoint.getConnectionEventListener()).closed();
             }
         }
         catch(RuntimeException e)
@@ -450,10 +452,10 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
             _frameWriter.setValue(amqFrame);
 
-            ByteBuffer dup = ByteBuffer.allocate(_conn.getMaxFrameSize());
+            ByteBuffer dup = ByteBuffer.allocate(_endpoint.getMaxFrameSize());
 
             int size = _frameWriter.writeToBuffer(dup);
-            if (size > _conn.getMaxFrameSize())
+            if (size > _endpoint.getMaxFrameSize())
             {
                 throw new OversizeFrameException(amqFrame, size);
             }
