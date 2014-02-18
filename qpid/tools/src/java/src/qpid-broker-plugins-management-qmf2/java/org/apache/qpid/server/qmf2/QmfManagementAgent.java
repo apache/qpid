@@ -231,9 +231,9 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 {
                     childAdded(connection, session);
 
-                    if (session.getSubscriptions() != null)
+                    if (session.getConsumers() != null)
                     {
-                        for (Consumer subscription : session.getSubscriptions())
+                        for (Consumer subscription : session.getConsumers())
                         {
                             childAdded(session, subscription);
                         }
