@@ -135,7 +135,7 @@ public class Exchange extends QmfAgentData
         }
 
         LifetimePolicy lifetimePolicy = (LifetimePolicy)_exchange.getAttribute("lifetimePolicy");
-        boolean autoDelete = (lifetimePolicy == LifetimePolicy.AUTO_DELETE) ? true : false;
+        boolean autoDelete = (lifetimePolicy != LifetimePolicy.PERMANENT) ? true : false;
 
         // TODO vhostRef - currently just use its name to try and get things working with standard command line tools.
 

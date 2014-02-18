@@ -23,6 +23,7 @@ package org.apache.qpid.server.qmf2.agentdata;
 
 // Misc Imports
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 // Simple Logging Facade 4 Java
@@ -563,8 +564,12 @@ System.out.println("properties = " + properties);
 
                             // I don't *think* that it make sense to allow setting exclusive or autoDelete to
                             // a queue created from config.
-                            Queue queue = vhost.createQueue(nameParser.getQueueName(), State.ACTIVE, durable, false,
-                                                            LifetimePolicy.PERMANENT, 0l, properties);
+                            Map<String,Object> attributes = new HashMap<String,Object>(properties);
+                            attributes.put(Queue.NAME, nameParser.getQueueName());
+                            attributes.put(Queue.DURABLE, durable);
+                            attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+
+                            Queue queue = vhost.createQueue(attributes);
 
                             // Set the queue's alternateExchange, which is just a little bit involved......
                             // The queue.setAttribute() method needs an org.apache.qpid.server.model.Exchange instance
