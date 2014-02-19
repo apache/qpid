@@ -346,6 +346,14 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 }
             });
         }
+        else
+        {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Ignoring the state environment change event as the environment facade for node '" + _prettyGroupNodeName
+                        + "' is in state " + _state.get());
+            }
+        }
     }
 
     private void stateChanged(StateChangeEvent stateChangeEvent)
@@ -930,6 +938,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             config.setRetainLogFiles(false);
             restore.execute(ile, config);
             environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+        }
+        if (LOGGER.isInfoEnabled())
+        {
+            LOGGER.info("Environment is created for node " + _prettyGroupNodeName);
         }
         return environment;
     }

@@ -446,6 +446,11 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
     @Override
     protected boolean setState(State currentState, State desiredState)
     {
+        if (desiredState == getActualState())
+        {
+            return false;
+        }
+
         switch (desiredState)
         {
         case ACTIVE:
@@ -454,9 +459,7 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
                 _replicatedEnvironmentFacade = _factory.createReplicatedEnvironmentFacade(this, new DefaultRemoteReplicationNodeFactory(_virtualHost));
                 return true;
             }
-        //TODO: Should we use UNAVAILABLE state instead of STOPPED to to stop the node
-        //      When node is stopped the corresponding remote node will have UNAVAILABLE state...
-        //      Alternatively, on DBPing failure, we can display the remote node state as STOPPED
+            break;
         case STOPPED:
             if (_state.compareAndSet(State.ACTIVE, State.STOPPED))
             {
@@ -466,6 +469,7 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
                 }
                 return true;
             }
+            break;
         case DELETED:
             if (getActualState() == State.ACTIVE)
             {
@@ -477,22 +481,15 @@ public class LocalReplicationNode extends AbstractAdapter implements Replication
             {
                 return true;
             }
+            break;
         case INITIALISING:
         case UNAVAILABLE:
         case ERRORED:
         case QUIESCED:
         default:
-            if (getActualState() == desiredState)
-            {
-                return false;
-            }
-            else
-            {
-                throw new IllegalStateTransitionException("Cannot transit into desired state " + desiredState + " from "
-                        + currentState);
-            }
-
         }
+        throw new IllegalStateTransitionException("Cannot transit into desired state " + desiredState + " from "
+                + currentState);
     }
 
     @Override

@@ -258,6 +258,7 @@ public class RemoteReplicationNode extends AbstractAdapter implements Replicatio
         }
         catch (IOException e)
         {
+            //TODO: Should it be STOPPED?
             _role = com.sleepycat.je.rep.ReplicatedEnvironment.State.UNKNOWN.name();
             LOGGER.warn("Cannot connect to node " + _replicationNode.getName() + " from " + _groupName);
         }

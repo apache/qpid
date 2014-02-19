@@ -63,6 +63,7 @@ public class LocalReplicationNodeWithReplicatedEnvironmentFacadeTest extends Qpi
        when(_virtualHost.getAttribute(VirtualHost.REMOTE_REPLICATION_NODE_MONITOR_INTERVAL)).thenReturn(100l);
        when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
        _evironmentWorkingFolder = TMP_FOLDER + File.separator + getTestName();
+       FileUtils.delete(new File(_evironmentWorkingFolder), true);
    }
 
    @Override
@@ -176,17 +177,38 @@ public class LocalReplicationNodeWithReplicatedEnvironmentFacadeTest extends Qpi
        int replicaPort = getNextAvailable(port + 1);
        Map<String, Object> replicaAttributes = createValidAttributes(replicaPort, port);
        String replicaEnvironmentFolder = _evironmentWorkingFolder + "-replica";
+       FileUtils.delete(new File(replicaEnvironmentFolder), true);
        replicaAttributes.put(ReplicationNode.STORE_PATH, replicaEnvironmentFolder);
        replicaAttributes.put(ReplicationNode.NAME, "testNode2");
        replicaAttributes.put(ReplicationNode.DESIGNATED_PRIMARY, true);
        LocalReplicationNode node = new LocalReplicationNode(_id, replicaAttributes, _virtualHost, _taskExecutor, new NodeReplicatedEnvironmentFacadeFactory());
+
        node.attainDesiredState();
+       ReplicatedEnvironmentFacade facade = node.getReplicatedEnvironmentFacade();
+       final CountDownLatch replicaMasterLatch = new CountDownLatch(1);
+       final CountDownLatch replicaReplicaLatch = new CountDownLatch(1);
+       facade.setStateChangeListener(new StateChangeListener()
+       {
+           @Override
+           public void stateChange(StateChangeEvent stateEvent) throws RuntimeException
+           {
+               if (stateEvent.getState() == com.sleepycat.je.rep.ReplicatedEnvironment.State.MASTER)
+               {
+                   replicaMasterLatch.countDown();
+               } else  if (stateEvent.getState() == com.sleepycat.je.rep.ReplicatedEnvironment.State.REPLICA)
+               {
+                   replicaReplicaLatch.countDown();
+               }
+           }
+       });
+
+       assertTrue("Transistion to REPLICA did not happen", replicaReplicaLatch.await(10, TimeUnit.SECONDS));
+
+       assertEquals("Unexpected role", "REPLICA", node.getAttribute(ReplicationNode.ROLE));
        try
        {
-           CountDownLatch replicaLatch = createMasterStateChangeAwaiter(node);
            node.setAttributes(Collections.<String, Object>singletonMap(ReplicationNode.ROLE, ReplicatedEnvironment.State.MASTER.name()));
-
-           assertTrue("Transistion to master did not happen", replicaLatch.await(10, TimeUnit.SECONDS));
+           assertTrue("Transistion to master did not happen", replicaMasterLatch.await(10, TimeUnit.SECONDS));
        }
        finally
        {
@@ -287,5 +309,6 @@ public class LocalReplicationNodeWithReplicatedEnvironmentFacadeTest extends Qpi
        assertEquals("Unexpected role attribute", "MASTER", node.getAttribute(ReplicationNode.ROLE));
        return  node;
    }
+
 }
 
