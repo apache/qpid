@@ -21,12 +21,15 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 import java.security.AccessControlException;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
+import org.apache.qpid.amqp_1_0.transport.ReceivingLinkListener;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
+import org.apache.qpid.amqp_1_0.transport.SendingLinkListener;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEventListener;
 import org.apache.qpid.amqp_1_0.type.*;
@@ -39,6 +42,7 @@ import org.apache.qpid.amqp_1_0.type.transaction.TxnCapability;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 
 import org.apache.qpid.amqp_1_0.type.transport.Error;
+import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
@@ -55,6 +59,7 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 
+import javax.security.auth.Subject;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -78,6 +83,8 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     private final Connection_1_0 _connection;
     private UUID _id = UUID.randomUUID();
     private AtomicBoolean _closed = new AtomicBoolean();
+    private final Subject _subject = new Subject();
+
 
 
     public Session_1_0(VirtualHost vhost, final Connection_1_0 connection, final SessionEndpoint endpoint)
@@ -86,12 +93,12 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         _endpoint = endpoint;
         _transaction = new AutoCommitTransaction(vhost.getMessageStore());
         _connection = connection;
-
+        _subject.getPrincipals().addAll(connection.getSubject().getPrincipals());
+        _subject.getPrincipals().add(new SessionPrincipal(this));
     }
 
     public void remoteLinkCreation(final LinkEndpoint endpoint)
     {
-
 
         Destination destination;
         Link_1_0 link = null;
@@ -105,7 +112,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         if(endpoint.getRole() == Role.SENDER)
         {
 
-            SendingLink_1_0 previousLink = (SendingLink_1_0) linkRegistry.getDurableSendingLink(endpoint.getName());
+            final SendingLink_1_0 previousLink = (SendingLink_1_0) linkRegistry.getDurableSendingLink(endpoint.getName());
 
             if(previousLink == null)
             {
@@ -161,7 +168,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                                                                                 _vhost,
                                                                                 (SendingDestination) destination
                         );
-                        sendingLinkEndpoint.setLinkEventListener(sendingLink);
+
+                        sendingLinkEndpoint.setLinkEventListener(new SubjectSpecificSendingLinkListener(sendingLink));
+
                         link = sendingLink;
                         if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()))
                         {
@@ -194,7 +203,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                 endpoint.setSource(oldSource);
                 SendingLinkEndpoint sendingLinkEndpoint = (SendingLinkEndpoint) endpoint;
                 previousLink.setLinkAttachment(new SendingLinkAttachment(this, sendingLinkEndpoint));
-                sendingLinkEndpoint.setLinkEventListener(previousLink);
+                sendingLinkEndpoint.setLinkEventListener(new SubjectSpecificSendingLinkListener(previousLink));
                 link = previousLink;
                 endpoint.setLocalUnsettled(previousLink.getUnsettledOutcomeMap());
             }
@@ -237,7 +246,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                 final ReceivingLinkEndpoint receivingLinkEndpoint = (ReceivingLinkEndpoint) endpoint;
                 final TxnCoordinatorLink_1_0 coordinatorLink =
                         new TxnCoordinatorLink_1_0(_vhost, this, receivingLinkEndpoint, _openTransactions);
-                receivingLinkEndpoint.setLinkEventListener(coordinatorLink);
+                receivingLinkEndpoint.setLinkEventListener(new SubjectSpecificReceivingLinkListener(coordinatorLink));
                 link = coordinatorLink;
 
 
@@ -296,7 +305,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         final ReceivingLinkEndpoint receivingLinkEndpoint = (ReceivingLinkEndpoint) endpoint;
                         final ReceivingLink_1_0 receivingLink = new ReceivingLink_1_0(new ReceivingLinkAttachment(this, receivingLinkEndpoint), _vhost,
                                 (ReceivingDestination) destination);
-                        receivingLinkEndpoint.setLinkEventListener(receivingLink);
+
+                        receivingLinkEndpoint.setLinkEventListener(new SubjectSpecificReceivingLinkListener(receivingLink));
+
                         link = receivingLink;
                         if(TerminusDurability.UNSETTLED_STATE.equals(target.getDurable()))
                         {
@@ -377,7 +388,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
 
             // TODO convert AMQP 1-0 node properties to queue attributes
 
-            final AMQQueue tempQueue = queue = _vhost.createQueue(this, attributes );
+            final AMQQueue tempQueue = queue = _vhost.createQueue(attributes );
         }
         catch (AccessControlException e)
         {
@@ -639,5 +650,87 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     public void removeDeleteTask(final Action<? super Session_1_0> task)
     {
         _taskList.remove(task);
+    }
+
+    public Subject getSubject()
+    {
+        return _subject;
+    }
+
+
+    private class SubjectSpecificReceivingLinkListener implements ReceivingLinkListener
+    {
+        private final ReceivingLinkListener _linkListener;
+
+        public SubjectSpecificReceivingLinkListener(final ReceivingLinkListener linkListener)
+        {
+            _linkListener = linkListener;
+        }
+
+        @Override
+        public void messageTransfer(final Transfer xfr)
+        {
+            Subject.doAs(_subject, new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    _linkListener.messageTransfer(xfr);
+                    return null;
+                }
+            });
+        }
+
+        @Override
+        public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
+        {
+            Subject.doAs(_subject, new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    _linkListener.remoteDetached(endpoint, detach);
+                    return null;
+                }
+            });
+        }
+    }
+
+    private class SubjectSpecificSendingLinkListener implements SendingLinkListener
+    {
+        private final SendingLink_1_0 _previousLink;
+
+        public SubjectSpecificSendingLinkListener(final SendingLink_1_0 previousLink)
+        {
+            _previousLink = previousLink;
+        }
+
+        @Override
+        public void flowStateChanged()
+        {
+            Subject.doAs(_subject, new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    _previousLink.flowStateChanged();
+                    return null;
+                }
+            });
+        }
+
+        @Override
+        public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
+        {
+            Subject.doAs(_subject, new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    _previousLink.remoteDetached(endpoint, detach);
+                    return null;
+                }
+            });
+        }
     }
 }

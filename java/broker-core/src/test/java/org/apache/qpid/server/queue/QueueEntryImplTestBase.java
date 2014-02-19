@@ -204,7 +204,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
-        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
+        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), queueAttributes);
         OrderedQueueEntryList queueEntryList = queue.getEntries();
 
         // create test entries

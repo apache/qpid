@@ -198,43 +198,36 @@ public abstract class AbstractServlet extends HttpServlet
             return;
         }
 
-        SecurityManager.setThreadSubject(subject);
+        HttpManagementActor logActor = HttpManagementUtil.getOrCreateAndCacheLogActor(request, _broker);
+        CurrentActor.set(logActor);
         try
         {
-            HttpManagementActor logActor = HttpManagementUtil.getOrCreateAndCacheLogActor(request, _broker);
-            CurrentActor.set(logActor);
-            try
+            Subject.doAs(subject, privilegedExceptionAction);
+        }
+        catch(RuntimeException e)
+        {
+            LOGGER.error("Unable to perform action", e);
+            throw e;
+        }
+        catch (PrivilegedActionException e)
+        {
+            LOGGER.error("Unable to perform action", e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException)
             {
-                Subject.doAs(subject, privilegedExceptionAction);
+                throw (RuntimeException)cause;
             }
-            catch(RuntimeException e)
+            if(cause instanceof Error)
             {
-                LOGGER.error("Unable to perform action", e);
-                throw e;
+                throw (Error)cause;
             }
-            catch (PrivilegedActionException e)
-            {
-                LOGGER.error("Unable to perform action", e);
-                Throwable cause = e.getCause();
-                if(cause instanceof RuntimeException)
-                {
-                    throw (RuntimeException)cause;
-                }
-                if(cause instanceof Error)
-                {
-                    throw (Error)cause;
-                }
-                throw new ConnectionScopedRuntimeException(e.getCause());
-            }
-            finally
-            {
-                CurrentActor.remove();
-            }
+            throw new ConnectionScopedRuntimeException(e.getCause());
         }
         finally
         {
-            SecurityManager.setThreadSubject(null);
+            CurrentActor.remove();
         }
+
     }
 
     protected Subject getAuthorisedSubject(HttpServletRequest request)

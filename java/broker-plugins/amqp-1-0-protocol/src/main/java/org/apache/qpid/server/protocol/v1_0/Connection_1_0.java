@@ -20,28 +20,38 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.Collection;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEventListener;
+import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
 
+import org.apache.qpid.amqp_1_0.transport.SessionEventListener;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 
@@ -50,12 +60,14 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     private final Port _port;
     private final Broker _broker;
+    private final SubjectCreator _subjectCreator;
     private VirtualHost _vhost;
     private final Transport _transport;
     private final ConnectionEndpoint _conn;
     private final long _connectionId;
     private final Collection<Session_1_0> _sessions = Collections.synchronizedCollection(new ArrayList<Session_1_0>());
     private final Object _reference = new Object();
+    private final Subject _subject = new Subject();
 
 
     private StatisticsCounter _messageDeliveryStatistics = new StatisticsCounter();
@@ -91,13 +103,15 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
                           ConnectionEndpoint conn,
                           long connectionId,
                           Port port,
-                          Transport transport)
+                          Transport transport, final SubjectCreator subjectCreator)
     {
         _broker = broker;
         _port = port;
         _transport = transport;
         _conn = conn;
         _connectionId = connectionId;
+        _subject.getPrincipals().add(new ConnectionPrincipal(this));
+        _subjectCreator = subjectCreator;
         //_vhost.getConnectionRegistry().registerConnection(this);
 
     }
@@ -109,9 +123,38 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     public void remoteSessionCreation(SessionEndpoint endpoint)
     {
-        Session_1_0 session = new Session_1_0(_vhost, this, endpoint);
+        final Session_1_0 session = new Session_1_0(_vhost, this, endpoint);
         _sessions.add(session);
-        endpoint.setSessionEventListener(session);
+        endpoint.setSessionEventListener(new SessionEventListener()
+        {
+            @Override
+            public void remoteLinkCreation(final LinkEndpoint endpoint)
+            {
+                Subject.doAs(session.getSubject(),new PrivilegedAction<Object>()
+                {
+                    @Override
+                    public Object run()
+                    {
+                        session.remoteLinkCreation(endpoint);
+                        return null;
+                    }
+                });
+            }
+
+            @Override
+            public void remoteEnd(final End end)
+            {
+                Subject.doAs(session.getSubject(),new PrivilegedAction<Object>()
+                {
+                    @Override
+                    public Object run()
+                    {
+                        session.remoteEnd(end);
+                        return null;
+                    }
+                });
+            }
+        });
     }
 
     void sessionEnded(Session_1_0 session)
@@ -209,6 +252,11 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         return String.valueOf(_conn.getRemoteAddress());
     }
 
+    public SocketAddress getRemoteAddress()
+    {
+        return _conn.getRemoteAddress();
+    }
+
     @Override
     public String getClientId()
     {
@@ -235,7 +283,8 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     public Principal getAuthorizedPrincipal()
     {
-        return _conn.getUser();
+        Set<AuthenticatedPrincipal> authPrincipals = _subject.getPrincipals(AuthenticatedPrincipal.class);
+        return authPrincipals.isEmpty() ? null : authPrincipals.iterator().next();
     }
 
     @Override
@@ -365,7 +414,16 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
                 err.setDescription("Unknown hostname " + _conn.getLocalHostname());
                 _conn.close(err);
             }
+            Subject authSubject = _subjectCreator.createSubjectWithGroups(_conn.getUser());
+            _subject.getPrincipals().addAll(authSubject.getPrincipals());
+            _subject.getPublicCredentials().addAll(authSubject.getPublicCredentials());
+            _subject.getPrivateCredentials().addAll(authSubject.getPrivateCredentials());
 
         }
+    }
+
+    Subject getSubject()
+    {
+        return _subject;
     }
 }

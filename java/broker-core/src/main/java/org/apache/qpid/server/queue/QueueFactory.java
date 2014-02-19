@@ -26,8 +26,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 
 public interface QueueFactory
 {
-    AMQQueue createQueue(final AMQSessionModel creatingSession,
-                         Map<String, Object> arguments);
+    AMQQueue createQueue(Map<String, Object> arguments);
 
     AMQQueue restoreQueue(Map<String, Object> arguments);
 

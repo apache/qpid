@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,6 +54,7 @@ import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -135,7 +137,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private Map<Integer, Long> _closingChannelsList = new ConcurrentHashMap<Integer, Long>();
     private ProtocolOutputConverter _protocolOutputConverter;
-    private Subject _authorizedSubject;
+    private final Subject _authorizedSubject = new Subject();
     private MethodDispatcher _dispatcher;
 
     private final long _connectionID;
@@ -187,6 +189,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _connectionID = connectionId;
 
         _actor = new AMQPConnectionActor(this, _broker.getRootMessageLogger());
+        _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
 
         _logSubject = new ConnectionLogSubject(this);
 
@@ -247,62 +250,71 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public void received(final ByteBuffer msg)
     {
-        final long arrivalTime = System.currentTimeMillis();
-        _lastReceivedTime = arrivalTime;
-        _lastIoTime = arrivalTime;
-        _readBytes += msg.remaining();
-
-        _receivedLock.lock();
-        try
+        Subject.doAs(_authorizedSubject, new PrivilegedAction<Void>()
         {
-            final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
-            for (AMQDataBlock dataBlock : dataBlocks)
+            @Override
+            public Void run()
             {
+                final long arrivalTime = System.currentTimeMillis();
+                _lastReceivedTime = arrivalTime;
+                _lastIoTime = arrivalTime;
+                _readBytes += msg.remaining();
+
+                _receivedLock.lock();
                 try
                 {
-                    dataBlockReceived(dataBlock);
-                }
-                catch(AMQConnectionException e)
-                {
-                    if(_logger.isDebugEnabled())
+                    final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
+                    for (AMQDataBlock dataBlock : dataBlocks)
                     {
-                        _logger.debug("Caught AMQConnectionException but will simply stop processing data blocks - the connection should already be closed.", e);
+                        try
+                        {
+                            dataBlockReceived(dataBlock);
+                        }
+                        catch(AMQConnectionException e)
+                        {
+                            if(_logger.isDebugEnabled())
+                            {
+                                _logger.debug("Caught AMQConnectionException but will simply stop processing data blocks - the connection should already be closed.", e);
+                            }
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.error("Unexpected exception when processing datablock", e);
+                            closeProtocolSession();
+                            break;
+                        }
                     }
-                    break;
+                    receivedComplete();
                 }
-                catch (Exception e)
+                catch (ConnectionScopedRuntimeException e)
                 {
-                    _logger.error("Unexpected exception when processing datablock", e);
+                    _logger.error("Unexpected exception", e);
                     closeProtocolSession();
-                    break;
                 }
+                catch (AMQProtocolVersionException e)
+                {
+                    _logger.error("Unexpected protocol version", e);
+                    closeProtocolSession();
+                }
+                catch (AMQFrameDecodingException e)
+                {
+                    _logger.error("Frame decoding", e);
+                    closeProtocolSession();
+                }
+                catch (IOException e)
+                {
+                    _logger.error("I/O Exception", e);
+                    closeProtocolSession();
+                }
+                finally
+                {
+                    _receivedLock.unlock();
+                }
+                return null;
             }
-            receivedComplete();
-        }
-        catch (ConnectionScopedRuntimeException e)
-        {
-            _logger.error("Unexpected exception", e);
-            closeProtocolSession();
-        }
-        catch (AMQProtocolVersionException e)
-        {
-            _logger.error("Unexpected protocol version", e);
-            closeProtocolSession();
-        }
-        catch (AMQFrameDecodingException e)
-        {
-            _logger.error("Frame decoding", e);
-            closeProtocolSession();
-        }
-        catch (IOException e)
-        {
-            _logger.error("I/O Exception", e);
-            closeProtocolSession();
-        }
-        finally
-        {
-            _receivedLock.unlock();
-        }
+        });
+
     }
 
     private void receivedComplete()
@@ -1126,7 +1138,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         {
             throw new IllegalArgumentException("authorizedSubject cannot be null");
         }
-        _authorizedSubject = authorizedSubject;
+
+        _authorizedSubject.getPrincipals().addAll(authorizedSubject.getPrincipals());
+
     }
 
     public Subject getAuthorizedSubject()
@@ -1136,7 +1150,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public Principal getAuthorizedPrincipal()
     {
-        return _authorizedSubject == null ? null : AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(_authorizedSubject);
+
+        return _authorizedSubject.getPrincipals(AuthenticatedPrincipal.class).size() == 0 ? null : AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(_authorizedSubject);
     }
 
     public SocketAddress getRemoteAddress()

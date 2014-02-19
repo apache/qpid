@@ -52,7 +52,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
             queueAttributes.put(Queue.NAME, "testActiveConsumerCount");
             queueAttributes.put(Queue.OWNER, "testOwner");
 
-            setQueue(new StandardQueue(null, null, queueAttributes));
+            setQueue(new StandardQueue(null, queueAttributes));
             assertNull("Queue was created", getQueue());
         }
         catch (IllegalArgumentException e)
@@ -70,7 +70,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getQname());
         queueAttributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
-        final StandardQueue queue = new StandardQueue(getVirtualHost(), null, queueAttributes);
+        final StandardQueue queue = new StandardQueue(getVirtualHost(), queueAttributes);
 
         setQueue(queue);
 
@@ -93,7 +93,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "testActiveConsumerCount");
         queueAttributes.put(Queue.OWNER, "testOwner");
-        final StandardQueue queue = new StandardQueue(getVirtualHost(), null, queueAttributes);
+        final StandardQueue queue = new StandardQueue(getVirtualHost(), queueAttributes);
 
         //verify adding an active consumer increases the count
         final MockConsumer consumer1 = new MockConsumer();
@@ -200,7 +200,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "test");
         // create queue with overridden method deliverAsync
-        StandardQueue testQueue = new StandardQueue(getVirtualHost(), null, queueAttributes)
+        StandardQueue testQueue = new StandardQueue(getVirtualHost(), queueAttributes)
         {
             @Override
             public void deliverAsync(QueueConsumer sub)
@@ -269,7 +269,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
 
         public DequeuedQueue(VirtualHost virtualHost)
         {
-            super(virtualHost, null, attributes(), new DequeuedQueueEntryListFactory());
+            super(virtualHost, attributes(), new DequeuedQueueEntryListFactory());
         }
 
         private static Map<String,Object> attributes()

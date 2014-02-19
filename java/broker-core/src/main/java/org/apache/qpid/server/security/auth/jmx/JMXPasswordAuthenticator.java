@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.auth.jmx;
 
 import java.net.SocketAddress;
+import java.security.PrivilegedAction;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
@@ -117,15 +118,16 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
 
     private void doManagementAuthorisation(Subject authenticatedSubject)
     {
-        SecurityManager.setThreadSubject(authenticatedSubject);
-        try
+        Subject.doAs(authenticatedSubject, new PrivilegedAction<Object>()
         {
-            _broker.getSecurityManager().accessManagement();
-        }
-        finally
-        {
-            SecurityManager.setThreadSubject(null);
-        }
+            @Override
+            public Object run()
+            {
+                _broker.getSecurityManager().accessManagement();
+                return null;
+            }
+        });
+
     }
 
 

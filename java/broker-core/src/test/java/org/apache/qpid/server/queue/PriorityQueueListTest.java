@@ -51,7 +51,7 @@ public class PriorityQueueListTest extends QpidTestCase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.PRIORITIES, 10);
-        PriorityQueue queue = new PriorityQueue(mock(VirtualHost.class), null, queueAttributes);
+        PriorityQueue queue = new PriorityQueue(mock(VirtualHost.class), queueAttributes);
         _list = queue.getEntries();
 
         for (int i = 0; i < PRIORITIES.length; i++)

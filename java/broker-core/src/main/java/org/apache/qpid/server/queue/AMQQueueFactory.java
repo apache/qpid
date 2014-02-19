@@ -27,7 +27,6 @@ import java.util.UUID;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -65,18 +64,17 @@ public class AMQQueueFactory implements QueueFactory
     @Override
     public AMQQueue restoreQueue(Map<String, Object> attributes)
     {
-        return createOrRestoreQueue(null, attributes, false);
+        return createOrRestoreQueue(attributes, false);
 
     }
 
     @Override
-    public AMQQueue createQueue(final AMQSessionModel creatingSession,
-                                Map<String, Object> attributes)
+    public AMQQueue createQueue(Map<String, Object> attributes)
     {
-        return createOrRestoreQueue(creatingSession, attributes, true);
+        return createOrRestoreQueue(attributes, true);
     }
 
-    private AMQQueue createOrRestoreQueue(final AMQSessionModel creatingSession, Map<String, Object> attributes,
+    private AMQQueue createOrRestoreQueue(Map<String, Object> attributes,
                                           boolean createInStore)
     {
 
@@ -129,19 +127,19 @@ public class AMQQueueFactory implements QueueFactory
 
         if(attributes.containsKey(Queue.SORT_KEY))
         {
-            queue = new SortedQueue(_virtualHost, creatingSession, attributes);
+            queue = new SortedQueue(_virtualHost, attributes);
         }
         else if(attributes.containsKey(Queue.LVQ_KEY))
         {
-            queue = new ConflationQueue(_virtualHost, creatingSession, attributes);
+            queue = new ConflationQueue(_virtualHost, attributes);
         }
         else if(attributes.containsKey(Queue.PRIORITIES))
         {
-            queue = new PriorityQueue(_virtualHost, creatingSession, attributes);
+            queue = new PriorityQueue(_virtualHost, attributes);
         }
         else
         {
-            queue = new StandardQueue(_virtualHost, creatingSession, attributes);
+            queue = new StandardQueue(_virtualHost, attributes);
         }
 
         //Register the new queue
@@ -232,7 +230,7 @@ public class AMQQueueFactory implements QueueFactory
                     args.put(Queue.ID, UUIDGenerator.generateQueueUUID(dlQueueName, _virtualHost.getName()));
                     args.put(Queue.NAME, dlQueueName);
                     args.put(Queue.DURABLE, true);
-                    dlQueue = _virtualHost.createQueue(null, args);
+                    dlQueue = _virtualHost.createQueue(args);
                 }
                 catch (QueueExistsException e)
                 {
@@ -260,7 +258,7 @@ public class AMQQueueFactory implements QueueFactory
 
         Map<String, Object> arguments = createQueueAttributesFromConfig(_virtualHost, config);
         
-        AMQQueue q = createOrRestoreQueue(null, arguments, false);
+        AMQQueue q = createOrRestoreQueue(arguments, false);
         return q;
     }
 

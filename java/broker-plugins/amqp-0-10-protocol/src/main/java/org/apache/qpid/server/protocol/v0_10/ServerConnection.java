@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import java.net.SocketAddress;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
@@ -65,7 +67,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
     private LogActor _actor;
 
-    private Subject _authorizedSubject = null;
+    private final Subject _authorizedSubject = new Subject();
     private Principal _authorizedPrincipal = null;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
@@ -84,6 +86,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public ServerConnection(final long connectionId, Broker broker)
     {
         _connectionId = connectionId;
+        _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
         _actor = new AMQPConnectionActor(this, broker.getRootMessageLogger());
     }
 
@@ -249,21 +252,27 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     }
 
     @Override
-    public void received(ProtocolEvent event)
+    public void received(final ProtocolEvent event)
     {
         _lastIoTime.set(System.currentTimeMillis());
+        Subject subject;
         if (event.isConnectionControl())
         {
             CurrentActor.set(_actor);
+            subject = _authorizedSubject;
         }
         else
         {
             ServerSession channel = (ServerSession) getSession(event.getChannel());
             LogActor channelActor = null;
-
             if (channel != null)
             {
+                subject = channel.getAuthorizedSubject();
                 channelActor = channel.getLogActor();
+            }
+            else
+            {
+                subject = _authorizedSubject;
             }
 
             CurrentActor.set(channelActor == null ? _actor : channelActor);
@@ -271,7 +280,15 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
         try
         {
-            super.received(event);
+            Subject.doAs(subject, new PrivilegedAction<Void>()
+            {
+                @Override
+                public Void run()
+                {
+                    ServerConnection.super.received(event);
+                    return null;
+                }
+            });
         }
         finally
         {
@@ -461,12 +478,12 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         if (authorizedSubject == null)
         {
-            _authorizedSubject = null;
             _authorizedPrincipal = null;
         }
         else
         {
-            _authorizedSubject = authorizedSubject;
+            _authorizedSubject.getPrincipals().addAll(authorizedSubject.getPrincipals());
+
             _authorizedPrincipal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(authorizedSubject);
         }
     }

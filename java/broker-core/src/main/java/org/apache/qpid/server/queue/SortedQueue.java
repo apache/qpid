@@ -38,20 +38,19 @@ public class SortedQueue extends OutOfOrderQueue<SortedQueueEntry, SortedQueue, 
     private final String _sortedPropertyName;
 
     protected SortedQueue(VirtualHost virtualHost,
-                          final AMQSessionModel creatingSession,
                           Map<String, Object> attributes,
                           QueueEntryListFactory<SortedQueueEntry, SortedQueue, SortedQueueEntryList> factory)
     {
-        super(virtualHost, creatingSession, attributes, factory);
+        super(virtualHost, attributes, factory);
         _sortedPropertyName = MapValueConverter.getStringAttribute(Queue.SORT_KEY,attributes);
     }
 
 
     protected SortedQueue(VirtualHost virtualHost,
-                          final AMQSessionModel creatingSession, Map<String, Object> attributes)
+                          Map<String, Object> attributes)
     {
         this(virtualHost,
-             creatingSession, attributes,
+             attributes,
              new SortedQueueEntryListFactory(MapValueConverter.getStringAttribute(Queue.SORT_KEY, attributes)));
     }
 

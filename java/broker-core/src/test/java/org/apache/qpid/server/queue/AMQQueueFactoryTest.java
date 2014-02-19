@@ -43,7 +43,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -97,13 +96,13 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         final ArgumentCaptor<Map> attributes = ArgumentCaptor.forClass(Map.class);
 
-        when(_virtualHost.createQueue(any(AMQSessionModel.class), attributes.capture())).then(
+        when(_virtualHost.createQueue(attributes.capture())).then(
                 new Answer<AMQQueue>()
                 {
                     @Override
                     public AMQQueue answer(InvocationOnMock invocation) throws Throwable
                     {
-                        return _queueFactory.createQueue(null, attributes.getValue());
+                        return _queueFactory.createQueue(attributes.getValue());
                     }
                 }
             );
@@ -206,7 +205,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.PRIORITIES, 5);
 
 
-        AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        AMQQueue queue = _queueFactory.createQueue(attributes);
 
         assertEquals("Queue not a priority queue", PriorityQueue.class, queue.getClass());
         verifyQueueRegistered("testPriorityQueue");
@@ -224,7 +223,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.NAME, queueName);
 
 
-        AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        AMQQueue queue = _queueFactory.createQueue(attributes);
         assertEquals("Queue not a simple queue", StandardQueue.class, queue.getClass());
         verifyQueueRegistered(queueName);
 
@@ -256,7 +255,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.NAME, queueName);
         attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
 
-        AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        AMQQueue queue = _queueFactory.createQueue(attributes);
 
         Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
@@ -297,7 +296,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, queueName);
 
-        AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        AMQQueue queue = _queueFactory.createQueue(attributes);
 
         assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryCount());
         Exchange altExchange = queue.getAlternateExchange();
@@ -338,7 +337,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.NAME, queueName);
         attributes.put(Queue.CREATE_DLQ_ON_CREATION, false);
 
-        AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        AMQQueue queue = _queueFactory.createQueue(attributes);
 
         assertNull("Queue should not have an alternate exchange as DLQ is disabled", queue.getAlternateExchange());
         assertNull("The alternate exchange should still not exist", _virtualHost.getExchange(dlExchangeName));
@@ -372,7 +371,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
 
         //create an autodelete queue
-        AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        AMQQueue queue = _queueFactory.createQueue(attributes);
         assertEquals("Queue should be autodelete",
                      LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS,
                      queue.getLifetimePolicy());
@@ -398,7 +397,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, (Object) 5);
 
-        final AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        final AMQQueue queue = _queueFactory.createQueue(attributes);
 
         assertNotNull("The queue was not registered as expected ", queue);
         assertEquals("Maximum delivery count not as expected", 5, queue.getMaximumDeliveryCount());
@@ -416,7 +415,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, "testMaximumDeliveryCountDefault");
 
-        final AMQQueue queue = _queueFactory.createQueue(null, attributes);
+        final AMQQueue queue = _queueFactory.createQueue(attributes);
 
         assertNotNull("The queue was not registered as expected ", queue);
         assertEquals("Maximum delivery count not as expected", 0, queue.getMaximumDeliveryCount());
@@ -434,7 +433,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
             Map<String,Object> attributes = new HashMap<String, Object>();
             attributes.put(Queue.ID, UUID.randomUUID());
 
-            _queueFactory.createQueue(null, attributes);
+            _queueFactory.createQueue(attributes);
             fail("queue with null name can not be created!");
         }
         catch (Exception e)
@@ -463,7 +462,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
             attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
 
-            _queueFactory.createQueue(null, attributes);
+            _queueFactory.createQueue(attributes);
             fail("queue with DLQ name having more than 255 characters can not be created!");
         }
         catch (Exception e)
@@ -493,7 +492,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
             attributes.put(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
 
-            _queueFactory.createQueue(null, attributes);
+            _queueFactory.createQueue(attributes);
             fail("queue with DLE name having more than 255 characters can not be created!");
         }
         catch (Exception e)

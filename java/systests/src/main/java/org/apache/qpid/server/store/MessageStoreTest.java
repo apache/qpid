@@ -27,7 +27,6 @@ import java.util.Collection;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -701,7 +700,7 @@ public class MessageStoreTest extends QpidTestCase
         AMQQueue queue = null;
 
         //Ideally we would be able to use the QueueDeclareHandler here.
-        queue = getVirtualHost().createQueue(null, queueArguments);
+        queue = getVirtualHost().createQueue(queueArguments);
 
         validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
 

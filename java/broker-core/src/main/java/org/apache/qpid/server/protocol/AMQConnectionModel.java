@@ -27,6 +27,7 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.Deletable;
 
+import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
@@ -71,6 +72,8 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
     public boolean isSessionNameUnique(byte[] name);
 
     String getRemoteAddressString();
+
+    SocketAddress getRemoteAddress();
 
     String getClientId();
 

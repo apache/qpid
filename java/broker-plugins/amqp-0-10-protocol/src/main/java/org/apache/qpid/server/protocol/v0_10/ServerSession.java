@@ -41,6 +41,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
+
+import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
@@ -100,6 +102,7 @@ public class ServerSession extends Session
     private static final int UNFINISHED_COMMAND_QUEUE_THRESHOLD = 500;
 
     private final UUID _id = UUID.randomUUID();
+    private final Subject _subject = new Subject();
     private long _createTime = System.currentTimeMillis();
     private LogActor _actor = GenericActor.getInstance(this);
 
@@ -146,6 +149,9 @@ public class ServerSession extends Session
         super(connection, delegate, name, expiry);
         _transaction = new AsyncAutoCommitTransaction(this.getMessageStore(),this);
         _logSubject = new ChannelLogSubject(this);
+
+        _subject.getPrincipals().addAll(((ServerConnection) connection).getAuthorizedSubject().getPrincipals());
+        _subject.getPrincipals().add(new SessionPrincipal(this));
 
         _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, new CloseAction()
         {
@@ -610,7 +616,7 @@ public class ServerSession extends Session
 
     public Subject getAuthorizedSubject()
     {
-        return getConnection().getAuthorizedSubject();
+        return _subject;
     }
 
     public void addDeleteTask(Action<? super ServerSession> task)

@@ -57,7 +57,7 @@ public class SimpleAMQQueueThreadPoolTest extends QpidTestCase
             Map<String,Object> attributes = new HashMap<String, Object>();
             attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
             attributes.put(Queue.NAME, "test");
-            AMQQueue queue = test.createQueue(null, attributes);
+            AMQQueue queue = test.createQueue(attributes);
 
             assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
 

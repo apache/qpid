@@ -83,7 +83,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             // Check virtualhost access
             try
             {
-                virtualHost.getSecurityManager().accessVirtualhost(virtualHostName, session.getRemoteAddress());
+                virtualHost.getSecurityManager().accessVirtualhost(virtualHostName);
             }
             catch (AccessControlException e)
             {

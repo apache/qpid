@@ -45,7 +45,6 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -61,6 +60,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.SuspendAndFailDtxException;
 import org.apache.qpid.server.txn.TimeoutDtxException;
 import org.apache.qpid.server.txn.UnknownDtxBranchException;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
@@ -89,8 +89,6 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         try
         {
-            setThreadSubject(session);
-
             if(!session.isClosing())
             {
                 Object asyncCommandMark = ((ServerSession)session).getAsyncCommandMark();
@@ -117,6 +115,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             LOGGER.error("Exception processing command", e);
             exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Exception processing command: " + e);
+            if(e instanceof ServerScopedRuntimeException)
+            {
+                throw e;
+            }
         }
     }
 
@@ -1222,7 +1224,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
                 arguments.put(Queue.EXCLUSIVE, exclusivityPolicy);
 
-                queue = virtualHost.createQueue((ServerSession)session, arguments);
+                queue = virtualHost.createQueue(arguments);
 
             }
             catch(QueueExistsException qe)
@@ -1437,7 +1439,6 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void closed(Session session)
     {
-        setThreadSubject(session);
         ServerSession serverSession = (ServerSession)session;
 
         serverSession.stopSubscriptions();
@@ -1449,12 +1450,6 @@ public class ServerSessionDelegate extends SessionDelegate
     public void detached(Session session)
     {
         closed(session);
-    }
-
-    private void setThreadSubject(Session session)
-    {
-        final ServerConnection scon = (ServerConnection) session.getConnection();
-        SecurityManager.setThreadSubject(scon.getAuthorizedSubject());
     }
 
     private static class CommandProcessedAction implements ServerTransaction.Action

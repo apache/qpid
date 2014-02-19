@@ -536,7 +536,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         }
     }
 
-    public AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> attributes) throws QueueExistsException
+    public AMQQueue createQueue(Map<String, Object> attributes) throws QueueExistsException
     {
         // make a copy as we may augment (with an ID for example)
         attributes = new LinkedHashMap<String, Object>(attributes);
@@ -585,7 +585,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             }
 
 
-            return _queueFactory.createQueue(creatingSession, attributes);
+            return _queueFactory.createQueue(attributes);
         }
 
     }

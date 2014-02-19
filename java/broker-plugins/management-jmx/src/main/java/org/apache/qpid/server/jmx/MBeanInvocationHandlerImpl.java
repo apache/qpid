@@ -162,7 +162,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
             }
 
             // Save the subject
-            SecurityManager.setThreadSubject(subject);
             CurrentActor.set(_logActor);
             try
             {

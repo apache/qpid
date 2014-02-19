@@ -34,9 +34,9 @@ public class ConflationQueue extends SimpleAMQQueue<ConflationQueueList.Conflati
 
 
     protected ConflationQueue(VirtualHost virtualHost,
-                              final AMQSessionModel creatingSession, Map<String, Object> attributes)
+                              Map<String, Object> attributes)
     {
-        super(virtualHost, creatingSession, attributes, entryList(attributes));
+        super(virtualHost, attributes, entryList(attributes));
     }
 
     private static ConflationQueueList.Factory entryList(final Map<String, Object> attributes)

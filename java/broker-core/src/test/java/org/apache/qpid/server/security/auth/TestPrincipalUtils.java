@@ -43,7 +43,7 @@ public class TestPrincipalUtils
             principals.add(new GroupPrincipal(group));
         }
 
-        return new Subject(true, principals, Collections.EMPTY_SET, Collections.EMPTY_SET);
+        return new Subject(false, principals, Collections.EMPTY_SET, Collections.EMPTY_SET);
     }
 
 }

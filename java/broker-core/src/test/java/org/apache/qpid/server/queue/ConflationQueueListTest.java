@@ -52,7 +52,7 @@ public class ConflationQueueListTest extends TestCase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.LVQ_KEY, CONFLATION_KEY);
-        _queue = new ConflationQueue(mock(VirtualHost.class), null, queueAttributes);
+        _queue = new ConflationQueue(mock(VirtualHost.class), queueAttributes);
         _list = _queue.getEntries();
     }
 

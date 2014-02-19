@@ -44,7 +44,7 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "SimpleQueueEntryImplTest");
-        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
+        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), queueAttributes);
 
         queueEntryList = queue.getEntries();
 

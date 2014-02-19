@@ -59,7 +59,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     int removeQueue(AMQQueue queue);
 
-    AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> arguments) throws QueueExistsException;
+    AMQQueue createQueue(Map<String, Object> arguments) throws QueueExistsException;
 
 
     Exchange createExchange(UUID id,

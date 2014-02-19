@@ -216,7 +216,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
                     attributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.LINK);
 
-                    queue = _vhost.createQueue(getSession(), attributes);
+                    queue = _vhost.createQueue(attributes);
                 }
                 else
                 {

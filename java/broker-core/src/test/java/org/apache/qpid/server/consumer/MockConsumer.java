@@ -38,6 +38,7 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
+import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -454,6 +455,11 @@ public class MockConsumer implements ConsumerTarget
         public String getRemoteAddressString()
         {
             return "remoteAddress:1234";
+        }
+
+        public SocketAddress getRemoteAddress()
+        {
+            return null;
         }
 
         @Override

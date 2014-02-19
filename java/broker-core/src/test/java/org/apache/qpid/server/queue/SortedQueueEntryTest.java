@@ -54,7 +54,7 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
         attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
         attributes.put(Queue.SORT_KEY, "KEY");
 
-        SortedQueue queue = new SortedQueue(mock(VirtualHost.class), null, attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
+        SortedQueue queue = new SortedQueue(mock(VirtualHost.class), attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
         {
 
             @Override

@@ -32,11 +32,17 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
+import javax.security.auth.Subject;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -85,12 +91,13 @@ public class AMQStateManager implements AMQMethodListener
 
     public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws AMQException
     {
-        MethodDispatcher dispatcher = _protocolSession.getMethodDispatcher();
+        final MethodDispatcher dispatcher = _protocolSession.getMethodDispatcher();
 
         final int channelId = evt.getChannelId();
-        B body = evt.getMethod();
+        final B body = evt.getMethod();
 
-        if(channelId != 0 && _protocolSession.getChannel(channelId)== null)
+        final AMQChannel channel = _protocolSession.getChannel(channelId);
+        if(channelId != 0 && channel == null)
         {
 
             if(! ((body instanceof ChannelOpenBody)
@@ -101,8 +108,37 @@ public class AMQStateManager implements AMQMethodListener
             }
 
         }
+        if(channel == null)
+        {
+            return body.execute(dispatcher, channelId);
+        }
+        else
+        {
+            try
+            {
+                return Subject.doAs(channel.getSubject(), new PrivilegedExceptionAction<Boolean>()
+                {
+                    @Override
+                    public Boolean run() throws AMQException
+                    {
+                        return body.execute(dispatcher, channelId);
+                    }
+                });
+            }
+            catch (PrivilegedActionException e)
+            {
+                if(e.getCause() instanceof AMQException)
+                {
+                    throw (AMQException) e.getCause();
+                }
+                else
+                {
+                    throw new ServerScopedRuntimeException(e.getCause());
+                }
+            }
 
-        return body.execute(dispatcher, channelId);
+
+        }
 
     }
 
@@ -113,7 +149,6 @@ public class AMQStateManager implements AMQMethodListener
 
     public AMQProtocolSession getProtocolSession()
     {
-        SecurityManager.setThreadSubject(_protocolSession.getAuthorizedSubject());
         return _protocolSession;
     }
 
