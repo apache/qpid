@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.configuration.updater;
 
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.BlockingQueue;
@@ -216,27 +217,32 @@ public class TaskExecutorTest extends TestCase
         _executor.start();
         LogActor actor = new TestLogActor(new NullRootMessageLogger());
         Subject subject = new Subject();
-        Subject currentSecurityManagerSubject = SecurityManager.getThreadSubject();
         final AtomicReference<LogActor> taskLogActor = new AtomicReference<LogActor>();
         final AtomicReference<Subject> taskSubject = new AtomicReference<Subject>();
         try
         {
             CurrentActor.set(actor);
-            SecurityManager.setThreadSubject(subject);
-            _executor.submitAndWait(new TaskExecutor.Task<Object>()
+            Subject.doAs(subject, new PrivilegedAction<Object>()
             {
                 @Override
-                public Void call()
+                public Object run()
+                {        _executor.submitAndWait(new TaskExecutor.Task<Object>()
                 {
-                    taskLogActor.set(CurrentActor.get());
-                    taskSubject.set(SecurityManager.getThreadSubject());
+                    @Override
+                    public Void call()
+                    {
+                        taskLogActor.set(CurrentActor.get());
+                        taskSubject.set(Subject.getSubject(AccessController.getContext()));
+                        return null;
+                    }
+                });
                     return null;
                 }
             });
+
         }
         finally
         {
-            SecurityManager.setThreadSubject(currentSecurityManagerSubject);
             CurrentActor.remove();
         }
         assertEquals("Unexpected task log actor", actor, taskLogActor.get());

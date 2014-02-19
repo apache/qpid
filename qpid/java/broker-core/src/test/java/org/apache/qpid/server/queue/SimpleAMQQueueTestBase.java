@@ -78,7 +78,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         attributes.put(Queue.NAME, _qname);
         attributes.put(Queue.OWNER, _owner);
 
-        _queue = (Q) _virtualHost.createQueue(null, attributes);
+        _queue = (Q) _virtualHost.createQueue(attributes);
 
         _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
@@ -106,7 +106,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
             Map<String,Object> attributes = new HashMap<String, Object>(_arguments);
             attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
 
-            _queue = (Q) _virtualHost.createQueue(null, attributes);
+            _queue = (Q) _virtualHost.createQueue(attributes);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -118,7 +118,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         Map<String,Object> attributes = new HashMap<String, Object>(_arguments);
         attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
         attributes.put(Queue.NAME, "differentName");
-        _queue = (Q) _virtualHost.createQueue(null, attributes);
+        _queue = (Q) _virtualHost.createQueue(attributes);
         assertNotNull("Queue was not created", _queue);
     }
 
@@ -1105,7 +1105,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
     {
         public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHost vhost)
         {
-            super(vhost, null, attributes(), factory);
+            super(vhost, attributes(), factory);
         }
 
         private static Map<String,Object> attributes()

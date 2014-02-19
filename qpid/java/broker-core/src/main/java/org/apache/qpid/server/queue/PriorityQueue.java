@@ -33,10 +33,9 @@ public class PriorityQueue extends OutOfOrderQueue<PriorityQueueList.PriorityQue
     public static final int DEFAULT_PRIORITY_LEVELS = 10;
 
     protected PriorityQueue(VirtualHost virtualHost,
-                            final AMQSessionModel creatingSession,
                             Map<String, Object> attributes)
     {
-        super(virtualHost, creatingSession, attributes, entryList(attributes));
+        super(virtualHost, attributes, entryList(attributes));
     }
 
     private static PriorityQueueList.Factory entryList(final Map<String, Object> attributes)

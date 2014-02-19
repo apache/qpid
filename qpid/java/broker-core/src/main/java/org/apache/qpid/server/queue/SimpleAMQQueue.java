@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -62,6 +65,8 @@ import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.security.auth.Subject;
 
 abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E, Q,L>, L extends SimpleQueueEntryList<E,Q,L>> implements AMQQueue<E, Q, QueueConsumer<?,E,Q,L>>,
                                        StateChangeListener<QueueConsumer<?,E,Q,L>, QueueConsumer.State>,
@@ -184,7 +189,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
     protected SimpleAMQQueue(VirtualHost virtualHost,
-                             final AMQSessionModel<?,?> creatingSession,
                              Map<String, Object> attributes,
                              QueueEntryListFactory<E, Q, L> entryListFactory)
     {
@@ -201,25 +205,39 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                                                              Queue.LIFETIME_POLICY,
                                                              attributes,
                                                              LifetimePolicy.PERMANENT);
-        if(creatingSession != null)
+
+        Subject activeSubject = Subject.getSubject(AccessController.getContext());
+        Set<SessionPrincipal> sessionPrincipals = activeSubject == null ? Collections.<SessionPrincipal>emptySet() : activeSubject.getPrincipals(SessionPrincipal.class);
+        AMQSessionModel<?,?> sessionModel;
+        if(sessionPrincipals.isEmpty())
+        {
+            sessionModel = null;
+        }
+        else
+        {
+            final SessionPrincipal sessionPrincipal = sessionPrincipals.iterator().next();
+            sessionModel = sessionPrincipal.getSession();
+        }
+
+        if(sessionModel != null)
         {
 
             switch(_exclusivityPolicy)
             {
 
                 case PRINCIPAL:
-                    _exclusiveOwner = creatingSession.getConnectionModel().getAuthorizedPrincipal();
+                    _exclusiveOwner = sessionModel.getConnectionModel().getAuthorizedPrincipal();
                     break;
                 case CONTAINER:
-                    _exclusiveOwner = creatingSession.getConnectionModel().getRemoteContainerName();
+                    _exclusiveOwner = sessionModel.getConnectionModel().getRemoteContainerName();
                     break;
                 case CONNECTION:
-                    _exclusiveOwner = creatingSession.getConnectionModel();
-                    addExclusivityConstraint(creatingSession.getConnectionModel());
+                    _exclusiveOwner = sessionModel.getConnectionModel();
+                    addExclusivityConstraint(sessionModel.getConnectionModel());
                     break;
                 case SESSION:
-                    _exclusiveOwner = creatingSession;
-                    addExclusivityConstraint(creatingSession);
+                    _exclusiveOwner = sessionModel;
+                    addExclusivityConstraint(sessionModel);
                     break;
                 case NONE:
                 case LINK:
@@ -251,9 +269,9 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
         if(_lifetimePolicy == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE)
         {
-            if(creatingSession != null)
+            if(sessionModel != null)
             {
-                addLifetimeConstraint(creatingSession.getConnectionModel());
+                addLifetimeConstraint(sessionModel.getConnectionModel());
             }
             else
             {
@@ -264,9 +282,9 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         }
         else if(_lifetimePolicy == LifetimePolicy.DELETE_ON_SESSION_END)
         {
-            if(creatingSession != null)
+            if(sessionModel != null)
             {
-                addLifetimeConstraint(creatingSession);
+                addLifetimeConstraint(sessionModel);
             }
             else
             {

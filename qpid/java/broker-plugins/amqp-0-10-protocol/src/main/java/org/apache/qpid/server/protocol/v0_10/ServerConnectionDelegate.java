@@ -38,7 +38,6 @@ import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
@@ -190,7 +189,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
         vhost = _broker.getVirtualHostRegistry().getVirtualHost(vhostName);
 
-        SecurityManager.setThreadSubject(sconn.getAuthorizedSubject());
+
 
         if(vhost != null)
         {
@@ -198,7 +197,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
             try
             {
-                vhost.getSecurityManager().accessVirtualhost(vhostName, sconn.getRemoteAddress());
+                vhost.getSecurityManager().accessVirtualhost(vhostName);
             }
             catch (AccessControlException e)
             {

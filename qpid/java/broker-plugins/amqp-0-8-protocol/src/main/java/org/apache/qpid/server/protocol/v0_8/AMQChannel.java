@@ -31,6 +31,7 @@ import java.util.concurrent.locks.Lock;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
@@ -86,6 +87,8 @@ import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TransportException;
+
+import javax.security.auth.Subject;
 
 public class AMQChannel<T extends AMQProtocolSession<T>>
         implements AMQSessionModel<AMQChannel<T>,T>,
@@ -172,6 +175,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
     private final CapacityCheckAction _capacityCheckAction = new CapacityCheckAction();
     private final ImmediateAction _immediateAction = new ImmediateAction();
+    private Subject _subject;
 
 
     public AMQChannel(T session, int channelId, MessageStore messageStore)
@@ -181,6 +185,10 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         _channelId = channelId;
 
         _actor = new AMQPChannelActor(this, session.getLogActor().getRootMessageLogger());
+        _subject = new Subject(false, session.getAuthorizedSubject().getPrincipals(),
+                               session.getAuthorizedSubject().getPublicCredentials(),
+                               session.getAuthorizedSubject().getPrivateCredentials());
+        _subject.getPrincipals().add(new SessionPrincipal(this));
         _logSubject = new ChannelLogSubject(this);
         _actor.message(ChannelMessages.CREATE());
 
@@ -1251,6 +1259,11 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     public void removeDeleteTask(final Action<? super AMQChannel<T>> task)
     {
         _taskList.remove(task);
+    }
+
+    public Subject getSubject()
+    {
+        return _subject;
     }
 
 

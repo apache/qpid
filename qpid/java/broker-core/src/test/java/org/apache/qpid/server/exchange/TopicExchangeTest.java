@@ -80,7 +80,7 @@ public class TopicExchangeTest extends QpidTestCase
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
         attributes.put(Queue.NAME, name);
-        return _vhost.createQueue(null, attributes);
+        return _vhost.createQueue(attributes);
     }
 
     public void testNoRoute() throws Exception

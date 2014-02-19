@@ -28,8 +28,8 @@ import java.util.Map;
 public class StandardQueue extends SimpleAMQQueue<StandardQueueEntry,StandardQueue,StandardQueueEntryList>
 {
     public StandardQueue(final VirtualHost virtualHost,
-                         final AMQSessionModel creatingSession, final Map<String, Object> arguments)
+                         final Map<String, Object> arguments)
     {
-        super(virtualHost, creatingSession, arguments, new StandardQueueEntryList.Factory());
+        super(virtualHost, arguments, new StandardQueueEntryList.Factory());
     }
 }

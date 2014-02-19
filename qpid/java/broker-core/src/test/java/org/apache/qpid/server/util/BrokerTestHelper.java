@@ -186,7 +186,7 @@ public class BrokerTestHelper
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
         attributes.put(Queue.NAME, queueName);
-        AMQQueue queue = virtualHost.createQueue(null, attributes);
+        AMQQueue queue = virtualHost.createQueue(attributes);
         return queue;
     }
 

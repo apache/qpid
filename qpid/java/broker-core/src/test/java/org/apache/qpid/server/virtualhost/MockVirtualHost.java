@@ -29,7 +29,6 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -153,7 +152,7 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public AMQQueue createQueue(final AMQSessionModel creatingSession, Map<String, Object> arguments)
+    public AMQQueue createQueue(Map<String, Object> arguments)
     {
         return null;
     }

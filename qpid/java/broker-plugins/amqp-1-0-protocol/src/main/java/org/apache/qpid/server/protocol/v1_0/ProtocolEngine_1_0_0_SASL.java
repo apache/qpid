@@ -25,10 +25,12 @@ import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
@@ -194,7 +196,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         _endpoint.setProperties(serverProperties);
 
         _endpoint.setRemoteAddress(getRemoteAddress());
-        _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport);
+        _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport, subjectCreator);
         _endpoint.setConnectionEventListener(_connection);
         _endpoint.setFrameOutputHandler(this);
         _endpoint.setSaslFrameOutput(this);
@@ -256,7 +258,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private final Logger RAW_LOGGER = Logger.getLogger("RAW");
 
 
-    public synchronized void received(ByteBuffer msg)
+    public synchronized void received(final ByteBuffer msg)
     {
         try
         {
@@ -357,8 +359,17 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                 case FRAME:
                     if (msg.hasRemaining())
                     {
-                        _frameHandler = _frameHandler.parse(msg);
-                        _connection.frameReceived();
+                        Subject.doAs(_connection.getSubject(), new PrivilegedAction<Void>()
+                        {
+                            @Override
+                            public Void run()
+                            {
+                                _frameHandler = _frameHandler.parse(msg);
+                                _connection.frameReceived();
+                                return null;
+                            }
+                        });
+
                     }
             }
         }

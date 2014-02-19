@@ -23,6 +23,9 @@ package org.apache.qpid.server.security.access.plugins;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.io.File;
+import java.net.SocketAddress;
+import java.security.AccessController;
+import java.util.Set;
 
 import javax.security.auth.Subject;
 
@@ -30,8 +33,8 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.security.Result;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
@@ -115,15 +118,22 @@ public class DefaultAccessControl implements AccessControl
 	 * Delegate to the {@link #authorise(Operation, ObjectType, ObjectProperties)} method, with
      * the operation set to ACCESS and no object properties.
 	 */
-    public Result access(ObjectType objectType, Object inetSocketAddress)
+    public Result access(ObjectType objectType)
     {
         InetAddress addressOfClient = null;
-
-        if(inetSocketAddress != null)
+        final Subject subject = Subject.getSubject(AccessController.getContext());
+        if(subject != null)
         {
-            addressOfClient = ((InetSocketAddress) inetSocketAddress).getAddress();
+            Set<ConnectionPrincipal> principals = subject.getPrincipals(ConnectionPrincipal.class);
+            if(!principals.isEmpty())
+            {
+                SocketAddress address = principals.iterator().next().getConnection().getRemoteAddress();
+                if(address instanceof InetSocketAddress)
+                {
+                    addressOfClient = ((InetSocketAddress) address).getAddress();
+                }
+            }
         }
-
         return authoriseFromAddress(Operation.ACCESS, objectType, ObjectProperties.EMPTY, addressOfClient);
     }
 
@@ -139,7 +149,7 @@ public class DefaultAccessControl implements AccessControl
 
     public Result authoriseFromAddress(Operation operation, ObjectType objectType, ObjectProperties properties, InetAddress addressOfClient)
     {
-        final Subject subject = SecurityManager.getThreadSubject();
+        final Subject subject = Subject.getSubject(AccessController.getContext());
         // Abstain if there is no subject/principal associated with this thread
         if (subject == null  || subject.getPrincipals().size() == 0)
         {

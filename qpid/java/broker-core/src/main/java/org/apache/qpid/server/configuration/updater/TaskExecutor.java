@@ -21,6 +21,7 @@
 package org.apache.qpid.server.configuration.updater;
 
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
@@ -211,14 +212,12 @@ public class TaskExecutor
     private class CallableWrapper<T> implements Task<T>
     {
         private Task<T> _userTask;
-        private Subject _securityManagerSubject;
         private LogActor _actor;
         private Subject _contextSubject;
 
         public CallableWrapper(Task<T> userWork)
         {
             _userTask = userWork;
-            _securityManagerSubject = SecurityManager.getThreadSubject();
             _actor = CurrentActor.get();
             _contextSubject = Subject.getSubject(AccessController.getContext());
         }
@@ -226,35 +225,21 @@ public class TaskExecutor
         @Override
         public T call()
         {
-            SecurityManager.setThreadSubject(_securityManagerSubject);
             CurrentActor.set(_actor);
 
             try
             {
                 T result = null;
-                try
-                {
-                    result = Subject.doAs(_contextSubject, new PrivilegedExceptionAction<T>()
+                result = Subject.doAs(_contextSubject, new PrivilegedAction<T>()
                     {
                         @Override
-                        public T run() throws Exception
+                        public T run()
                         {
                             return executeTask(_userTask);
                         }
                     });
-                }
-                catch (PrivilegedActionException e)
-                {
-                    Exception underlying =  e.getException();
-                    if(underlying instanceof RuntimeException)
-                    {
-                        throw (RuntimeException)underlying;
-                    }
-                    else
-                    {
-                        throw new ServerScopedRuntimeException(e);
-                    }
-                }
+
+
                 return result;
             }
             finally
@@ -266,14 +251,6 @@ public class TaskExecutor
                 catch (Exception e)
                 {
                     LOGGER.warn("Unexpected exception on current actor removal", e);
-                }
-                try
-                {
-                    SecurityManager.setThreadSubject(null);
-                }
-                catch (Exception e)
-                {
-                    LOGGER.warn("Unexpected exception on nullifying of subject for a security manager", e);
                 }
             }
         }

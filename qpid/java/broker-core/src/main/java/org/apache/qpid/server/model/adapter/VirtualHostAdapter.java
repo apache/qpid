@@ -414,7 +414,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         try
         {
 
-            AMQQueue queue = _virtualHost.createQueue(null, attributes);
+            AMQQueue queue = _virtualHost.createQueue(attributes);
 
             synchronized (_queueAdapters)
             {

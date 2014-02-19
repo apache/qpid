@@ -86,7 +86,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
         attributes.put(Queue.SORT_KEY, "KEY");
 
         // Create test list
-        _testQueue = new SortedQueue(mock(VirtualHost.class), null, attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
+        _testQueue = new SortedQueue(mock(VirtualHost.class), attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
         {
 
             @Override

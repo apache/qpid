@@ -50,7 +50,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
-        _testQueue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
+        _testQueue = new StandardQueue(mock(VirtualHost.class), queueAttributes);
 
         _sqel = _testQueue.getEntries();
         for(int i = 1; i <= 100; i++)
@@ -93,7 +93,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
             Map<String,Object> queueAttributes = new HashMap<String, Object>();
             queueAttributes.put(Queue.ID, UUID.randomUUID());
             queueAttributes.put(Queue.NAME, getName());
-            StandardQueue queue = new StandardQueue(mock(VirtualHost.class), null, queueAttributes);
+            StandardQueue queue = new StandardQueue(mock(VirtualHost.class), queueAttributes);
 
             return queue.getEntries();
         }

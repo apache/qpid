@@ -215,7 +215,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         attributes.put(Queue.LIFETIME_POLICY, lifetimePolicy);
 
 
-        final AMQQueue queue = virtualHost.createQueue(channel, attributes);
+        final AMQQueue queue = virtualHost.createQueue(attributes);
 
         return queue;
     }

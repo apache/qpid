@@ -29,11 +29,10 @@ public abstract class OutOfOrderQueue<E extends QueueEntryImpl<E,Q,L>, Q extends
 {
 
     protected OutOfOrderQueue(VirtualHost virtualHost,
-                              final AMQSessionModel creatingSession,
                               Map<String, Object> attributes,
                               QueueEntryListFactory<E, Q, L> entryListFactory)
     {
-        super(virtualHost, creatingSession, attributes, entryListFactory);
+        super(virtualHost, attributes, entryListFactory);
     }
 
     @Override

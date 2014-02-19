@@ -24,17 +24,20 @@ import static org.mockito.Mockito.*;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 
 import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.Result;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
@@ -64,7 +67,6 @@ public class DefaultAccessControlTest extends TestCase
     private void configureAccessControl(final RuleSet rs) throws ConfigurationException
     {
         _plugin = new DefaultAccessControl(rs);
-        SecurityManager.setThreadSubject(null);
         CurrentActor.set(new TestLogActor(messageLogger));
     }
 
@@ -86,7 +88,6 @@ public class DefaultAccessControlTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        SecurityManager.setThreadSubject(null);
     }
 
     /**
@@ -95,8 +96,6 @@ public class DefaultAccessControlTest extends TestCase
     public void testNoSubjectAlwaysAbstains() throws ConfigurationException
     {
         setUpGroupAccessControl();
-        SecurityManager.setThreadSubject(null);
-
         final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
         assertEquals(Result.ABSTAIN, result);
     }
@@ -108,10 +107,16 @@ public class DefaultAccessControlTest extends TestCase
     public void testUsernameAllowsOperation() throws ConfigurationException
     {
         setUpGroupAccessControl();
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user1"));
-
-        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(Result.ALLOWED, result);
+        Subject.doAs(TestPrincipalUtils.createTestSubject("user1"), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+                assertEquals(Result.ALLOWED, result);
+                return null;
+            }
+        });
     }
 
     /**
@@ -143,14 +148,22 @@ public class DefaultAccessControlTest extends TestCase
     public void testCatchAllRuleDeniesUnrecognisedUsername() throws ConfigurationException
     {
         setUpGroupAccessControl();
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("unknown", "unkgroup1", "unkgroup2"));
+        Subject.doAs(TestPrincipalUtils.createTestSubject("unknown", "unkgroup1", "unkgroup2"),
+                     new PrivilegedAction<Object>()
+                     {
+                         @Override
+                         public Object run()
+                         {
+                             assertEquals("Expecting zero messages before test", 0, messageLogger.getLogMessages().size());
+                             final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+                             assertEquals(Result.DENIED, result);
 
-        assertEquals("Expecting zero messages before test", 0, messageLogger.getLogMessages().size());
-        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(Result.DENIED, result);
+                             assertEquals("Expecting one message before test", 1, messageLogger.getLogMessages().size());
+                             assertTrue("Logged message does not contain expected string", messageLogger.messageContains(0, "ACL-1002"));
+                             return null;
+                         }
+                     });
 
-        assertEquals("Expecting one message before test", 1, messageLogger.getLogMessages().size());
-        assertTrue("Logged message does not contain expected string", messageLogger.messageContains(0, "ACL-1002"));
     }
 
     /**
@@ -163,13 +176,20 @@ public class DefaultAccessControlTest extends TestCase
         // grant user4 access right on any method in any component
         rs.grant(1, "user4", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, new ObjectProperties(ObjectProperties.STAR));
         configureAccessControl(rs);
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user4"));
+        Subject.doAs(TestPrincipalUtils.createTestSubject("user4"), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                ObjectProperties actionProperties = new ObjectProperties("getName");
+                actionProperties.put(ObjectProperties.Property.COMPONENT, "Test");
 
-        ObjectProperties actionProperties = new ObjectProperties("getName");
-        actionProperties.put(ObjectProperties.Property.COMPONENT, "Test");
+                final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
+                assertEquals(Result.ALLOWED, result);
+                return null;
+            }
+        });
 
-        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
-        assertEquals(Result.ALLOWED, result);
     }
 
     /**
@@ -184,55 +204,91 @@ public class DefaultAccessControlTest extends TestCase
         ruleProperties.put(ObjectProperties.Property.COMPONENT, "Test");
         rs.grant(1, "user5", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, ruleProperties);
         configureAccessControl(rs);
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user5"));
+        Subject.doAs(TestPrincipalUtils.createTestSubject("user5"), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                ObjectProperties actionProperties = new ObjectProperties("getName");
+                actionProperties.put(ObjectProperties.Property.COMPONENT, "Test");
+                Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
+                assertEquals(Result.ALLOWED, result);
 
-        ObjectProperties actionProperties = new ObjectProperties("getName");
-        actionProperties.put(ObjectProperties.Property.COMPONENT, "Test");
-        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
-        assertEquals(Result.ALLOWED, result);
+                actionProperties.put(ObjectProperties.Property.COMPONENT, "Test2");
+                result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
+                assertEquals(Result.DEFER, result);
+                return null;
+            }
+        });
 
-        actionProperties.put(ObjectProperties.Property.COMPONENT, "Test2");
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, actionProperties);
-        assertEquals(Result.DEFER, result);
+
     }
 
     public void testAccess() throws Exception
     {
-        Subject subject = TestPrincipalUtils.createTestSubject("user1");
-        SecurityManager.setThreadSubject(subject);
+        final Subject subject = TestPrincipalUtils.createTestSubject("user1");
+        final InetAddress inetAddress = InetAddress.getLocalHost();
+        final InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 1);
 
-        RuleSet mockRuleSet = mock(RuleSet.class);
+        AMQConnectionModel connectionModel = mock(AMQConnectionModel.class);
+        when(connectionModel.getRemoteAddress()).thenReturn(inetSocketAddress);
 
-        InetAddress inetAddress = InetAddress.getLocalHost();
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 1);
+        subject.getPrincipals().add(new ConnectionPrincipal(connectionModel));
 
-        DefaultAccessControl accessControl = new DefaultAccessControl(mockRuleSet);
+        Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
+        {
+            @Override
+            public Object run() throws Exception
+            {
+                RuleSet mockRuleSet = mock(RuleSet.class);
 
-        accessControl.access(ObjectType.VIRTUALHOST, inetSocketAddress);
 
-        verify(mockRuleSet).check(subject, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY, inetAddress);
+
+                DefaultAccessControl accessControl = new DefaultAccessControl(mockRuleSet);
+
+                accessControl.access(ObjectType.VIRTUALHOST);
+
+                verify(mockRuleSet).check(subject, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY, inetAddress);
+                return null;
+            }
+        });
+
     }
 
     public void testAccessIsDeniedIfRuleThrowsException() throws Exception
     {
-        Subject subject = TestPrincipalUtils.createTestSubject("user1");
-        SecurityManager.setThreadSubject(subject);
+        final Subject subject = TestPrincipalUtils.createTestSubject("user1");
+        final InetAddress inetAddress = InetAddress.getLocalHost();
+        final InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 1);
 
-        InetAddress inetAddress = InetAddress.getLocalHost();
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 1);
+        AMQConnectionModel connectionModel = mock(AMQConnectionModel.class);
+        when(connectionModel.getRemoteAddress()).thenReturn(inetSocketAddress);
 
-        RuleSet mockRuleSet = mock(RuleSet.class);
-        when(mockRuleSet.check(
-                subject,
-                Operation.ACCESS,
-                ObjectType.VIRTUALHOST,
-                ObjectProperties.EMPTY,
-                inetAddress)).thenThrow(new RuntimeException());
+        subject.getPrincipals().add(new ConnectionPrincipal(connectionModel));
 
-        DefaultAccessControl accessControl = new DefaultAccessControl(mockRuleSet);
-        Result result = accessControl.access(ObjectType.VIRTUALHOST, inetSocketAddress);
+        Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
+        {
+            @Override
+            public Object run() throws Exception
+            {
 
-        assertEquals(Result.DENIED, result);
+
+                RuleSet mockRuleSet = mock(RuleSet.class);
+                when(mockRuleSet.check(
+                        subject,
+                        Operation.ACCESS,
+                        ObjectType.VIRTUALHOST,
+                        ObjectProperties.EMPTY,
+                        inetAddress)).thenThrow(new RuntimeException());
+
+                DefaultAccessControl accessControl = new DefaultAccessControl(mockRuleSet);
+                Result result = accessControl.access(ObjectType.VIRTUALHOST);
+
+                assertEquals(Result.DENIED, result);
+                return null;
+            }
+        });
+
     }
 
 
@@ -248,21 +304,29 @@ public class DefaultAccessControlTest extends TestCase
         ruleProperties.put(ObjectProperties.Property.COMPONENT, "Test");
         rs.grant(1, "user6", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, ruleProperties);
         configureAccessControl(rs);
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user6"));
+        Subject.doAs(TestPrincipalUtils.createTestSubject("user6"), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                ObjectProperties properties = new ObjectProperties("getAttribute");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        ObjectProperties properties = new ObjectProperties("getAttribute");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+                properties.put(ObjectProperties.Property.COMPONENT, "Test2");
+                result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.DEFER, result);
 
-        properties.put(ObjectProperties.Property.COMPONENT, "Test2");
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.DEFER, result);
+                properties = new ObjectProperties("getAttribute2");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.DEFER, result);
 
-        properties = new ObjectProperties("getAttribute2");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.DEFER, result);
+                return null;
+            }
+        });
+
     }
 
     /**
@@ -275,25 +339,33 @@ public class DefaultAccessControlTest extends TestCase
         // grant user8 all rights on method queryNames in all component
         rs.grant(1, "user8", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties("queryNames"));
         configureAccessControl(rs);
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user8"));
+        Subject.doAs(TestPrincipalUtils.createTestSubject("user8"), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                ObjectProperties properties = new ObjectProperties();
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                properties.put(ObjectProperties.Property.NAME, "queryNames");
 
-        ObjectProperties properties = new ObjectProperties();
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        properties.put(ObjectProperties.Property.NAME, "queryNames");
+                Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+                result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+                properties = new ObjectProperties("getAttribute");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+                assertEquals(Result.DEFER, result);
 
-        properties = new ObjectProperties("getAttribute");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
-        assertEquals(Result.DEFER, result);
+                result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.DEFER, result);
+                return null;
+            }
+        });
 
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.DEFER, result);
+
     }
 
     /**
@@ -306,24 +378,32 @@ public class DefaultAccessControlTest extends TestCase
         // grant user9 all rights on any method in all component
         rs.grant(1, "user9", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties());
         configureAccessControl(rs);
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user9"));
+        Subject.doAs(TestPrincipalUtils.createTestSubject("user9"), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                ObjectProperties properties = new ObjectProperties("queryNames");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
 
-        ObjectProperties properties = new ObjectProperties("queryNames");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+                result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+                properties = new ObjectProperties("getAttribute");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        properties = new ObjectProperties("getAttribute");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        result = _plugin.authorise(Operation.UPDATE, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+                result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
+                return null;
+            }
+        });
 
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+
     }
 
     /**
@@ -340,29 +420,43 @@ public class DefaultAccessControlTest extends TestCase
 
         rs.grant(1, "user9", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, ruleProperties);
         configureAccessControl(rs);
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user9"));
+        Subject.doAs(TestPrincipalUtils.createTestSubject("user9"), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                ObjectProperties properties = new ObjectProperties("getAttributes");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        ObjectProperties properties = new ObjectProperties("getAttributes");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
+                properties = new ObjectProperties("getAttribute");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.ALLOWED, result);
 
-        properties = new ObjectProperties("getAttribute");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.ALLOWED, result);
-
-        properties = new ObjectProperties("getAttribut");
-        properties.put(ObjectProperties.Property.COMPONENT, "Test");
-        result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
-        assertEquals(Result.DEFER, result);
+                properties = new ObjectProperties("getAttribut");
+                properties.put(ObjectProperties.Property.COMPONENT, "Test");
+                result = _plugin.authorise(Operation.ACCESS, ObjectType.METHOD, properties);
+                assertEquals(Result.DEFER, result);
+                return null;
+            }
+        });
     }
 
-    private void authoriseAndAssertResult(Result expectedResult, String userName, String... groups)
+    private void authoriseAndAssertResult(final Result expectedResult, String userName, String... groups)
     {
-        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject(userName, groups));
 
-        Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
-        assertEquals(expectedResult, result);
+        Subject.doAs(TestPrincipalUtils.createTestSubject(userName, groups), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+                assertEquals(expectedResult, result);
+                return null;
+            }
+        });
+
     }
 }

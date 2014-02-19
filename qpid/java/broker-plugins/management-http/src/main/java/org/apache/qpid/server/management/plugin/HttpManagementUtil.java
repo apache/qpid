@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.X509Certificate;
@@ -119,37 +120,22 @@ public class HttpManagementUtil
     public static void assertManagementAccess(final SecurityManager securityManager, Subject subject, LogActor actor)
     {
         // TODO: We should eliminate SecurityManager.setThreadSubject in favour of Subject.doAs
-        SecurityManager.setThreadSubject(subject); // Required for accessManagement check
         CurrentActor.set(actor);
         try
         {
-            try
+            Subject.doAs(subject, new PrivilegedAction<Void>()
             {
-                Subject.doAs(subject, new PrivilegedExceptionAction<Void>()
+                @Override
+                public Void run()
                 {
-                    @Override
-                    public Void run()
-                    {
-                        securityManager.accessManagement();
-                        return null;
-                    }
-                });
-            }
-            catch (PrivilegedActionException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to perform access check", e);
-            }
+                    securityManager.accessManagement();
+                    return null;
+                }
+            });
         }
         finally
         {
-            try
-            {
-                CurrentActor.remove();
-            }
-            finally
-            {
-                SecurityManager.setThreadSubject(null);
-            }
+            CurrentActor.remove();
         }
     }
 
