@@ -171,6 +171,9 @@ if (BUILD_AMQP)
         )
 
     if (WIN32)
+        list (APPEND amqp_SOURCES qpid/messaging/amqp/windows/SslTransport.cpp)
+        list (APPEND amqpc_SOURCES qpid/messaging/amqp/windows/SslTransport.cpp)
+
         set(proton_dll  "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}.dll")
         set(proton_dlld "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}d.dll")
 

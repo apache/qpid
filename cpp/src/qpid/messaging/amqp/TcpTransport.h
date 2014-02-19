@@ -52,23 +52,26 @@ class TcpTransport : public Transport
     void close();
     const qpid::sys::SecuritySettings* getSecuritySettings();
 
-  private:
+  protected:
     boost::scoped_ptr<qpid::sys::Socket> socket;
     TransportContext& context;
     qpid::sys::AsynchConnector* connector;
     qpid::sys::AsynchIO* aio;
     boost::shared_ptr<qpid::sys::Poller> poller;
     std::string id;
-    bool closed;
-    qpid::sys::Mutex lock;
 
-    void connected(const qpid::sys::Socket&);
+    virtual ~TcpTransport() {}
+    virtual void connected(const qpid::sys::Socket&);
     void failed(const std::string& msg);
     void read(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void write(qpid::sys::AsynchIO&);
     void eof(qpid::sys::AsynchIO&);
     void disconnected(qpid::sys::AsynchIO&);
     void socketClosed(qpid::sys::AsynchIO&, const qpid::sys::Socket&);
+
+  private:
+    bool closed;
+    qpid::sys::Mutex lock;
 };
 }}} // namespace qpid::messaging::amqp
 
