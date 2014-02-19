@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.ReplicationNode;
@@ -48,6 +47,7 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.rep.InsufficientReplicasException;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicatedEnvironment.State;
 import com.sleepycat.je.rep.ReplicationConfig;
 import com.sleepycat.je.rep.StateChangeEvent;
@@ -55,7 +55,6 @@ import com.sleepycat.je.rep.StateChangeListener;
 
 public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 {
-    private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacadeTest.class);
 
     private static final int TEST_NODE_PORT = new QpidTestCase().findFreePort();
     private static final int LISTENER_TIMEOUT = 5;
@@ -130,6 +129,123 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         Environment e = ef.getEnvironment();
 
         assertNull("Environment should be null after facade close", e);
+    }
+
+    public void testTransferMasterToSelf() throws Exception
+    {
+        final CountDownLatch firstNodeReplicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch firstNodeMasterStateLatch = new CountDownLatch(1);
+        StateChangeListener stateChangeListener = new StateChangeListener(){
+
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    firstNodeReplicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    firstNodeMasterStateLatch.countDown();
+                }
+            }
+        };
+        ReplicatedEnvironmentFacade firstNode = addNode(State.MASTER, stateChangeListener, new NoopReplicationGroupListener());
+        assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
+
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+        ReplicatedEnvironmentFacade secondNode = addReplica(TEST_NODE_NAME + "_1", node1NodeHostPort);
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), secondNode.getNodeState());
+
+        int replica2Port = getNextAvailable(replica1Port + 1);
+        String node2NodeHostPort = "localhost:" + replica2Port;
+        final CountDownLatch replicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch masterStateLatch = new CountDownLatch(1);
+        StateChangeListener testStateChangeListener = new StateChangeListener()
+        {
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    replicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    masterStateLatch.countDown();
+                }
+            }
+        };
+        ReplicatedEnvironmentFacade thirdNode = addNode(TEST_NODE_NAME + "_2", node2NodeHostPort, TEST_DESIGNATED_PRIMARY, State.REPLICA, testStateChangeListener, new NoopReplicationGroupListener());
+        assertTrue("Environment did not become a replica", replicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals(3, thirdNode.getNumberOfElectableGroupMembers());
+
+        thirdNode.transferMasterToSelfAsynchronously();
+        assertTrue("Environment did not become a master", masterStateLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("First node environment did not become a replica", firstNodeReplicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), firstNode.getNodeState());
+    }
+
+    public void testTransferMasterAnotherNode() throws Exception
+    {
+        final CountDownLatch firstNodeReplicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch firstNodeMasterStateLatch = new CountDownLatch(1);
+        StateChangeListener stateChangeListener = new StateChangeListener(){
+
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    firstNodeReplicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    firstNodeMasterStateLatch.countDown();
+                }
+            }
+        };
+        ReplicatedEnvironmentFacade firstNode = addNode(State.MASTER, stateChangeListener, new NoopReplicationGroupListener());
+        assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
+
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+        ReplicatedEnvironmentFacade secondNode = addReplica(TEST_NODE_NAME + "_1", node1NodeHostPort);
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), secondNode.getNodeState());
+
+        int replica2Port = getNextAvailable(replica1Port + 1);
+        String node2NodeHostPort = "localhost:" + replica2Port;
+        final CountDownLatch replicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch masterStateLatch = new CountDownLatch(1);
+        StateChangeListener testStateChangeListener = new StateChangeListener()
+        {
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    replicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    masterStateLatch.countDown();
+                }
+            }
+        };
+        String thirdNodeName = TEST_NODE_NAME + "_2";
+        ReplicatedEnvironmentFacade thirdNode = addNode(thirdNodeName, node2NodeHostPort, TEST_DESIGNATED_PRIMARY, State.REPLICA, testStateChangeListener, new NoopReplicationGroupListener());
+        assertTrue("Environment did not become a replica", replicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals(3, thirdNode.getNumberOfElectableGroupMembers());
+
+        firstNode.transferMasterAsynchronously(thirdNodeName);
+        assertTrue("Environment did not become a master", masterStateLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("First node environment did not become a replica", firstNodeReplicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), firstNode.getNodeState());
     }
 
     public void testOpenDatabases() throws Exception
@@ -404,7 +520,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testEnvironmentRestartOnInsufficientReplicas() throws Exception
     {
-        long startTime = System.currentTimeMillis();
 
         ReplicatedEnvironmentFacade master = createMaster();
 
@@ -417,9 +532,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         String replica2NodeName = TEST_NODE_NAME + "_2";
         String replica2NodeHostPort = "localhost:" + replica2Port;
         ReplicatedEnvironmentFacade replica2 = addReplica(replica2NodeName, replica2NodeHostPort);
-        
-        long setUpTime = System.currentTimeMillis();
-        LOGGER.debug("XXX Start Up Time " + (setUpTime - startTime));
+
         String databaseName = "test";
 
         DatabaseConfig dbConfig = createDatabase(master, databaseName);
@@ -428,8 +541,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         replica1.close();
         replica2.close();
 
-        long closeTime = System.currentTimeMillis();
-        LOGGER.debug("XXX Env close  Time " + (closeTime - setUpTime));
         Environment e = master.getEnvironment();
         Database db = master.getOpenDatabase(databaseName);
         try
@@ -441,22 +552,17 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         {
             master.handleDatabaseException(null, ex);
         }
-        long openDatabaseTime = System.currentTimeMillis();
-        LOGGER.debug("XXX Open db Time " + (openDatabaseTime - closeTime ));
 
         replica1 = addReplica(replica1NodeName, replica1NodeHostPort);
         replica2 = addReplica(replica2NodeName, replica2NodeHostPort);
 
-        long reopenTime = System.currentTimeMillis();
-        LOGGER.debug("XXX Restart Time " + (reopenTime - openDatabaseTime ));
         // Need to poll to await the remote node updating itself
         long timeout = System.currentTimeMillis() + 5000;
         while(!(State.REPLICA.name().equals(master.getNodeState()) || State.MASTER.name().equals(master.getNodeState()) ) && System.currentTimeMillis() < timeout)
         {
             Thread.sleep(200);
         }
-        long recoverTime = System.currentTimeMillis();
-        LOGGER.debug("XXX Recover Time " + (recoverTime - reopenTime));
+
         assertTrue("The node could not rejoin the cluster. State is " + master.getNodeState(),
                 State.REPLICA.name().equals(master.getNodeState()) || State.MASTER.name().equals(master.getNodeState()) );
 

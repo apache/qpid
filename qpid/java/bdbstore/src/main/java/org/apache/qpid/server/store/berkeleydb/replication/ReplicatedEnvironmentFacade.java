@@ -150,6 +150,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private volatile ReplicatedEnvironment _environment;
     private volatile long _joinTime;
+    private volatile ReplicatedEnvironment.State _lastKnownEnvironmentState;
 
     public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration, RemoteReplicationNodeFactory remoteReplicationNodeFactory)
     {
@@ -229,36 +230,41 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientReplicasException || dbe instanceof RestartRequiredException);
         if (restart)
         {
-            if (_state.compareAndSet(State.OPEN, State.RESTARTING))
-            {
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Environment restarting due to exception " + dbe.getMessage(), dbe);
-                }
-
-                _environmentJobExecutor.execute(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            restartEnvironment(dbe);
-                        }
-                        catch (Exception e)
-                        {
-                            LOGGER.error("Exception on environment restart", e);
-                        }
-                    }
-                });
-
-            }
-            else
-            {
-                LOGGER.info("Cannot restart environment because of facade state: " + _state.get());
-            }
+            tryToRestartEnvironment(dbe);
         }
         return new AMQStoreException(contextMessage, dbe);
+    }
+
+    private void tryToRestartEnvironment(final DatabaseException dbe)
+    {
+        if (_state.compareAndSet(State.OPEN, State.RESTARTING))
+        {
+            if (dbe != null && LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Environment restarting due to exception " + dbe.getMessage(), dbe);
+            }
+
+            _environmentJobExecutor.execute(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        restartEnvironment();
+                    }
+                    catch (Exception e)
+                    {
+                        LOGGER.error("Exception on environment restart", e);
+                    }
+                }
+            });
+
+        }
+        else
+        {
+            LOGGER.info("Cannot restart environment because of facade state: " + _state.get());
+        }
     }
 
     @Override
@@ -379,6 +385,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             listener.stateChange(stateChangeEvent);
         }
+
+        if (_lastKnownEnvironmentState == ReplicatedEnvironment.State.MASTER && state == ReplicatedEnvironment.State.DETACHED && _state.get() == State.OPEN)
+        {
+            tryToRestartEnvironment(null);
+        }
+        _lastKnownEnvironmentState = state;
     }
 
     private void reopenDatabases()
@@ -726,7 +738,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private void restartEnvironment(DatabaseException dbe)
+    private void restartEnvironment()
     {
         LOGGER.info("Restarting environment");
 
@@ -983,15 +995,30 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         @Override
         public void run()
         {
-            String groupName = _configuration.getGroupName();
-            if (LOGGER.isDebugEnabled())
+            if (_state.get() == State.OPEN)
             {
-                LOGGER.debug("Checking for changes in the group " + groupName);
-            }
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Checking for changes in the group " + _configuration.getGroupName() + " on node " + _configuration.getName());
+                }
 
+                try
+                {
+                    detectGroupChangesAndNotify();
+                }
+                catch(DatabaseException e)
+                {
+                    handleDatabaseException("Exception on replication group check", e);
+                }
+            }
+        }
+
+        private void detectGroupChangesAndNotify()
+        {
+            String groupName = _configuration.getGroupName();
             ReplicatedEnvironment env = _environment;
             ReplicationGroupListener replicationGroupListener = _replicationGroupListener.get();
-            if (env != null && env.isValid())
+            if (env != null)
             {
                 ReplicationGroup group = env.getGroup();
                 Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getElectableNodes());

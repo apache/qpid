@@ -143,6 +143,9 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(ReplicationNode.ROLE));
 
         assertProducingConsuming(connection);
+
+        String nodeName = _clusterCreator.getNodeNameForBrokerPort(activeBrokerPort);
+        _clusterCreator.awaitNodeToAttainRole(activeBrokerPort, nodeName, "REPLICA");
     }
 
     public void testTransferMasterFromRemoteNode() throws Exception
@@ -171,7 +174,10 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(ReplicationNode.ROLE));
 
         assertProducingConsuming(connection);
+
+        _clusterCreator.awaitNodeToAttainRole(activeBrokerPort, nodeName, "REPLICA");
     }
+
     public void testQuorumOverride() throws Exception
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
