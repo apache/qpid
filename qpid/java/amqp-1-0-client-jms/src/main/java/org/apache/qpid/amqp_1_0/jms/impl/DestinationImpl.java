@@ -27,7 +27,7 @@ import javax.jms.JMSException;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
-public class DestinationImpl implements Destination, Queue, Topic
+public class DestinationImpl implements Destination
 {
     private static final WeakHashMap<String, DestinationImpl> DESTINATION_CACHE =
             new WeakHashMap<String, DestinationImpl>();
