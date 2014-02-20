@@ -93,7 +93,6 @@ ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& optio
 {
     setOptions(options);
     urls.insert(urls.begin(), url);
-    QPID_LOG(debug, "Created connection " << url << " with " << options);
 }
 
 void ConnectionImpl::setOptions(const Variant::Map& options)

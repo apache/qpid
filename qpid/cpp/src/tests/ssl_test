@@ -153,7 +153,7 @@ ssl_cluster_broker() {		# $1 = port
     start_brokers 1 "--ssl-port $1 --auth no --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1"
 
     # Wait for broker to be ready
-    qpid-ping -Pssl -b $TEST_HOSTNAME -qp $1 || { echo "Cannot connect to broker on $1"; exit 1; }
+    qpid-ping -Pssl -b $TEST_HOSTNAME:$1 -q || { echo "Cannot connect to broker on $1"; exit 1; }
 }
 
 CERTUTIL=$(type -p certutil)
