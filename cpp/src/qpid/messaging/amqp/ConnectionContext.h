@@ -132,6 +132,9 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
         ConnectionContext& context;
     };
 
+    Url fullUrl;                // Combined URL of all known addresses.
+    Url currentUrl;             // URL of currently connected address.
+
     boost::shared_ptr<DriverImpl> driver;
     boost::shared_ptr<Transport> transport;
 
@@ -143,7 +146,6 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     bool readHeader;
     bool haveOutput;
     std::string id;
-    std::string currentUrl;
     enum {
         DISCONNECTED,
         CONNECTING,
@@ -170,13 +172,13 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void wakeupDriver();
     void attach(boost::shared_ptr<SessionContext>, pn_link_t*, int credit=0);
     void autoconnect();
-    bool tryConnect();
-    bool tryConnect(const qpid::Url& url);
-    bool tryConnect(const qpid::Address& address);
+    bool tryConnectUrl(const qpid::Url& url);
+    bool tryOpenAddr(const qpid::Address& address);
+    bool tryConnectAddr(const qpid::Address& address);
+    void reconnect(const Url& url);
     void reset();
     bool restartSessions();
     void restartSession(boost::shared_ptr<SessionContext>);
-    void setCurrentUrl(const qpid::Address&);
 
     std::size_t decodePlain(const char* buffer, std::size_t size);
     std::size_t encodePlain(char* buffer, std::size_t size);

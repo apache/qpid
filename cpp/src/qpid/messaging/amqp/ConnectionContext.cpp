@@ -37,7 +37,9 @@
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/urlAdd.h"
 #include "config.h"
+#include <boost/lexical_cast.hpp>
 #include <vector>
 extern "C" {
 #include <proton/engine.h>
@@ -47,17 +49,6 @@ namespace qpid {
 namespace messaging {
 namespace amqp {
 namespace {
-
-std::string asString(const std::vector<std::string>& v) {
-    std::stringstream os;
-    os << "[";
-    for(std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i ) {
-        if (i != v.begin()) os << ", ";
-        os << '"' << *i << '"';
-    }
-    os << "]";
-    return os.str();
-}
 
 //remove conditional when 0.5 is no longer supported
 #ifdef HAVE_PROTON_TRACER
@@ -86,6 +77,7 @@ void ConnectionContext::trace(const char* message) const
 
 ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::Variant::Map& o)
     : qpid::messaging::ConnectionOptions(o),
+      fullUrl(url),
       engine(pn_transport()),
       connection(pn_connection()),
       //note: disabled read/write of header as now handled by engine
@@ -95,7 +87,8 @@ ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::
       state(DISCONNECTED),
       codecAdapter(*this)
 {
-    urls.insert(urls.begin(), url);
+    // Concatenate all known URLs into a single URL, get rid of duplicate addresses.
+    sys::urlAddStrings(fullUrl, urls.begin(), urls.end());
     if (pn_transport_bind(engine, connection)) {
         //error
     }
@@ -495,7 +488,9 @@ void ConnectionContext::reset()
 void ConnectionContext::check() {
     if (checkDisconnected()) {
         if (ConnectionOptions::reconnect) {
+            QPID_LOG(notice, "Auto-reconnecting to " << fullUrl);
             autoconnect();
+            QPID_LOG(notice, "Auto-reconnected to " << currentUrl);
         } else {
             throw qpid::messaging::TransportFailure("Disconnected (reconnect disabled)");
         }
@@ -903,7 +898,7 @@ void ConnectionContext::open()
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (state != DISCONNECTED) throw qpid::messaging::ConnectionError("Connection was already opened!");
     if (!driver) driver = DriverImpl::getDefault();
-
+    QPID_LOG(info, "Starting connection to " << fullUrl);
     autoconnect();
 }
 
@@ -921,64 +916,38 @@ bool expired(const sys::AbsTime& start, double timeout)
 const std::string COLON(":");
 }
 
+void throwConnectFail(const Url& url, const std::string& msg) {
+    throw qpid::messaging::TransportFailure(
+        Msg() << "Connect failed to " << url << ": " << msg);
+}
+
 void ConnectionContext::autoconnect()
 {
     qpid::sys::AbsTime started(qpid::sys::now());
-    QPID_LOG(debug, "Starting connection, urls=" << asString(urls));
-    for (double i = minReconnectInterval; !tryConnect(); i = std::min(i*2, maxReconnectInterval)) {
-        if (!ConnectionOptions::reconnect) {
-            throw qpid::messaging::TransportFailure("Failed to connect (reconnect disabled)");
-        }
-        if (limit >= 0 && retries++ >= limit) {
-            throw qpid::messaging::TransportFailure("Failed to connect within reconnect limit");
-        }
-        if (expired(started, timeout)) {
-            throw qpid::messaging::TransportFailure("Failed to connect within reconnect timeout");
-        }
-        QPID_LOG(debug, "Connection retry in " << i*1000*1000 << " microseconds, urls="
-                 << asString(urls));
+    for (double i = minReconnectInterval; !tryConnectUrl(fullUrl); i = std::min(i*2, maxReconnectInterval)) {
+        if (!ConnectionOptions::reconnect) throwConnectFail(fullUrl, "Reconnect disabled");
+        if (limit >= 0 && retries++ >= limit) throwConnectFail(fullUrl, "Exceeded retries");
+        if (expired(started, timeout)) throwConnectFail(fullUrl, "Exceeded timeout");
+        QPID_LOG(debug, "Connection retry in " << i*1000*1000 << " microseconds to"
+                 << fullUrl);
         qpid::sys::usleep(int64_t(i*1000*1000)); // Sleep in microseconds.
     }
     retries = 0;
 }
 
-bool ConnectionContext::tryConnect()
-{
-    for (std::vector<std::string>::const_iterator i = urls.begin(); i != urls.end(); ++i) {
-        try {
-            QPID_LOG(info, "Trying to connect to " << *i << "...");
-            if (tryConnect(qpid::Url(*i, protocol.empty() ? qpid::Address::TCP : protocol))) {
-                return true;
-            }
-            QPID_LOG(info, "Failed to connect to " << *i);
-        } catch (const qpid::messaging::TransportFailure& e) {
-            QPID_LOG(info, "Failed to connect to " << *i << ": " << e.what());
-        }
-    }
-    return false;
-}
-
-void ConnectionContext::reconnect(const std::string& url)
-{
+void ConnectionContext::reconnect(const Url& url) {
+    QPID_LOG(notice, "Reconnecting to " << url);
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (state != DISCONNECTED) throw qpid::messaging::ConnectionError("Connection was already opened!");
     if (!driver) driver = DriverImpl::getDefault();
     reset();
-    if (!tryConnect(qpid::Url(url, protocol.empty() ? qpid::Address::TCP : protocol))) {
-        throw qpid::messaging::TransportFailure("Failed to connect");
-    }
+    if (!tryConnectUrl(url)) throwConnectFail(url, "Failed to reconnect");
+    QPID_LOG(notice, "Reconnected to " << currentUrl);
 }
 
-void ConnectionContext::reconnect()
-{
-    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    if (state != DISCONNECTED) throw qpid::messaging::ConnectionError("Connection was already opened!");
-    if (!driver) driver = DriverImpl::getDefault();
-    reset();
-    if (!tryConnect()) {
-        throw qpid::messaging::TransportFailure("Failed to reconnect");
-    }
-}
+void ConnectionContext::reconnect(const std::string& url) { reconnect(Url(url)); }
+
+void ConnectionContext::reconnect() { reconnect(fullUrl); }
 
 void ConnectionContext::waitNoReconnect() {
     if (!checkDisconnected()) {
@@ -987,77 +956,75 @@ void ConnectionContext::waitNoReconnect() {
     }
 }
 
-bool ConnectionContext::tryConnect(const Url& url)
+// Try to connect to a URL, i.e. try to connect to each of its addresses in turn
+// till one succeeds or they all fail.
+// @return true if we connect successfully
+bool ConnectionContext::tryConnectUrl(const Url& url)
 {
     if (url.getUser().size()) username = url.getUser();
     if (url.getPass().size()) password = url.getPass();
 
     for (Url::const_iterator i = url.begin(); i != url.end(); ++i) {
-        if (tryConnect(*i)) {
+        QPID_LOG(info, "Connecting to " << *i);
+        if (tryConnectAddr(*i) && tryOpenAddr(*i)) {
             QPID_LOG(info, "Connected to " << *i);
-            setCurrentUrl(*i);
-            if (sasl.get()) {
-                wakeupDriver();
-                while (!sasl->authenticated() && state != DISCONNECTED) {
-                    QPID_LOG(debug, id << " Waiting to be authenticated...");
-                    waitNoReconnect();
-                }
-                if (state == DISCONNECTED) continue;
-                QPID_LOG(debug, id << " Authenticated");
-            }
-
-            QPID_LOG(debug, id << " Opening...");
-            setProperties();
-            pn_connection_open(connection);
-            wakeupDriver(); //want to write
-            while ((pn_connection_state(connection) & PN_REMOTE_UNINIT) &&
-                   state != DISCONNECTED)
-                waitNoReconnect();
-            if (state == DISCONNECTED) continue;
-            if (!(pn_connection_state(connection) & PN_REMOTE_ACTIVE)) {
-                throw qpid::messaging::ConnectionError("Failed to open connection");
-            }
-            QPID_LOG(debug, id << " Opened");
-
-            return restartSessions();
-        } else {
-            QPID_LOG(notice, "Failed to connect to " << *i);
+            return true;
         }
     }
     return false;
 }
 
-void ConnectionContext::setCurrentUrl(const qpid::Address& a)
-{
-    std::stringstream u;
-    u << a;
-    currentUrl = u.str();
+// Try to open an AMQP protocol connection on an address, after we have already
+// established a transport connect (see tryConnectAddr below)
+// @return true if the AMQP connection is succesfully opened.
+bool ConnectionContext::tryOpenAddr(const qpid::Address& addr) {
+    currentUrl = Url(addr);
+    if (sasl.get()) {
+        wakeupDriver();
+        while (!sasl->authenticated() && state != DISCONNECTED) {
+            QPID_LOG(debug, id << " Waiting to be authenticated...");
+            waitNoReconnect();
+        }
+        if (state == DISCONNECTED) return false;
+        QPID_LOG(debug, id << " Authenticated");
+    }
+
+    QPID_LOG(debug, id << " Opening...");
+    setProperties();
+    pn_connection_open(connection);
+    wakeupDriver(); //want to write
+    while ((pn_connection_state(connection) & PN_REMOTE_UNINIT) &&
+           state != DISCONNECTED)
+        waitNoReconnect();
+    if (state == DISCONNECTED) return false;
+    if (!(pn_connection_state(connection) & PN_REMOTE_ACTIVE)) {
+        throw qpid::messaging::ConnectionError("Failed to open connection");
+    }
+    QPID_LOG(debug, id << " Opened");
+
+    return restartSessions();
 }
 
 std::string ConnectionContext::getUrl() const
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    if (state == CONNECTED) {
-        return currentUrl;
-    } else {
-        return std::string();
-    }
+    return (state == CONNECTED) ? currentUrl.str() : std::string();
 }
 
-
-bool ConnectionContext::tryConnect(const qpid::Address& address)
+// Try to establish a transport connect to an individual address (typically a
+// TCP host:port)
+// @return true if we succeed in connecting.
+bool ConnectionContext::tryConnectAddr(const qpid::Address& address)
 {
     transport = driver->getTransport(address.protocol, *this);
-    std::stringstream port;
-    port << address.port;
-    id = address.host + COLON + port.str();
+    id = boost::lexical_cast<std::string>(address);
     if (useSasl()) {
         sasl = std::auto_ptr<Sasl>(new Sasl(id, *this, address.host));
     }
     state = CONNECTING;
     try {
         QPID_LOG(debug, id << " Connecting ...");
-        transport->connect(address.host, port.str());
+        transport->connect(address.host, boost::lexical_cast<std::string>(address.port));
         bool waiting(true);
         while (waiting) {
             switch (state) {
@@ -1069,7 +1036,6 @@ bool ConnectionContext::tryConnect(const qpid::Address& address)
                 break;
               case DISCONNECTED:
                 waiting = false;
-                QPID_LOG(debug, id << " Failed to connect");
                 break;
             }
         }
