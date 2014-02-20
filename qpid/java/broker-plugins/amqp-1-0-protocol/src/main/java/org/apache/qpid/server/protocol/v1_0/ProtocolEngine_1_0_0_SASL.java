@@ -365,7 +365,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
                             public Void run()
                             {
                                 _frameHandler = _frameHandler.parse(msg);
-                                _connection.frameReceived();
                                 return null;
                             }
                         });

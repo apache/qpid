@@ -87,11 +87,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
 
 
 
-    public Session_1_0(VirtualHost vhost, final Connection_1_0 connection, final SessionEndpoint endpoint)
+    public Session_1_0(final Connection_1_0 connection, final SessionEndpoint endpoint)
     {
-        _vhost = vhost;
         _endpoint = endpoint;
-        _transaction = new AutoCommitTransaction(vhost.getMessageStore());
         _connection = connection;
         _subject.getPrincipals().addAll(connection.getSubject().getPrincipals());
         _subject.getPrincipals().add(new SessionPrincipal(this));
@@ -106,7 +104,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
 
         final
         LinkRegistry
-                linkRegistry = _vhost.getLinkRegistry(endpoint.getSession().getConnection().getRemoteContainerId());
+                linkRegistry = getVirtualHost().getLinkRegistry(endpoint.getSession().getConnection().getRemoteContainerId());
 
 
         if(endpoint.getRole() == Role.SENDER)
@@ -129,7 +127,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         source.setAddress(tempQueue.getName());
                     }
                     String addr = source.getAddress();
-                    MessageSource queue = _vhost.getMessageSource(addr);
+                    MessageSource queue = getVirtualHost().getMessageSource(addr);
                     if(queue != null)
                     {
 
@@ -140,7 +138,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                     }
                     else
                     {
-                        Exchange exchg = _vhost.getExchange(addr);
+                        Exchange exchg = getVirtualHost().getExchange(addr);
                         if(exchg != null)
                         {
                             destination = new ExchangeDestination(exchg, source.getDurable(), source.getExpiryPolicy());
@@ -165,7 +163,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                     try
                     {
                         final SendingLink_1_0 sendingLink = new SendingLink_1_0(new SendingLinkAttachment(this, sendingLinkEndpoint),
-                                                                                _vhost,
+                                                                                getVirtualHost(),
                                                                                 (SendingDestination) destination
                         );
 
@@ -245,7 +243,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
 
                 final ReceivingLinkEndpoint receivingLinkEndpoint = (ReceivingLinkEndpoint) endpoint;
                 final TxnCoordinatorLink_1_0 coordinatorLink =
-                        new TxnCoordinatorLink_1_0(_vhost, this, receivingLinkEndpoint, _openTransactions);
+                        new TxnCoordinatorLink_1_0(getVirtualHost(), this, receivingLinkEndpoint, _openTransactions);
                 receivingLinkEndpoint.setLinkEventListener(new SubjectSpecificReceivingLinkListener(coordinatorLink));
                 link = coordinatorLink;
 
@@ -272,7 +270,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         }
 
                         String addr = target.getAddress();
-                        MessageDestination messageDestination = _vhost.getMessageDestination(addr);
+                        MessageDestination messageDestination = getVirtualHost().getMessageDestination(addr);
                         if(messageDestination != null)
                         {
                             destination = new NodeReceivingDestination(messageDestination, target.getDurable(),
@@ -280,7 +278,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         }
                         else
                         {
-                            AMQQueue queue = _vhost.getQueue(addr);
+                            AMQQueue queue = getVirtualHost().getQueue(addr);
                             if(queue != null)
                             {
 
@@ -303,7 +301,8 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                     if(destination != null)
                     {
                         final ReceivingLinkEndpoint receivingLinkEndpoint = (ReceivingLinkEndpoint) endpoint;
-                        final ReceivingLink_1_0 receivingLink = new ReceivingLink_1_0(new ReceivingLinkAttachment(this, receivingLinkEndpoint), _vhost,
+                        final ReceivingLink_1_0 receivingLink = new ReceivingLink_1_0(new ReceivingLinkAttachment(this, receivingLinkEndpoint),
+                                                                                      getVirtualHost(),
                                 (ReceivingDestination) destination);
 
                         receivingLinkEndpoint.setLinkEventListener(new SubjectSpecificReceivingLinkListener(receivingLink));
@@ -355,7 +354,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                                             ? null
                                             : (LifetimePolicy) properties.get(LIFETIME_POLICY);
             Map<String,Object> attributes = new HashMap<String,Object>();
-            attributes.put(org.apache.qpid.server.model.Queue.ID, UUIDGenerator.generateQueueUUID(queueName, _vhost.getName()));
+            attributes.put(org.apache.qpid.server.model.Queue.ID, UUIDGenerator.generateQueueUUID(queueName, getVirtualHost().getName()));
             attributes.put(org.apache.qpid.server.model.Queue.NAME, queueName);
             attributes.put(org.apache.qpid.server.model.Queue.DURABLE, false);
 
@@ -388,7 +387,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
 
             // TODO convert AMQP 1-0 node properties to queue attributes
 
-            final AMQQueue tempQueue = queue = _vhost.createQueue(attributes );
+            final AMQQueue tempQueue = queue = getVirtualHost().createQueue(attributes);
         }
         catch (AccessControlException e)
         {
@@ -409,7 +408,15 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     {
         // TODO should treat invalid id differently to null
         ServerTransaction transaction = _openTransactions.get(binaryToInteger(transactionId));
-        return transaction == null ? _transaction : transaction;
+        if(transaction == null)
+        {
+            if(_transaction == null)
+            {
+                _transaction = new AutoCommitTransaction(_connection.getVirtualHost().getMessageStore());
+            }
+            transaction = _transaction;
+        }
+        return transaction;
     }
 
     public void remoteEnd(End end)
@@ -622,7 +629,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                                     connectionId,
                                     getClientID(),
                                     remoteAddress,
-                                    _vhost.getName(),
+                                    getVirtualHost().getName(),
                                     _endpoint.getSendingChannel())  + "] ";
     }
 
@@ -655,6 +662,11 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     public Subject getSubject()
     {
         return _subject;
+    }
+
+    VirtualHost getVirtualHost()
+    {
+        return _connection.getVirtualHost();
     }
 
 

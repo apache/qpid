@@ -21,8 +21,16 @@ package org.apache.qpid.amqp_1_0.transport;
 
 public interface ConnectionEventListener
 {
+    void openReceived();
+
     class DefaultConnectionEventListener implements ConnectionEventListener
     {
+        @Override
+        public void openReceived()
+        {
+
+        }
+
         public void remoteSessionCreation(final SessionEndpoint endpoint)
         {
             endpoint.end();

@@ -343,6 +343,8 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
             _idleTimeout = open.getIdleTimeOut().longValue();
         }
 
+        _connectionEventListener.openReceived();
+
         switch (_state)
         {
             case UNOPENED:
