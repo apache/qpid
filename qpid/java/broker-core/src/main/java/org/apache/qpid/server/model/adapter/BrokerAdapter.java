@@ -24,6 +24,8 @@ import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,6 +74,8 @@ import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
+
+import javax.security.auth.Subject;
 
 public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
 {
@@ -297,15 +301,15 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
-        SecurityManager.setAccessChecksDisabled(true);
-        try
-        {
-            virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
-        }
-        finally
-        {
-            SecurityManager.setAccessChecksDisabled(false);
-        }
+        Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<Object>()
+                            {
+                                @Override
+                                public Object run()
+                                {
+                                    virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
+                                    return null;
+                                }
+                            });
         return virtualHostAdapter;
     }
 

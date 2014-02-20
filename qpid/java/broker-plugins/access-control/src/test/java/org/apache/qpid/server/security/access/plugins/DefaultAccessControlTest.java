@@ -246,7 +246,7 @@ public class DefaultAccessControlTest extends TestCase
 
                 DefaultAccessControl accessControl = new DefaultAccessControl(mockRuleSet);
 
-                accessControl.access(ObjectType.VIRTUALHOST);
+                accessControl.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
 
                 verify(mockRuleSet).check(subject, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY, inetAddress);
                 return null;
@@ -282,7 +282,7 @@ public class DefaultAccessControlTest extends TestCase
                         inetAddress)).thenThrow(new RuntimeException());
 
                 DefaultAccessControl accessControl = new DefaultAccessControl(mockRuleSet);
-                Result result = accessControl.access(ObjectType.VIRTUALHOST);
+                Result result = accessControl.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
 
                 assertEquals(Result.DENIED, result);
                 return null;

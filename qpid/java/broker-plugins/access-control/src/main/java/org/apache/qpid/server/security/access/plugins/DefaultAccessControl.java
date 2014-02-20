@@ -113,47 +113,29 @@ public class DefaultAccessControl implements AccessControl
     }
 
     /**
-     * Object instance access authorisation.
-     *
-	 * Delegate to the {@link #authorise(Operation, ObjectType, ObjectProperties)} method, with
-     * the operation set to ACCESS and no object properties.
-	 */
-    public Result access(ObjectType objectType)
-    {
-        InetAddress addressOfClient = null;
-        final Subject subject = Subject.getSubject(AccessController.getContext());
-        if(subject != null)
-        {
-            Set<ConnectionPrincipal> principals = subject.getPrincipals(ConnectionPrincipal.class);
-            if(!principals.isEmpty())
-            {
-                SocketAddress address = principals.iterator().next().getConnection().getRemoteAddress();
-                if(address instanceof InetSocketAddress)
-                {
-                    addressOfClient = ((InetSocketAddress) address).getAddress();
-                }
-            }
-        }
-        return authoriseFromAddress(Operation.ACCESS, objectType, ObjectProperties.EMPTY, addressOfClient);
-    }
-
-    /**
      * Check if an operation is authorised by asking the  configuration object about the access
      * control rules granted to the current thread's {@link Subject}. If there is no current
      * user the plugin will abstain.
      */
     public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)
     {
-        return authoriseFromAddress(operation, objectType, properties, null);
-    }
-
-    public Result authoriseFromAddress(Operation operation, ObjectType objectType, ObjectProperties properties, InetAddress addressOfClient)
-    {
+        InetAddress addressOfClient = null;
         final Subject subject = Subject.getSubject(AccessController.getContext());
+
         // Abstain if there is no subject/principal associated with this thread
         if (subject == null  || subject.getPrincipals().size() == 0)
         {
             return Result.ABSTAIN;
+        }
+
+        Set<ConnectionPrincipal> principals = subject.getPrincipals(ConnectionPrincipal.class);
+        if(!principals.isEmpty())
+        {
+            SocketAddress address = principals.iterator().next().getConnection().getRemoteAddress();
+            if(address instanceof InetSocketAddress)
+            {
+                addressOfClient = ((InetSocketAddress) address).getAddress();
+            }
         }
 
         if(_logger.isDebugEnabled())
