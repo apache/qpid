@@ -96,7 +96,6 @@ public class QueueRunner implements Runnable
             }
             finally
             {
-                CurrentActor.remove();
                 _scheduled.compareAndSet(RUNNING, IDLE);
                 final long stateChangeCount = _queue.getStateChangeCount();
                 _lastRunAgain.set(runAgain);
@@ -108,6 +107,7 @@ public class QueueRunner implements Runnable
                         _queue.execute(this);
                     }
                 }
+                CurrentActor.remove();
             }
 
         }
