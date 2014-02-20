@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
-import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.PrivilegedAction;
@@ -121,9 +120,32 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         return _reference;
     }
 
+    @Override
+    public void openReceived()
+    {
+        String host = _conn.getLocalHostname();
+        if(host == null || host.trim().equals(""))
+        {
+            host = (String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST);
+        }
+        _vhost = _broker.getVirtualHostRegistry().getVirtualHost(host);
+        if(_vhost == null)
+        {
+            final Error err = new Error();
+            err.setCondition(AmqpError.NOT_FOUND);
+            err.setDescription("Unknown hostname " + _conn.getLocalHostname());
+            _conn.close(err);
+        }
+        Subject authSubject = _subjectCreator.createSubjectWithGroups(_conn.getUser());
+        _subject.getPrincipals().addAll(authSubject.getPrincipals());
+        _subject.getPublicCredentials().addAll(authSubject.getPublicCredentials());
+        _subject.getPrivateCredentials().addAll(authSubject.getPrivateCredentials());
+
+    }
+
     public void remoteSessionCreation(SessionEndpoint endpoint)
     {
-        final Session_1_0 session = new Session_1_0(_vhost, this, endpoint);
+        final Session_1_0 session = new Session_1_0(this, endpoint);
         _sessions.add(session);
         endpoint.setSessionEventListener(new SessionEventListener()
         {
@@ -397,33 +419,13 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
 
-    public void frameReceived()
-    {
-        if(_vhost == null && _conn.isOpen())
-        {
-            String host = _conn.getLocalHostname();
-            if(host == null || host.trim().equals(""))
-            {
-                host = (String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST);
-            }
-            _vhost = _broker.getVirtualHostRegistry().getVirtualHost(host);
-            if(_vhost == null)
-            {
-                final Error err = new Error();
-                err.setCondition(AmqpError.NOT_FOUND);
-                err.setDescription("Unknown hostname " + _conn.getLocalHostname());
-                _conn.close(err);
-            }
-            Subject authSubject = _subjectCreator.createSubjectWithGroups(_conn.getUser());
-            _subject.getPrincipals().addAll(authSubject.getPrincipals());
-            _subject.getPublicCredentials().addAll(authSubject.getPublicCredentials());
-            _subject.getPrivateCredentials().addAll(authSubject.getPrivateCredentials());
-
-        }
-    }
-
     Subject getSubject()
     {
         return _subject;
+    }
+
+    VirtualHost getVirtualHost()
+    {
+        return _vhost;
     }
 }
