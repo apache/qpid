@@ -46,6 +46,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 
 /**
@@ -201,7 +204,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         }
     }
 
-    private Object authoriseAndInvoke(Method method, Object[] args) throws IllegalAccessException, InvocationTargetException
+    private Object authoriseAndInvoke(final Method method, final Object[] args) throws Throwable
     {
         String methodName;
         // Get the component, type and impact, which may be null
@@ -229,23 +232,29 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         Operation operation = (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO) ? Operation.ACCESS : Operation.UPDATE;
         security.authoriseMethod(operation, type, methodName);
 
-        boolean oldAccessChecksDisabled = false;
-        if(_managementRightsInferAllAccess)
+        if (_managementRightsInferAllAccess)
         {
-            oldAccessChecksDisabled = SecurityManager.setAccessChecksDisabled(true);
+            try
+            {
+                return Subject.doAs(SecurityManager.SYSTEM, new PrivilegedExceptionAction<Object>()
+                {
+                    @Override
+                    public Object run() throws IllegalAccessException, InvocationTargetException
+                    {
+                        return method.invoke(_mbs, args);
+                    }
+                });
+            }
+            catch (PrivilegedActionException e)
+            {
+                throw e.getCause();
+            }
         }
-
-        try
+        else
         {
             return method.invoke(_mbs, args);
         }
-        finally
-        {
-            if(_managementRightsInferAllAccess)
-            {
-                SecurityManager.setAccessChecksDisabled(oldAccessChecksDisabled);
-            }
-        }
+
     }
 
     private String getType(Method method, Object[] args)

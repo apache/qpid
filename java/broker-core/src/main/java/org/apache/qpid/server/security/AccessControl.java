@@ -23,20 +23,15 @@ import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 
 /**
- * The two methods, {@link #access(org.apache.qpid.server.security.access.ObjectType)} and {@link #authorise(Operation, ObjectType, ObjectProperties)},
- * return the {@link Result} of the security decision, which may be to {@link Result#ABSTAIN} if no decision is made.
+ * The method {@link #authorise(Operation, ObjectType, ObjectProperties)},
+ * returns the {@link Result} of the security decision, which may be to {@link Result#ABSTAIN} if no decision is made.
  */
 public interface AccessControl
 {
 	/**
-	 * Default result for {@link #access(org.apache.qpid.server.security.access.ObjectType)} or {@link #authorise(Operation, ObjectType, ObjectProperties)}.
+	 * Default result for {@link #authorise(Operation, ObjectType, ObjectProperties)}.
 	 */
 	Result getDefault();
-
-    /**
-     * Authorise access granted to an object instance.
-     */
-    Result access(ObjectType objectType);
 
     /**
      * Authorise an operation on an object defined by a set of properties.

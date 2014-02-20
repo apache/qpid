@@ -36,6 +36,8 @@ import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.OperationLoggingDetails;
 
+import javax.security.auth.Subject;
+
 import static org.apache.qpid.server.security.access.ObjectType.BROKER;
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
 import static org.apache.qpid.server.security.access.ObjectType.GROUP;
@@ -54,8 +56,9 @@ import static org.apache.qpid.server.security.access.Operation.PURGE;
 import static org.apache.qpid.server.security.access.Operation.UNBIND;
 import static org.apache.qpid.server.security.access.Operation.UPDATE;
 
-import java.net.SocketAddress;
 import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,7 +70,11 @@ public class SecurityManager implements ConfigurationChangeListener
 {
     private static final Logger _logger = Logger.getLogger(SecurityManager.class);
 
-    public static final ThreadLocal<Boolean> _accessChecksDisabled = new ClearingThreadLocal(false);
+    public static final Subject SYSTEM = new Subject(true,
+                                                     Collections.singleton(new SystemPrincipal()),
+                                                     Collections.emptySet(),
+                                                     Collections.emptySet());
+
 
     private ConcurrentHashMap<String, AccessControl> _globalPlugins = new ConcurrentHashMap<String, AccessControl>();
     private ConcurrentHashMap<String, AccessControl> _hostPlugins = new ConcurrentHashMap<String, AccessControl>();
@@ -75,51 +82,6 @@ public class SecurityManager implements ConfigurationChangeListener
     private boolean _managementMode;
 
     private Broker _broker;
-
-    /**
-     * A special ThreadLocal, which calls remove() on itself whenever the value is
-     * the default, to avoid leaving a default value set after its use has passed.
-     */
-    private static final class ClearingThreadLocal extends ThreadLocal<Boolean>
-    {
-        private Boolean _defaultValue;
-
-        public ClearingThreadLocal(Boolean defaultValue)
-        {
-            super();
-            _defaultValue = defaultValue;
-        }
-
-        @Override
-        protected Boolean initialValue()
-        {
-            return _defaultValue;
-        }
-
-        @Override
-        public void set(Boolean value)
-        {
-            if (value == _defaultValue)
-            {
-                super.remove();
-            }
-            else
-            {
-                super.set(value);
-            }
-        }
-
-        @Override
-        public Boolean get()
-        {
-            Boolean value = super.get();
-            if (value == _defaultValue)
-            {
-                super.remove();
-            }
-            return value;
-        }
-    }
 
     /*
      * Used by the Broker.
@@ -190,6 +152,19 @@ public class SecurityManager implements ConfigurationChangeListener
         return _logger;
     }
 
+    private static final class SystemPrincipal implements Principal
+    {
+        private SystemPrincipal()
+        {
+        }
+
+        @Override
+        public String getName()
+        {
+            return "SYSTEM";
+        }
+    }
+
     private abstract class AccessCheck
     {
         abstract Result allowed(AccessControl plugin);
@@ -197,7 +172,9 @@ public class SecurityManager implements ConfigurationChangeListener
 
     private boolean checkAllPlugins(AccessCheck checker)
     {
-        if(_accessChecksDisabled.get())
+        // If we are running as SYSTEM then no ACL checking
+        final Subject subject = Subject.getSubject(AccessController.getContext());
+        if(subject != null && !subject.getPrincipals(SystemPrincipal.class).isEmpty())
         {
             return true;
         }
@@ -321,7 +298,7 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.access(ObjectType.MANAGEMENT);
+                return plugin.authorise(Operation.ACCESS, ObjectType.MANAGEMENT, ObjectProperties.EMPTY);
             }
         }))
         {
@@ -335,7 +312,7 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.access(VIRTUALHOST);
+                return plugin.authorise(Operation.ACCESS, VIRTUALHOST, ObjectProperties.EMPTY);
             }
         }))
         {
@@ -548,15 +525,6 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public static boolean setAccessChecksDisabled(final boolean status)
-    {
-        //remember current value
-        boolean current = _accessChecksDisabled.get();
-
-        _accessChecksDisabled.set(status);
-
-        return current;
-    }
 
     private class PublishAccessCheck extends AccessCheck
     {
