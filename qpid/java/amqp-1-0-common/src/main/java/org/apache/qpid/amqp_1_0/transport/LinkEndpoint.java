@@ -300,14 +300,20 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
         }
     }
 
-    public synchronized boolean isAttached()
+    public boolean isAttached()
     {
-        return _state == State.ATTACHED;
+        synchronized (getLock())
+        {
+            return _state == State.ATTACHED;
+        }
     }
 
-    public synchronized boolean isDetached()
+    public boolean isDetached()
     {
-        return _state == State.DETACHED || _session.isEnded();
+        synchronized (getLock())
+        {
+            return _state == State.DETACHED || _session.isEnded();
+        }
     }
 
     public SessionEndpoint getSession()

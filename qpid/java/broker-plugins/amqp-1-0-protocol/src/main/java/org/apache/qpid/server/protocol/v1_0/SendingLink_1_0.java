@@ -382,38 +382,58 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         // if not durable or close
         if(!TerminusDurability.UNSETTLED_STATE.equals(_durability))
         {
-            _consumer.close();
-
-            Modified state = new Modified();
-            state.setDeliveryFailed(true);
-
-            for(UnsettledAction action : _unsettledActionMap.values())
+            while(!_consumer.trySendLock())
             {
-
-                action.process(state,Boolean.TRUE);
-            }
-            _unsettledActionMap.clear();
-
-            endpoint.close();
-
-            if(_destination instanceof ExchangeDestination
-               && (_durability == TerminusDurability.CONFIGURATION
-                    || _durability == TerminusDurability.UNSETTLED_STATE))
-            {
-                try
+                synchronized (endpoint.getLock())
                 {
-                    _vhost.removeQueue((AMQQueue)_queue);
-                }
-                catch (AccessControlException e)
-                {
-                    //TODO
-                    _logger.error("Error registering subscription", e);
+                    try
+                    {
+                        endpoint.getLock().wait(100);
+                    }
+                    catch (InterruptedException e)
+                    {
+                    }
                 }
             }
-
-            if(_closeAction != null)
+            try
             {
-                _closeAction.run();
+                _consumer.close();
+
+                Modified state = new Modified();
+                state.setDeliveryFailed(true);
+
+                for(UnsettledAction action : _unsettledActionMap.values())
+                {
+
+                    action.process(state,Boolean.TRUE);
+                }
+                _unsettledActionMap.clear();
+
+                endpoint.close();
+
+                if(_destination instanceof ExchangeDestination
+                   && (_durability == TerminusDurability.CONFIGURATION
+                        || _durability == TerminusDurability.UNSETTLED_STATE))
+                {
+                    try
+                    {
+                        _vhost.removeQueue((AMQQueue)_queue);
+                    }
+                    catch (AccessControlException e)
+                    {
+                        //TODO
+                        _logger.error("Error registering subscription", e);
+                    }
+                }
+
+                if(_closeAction != null)
+                {
+                    _closeAction.run();
+                }
+            }
+            finally
+            {
+                _consumer.releaseSendLock();
             }
         }
         else if(detach == null || detach.getError() != null)
