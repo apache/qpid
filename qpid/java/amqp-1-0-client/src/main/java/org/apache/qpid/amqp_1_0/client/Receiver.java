@@ -505,7 +505,7 @@ public class Receiver implements DeliveryStateHandler
         _endpoint.setTarget(null);
         _endpoint.close();
         Message msg;
-        while((msg = receive(-1l)) != null)
+        while((msg = receive(0l)) != null)
         {
             release(msg);
         }
@@ -518,7 +518,7 @@ public class Receiver implements DeliveryStateHandler
         _endpoint.setTarget(null);
         _endpoint.detach();
         Message msg;
-        while((msg = receive(-1l)) != null)
+        while((msg = receive(0l)) != null)
         {
             release(msg);
         }
