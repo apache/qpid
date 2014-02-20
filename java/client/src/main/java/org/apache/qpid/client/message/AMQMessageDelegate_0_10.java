@@ -732,7 +732,8 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         if (propertyName.equals(CustomJMSXProperty.JMSXUserID.toString()))
         {
-            return new String(_messageProps.getUserId());
+            final byte[] userIdBytes = _messageProps.getUserId();
+            return userIdBytes == null ? null : new String(userIdBytes);
         }
         else if (QpidMessageProperties.AMQP_0_10_APP_ID.equals(propertyName) &&
                 _messageProps.getAppId() != null)
