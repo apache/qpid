@@ -370,29 +370,31 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
                 UnsignedInteger first = deliveryId;
                 UnsignedInteger last = first;
 
-                while(iter.hasNext())
+                if(!firstTag.equals(lastTag))
                 {
-                    tag = iter.next();
-                    tagsToUpdate.add(tag);
-
-                    deliveryId = _unsettledIds.get(tag).getDeliveryId();
-
-                    if(deliveryId.equals(last.add(UnsignedInteger.ONE)))
+                    while(iter.hasNext())
                     {
-                        last = deliveryId;
-                    }
-                    else
-                    {
-                        ranges.put(first,last);
-                        first = last = deliveryId;
-                    }
+                        tag = iter.next();
+                        tagsToUpdate.add(tag);
 
-                    if(tag.equals(lastTag))
-                    {
-                        break;
+                        deliveryId = _unsettledIds.get(tag).getDeliveryId();
+
+                        if(deliveryId.equals(last.add(UnsignedInteger.ONE)))
+                        {
+                            last = deliveryId;
+                        }
+                        else
+                        {
+                            ranges.put(first,last);
+                            first = last = deliveryId;
+                        }
+
+                        if(tag.equals(lastTag))
+                        {
+                            break;
+                        }
                     }
                 }
-
                 ranges.put(first,last);
             }
 
