@@ -319,12 +319,31 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private void receivedComplete()
     {
+        RuntimeException exception = null;
+
         for (AMQChannel<AMQProtocolEngine> channel : _channelsForCurrentMessage)
         {
-            channel.receivedComplete();
+            try
+            {
+                channel.receivedComplete();
+            }
+            catch(RuntimeException exceptionForThisChannel)
+            {
+                if(exception == null)
+                {
+                    exception = exceptionForThisChannel;
+                }
+                _logger.error("Error informing channel that receiving is complete. Channel: " + channel,
+                              exceptionForThisChannel);
+            }
         }
 
         _channelsForCurrentMessage.clear();
+
+        if(exception != null)
+        {
+            throw exception;
+        }
     }
 
     /**

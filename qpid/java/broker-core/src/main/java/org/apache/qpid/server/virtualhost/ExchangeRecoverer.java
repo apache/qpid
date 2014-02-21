@@ -66,7 +66,6 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
                                   final Map<String, Object> attributeMap)
         {
             String exchangeName = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.NAME);
-            String lifeTimePolicy = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY);
             try
             {
                 _exchange = _exchangeRegistry.getExchange(id);

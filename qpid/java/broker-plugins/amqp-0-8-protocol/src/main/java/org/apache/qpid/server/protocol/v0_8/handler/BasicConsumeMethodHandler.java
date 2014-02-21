@@ -155,31 +155,31 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 }
                 catch (AMQQueue.ExistingExclusiveConsumer e)
                 {
-                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
-                                                   "Cannot subscribe to queue "
-                                                   + queue.getName()
-                                                   + " as it already has an existing exclusive consumer");
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
+                                                      "Cannot subscribe to queue "
+                                                      + queue.getName()
+                                                      + " as it already has an existing exclusive consumer");
                 }
                 catch (AMQQueue.ExistingConsumerPreventsExclusive e)
                 {
-                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
-                                                   "Cannot subscribe to queue "
-                                                   + queue.getName()
-                                                   + " exclusively as it already has a consumer");
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
+                                                      "Cannot subscribe to queue "
+                                                      + queue.getName()
+                                                      + " exclusively as it already has a consumer");
                 }
                 catch (AccessControlException e)
                 {
-                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
-                                                   "Cannot subscribe to queue "
-                                                   + queue.getName()
-                                                   + " permission denied");
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
+                                                      "Cannot subscribe to queue "
+                                                      + queue.getName()
+                                                      + " permission denied");
                 }
                 catch (MessageSource.ConsumerAccessRefused consumerAccessRefused)
                 {
-                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
-                                                   "Cannot subscribe to queue "
-                                                   + queue.getName()
-                                                   + " as it already has an incompatible exclusivity policy");
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
+                                                      "Cannot subscribe to queue "
+                                                      + queue.getName()
+                                                      + " as it already has an incompatible exclusivity policy");
                 }
 
             }
