@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;

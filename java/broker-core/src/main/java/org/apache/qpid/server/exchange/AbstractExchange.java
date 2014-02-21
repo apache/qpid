@@ -119,6 +119,9 @@ public abstract class AbstractExchange implements Exchange
         _id = id;
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
+        // check ACL
+        host.getSecurityManager().authoriseCreateExchange(this);
+
         // Log Exchange creation
         CurrentActor.get().message(ExchangeMessages.CREATED(getType().getType(), name, durable));
     }
@@ -623,9 +626,6 @@ public abstract class AbstractExchange implements Exchange
         {
             arguments = Collections.emptyMap();
         }
-
-        //Perform ACLs
-        _virtualHost.getSecurityManager().authoriseBind(AbstractExchange.this, queue, bindingKey);
 
         if (id == null)
         {

@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.HashMap;
@@ -44,7 +45,10 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "SimpleQueueEntryImplTest");
-        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), queueAttributes);
+        final VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
+
+        StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
 
         queueEntryList = queue.getEntries();
 

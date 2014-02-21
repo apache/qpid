@@ -22,6 +22,7 @@ package org.apache.qpid.server.management.amqp;
 
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -88,8 +89,9 @@ class ManagementNodeConsumer implements Consumer
     }
 
     @Override
-    public void setNoLocal(final boolean noLocal)
+    public MessageSource getMessageSource()
     {
+        return _managementNode;
     }
 
     @Override

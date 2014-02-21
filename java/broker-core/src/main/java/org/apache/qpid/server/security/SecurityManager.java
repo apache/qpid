@@ -20,15 +20,14 @@ package org.apache.qpid.server.security;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.exchange.Exchange;
 
-import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfigurationChangeListener;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -253,20 +252,24 @@ public class SecurityManager implements ConfigurationChangeListener
         return true;
     }
 
-    public void authoriseBind(final Exchange exch, final AMQQueue queue, final String routingKey)
+    public void authoriseCreateBinding(Binding binding)
     {
+        final Exchange exch = binding.getExchange();
+        final AMQQueue queue = binding.getQueue();
+        final String bindingKey = binding.getBindingKey();
+
         boolean allowed =
             checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(BIND, EXCHANGE, new ObjectProperties(exch, queue, routingKey));
+                return plugin.authorise(BIND, EXCHANGE, new ObjectProperties(exch, queue, bindingKey));
             }
         });
 
         if(!allowed)
         {
-            throw new AccessControlException("Permission denied: binding " + routingKey);
+            throw new AccessControlException("Permission denied: binding " + bindingKey);
         }
     }
 
@@ -306,7 +309,7 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void accessVirtualhost(final String vhostname)
+    public void authoriseCreateConnection(final AMQConnectionModel connection)
     {
         if(!checkAllPlugins(new AccessCheck()
         {
@@ -316,12 +319,15 @@ public class SecurityManager implements ConfigurationChangeListener
             }
         }))
         {
-            throw new AccessControlException("Permission denied: " + vhostname);
+            throw new AccessControlException("Permission denied: " + connection.getVirtualHostName());
         }
     }
 
-    public void authoriseConsume(final AMQQueue queue)
+    public void authoriseCreateConsumer(final Consumer consumer)
     {
+        // TODO
+        final AMQQueue queue = (AMQQueue) consumer.getMessageSource();
+
         if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
@@ -334,20 +340,17 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseCreateExchange(final Boolean autoDelete,
-                                        final Boolean durable,
-                                        final String exchangeName,
-                                        final Boolean internal,
-                                        final Boolean nowait,
-                                        final Boolean passive,
-                                        final String exchangeType)
+    public void authoriseCreateExchange(final Exchange exchange)
     {
+        final String exchangeName = exchange.getName();
         if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(CREATE, EXCHANGE, new ObjectProperties(autoDelete, durable, exchangeName,
-                        internal, nowait, passive, exchangeType));
+                return plugin.authorise(CREATE, EXCHANGE, new ObjectProperties(exchange.isAutoDelete(),
+                                                                               exchange.isDurable(),
+                                                                               exchangeName,
+                                                                               exchange.getTypeName()));
             }
         }))
         {
@@ -355,20 +358,25 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseCreateQueue(final Boolean autoDelete, final Boolean durable, final Boolean exclusive,
-            final Boolean nowait, final Boolean passive, final String queueName, final String owner)
+    public void authoriseCreateQueue(final AMQQueue queue)
     {
+        final String queueName = queue.getName();
         if(! checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(CREATE, QUEUE, new ObjectProperties(autoDelete, durable, exclusive, nowait, passive, queueName, owner));
+                return plugin.authorise(CREATE, QUEUE, new ObjectProperties(queue.getAttribute(Queue.LIFETIME_POLICY) != LifetimePolicy.PERMANENT,
+                                                                            Boolean.TRUE.equals(queue.getAttribute(Queue.DURABLE)),
+                                                                            queue.getAttribute(Queue.EXCLUSIVE) != ExclusivityPolicy.NONE,
+                                                                            queueName,
+                                                                            queue.getOwner()));
             }
         }))
         {
             throw new AccessControlException("Permission denied: queue-name '" + queueName + "'");
         }
     }
+
 
     public void authoriseDelete(final AMQQueue queue)
     {

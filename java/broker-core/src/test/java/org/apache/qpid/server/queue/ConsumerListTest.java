@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
@@ -55,9 +56,11 @@ public class ConsumerListTest extends QpidTestCase
 
     private QueueConsumer newMockConsumer()
     {
-        ConsumerTarget target = mock(ConsumerTarget.class);
-        when(target.getSessionModel()).thenReturn(mock(AMQSessionModel.class));
-        return new QueueConsumer(null,null,true,true,"sub",false,target);
+        QueueConsumer consumer = mock(QueueConsumer.class);
+        MessageInstance.ConsumerAcquiredState owningState = new QueueEntryImpl.ConsumerAcquiredState(consumer);
+        when(consumer.getOwningState()).thenReturn(owningState);
+
+        return consumer;
     }
 
     /**

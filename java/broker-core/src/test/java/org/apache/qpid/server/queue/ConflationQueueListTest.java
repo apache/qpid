@@ -27,6 +27,8 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.HashMap;
@@ -52,7 +54,10 @@ public class ConflationQueueListTest extends TestCase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.LVQ_KEY, CONFLATION_KEY);
-        _queue = new ConflationQueue(mock(VirtualHost.class), queueAttributes);
+        final VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
+
+        _queue = new ConflationQueue(virtualHost, queueAttributes);
         _list = _queue.getEntries();
     }
 

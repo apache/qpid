@@ -25,11 +25,16 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.queue.MockAMQQueue;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  */
@@ -73,7 +78,7 @@ public class HeadersBindingTest extends TestCase
 
         public String getEncoding()
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         public byte getPriority()
@@ -131,12 +136,15 @@ public class HeadersBindingTest extends TestCase
     private Map<String,Object> bindHeaders = new HashMap<String,Object>();
     private MockHeader matchHeaders = new MockHeader();
     private int _count = 0;
-    private MockAMQQueue _queue;
+    private AMQQueue _queue;
 
     protected void setUp()
     {
         _count++;
-        _queue = new MockAMQQueue(getQueueName());
+        _queue = mock(AMQQueue.class);
+        VirtualHost vhost = mock(VirtualHost.class);
+        when(_queue.getVirtualHost()).thenReturn(vhost);
+        when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
     }
 
     protected String getQueueName()

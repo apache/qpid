@@ -21,9 +21,11 @@
 package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Validate QueueLogSubjects are logged as expected
@@ -41,8 +43,9 @@ public class QueueLogSubjectTest extends AbstractTestLogSubject
 
         _testVhost = BrokerTestHelper.createVirtualHost("test");
 
-        _queue = new MockAMQQueue("QueueLogSubjectTest");
-        ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
+        _queue = mock(AMQQueue.class);
+        when(_queue.getName()).thenReturn("QueueLogSubjectTest");
+        when(_queue.getVirtualHost()).thenReturn(_testVhost);
 
         _subject = new QueueLogSubject(_queue);
     }

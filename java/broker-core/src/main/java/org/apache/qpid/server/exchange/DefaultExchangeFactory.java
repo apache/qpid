@@ -116,8 +116,6 @@ public class DefaultExchangeFactory implements ExchangeFactory
     public Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete)
             throws AMQUnknownExchangeType
     {
-        // Check access
-        _host.getSecurityManager().authoriseCreateExchange(autoDelete, durable, exchange, null, null, null, type);
 
         ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
         if (exchType == null)

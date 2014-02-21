@@ -22,9 +22,11 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Validate BindingLogSubjects are logged as expected
@@ -45,8 +47,9 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
         _testVhost = BrokerTestHelper.createVirtualHost("test");
         _routingKey = "RoutingKey";
         _exchange = _testVhost.getExchange("amq.direct");
-        _queue = new MockAMQQueue("BindingLogSubjectTest");
-        ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
+        _queue = mock(AMQQueue.class);
+        when(_queue.getName()).thenReturn("BindingLogSubjectTest");
+        when(_queue.getVirtualHost()).thenReturn(_testVhost);
 
         _subject = new BindingLogSubject(_routingKey, _exchange, _queue);
     }

@@ -43,6 +43,8 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -66,6 +68,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         _queues = new ArrayList<AMQQueue>();
 
         _virtualHost = mock(VirtualHost.class);
+        when(_virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
 
         VirtualHostConfiguration vhostConfig = mock(VirtualHostConfiguration.class);
         when(_virtualHost.getConfiguration()).thenReturn(vhostConfig);

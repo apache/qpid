@@ -22,8 +22,7 @@ package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockAMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.MockMessageInstance;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -33,6 +32,9 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * A unit test ensuring that AutoCommitTransaction creates a separate transaction for
@@ -46,8 +48,8 @@ public class AutoCommitTransactionTest extends QpidTestCase
     private ServerTransaction _transaction = null;  // Class under test
     
     private MessageStore _transactionLog;
-    private AMQQueue _queue;
-    private List<AMQQueue> _queues;
+    private BaseQueue _queue;
+    private List<BaseQueue> _queues;
     private Collection<MessageInstance> _queueEntries;
     private ServerMessage _message;
     private MockAction _action;
@@ -382,7 +384,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         
         for(int i = 0; i < queueDurableFlags.length; i++)
         {
-            final AMQQueue queue = createTestAMQQueue(queueDurableFlags[i]);
+            final BaseQueue queue = createTestAMQQueue(queueDurableFlags[i]);
             final ServerMessage message = createTestMessage(messagePersistentFlags[i]);
             
             queueEntries.add(new MockMessageInstance()
@@ -411,9 +413,9 @@ public class AutoCommitTransactionTest extends QpidTestCase
         return new MockStoreTransaction(throwException);
     }
 
-    private List<AMQQueue> createTestBaseQueues(boolean[] durableFlags)
+    private List<BaseQueue> createTestBaseQueues(boolean[] durableFlags)
     {
-        List<AMQQueue> queues = new ArrayList<AMQQueue>();
+        List<BaseQueue> queues = new ArrayList<BaseQueue>();
         for (boolean b: durableFlags)
         {
             queues.add(createTestAMQQueue(b));
@@ -422,17 +424,11 @@ public class AutoCommitTransactionTest extends QpidTestCase
         return queues;
     }
 
-    private AMQQueue createTestAMQQueue(final boolean durable)
+    private BaseQueue createTestAMQQueue(final boolean durable)
     {
-        return new MockAMQQueue("mockQueue")
-        {
-            @Override
-            public boolean isDurable()
-            {
-                return durable;
-            }
-            
-        };
+        BaseQueue queue = mock(BaseQueue.class);
+        when(queue.isDurable()).thenReturn(durable);
+        return queue;
     }
 
     private ServerMessage createTestMessage(final boolean persistent)

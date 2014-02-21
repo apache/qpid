@@ -197,7 +197,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
             try
             {
-                vhost.getSecurityManager().accessVirtualhost(vhostName);
+                vhost.getSecurityManager().authoriseCreateConnection(sconn);
             }
             catch (AccessControlException e)
             {
