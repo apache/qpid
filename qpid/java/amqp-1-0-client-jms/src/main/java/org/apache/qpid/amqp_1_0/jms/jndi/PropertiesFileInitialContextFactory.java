@@ -57,8 +57,6 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         Map data = new ConcurrentHashMap();
 
         String file = null;
-        String fileName = (environment.containsKey(Context.PROVIDER_URL))
-                            ? (String)environment.get(Context.PROVIDER_URL) : System.getProperty(Context.PROVIDER_URL);
 
         try
         {
@@ -99,10 +97,6 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
                         System.setProperty(key, value);
                     }
                 }
-            }
-            else
-            {
-                throw new NamingException("No Provider URL specified.");
             }
         }
         catch (IOException ioe)
