@@ -58,7 +58,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _queuePrefix;
     private String _topicPrefix;
     private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
-    private boolean _syncPublish = Boolean.parseBoolean(System.getProperty("qpid.sync_publish", "false"));
+    private Boolean _syncPublish;
     private int _maxSessions = Integer.getInteger("qpid.max_sessions", 0);
     private int _maxPrefetch;
     private String _keyStorePath;
@@ -138,6 +138,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _remoteHost = remoteHost;
         _ssl = ssl;
         _maxSessions = maxSessions;
+        if(! "".equals(System.getProperty("qpid.sync_publish","")))
+        {
+            _syncPublish = Boolean.getBoolean("qpid.sync_publish");
+        }
     }
 
     public ConnectionImpl createConnection() throws JMSException
@@ -239,7 +243,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String remoteHost;
 
         boolean binaryMessageId = true;
-        boolean syncPublish;
+        Boolean syncPublish;
         int maxSessions;
         public boolean ssl;
         public int maxPrefetch;
@@ -539,7 +543,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _useBinaryMessageId = useBinaryMessageId;
     }
 
-    public void setSyncPublish(boolean syncPublish)
+    public void setSyncPublish(Boolean syncPublish)
     {
         _syncPublish = syncPublish;
     }

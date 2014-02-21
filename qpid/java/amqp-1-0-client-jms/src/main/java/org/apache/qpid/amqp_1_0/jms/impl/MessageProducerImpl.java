@@ -55,12 +55,14 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
     private SessionImpl _session;
     private Sender _sender;
     private boolean _closed;
-    private boolean _syncPublish = Boolean.getBoolean("qpid.sync_publish");
+    private Boolean _syncPublish;
+
     private long _syncPublishTimeout = Long.getLong("qpid.sync_publish_timeout", 30000l);
 
     protected MessageProducerImpl(final Destination destination,
                                final SessionImpl session) throws JMSException
     {
+
         if(destination instanceof DestinationImpl)
         {
             _destination = (DestinationImpl) destination;
@@ -305,7 +307,10 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         final org.apache.qpid.amqp_1_0.client.Message clientMessage = new org.apache.qpid.amqp_1_0.client.Message(msg.getSections());
 
         DispositionAction action = null;
-        final boolean doSync = _syncPublish || (deliveryMode == DeliveryMode.PERSISTENT && _session.getTxn() == null);
+        final boolean doSync = Boolean.TRUE.equals(_syncPublish)
+                               || (deliveryMode == DeliveryMode.PERSISTENT
+                                   && _session.getTxn() == null
+                                   && !Boolean.FALSE.equals(_syncPublish));
         if(doSync)
         {
             action = new DispositionAction(_sender);

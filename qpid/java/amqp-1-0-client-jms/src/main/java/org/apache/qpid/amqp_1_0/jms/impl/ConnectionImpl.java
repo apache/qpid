@@ -62,7 +62,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private String _queuePrefix;
     private String _topicPrefix;
     private boolean _useBinaryMessageId = Boolean.parseBoolean(System.getProperty("qpid.use_binary_message_id", "true"));
-    private boolean _syncPublish = Boolean.parseBoolean(System.getProperty("qpid.sync_publish", "false"));
+    private Boolean _syncPublish;
     private int _maxSessions;
     private int _maxPrefetch;
 
@@ -141,6 +141,11 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         _remoteHost = remoteHost;
         _sslContext = sslContext;
         _maxSessions = maxSessions;
+
+        if(! "".equals(System.getProperty("qpid.sync_publish","")))
+        {
+            _syncPublish = Boolean.getBoolean("qpid.sync_publish");
+        }
     }
 
     private void connect() throws JMSException
@@ -629,12 +634,12 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         return _useBinaryMessageId;
     }
 
-    void setSyncPublish(boolean syncPublish)
+    void setSyncPublish(Boolean syncPublish)
     {
         _syncPublish = syncPublish;
     }
 
-    boolean syncPublish()
+    Boolean syncPublish()
     {
         return _syncPublish;
     }
