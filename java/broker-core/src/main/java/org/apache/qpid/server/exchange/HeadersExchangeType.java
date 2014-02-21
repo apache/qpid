@@ -20,10 +20,12 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class HeadersExchangeType implements ExchangeType<HeadersExchange>
@@ -34,13 +36,11 @@ public class HeadersExchangeType implements ExchangeType<HeadersExchange>
         return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
     }
 
-    public HeadersExchange newInstance(UUID id, VirtualHost host, String name, boolean durable,
-                                       boolean autoDelete)
+    @Override
+    public HeadersExchange newInstance(final VirtualHost virtualHost, final Map<String, Object> attributes)
+            throws UnknownExchangeException
     {
-        HeadersExchange exch = new HeadersExchange();
-
-        exch.initialise(id, host, name, durable, autoDelete);
-        return exch;
+        return new HeadersExchange(virtualHost, attributes);
     }
 
     public String getDefaultExchangeName()

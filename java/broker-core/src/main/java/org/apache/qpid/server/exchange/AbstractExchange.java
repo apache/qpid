@@ -34,6 +34,7 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -42,6 +43,8 @@ import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -55,7 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class AbstractExchange implements Exchange
+public abstract class AbstractExchange<T extends Exchange> implements Exchange<T>
 {
     private static final Logger _logger = Logger.getLogger(AbstractExchange.class);
     private String _name;
@@ -79,7 +82,6 @@ public abstract class AbstractExchange implements Exchange
     private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
 
     private final CopyOnWriteArrayList<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
-    private final ExchangeType<? extends Exchange> _type;
     private UUID _id;
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
     private final AtomicLong _receivedMessageCount = new AtomicLong();
@@ -94,36 +96,63 @@ public abstract class AbstractExchange implements Exchange
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
 
-    public AbstractExchange(final ExchangeType<? extends Exchange> type)
+    public AbstractExchange(VirtualHost vhost, Map<String, Object> attributes) throws UnknownExchangeException
     {
-        _type = type;
+        _virtualHost = vhost;
+
+        _id = MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributes);
+        _name = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.NAME, attributes);
+        _durable = MapValueConverter.getBooleanAttribute(org.apache.qpid.server.model.Exchange.DURABLE, attributes);
+        _autoDelete = MapValueConverter.getEnumAttribute(LifetimePolicy.class, org.apache.qpid.server.model.Exchange.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT) != LifetimePolicy.PERMANENT;
+        _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
+
+        // check ACL
+        _virtualHost.getSecurityManager().authoriseCreateExchange(this);
+
+        Object alternateExchangeAttr = attributes.get(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE);
+        if(alternateExchangeAttr != null)
+        {
+            if(alternateExchangeAttr instanceof Exchange)
+            {
+                _alternateExchange = (Exchange) alternateExchangeAttr;
+            }
+            else if(alternateExchangeAttr instanceof UUID)
+            {
+                _alternateExchange = vhost.getExchange((UUID)alternateExchangeAttr);
+            }
+            else if(alternateExchangeAttr instanceof String)
+            {
+                _alternateExchange = vhost.getExchange((String)alternateExchangeAttr);
+                if(_alternateExchange == null)
+                {
+                    try
+                    {
+                        UUID altExcAsUUID = UUID.fromString((String)alternateExchangeAttr);
+                        _alternateExchange = vhost.getExchange(altExcAsUUID);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        // ignore - we'll throw an exception shortly because _alternateExchange will be null
+                    }
+                }
+            }
+            if(_alternateExchange == null)
+            {
+                throw new UnknownExchangeException(alternateExchangeAttr.toString());
+            }
+
+        }
+
+        // Log Exchange creation
+        CurrentActor.get().message(ExchangeMessages.CREATED(getType().getType(), _name, _durable));
     }
+
+    public abstract ExchangeType<T> getType();
 
     @Override
     public String getTypeName()
     {
-        return _type.getType();
-    }
-
-    public void initialise(UUID id,
-                           VirtualHost host,
-                           String name,
-                           boolean durable,
-                           boolean autoDelete)
-    {
-        _virtualHost = host;
-        _name = name;
-        _durable = durable;
-        _autoDelete = autoDelete;
-
-        _id = id;
-        _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
-
-        // check ACL
-        host.getSecurityManager().authoriseCreateExchange(this);
-
-        // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.CREATED(getType().getType(), name, durable));
+        return getType().getType();
     }
 
     public boolean isDurable()
@@ -363,11 +392,6 @@ public abstract class AbstractExchange implements Exchange
     public String getName()
     {
         return _name.toString();
-    }
-
-    public ExchangeType getType()
-    {
-        return _type;
     }
 
     public Map<String, Object> getArguments()

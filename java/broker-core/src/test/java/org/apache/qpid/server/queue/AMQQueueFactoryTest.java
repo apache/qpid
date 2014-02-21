@@ -46,6 +46,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.ArgumentCaptor;
@@ -136,19 +137,18 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
     private void mockExchangeCreation() throws Exception
     {
-        final ArgumentCaptor<UUID> idCapture = ArgumentCaptor.forClass(UUID.class);
-        final ArgumentCaptor<String> exchangeNameCapture = ArgumentCaptor.forClass(String.class);
-        final ArgumentCaptor<String> type = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<Map> attributes = ArgumentCaptor.forClass(Map.class);
 
-        when(_virtualHost.createExchange(idCapture.capture(), exchangeNameCapture.capture(), type.capture(),
-                anyBoolean(), anyBoolean(), anyString())).then(
+
+        when(_virtualHost.createExchange(attributes.capture())).then(
                 new Answer<Exchange>()
                 {
                     @Override
                     public Exchange answer(InvocationOnMock invocation) throws Throwable
                     {
-                        final String name = exchangeNameCapture.getValue();
-                        final UUID id = idCapture.getValue();
+                        Map attributeValues = attributes.getValue();
+                        final String name = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.NAME, attributeValues);
+                        final UUID id = MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributeValues);
 
                         final Exchange exchange = mock(Exchange.class);
                         ExchangeType exType = mock(ExchangeType.class);
@@ -157,7 +157,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
                         when(exchange.getId()).thenReturn(id);
                         when(exchange.getType()).thenReturn(exType);
 
-                        final String typeName = type.getValue();
+                        final String typeName = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.TYPE, attributeValues);
                         when(exType.getType()).thenReturn(typeName);
                         when(exchange.getTypeName()).thenReturn(typeName);
 
@@ -166,7 +166,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
                         final ArgumentCaptor<AMQQueue> queue = ArgumentCaptor.forClass(AMQQueue.class);
 
-                        when(exchange.addBinding(anyString(),queue.capture(),anyMap())).then(new Answer<Boolean>() {
+                        when(exchange.addBinding(anyString(), queue.capture(), anyMap())).then(new Answer<Boolean>()
+                        {
 
                             @Override
                             public Boolean answer(InvocationOnMock invocation) throws Throwable
@@ -179,7 +180,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
                         return exchange;
                     }
                 }
-        );
+                                                                    );
     }
 
     @Override

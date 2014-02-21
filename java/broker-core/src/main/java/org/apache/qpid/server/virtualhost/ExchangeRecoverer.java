@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
@@ -65,10 +66,7 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
                                   final Map<String, Object> attributeMap)
         {
             String exchangeName = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.NAME);
-            String exchangeType = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.TYPE);
             String lifeTimePolicy = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY);
-            boolean autoDelete = lifeTimePolicy == null
-                                 || LifetimePolicy.valueOf(lifeTimePolicy) != LifetimePolicy.PERMANENT;
             try
             {
                 _exchange = _exchangeRegistry.getExchange(id);
@@ -78,7 +76,10 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
                 }
                 if (_exchange == null)
                 {
-                    _exchange = _exchangeFactory.restoreExchange(id, exchangeName, exchangeType, autoDelete);
+                    Map<String,Object> attributesWithId = new HashMap<String,Object>(attributeMap);
+                    attributesWithId.put(org.apache.qpid.server.model.Exchange.ID,id);
+                    attributesWithId.put(org.apache.qpid.server.model.Exchange.DURABLE,true);
+                    _exchange = _exchangeFactory.restoreExchange(attributesWithId);
                     _exchangeRegistry.registerExchange(_exchange);
                 }
             }
@@ -86,6 +87,11 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
             {
                 throw new ServerScopedRuntimeException("Unknown exchange type found when attempting to restore " +
                                                        "exchanges, check classpath", e);
+            }
+            catch (UnknownExchangeException e)
+            {
+                throw new ServerScopedRuntimeException("Unknown alternate exchange type found when attempting to restore " +
+                                                       "exchanges: ", e);
             }
         }
 

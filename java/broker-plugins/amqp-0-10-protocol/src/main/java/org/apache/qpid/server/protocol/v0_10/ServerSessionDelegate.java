@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import java.security.AccessControlException;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
@@ -61,13 +62,7 @@ import org.apache.qpid.server.txn.SuspendAndFailDtxException;
 import org.apache.qpid.server.txn.TimeoutDtxException;
 import org.apache.qpid.server.txn.UnknownDtxBranchException;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.ExchangeExistsException;
-import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
-import org.apache.qpid.server.virtualhost.RequiredExchangeException;
-import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.QueueExistsException;
+import org.apache.qpid.server.virtualhost.*;
 import org.apache.qpid.transport.*;
 
 import java.nio.ByteBuffer;
@@ -712,12 +707,16 @@ public class ServerSessionDelegate extends SessionDelegate
 
             try
             {
-                virtualHost.createExchange(null,
-                        method.getExchange(),
-                        method.getType(),
-                        method.getDurable(),
-                        method.getAutoDelete(),
-                        method.getAlternateExchange());
+                Map<String,Object> attributes = new HashMap<String, Object>();
+
+                attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
+                attributes.put(org.apache.qpid.server.model.Exchange.NAME, method.getExchange());
+                attributes.put(org.apache.qpid.server.model.Exchange.TYPE, method.getType());
+                attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, method.getDurable());
+                attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                               method.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+                attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, method.getAlternateExchange());
+                virtualHost.createExchange(attributes);
             }
             catch(ReservedExchangeNameException e)
             {

@@ -26,11 +26,16 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -60,15 +65,56 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public void initialise(ExchangeFactory exchangeFactory)
     {
         //create 'standard' exchanges:
-        new ExchangeInitialiser().initialise(exchangeFactory, this, getDurableConfigurationStore());
+        initialiseExchanges(exchangeFactory, getDurableConfigurationStore());
 
-        _defaultExchange = new DefaultExchange(_queueRegistry);
+        _defaultExchange =
+                new DefaultExchange(_host, _queueRegistry,
+                                    UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME,
+                                                                       _host.getName()));
 
-        UUID defaultExchangeId =
-                UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME, _host.getName());
 
-        _defaultExchange.initialise(defaultExchangeId, _host, ExchangeDefaults.DEFAULT_EXCHANGE_NAME,false, false);
+    }
 
+    private void initialiseExchanges(ExchangeFactory factory, DurableConfigurationStore store)
+    {
+        for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
+        {
+            defineExchange(factory, type.getDefaultExchangeName(), type.getType(), store);
+        }
+
+    }
+
+    private void defineExchange(ExchangeFactory f, String name, String type, DurableConfigurationStore store)
+    {
+        try
+        {
+            if(getExchange(name) == null)
+            {
+                Map<String, Object> attributes = new HashMap<String, Object>();
+                attributes.put(org.apache.qpid.server.model.Exchange.ID,
+                               UUIDGenerator.generateExchangeUUID(name, _host.getName()));
+                attributes.put(org.apache.qpid.server.model.Exchange.NAME, name);
+                attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type);
+                attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
+                Exchange exchange = f.createExchange(attributes);
+                registerExchange(exchange);
+                if(exchange.isDurable())
+                {
+                    DurableConfigurationStoreHelper.createExchange(store, exchange);
+                }
+            }
+        }
+        catch (AMQUnknownExchangeType e)
+        {
+            throw new ServerScopedRuntimeException("Unknown exchange type while attempting to initialise exchanges - " +
+                                                   "this is because necessary jar files are not on the classpath", e);
+        }
+        catch (UnknownExchangeException e)
+        {
+            throw new ServerScopedRuntimeException("Unknown alternate exchange type while attempting to initialise " +
+                                                   "a mandatory exchange which should not have an alternate: '" +
+                                                   name + "'");
+        }
     }
 
     public DurableConfigurationStore getDurableConfigurationStore()
@@ -87,11 +133,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
             }
 
         }
-    }
-
-    public void setDefaultExchange(Exchange exchange)
-    {
-        _defaultExchange = exchange;
     }
 
     public Exchange getDefaultExchange()

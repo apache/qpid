@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,9 +38,12 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -49,16 +53,18 @@ public class FanoutExchangeTest extends TestCase
     private FanoutExchange _exchange;
     private VirtualHost _virtualHost;
 
-    public void setUp()
+    public void setUp() throws UnknownExchangeException
     {
         CurrentActor.setDefault(mock(LogActor.class));
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Exchange.ID, UUID.randomUUID());
+        attributes.put(Exchange.NAME, "test");
+        attributes.put(Exchange.DURABLE, false);
 
-        _exchange = new FanoutExchange();
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
-
-        _exchange.initialise(UUID.randomUUID(), _virtualHost, "test", false, false);
+        _exchange = new FanoutExchange(_virtualHost, attributes);
     }
 
     public void testIsBoundStringMapAMQQueueWhenQueueIsNull()

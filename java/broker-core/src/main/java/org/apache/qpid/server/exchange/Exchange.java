@@ -30,16 +30,14 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
-public interface Exchange extends ExchangeReferrer, MessageDestination
+public interface Exchange<T extends Exchange> extends ExchangeReferrer, MessageDestination
 {
-    void initialise(UUID id, VirtualHost host, String name, boolean durable, boolean autoDelete);
-
 
     UUID getId();
 
     String getName();
 
-    ExchangeType getType();
+    ExchangeType<T> getType();
 
     String getTypeName();
 

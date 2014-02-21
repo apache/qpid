@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import junit.framework.Assert;
 
@@ -30,8 +31,8 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -54,8 +55,13 @@ public class TopicExchangeTest extends QpidTestCase
     {
         super.setUp();
         BrokerTestHelper.setUp();
-        _exchange = new TopicExchange();
         _vhost = BrokerTestHelper.createVirtualHost(getName());
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Exchange.ID, UUID.randomUUID());
+        attributes.put(Exchange.NAME, "test");
+        attributes.put(Exchange.DURABLE, false);
+
+        _exchange = new TopicExchange(_vhost, attributes);
     }
 
     @Override
