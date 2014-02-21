@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -177,8 +178,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
             }
 
             @Override
-            public Exchange newInstance(UUID id, VirtualHost host, String name, boolean durable,
-                                        boolean autoDelete)
+            public Exchange newInstance(VirtualHost host, Map<String,Object> attributes)
             {
                 return null;
             }

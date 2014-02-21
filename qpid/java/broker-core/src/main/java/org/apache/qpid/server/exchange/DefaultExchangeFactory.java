@@ -23,12 +23,13 @@ package org.apache.qpid.server.exchange;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,41 +97,24 @@ public class DefaultExchangeFactory implements ExchangeFactory
         return _exchangeClassMap.values();
     }
 
-    public Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes()
+    @Override
+    public Exchange createExchange(final Map<String, Object> attributes)
+            throws AMQUnknownExchangeType, UnknownExchangeException
     {
-        Collection<ExchangeType<? extends Exchange>> publicTypes =
-                                new ArrayList<ExchangeType<? extends Exchange>>();
-        publicTypes.addAll(_exchangeClassMap.values());
-
-        return publicTypes;
-    }
-
-    public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
-            throws AMQUnknownExchangeType
-    {
-
-        UUID id = UUIDGenerator.generateExchangeUUID(exchange, _host.getName());
-        return createExchange(id, exchange, type, durable, autoDelete);
-    }
-
-    public Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete)
-            throws AMQUnknownExchangeType
-    {
-
+        String type = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.TYPE, attributes);
         ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
         if (exchType == null)
         {
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
         }
-
-        Exchange e = exchType.newInstance(id, _host, exchange, durable, autoDelete);
-        return e;
+        return exchType.newInstance(_host, attributes);
     }
 
     @Override
-    public Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete)
-            throws AMQUnknownExchangeType
+    public Exchange restoreExchange(Map<String,Object> attributes)
+            throws AMQUnknownExchangeType, UnknownExchangeException
     {
-        return createExchange(id, exchange, type, true, autoDelete);
+        return createExchange(attributes);
+
     }
 }

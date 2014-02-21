@@ -38,6 +38,7 @@ import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
@@ -187,10 +188,16 @@ public class AMQQueueFactory implements QueueFactory
 
         try
         {
-            dlExchange = _virtualHost.createExchange(dlExchangeId,
-                                                            dlExchangeName,
-                                                            ExchangeDefaults.FANOUT_EXCHANGE_CLASS,
-                                                            true, false, null);
+            Map<String,Object> attributes = new HashMap<String, Object>();
+
+            attributes.put(org.apache.qpid.server.model.Exchange.ID, dlExchangeId);
+            attributes.put(org.apache.qpid.server.model.Exchange.NAME, dlExchangeName);
+            attributes.put(org.apache.qpid.server.model.Exchange.TYPE, ExchangeDefaults.FANOUT_EXCHANGE_CLASS);
+            attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
+            attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                           false ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+            attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+            dlExchange = _virtualHost.createExchange(attributes);
         }
         catch(ExchangeExistsException e)
         {

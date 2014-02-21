@@ -158,12 +158,7 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public Exchange createExchange(UUID id,
-                                   String exchange,
-                                   String type,
-                                   boolean durable,
-                                   boolean autoDelete,
-                                   String alternateExchange)
+    public Exchange createExchange(Map<String,Object> attributes)
     {
         return null;
     }

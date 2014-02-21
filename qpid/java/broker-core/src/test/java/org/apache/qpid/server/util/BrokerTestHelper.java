@@ -22,6 +22,7 @@ package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.when;
 
 import java.net.SocketAddress;
@@ -177,7 +178,12 @@ public class BrokerTestHelper
         when(virtualHost.getName()).thenReturn(hostName);
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);
         DefaultExchangeFactory factory = new DefaultExchangeFactory(virtualHost);
-        return factory.createExchange("amp.direct", "direct", false, false);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID("amp.direct", virtualHost.getName()));
+        attributes.put(org.apache.qpid.server.model.Exchange.NAME, "amq.direct");
+        attributes.put(org.apache.qpid.server.model.Exchange.TYPE, "direct");
+        attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, false);
+        return factory.createExchange(attributes);
     }
 
     public static AMQQueue createQueue(String queueName, VirtualHost virtualHost)

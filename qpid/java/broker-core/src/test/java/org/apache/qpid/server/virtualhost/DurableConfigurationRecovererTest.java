@@ -269,10 +269,27 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         final Exchange customExchange = mock(Exchange.class);
 
-        when(_exchangeFactory.restoreExchange(eq(customExchangeId),
-                                             eq(CUSTOM_EXCHANGE_NAME),
-                                             eq(HeadersExchange.TYPE.getType()),
-                                             anyBoolean())).thenReturn(customExchange);
+        final ArgumentCaptor<Map> attributesCaptor = ArgumentCaptor.forClass(Map.class);
+        when(_exchangeFactory.restoreExchange(attributesCaptor.capture())).thenAnswer(new Answer<Exchange>()
+        {
+            @Override
+            public Exchange answer(final InvocationOnMock invocation) throws Throwable
+            {
+                Map arguments = attributesCaptor.getValue();
+                if(CUSTOM_EXCHANGE_NAME.equals(arguments.get(org.apache.qpid.server.model.Exchange.NAME))
+                    && HeadersExchange.TYPE.getType().equals(arguments.get(org.apache.qpid.server.model.Exchange.TYPE))
+                    && customExchangeId.equals(arguments.get(org.apache.qpid.server.model.Exchange.ID)))
+                {
+                    return customExchange;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        });
+
+
 
         final ConfiguredObjectRecord[] expected = {
                 new ConfiguredObjectRecord(new UUID(1, 0), "org.apache.qpid.server.model.Binding",
@@ -385,10 +402,26 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         when(customExchange.getId()).thenReturn(exchangeId);
         when(customExchange.getName()).thenReturn(CUSTOM_EXCHANGE_NAME);
 
-        when(_exchangeFactory.restoreExchange(eq(exchangeId),
-                                             eq(CUSTOM_EXCHANGE_NAME),
-                                             eq(HeadersExchange.TYPE.getType()),
-                                             anyBoolean())).thenReturn(customExchange);
+        final ArgumentCaptor<Map> attributesCaptor = ArgumentCaptor.forClass(Map.class);
+
+        when(_exchangeFactory.restoreExchange(attributesCaptor.capture())).thenAnswer(new Answer<Exchange>()
+        {
+            @Override
+            public Exchange answer(final InvocationOnMock invocation) throws Throwable
+            {
+                Map arguments = attributesCaptor.getValue();
+                if(CUSTOM_EXCHANGE_NAME.equals(arguments.get(org.apache.qpid.server.model.Exchange.NAME))
+                   && HeadersExchange.TYPE.getType().equals(arguments.get(org.apache.qpid.server.model.Exchange.TYPE))
+                   && exchangeId.equals(arguments.get(org.apache.qpid.server.model.Exchange.ID)))
+                {
+                    return customExchange;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        });
 
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
 

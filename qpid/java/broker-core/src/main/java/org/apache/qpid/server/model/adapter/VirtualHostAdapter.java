@@ -73,6 +73,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
@@ -348,12 +349,17 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
                     }
                 }
             }
-            org.apache.qpid.server.exchange.Exchange exchange = _virtualHost.createExchange(null,
-                    name,
-                    type,
-                    durable,
-                    lifetime != null && lifetime != LifetimePolicy.PERMANENT,
-                    alternateExchange);
+            Map<String,Object> attributes1 = new HashMap<String, Object>();
+
+            attributes1.put(ID, null);
+            attributes1.put(NAME, name);
+            attributes1.put(Exchange.TYPE, type);
+            attributes1.put(Exchange.DURABLE, durable);
+            attributes1.put(Exchange.LIFETIME_POLICY,
+                            lifetime != null && lifetime != LifetimePolicy.PERMANENT
+                                    ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+            attributes1.put(Exchange.ALTERNATE_EXCHANGE, alternateExchange);
+            org.apache.qpid.server.exchange.Exchange exchange = _virtualHost.createExchange(attributes1);
             synchronized (_exchangeAdapters)
             {
                 return _exchangeAdapters.get(exchange);

@@ -30,17 +30,21 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.security.AccessControlException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExchangeDeclareHandler implements StateAwareMethodListener<ExchangeDeclareBody>
 {
@@ -95,12 +99,18 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         {
             try
             {
-                exchange = virtualHost.createExchange(null,
-                                                      exchangeName == null ? null : exchangeName.intern().toString(),
-                                                      body.getType() == null ? null : body.getType().intern().toString(),
-                                                      body.getDurable(),
-                                                      body.getAutoDelete(),
-                        null);
+                String name = exchangeName == null ? null : exchangeName.intern().toString();
+                String type = body.getType() == null ? null : body.getType().intern().toString();
+                Map<String,Object> attributes = new HashMap<String, Object>();
+
+                attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
+                attributes.put(org.apache.qpid.server.model.Exchange.NAME,name);
+                attributes.put(org.apache.qpid.server.model.Exchange.TYPE,type);
+                attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, body.getDurable());
+                attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                               body.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+                attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+                exchange = virtualHost.createExchange(attributes);
 
             }
             catch(ReservedExchangeNameException e)

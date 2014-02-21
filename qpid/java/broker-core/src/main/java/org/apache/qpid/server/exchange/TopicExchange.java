@@ -42,8 +42,10 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class TopicExchange extends AbstractExchange
+public class TopicExchange extends AbstractExchange<TopicExchange>
 {
     public static final ExchangeType<TopicExchange> TYPE = new TopicExchangeType();
 
@@ -57,9 +59,15 @@ public class TopicExchange extends AbstractExchange
 
     private final Map<Binding, Map<String,Object>> _bindings = new HashMap<Binding, Map<String,Object>>();
 
-    public TopicExchange()
+    public TopicExchange(final VirtualHost vhost, final Map attributes) throws UnknownExchangeException
     {
-        super(TYPE);
+        super(vhost, attributes);
+    }
+
+    @Override
+    public ExchangeType<TopicExchange> getType()
+    {
+        return TYPE;
     }
 
     protected synchronized void registerQueue(final Binding binding) throws AMQInvalidArgumentException

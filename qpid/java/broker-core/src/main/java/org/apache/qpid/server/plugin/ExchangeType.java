@@ -20,17 +20,18 @@
  */
 package org.apache.qpid.server.plugin;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public interface ExchangeType<T extends Exchange> extends Pluggable
 {
     public String getType();
 
-    public T newInstance(UUID id, VirtualHost host, String name,
-                         boolean durable, boolean autoDelete);
+    public T newInstance(final VirtualHost virtualHost, Map<String, Object> attributes) throws UnknownExchangeException;
 
     public String getDefaultExchangeName();
 }

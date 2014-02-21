@@ -132,7 +132,8 @@ public class AutoCommitTransaction implements ServerTransaction
             }
             postTransactionAction.postCommit();
             postTransactionAction = null;
-        }finally
+        }
+        finally
         {
             rollbackIfNecessary(postTransactionAction, txn);
         }

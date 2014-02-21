@@ -61,13 +61,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     AMQQueue createQueue(Map<String, Object> arguments) throws QueueExistsException;
 
-
-    Exchange createExchange(UUID id,
-                            String exchange,
-                            String type,
-                            boolean durable,
-                            boolean autoDelete,
-                            String alternateExchange)
+    Exchange createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType;
 

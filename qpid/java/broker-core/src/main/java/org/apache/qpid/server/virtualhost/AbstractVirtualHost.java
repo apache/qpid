@@ -349,8 +349,16 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         boolean autodelete = exchangeConfiguration.getAutoDelete();
         try
         {
-            Exchange newExchange = createExchange(null, exchangeConfiguration.getName(),
-                                                  exchangeConfiguration.getType(), durable, autodelete, null);
+            Map<String,Object> attributes = new HashMap<String, Object>();
+
+            attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
+            attributes.put(org.apache.qpid.server.model.Exchange.NAME, exchangeConfiguration.getName());
+            attributes.put(org.apache.qpid.server.model.Exchange.TYPE, exchangeConfiguration.getType());
+            attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, durable);
+            attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                           autodelete ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+            attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+            Exchange newExchange = createExchange(attributes);
         }
         catch(ExchangeExistsException e)
         {
@@ -620,15 +628,15 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public Exchange createExchange(UUID id,
-                                   String name,
-                                   String type,
-                                   boolean durable,
-                                   boolean autoDelete,
-                                   String alternateExchangeName)
+    public Exchange createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType
     {
+        String name = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.NAME, attributes);
+        boolean durable =
+                MapValueConverter.getBooleanAttribute(org.apache.qpid.server.model.Exchange.DURABLE, attributes);
+
+
         synchronized (_exchangeRegistry)
         {
             Exchange existing;
@@ -641,28 +649,16 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                 throw new ReservedExchangeNameException(name);
             }
 
-            Exchange alternateExchange;
 
-            if(alternateExchangeName != null)
+            if(attributes.get(org.apache.qpid.server.model.Exchange.ID) == null)
             {
-                alternateExchange = _exchangeRegistry.getExchange(alternateExchangeName);
-                if(alternateExchange == null)
-                {
-                    throw new UnknownExchangeException(alternateExchangeName);
-                }
-            }
-            else
-            {
-                alternateExchange = null;
+                attributes = new LinkedHashMap<String, Object>(attributes);
+                attributes.put(org.apache.qpid.server.model.Exchange.ID,
+                               UUIDGenerator.generateExchangeUUID(name, getName()));
             }
 
-            if(id == null)
-            {
-                id = UUIDGenerator.generateExchangeUUID(name, getName());
-            }
+            Exchange exchange = _exchangeFactory.createExchange(attributes);
 
-            Exchange exchange = _exchangeFactory.createExchange(id, name, type, durable, autoDelete);
-            exchange.setAlternateExchange(alternateExchange);
             _exchangeRegistry.registerExchange(exchange);
             if(durable)
             {

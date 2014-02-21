@@ -21,8 +21,10 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -31,13 +33,8 @@ public interface ExchangeFactory
 
     Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
 
-    Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes();
+    Exchange createExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
 
-    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
-            throws AMQUnknownExchangeType;
-
-    Exchange createExchange(UUID id, String exchange, String type, boolean durable, boolean autoDelete) throws AMQUnknownExchangeType;
-    Exchange restoreExchange(UUID id, String exchange, String type, boolean autoDelete)
-            throws AMQUnknownExchangeType;
+    Exchange restoreExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
 
 }

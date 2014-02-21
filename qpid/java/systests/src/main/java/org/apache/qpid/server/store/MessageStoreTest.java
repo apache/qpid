@@ -56,6 +56,7 @@ import org.apache.qpid.server.queue.StandardQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -726,7 +727,15 @@ public class MessageStoreTest extends QpidTestCase
     {
         Exchange exchange = null;
 
-        exchange = getVirtualHost().createExchange(null, name, type.getType(), durable, false, null);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+
+        attributes.put(org.apache.qpid.server.model.Exchange.NAME, name);
+        attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type.getType());
+        attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, durable);
+        attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                       false ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+        attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+        exchange = getVirtualHost().createExchange(attributes);
 
         return exchange;
     }

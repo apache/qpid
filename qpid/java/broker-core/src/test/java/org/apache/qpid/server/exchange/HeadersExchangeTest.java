@@ -35,6 +35,8 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -58,12 +60,15 @@ public class HeadersExchangeTest extends TestCase
         super.setUp();
 
         CurrentActor.setDefault(mock(LogActor.class));
-        _exchange = new HeadersExchange();
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Exchange.ID, UUID.randomUUID());
+        attributes.put(Exchange.NAME, "test");
+        attributes.put(Exchange.DURABLE, false);
 
-        _exchange.initialise(UUID.randomUUID(), _virtualHost, "test", false, false);
+        _exchange = new HeadersExchange(_virtualHost, attributes);
 
     }
 

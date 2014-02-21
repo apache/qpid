@@ -35,6 +35,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +44,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-public class DirectExchange extends AbstractExchange
+public class DirectExchange extends AbstractExchange<DirectExchange>
 {
 
     private static final Logger _logger = Logger.getLogger(DirectExchange.class);
@@ -128,9 +130,16 @@ public class DirectExchange extends AbstractExchange
 
     public static final ExchangeType<DirectExchange> TYPE = new DirectExchangeType();
 
-    public DirectExchange()
+    public DirectExchange(final VirtualHost vhost,
+                          final Map<String, Object> attributes) throws UnknownExchangeException
     {
-        super(TYPE);
+        super(vhost, attributes);
+    }
+
+    @Override
+    public ExchangeType<DirectExchange> getType()
+    {
+        return TYPE;
     }
 
     @Override

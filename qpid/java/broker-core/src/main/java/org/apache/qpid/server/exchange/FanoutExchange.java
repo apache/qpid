@@ -37,10 +37,12 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 
-public class FanoutExchange extends AbstractExchange
+public class FanoutExchange extends AbstractExchange<FanoutExchange>
 {
     private static final Logger _logger = Logger.getLogger(FanoutExchange.class);
 
@@ -64,9 +66,16 @@ public class FanoutExchange extends AbstractExchange
 
     public static final ExchangeType<FanoutExchange> TYPE = new FanoutExchangeType();
 
-    public FanoutExchange()
+    public FanoutExchange(final VirtualHost vhost,
+                          final Map<String, Object> attributes) throws UnknownExchangeException
     {
-        super(TYPE);
+        super(vhost, attributes);
+    }
+
+    @Override
+    public ExchangeType<FanoutExchange> getType()
+    {
+        return TYPE;
     }
 
     @Override

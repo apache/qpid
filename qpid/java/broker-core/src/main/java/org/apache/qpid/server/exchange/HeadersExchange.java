@@ -29,6 +29,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -64,7 +66,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *  amq.match - pub/sub on field content/value
  *  </pre>
  */
-public class HeadersExchange extends AbstractExchange
+public class HeadersExchange extends AbstractExchange<HeadersExchange>
 {
 
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
@@ -78,9 +80,16 @@ public class HeadersExchange extends AbstractExchange
 
     public static final ExchangeType<HeadersExchange> TYPE = new HeadersExchangeType();
 
-    public HeadersExchange()
+    public HeadersExchange(final VirtualHost vhost,
+                           final Map<String, Object> attributes) throws UnknownExchangeException
     {
-        super(TYPE);
+        super(vhost, attributes);
+    }
+
+    @Override
+    public ExchangeType<HeadersExchange> getType()
+    {
+        return TYPE;
     }
 
     @Override

@@ -47,7 +47,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class DefaultExchange implements Exchange
+public class DefaultExchange implements Exchange<DirectExchange>
 {
 
     private final QueueRegistry _queueRegistry;
@@ -56,24 +56,13 @@ public class DefaultExchange implements Exchange
     private static final Logger _logger = Logger.getLogger(DefaultExchange.class);
     private final AtomicBoolean _closed = new AtomicBoolean();
 
-    private LogSubject _logSubject;
     private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
 
-    public DefaultExchange(QueueRegistry queueRegistry)
+    public DefaultExchange(VirtualHost virtualHost, QueueRegistry queueRegistry, UUID id)
     {
+        _virtualHost =  virtualHost;
         _queueRegistry = queueRegistry;
-    }
-
-
-    @Override
-    public void initialise(UUID id,
-                           VirtualHost host,
-                           String name,
-                           boolean durable,
-                           boolean autoDelete)
-    {
         _id = id;
-        _virtualHost = host;
     }
 
     @Override
@@ -83,7 +72,7 @@ public class DefaultExchange implements Exchange
     }
 
     @Override
-    public ExchangeType getType()
+    public ExchangeType<DirectExchange> getType()
     {
         return DirectExchange.TYPE;
     }
@@ -195,12 +184,7 @@ public class DefaultExchange implements Exchange
     @Override
     public void close()
     {
-        if(_closed.compareAndSet(false,true))
-        {
-
-            CurrentActor.get().message(_logSubject, ExchangeMessages.DELETED());
-
-        }
+        throw new AccessControlException("Cannot close the default exchange");
     }
 
     @Override
