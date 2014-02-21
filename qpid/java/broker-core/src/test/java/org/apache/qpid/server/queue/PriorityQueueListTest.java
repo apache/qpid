@@ -27,6 +27,8 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
+
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -51,7 +53,9 @@ public class PriorityQueueListTest extends QpidTestCase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.PRIORITIES, 10);
-        PriorityQueue queue = new PriorityQueue(mock(VirtualHost.class), queueAttributes);
+        final VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
+        PriorityQueue queue = new PriorityQueue(virtualHost, queueAttributes);
         _list = queue.getEntries();
 
         for (int i = 0; i < PRIORITIES.length; i++)

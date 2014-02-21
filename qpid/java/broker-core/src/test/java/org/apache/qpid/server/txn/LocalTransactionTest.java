@@ -22,8 +22,7 @@ package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockAMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.MockMessageInstance;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -33,6 +32,9 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * A unit test ensuring that LocalTransactionTest creates a long-lived store transaction
@@ -45,8 +47,8 @@ public class LocalTransactionTest extends QpidTestCase
 {
     private ServerTransaction _transaction = null;  // Class under test
     
-    private AMQQueue _queue;
-    private List<AMQQueue> _queues;
+    private BaseQueue _queue;
+    private List<BaseQueue> _queues;
     private Collection<MessageInstance> _queueEntries;
     private ServerMessage _message;
     private MockAction _action1;
@@ -77,7 +79,7 @@ public class LocalTransactionTest extends QpidTestCase
     public void testEnqueueToNonDurableQueueOfNonPersistentMessage() throws Exception
     {
         _message = createTestMessage(false);
-        _queue = createTestAMQQueue(false);
+        _queue = createQueue(false);
         
         _transaction.enqueue(_queue, _message, _action1);
 
@@ -93,7 +95,7 @@ public class LocalTransactionTest extends QpidTestCase
     public void testEnqueueToDurableQueueOfPersistentMessage() throws Exception
     {
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
         
         _transaction.enqueue(_queue, _message, _action1);
 
@@ -109,7 +111,7 @@ public class LocalTransactionTest extends QpidTestCase
     public void testStoreEnqueueCausesException() throws Exception
     {
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
         
         _storeTransaction = createTestStoreTransaction(true);
         _transactionLog = MockStoreTransaction.createTestTransactionLog(_storeTransaction);
@@ -217,7 +219,7 @@ public class LocalTransactionTest extends QpidTestCase
     public void testDequeueFromNonDurableQueueOfNonPersistentMessage() throws Exception
     {
         _message = createTestMessage(false);
-        _queue = createTestAMQQueue(false);
+        _queue = createQueue(false);
 
         _transaction.dequeue(_queue, _message, _action1);
 
@@ -234,7 +236,7 @@ public class LocalTransactionTest extends QpidTestCase
     public void testDequeueFromDurableQueueOfPersistentMessage() throws Exception
     {
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
         
         _transaction.dequeue(_queue, _message, _action1);
 
@@ -250,7 +252,7 @@ public class LocalTransactionTest extends QpidTestCase
     public void testStoreDequeueCausesException() throws Exception
     {
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
         
         _storeTransaction = createTestStoreTransaction(true);
         _transactionLog = MockStoreTransaction.createTestTransactionLog(_storeTransaction);
@@ -396,7 +398,7 @@ public class LocalTransactionTest extends QpidTestCase
     {
         
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
         assertFalse("Post commit action must not be fired yet", _action1.isPostCommitActionFired());
@@ -419,7 +421,7 @@ public class LocalTransactionTest extends QpidTestCase
     {
         
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
 
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -445,7 +447,7 @@ public class LocalTransactionTest extends QpidTestCase
     {
         
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
         
         _transaction.addPostTransactionAction(_action1);
         _transaction.dequeue(_queue, _message, _action2);
@@ -467,7 +469,7 @@ public class LocalTransactionTest extends QpidTestCase
     public void testRollbackWorkWithAdditionalPostAction() throws Exception
     {
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
         
         _transaction.addPostTransactionAction(_action1);
         _transaction.dequeue(_queue, _message, _action2);
@@ -488,7 +490,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
 
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
         long startTime = System.currentTimeMillis();
         _transaction.enqueue(_queue, _message, _action1);
@@ -503,7 +505,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
 
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
         _transaction.enqueue(_queue, _message, _action1);
 
@@ -526,7 +528,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
 
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
         long startTime = System.currentTimeMillis();
         _transaction.dequeue(_queue, _message, _action1);
@@ -541,7 +543,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
 
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
         _transaction.enqueue(_queue, _message, _action1);
 
@@ -564,7 +566,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
 
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
         long startTime = System.currentTimeMillis();
         _transaction.enqueue(_queue, _message, _action1);
@@ -584,7 +586,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction update time before test", 0, _transaction.getTransactionUpdateTime());
 
         _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
+        _queue = createQueue(true);
 
         long startTime = System.currentTimeMillis();
         _transaction.enqueue(_queue, _message, _action1);
@@ -606,7 +608,7 @@ public class LocalTransactionTest extends QpidTestCase
         
         for(int i = 0; i < queueDurableFlags.length; i++)
         {
-            final AMQQueue queue = createTestAMQQueue(queueDurableFlags[i]);
+            final TransactionLogResource queue = createQueue(queueDurableFlags[i]);
             final ServerMessage message = createTestMessage(messagePersistentFlags[i]);
             
             queueEntries.add(new MockMessageInstance()
@@ -635,28 +637,22 @@ public class LocalTransactionTest extends QpidTestCase
         return new MockStoreTransaction(throwException);
     }
     
-    private List<AMQQueue> createTestBaseQueues(boolean[] durableFlags)
+    private List<BaseQueue> createTestBaseQueues(boolean[] durableFlags)
     {
-        List<AMQQueue> queues = new ArrayList<AMQQueue>();
+        List<BaseQueue> queues = new ArrayList<BaseQueue>();
         for (boolean b: durableFlags)
         {
-            queues.add(createTestAMQQueue(b));
+            queues.add(createQueue(b));
         }
         
         return queues;
     }
 
-    private AMQQueue createTestAMQQueue(final boolean durable)
+    private BaseQueue createQueue(final boolean durable)
     {
-        return new MockAMQQueue("mockQueue")
-        {
-            @Override
-            public boolean isDurable()
-            {
-                return durable;
-            }
-            
-        };
+        BaseQueue queue = mock(BaseQueue.class);
+        when(queue.isDurable()).thenReturn(durable);
+        return queue;
     }
 
     private ServerMessage createTestMessage(final boolean persistent)

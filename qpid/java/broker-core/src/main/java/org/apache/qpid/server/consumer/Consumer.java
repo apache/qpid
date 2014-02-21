@@ -21,6 +21,8 @@
 package org.apache.qpid.server.consumer;
 
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
 public interface Consumer
@@ -48,7 +50,7 @@ public interface Consumer
 
     AMQSessionModel getSessionModel();
 
-    void setNoLocal(boolean noLocal);
+    MessageSource getMessageSource();
 
     long getId();
 

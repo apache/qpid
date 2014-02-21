@@ -182,7 +182,7 @@ public class ObjectProperties
     }
 
     public ObjectProperties(Boolean autoDelete, Boolean durable, String exchangeName,
-            Boolean internal, Boolean nowait, Boolean passive, String exchangeType)
+            String exchangeType)
     {
         super();
 
@@ -191,14 +191,11 @@ public class ObjectProperties
         put(Property.AUTO_DELETE, autoDelete);
         put(Property.TEMPORARY, autoDelete);
         put(Property.DURABLE, durable);
-        put(Property.INTERNAL, internal);
-        put(Property.NO_WAIT, nowait);
-        put(Property.PASSIVE, passive);
         put(Property.TYPE, exchangeType);
     }
 
-    public ObjectProperties(Boolean autoDelete, Boolean durable, Boolean exclusive, Boolean nowait, Boolean passive,
-            String queueName, String owner)
+    public ObjectProperties(Boolean autoDelete, Boolean durable, Boolean exclusive,
+                            String queueName, String owner)
     {
         super();
 
@@ -208,8 +205,6 @@ public class ObjectProperties
         put(Property.TEMPORARY, autoDelete);
         put(Property.DURABLE, durable);
         put(Property.EXCLUSIVE, exclusive);
-        put(Property.NO_WAIT, nowait);
-        put(Property.PASSIVE, passive);
         put(Property.OWNER, owner);
     }
 

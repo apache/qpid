@@ -28,6 +28,7 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Arrays;
@@ -86,7 +87,10 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
         attributes.put(Queue.SORT_KEY, "KEY");
 
         // Create test list
-        _testQueue = new SortedQueue(mock(VirtualHost.class), attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
+        final VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
+
+        _testQueue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
         {
 
             @Override

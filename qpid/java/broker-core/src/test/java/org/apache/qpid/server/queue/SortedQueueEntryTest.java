@@ -29,6 +29,7 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import static org.mockito.Matchers.eq;
@@ -54,7 +55,10 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
         attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
         attributes.put(Queue.SORT_KEY, "KEY");
 
-        SortedQueue queue = new SortedQueue(mock(VirtualHost.class), attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
+        final VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
+
+        SortedQueue queue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
         {
 
             @Override

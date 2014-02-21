@@ -48,6 +48,10 @@ public class Binding
         _queue = queue;
         _exchange = exchange;
         _arguments = arguments == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(arguments);
+
+        //Perform ACLs
+        queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
+
     }
 
     public UUID getId()

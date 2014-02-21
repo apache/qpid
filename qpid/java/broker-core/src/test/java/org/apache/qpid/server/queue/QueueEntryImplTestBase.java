@@ -24,11 +24,13 @@ import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.lang.reflect.Field;
@@ -48,6 +50,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
     protected QueueEntryImpl _queueEntry;
     protected QueueEntryImpl _queueEntry2;
     protected QueueEntryImpl _queueEntry3;
+    private long _consumerId;
 
     public abstract QueueEntryImpl getQueueEntryImpl(int msgId);
 
@@ -136,9 +139,11 @@ public abstract class QueueEntryImplTestBase extends TestCase
 
     private QueueConsumer newConsumer()
     {
-        final ConsumerTarget target = mock(ConsumerTarget.class);
-        when(target.getSessionModel()).thenReturn(mock(AMQSessionModel.class));
-        final QueueConsumer consumer = new QueueConsumer(null,null,true,true,"mock",false,target);
+        final QueueConsumer consumer = mock(QueueConsumer.class);
+
+        MessageInstance.ConsumerAcquiredState owningState = new QueueEntryImpl.ConsumerAcquiredState(consumer);
+        when(consumer.getOwningState()).thenReturn(owningState);
+        when(consumer.getId()).thenReturn(_consumerId++);
         return consumer;
     }
 
@@ -204,7 +209,10 @@ public abstract class QueueEntryImplTestBase extends TestCase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
-        StandardQueue queue = new StandardQueue(mock(VirtualHost.class), queueAttributes);
+        final VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
+
+        StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
         OrderedQueueEntryList queueEntryList = queue.getEntries();
 
         // create test entries

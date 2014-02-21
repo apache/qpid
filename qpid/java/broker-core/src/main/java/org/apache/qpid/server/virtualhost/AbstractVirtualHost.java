@@ -550,15 +550,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         ExclusivityPolicy exclusive = MapValueConverter.getEnumAttribute(ExclusivityPolicy.class,Queue.EXCLUSIVE, attributes, ExclusivityPolicy.NONE);
         String owner = MapValueConverter.getStringAttribute(Queue.OWNER, attributes, null);
 
-        // Access check
-        getSecurityManager().authoriseCreateQueue(autoDelete,
-                                                  durable,
-                                                  exclusive != null && exclusive != ExclusivityPolicy.NONE,
-                                                  null,
-                                                  null,
-                                                  queueName,
-                                                  owner);
-
         synchronized (_queueRegistry)
         {
             if(_queueRegistry.getQueue(queueName) != null)

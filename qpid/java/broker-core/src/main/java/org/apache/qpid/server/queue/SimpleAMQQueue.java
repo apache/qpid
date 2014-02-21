@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
@@ -192,8 +191,19 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                              Map<String, Object> attributes,
                              QueueEntryListFactory<E, Q, L> entryListFactory)
     {
+        if (virtualHost == null)
+        {
+            throw new IllegalArgumentException("Virtual Host must not be null");
+        }
+
         UUID id = MapValueConverter.getUUIDAttribute(Queue.ID, attributes);
         String name = MapValueConverter.getStringAttribute(Queue.NAME, attributes);
+
+        if (name == null)
+        {
+            throw new IllegalArgumentException("Queue name must not be null");
+        }
+
         boolean durable = MapValueConverter.getBooleanAttribute(Queue.DURABLE,attributes,false);
 
 
@@ -205,6 +215,30 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                                                              Queue.LIFETIME_POLICY,
                                                              attributes,
                                                              LifetimePolicy.PERMANENT);
+
+
+        _name = name;
+        _durable = durable;
+        _virtualHost = virtualHost;
+        _entries = entryListFactory.createQueueEntryList((Q) this);
+        final LinkedHashMap<String, Object> arguments = new LinkedHashMap<String, Object>(attributes);
+
+        arguments.put(Queue.EXCLUSIVE, _exclusivityPolicy);
+        arguments.put(Queue.LIFETIME_POLICY, _lifetimePolicy);
+
+        _arguments = Collections.synchronizedMap(arguments);
+        _description = MapValueConverter.getStringAttribute(Queue.DESCRIPTION, attributes, null);
+
+        _noLocal = MapValueConverter.getBooleanAttribute(Queue.NO_LOCAL, attributes, false);
+
+
+        _id = id;
+        _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
+
+        _logSubject = new QueueLogSubject(this);
+        _logActor = new QueueActor(this, CurrentActor.get().getRootMessageLogger());
+
+        virtualHost.getSecurityManager().authoriseCreateQueue(this);
 
         Subject activeSubject = Subject.getSubject(AccessController.getContext());
         Set<SessionPrincipal> sessionPrincipals = activeSubject == null ? Collections.<SessionPrincipal>emptySet() : activeSubject.getPrincipals(SessionPrincipal.class);
@@ -294,36 +328,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
             }
         }
 
-        if (name == null)
-        {
-            throw new IllegalArgumentException("Queue name must not be null");
-        }
 
-        if (virtualHost == null)
-        {
-            throw new IllegalArgumentException("Virtual Host must not be null");
-        }
-
-        _name = name;
-        _durable = durable;
-        _virtualHost = virtualHost;
-        _entries = entryListFactory.createQueueEntryList((Q) this);
-        final LinkedHashMap<String, Object> arguments = new LinkedHashMap<String, Object>(attributes);
-
-        arguments.put(Queue.EXCLUSIVE, _exclusivityPolicy);
-        arguments.put(Queue.LIFETIME_POLICY, _lifetimePolicy);
-
-        _arguments = Collections.synchronizedMap(arguments);
-        _description = MapValueConverter.getStringAttribute(Queue.DESCRIPTION, attributes, null);
-
-        _noLocal = MapValueConverter.getBooleanAttribute(Queue.NO_LOCAL, attributes, false);
-
-
-        _id = id;
-        _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
-
-        _logSubject = new QueueLogSubject(this);
-        _logActor = new QueueActor(this, CurrentActor.get().getRootMessageLogger());
 
 
         if (attributes.containsKey(Queue.ALERT_THRESHOLD_MESSAGE_AGE))
@@ -593,40 +598,38 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                    ConsumerAccessRefused
     {
 
-        // Access control
-        getVirtualHost().getSecurityManager().authoriseConsume(this);
-
 
         if (hasExclusiveConsumer())
         {
             throw new ExistingExclusiveConsumer();
         }
 
+        Object exclusiveOwner = _exclusiveOwner;
         switch(_exclusivityPolicy)
         {
             case CONNECTION:
-                if(_exclusiveOwner == null)
+                if(exclusiveOwner == null)
                 {
-                    _exclusiveOwner = target.getSessionModel().getConnectionModel();
+                    exclusiveOwner = target.getSessionModel().getConnectionModel();
                     addExclusivityConstraint(target.getSessionModel().getConnectionModel());
                 }
                 else
                 {
-                    if(_exclusiveOwner != target.getSessionModel().getConnectionModel())
+                    if(exclusiveOwner != target.getSessionModel().getConnectionModel())
                     {
                         throw new ConsumerAccessRefused();
                     }
                 }
                 break;
             case SESSION:
-                if(_exclusiveOwner == null)
+                if(exclusiveOwner == null)
                 {
-                    _exclusiveOwner = target.getSessionModel();
+                    exclusiveOwner = target.getSessionModel();
                     addExclusivityConstraint(target.getSessionModel());
                 }
                 else
                 {
-                    if(_exclusiveOwner != target.getSessionModel())
+                    if(exclusiveOwner != target.getSessionModel())
                     {
                         throw new ConsumerAccessRefused();
                     }
@@ -639,26 +642,26 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                 }
                 break;
             case PRINCIPAL:
-                if(_exclusiveOwner == null)
+                if(exclusiveOwner == null)
                 {
-                    _exclusiveOwner = target.getSessionModel().getConnectionModel().getAuthorizedPrincipal();
+                    exclusiveOwner = target.getSessionModel().getConnectionModel().getAuthorizedPrincipal();
                 }
                 else
                 {
-                    if(!_exclusiveOwner.equals(target.getSessionModel().getConnectionModel().getAuthorizedPrincipal()))
+                    if(!exclusiveOwner.equals(target.getSessionModel().getConnectionModel().getAuthorizedPrincipal()))
                     {
                         throw new ConsumerAccessRefused();
                     }
                 }
                 break;
             case CONTAINER:
-                if(_exclusiveOwner == null)
+                if(exclusiveOwner == null)
                 {
-                    _exclusiveOwner = target.getSessionModel().getConnectionModel().getRemoteContainerName();
+                    exclusiveOwner = target.getSessionModel().getConnectionModel().getRemoteContainerName();
                 }
                 else
                 {
-                    if(!_exclusiveOwner.equals(target.getSessionModel().getConnectionModel().getRemoteContainerName()))
+                    if(!exclusiveOwner.equals(target.getSessionModel().getConnectionModel().getRemoteContainerName()))
                     {
                         throw new ConsumerAccessRefused();
                     }
@@ -673,15 +676,24 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         boolean exclusive =  optionSet.contains(Consumer.Option.EXCLUSIVE);
         boolean isTransient =  optionSet.contains(Consumer.Option.TRANSIENT);
 
+        if(_noLocal && !optionSet.contains(Consumer.Option.NO_LOCAL))
+        {
+            optionSet = EnumSet.copyOf(optionSet);
+            optionSet.add(Consumer.Option.NO_LOCAL);
+        }
+
         if(exclusive && getConsumerCount() != 0)
         {
             throw new ExistingConsumerPreventsExclusive();
         }
 
-        QueueConsumer<T,E,Q,L> consumer = new QueueConsumer<T,E,Q,L>(filters, messageClass,
-                                                         optionSet.contains(Consumer.Option.ACQUIRES),
-                                                         optionSet.contains(Consumer.Option.SEES_REQUEUES),
-                                                         consumerName, optionSet.contains(Consumer.Option.TRANSIENT), target);
+        QueueConsumerImpl<T,E,Q,L> consumer = new QueueConsumerImpl<T,E,Q,L>((Q)this,
+                                                                     target,
+                                                                     consumerName,
+                                                                     filters, messageClass,
+                                                                     optionSet);
+
+        _exclusiveOwner = exclusiveOwner;
         target.consumerAdded(consumer);
 
 
@@ -700,12 +712,6 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
         if (!isDeleted())
         {
-            consumer.setQueue((Q)this, exclusive);
-            if(_noLocal)
-            {
-                consumer.setNoLocal(true);
-            }
-
             synchronized (_consumerListeners)
             {
                 for(ConsumerRegistrationListener<Q> listener : _consumerListeners)
@@ -732,7 +738,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
     }
 
-    synchronized void unregisterConsumer(final QueueConsumer<?,E,Q,L> consumer)
+    synchronized void unregisterConsumer(final QueueConsumerImpl<?,E,Q,L> consumer)
     {
         if (consumer == null)
         {
@@ -1021,7 +1027,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         {
             return true;
         }
-        QueueConsumer assigned = _messageGroupManager.getAssignedConsumer(entry);
+        QueueConsumer<?,E,Q,L> assigned = _messageGroupManager.getAssignedConsumer(entry);
         return (assigned == null) || (assigned == sub);
     }
 
