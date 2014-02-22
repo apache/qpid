@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
         s.createSender(opts.address).send(Message(opts.message));
         if (!opts.quiet) cout << "Sent message." << endl;
         Message m = s.createReceiver(opts.address).
-            fetch(Duration(opts.timeout*1000));
+            fetch(Duration(uint64_t(opts.timeout*1000)));
         if (m.getContent() != opts.message)
             throw qpid::Exception(qpid::Msg() << "Expected " << opts.message
                                   << " but received " << m.getContent());
