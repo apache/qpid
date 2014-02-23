@@ -32,7 +32,7 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.message.internal.InternalMessageHeader;
-import org.apache.qpid.server.model.AmqpManagement;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -145,7 +145,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         allClasses.add(objectClass.getSuperclass());
         for(Class clazz : allClasses)
         {
-            AmqpManagement annotation = (AmqpManagement) clazz.getAnnotation(AmqpManagement.class);
+            ManagedObject annotation = (ManagedObject) clazz.getAnnotation(ManagedObject.class);
             if(annotation != null)
             {
                 return clazz;
@@ -159,7 +159,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         Class clazz = getManagementClass(objectClass);
         if( clazz != null)
         {
-            AmqpManagement annotation = (AmqpManagement) clazz.getAnnotation(AmqpManagement.class);
+            ManagedObject annotation = (ManagedObject) clazz.getAnnotation(ManagedObject.class);
             populateTypeMetaData(clazz, annotation);
             return true;
         }
@@ -170,7 +170,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     }
 
     private ManagedEntityType populateTypeMetaData(Class clazz,
-                                                   final AmqpManagement entityType)
+                                                   final ManagedObject entityType)
     {
 
         ManagedEntityType managedEntityType = _entityTypes.get(clazz.getName());
@@ -203,11 +203,11 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
 
             for(Class parentClazz : allClasses)
             {
-                if(parentClazz.getAnnotation(AmqpManagement.class) != null)
+                if(parentClazz.getAnnotation(ManagedObject.class) != null)
                 {
                     ManagedEntityType parentType = populateTypeMetaData(parentClazz,
-                                                                        (AmqpManagement) parentClazz.getAnnotation(
-                                                                                AmqpManagement.class)
+                                                                        (ManagedObject) parentClazz.getAnnotation(
+                                                                                ManagedObject.class)
                                                                        );
                     parentSet.add(parentType);
                     parentSet.addAll(Arrays.asList(parentType.getParents()));

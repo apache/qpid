@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-@AmqpManagement( managesChildren = true )
+@ManagedObject( managesChildren = true )
 
 public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
 {

@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
-@AmqpManagement( creatable = false )
+@ManagedObject( creatable = false, category = false )
 /**
  * An object that can be "managed" (eg via the web interface) and usually read from configuration.
  */
