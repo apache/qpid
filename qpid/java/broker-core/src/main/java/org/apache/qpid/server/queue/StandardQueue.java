@@ -25,7 +25,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
 
-public class StandardQueue extends SimpleAMQQueue<StandardQueueEntry,StandardQueue,StandardQueueEntryList>
+public class StandardQueue extends AbstractQueue<StandardQueueEntry,StandardQueue,StandardQueueEntryList>
 {
     public StandardQueue(final VirtualHost virtualHost,
                          final Map<String, Object> arguments)

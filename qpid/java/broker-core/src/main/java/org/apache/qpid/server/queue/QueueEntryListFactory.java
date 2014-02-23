@@ -20,7 +20,7 @@
 */
 package org.apache.qpid.server.queue;
 
-interface QueueEntryListFactory<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>>
+interface QueueEntryListFactory<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>>
 {
     public L createQueueEntryList(Q queue);
 }

@@ -65,7 +65,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
     }
 
     @Override
-    public ExchangeType<TopicExchange> getType()
+    public ExchangeType<TopicExchange> getExchangeType()
     {
         return TYPE;
     }

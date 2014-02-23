@@ -35,7 +35,7 @@ import org.apache.qpid.server.consumer.Consumer;
 
 import static org.mockito.Mockito.when;
 
-public class PriorityQueueTest extends SimpleAMQQueueTestBase
+public class PriorityQueueTest extends AbstractQueueTestBase
 {
 
     @Override
@@ -49,7 +49,7 @@ public class PriorityQueueTest extends SimpleAMQQueueTestBase
     {
 
         // Enqueue messages in order
-        SimpleAMQQueue queue = getQueue();
+        AbstractQueue queue = getQueue();
         queue.enqueue(createMessage(1L, (byte) 10), null);
         queue.enqueue(createMessage(2L, (byte) 4), null);
         queue.enqueue(createMessage(3L, (byte) 0), null);

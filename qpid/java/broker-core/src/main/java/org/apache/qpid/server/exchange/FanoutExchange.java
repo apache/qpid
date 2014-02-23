@@ -73,7 +73,7 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
     }
 
     @Override
-    public ExchangeType<FanoutExchange> getType()
+    public ExchangeType<FanoutExchange> getExchangeType()
     {
         return TYPE;
     }

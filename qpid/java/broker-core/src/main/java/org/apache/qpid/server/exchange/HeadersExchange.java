@@ -87,7 +87,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
     }
 
     @Override
-    public ExchangeType<HeadersExchange> getType()
+    public ExchangeType<HeadersExchange> getExchangeType()
     {
         return TYPE;
     }

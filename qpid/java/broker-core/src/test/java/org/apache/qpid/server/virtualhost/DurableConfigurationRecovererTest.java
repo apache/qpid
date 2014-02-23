@@ -53,8 +53,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -86,11 +84,11 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
 
         _directExchange = mock(Exchange.class);
-        when(_directExchange.getType()).thenReturn(DirectExchange.TYPE);
+        when(_directExchange.getExchangeType()).thenReturn(DirectExchange.TYPE);
 
 
         _topicExchange = mock(Exchange.class);
-        when(_topicExchange.getType()).thenReturn(TopicExchange.TYPE);
+        when(_topicExchange.getExchangeType()).thenReturn(TopicExchange.TYPE);
 
         AMQQueue queue = mock(AMQQueue.class);
 

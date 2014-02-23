@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> implements MessageGroupManager<E,Q,L>
+public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> implements MessageGroupManager<E,Q,L>
 {
     private static final Logger _logger = LoggerFactory.getLogger(AssignedConsumerMessageGroupManager.class);
 

@@ -37,7 +37,7 @@ public interface Exchange<T extends Exchange> extends ExchangeReferrer, MessageD
 
     String getName();
 
-    ExchangeType<T> getType();
+    ExchangeType<T> getExchangeType();
 
     String getTypeName();
 

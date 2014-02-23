@@ -132,7 +132,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
             else
             {
                 return _exchangeRegistry.getExchange(exchangeId) != null
-                       && _exchangeRegistry.getExchange(exchangeId).getType() == TopicExchange.TYPE;
+                       && _exchangeRegistry.getExchange(exchangeId).getExchangeType() == TopicExchange.TYPE;
             }
 
         }

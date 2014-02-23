@@ -137,7 +137,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
     }
 
     @Override
-    public ExchangeType<DirectExchange> getType()
+    public ExchangeType<DirectExchange> getExchangeType()
     {
         return TYPE;
     }
