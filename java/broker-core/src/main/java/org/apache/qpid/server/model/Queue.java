@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
-@AmqpManagement
+@ManagedObject
 
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {

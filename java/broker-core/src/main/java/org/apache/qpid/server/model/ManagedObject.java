@@ -25,9 +25,9 @@ import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
 
-public @interface AmqpManagement
+public @interface ManagedObject
 {
-    String[] attributes() default {};
+    boolean category() default true;
     String[] operations() default {};
     boolean managesChildren() default false; // for objects that manage children, a management node needs to be created
     boolean creatable() default true;

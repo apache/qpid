@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-@AmqpManagement
+@ManagedObject
 
 public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
 {

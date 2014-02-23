@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-@AmqpManagement( creatable = false )
+@ManagedObject( creatable = false )
 public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
 {
 
