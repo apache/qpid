@@ -34,7 +34,9 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -232,9 +234,15 @@ public class BrokerRestTest extends QpidRestTestCase
 
     protected void assertBrokerAttributes(Map<String, Object> brokerDetails)
     {
-        Asserts.assertAttributesPresent(brokerDetails, Broker.AVAILABLE_ATTRIBUTES,
+        Asserts.assertAttributesPresent(brokerDetails, Attribute.getAttributeNames(Broker.class),
                 Broker.BYTES_RETAINED, Broker.PROCESS_PID,
-                Broker.CREATED, Broker.TIME_TO_LIVE, Broker.UPDATED);
+                Broker.TIME_TO_LIVE,
+                ConfiguredObject.TYPE,
+                ConfiguredObject.CREATED_BY,
+                ConfiguredObject.CREATED_TIME,
+                ConfiguredObject.LAST_UPDATED_BY,
+                ConfiguredObject.LAST_UPDATED_TIME,
+                ConfiguredObject.DESCRIPTION);
 
         assertEquals("Unexpected value of attribute " + Broker.BUILD_VERSION, QpidProperties.getBuildVersion(),
                 brokerDetails.get(Broker.BUILD_VERSION));

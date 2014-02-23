@@ -29,7 +29,7 @@ import org.apache.qpid.server.model.VirtualHost;
 
 public class MBeanUtils
 {
-    public static Queue findQueueFromQueueName(VirtualHost virtualHost, String queueName) throws OperationsException
+    public static Queue findQueueFromQueueName(VirtualHost<?> virtualHost, String queueName) throws OperationsException
     {
         Queue queue = ConfiguredObjectFinder.findConfiguredObjectByName(virtualHost.getQueues(), queueName);
         if (queue == null)
@@ -42,7 +42,7 @@ public class MBeanUtils
         }
     }
 
-    public static  Exchange findExchangeFromExchangeName(VirtualHost virtualHost, String exchangeName) throws OperationsException
+    public static  Exchange findExchangeFromExchangeName(VirtualHost<?> virtualHost, String exchangeName) throws OperationsException
     {
         Exchange exchange = ConfiguredObjectFinder.findConfiguredObjectByName(virtualHost.getExchanges(), exchangeName);
         if (exchange == null)

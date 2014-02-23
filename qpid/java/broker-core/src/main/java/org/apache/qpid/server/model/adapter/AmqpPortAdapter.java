@@ -50,12 +50,12 @@ import org.apache.qpid.server.transport.TransportProvider;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
-public class AmqpPortAdapter extends PortAdapter
+public class AmqpPortAdapter extends PortAdapter<AmqpPortAdapter>
 {
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private AcceptingTransport _transport;
 
-    public AmqpPortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaultAttributes, TaskExecutor taskExecutor)
+    public AmqpPortAdapter(UUID id, Broker<?> broker, Map<String, Object> attributes, Map<String, Object> defaultAttributes, TaskExecutor taskExecutor)
     {
         super(id, broker, attributes, defaultAttributes, taskExecutor);
         _broker = broker;
@@ -200,5 +200,35 @@ public class AmqpPortAdapter extends PortAdapter
             return AmqpProtocolVersion.valueOf(defaultAmqpSupportedReply);
         }
         return null;
+    }
+
+    @Override
+    public boolean isTcpNoDelay()
+    {
+        return false;
+    }
+
+    @Override
+    public int getSendBufferSize()
+    {
+        return 0;
+    }
+
+    @Override
+    public int getReceiveBufferSize()
+    {
+        return 0;
+    }
+
+    @Override
+    public boolean getNeedClientAuth()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean getWantClientAuth()
+    {
+        return false;
     }
 }

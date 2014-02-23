@@ -25,27 +25,28 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
-@AmqpManagement(
-        attributes = {
-                ConfiguredObject.ID,
-                ConfiguredObject.NAME
-        },
-        operations = {},
-        creatable = false
-)
+@AmqpManagement( creatable = false )
 /**
  * An object that can be "managed" (eg via the web interface) and usually read from configuration.
  */
-public interface ConfiguredObject
+public interface ConfiguredObject<X extends ConfiguredObject<X>>
 {
     public static final String ID = "id";
     public static final String NAME = "name";
-//    public static final String TYPE = "type";
+    public static final String TYPE = "type";
+    public static final String DESCRIPTION = "description";
+    public static final String LAST_UPDATED_BY = "lastUpdatedBy";
+    public static final String LAST_UPDATED_TIME = "lastUpdatedTime";
+    public static final String CREATED_BY = "createdBy";
+    public static final String CREATED_TIME = "createdTime";
+
+
     /**
      * Get the universally unique identifier for the object
      *
      * @return the objects id
      */
+    @ManagedAttribute
     UUID getId();
 
     /**
@@ -53,8 +54,27 @@ public interface ConfiguredObject
      *
      * @return the name of the object
      */
+    @ManagedAttribute
     String getName();
 
+
+    @ManagedAttribute
+    String getDescription();
+
+    @ManagedAttribute
+    String getType();
+
+    @ManagedAttribute
+    String getLastUpdatedBy();
+
+    @ManagedAttribute
+    long getLastUpdatedTime();
+
+    @ManagedAttribute
+    String getCreatedBy();
+
+    @ManagedAttribute
+    long getCreatedTime();
 
     /**
      * Attempt to change the name of the object
@@ -109,7 +129,8 @@ public interface ConfiguredObject
      *
      * @return the actual state of the object
      */
-    State getActualState();
+    @ManagedAttribute
+    State getState();
 
 
     /**
@@ -142,6 +163,7 @@ public interface ConfiguredObject
      *
      * @return the durability
      */
+    @ManagedAttribute
     boolean isDurable();
 
     /**
@@ -162,6 +184,7 @@ public interface ConfiguredObject
      *
      * @return the lifetime policy
      */
+    @ManagedAttribute
     LifetimePolicy getLifetimePolicy();
 
     /**
@@ -183,6 +206,7 @@ public interface ConfiguredObject
      *
      * @return the time to live
      */
+    @ManagedAttribute
     long getTimeToLive();
 
     /**
@@ -221,6 +245,8 @@ public interface ConfiguredObject
      *         attribute value is set neither on object itself no in defaults)
      */
     Object getAttribute(String name);
+
+    <T> T getAttribute(Attribute<? super X, T> attr);
 
     /**
      * Return the map containing only explicitly set attributes

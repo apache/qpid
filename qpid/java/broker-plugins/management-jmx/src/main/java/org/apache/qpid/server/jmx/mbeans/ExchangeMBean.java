@@ -112,7 +112,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
     }
     
     
-    private final Exchange _exchange;
+    private final Exchange<?> _exchange;
     private final VirtualHostMBean _vhostMBean;
 
     protected ExchangeMBean(Exchange exchange, VirtualHostMBean virtualHostMBean)
@@ -151,7 +151,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 
     public String getExchangeType()
     {
-        return _exchange.getExchangeType();
+        return _exchange.getType();
     }
 
     public Integer getTicketNo()
@@ -171,7 +171,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 
     public TabularData bindings() throws IOException, JMException
     {
-        if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getExchangeType()))
+        if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getType()))
         {
             return getHeadersBindings(_exchange.getBindings()); 
         }
@@ -235,7 +235,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 
         for (Binding binding : bindings)
         {
-            String key = FANOUT_EXCHANGE_TYPE.equals(_exchange.getExchangeType()) ? "*" : binding.getName();
+            String key = FANOUT_EXCHANGE_TYPE.equals(_exchange.getType()) ? "*" : binding.getName();
             List<String> queueList = bindingMap.get(key);
             if(queueList == null)
             {
@@ -268,7 +268,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
     @Override
     public void createNewBinding(String queueName, String binding, Map<String, Object> arguments) throws JMException
     {
-        if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getExchangeType()))
+        if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getType()))
         {
             arguments = new HashMap<String, Object>(arguments);
             final String[] bindings = binding.split(",");

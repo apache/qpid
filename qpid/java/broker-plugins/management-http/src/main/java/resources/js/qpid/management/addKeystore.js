@@ -129,10 +129,10 @@ define(["dojo/_base/lang",
                 }
                 optionalFieldContainer.addChild(new dijit.form.ValidationTextBox({
                   required: false,
-                  value: keystore.type,
+                  value: isKeystore ? keystore.keyStoreType : keystore.trustStoreType,
                   label: "Key store type:",
                   placeHolder: "Use default",
-                  name: "type"}));
+                  name: isKeystore ? "keyStoreType" : "trustStoreType"}));
                 var panel = new dijit.TitlePane({title: "Optional Attributes", content: optionalFieldContainer.domNode, open: false});
                 return panel;
               }

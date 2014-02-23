@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-public interface GroupMember extends ConfiguredObject
+public interface GroupMember<X extends GroupMember<X>> extends ConfiguredObject<X>
 {
     String CREATED         = "created";
     String DURABLE         = "durable";
@@ -31,20 +31,5 @@ public interface GroupMember extends ConfiguredObject
     String STATE           = "state";
     String TIME_TO_LIVE    = "timeToLive";
     String UPDATED         = "updated";
-
-    // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-           Collections.unmodifiableList(
-                   Arrays.asList(
-                           ID,
-                           NAME,
-                           STATE,
-                           DURABLE,
-                           LIFETIME_POLICY,
-                           TIME_TO_LIVE,
-                           CREATED,
-                           UPDATED
-                   ));
-
 
 }

@@ -26,7 +26,7 @@ import java.util.Collections;
 
 import org.apache.qpid.server.security.SubjectCreator;
 
-public interface AuthenticationProvider extends ConfiguredObject
+public interface AuthenticationProvider<X extends AuthenticationProvider<X>> extends ConfiguredObject<X>
 {
 
     public static final String DESCRIPTION = "description";
@@ -37,21 +37,6 @@ public interface AuthenticationProvider extends ConfiguredObject
     public static final String CREATED = "created";
     public static final String UPDATED = "updated";
 
-    public static final String TYPE = "type";
-
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(ID,
-                                  NAME,
-                                  DESCRIPTION,
-                                  STATE,
-                                  DURABLE,
-                                  LIFETIME_POLICY,
-                                  TIME_TO_LIVE,
-                                  CREATED,
-                                  UPDATED,
-                                  TYPE
-                                  ));
     //children
     Collection<VirtualHostAlias> getVirtualHostPortBindings();
 

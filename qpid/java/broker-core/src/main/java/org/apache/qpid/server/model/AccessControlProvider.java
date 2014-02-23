@@ -22,10 +22,11 @@ package org.apache.qpid.server.model;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 
 import org.apache.qpid.server.security.AccessControl;
 
-public interface AccessControlProvider extends ConfiguredObject
+public interface AccessControlProvider<X extends AccessControlProvider<X>> extends ConfiguredObject<X>
 {
     public static final String DESCRIPTION = "description";
     public static final String STATE = "state";
@@ -35,19 +36,6 @@ public interface AccessControlProvider extends ConfiguredObject
     public static final String CREATED = "created";
     public static final String UPDATED = "updated";
     public static final String TYPE = "type";
-
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(ID,
-                                  NAME,
-                                  DESCRIPTION,
-                                  STATE,
-                                  DURABLE,
-                                  LIFETIME_POLICY,
-                                  TIME_TO_LIVE,
-                                  CREATED,
-                                  UPDATED,
-                                  TYPE));
 
     //retrieve the underlying AccessControl object
     AccessControl getAccessControl();

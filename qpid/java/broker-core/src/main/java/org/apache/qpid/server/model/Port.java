@@ -24,8 +24,9 @@ import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
-public interface Port extends ConfiguredObject
+public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 {
     String CREATED                              = "created";
     String DURABLE                              = "durable";
@@ -47,41 +48,47 @@ public interface Port extends ConfiguredObject
     String TRUST_STORES                         = "trustStores";
 
     // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(
-                            ID,
-                            NAME,
-                            STATE,
-                            DURABLE,
-                            LIFETIME_POLICY,
-                            TIME_TO_LIVE,
-                            CREATED,
-                            UPDATED,
-                            BINDING_ADDRESS,
-                            PORT,
-                            PROTOCOLS,
-                            TRANSPORTS,
-                            TCP_NO_DELAY,
-                            SEND_BUFFER_SIZE,
-                            RECEIVE_BUFFER_SIZE,
-                            NEED_CLIENT_AUTH,
-                            WANT_CLIENT_AUTH,
-                            AUTHENTICATION_PROVIDER,
-                            KEY_STORE,
-                            TRUST_STORES
-                                 ));
 
-
+    @ManagedAttribute
     String getBindingAddress();
 
+    @ManagedAttribute
     int getPort();
 
+    @ManagedAttribute
+    Collection<Protocol> getProtocols();
+
+    @ManagedAttribute
+    Collection<Transport> getTransports();
+
+    @ManagedAttribute
+    boolean isTcpNoDelay();
+
+    @ManagedAttribute
+    int getSendBufferSize();
+
+    @ManagedAttribute
+    int getReceiveBufferSize();
+
+    @ManagedAttribute
+    boolean getNeedClientAuth();
+
+    @ManagedAttribute
+    boolean getWantClientAuth();
+
+    @ManagedAttribute
+    AuthenticationProvider getAuthenticationProvider();
+
+    @ManagedAttribute
     KeyStore getKeyStore();
 
+    @ManagedAttribute
     Collection<TrustStore> getTrustStores();
 
-    Collection<Transport> getTransports();
+
+
+
+
 
     void addTransport(Transport transport) throws IllegalStateException,
                                                   AccessControlException,
@@ -91,7 +98,6 @@ public interface Port extends ConfiguredObject
                                                           AccessControlException,
                                                           IllegalArgumentException;
 
-    Collection<Protocol> getProtocols();
 
     void addProtocol(Protocol protocol) throws IllegalStateException,
                                                AccessControlException,
@@ -101,7 +107,6 @@ public interface Port extends ConfiguredObject
                                                       AccessControlException,
                                                       IllegalArgumentException;
 
-    AuthenticationProvider getAuthenticationProvider();
 
     //children
     Collection<VirtualHostAlias> getVirtualHostBindings();

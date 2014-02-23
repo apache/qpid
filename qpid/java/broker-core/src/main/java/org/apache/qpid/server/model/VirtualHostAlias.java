@@ -23,7 +23,7 @@ package org.apache.qpid.server.model;
 import java.security.AccessControlException;
 import java.util.Collection;
 
-public interface VirtualHostAlias extends ConfiguredObject
+public interface VirtualHostAlias<X extends VirtualHostAlias<X>> extends ConfiguredObject<X>
 {
     // parents
     Port getPort();

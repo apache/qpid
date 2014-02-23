@@ -37,7 +37,7 @@ public class ConfiguredObjectToMapConverter
 
     private Model _model = Model.getInstance();
 
-    public Map<String, Object> convertObjectToMap(final ConfiguredObject confObject,
+    public Map<String, Object> convertObjectToMap(final ConfiguredObject<?> confObject,
                                                   Class<? extends  ConfiguredObject> clazz,
                                                   int depth)
     {
@@ -62,7 +62,7 @@ public class ConfiguredObjectToMapConverter
     }
 
     private void incorporateAttributesIntoMap(
-            final ConfiguredObject confObject, Map<String, Object> object)
+            final ConfiguredObject<?> confObject, Map<String, Object> object)
     {
         for(String name : confObject.getAttributeNames())
         {

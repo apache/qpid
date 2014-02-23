@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
@@ -255,7 +254,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         assertEquals("unexpected (dummy) password of default systests trust store",
                 AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK, truststore.get(TrustStore.PASSWORD));
         assertEquals("unexpected type of default systests trust store",
-                java.security.KeyStore.getDefaultType(), truststore.get(TrustStore.TYPE));
+                java.security.KeyStore.getDefaultType(), truststore.get(TrustStore.TRUST_STORE_TYPE));
         assertEquals("unexpected peersOnly value",
                 peersOnly, truststore.get(TrustStore.PEERS_ONLY));
     }

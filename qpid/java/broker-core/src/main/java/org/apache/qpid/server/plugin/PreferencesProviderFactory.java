@@ -28,6 +28,6 @@ public interface PreferencesProviderFactory extends Pluggable
 {
     PluggableFactoryLoader<PreferencesProviderFactory> FACTORIES = new PluggableFactoryLoader<PreferencesProviderFactory>(PreferencesProviderFactory.class);
 
-    PreferencesProvider createInstance(UUID id, Map<String, Object> attributes, AuthenticationProvider authenticationProvider);
+    PreferencesProvider createInstance(UUID id, Map<String, Object> attributes, AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider);
 
 }

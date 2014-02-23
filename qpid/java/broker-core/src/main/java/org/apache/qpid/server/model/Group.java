@@ -19,11 +19,7 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-
-public interface Group extends ConfiguredObject
+public interface Group<X extends Group<X>> extends ConfiguredObject<X>
 {
     String CREATED         = "created";
     String DURABLE         = "durable";
@@ -31,20 +27,5 @@ public interface Group extends ConfiguredObject
     String STATE           = "state";
     String TIME_TO_LIVE    = "timeToLive";
     String UPDATED         = "updated";
-
-    // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-           Collections.unmodifiableList(
-                   Arrays.asList(
-                           ID,
-                           NAME,
-                           STATE,
-                           DURABLE,
-                           LIFETIME_POLICY,
-                           TIME_TO_LIVE,
-                           CREATED,
-                           UPDATED
-                   ));
-
 
 }

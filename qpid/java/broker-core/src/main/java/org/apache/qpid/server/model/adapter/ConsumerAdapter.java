@@ -21,6 +21,8 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.util.Map;
+
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
@@ -32,7 +34,7 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 
-public class ConsumerAdapter extends AbstractAdapter implements org.apache.qpid.server.model.Consumer
+public class ConsumerAdapter extends AbstractConfiguredObject<ConsumerAdapter> implements org.apache.qpid.server.model.Consumer<ConsumerAdapter>
 {
     private final Consumer _consumer;
     private final QueueAdapter _queue;
@@ -65,7 +67,7 @@ public class ConsumerAdapter extends AbstractAdapter implements org.apache.qpid.
         return null;  //TODO
     }
 
-    public State getActualState()
+    public State getState()
     {
         return null;  //TODO
     }
@@ -106,7 +108,7 @@ public class ConsumerAdapter extends AbstractAdapter implements org.apache.qpid.
     @Override
     public Collection<String> getAttributeNames()
     {
-        return org.apache.qpid.server.model.Consumer.AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(org.apache.qpid.server.model.Consumer.class);
     }
 
     @Override
@@ -182,6 +184,36 @@ public class ConsumerAdapter extends AbstractAdapter implements org.apache.qpid.
     public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         throw new IllegalArgumentException();
+    }
+
+    @Override
+    public String getDistributionMode()
+    {
+        return _consumer.acquires() ? "MOVE" : "COPY";
+    }
+
+    @Override
+    public String getSettlementMode()
+    {
+        return null;
+    }
+
+    @Override
+    public boolean isExclusive()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isNoLocal()
+    {
+        return false;
+    }
+
+    @Override
+    public String getSelector()
+    {
+        return null;
     }
 
     private class ConsumerStatistics implements Statistics

@@ -71,7 +71,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         {
             if (_preferencesProvider != null)
             {
-                _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.DELETED);
+                _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.DELETED);
             }
             BrokerTestHelper.tearDown();
             _preferencesFile.delete();
@@ -85,7 +85,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
     public void testConstructionWithExistingFile()
     {
         _preferencesProvider = createPreferencesProvider();
-        assertEquals(State.INITIALISING, _preferencesProvider.getActualState());
+        assertEquals(State.INITIALISING, _preferencesProvider.getState());
     }
 
     public void testConstructionWithNonExistingFile()
@@ -98,7 +98,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
             attributes.put(FileSystemPreferencesProvider.PATH, nonExistingFile.getAbsolutePath());
             _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider, _broker.getTaskExecutor());
             _preferencesProvider.createStoreIfNotExist();
-            assertEquals(State.INITIALISING, _preferencesProvider.getActualState());
+            assertEquals(State.INITIALISING, _preferencesProvider.getState());
             assertTrue("Preferences file was not created", nonExistingFile.exists());
         }
         finally
@@ -117,7 +117,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(FileSystemPreferencesProvider.PATH, emptyPrefsFile.getAbsolutePath());
             _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider, _broker.getTaskExecutor());
-            assertEquals(State.INITIALISING, _preferencesProvider.getActualState());
+            assertEquals(State.INITIALISING, _preferencesProvider.getState());
         }
         finally
         {
@@ -130,7 +130,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         _preferencesProvider = createPreferencesProvider();
         _preferencesProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
 
-        assertEquals("Unexpected state", State.ACTIVE, _preferencesProvider.getActualState());
+        assertEquals("Unexpected state", State.ACTIVE, _preferencesProvider.getState());
     }
 
     public void testChangeAttributes()

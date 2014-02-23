@@ -23,16 +23,26 @@ package org.apache.qpid.server.management.plugin;
 import java.net.SocketAddress;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.Plugin;
 
-public interface HttpManagementConfiguration
+public interface HttpManagementConfiguration<X extends HttpManagementConfiguration<X>> extends Plugin<X>
 {
+    @ManagedAttribute
     boolean isHttpsSaslAuthenticationEnabled();
 
+    @ManagedAttribute
     boolean isHttpSaslAuthenticationEnabled();
 
+    @ManagedAttribute
     boolean isHttpsBasicAuthenticationEnabled();
 
+    @ManagedAttribute
     boolean isHttpBasicAuthenticationEnabled();
+
+    @ManagedAttribute
+    public int getSessionTimeout();
 
     AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
 }

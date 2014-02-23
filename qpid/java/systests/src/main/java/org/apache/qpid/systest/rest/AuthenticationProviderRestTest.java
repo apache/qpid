@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -302,9 +304,9 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
     private void assertProvider(boolean managesPrincipals, String type, Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, AuthenticationProvider.AVAILABLE_ATTRIBUTES,
-                AuthenticationProvider.CREATED, AuthenticationProvider.UPDATED, AuthenticationProvider.DESCRIPTION,
-                AuthenticationProvider.TIME_TO_LIVE);
+        Asserts.assertAttributesPresent(provider, Attribute.getAttributeNames(AuthenticationProvider.class),
+                AuthenticationProvider.DESCRIPTION, AuthenticationProvider.TIME_TO_LIVE, ConfiguredObject.CREATED_BY,
+                ConfiguredObject.CREATED_TIME, ConfiguredObject.LAST_UPDATED_BY, ConfiguredObject.LAST_UPDATED_TIME);
         assertEquals("Unexpected value of provider attribute " + AuthenticationProvider.STATE, State.ACTIVE.name(),
                 provider.get(AuthenticationProvider.STATE));
         assertEquals("Unexpected value of provider attribute " + AuthenticationProvider.LIFETIME_POLICY,

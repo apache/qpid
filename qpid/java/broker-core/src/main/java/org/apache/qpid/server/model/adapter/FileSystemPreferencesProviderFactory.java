@@ -40,9 +40,9 @@ public class FileSystemPreferencesProviderFactory implements PreferencesProvider
 
     @Override
     public PreferencesProvider createInstance(UUID id, Map<String, Object> attributes,
-            AuthenticationProvider authenticationProvider)
+            AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
-        Broker broker = authenticationProvider.getParent(Broker.class);
+        Broker<?> broker = authenticationProvider.getParent(Broker.class);
         FileSystemPreferencesProvider provider = new FileSystemPreferencesProvider(id, attributes, authenticationProvider, broker.getTaskExecutor());
 
         // create store if such does not exist

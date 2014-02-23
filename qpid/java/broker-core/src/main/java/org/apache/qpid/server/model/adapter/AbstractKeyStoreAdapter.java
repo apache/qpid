@@ -35,7 +35,7 @@ import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.util.MapValueConverter;
 
-public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
+public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> extends AbstractConfiguredObject<X>
 {
     public static final String DUMMY_PASSWORD_MASK = "********";
     public static final String DEFAULT_KEYSTORE_TYPE = java.security.KeyStore.getDefaultType();
@@ -67,7 +67,7 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return State.ACTIVE;
     }
@@ -140,7 +140,7 @@ public abstract class AbstractKeyStoreAdapter extends AbstractAdapter
         }
         else if(KeyStore.STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if(KeyStore.DURABLE.equals(name))
         {

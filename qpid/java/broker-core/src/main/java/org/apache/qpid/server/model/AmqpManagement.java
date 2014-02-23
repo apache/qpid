@@ -27,8 +27,8 @@ import java.lang.annotation.RetentionPolicy;
 
 public @interface AmqpManagement
 {
-    String[] attributes();
-    String[] operations();
+    String[] attributes() default {};
+    String[] operations() default {};
     boolean managesChildren() default false; // for objects that manage children, a management node needs to be created
     boolean creatable() default true;
     String defaultImplementation() default ""; // in this case the class/interface itself is to be used

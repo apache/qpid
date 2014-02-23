@@ -51,28 +51,8 @@ import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServ
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
-import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.Group;
-import org.apache.qpid.server.model.GroupMember;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.User;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -88,7 +68,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-public class HttpManagement extends AbstractPluginAdapter implements HttpManagementConfiguration
+public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
 
@@ -107,17 +87,6 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
     public static final String HTTPS_SASL_AUTHENTICATION_ENABLED = "httpsSaslAuthenticationEnabled";
 
     public static final String PLUGIN_TYPE = "MANAGEMENT-HTTP";
-
-    @SuppressWarnings("serial")
-    private static final Collection<String> AVAILABLE_ATTRIBUTES = Collections.unmodifiableSet(new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES)
-    {{
-        add(HTTP_BASIC_AUTHENTICATION_ENABLED);
-        add(HTTPS_BASIC_AUTHENTICATION_ENABLED);
-        add(HTTP_SASL_AUTHENTICATION_ENABLED);
-        add(HTTPS_SASL_AUTHENTICATION_ENABLED);
-        add(TIME_OUT);
-        add(PluginFactory.PLUGIN_TYPE);
-    }});
 
     private static final String OPERATIONAL_LOGGING_NAME = "Web";
 
@@ -206,8 +175,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
-    /** Added for testing purposes */
-    int getSessionTimeout()
+    public int getSessionTimeout()
     {
         return (Integer)getAttribute(TIME_OUT);
     }
@@ -224,7 +192,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         int lastPort = -1;
         for (Port port : ports)
         {
-            if (State.QUIESCED.equals(port.getActualState()))
+            if (State.QUIESCED.equals(port.getState()))
             {
                 continue;
             }
@@ -462,7 +430,7 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Collections.unmodifiableCollection(AVAILABLE_ATTRIBUTES);
+        return Attribute.getAttributeNames(HttpManagement.class);
     }
 
     @Override
@@ -524,4 +492,10 @@ public class HttpManagement extends AbstractPluginAdapter implements HttpManagem
         }
     }
 
+
+    @Override
+    public String getPluginType()
+    {
+        return PLUGIN_TYPE;
+    }
 }

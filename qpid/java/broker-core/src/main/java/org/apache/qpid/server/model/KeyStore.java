@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import javax.net.ssl.KeyManager;
 
-public interface KeyStore extends ConfiguredObject
+public interface KeyStore<X extends KeyStore<X>> extends ConfiguredObject<X>
 {
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
@@ -38,30 +38,43 @@ public interface KeyStore extends ConfiguredObject
 
     String PATH = "path";
     String PASSWORD = "password";
-    String TYPE = "type";
+    String KEY_STORE_TYPE = "keyStoreType";
     String CERTIFICATE_ALIAS = "certificateAlias";
     String KEY_MANAGER_FACTORY_ALGORITHM = "keyManagerFactoryAlgorithm";
 
     public static final Collection<String> AVAILABLE_ATTRIBUTES =
             Collections.unmodifiableList(
-                Arrays.asList(
-                              ID,
-                              NAME,
-                              STATE,
-                              DURABLE,
-                              LIFETIME_POLICY,
-                              TIME_TO_LIVE,
-                              CREATED,
-                              UPDATED,
-                              DESCRIPTION,
-                              PATH,
-                              PASSWORD,
-                              TYPE,
-                              CERTIFICATE_ALIAS,
-                              KEY_MANAGER_FACTORY_ALGORITHM
-                              ));
+                    Arrays.asList(
+                            ID,
+                            NAME,
+                            STATE,
+                            DURABLE,
+                            LIFETIME_POLICY,
+                            TIME_TO_LIVE,
+                            CREATED,
+                            UPDATED,
+                            DESCRIPTION,
+                            PATH,
+                            PASSWORD,
+                            KEY_STORE_TYPE,
+                            CERTIFICATE_ALIAS,
+                            KEY_MANAGER_FACTORY_ALGORITHM
+                                 ));
 
+    @ManagedAttribute( secure = true )
     public String getPassword();
+    
+    @ManagedAttribute
+    public String getPath();
+
+    @ManagedAttribute
+    public String getCertificateAlias();
+
+    @ManagedAttribute
+    public String getKeyManagerFactoryAlgorithm();
+
+    @ManagedAttribute
+    public String getKeyStoreType();
 
     public void setPassword(String password);
 

@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-public interface Session extends ConfiguredObject
+public interface Session<X extends Session<X>> extends ConfiguredObject<X>
 {
     // Statistics
 
@@ -63,17 +63,12 @@ public interface Session extends ConfiguredObject
     // available credit of both producer and consumer sides.
     public static final String PRODUCER_FLOW_BLOCKED = "producerFlowBlocked";
 
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableCollection(Arrays.asList(ID,
-                                                             NAME,
-                                                             STATE,
-                                                             DURABLE,
-                                                             LIFETIME_POLICY,
-                                                             TIME_TO_LIVE,
-                                                             CREATED,
-                                                             UPDATED,
-                                                             CHANNEL_ID,
-                                                             PRODUCER_FLOW_BLOCKED));
+    @ManagedAttribute
+    int getChannelId();
+
+    @ManagedAttribute
+    boolean isProducerFlowBlocked();
+
 
     Collection<Consumer> getConsumers();
     Collection<Publisher> getPublishers();

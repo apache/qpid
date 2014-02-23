@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import javax.net.ssl.TrustManager;
 
-public interface TrustStore extends ConfiguredObject
+public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
 {
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
@@ -38,30 +38,25 @@ public interface TrustStore extends ConfiguredObject
 
     String PATH = "path";
     String PASSWORD = "password";
-    String TYPE = "type";
+    String TRUST_STORE_TYPE = "trustStoreType";
     String PEERS_ONLY = "peersOnly";
     String TRUST_MANAGER_FACTORY_ALGORITHM = "trustManagerFactoryAlgorithm";
 
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                Arrays.asList(
-                              ID,
-                              NAME,
-                              STATE,
-                              DURABLE,
-                              LIFETIME_POLICY,
-                              TIME_TO_LIVE,
-                              CREATED,
-                              UPDATED,
-                              DESCRIPTION,
-                              PATH,
-                              PASSWORD,
-                              TYPE,
-                              PEERS_ONLY,
-                              TRUST_MANAGER_FACTORY_ALGORITHM
-                              ));
-
+    @ManagedAttribute( secure = true )
     public String getPassword();
+
+    @ManagedAttribute
+    public String getPath();
+
+    @ManagedAttribute
+    public String getTrustManagerFactoryAlgorithm();
+
+    @ManagedAttribute
+    public String getTrustStoreType();
+
+    @ManagedAttribute
+    public boolean isPeersOnly();
+
 
     public void setPassword(String password);
 

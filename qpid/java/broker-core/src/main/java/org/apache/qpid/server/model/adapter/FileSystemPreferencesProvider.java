@@ -45,14 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
@@ -60,7 +53,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.type.TypeReference;
 
-public class FileSystemPreferencesProvider extends AbstractAdapter implements PreferencesProvider
+public class FileSystemPreferencesProvider extends AbstractConfiguredObject<FileSystemPreferencesProvider> implements PreferencesProvider<FileSystemPreferencesProvider>
 {
     private static final Logger LOGGER = Logger.getLogger(FileSystemPreferencesProvider.class);
     public static String PATH = "path";
@@ -80,20 +73,14 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
             put(TYPE, String.class);
     }});
 
-    @SuppressWarnings("serial")
-    private static Collection<String> AVAILABLE_ATTRIBUTES = Collections.unmodifiableList(new ArrayList<String>(
-            PreferencesProvider.AVAILABLE_ATTRIBUTES)
-    {{
-            add(PATH);
-    }});
-
-    private final AuthenticationProvider _authenticationProvider;
+    private final AuthenticationProvider<? extends AuthenticationProvider> _authenticationProvider;
     private AtomicReference<State> _state;
 
     private FileSystemPreferencesStore _store;
 
-    protected FileSystemPreferencesProvider(UUID id, Map<String, Object> attributes, AuthenticationProvider authenticationProvider,
-            TaskExecutor taskExecutor)
+    protected FileSystemPreferencesProvider(UUID id, Map<String, Object> attributes,
+                                            AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider,
+                                            TaskExecutor taskExecutor)
     {
         super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
@@ -106,13 +93,19 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(FileSystemPreferencesProvider.class);
     }
 
     @Override
     public String getName()
     {
         return (String) getAttribute(AuthenticationProvider.NAME);
+    }
+
+    @ManagedAttribute
+    public String getPath()
+    {
+        return (String) getAttribute(PATH);
     }
 
     @Override
@@ -122,7 +115,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return _state.get();
     }
@@ -198,7 +191,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         }
         else if (STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if (TIME_TO_LIVE.equals(name))
         {
@@ -249,7 +242,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
                 catch (RuntimeException e)
                 {
                     _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    Broker broker = getAuthenticationProvider().getParent(Broker.class);
+                    Broker<?> broker = getAuthenticationProvider().getParent(Broker.class);
                     if (broker != null && broker.isManagementMode())
                     {
                         LOGGER.warn("Failed to activate preferences provider: " + getName(), e);
@@ -313,7 +306,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
         return _store.listUserIDs();
     }
 
-    public AuthenticationProvider getAuthenticationProvider()
+    public AuthenticationProvider<? extends AuthenticationProvider> getAuthenticationProvider()
     {
         return _authenticationProvider;
     }
@@ -378,7 +371,7 @@ public class FileSystemPreferencesProvider extends AbstractAdapter implements Pr
             throw new IllegalConfigurationException("Changing the type of preferences provider is not supported");
         }
         String path = (String) attributes.get(PATH);
-        if (path == null || path.equals("") || !(path instanceof String))
+        if (path == null || path.equals(""))
         {
             throw new IllegalConfigurationException("Path to preferences file is not specified");
         }

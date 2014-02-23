@@ -25,41 +25,9 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
-@AmqpManagement(
-        attributes = {
-                Queue.ID,
-                Queue.NAME,
-                Queue.DESCRIPTION,
-                Queue.STATE,
-                Queue.DURABLE,
-                Queue.LIFETIME_POLICY,
-                Queue.TIME_TO_LIVE,
-                Queue.CREATED,
-                Queue.UPDATED,
-                Queue.QUEUE_TYPE,
-                Queue.ALTERNATE_EXCHANGE,
-                Queue.EXCLUSIVE,
-                Queue.OWNER,
-                Queue.NO_LOCAL,
-                Queue.LVQ_KEY,
-                Queue.SORT_KEY,
-                Queue.MESSAGE_GROUP_KEY,
-                Queue.MESSAGE_GROUP_SHARED_GROUPS,
-                Queue.MAXIMUM_DELIVERY_ATTEMPTS,
-                Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES,
-                Queue.QUEUE_FLOW_RESUME_SIZE_BYTES,
-                Queue.QUEUE_FLOW_STOPPED,
-                Queue.ALERT_THRESHOLD_MESSAGE_AGE,
-                Queue.ALERT_THRESHOLD_MESSAGE_SIZE,
-                Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                Queue.ALERT_REPEAT_GAP,
-                Queue.PRIORITIES
-        },
-        operations = {}
-)
+@AmqpManagement
 
-public interface Queue extends ConfiguredObject
+public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {
     public static final String BINDING_COUNT = "bindingCount";
     public static final String CONSUMER_COUNT = "consumerCount";
@@ -103,14 +71,10 @@ public interface Queue extends ConfiguredObject
 
 
 
-    public static final String DESCRIPTION = "description";
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
     public static final String TIME_TO_LIVE = "timeToLive";
-    public static final String CREATED = "created";
-    public static final String UPDATED = "updated";
-    public static final String ARGUMENTS = "arguments";
 
     public static final String ALERT_REPEAT_GAP = "alertRepeatGap";
     public static final String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
@@ -135,41 +99,69 @@ public interface Queue extends ConfiguredObject
 
     public static final String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
 
-    public static final String FEDERATION_EXCLUDES = "federationExcludes";
-    public static final String FEDERATION_ID = "federationId";
+    @ManagedAttribute
+    String getQueueType();
+
+    @ManagedAttribute
+    Exchange getAlternateExchange();
+
+    @ManagedAttribute
+    ExclusivityPolicy getExclusive();
+
+    @ManagedAttribute
+    String getOwner();
+
+    @ManagedAttribute
+    boolean getNoLocal();
+
+    @ManagedAttribute
+    String getLvqKey();
+
+    @ManagedAttribute
+    String getSortKey();
+
+    @ManagedAttribute
+    String getMessageGroupKey();
 
 
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(ID,
-                                  NAME,
-                                  DESCRIPTION,
-                                  STATE,
-                                  DURABLE,
-                                  LIFETIME_POLICY,
-                                  TIME_TO_LIVE,
-                                  CREATED,
-                                  UPDATED,
-                                  QUEUE_TYPE,
-                                  ALTERNATE_EXCHANGE,
-                                  EXCLUSIVE,
-                                  OWNER,
-                                  NO_LOCAL,
-                                  LVQ_KEY,
-                                  SORT_KEY,
-                                  MESSAGE_GROUP_KEY,
-                                  MESSAGE_GROUP_SHARED_GROUPS,
-                                  MAXIMUM_DELIVERY_ATTEMPTS,
-                                  QUEUE_FLOW_CONTROL_SIZE_BYTES,
-                                  QUEUE_FLOW_RESUME_SIZE_BYTES,
-                                  QUEUE_FLOW_STOPPED,
-                                  ALERT_THRESHOLD_MESSAGE_AGE,
-                                  ALERT_THRESHOLD_MESSAGE_SIZE,
-                                  ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                                  ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                                  ALERT_REPEAT_GAP,
-                                  PRIORITIES
-                    ));
+    // TODO - this should either be a boolean or maybe an enum
+    @ManagedAttribute
+    int getMessageGroupSharedGroups();
+
+
+    @ManagedAttribute
+    int getMaximumDeliveryAttempts();
+
+    @ManagedAttribute
+    long getQueueFlowControlSizeBytes();
+
+    @ManagedAttribute
+    long getQueueFlowResumeSizeBytes();
+
+
+    // TODO - this is not an attribute
+    @ManagedAttribute
+    boolean isQueueFlowStopped();
+
+
+    @ManagedAttribute
+    long getAlertThresholdMessageAge();
+
+    @ManagedAttribute
+    long getAlertThresholdMessageSize();
+
+    @ManagedAttribute
+    long getAlertThresholdQueueDepthBytes();
+
+    @ManagedAttribute
+    long getAlertThresholdQueueDepthMessages();
+
+    @ManagedAttribute
+    long getAlertRepeatGap();
+
+    @ManagedAttribute
+    int getPriorities();
+
 
 
     //children

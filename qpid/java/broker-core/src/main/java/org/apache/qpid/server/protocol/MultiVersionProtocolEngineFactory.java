@@ -48,7 +48,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private final Transport _transport;
     private final ProtocolEngineCreator[] _creators;
 
-    public MultiVersionProtocolEngineFactory(Broker broker,
+    public MultiVersionProtocolEngineFactory(Broker<?> broker,
                                              SSLContext sslContext,
                                              boolean wantClientAuth,
                                              boolean needClientAuth,

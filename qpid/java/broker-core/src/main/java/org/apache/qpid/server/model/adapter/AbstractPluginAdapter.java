@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -34,7 +35,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.security.access.Operation;
 
-public abstract class AbstractPluginAdapter extends AbstractAdapter implements Plugin
+public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends AbstractConfiguredObject<X> implements Plugin<X>
 {
     private Broker _broker;
 
@@ -52,7 +53,7 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return null;
     }
@@ -110,7 +111,7 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(Plugin.class);
     }
 
     @Override
@@ -122,7 +123,7 @@ public abstract class AbstractPluginAdapter extends AbstractAdapter implements P
         }
         else if (STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if (DURABLE.equals(name))
         {

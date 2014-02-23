@@ -25,7 +25,7 @@ import java.util.Map;
 
 import javax.security.auth.login.AccountNotFoundException;
 
-public interface PasswordCredentialManagingAuthenticationProvider extends AuthenticationProvider
+public interface PasswordCredentialManagingAuthenticationProvider<X extends PasswordCredentialManagingAuthenticationProvider<X>> extends AuthenticationProvider<X>
 {
     boolean createUser(String username, String password, Map<String, String> attributes);
 

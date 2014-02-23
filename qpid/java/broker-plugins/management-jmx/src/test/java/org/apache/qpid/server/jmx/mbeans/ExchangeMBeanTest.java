@@ -64,7 +64,7 @@ public class ExchangeMBeanTest extends TestCase
     {
         _mockExchange = mock(Exchange.class);
         when(_mockExchange.getName()).thenReturn(EXCHANGE_NAME);
-        when(_mockExchange.getExchangeType()).thenReturn(EXCHANGE_TYPE);
+        when(_mockExchange.getType()).thenReturn(EXCHANGE_TYPE);
         _mockVirtualHostMBean = mock(VirtualHostMBean.class);
 
         _mockManagedObjectRegistry = mock(ManagedObjectRegistry.class);
@@ -80,7 +80,7 @@ public class ExchangeMBeanTest extends TestCase
         _exchangeMBean = new ExchangeMBean(_mockExchange, _mockVirtualHostMBean);
 
         _mockHeadersExchange = mock(Exchange.class);
-        when(_mockHeadersExchange.getExchangeType()).thenReturn(ExchangeMBean.HEADERS_EXCHANGE_TYPE);
+        when(_mockHeadersExchange.getType()).thenReturn(ExchangeMBean.HEADERS_EXCHANGE_TYPE);
         when(_mockHeadersExchange.getParent(VirtualHost.class)).thenReturn(mockVirtualHost);
 
     }

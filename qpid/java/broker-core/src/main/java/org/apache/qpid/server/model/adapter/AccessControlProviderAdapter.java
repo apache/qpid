@@ -30,19 +30,13 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
 
-public class AccessControlProviderAdapter extends AbstractAdapter implements AccessControlProvider
+public class AccessControlProviderAdapter extends AbstractConfiguredObject<AccessControlProviderAdapter> implements AccessControlProvider<AccessControlProviderAdapter>
 {
     private static final Logger LOGGER = Logger.getLogger(AccessControlProviderAdapter.class);
 
@@ -85,7 +79,7 @@ public class AccessControlProviderAdapter extends AbstractAdapter implements Acc
 
     protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
     {
-        List<String> attributesNames = new ArrayList<String>(AVAILABLE_ATTRIBUTES);
+        List<String> attributesNames = new ArrayList<String>(Attribute.getAttributeNames(AccessControlProvider.class));
         if (factoryAttributes != null)
         {
             attributesNames.addAll(factoryAttributes);
@@ -107,7 +101,7 @@ public class AccessControlProviderAdapter extends AbstractAdapter implements Acc
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return _state.get();
     }
@@ -183,7 +177,7 @@ public class AccessControlProviderAdapter extends AbstractAdapter implements Acc
         }
         else if(STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if(TIME_TO_LIVE.equals(name))
         {

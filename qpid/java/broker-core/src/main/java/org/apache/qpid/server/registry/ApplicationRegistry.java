@@ -253,7 +253,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
             if (_broker != null)
             {
-                _broker.setDesiredState(_broker.getActualState(), State.STOPPED);
+                _broker.setDesiredState(_broker.getState(), State.STOPPED);
             }
 
             //Shutdown virtualhosts

@@ -60,7 +60,7 @@ public class AuthenticationProviderFactory
      */
     public AuthenticationProvider create(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        AuthenticationProviderAdapter<?> provider = createAuthenticationProvider(id, broker, attributes);
+        AuthenticationProviderAdapter provider = createAuthenticationProvider(id, broker, attributes);
         provider.getAuthManager().onCreate();
         return provider;
     }
@@ -76,14 +76,14 @@ public class AuthenticationProviderFactory
         return createAuthenticationProvider(id, broker, attributes);
     }
 
-    private AuthenticationProviderAdapter<?> createAuthenticationProvider(UUID id, Broker broker, Map<String, Object> attributes)
+    private AuthenticationProviderAdapter createAuthenticationProvider(UUID id, Broker broker, Map<String, Object> attributes)
     {
         for (AuthenticationManagerFactory factory : _factories)
         {
             AuthenticationManager manager = factory.createInstance(broker, attributes);
             if (manager != null)
             {
-                AuthenticationProviderAdapter<?> authenticationProvider;
+                AuthenticationProviderAdapter authenticationProvider;
                 if (manager instanceof PrincipalDatabaseAuthenticationManager)
                 {
                     authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,

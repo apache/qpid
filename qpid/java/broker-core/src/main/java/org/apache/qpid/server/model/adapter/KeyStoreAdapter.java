@@ -38,6 +38,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
@@ -49,34 +50,34 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
-public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
+public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> implements KeyStore<KeyStoreAdapter>
 {
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
         put(PATH, String.class);
         put(PASSWORD, String.class);
-        put(TYPE, String.class);
+        put(KEY_STORE_TYPE, String.class);
         put(CERTIFICATE_ALIAS, String.class);
         put(KEY_MANAGER_FACTORY_ALGORITHM, String.class);
     }});
 
     @SuppressWarnings("serial")
     public static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
-        put(KeyStore.TYPE, DEFAULT_KEYSTORE_TYPE);
+        put(KeyStore.KEY_STORE_TYPE, DEFAULT_KEYSTORE_TYPE);
         put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
     }});
 
-    private Broker _broker;
+    private Broker<?> _broker;
 
-    public KeyStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
+    public KeyStoreAdapter(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
         super(id, broker, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
         _broker = broker;
 
         String keyStorePath = (String)getAttribute(KeyStore.PATH);
         String keyStorePassword = getPassword();
-        String keyStoreType = (String)getAttribute(KeyStore.TYPE);
+        String keyStoreType = (String)getAttribute(KeyStore.KEY_STORE_TYPE);
         String keyManagerFactoryAlgorithm = (String)getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
         String certAlias = (String)getAttribute(KeyStore.CERTIFICATE_ALIAS);
 
@@ -85,9 +86,15 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
     }
 
     @Override
+    public String getDescription()
+    {
+        return null;
+    }
+
+    @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(KeyStore.class);
     }
 
     @Override
@@ -162,7 +169,7 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
 
         String keyStorePath = (String)merged.get(KeyStore.PATH);
         String keyStorePassword = (String) merged.get(KeyStore.PASSWORD);
-        String keyStoreType = (String)merged.get(KeyStore.TYPE);
+        String keyStoreType = (String)merged.get(KeyStore.KEY_STORE_TYPE);
         String keyManagerFactoryAlgorithm = (String)merged.get(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
         String certAlias = (String)merged.get(KeyStore.CERTIFICATE_ALIAS);
 
@@ -176,7 +183,7 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
                                             String keyStorePassword, String alias,
                                             String keyManagerFactoryAlgorithm)
     {
-        java.security.KeyStore keyStore = null;
+        java.security.KeyStore keyStore;
         try
         {
             keyStore = SSLUtil.getInitializedKeyStore(keyStorePath, keyStorePassword, type);
@@ -188,7 +195,7 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
 
         if (alias != null)
         {
-            Certificate cert = null;
+            Certificate cert;
             try
             {
                 cert = keyStore.getCertificate(alias);
@@ -216,11 +223,35 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter implements KeyStore
         }
     }
 
+    @Override
+    public String getPath()
+    {
+        return (String) getAttribute(PATH);
+    }
+
+    @Override
+    public String getCertificateAlias()
+    {
+        return (String) getAttribute(CERTIFICATE_ALIAS);
+    }
+
+    @Override
+    public String getKeyManagerFactoryAlgorithm()
+    {
+        return (String) getAttribute(KEY_MANAGER_FACTORY_ALGORITHM);
+    }
+
+    @Override
+    public String getKeyStoreType()
+    {
+        return (String) getAttribute(KEY_STORE_TYPE);
+    }
+
     public KeyManager[] getKeyManagers() throws GeneralSecurityException
     {
         String keyStorePath = (String)getAttribute(KeyStore.PATH);
         String keyStorePassword = getPassword();
-        String keyStoreType = (String)getAttribute(KeyStore.TYPE);
+        String keyStoreType = (String)getAttribute(KeyStore.KEY_STORE_TYPE);
         String keyManagerFactoryAlgorithm = (String)getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
         String certAlias = (String)getAttribute(KeyStore.CERTIFICATE_ALIAS);
 

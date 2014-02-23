@@ -75,9 +75,9 @@ public class HttpManagementUtil
     private static final String ATTR_SUBJECT = "Qpid.subject";
     private static final String ATTR_LOG_ACTOR = "Qpid.logActor";
 
-    public static Broker getBroker(ServletContext servletContext)
+    public static Broker<?> getBroker(ServletContext servletContext)
     {
-        return (Broker) servletContext.getAttribute(ATTR_BROKER);
+        return (Broker<?>) servletContext.getAttribute(ATTR_BROKER);
     }
 
     public static HttpManagementConfiguration getManagementConfiguration(ServletContext servletContext)

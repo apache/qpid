@@ -25,7 +25,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,22 +44,7 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfigurationChangeListener;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
@@ -77,7 +61,7 @@ import org.apache.qpid.util.SystemUtils;
 
 import javax.security.auth.Subject;
 
-public class BrokerAdapter extends AbstractAdapter implements Broker, ConfigurationChangeListener
+public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject<X> implements Broker<X>, ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
 
@@ -171,15 +155,15 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private final RootMessageLogger _rootMessageLogger;
     private StatisticsAdapter _statistics;
 
-    private final Map<String, VirtualHost> _vhostAdapters = new HashMap<String, VirtualHost>();
-    private final Map<UUID, Port> _portAdapters = new HashMap<UUID, Port>();
+    private final Map<String, VirtualHost<?>> _vhostAdapters = new HashMap<String, VirtualHost<?>>();
+    private final Map<UUID, Port<?>> _portAdapters = new HashMap<UUID, Port<?>>();
     private final Map<Port, Integer> _stillInUsePortNumbers = new HashMap<Port, Integer>();
-    private final Map<UUID, AuthenticationProvider> _authenticationProviders = new HashMap<UUID, AuthenticationProvider>();
-    private final Map<String, GroupProvider> _groupProviders = new HashMap<String, GroupProvider>();
-    private final Map<UUID, ConfiguredObject> _plugins = new HashMap<UUID, ConfiguredObject>();
-    private final Map<String, KeyStore> _keyStores = new HashMap<String, KeyStore>();
-    private final Map<String, TrustStore> _trustStores = new HashMap<String, TrustStore>();
-    private final Map<UUID, AccessControlProvider> _accessControlProviders = new HashMap<UUID, AccessControlProvider>();
+    private final Map<UUID, AuthenticationProvider<?>> _authenticationProviders = new HashMap<UUID, AuthenticationProvider<?>>();
+    private final Map<String, GroupProvider<?>> _groupProviders = new HashMap<String, GroupProvider<?>>();
+    private final Map<UUID, ConfiguredObject<?>> _plugins = new HashMap<UUID, ConfiguredObject<?>>();
+    private final Map<String, KeyStore<?>> _keyStores = new HashMap<String, KeyStore<?>>();
+    private final Map<String, TrustStore<?>> _trustStores = new HashMap<String, TrustStore<?>>();
+    private final Map<UUID, AccessControlProvider<?>> _accessControlProviders = new HashMap<UUID, AccessControlProvider<?>>();
 
     private final GroupProviderFactory _groupProviderFactory;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
@@ -191,7 +175,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     private Collection<String> _supportedBrokerStoreTypes;
     private final ConfigurationEntryStore _brokerStore;
 
-    private AuthenticationProvider _managementAuthenticationProvider;
+    private AuthenticationProvider<?> _managementAuthenticationProvider;
     private BrokerOptions _brokerOptions;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
@@ -217,45 +201,241 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         if (_brokerOptions.isManagementMode())
         {
             AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
-            AuthenticationProvider authenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
+            _managementAuthenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
                     authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
-            _managementAuthenticationProvider = authenticationProvider;
         }
     }
 
-    public Collection<VirtualHost> getVirtualHosts()
+    @Override
+    public String getBuildVersion()
+    {
+        return (String) getAttribute(BUILD_VERSION);
+    }
+
+    @Override
+    public String getOperatingSystem()
+    {
+        return (String) getAttribute(OPERATING_SYSTEM);
+    }
+
+    @Override
+    public String getPlatform()
+    {
+        return (String) getAttribute(PLATFORM);
+    }
+
+    @Override
+    public String getProcessPid()
+    {
+        return (String) getAttribute(PROCESS_PID);
+    }
+
+    @Override
+    public String getProductVersion()
+    {
+        return (String) getAttribute(PRODUCT_VERSION);
+    }
+
+    @Override
+    public Collection<String> getSupportedBrokerStoreTypes()
+    {
+        return _supportedBrokerStoreTypes;
+    }
+
+    @Override
+    public Collection<String> getSupportedVirtualHostStoreTypes()
+    {
+        return _supportedVirtualHostStoreTypes;
+    }
+
+    @Override
+    public Collection<String> getSupportedAuthenticationProviders()
+    {
+        return _authenticationProviderFactory.getSupportedAuthenticationProviders();
+    }
+
+    @Override
+    public Collection<String> getSupportedPreferencesProviderTypes()
+    {
+        return PreferencesProviderFactory.FACTORIES.getDescriptiveTypes();
+    }
+
+    @Override
+    public String getDefaultVirtualHost()
+    {
+        return (String) getAttribute(DEFAULT_VIRTUAL_HOST);
+    }
+
+    @Override
+    public int getQueue_alertThresholdMessageAge()
+    {
+        return (Integer) getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE);
+    }
+
+    @Override
+    public long getQueue_alertThresholdQueueDepthMessages()
+    {
+        return (Long) getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
+    }
+
+    @Override
+    public long getQueue_alertThresholdQueueDepthBytes()
+    {
+        return (Long) getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
+    }
+
+    @Override
+    public long getQueue_alertThresholdMessageSize()
+    {
+        return (Long) getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE);
+    }
+
+    @Override
+    public long getQueue_alertRepeatGap()
+    {
+        return (Long) getAttribute(QUEUE_ALERT_REPEAT_GAP);
+    }
+
+    @Override
+    public long getQueue_flowControlSizeBytes()
+    {
+        return (Long) getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES);
+    }
+
+    @Override
+    public long getQueue_flowResumeSizeBytes()
+    {
+        return (Long) getAttribute(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
+    }
+
+    @Override
+    public int getQueue_maximumDeliveryAttempts()
+    {
+        return (Integer) getAttribute(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS);
+    }
+
+    @Override
+    public boolean isQueue_deadLetterQueueEnabled()
+    {
+        return (Boolean) getAttribute(QUEUE_DEAD_LETTER_QUEUE_ENABLED);
+    }
+
+    @Override
+    public long getVirtualhost_housekeepingCheckPeriod()
+    {
+        return (Long) getAttribute(VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD);
+    }
+
+    @Override
+    public int getConnection_sessionCountLimit()
+    {
+        return (Integer) getAttribute(CONNECTION_SESSION_COUNT_LIMIT);
+    }
+
+    @Override
+    public int getConnection_heartBeatDelay()
+    {
+        return (Integer) getAttribute(CONNECTION_HEART_BEAT_DELAY);
+    }
+
+    @Override
+    public boolean getConnection_closeWhenNoRoute()
+    {
+        return (Boolean) getAttribute(CONNECTION_CLOSE_WHEN_NO_ROUTE);
+    }
+
+    @Override
+    public int getStatisticsReportingPeriod()
+    {
+        return (Integer) getAttribute(STATISTICS_REPORTING_PERIOD);
+    }
+
+    @Override
+    public boolean getStatisticsReportingResetEnabled()
+    {
+        return (Boolean) getAttribute(STATISTICS_REPORTING_RESET_ENABLED);
+    }
+
+    @Override
+    public String getStoreType()
+    {
+        return _brokerStore.getType();
+    }
+
+    @Override
+    public int getStoreVersion()
+    {
+        return _brokerStore.getVersion();
+    }
+
+    @Override
+    public String getStorePath()
+    {
+        return _brokerStore.getStoreLocation();
+    }
+
+    @Override
+    public String getModelVersion()
+    {
+        return Model.MODEL_VERSION;
+    }
+
+    @Override
+    public long getVirtualhost_storeTransactionIdleTimeoutClose()
+    {
+        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
+    }
+
+    @Override
+    public long getVirtualhost_storeTransactionIdleTimeoutWarn()
+    {
+        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
+    }
+
+    @Override
+    public long getVirtualhost_storeTransactionOpenTimeoutClose()
+    {
+        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
+    }
+
+    @Override
+    public long getVirtualhost_storeTransactionOpenTimeoutWarn()
+    {
+        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
+    }
+
+    public Collection<VirtualHost<?>> getVirtualHosts()
     {
         synchronized(_vhostAdapters)
         {
-            return new ArrayList<VirtualHost>(_vhostAdapters.values());
+            return new ArrayList<VirtualHost<?>>(_vhostAdapters.values());
         }
     }
 
-    public Collection<Port> getPorts()
+    public Collection<Port<?>> getPorts()
     {
         synchronized (_portAdapters)
         {
-            final ArrayList<Port> ports = new ArrayList<Port>(_portAdapters.values());
-            return ports;
+            return new ArrayList<Port<?>>(_portAdapters.values());
         }
     }
 
-    public Collection<AuthenticationProvider> getAuthenticationProviders()
+    public Collection<AuthenticationProvider<?>> getAuthenticationProviders()
     {
         synchronized (_authenticationProviders)
         {
-            return new ArrayList<AuthenticationProvider>(_authenticationProviders.values());
+            return new ArrayList<AuthenticationProvider<?>>(_authenticationProviders.values());
         }
     }
 
-    public AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName)
+    public AuthenticationProvider<?> findAuthenticationProviderByName(String authenticationProviderName)
     {
         if (isManagementMode())
         {
             return _managementAuthenticationProvider;
         }
-        Collection<AuthenticationProvider> providers = getAuthenticationProviders();
-        for (AuthenticationProvider authenticationProvider : providers)
+        Collection<AuthenticationProvider<?>> providers = getAuthenticationProviders();
+        for (AuthenticationProvider<?> authenticationProvider : providers)
         {
             if (authenticationProvider.getName().equals(authenticationProviderName))
             {
@@ -265,7 +445,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return null;
     }
 
-    public KeyStore findKeyStoreByName(String keyStoreName)
+    public KeyStore<?> findKeyStoreByName(String keyStoreName)
     {
         synchronized(_keyStores)
         {
@@ -273,7 +453,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         }
     }
 
-    public TrustStore findTrustStoreByName(String trustStoreName)
+    public TrustStore<?> findTrustStoreByName(String trustStoreName)
     {
         synchronized(_trustStores)
         {
@@ -282,13 +462,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
     @Override
-    public Collection<GroupProvider> getGroupProviders()
+    public Collection<GroupProvider<?>> getGroupProviders()
     {
         synchronized (_groupProviders)
         {
-            final ArrayList<GroupProvider> groupManagers =
-                    new ArrayList<GroupProvider>(_groupProviders.values());
-            return groupManagers;
+            return new ArrayList<GroupProvider<?>>(_groupProviders.values());
         }
     }
 
@@ -335,7 +513,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
 
-    public State getActualState()
+    public State getState()
     {
         return null;  //TODO
     }
@@ -462,7 +640,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
      */
     private Port createPort(Map<String, Object> attributes)
     {
-        Port port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
+        Port<?> port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
         addPort(port);
 
         //1. AMQP ports are disabled during ManagementMode.
@@ -477,7 +655,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return port;
     }
 
-    private void addPort(Port port)
+    private void addPort(Port<?> port)
     {
         synchronized (_portAdapters)
         {
@@ -485,19 +663,19 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             String portName = port.getName();
             UUID portId = port.getId();
 
-            for(Port p : _portAdapters.values())
+            for(Port<?> p : _portAdapters.values())
             {
                 if(portNumber == p.getPort())
                 {
                     throw new IllegalConfigurationException("Can't add port " + portName + " because port number " + portNumber + " is already configured for port " + p.getName());
                 }
 
-                if(portName == p.getName())
+                if(portName.equals(p.getName()))
                 {
                     throw new IllegalConfigurationException("Can't add Port because one with name " + portName + " already exists");
                 }
 
-                if(portId == p.getId())
+                if(portId.equals(p.getId()))
                 {
                     throw new IllegalConfigurationException("Can't add Port because one with id " + portId + " already exists");
                 }
@@ -508,9 +686,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         port.addChangeListener(this);
     }
 
-    private AccessControlProvider createAccessControlProvider(Map<String, Object> attributes)
+    private AccessControlProvider<?> createAccessControlProvider(Map<String, Object> attributes)
     {
-        AccessControlProvider accessControlProvider = null;
+        AccessControlProvider<?> accessControlProvider;
         synchronized (_accessControlProviders)
         {
             accessControlProvider = _accessControlProviderFactory.create(UUID.randomUUID(), this, attributes);
@@ -526,7 +704,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     /**
      * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
      */
-    private void addAccessControlProvider(AccessControlProvider accessControlProvider)
+    private void addAccessControlProvider(AccessControlProvider<?> accessControlProvider)
     {
         String name = accessControlProvider.getName();
         synchronized (_authenticationProviders)
@@ -535,7 +713,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             {
                 throw new IllegalConfigurationException("Can't add AccessControlProvider because one with id " + accessControlProvider.getId() + " already exists");
             }
-            for (AccessControlProvider provider : _accessControlProviders.values())
+            for (AccessControlProvider<?> provider : _accessControlProviders.values())
             {
                 if (provider.getName().equals(name))
                 {
@@ -549,9 +727,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         accessControlProvider.addChangeListener(_securityManager);
     }
 
-    private boolean deleteAccessControlProvider(AccessControlProvider accessControlProvider)
+    private boolean deleteAccessControlProvider(AccessControlProvider<?> accessControlProvider)
     {
-        AccessControlProvider removedAccessControlProvider = null;
+        AccessControlProvider removedAccessControlProvider;
         synchronized (_accessControlProviders)
         {
             removedAccessControlProvider = _accessControlProviders.remove(accessControlProvider.getId());
@@ -568,7 +746,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
-        AuthenticationProvider authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
+        AuthenticationProvider<?> authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
         authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
         addAuthenticationProvider(authenticationProvider);
         return authenticationProvider;
@@ -577,7 +755,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     /**
      * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
      */
-    private void addAuthenticationProvider(AuthenticationProvider authenticationProvider)
+    private void addAuthenticationProvider(AuthenticationProvider<?> authenticationProvider)
     {
         String name = authenticationProvider.getName();
         synchronized (_authenticationProviders)
@@ -598,15 +776,15 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         authenticationProvider.addChangeListener(this);
     }
 
-    private GroupProvider createGroupProvider(Map<String, Object> attributes)
+    private GroupProvider<?> createGroupProvider(Map<String, Object> attributes)
     {
-        GroupProvider groupProvider = _groupProviderFactory.create(UUID.randomUUID(), this, attributes);
+        GroupProvider<?> groupProvider = _groupProviderFactory.create(UUID.randomUUID(), this, attributes);
         groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
         addGroupProvider(groupProvider);
         return groupProvider;
     }
 
-    private void addGroupProvider(GroupProvider groupProvider)
+    private void addGroupProvider(GroupProvider<?> groupProvider)
     {
         synchronized (_groupProviders)
         {
@@ -711,7 +889,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(Broker.class);
     }
 
     @Override
@@ -786,7 +964,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             return _authenticationProviderFactory.getSupportedAuthenticationProviders();
         }
-        else if (SUPPORTED_PREFERENCES_PROVIDERS_TYPES.equals(name))
+        else if (SUPPORTED_PREFERENCES_PROVIDER_TYPES.equals(name))
         {
             return PreferencesProviderFactory.FACTORIES.getDescriptiveTypes();
         }
@@ -811,7 +989,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
 
     private boolean deletePort(State oldState, Port portAdapter)
     {
-        Port removedPort = null;
+        Port<?> removedPort;
         synchronized (_portAdapters)
         {
             removedPort = _portAdapters.remove(portAdapter.getId());
@@ -832,9 +1010,9 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return removedPort != null;
     }
 
-    private boolean deleteAuthenticationProvider(AuthenticationProvider authenticationProvider)
+    private boolean deleteAuthenticationProvider(AuthenticationProvider<?> authenticationProvider)
     {
-        AuthenticationProvider removedAuthenticationProvider = null;
+        AuthenticationProvider removedAuthenticationProvider;
         synchronized (_authenticationProviders)
         {
             removedAuthenticationProvider = _authenticationProviders.remove(authenticationProvider.getId());
@@ -848,7 +1026,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         return removedAuthenticationProvider != null;
     }
 
-    private void addVirtualHost(VirtualHost virtualHost)
+    private void addVirtualHost(VirtualHost<?> virtualHost)
     {
         synchronized (_vhostAdapters)
         {
@@ -909,7 +1087,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
             Collection<? extends ConfiguredObject> adapters = configuredObjectMap.values();
             for (ConfiguredObject configuredObject : adapters)
             {
-                if (State.ACTIVE.equals(desiredState) && State.QUIESCED.equals(configuredObject.getActualState()))
+                if (State.ACTIVE.equals(desiredState) && State.QUIESCED.equals(configuredObject.getState()))
                 {
                     if (LOGGER.isDebugEnabled())
                     {
@@ -997,14 +1175,14 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
         {
             //Record all the originally used port numbers of active ports, to ensure that when
             //creating new ports we don't try to re-bind a port number that we are still using
-            if(attributeName == Port.PORT && object.getActualState() == State.ACTIVE)
+            if(Port.PORT.equals(attributeName) && object.getState() == State.ACTIVE)
             {
                 recordPreviouslyUsedPortNumberIfNecessary((Port) object, (Integer)oldAttributeValue);
             }
         }
     }
 
-    private void addPlugin(ConfiguredObject plugin)
+    private void addPlugin(ConfiguredObject<?> plugin)
     {
         synchronized(_plugins)
         {
@@ -1018,7 +1196,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
 
-    private Collection<ConfiguredObject> getPlugins()
+    private Collection<ConfiguredObject<?>> getPlugins()
     {
         synchronized(_plugins)
         {
@@ -1104,12 +1282,12 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
     @Override
-    public AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress)
+    public AuthenticationProvider<?> getAuthenticationProvider(SocketAddress localAddress)
     {
         InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
         AuthenticationProvider provider = null;
-        Collection<Port> ports = getPorts();
-        for (Port p : ports)
+        Collection<Port<?>> ports = getPorts();
+        for (Port<?> p : ports)
         {
             if (inetSocketAddress.getPort() == p.getPort())
             {
@@ -1121,7 +1299,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
     @Override
-    public Collection<KeyStore> getKeyStores()
+    public Collection<KeyStore<?>> getKeyStores()
     {
         synchronized(_keyStores)
         {
@@ -1130,7 +1308,7 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
     @Override
-    public Collection<TrustStore> getTrustStores()
+    public Collection<TrustStore<?>> getTrustStores()
     {
         synchronized(_trustStores)
         {
@@ -1245,11 +1423,11 @@ public class BrokerAdapter extends AbstractAdapter implements Broker, Configurat
     }
 
     @Override
-    public Collection<AccessControlProvider> getAccessControlProviders()
+    public Collection<AccessControlProvider<?>> getAccessControlProviders()
     {
         synchronized (_accessControlProviders)
         {
-            return new ArrayList<AccessControlProvider>(_accessControlProviders.values());
+            return new ArrayList<AccessControlProvider<?>>(_accessControlProviders.values());
         }
     }
 

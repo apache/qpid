@@ -101,7 +101,7 @@ define(["dojo/dom",
 
                storeNodes(["name",
                            "path",
-                           "type",
+                           "trustStoreType",
                            "trustManagerFactoryAlgorithm",
                            "certificateAlias",
                            "peersOnly"
@@ -121,7 +121,7 @@ define(["dojo/dom",
            {
               this.name.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
               this.path.innerHTML = entities.encode(String(this.keyStoreData[ "path" ]));
-              this.type.innerHTML = entities.encode(String(this.keyStoreData[ "type" ]));
+              this.trustStoreType.innerHTML = entities.encode(String(this.keyStoreData[ "trustStoreType" ]));
               this.trustManagerFactoryAlgorithm.innerHTML = entities.encode(String(this.keyStoreData[ "trustManagerFactoryAlgorithm" ]));
               this.peersOnly.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "peersOnly" ] ? "checked='checked'": "")+" />" ;
            };

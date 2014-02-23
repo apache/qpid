@@ -122,7 +122,7 @@ public class MessageServlet extends AbstractServlet
         mapper.writeValue(writer, messages);
     }
 
-    private Queue getQueueFromRequest(HttpServletRequest request)
+    private Queue<?> getQueueFromRequest(HttpServletRequest request)
     {
         // TODO - validation that there is a vhost and queue and only those in the path
 
@@ -134,9 +134,9 @@ public class MessageServlet extends AbstractServlet
         String vhostName = pathInfoElements[0];
         String queueName = pathInfoElements[1];
 
-        VirtualHost vhost = null;
+        VirtualHost<?> vhost = null;
 
-        for(VirtualHost vh : getBroker().getVirtualHosts())
+        for(VirtualHost<?> vh : getBroker().getVirtualHosts())
         {
             if(vh.getName().equals(vhostName))
             {
@@ -148,7 +148,7 @@ public class MessageServlet extends AbstractServlet
         return getQueueFromVirtualHost(queueName, vhost);
     }
 
-    private Queue getQueueFromVirtualHost(String queueName, VirtualHost vhost)
+    private Queue getQueueFromVirtualHost(String queueName, VirtualHost<?> vhost)
     {
         Queue queue = null;
 
@@ -410,7 +410,7 @@ public class MessageServlet extends AbstractServlet
 
         try
         {
-            final Queue sourceQueue = getQueueFromRequest(request);
+            final Queue<?> sourceQueue = getQueueFromRequest(request);
 
             ObjectMapper mapper = new ObjectMapper();
 
@@ -420,7 +420,7 @@ public class MessageServlet extends AbstractServlet
             String destQueueName = (String) providedObject.get("destinationQueue");
             Boolean move = (Boolean) providedObject.get("move");
 
-            final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
+            final VirtualHost<?> vhost = sourceQueue.getParent(VirtualHost.class);
 
             boolean isMoveTransaction = move != null && Boolean.valueOf(move);
 
@@ -459,9 +459,9 @@ public class MessageServlet extends AbstractServlet
     protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response)
     {
 
-        final Queue sourceQueue = getQueueFromRequest(request);
+        final Queue<?> sourceQueue = getQueueFromRequest(request);
 
-        final VirtualHost vhost = sourceQueue.getParent(VirtualHost.class);
+        final VirtualHost<?> vhost = sourceQueue.getParent(VirtualHost.class);
 
 
         final List<Long> messageIds = new ArrayList<Long>();

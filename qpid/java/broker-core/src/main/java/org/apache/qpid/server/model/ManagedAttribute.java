@@ -1,3 +1,4 @@
+package org.apache.qpid.server.model;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,8 +19,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
 
-public interface Publisher<X extends Publisher<X>> extends ConfiguredObject<X>
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+
+public @interface ManagedAttribute
 {
+    boolean secure() default false;
+    boolean derived() default false;
 }

@@ -33,6 +33,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.message.internal.InternalMessageHeader;
 import org.apache.qpid.server.model.AmqpManagement;
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
@@ -96,7 +97,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             new CopyOnWriteArrayList<ConsumerRegistrationListener<ManagementNode>>();
 
     private final SystemNodeCreator.SystemNodeRegistry _registry;
-    private final ConfiguredObject _managedObject;
+    private final ConfiguredObject<?> _managedObject;
     private Map<String, ManagementNodeConsumer> _consumers = new ConcurrentHashMap<String, ManagementNodeConsumer>();
 
     private Map<String,ManagedEntityType> _entityTypes = Collections.synchronizedMap(new LinkedHashMap<String, ManagedEntityType>());
@@ -105,7 +106,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
 
 
     public ManagementNode(final SystemNodeCreator.SystemNodeRegistry registry,
-                          final ConfiguredObject configuredObject)
+                          final ConfiguredObject<?> configuredObject)
     {
         _virtualHost = registry.getVirtualHost();
         _registry = registry;
@@ -213,7 +214,9 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
 
                 }
             }
-            managedEntityType = new ManagedEntityType(clazz.getName(), parentSet.toArray(new ManagedEntityType[parentSet.size()]), entityType.attributes(), opsList.toArray(new String[opsList.size()]));
+            managedEntityType = new ManagedEntityType(clazz.getName(), parentSet.toArray(new ManagedEntityType[parentSet.size()]),
+                                                      (String[])(Attribute.getAttributeNames(clazz).toArray(new String[0])),
+                                                      opsList.toArray(new String[opsList.size()]));
             _entityTypes.put(clazz.getName(),managedEntityType);
             _entities.put(managedEntityType, Collections.synchronizedMap(new LinkedHashMap<String, ConfiguredObject>()));
 
@@ -463,7 +466,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         responseHeader.setHeader(TYPE_ATTRIBUTE, type);
         try
         {
-            entity.setDesiredState(entity.getActualState(),State.DELETED);
+            entity.setDesiredState(entity.getState(),State.DELETED);
             responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_NO_CONTENT);
         }
         catch(AccessControlException e)
@@ -802,7 +805,6 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
             count = Integer.MAX_VALUE;
         }
 
-        responseHeader.setHeader(ATTRIBUTES_HEADER, attributes);
 
         responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_OK);
         List<List<? extends Object>> responseList = new ArrayList<List<? extends Object>>();
@@ -855,7 +857,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                 break;
             }
         }
-        responseHeader.setHeader(COUNT_HEADER, count);
+        responseHeader.setHeader(COUNT_HEADER, responseList.size()-1);
         responseMessage = InternalMessage.createListMessage(_virtualHost.getMessageStore(),
                                                             responseHeader,
                                                             responseList);

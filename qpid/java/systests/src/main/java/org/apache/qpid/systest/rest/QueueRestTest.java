@@ -34,7 +34,9 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -209,9 +211,16 @@ public class QueueRestTest extends QpidRestTestCase
     private void assertConsumer(Map<String, Object> consumer)
     {
         assertNotNull("Consumer map should not be null", consumer);
-        Asserts.assertAttributesPresent(consumer, Consumer.AVAILABLE_ATTRIBUTES, Consumer.STATE, Consumer.TIME_TO_LIVE,
-                Consumer.CREATED, Consumer.UPDATED, Consumer.SETTLEMENT_MODE, Consumer.EXCLUSIVE, Consumer.SELECTOR,
-                Consumer.NO_LOCAL);
+        Asserts.assertAttributesPresent(consumer,
+                                        Attribute.getAttributeNames(Consumer.class), Consumer.STATE, Consumer.TIME_TO_LIVE,
+                Consumer.SETTLEMENT_MODE, Consumer.EXCLUSIVE, Consumer.SELECTOR,
+                Consumer.NO_LOCAL,
+                ConfiguredObject.TYPE,
+                ConfiguredObject.CREATED_BY,
+                ConfiguredObject.CREATED_TIME,
+                ConfiguredObject.LAST_UPDATED_BY,
+                ConfiguredObject.LAST_UPDATED_TIME,
+                ConfiguredObject.DESCRIPTION);
 
         assertEquals("Unexpected binding attribute " + Consumer.NAME, "1", consumer.get(Consumer.NAME));
         assertEquals("Unexpected binding attribute " + Consumer.DURABLE, Boolean.FALSE, consumer.get(Consumer.DURABLE));

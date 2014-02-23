@@ -38,9 +38,9 @@ import javax.net.ssl.TrustManagerFactory;
 
 import javax.net.ssl.X509TrustManager;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -52,35 +52,35 @@ import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.apache.qpid.transport.network.security.ssl.QpidPeersOnlyTrustManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
-public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustStore
+public class TrustStoreAdapter extends AbstractKeyStoreAdapter<TrustStoreAdapter> implements TrustStore<TrustStoreAdapter>
 {
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
         put(PATH, String.class);
         put(PASSWORD, String.class);
-        put(TYPE, String.class);
+        put(TRUST_STORE_TYPE, String.class);
         put(PEERS_ONLY, Boolean.class);
         put(TRUST_MANAGER_FACTORY_ALGORITHM, String.class);
     }});
 
     @SuppressWarnings("serial")
     public static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
-        put(TrustStore.TYPE, DEFAULT_KEYSTORE_TYPE);
+        put(TrustStore.TRUST_STORE_TYPE, DEFAULT_KEYSTORE_TYPE);
         put(TrustStore.PEERS_ONLY, Boolean.FALSE);
         put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
     }});
 
-    private Broker _broker;
+    private Broker<?> _broker;
 
-    public TrustStoreAdapter(UUID id, Broker broker, Map<String, Object> attributes)
+    public TrustStoreAdapter(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
         super(id, broker, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
         _broker = broker;
 
         String trustStorePath = (String) getAttribute(TrustStore.PATH);
         String trustStorePassword = getPassword();
-        String trustStoreType = (String) getAttribute(TrustStore.TYPE);
+        String trustStoreType = (String) getAttribute(TrustStore.TRUST_STORE_TYPE);
         String trustManagerFactoryAlgorithm = (String) getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
 
         validateTrustStoreAttributes(trustStoreType, trustStorePath,
@@ -90,7 +90,7 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustS
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(TrustStore.class);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustS
             // verify that it is not in use
             String storeName = getName();
 
-            Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
+            Collection<Port<?>> ports = new ArrayList<Port<?>>(_broker.getPorts());
             for (Port port : ports)
             {
                 Collection<TrustStore> trustStores = port.getTrustStores();
@@ -180,7 +180,7 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustS
 
         String trustStorePath = (String)merged.get(TrustStore.PATH);
         String trustStorePassword = (String) merged.get(TrustStore.PASSWORD);
-        String trustStoreType = (String)merged.get(TrustStore.TYPE);
+        String trustStoreType = (String)merged.get(TrustStore.TRUST_STORE_TYPE);
         String trustManagerFactoryAlgorithm = (String)merged.get(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
 
         validateTrustStoreAttributes(trustStoreType, trustStorePath,
@@ -211,11 +211,35 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter implements TrustS
         }
     }
 
+    @Override
+    public String getPath()
+    {
+        return (String) getAttribute(PATH);
+    }
+
+    @Override
+    public String getTrustManagerFactoryAlgorithm()
+    {
+        return (String) getAttribute(TRUST_MANAGER_FACTORY_ALGORITHM);
+    }
+
+    @Override
+    public String getTrustStoreType()
+    {
+        return (String) getAttribute(TRUST_STORE_TYPE);
+    }
+
+    @Override
+    public boolean isPeersOnly()
+    {
+        return (Boolean) getAttribute(PEERS_ONLY);
+    }
+
     public TrustManager[] getTrustManagers() throws GeneralSecurityException
     {
         String trustStorePath = (String)getAttribute(TrustStore.PATH);
         String trustStorePassword = getPassword();
-        String trustStoreType = (String)getAttribute(TrustStore.TYPE);
+        String trustStoreType = (String)getAttribute(TrustStore.TRUST_STORE_TYPE);
         String trustManagerFactoryAlgorithm = (String)getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
 
         try

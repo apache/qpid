@@ -25,23 +25,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-@AmqpManagement(
-        attributes = {
-                Exchange.ID,
-                Exchange.NAME,
-                Exchange.STATE,
-                Exchange.DURABLE,
-                Exchange.LIFETIME_POLICY,
-                Exchange.TIME_TO_LIVE,
-                Exchange.CREATED,
-                Exchange.UPDATED,
-                Exchange.ALTERNATE_EXCHANGE,
-                Exchange.TYPE
-        },
-        operations = {}
-)
+@AmqpManagement
 
-public interface Exchange extends ConfiguredObject
+public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
 {
     String BINDING_COUNT = "bindingCount";
     String BYTES_DROPPED = "bytesDropped";
@@ -68,25 +54,11 @@ public interface Exchange extends ConfiguredObject
     String TIME_TO_LIVE                         = "timeToLive";
     String UPDATED                              = "updated";
     String ALTERNATE_EXCHANGE                   = "alternateExchange";
-    String TYPE                                 = "type";
 
     // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(
-                            ID,
-                            NAME,
-                            STATE,
-                            DURABLE,
-                            LIFETIME_POLICY,
-                            TIME_TO_LIVE,
-                            CREATED,
-                            UPDATED,
-                            ALTERNATE_EXCHANGE,
-                            TYPE
-                    ));
 
-    String getExchangeType();
+    @ManagedAttribute
+    Exchange<?> getAlternateExchange();
 
     //children
     Collection<Binding> getBindings();

@@ -101,7 +101,7 @@ define(["dojo/dom",
 
                storeNodes(["name",
                            "path",
-                           "type",
+                           "keyStoreType",
                            "keyManagerFactoryAlgorithm",
                            "certificateAlias",
                            "peersOnly"
@@ -121,7 +121,7 @@ define(["dojo/dom",
            {
               this.name.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
               this.path.innerHTML = entities.encode(String(this.keyStoreData[ "path" ]));
-              this.type.innerHTML = entities.encode(String(this.keyStoreData[ "type" ]));
+              this.keyStoreType.innerHTML = entities.encode(String(this.keyStoreData[ "keyStoreType" ]));
               this.keyManagerFactoryAlgorithm.innerHTML = entities.encode(String(this.keyStoreData[ "keyManagerFactoryAlgorithm" ]));
               this.certificateAlias.innerHTML = this.keyStoreData[ "certificateAlias" ] ? entities.encode(String( this.keyStoreData[ "certificateAlias" ])) : "";
            };

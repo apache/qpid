@@ -33,27 +33,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
-public class PortAdapter extends AbstractAdapter implements Port
+abstract public class PortAdapter<X extends PortAdapter<X>> extends AbstractConfiguredObject<X> implements Port<X>
 {
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
@@ -73,11 +60,11 @@ public class PortAdapter extends AbstractAdapter implements Port
         put(AUTHENTICATION_PROVIDER, String.class);
     }});
 
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private AuthenticationProvider _authenticationProvider;
     private AtomicReference<State> _state;
 
-    public PortAdapter(UUID id, Broker broker, Map<String, Object> attributes, Map<String, Object> defaults, TaskExecutor taskExecutor)
+    public PortAdapter(UUID id, Broker<?> broker, Map<String, Object> attributes, Map<String, Object> defaults, TaskExecutor taskExecutor)
     {
         super(id, defaults, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _broker = broker;
@@ -162,9 +149,9 @@ public class PortAdapter extends AbstractAdapter implements Port
     public Collection<VirtualHostAlias> getVirtualHostBindings()
     {
         List<VirtualHostAlias> aliases = new ArrayList<VirtualHostAlias>();
-        for(VirtualHost vh : _broker.getVirtualHosts())
+        for(VirtualHost<?> vh : _broker.getVirtualHosts())
         {
-            for(VirtualHostAlias alias : vh.getAliases())
+            for(VirtualHostAlias<?> alias : vh.getAliases())
             {
                 if(alias.getPort().equals(this))
                 {
@@ -194,7 +181,7 @@ public class PortAdapter extends AbstractAdapter implements Port
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return _state.get();
     }
@@ -272,7 +259,7 @@ public class PortAdapter extends AbstractAdapter implements Port
         }
         else if(STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if(DURABLE.equals(name))
         {
@@ -300,7 +287,7 @@ public class PortAdapter extends AbstractAdapter implements Port
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(Port.class);
     }
 
     @Override
@@ -465,9 +452,9 @@ public class PortAdapter extends AbstractAdapter implements Port
         String authenticationProviderName = (String)merged.get(AUTHENTICATION_PROVIDER);
         if (authenticationProviderName != null)
         {
-            Collection<AuthenticationProvider> providers = _broker.getAuthenticationProviders();
-            AuthenticationProvider provider = null;
-            for (AuthenticationProvider p : providers)
+            Collection<AuthenticationProvider<?>> providers = _broker.getAuthenticationProviders();
+            AuthenticationProvider<?> provider = null;
+            for (AuthenticationProvider<?> p : providers)
             {
                 if (p.getName().equals(authenticationProviderName))
                 {
@@ -567,4 +554,33 @@ public class PortAdapter extends AbstractAdapter implements Port
         return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", port=" + getPort() + "]";
     }
 
+    @Override
+    public boolean isTcpNoDelay()
+    {
+        return (Boolean)getAttribute(TCP_NO_DELAY);
+    }
+
+    @Override
+    public int getSendBufferSize()
+    {
+        return (Integer)getAttribute(SEND_BUFFER_SIZE);
+    }
+
+    @Override
+    public int getReceiveBufferSize()
+    {
+        return (Integer)getAttribute(RECEIVE_BUFFER_SIZE);
+    }
+
+    @Override
+    public boolean getNeedClientAuth()
+    {
+        return (Boolean)getAttribute(NEED_CLIENT_AUTH);
+    }
+
+    @Override
+    public boolean getWantClientAuth()
+    {
+        return (Boolean)getAttribute(WANT_CLIENT_AUTH);
+    }
 }
