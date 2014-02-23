@@ -544,11 +544,11 @@ public final class ConnectionHelper
             brokerList = "'" + buf.toString() + "'";
         }
         else if (url.contains("@"))
-        { // BrokerURL format
+        { // BrokerURL format as used in the Python tools.
             String[] split = url.split("@");
             url = split[1];
 
-            split = split[0].split("/");
+            split = split[0].split("[/:]"); // Accept both <username>/<password> and <username>:<password>
             username = split[0];
 
             if (split.length == 2)

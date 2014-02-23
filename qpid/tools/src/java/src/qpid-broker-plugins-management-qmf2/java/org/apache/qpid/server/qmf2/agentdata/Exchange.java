@@ -134,6 +134,10 @@ public class Exchange extends QmfAgentData
             setCompareKey(_name);
         }
 
+        // In the Java Broker LifetimePolicy may be PERMANENT, DELETE_ON_CONNECTION_CLOSE,
+        // DELETE_ON_SESSION_END, DELETE_ON_NO_OUTBOUND_LINKS, DELETE_ON_NO_LINKS, IN_USE
+        // We map these to a boolean value to be consistent with the C++ Broker QMF value.
+        // TODO The C++ and Java Brokers should really return consistent information.
         LifetimePolicy lifetimePolicy = (LifetimePolicy)_exchange.getAttribute("lifetimePolicy");
         boolean autoDelete = (lifetimePolicy != LifetimePolicy.PERMANENT) ? true : false;
 
