@@ -18,10 +18,22 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.model.adapter;
 
-package org.apache.qpid.server.model;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
 
-abstract public class Event<T extends EventType>
+import java.util.Map;
+import java.util.UUID;
+
+public class NonAmqpPortAdapter extends PortAdapter<NonAmqpPortAdapter>
 {
-    abstract public T getEventType();
+    public NonAmqpPortAdapter(final UUID id,
+                              final Broker<?> broker,
+                              final Map<String, Object> attributes,
+                              final Map<String, Object> defaults,
+                              final TaskExecutor taskExecutor)
+    {
+        super(id, broker, attributes, defaults, taskExecutor);
+    }
 }

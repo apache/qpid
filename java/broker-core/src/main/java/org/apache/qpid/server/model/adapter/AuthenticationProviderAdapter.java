@@ -35,20 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.login.AccountNotFoundException;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.IntegrityViolationException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.User;
-import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
@@ -63,7 +50,9 @@ import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticat
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.MapValueConverter;
 
-public abstract class AuthenticationProviderAdapter<T extends AuthenticationManager> extends AbstractAdapter implements AuthenticationProvider
+public abstract class AuthenticationProviderAdapter<X extends AuthenticationProvider<X>, T extends AuthenticationManager> extends
+                                                                                                                          AbstractConfiguredObject<X>
+        implements AuthenticationProvider<X>
 {
     private static final Logger LOGGER = Logger.getLogger(AuthenticationProviderAdapter.class);
 
@@ -124,7 +113,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return _state.get();
     }
@@ -200,7 +189,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         }
         else if(STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if(TIME_TO_LIVE.equals(name))
         {
@@ -250,7 +239,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 _authManager.onDelete();
                 if (_preferencesProvider != null)
                 {
-                    _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.DELETED);
+                    _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.DELETED);
                 }
                 return true;
             }
@@ -268,7 +257,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                     _authManager.initialise();
                     if (_preferencesProvider != null)
                     {
-                        _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.ACTIVE);
+                        _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.ACTIVE);
                     }
                     return true;
                 }
@@ -304,7 +293,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                 _authManager.close();
                 if (_preferencesProvider != null)
                 {
-                    _preferencesProvider.setDesiredState(_preferencesProvider.getActualState(), State.STOPPED);
+                    _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.STOPPED);
                 }
                 return true;
             }
@@ -350,7 +339,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
 
     protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
     {
-        List<String> attributesNames = new ArrayList<String>(AVAILABLE_ATTRIBUTES);
+        List<String> attributesNames = new ArrayList<String>(Attribute.getAttributeNames(AuthenticationProvider.class));
         if (factoryAttributes != null)
         {
             attributesNames.addAll(factoryAttributes);
@@ -449,7 +438,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
         throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
     }
 
-    public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<AuthenticationManager>
+    public static class SimpleAuthenticationProviderAdapter extends AuthenticationProviderAdapter<SimpleAuthenticationProviderAdapter,AuthenticationManager>
     {
 
         public SimpleAuthenticationProviderAdapter(
@@ -460,8 +449,8 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
     }
 
     public static class PrincipalDatabaseAuthenticationManagerAdapter
-            extends AuthenticationProviderAdapter<PrincipalDatabaseAuthenticationManager>
-            implements PasswordCredentialManagingAuthenticationProvider
+            extends AuthenticationProviderAdapter<PrincipalDatabaseAuthenticationManagerAdapter, PrincipalDatabaseAuthenticationManager>
+            implements PasswordCredentialManagingAuthenticationProvider<PrincipalDatabaseAuthenticationManagerAdapter>
     {
         public PrincipalDatabaseAuthenticationManagerAdapter(
                 UUID id, Broker broker, PrincipalDatabaseAuthenticationManager authManager, Map<String, Object> attributes, Collection<String> attributeNames)
@@ -592,7 +581,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             super.childRemoved(child);
         }
 
-        private class PrincipalAdapter extends AbstractAdapter implements User
+        private class PrincipalAdapter extends AbstractConfiguredObject<PrincipalAdapter> implements User<PrincipalAdapter>
         {
             private final Principal _user;
 
@@ -602,6 +591,12 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
                         PrincipalDatabaseAuthenticationManagerAdapter.this.getTaskExecutor());
                 _user = user;
 
+            }
+
+            @Override
+            public String getPassword()
+            {
+                return (String)getAttribute(PASSWORD);
             }
 
             @Override
@@ -631,7 +626,7 @@ public abstract class AuthenticationProviderAdapter<T extends AuthenticationMana
             }
 
             @Override
-            public State getActualState()
+            public State getState()
             {
                 return State.ACTIVE;
             }

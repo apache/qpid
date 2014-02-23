@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-public interface Plugin extends ConfiguredObject
+public interface Plugin<X extends Plugin<X>> extends ConfiguredObject<X>
 {
     //Hack, using it for the class name only for consistency with the other things.
     String CREATED                              = "created";
@@ -35,16 +35,7 @@ public interface Plugin extends ConfiguredObject
     String UPDATED                              = "updated";
 
     // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(
-                            ID,
-                            NAME,
-                            STATE,
-                            DURABLE,
-                            LIFETIME_POLICY,
-                            TIME_TO_LIVE,
-                            CREATED,
-                            UPDATED
-                                 ));
+
+    @ManagedAttribute
+    String getPluginType();
 }

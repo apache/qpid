@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
@@ -161,8 +163,13 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
 
     public void assertProviderCommonAttributes(Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, PreferencesProvider.AVAILABLE_ATTRIBUTES, PreferencesProvider.CREATED,
-                PreferencesProvider.UPDATED, PreferencesProvider.TIME_TO_LIVE);
+        Asserts.assertAttributesPresent(provider,
+                                        Attribute.getAttributeNames(PreferencesProvider.class),
+                                        ConfiguredObject.CREATED_BY,
+                                        ConfiguredObject.CREATED_TIME,
+                                        ConfiguredObject.LAST_UPDATED_BY,
+                                        ConfiguredObject.LAST_UPDATED_TIME,
+                                        ConfiguredObject.DESCRIPTION, PreferencesProvider.TIME_TO_LIVE);
         assertEquals("Unexpected value of provider attribute " + PreferencesProvider.STATE, State.ACTIVE.name(),
                 provider.get(PreferencesProvider.STATE));
         assertEquals("Unexpected value of provider attribute " + PreferencesProvider.LIFETIME_POLICY,

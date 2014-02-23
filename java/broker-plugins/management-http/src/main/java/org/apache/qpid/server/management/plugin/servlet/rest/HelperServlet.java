@@ -58,7 +58,7 @@ public class HelperServlet extends AbstractServlet
                 new ListAuthenticationProviderAttributes(),
                 new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, "ListMessageStoreTypes"),
                 new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_TYPES, "ListVirtualHostTypes"),
-                new ListBrokerAttribute(Broker.SUPPORTED_PREFERENCES_PROVIDERS_TYPES, "ListPreferencesProvidersTypes"),
+                new ListBrokerAttribute(Broker.SUPPORTED_PREFERENCES_PROVIDER_TYPES, "ListPreferencesProvidersTypes"),
                 new ListBrokerAttribute(Broker.PRODUCT_VERSION, "version"),
                 new ListGroupProviderAttributes(),
                 new ListAccessControlProviderAttributes(),

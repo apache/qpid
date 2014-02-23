@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-public interface GroupProvider extends ConfiguredObject
+public interface GroupProvider<X extends GroupProvider<X>> extends ConfiguredObject<X>
 {
     public static final String DESCRIPTION = "description";
     public static final String STATE = "state";

@@ -50,7 +50,7 @@ public abstract class AbstractServlet extends HttpServlet
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractServlet.class);
 
-    private Broker _broker;
+    private Broker<?> _broker;
     private HttpManagementConfiguration _managementConfiguration;
 
     protected AbstractServlet()
@@ -240,7 +240,7 @@ public abstract class AbstractServlet extends HttpServlet
         return subject;
     }
 
-    protected Broker getBroker()
+    protected Broker<?> getBroker()
     {
         return _broker;
     }

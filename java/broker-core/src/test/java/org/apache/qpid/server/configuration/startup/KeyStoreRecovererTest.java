@@ -109,7 +109,7 @@ public class KeyStoreRecovererTest extends TestCase
         attributes.put(KeyStore.NAME, getName());
         attributes.put(KeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(KeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        attributes.put(KeyStore.TYPE, "jks");
+        attributes.put(KeyStore.KEY_STORE_TYPE, "jks");
         attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
         attributes.put(KeyStore.CERTIFICATE_ALIAS, "java-broker");
         return attributes;

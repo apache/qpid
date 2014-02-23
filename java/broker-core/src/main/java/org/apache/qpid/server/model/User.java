@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public interface User extends ConfiguredObject
+public interface User<X extends User<X>> extends ConfiguredObject<X>
 {
     String CREATED         = "created";
     String DURABLE         = "durable";
@@ -50,6 +50,10 @@ public interface User extends ConfiguredObject
                            UPDATED,
                            PASSWORD
                    ));
+
+
+    @ManagedAttribute
+    String getPassword();
 
     public void setPassword(String password);
 

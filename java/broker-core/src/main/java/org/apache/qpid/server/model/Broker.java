@@ -32,7 +32,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public interface Broker extends ConfiguredObject
+public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
 {
 
     String BUILD_VERSION = "buildVersion";
@@ -45,7 +45,7 @@ public interface Broker extends ConfiguredObject
     String SUPPORTED_VIRTUALHOST_TYPES = "supportedVirtualHostTypes";
     String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
-    String SUPPORTED_PREFERENCES_PROVIDERS_TYPES = "supportedPreferencesProviderTypes";
+    String SUPPORTED_PREFERENCES_PROVIDER_TYPES = "supportedPreferencesProviderTypes";
     String CREATED = "created";
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
@@ -80,63 +80,116 @@ public interface Broker extends ConfiguredObject
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "virtualhost.storeTransactionOpenTimeoutClose";
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "virtualhost.storeTransactionOpenTimeoutWarn";
 
-    // Attributes
-    Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                Arrays.asList(BUILD_VERSION,
-                              BYTES_RETAINED,
-                              OPERATING_SYSTEM,
-                              PLATFORM,
-                              PROCESS_PID,
-                              PRODUCT_VERSION,
-                              SUPPORTED_BROKER_STORE_TYPES,
-                              SUPPORTED_VIRTUALHOST_STORE_TYPES,
-                              SUPPORTED_AUTHENTICATION_PROVIDERS,
-                              SUPPORTED_PREFERENCES_PROVIDERS_TYPES,
-                              CREATED,
-                              DURABLE,
-                              ID,
-                              LIFETIME_POLICY,
-                              NAME,
-                              STATE,
-                              TIME_TO_LIVE,
-                              UPDATED,
-                              DEFAULT_VIRTUAL_HOST,
-                              QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
-                              QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                              QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                              QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE,
-                              QUEUE_ALERT_REPEAT_GAP,
-                              QUEUE_FLOW_CONTROL_SIZE_BYTES,
-                              QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES,
-                              QUEUE_MAXIMUM_DELIVERY_ATTEMPTS,
-                              QUEUE_DEAD_LETTER_QUEUE_ENABLED,
-                              VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD,
-                              CONNECTION_SESSION_COUNT_LIMIT,
-                              CONNECTION_HEART_BEAT_DELAY,
-                              CONNECTION_CLOSE_WHEN_NO_ROUTE,
-                              STATISTICS_REPORTING_PERIOD,
-                              STATISTICS_REPORTING_RESET_ENABLED,
-                              STORE_TYPE,
-                              STORE_VERSION,
-                              STORE_PATH,
-                              MODEL_VERSION,
-                              VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
-                              VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
-                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
-                              VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN
-                              ));
+    @ManagedAttribute
+    String getBuildVersion();
+
+    @ManagedAttribute
+    String getOperatingSystem();
+
+    @ManagedAttribute
+    String getPlatform();
+
+    @ManagedAttribute
+    String getProcessPid();
+
+    @ManagedAttribute
+    String getProductVersion();
+
+    @ManagedAttribute
+    Collection<String> getSupportedBrokerStoreTypes();
+
+    @ManagedAttribute
+    Collection<String> getSupportedVirtualHostStoreTypes();
+
+    @ManagedAttribute
+    Collection<String> getSupportedAuthenticationProviders();
+
+    @ManagedAttribute
+    Collection<String> getSupportedPreferencesProviderTypes();
+
+    @ManagedAttribute
+    String getDefaultVirtualHost();
+
+    @ManagedAttribute
+    int getQueue_alertThresholdMessageAge();
+
+    @ManagedAttribute
+    long getQueue_alertThresholdQueueDepthMessages();
+
+    @ManagedAttribute
+    long getQueue_alertThresholdQueueDepthBytes();
+
+    @ManagedAttribute
+    long getQueue_alertThresholdMessageSize();
+
+    @ManagedAttribute
+    long getQueue_alertRepeatGap();
+
+    @ManagedAttribute
+    long getQueue_flowControlSizeBytes();
+
+    @ManagedAttribute
+    long getQueue_flowResumeSizeBytes();
+
+    @ManagedAttribute
+    int getQueue_maximumDeliveryAttempts();
+
+    @ManagedAttribute
+    boolean isQueue_deadLetterQueueEnabled();
+
+    @ManagedAttribute
+    long getVirtualhost_housekeepingCheckPeriod();
+
+    @ManagedAttribute
+    int getConnection_sessionCountLimit();
+
+    @ManagedAttribute
+    int getConnection_heartBeatDelay();
+
+    @ManagedAttribute
+    boolean getConnection_closeWhenNoRoute();
+
+    @ManagedAttribute
+    int getStatisticsReportingPeriod();
+
+    @ManagedAttribute
+    boolean getStatisticsReportingResetEnabled();
+
+    @ManagedAttribute
+    String getStoreType();
+
+    @ManagedAttribute
+    int getStoreVersion();
+
+    @ManagedAttribute
+    String getStorePath();
+
+    @ManagedAttribute
+    String getModelVersion();
+
+    @ManagedAttribute
+    long getVirtualhost_storeTransactionIdleTimeoutClose();
+
+    @ManagedAttribute
+    long getVirtualhost_storeTransactionIdleTimeoutWarn();
+
+    @ManagedAttribute
+    long getVirtualhost_storeTransactionOpenTimeoutClose();
+
+    @ManagedAttribute
+    long getVirtualhost_storeTransactionOpenTimeoutWarn();
+
 
     //children
-    Collection < VirtualHost > getVirtualHosts();
+    Collection < VirtualHost<?> > getVirtualHosts();
 
-    Collection<Port> getPorts();
+    Collection<Port<?>> getPorts();
 
-    Collection<AuthenticationProvider> getAuthenticationProviders();
+    Collection<AuthenticationProvider<?>> getAuthenticationProviders();
 
-    Collection<AccessControlProvider> getAccessControlProviders();
+    Collection<AccessControlProvider<?>> getAccessControlProviders();
 
-    Collection<GroupProvider> getGroupProviders();
+    Collection<GroupProvider<?>> getGroupProviders();
 
     /**
      * A temporary hack to expose root message logger via broker instance.
@@ -155,25 +208,25 @@ public interface Broker extends ConfiguredObject
      */
     LogRecorder getLogRecorder();
 
-    AuthenticationProvider findAuthenticationProviderByName(String authenticationProviderName);
+    AuthenticationProvider<?> findAuthenticationProviderByName(String authenticationProviderName);
 
-    VirtualHost findVirtualHostByName(String name);
+    VirtualHost<?> findVirtualHostByName(String name);
 
-    KeyStore findKeyStoreByName(String name);
+    KeyStore<?> findKeyStoreByName(String name);
 
-    TrustStore findTrustStoreByName(String name);
+    TrustStore<?> findTrustStoreByName(String name);
 
     /**
      * Get the SubjectCreator for the given socket address.
      * TODO: move the authentication related functionality into host aliases and AuthenticationProviders
      *
-     * @param address The (listening) socket address for which the AuthenticationManager is required
+     * @param localAddress The (listening) socket address for which the AuthenticationManager is required
      */
     SubjectCreator getSubjectCreator(SocketAddress localAddress);
 
-    Collection<KeyStore> getKeyStores();
+    Collection<KeyStore<?>> getKeyStores();
 
-    Collection<TrustStore> getTrustStores();
+    Collection<TrustStore<?>> getTrustStores();
 
     /*
      * TODO: Remove this method. Eventually the broker will become a registry.
@@ -184,5 +237,5 @@ public interface Broker extends ConfiguredObject
 
     boolean isManagementMode();
 
-    AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
+    AuthenticationProvider<?> getAuthenticationProvider(SocketAddress localAddress);
 }

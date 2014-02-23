@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-public interface Consumer extends ConfiguredObject
+public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
 {
     public String DISTRIBUTION_MODE = "distributionMode";
     public String EXCLUSIVE = "exclusive";
@@ -38,21 +38,22 @@ public interface Consumer extends ConfiguredObject
     public String TIME_TO_LIVE = "timeToLive";
     public String UPDATED = "updated";
 
-    public Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableCollection(
-                    Arrays.asList(ID,
-                                  NAME,
-                                  STATE,
-                                  DURABLE,
-                                  LIFETIME_POLICY,
-                                  TIME_TO_LIVE,
-                                  CREATED,
-                                  UPDATED,
-                                  DISTRIBUTION_MODE,
-                                  SETTLEMENT_MODE,
-                                  EXCLUSIVE,
-                                  NO_LOCAL,
-                                  SELECTOR));
+    @ManagedAttribute
+    String getDistributionMode();
+
+    @ManagedAttribute
+    String getSettlementMode();
+
+    @ManagedAttribute
+    boolean isExclusive();
+
+    @ManagedAttribute
+    boolean isNoLocal();
+
+    @ManagedAttribute
+    String getSelector();
+
+
 
     public String BYTES_OUT = "bytesOut";
     public String MESSAGES_OUT = "messagesOut";

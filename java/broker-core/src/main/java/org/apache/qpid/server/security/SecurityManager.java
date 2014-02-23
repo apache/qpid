@@ -587,7 +587,7 @@ public class SecurityManager implements ConfigurationChangeListener
                         Collection<AccessControlProvider> providers = _broker.getAccessControlProviders();
                         for(AccessControlProvider p : providers)
                         {
-                            if(p == object || p.getActualState() != State.ACTIVE)
+                            if(p == object || p.getState() != State.ACTIVE)
                             {
                                 //we don't count ourself as another
                                 continue;

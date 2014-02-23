@@ -36,7 +36,7 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 
-public class VirtualHostAliasAdapter  extends AbstractAdapter implements VirtualHostAlias
+public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHostAliasAdapter> implements VirtualHostAlias<VirtualHostAliasAdapter>
 {
     private VirtualHostAdapter _vhost;
     private Port _port;
@@ -79,7 +79,7 @@ public class VirtualHostAliasAdapter  extends AbstractAdapter implements Virtual
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return State.ACTIVE;  // TODO - Implement
     }

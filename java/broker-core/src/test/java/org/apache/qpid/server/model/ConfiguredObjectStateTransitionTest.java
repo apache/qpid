@@ -180,7 +180,7 @@ public class ConfiguredObjectStateTransitionTest extends QpidTestCase
 
     private void assertInvalidStateTransition(ConfiguredObject object, State initialState, State... invalidStates)
     {
-        assertEquals("Unexpected state", initialState, object.getActualState());
+        assertEquals("Unexpected state", initialState, object.getState());
         for (State state : invalidStates)
         {
             try
@@ -192,19 +192,19 @@ public class ConfiguredObjectStateTransitionTest extends QpidTestCase
                 // expected
             }
             assertEquals("Transition from state " + initialState + " into state " + state + " did occur", initialState,
-                    object.getActualState());
+                    object.getState());
         }
     }
 
     private void assertValidStateTransition(ConfiguredObject object, State initialState, State... validStateSequence)
     {
-        assertEquals("Unexpected state", initialState, object.getActualState());
+        assertEquals("Unexpected state", initialState, object.getState());
         State currentState = initialState;
         for (State state : validStateSequence)
         {
             object.setDesiredState(currentState, state);
             assertEquals("Transition from state " + currentState + " into state " + state + " did not occur", state,
-                    object.getActualState());
+                    object.getState());
             currentState = state;
         }
     }

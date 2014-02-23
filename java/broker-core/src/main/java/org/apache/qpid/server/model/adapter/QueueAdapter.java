@@ -39,7 +39,7 @@ import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.MapValueConverter;
 
-final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter implements Queue,
+final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractConfiguredObject<QueueAdapter<Q>> implements Queue<QueueAdapter<Q>>,
                                                             MessageSource.ConsumerRegistrationListener<Q>,
                                                             AMQQueue.NotificationListener
 {
@@ -135,6 +135,124 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         }
     }
 
+    @Override
+    public String getQueueType()
+    {
+        return (String) getAttribute(QUEUE_TYPE);
+    }
+
+    @Override
+    public Exchange getAlternateExchange()
+    {
+        org.apache.qpid.server.exchange.Exchange alternateExchange = _queue.getAlternateExchange();
+        return alternateExchange == null ? null :
+                ConfiguredObjectFinder.findConfiguredObjectByName(_vhost.getExchanges(),
+                                                                  alternateExchange.getName());
+    }
+
+    @Override
+    public ExclusivityPolicy getExclusive()
+    {
+        return (ExclusivityPolicy) _queue.getAttribute(EXCLUSIVE);
+    }
+
+    @Override
+    public String getOwner()
+    {
+        return _queue.getOwner();
+    }
+
+    @Override
+    public boolean getNoLocal()
+    {
+        // TODO
+        return false;
+    }
+
+    @Override
+    public String getLvqKey()
+    {
+        return (String) _queue.getAttribute(LVQ_KEY);
+    }
+
+    @Override
+    public String getSortKey()
+    {
+        return (String) _queue.getAttribute(SORT_KEY);
+    }
+
+    @Override
+    public String getMessageGroupKey()
+    {
+        return (String) _queue.getAttribute(MESSAGE_GROUP_KEY);
+    }
+
+    @Override
+    public int getMessageGroupSharedGroups()
+    {
+        return (Integer) _queue.getAttribute(MESSAGE_GROUP_SHARED_GROUPS);
+    }
+
+    @Override
+    public int getMaximumDeliveryAttempts()
+    {
+        return _queue.getMaximumDeliveryCount();
+    }
+
+    @Override
+    public long getQueueFlowControlSizeBytes()
+    {
+        return _queue.getCapacity();
+    }
+
+    @Override
+    public long getQueueFlowResumeSizeBytes()
+    {
+        return _queue.getFlowResumeCapacity();
+    }
+
+    @Override
+    public boolean isQueueFlowStopped()
+    {
+        return false;
+    }
+
+    @Override
+    public long getAlertThresholdMessageAge()
+    {
+        return _queue.getMaximumMessageAge();
+    }
+
+    @Override
+    public long getAlertThresholdMessageSize()
+    {
+        return _queue.getMaximumMessageSize();
+    }
+
+    @Override
+    public long getAlertThresholdQueueDepthBytes()
+    {
+        return _queue.getMaximumQueueDepth();
+    }
+
+    @Override
+    public long getAlertThresholdQueueDepthMessages()
+    {
+        return _queue.getMaximumMessageCount();
+    }
+
+    @Override
+    public long getAlertRepeatGap()
+    {
+        return _queue.getMinimumAlertRepeatGap();
+    }
+
+    @Override
+    public int getPriorities()
+    {
+        return (Integer) _queue.getAttribute(PRIORITIES);
+    }
+
     public Collection<org.apache.qpid.server.model.Binding> getBindings()
     {
         synchronized (_bindingAdapters)
@@ -173,7 +291,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
         return null;  //TODO
     }
 
-    public State getActualState()
+    public State getState()
     {
         return null;  //TODO
     }
@@ -215,7 +333,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Queue.AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(Queue.class);
     }
 
     @Override
@@ -451,10 +569,6 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
             }
             return "standard";
         }
-        else if(CREATED.equals(name))
-        {
-            // TODO
-        }
         else if(DURABLE.equals(name))
         {
             return _queue.isDurable();
@@ -476,10 +590,6 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractAdapter impl
             return State.ACTIVE; // TODO
         }
         else if(TIME_TO_LIVE.equals(name))
-        {
-            // TODO
-        }
-        else if(UPDATED.equals(name))
         {
             // TODO
         }

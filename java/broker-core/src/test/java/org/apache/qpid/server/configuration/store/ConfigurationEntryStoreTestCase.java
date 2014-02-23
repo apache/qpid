@@ -286,7 +286,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(TrustStore.NAME, getName());
         attributes.put(TrustStore.PATH, "/path/to/truststore");
         attributes.put(TrustStore.PASSWORD, "my-secret-password");
-        attributes.put(TrustStore.TYPE, "NON-JKS");
+        attributes.put(TrustStore.TRUST_STORE_TYPE, "NON-JKS");
         attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(TrustStore.DESCRIPTION, "Description");
 
@@ -309,7 +309,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(KeyStore.NAME, getName());
         attributes.put(KeyStore.PATH, "/path/to/truststore");
         attributes.put(KeyStore.PASSWORD, "my-secret-password");
-        attributes.put(KeyStore.TYPE, "NON-JKS");
+        attributes.put(KeyStore.KEY_STORE_TYPE, "NON-JKS");
         attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(KeyStore.DESCRIPTION, "Description");
         attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");
@@ -382,7 +382,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(KeyStore.NAME, getName());
         attributes.put(KeyStore.PATH, "/path/to/truststore");
         attributes.put(KeyStore.PASSWORD, "my-secret-password");
-        attributes.put(KeyStore.TYPE, "NON-JKS");
+        attributes.put(KeyStore.KEY_STORE_TYPE, "NON-JKS");
         attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(KeyStore.DESCRIPTION, "Description");
         attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");

@@ -40,13 +40,13 @@ class TCPandSSLTransport implements AcceptingTransport
     private Set<Transport> _transports;
     private SSLContext _sslContext;
     private InetSocketAddress _bindingSocketAddress;
-    private Port _port;
+    private Port<?> _port;
     private Set<AmqpProtocolVersion> _supported;
     private AmqpProtocolVersion _defaultSupportedProtocolReply;
 
     TCPandSSLTransport(final Set<Transport> transports,
                        final SSLContext sslContext,
-                       final Port port,
+                       final Port<?> port,
                        final Set<AmqpProtocolVersion> supported,
                        final AmqpProtocolVersion defaultSupportedProtocolReply)
     {

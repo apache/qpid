@@ -28,18 +28,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import java.util.Map;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Publisher;
-import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.UUIDGenerator;
+
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
-final class SessionAdapter extends AbstractAdapter implements Session
+final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> implements Session<SessionAdapter>
 {
     // Attributes
 
@@ -53,6 +48,18 @@ final class SessionAdapter extends AbstractAdapter implements Session
         super(UUIDGenerator.generateRandomUUID(), taskExecutor);
         _session = session;
         _statistics = new SessionStatistics();
+    }
+
+    @Override
+    public int getChannelId()
+    {
+        return _session.getChannelId();
+    }
+
+    @Override
+    public boolean isProducerFlowBlocked()
+    {
+        return _session.getBlocking();
     }
 
     public Collection<org.apache.qpid.server.model.Consumer> getConsumers()
@@ -79,7 +86,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
         return null;  //TODO
     }
 
-    public State getActualState()
+    public State getState()
     {
         return null;  //TODO
     }
@@ -151,10 +158,7 @@ final class SessionAdapter extends AbstractAdapter implements Session
     @Override
     public Collection<String> getAttributeNames()
     {
-        Collection<String> names = new HashSet<String>(super.getAttributeNames());
-        names.addAll(AVAILABLE_ATTRIBUTES);
-
-        return Collections.unmodifiableCollection(names);
+        return Attribute.getAttributeNames(Session.class);
     }
 
     @Override

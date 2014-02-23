@@ -141,7 +141,7 @@ public class PortFactory
             }
 
             defaults.put(Port.NAME, portValue + "-" + protocol.name());
-            port = new PortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
+            port = new NonAmqpPortAdapter(id, broker, attributes, defaults, broker.getTaskExecutor());
 
             boolean rmiPort = port.getProtocols().contains(Protocol.RMI);
             if (rmiPort && port.getTransports().contains(Transport.SSL))

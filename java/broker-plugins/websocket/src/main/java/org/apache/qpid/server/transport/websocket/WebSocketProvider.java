@@ -58,7 +58,7 @@ class WebSocketProvider implements AcceptingTransport
     public static final String AMQP_WEBSOCKET_SUBPROTOCOL = "AMQPWSB10";
     private final Transport _transport;
     private final SSLContext _sslContext;
-    private final Port _port;
+    private final Port<?> _port;
     private final Set<AmqpProtocolVersion> _supported;
     private final AmqpProtocolVersion _defaultSupportedProtocolReply;
     private final ProtocolEngineFactory _factory;
@@ -66,7 +66,7 @@ class WebSocketProvider implements AcceptingTransport
 
     WebSocketProvider(final Transport transport,
                       final SSLContext sslContext,
-                      final Port port,
+                      final Port<?> port,
                       final Set<AmqpProtocolVersion> supported,
                       final AmqpProtocolVersion defaultSupportedProtocolReply)
     {

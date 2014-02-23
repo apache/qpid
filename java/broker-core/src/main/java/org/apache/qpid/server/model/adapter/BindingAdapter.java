@@ -26,16 +26,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.*;
 
-final class BindingAdapter extends AbstractAdapter implements Binding
+final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> implements Binding<BindingAdapter>
 {
     private final org.apache.qpid.server.binding.Binding _binding;
     private Statistics _statistics = NoStatistics.getInstance();
@@ -76,7 +69,7 @@ final class BindingAdapter extends AbstractAdapter implements Binding
         return null;  //TODO
     }
 
-    public State getActualState()
+    public State getState()
     {
         return null;  //TODO
     }
@@ -195,7 +188,7 @@ final class BindingAdapter extends AbstractAdapter implements Binding
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Binding.AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(Binding.class);
     }
 
     @Override

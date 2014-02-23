@@ -258,7 +258,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         assertEquals("unexpected (dummy) password of default systests key store",
                 AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK, keystore.get(KeyStore.PASSWORD));
         assertEquals("unexpected type of default systests key store",
-                java.security.KeyStore.getDefaultType(), keystore.get(KeyStore.TYPE));
+                java.security.KeyStore.getDefaultType(), keystore.get(KeyStore.KEY_STORE_TYPE));
         assertEquals("unexpected certificateAlias value",
                 certAlias, keystore.get(KeyStore.CERTIFICATE_ALIAS));
         if(certAlias == null)

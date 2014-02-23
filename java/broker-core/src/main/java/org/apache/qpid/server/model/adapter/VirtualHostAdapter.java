@@ -45,20 +45,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.IntegrityViolationException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.QueueType;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -73,7 +60,6 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
@@ -81,7 +67,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostListener;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 
-public final class VirtualHostAdapter extends AbstractAdapter implements VirtualHost, VirtualHostListener
+public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHostAdapter> implements VirtualHost<VirtualHostAdapter>, VirtualHostListener
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
 
@@ -106,11 +92,11 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     private final Map<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter> _exchangeAdapters =
             new HashMap<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter>();
     private StatisticsAdapter _statistics;
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private StatisticsGatherer _brokerStatisticsGatherer;
 
-    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
+    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker<?> broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
         super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
         _broker = broker;
@@ -460,7 +446,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         if (_virtualHost == null)
         {
@@ -817,7 +803,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
         else if(STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if(DURABLE.equals(name))
         {
@@ -931,7 +917,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(VirtualHost.class);
     }
 
     private void checkVHostStateIsActive()
@@ -943,6 +929,137 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
         }
     }
 
+    @Override
+    public Collection<String> getSupportedExchangeTypes()
+    {
+        List<String> types = new ArrayList<String>();
+        for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeTypes())
+        {
+            types.add(type.getType());
+        }
+        return Collections.unmodifiableCollection(types);
+    }
+
+    @Override
+    public Collection<String> getSupportedQueueTypes()
+    {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public boolean isQueue_deadLetterQueueEnabled()
+    {
+        return _virtualHost.getConfiguration().isDeadLetterQueueEnabled();
+    }
+
+    @Override
+    public long getHousekeepingCheckPeriod()
+    {
+        return _virtualHost.getConfiguration().getHousekeepingCheckPeriod();
+    }
+
+    @Override
+    public int getQueue_maximumDeliveryAttempts()
+    {
+        return _virtualHost.getConfiguration().getMaxDeliveryCount();
+    }
+
+    @Override
+    public long getQueue_flowControlSizeBytes()
+    {
+        return _virtualHost.getConfiguration().getCapacity();
+    }
+
+    @Override
+    public long getQueue_flowResumeSizeBytes()
+    {
+        return _virtualHost.getConfiguration().getFlowResumeCapacity();
+    }
+
+    @Override
+    public String getConfigStoreType()
+    {
+        return (String) getAttribute(CONFIG_STORE_TYPE);
+    }
+
+    @Override
+    public String getConfigStorePath()
+    {
+        return (String) getAttribute(CONFIG_PATH);
+    }
+
+    @Override
+    public String getStoreType()
+    {
+        return _virtualHost.getMessageStore().getStoreType();
+    }
+
+    @Override
+    public String getStorePath()
+    {
+        return _virtualHost.getMessageStore().getStoreLocation();
+    }
+
+    @Override
+    public long getStoreTransactionIdleTimeoutClose()
+    {
+        return _virtualHost.getConfiguration().getTransactionTimeoutIdleClose();
+    }
+
+    @Override
+    public long getStoreTransactionIdleTimeoutWarn()
+    {
+        return _virtualHost.getConfiguration().getTransactionTimeoutIdleWarn();
+    }
+
+    @Override
+    public long getStoreTransactionOpenTimeoutClose()
+    {
+        return _virtualHost.getConfiguration().getTransactionTimeoutOpenClose();
+    }
+
+    @Override
+    public long getStoreTransactionOpenTimeoutWarn()
+    {
+        return _virtualHost.getConfiguration().getTransactionTimeoutOpenWarn();
+    }
+
+    @Override
+    public long getQueue_alertRepeatGap()
+    {
+        return _virtualHost.getConfiguration().getMinimumAlertRepeatGap();
+    }
+
+    @Override
+    public long getQueue_alertThresholdMessageAge()
+    {
+        return _virtualHost.getConfiguration().getMaximumMessageAge();
+    }
+
+    @Override
+    public long getQueue_alertThresholdMessageSize()
+    {
+        return _virtualHost.getConfiguration().getMaximumMessageSize();
+    }
+
+    @Override
+    public long getQueue_alertThresholdQueueDepthBytes()
+    {
+        return _virtualHost.getConfiguration().getMaximumQueueDepth();
+    }
+
+    @Override
+    public long getQueue_alertThresholdQueueDepthMessages()
+    {
+        return _virtualHost.getConfiguration().getMaximumMessageCount();
+    }
+
+    @Override
+    public String getConfigPath()
+    {
+        return (String) getAttribute(CONFIG_PATH);
+    }
 
     private static class VirtualHostStatisticsAdapter extends StatisticsAdapter
     {
@@ -1058,7 +1175,7 @@ public final class VirtualHostAdapter extends AbstractAdapter implements Virtual
 
                 _virtualHost = null;
             }
-            setAttribute(VirtualHost.STATE, getActualState(), State.DELETED);
+            setAttribute(VirtualHost.STATE, getState(), State.DELETED);
             return true;
         }
         return false;

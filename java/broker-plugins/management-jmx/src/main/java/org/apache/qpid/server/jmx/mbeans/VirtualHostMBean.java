@@ -45,7 +45,7 @@ public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtual
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostMBean.class);
 
-    private final VirtualHost _virtualHost;
+    private final VirtualHost<?> _virtualHost;
 
     private final Map<ConfiguredObject, AMQManagedObject> _children =
             new HashMap<ConfiguredObject, AMQManagedObject>();

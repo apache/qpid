@@ -29,6 +29,8 @@ import java.util.Properties;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.Attribute;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -320,9 +322,14 @@ public class GroupProviderRestTest extends QpidRestTestCase
 
     private void assertProvider(String name, String type, Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, GroupProvider.AVAILABLE_ATTRIBUTES,
-                GroupProvider.CREATED, GroupProvider.UPDATED, GroupProvider.DESCRIPTION,
-                GroupProvider.TIME_TO_LIVE);
+        Asserts.assertAttributesPresent(provider, Attribute.getAttributeNames(GroupProvider.class),
+                GroupProvider.TIME_TO_LIVE,
+                ConfiguredObject.TYPE,
+                ConfiguredObject.CREATED_BY,
+                ConfiguredObject.CREATED_TIME,
+                ConfiguredObject.LAST_UPDATED_BY,
+                ConfiguredObject.LAST_UPDATED_TIME,
+                ConfiguredObject.DESCRIPTION);
         assertEquals("Unexpected value of provider attribute " + GroupProvider.STATE, State.ACTIVE.name(),
                 provider.get(GroupProvider.STATE));
         assertEquals("Unexpected value of provider attribute " + GroupProvider.LIFETIME_POLICY,

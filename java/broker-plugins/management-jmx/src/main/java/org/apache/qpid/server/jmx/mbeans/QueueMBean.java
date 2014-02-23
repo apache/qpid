@@ -115,7 +115,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
     }
 
-    private final Queue _queue;
+    private final Queue<?> _queue;
     private final VirtualHostMBean _vhostMBean;
 
     /** Date/time format used for message expiration and message timestamp formatting */
@@ -298,7 +298,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
         else
         {
-            VirtualHost virtualHost = _queue.getParent(VirtualHost.class);
+            VirtualHost<?> virtualHost = _queue.getParent(VirtualHost.class);
             Exchange exchange = MBeanUtils.findExchangeFromExchangeName(virtualHost, exchangeName);
 
             _queue.setAttribute(Queue.ALTERNATE_EXCHANGE, getAlternateExchange(), exchange);

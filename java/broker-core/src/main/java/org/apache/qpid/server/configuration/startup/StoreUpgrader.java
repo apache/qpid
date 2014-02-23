@@ -82,6 +82,58 @@ public abstract class StoreUpgrader
         }
     };
 
+
+    private final static StoreUpgrader UPGRADE_1_2 = new StoreUpgrader("1.2")
+    {
+        @Override
+        protected void doUpgrade(ConfigurationEntryStore store)
+        {
+            ConfigurationEntry root = store.getRootEntry();
+            Map<String, Collection<ConfigurationEntry>> children = root.getChildren();
+            Collection<ConfigurationEntry> changed =  new HashSet<ConfigurationEntry>();
+            Collection<ConfigurationEntry> keyStores = children.get("KeyStore");
+            if(keyStores != null)
+            {
+                for(ConfigurationEntry keyStore : keyStores)
+                {
+                    Map<String, Object> attributes = keyStore.getAttributes();
+                    if(attributes.containsKey("type"))
+                    {
+                        attributes = new HashMap<String, Object>(attributes);
+                        attributes.put("keyStoreType", attributes.remove("type"));
+
+                        changed.add(new ConfigurationEntry(keyStore.getId(),keyStore.getType(),attributes,keyStore.getChildrenIds(),store));
+
+                    }
+
+                }
+            }
+            Collection<ConfigurationEntry> trustStores = children.get("TrustStore");
+            if(trustStores != null)
+            {
+                for(ConfigurationEntry trustStore : trustStores)
+                {
+                    Map<String, Object> attributes = trustStore.getAttributes();
+                    if(attributes.containsKey("type"))
+                    {
+                        attributes = new HashMap<String, Object>(attributes);
+                        attributes.put("trustStoreType", attributes.remove("type"));
+
+                        changed.add(new ConfigurationEntry(trustStore.getId(),trustStore.getType(),attributes,trustStore.getChildrenIds(),store));
+
+                    }
+
+                }
+            }
+            Map<String, Object> attributes = new HashMap<String, Object>(root.getAttributes());
+            attributes.put(Broker.MODEL_VERSION, "1.3");
+            changed.add(new ConfigurationEntry(root.getId(),root.getType(),attributes,root.getChildrenIds(),store));
+
+            store.save(changed.toArray(new ConfigurationEntry[changed.size()]));
+
+        }
+    };
+
     private StoreUpgrader(String version)
     {
         _upgraders.put(version, this);

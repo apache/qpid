@@ -112,7 +112,7 @@ public class RestServlet extends AbstractServlet
         }
     }
 
-    protected Collection<ConfiguredObject> getObjects(HttpServletRequest request)
+    protected Collection<ConfiguredObject<?>> getObjects(HttpServletRequest request)
     {
         String[] pathInfoElements = getPathInfoElements(request);
         List<String> names = new ArrayList<String>();
@@ -128,8 +128,9 @@ public class RestServlet extends AbstractServlet
             names.addAll(Arrays.asList(pathInfoElements));
         }
 
-        Collection<ConfiguredObject> parents = Collections.singleton((ConfiguredObject) getBroker());
-        Collection<ConfiguredObject> children = new ArrayList<ConfiguredObject>();
+        Collection<ConfiguredObject<?>> parents = new ArrayList<ConfiguredObject<?>>();
+        parents.add(getBroker());
+        Collection<ConfiguredObject<?>> children = new ArrayList<ConfiguredObject<?>>();
 
         Map<Class<? extends ConfiguredObject>, String> filters =
                 new HashMap<Class<? extends ConfiguredObject>, String>();
@@ -139,14 +140,14 @@ public class RestServlet extends AbstractServlet
             if(i == 0 || Model.getInstance().getChildTypes(_hierarchy[i - 1]).contains(_hierarchy[i]))
             {
 
-                for(ConfiguredObject parent : parents)
+                for(ConfiguredObject<?> parent : parents)
                 {
                     if(names.size() > i
                             && names.get(i) != null
                             && !names.get(i).equals("*")
                             && names.get(i).trim().length() != 0)
                     {
-                        for(ConfiguredObject child : parent.getChildren(_hierarchy[i]))
+                        for(ConfiguredObject<?> child : parent.getChildren(_hierarchy[i]))
                         {
                             if(child.getName().equals(names.get(i)))
                             {
@@ -156,7 +157,7 @@ public class RestServlet extends AbstractServlet
                     }
                     else
                     {
-                        children.addAll(parent.getChildren(_hierarchy[i]));
+                        children.addAll((Collection<? extends ConfiguredObject<?>>) parent.getChildren(_hierarchy[i]));
                     }
                 }
             }
@@ -173,13 +174,13 @@ public class RestServlet extends AbstractServlet
             }
 
             parents = children;
-            children = new ArrayList<ConfiguredObject>();
+            children = new ArrayList<ConfiguredObject<?>>();
         }
 
         if(!filters.isEmpty())
         {
-            Collection<ConfiguredObject> potentials = parents;
-            parents = new ArrayList<ConfiguredObject>();
+            Collection<ConfiguredObject<?>> potentials = parents;
+            parents = new ArrayList<ConfiguredObject<?>>();
 
             for(ConfiguredObject o : potentials)
             {
@@ -215,7 +216,7 @@ public class RestServlet extends AbstractServlet
         return filter(parents, request);
     }
 
-    private Collection<ConfiguredObject> filter(Collection<ConfiguredObject> objects, HttpServletRequest request)
+    private Collection<ConfiguredObject<?>> filter(Collection<ConfiguredObject<?>> objects, HttpServletRequest request)
     {
 
 
@@ -234,9 +235,9 @@ public class RestServlet extends AbstractServlet
             return objects;
         }
 
-        Collection<ConfiguredObject> filteredObj = new ArrayList<ConfiguredObject>(objects);
+        Collection<ConfiguredObject<?>> filteredObj = new ArrayList<ConfiguredObject<?>>(objects);
 
-        Iterator<ConfiguredObject> iter = filteredObj.iterator();
+        Iterator<ConfiguredObject<?>> iter = filteredObj.iterator();
 
         while(iter.hasNext())
         {
@@ -293,7 +294,7 @@ public class RestServlet extends AbstractServlet
 
         setCachingHeadersOnResponse(response);
 
-        Collection<ConfiguredObject> allObjects = getObjects(request);
+        Collection<ConfiguredObject<?>> allObjects = getObjects(request);
 
         // TODO - sort special params, everything else should act as a filter
         int depth = getDepthParameterFromRequest(request);
@@ -392,9 +393,9 @@ public class RestServlet extends AbstractServlet
                     {
                         if(Model.getInstance().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
                         {
-                            for(ConfiguredObject parent : objects[j])
+                            for(ConfiguredObject<?> parent : objects[j])
                             {
-                                for(ConfiguredObject object : parent.getChildren(_hierarchy[i]))
+                                for(ConfiguredObject<?> object : parent.getChildren(_hierarchy[i]))
                                 {
                                     if(object.getName().equals(names.get(i)))
                                     {
@@ -523,10 +524,10 @@ public class RestServlet extends AbstractServlet
         setCachingHeadersOnResponse(response);
         try
         {
-            Collection<ConfiguredObject> allObjects = getObjects(request);
+            Collection<ConfiguredObject<?>> allObjects = getObjects(request);
             for(ConfiguredObject o : allObjects)
             {
-                o.setDesiredState(o.getActualState(), State.DELETED);
+                o.setDesiredState(o.getState(), State.DELETED);
             }
 
             response.setStatus(HttpServletResponse.SC_OK);

@@ -606,7 +606,7 @@ define(["dojo/_base/xhr",
                                new UpdatableStore(that.brokerData.keystores, query(".broker-key-stores")[0],
                                                [ { name: "Name",    field: "name",      width: "20%"},
                                                  { name: "Path", field: "path", width: "40%"},
-                                                 { name: "Type", field: "type", width: "5%"},
+                                                 { name: "Type", field: "keyStoreType", width: "5%"},
                                                  { name: "Key Manager Algorithm", field: "keyManagerFactoryAlgorithm", width: "20%"},
                                                  { name: "Alias", field: "certificateAlias", width: "15%"}
                                                ], function(obj) {
@@ -623,7 +623,7 @@ define(["dojo/_base/xhr",
                                new UpdatableStore(that.brokerData.truststores, query(".broker-trust-stores")[0],
                                                [ { name: "Name",    field: "name",      width: "20%"},
                                                  { name: "Path", field: "path", width: "40%"},
-                                                 { name: "Type", field: "type", width: "5%"},
+                                                 { name: "Type", field: "trustStoreType", width: "5%"},
                                                  { name: "Trust Manager Algorithm", field: "trustManagerFactoryAlgorithm", width: "25%"},
                                                  { name: "Peers only", field: "peersOnly", width: "10%",
                                                    formatter: function(val){

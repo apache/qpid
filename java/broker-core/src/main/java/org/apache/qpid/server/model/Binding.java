@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public interface Binding extends ConfiguredObject
+public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
 {
 
     public String MATCHED_BYTES = "matchedBytes";
@@ -50,23 +50,13 @@ public interface Binding extends ConfiguredObject
     public String QUEUE = "queue";
     public String EXCHANGE = "exchange";
 
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableCollection(
-                    Arrays.asList(ID,
-                                  NAME,
-                                  STATE,
-                                  DURABLE,
-                                  LIFETIME_POLICY,
-                                  TIME_TO_LIVE,
-                                  CREATED,
-                                  UPDATED,
-                                  EXCHANGE,
-                                  QUEUE,
-                                  ARGUMENTS)
-            );
+    @ManagedAttribute
+    Queue getQueue();
 
+    @ManagedAttribute
+    Exchange getExchange();
 
-
+    @ManagedAttribute
     Map<String,Object> getArguments();
 
     void delete();

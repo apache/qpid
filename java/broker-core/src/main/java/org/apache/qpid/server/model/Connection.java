@@ -24,33 +24,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-@AmqpManagement(
-        attributes = {
-                Connection.ID,
-                Connection.NAME,
-                Connection.STATE,
-                Connection.DURABLE,
-                Connection.LIFETIME_POLICY,
-                Connection.TIME_TO_LIVE,
-                Connection.CREATED,
-                Connection.UPDATED,
-                Connection.CLIENT_ID,
-                Connection.CLIENT_VERSION,
-                Connection.INCOMING,
-                Connection.LOCAL_ADDRESS,
-                Connection.PRINCIPAL,
-                Connection.PROPERTIES,
-                Connection.REMOTE_ADDRESS,
-                Connection.REMOTE_PROCESS_NAME,
-                Connection.REMOTE_PROCESS_PID,
-                Connection.SESSION_COUNT_LIMIT,
-                Connection.TRANSPORT,
-                Connection.PORT
-        },
-        operations = {},
-        creatable = false
-)
-public interface Connection extends ConfiguredObject
+@AmqpManagement( creatable = false )
+public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
 {
 
     // Statistics
@@ -106,29 +81,38 @@ public interface Connection extends ConfiguredObject
     /** Name of port associated with the connection */
     public static final String PORT = "port";
 
+    @ManagedAttribute
+    String getClientId();
 
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableCollection(
-                    Arrays.asList(  ID,
-                                    NAME,
-                                    STATE,
-                                    DURABLE,
-                                    LIFETIME_POLICY,
-                                    TIME_TO_LIVE,
-                                    CREATED,
-                                    UPDATED,
-                                    CLIENT_ID,
-                                    CLIENT_VERSION,
-                                    INCOMING,
-                                    LOCAL_ADDRESS,
-                                    PRINCIPAL,
-                                    PROPERTIES,
-                                    REMOTE_ADDRESS,
-                                    REMOTE_PROCESS_NAME,
-                                    REMOTE_PROCESS_PID,
-                                    SESSION_COUNT_LIMIT,
-                                    TRANSPORT,
-                                    PORT));
+    @ManagedAttribute
+    String getClientVersion();
+
+    @ManagedAttribute
+    boolean isIncoming();
+
+    @ManagedAttribute
+    String getLocalAddress();
+
+    @ManagedAttribute
+    String getPrincipal();
+
+    @ManagedAttribute
+    String getRemoteAddress();
+
+    @ManagedAttribute
+    String getRemoteProcessName();
+
+    @ManagedAttribute
+    String getRemoteProcessPid();
+
+    @ManagedAttribute
+    long getSessionCountLimit();
+
+    @ManagedAttribute
+    Transport getTransport();
+
+    @ManagedAttribute
+    Port getPort();
 
     //children
     Collection<Session> getSessions();

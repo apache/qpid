@@ -40,23 +40,14 @@ import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
 import org.apache.qpid.server.jmx.mbeans.Shutdown;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfigurationChangeListener;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
-public class JMXManagement extends AbstractPluginAdapter implements ConfigurationChangeListener
+public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implements ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
 
@@ -69,13 +60,6 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     // default values
     public static final String DEFAULT_NAME = "JMXManagement";
     public static final boolean DEFAULT_USE_PLATFORM_MBEAN_SERVER = true;
-
-    @SuppressWarnings("serial")
-    private static final Collection<String> AVAILABLE_ATTRIBUTES = Collections.unmodifiableCollection(new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES){{
-        add(NAME);
-        add(USE_PLATFORM_MBEAN_SERVER);
-        add(PluginFactory.PLUGIN_TYPE);
-    }});
 
     @SuppressWarnings("serial")
     private static final Map<String, Object> DEFAULTS = new HashMap<String, Object>(){{
@@ -125,13 +109,13 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
 
     private void start() throws JMException, IOException
     {
-        Broker broker = getBroker();
+        Broker<?> broker = getBroker();
         Port connectorPort = null;
         Port registryPort = null;
-        Collection<Port> ports = broker.getPorts();
+        Collection<Port<?>> ports = broker.getPorts();
         for (Port port : ports)
         {
-            if (State.QUIESCED.equals(port.getActualState()))
+            if (State.QUIESCED.equals(port.getState()))
             {
                 continue;
             }
@@ -160,7 +144,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
 
         synchronized (_children)
         {
-            for(VirtualHost virtualHost : broker.getVirtualHosts())
+            for(VirtualHost<?> virtualHost : broker.getVirtualHosts())
             {
                 if(!_children.containsKey(virtualHost))
                 {
@@ -177,8 +161,8 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                     createAdditionalMBeansFromProviders(virtualHost, mbean);
                 }
             }
-            Collection<AuthenticationProvider> authenticationProviders = broker.getAuthenticationProviders();
-            for (AuthenticationProvider authenticationProvider : authenticationProviders)
+            Collection<AuthenticationProvider<?>> authenticationProviders = broker.getAuthenticationProviders();
+            for (AuthenticationProvider<?> authenticationProvider : authenticationProviders)
             {
                 if(authenticationProvider instanceof PasswordCredentialManagingAuthenticationProvider)
                 {
@@ -336,7 +320,7 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(JMXManagement.class);
     }
 
     @Override
@@ -373,5 +357,17 @@ public class JMXManagement extends AbstractPluginAdapter implements Configuratio
                 _objectRegistry = null;
             }
         }
+    }
+
+    @Override
+    public String getPluginType()
+    {
+        return PLUGIN_TYPE;
+    }
+
+    @ManagedAttribute
+    public boolean getUsePlatformMBeanServer()
+    {
+        return (Boolean)getAttribute(USE_PLATFORM_MBEAN_SERVER);
     }
 }

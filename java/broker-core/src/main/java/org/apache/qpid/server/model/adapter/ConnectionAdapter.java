@@ -32,20 +32,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
-final class ConnectionAdapter extends AbstractAdapter implements Connection
+final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter> implements Connection<ConnectionAdapter>
 {
     private AMQConnectionModel _connection;
 
@@ -58,6 +51,73 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         super(UUIDGenerator.generateRandomUUID(), taskExecutor);
         _connection = conn;
         _statistics = new ConnectionStatisticsAdapter(conn);
+    }
+
+    @Override
+    public String getClientId()
+    {
+        return (String) getAttribute(CLIENT_ID);
+    }
+
+    @Override
+    public String getClientVersion()
+    {
+        return (String) getAttribute(CLIENT_VERSION);
+    }
+
+    @Override
+    public boolean isIncoming()
+    {
+        return true;
+    }
+
+    @Override
+    public String getLocalAddress()
+    {
+        return (String)getAttribute(LOCAL_ADDRESS);
+    }
+
+    @Override
+    public String getPrincipal()
+    {
+        final Principal authorizedPrincipal = _connection.getAuthorizedPrincipal();
+        return authorizedPrincipal == null ? null : authorizedPrincipal.getName();
+    }
+
+    @Override
+    public String getRemoteAddress()
+    {
+        return _connection.getRemoteAddressString();
+    }
+
+    @Override
+    public String getRemoteProcessName()
+    {
+        return null;
+    }
+
+    @Override
+    public String getRemoteProcessPid()
+    {
+        return null;
+    }
+
+    @Override
+    public long getSessionCountLimit()
+    {
+        return _connection.getSessionCountLimit();
+    }
+
+    @Override
+    public Transport getTransport()
+    {
+        return _connection.getTransport();
+    }
+
+    @Override
+    public Port getPort()
+    {
+        return _connection.getPort();
     }
 
     public Collection<Session> getSessions()
@@ -124,7 +184,7 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
         return null;  //TODO
     }
 
-    public State getActualState()
+    public State getState()
     {
         return null;  //TODO
     }
@@ -230,8 +290,8 @@ final class ConnectionAdapter extends AbstractAdapter implements Connection
     @Override
     public Collection<String> getAttributeNames()
     {
-        final HashSet<String> attrNames = new HashSet<String>(super.getAttributeNames());
-        attrNames.addAll(Connection.AVAILABLE_ATTRIBUTES);
+        final HashSet<String> attrNames = new HashSet<String>(Attribute.getAttributeNames(Connection.class));
+
         return Collections.unmodifiableCollection(attrNames);
     }
 

@@ -21,7 +21,6 @@
 package org.apache.qpid.server.model;
 
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 
@@ -31,44 +30,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-@AmqpManagement(
-        attributes = {
-                VirtualHost.ID,
-                VirtualHost.NAME,
-                VirtualHost.TYPE,
-                VirtualHost.STATE,
-                VirtualHost.DURABLE,
-                VirtualHost.LIFETIME_POLICY,
-                VirtualHost.TIME_TO_LIVE,
-                VirtualHost.CREATED,
-                VirtualHost.UPDATED,
-                VirtualHost.SUPPORTED_EXCHANGE_TYPES,
-                VirtualHost.SUPPORTED_QUEUE_TYPES,
-                VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED,
-                VirtualHost.HOUSEKEEPING_CHECK_PERIOD,
-                VirtualHost.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS,
-                VirtualHost.QUEUE_FLOW_CONTROL_SIZE_BYTES,
-                VirtualHost.QUEUE_FLOW_RESUME_SIZE_BYTES,
-                VirtualHost.CONFIG_STORE_TYPE,
-                VirtualHost.CONFIG_STORE_PATH,
-                VirtualHost.STORE_TYPE,
-                VirtualHost.STORE_PATH,
-                VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
-                VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
-                VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
-                VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
-                VirtualHost.QUEUE_ALERT_REPEAT_GAP,
-                VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
-                VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE,
-                VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                VirtualHost.CONFIG_PATH
-            },
-        operations = {},
-        managesChildren = true
-)
+@AmqpManagement( managesChildren = true )
 
-public interface VirtualHost extends ConfiguredObject
+public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
 {
     // Statistics
 
@@ -121,46 +85,76 @@ public interface VirtualHost extends ConfiguredObject
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
-    String TYPE                                 = "type";
     String UPDATED                              = "updated";
     String CONFIG_PATH                          = "configPath";
 
     // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(
-                            ID,
-                            NAME,
-                            TYPE,
-                            STATE,
-                            DURABLE,
-                            LIFETIME_POLICY,
-                            TIME_TO_LIVE,
-                            CREATED,
-                            UPDATED,
-                            SUPPORTED_EXCHANGE_TYPES,
-                            SUPPORTED_QUEUE_TYPES,
-                            QUEUE_DEAD_LETTER_QUEUE_ENABLED,
-                            HOUSEKEEPING_CHECK_PERIOD,
-                            QUEUE_MAXIMUM_DELIVERY_ATTEMPTS,
-                            QUEUE_FLOW_CONTROL_SIZE_BYTES,
-                            QUEUE_FLOW_RESUME_SIZE_BYTES,
-                            CONFIG_STORE_TYPE,
-                            CONFIG_STORE_PATH,
-                            STORE_TYPE,
-                            STORE_PATH,
-                            STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
-                            STORE_TRANSACTION_IDLE_TIMEOUT_WARN,
-                            STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
-                            STORE_TRANSACTION_OPEN_TIMEOUT_WARN,
-                            QUEUE_ALERT_REPEAT_GAP,
-                            QUEUE_ALERT_THRESHOLD_MESSAGE_AGE,
-                            QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE,
-                            QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                            QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                            CONFIG_PATH));
 
     int CURRENT_CONFIG_VERSION = 4;
+
+    @ManagedAttribute
+    Collection<String> getSupportedExchangeTypes();
+
+    @ManagedAttribute
+    Collection<String> getSupportedQueueTypes();
+
+    @ManagedAttribute
+    boolean isQueue_deadLetterQueueEnabled();
+
+    @ManagedAttribute
+    long getHousekeepingCheckPeriod();
+
+    @ManagedAttribute
+    int getQueue_maximumDeliveryAttempts();
+
+    @ManagedAttribute
+    long getQueue_flowControlSizeBytes();
+
+    @ManagedAttribute
+    long getQueue_flowResumeSizeBytes();
+
+    @ManagedAttribute
+    String getConfigStoreType();
+
+    @ManagedAttribute
+    String getConfigStorePath();
+
+    @ManagedAttribute
+    String getStoreType();
+
+    @ManagedAttribute
+    String getStorePath();
+
+    @ManagedAttribute
+    long getStoreTransactionIdleTimeoutClose();
+
+    @ManagedAttribute
+    long getStoreTransactionIdleTimeoutWarn();
+
+    @ManagedAttribute
+    long getStoreTransactionOpenTimeoutClose();
+
+    @ManagedAttribute
+    long getStoreTransactionOpenTimeoutWarn();
+
+    @ManagedAttribute
+    long getQueue_alertRepeatGap();
+
+    @ManagedAttribute
+    long getQueue_alertThresholdMessageAge();
+
+    @ManagedAttribute
+    long getQueue_alertThresholdMessageSize();
+
+    @ManagedAttribute
+    long getQueue_alertThresholdQueueDepthBytes();
+
+    @ManagedAttribute
+    long getQueue_alertThresholdQueueDepthMessages();
+
+    @ManagedAttribute
+    String getConfigPath();
+
 
     //children
     Collection<VirtualHostAlias> getAliases();

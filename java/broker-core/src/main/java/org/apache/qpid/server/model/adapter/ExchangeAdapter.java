@@ -28,20 +28,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFinder;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Publisher;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 
-final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apache.qpid.server.exchange.Exchange.BindingListener
+final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> implements Exchange<ExchangeAdapter>, org.apache.qpid.server.exchange.Exchange.BindingListener
 {
 
     private final org.apache.qpid.server.exchange.Exchange _exchange;
@@ -83,7 +76,8 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
 
     }
 
-    public String getExchangeType()
+    @Override
+    public String getType()
     {
         return _exchange.getType().getType();
     }
@@ -171,7 +165,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         return null;  //TODO
     }
 
-    public State getActualState()
+    public State getState()
     {
         return null;  //TODO
     }
@@ -341,7 +335,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
         }
         else if(TYPE.equals(name))
         {
-            return _exchange.getTypeName();
+            return getType();
         }
         return super.getAttribute(name);
     }
@@ -349,7 +343,7 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
     @Override
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return Attribute.getAttributeNames(Exchange.class);
     }
 
     @Override
@@ -421,5 +415,11 @@ final class ExchangeAdapter extends AbstractAdapter implements Exchange, org.apa
             }
             return null;  // TODO - Implement
         }
+    }
+
+    @Override
+    public Exchange<?> getAlternateExchange()
+    {
+        return null;
     }
 }

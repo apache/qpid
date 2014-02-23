@@ -71,6 +71,24 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     {
         _name = virtualHost.getName();
 
+        setup(virtualHost);
+        load();
+        recoveryHandler.beginConfigurationRecovery(this,_configVersion);
+        List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
+        for(ConfiguredObjectRecord record : records)
+        {
+            recoveryHandler.configuredObject(record.getId(), record.getType(), record.getAttributes());
+        }
+        int oldConfigVersion = _configVersion;
+        _configVersion = recoveryHandler.completeConfigurationRecovery();
+        if(oldConfigVersion != _configVersion)
+        {
+            save();
+        }
+    }
+
+    protected void setup(final VirtualHost virtualHost)
+    {
         Object storePathAttr = virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
         if(!(storePathAttr instanceof String))
         {
@@ -100,21 +118,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             {
                 renameFile(_backupFileName, _configFileName);
             }
-        }
-
-
-        load();
-        recoveryHandler.beginConfigurationRecovery(this,_configVersion);
-        List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
-        for(ConfiguredObjectRecord record : records)
-        {
-            recoveryHandler.configuredObject(record.getId(), record.getType(), record.getAttributes());
-        }
-        int oldConfigVersion = _configVersion;
-        _configVersion = recoveryHandler.completeConfigurationRecovery();
-        if(oldConfigVersion != _configVersion)
-        {
-            save();
         }
     }
 
@@ -194,39 +197,13 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
     }
 
-    private void load()
+    protected void load()
     {
         final File configFile = new File(_directoryName, _configFileName);
         try
         {
             Map data = _objectMapper.readValue(configFile,Map.class);
-            Collection<Class<? extends ConfiguredObject>> childClasses =
-                    MODEL.getChildTypes(VirtualHost.class);
-            data.remove("modelVersion");
-            Object configVersion;
-            if((configVersion = data.remove("configVersion")) instanceof Integer)
-            {
-                _configVersion = (Integer) configVersion;
-            }
-            for(Class<? extends ConfiguredObject> childClass : childClasses)
-            {
-                final String type = childClass.getSimpleName();
-                String attrName = type.toLowerCase() + "s";
-                Object children = data.remove(attrName);
-                if(children != null)
-                {
-                    if(children instanceof Collection)
-                    {
-                        for(Object child : (Collection)children)
-                        {
-                            if(child instanceof Map)
-                            {
-                                loadChild(childClass, (Map)child, VirtualHost.class, null);
-                            }
-                        }
-                    }
-                }
-            }
+            loadFromMap(data);
         }
         catch (JsonMappingException e)
         {
@@ -241,6 +218,37 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             throw new StoreException("Could not load the configuration file " + configFile, e);
         }
 
+    }
+
+    protected void loadFromMap(final Map data)
+    {
+        Collection<Class<? extends ConfiguredObject>> childClasses =
+                MODEL.getChildTypes(VirtualHost.class);
+        data.remove("modelVersion");
+        Object configVersion;
+        if((configVersion = data.remove("configVersion")) instanceof Integer)
+        {
+            _configVersion = (Integer) configVersion;
+        }
+        for(Class<? extends ConfiguredObject> childClass : childClasses)
+        {
+            final String type = childClass.getSimpleName();
+            String attrName = type.toLowerCase() + "s";
+            Object children = data.remove(attrName);
+            if(children != null)
+            {
+                if(children instanceof Collection)
+                {
+                    for(Object child : (Collection)children)
+                    {
+                        if(child instanceof Map)
+                        {
+                            loadChild(childClass, (Map)child, VirtualHost.class, null);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void loadChild(final Class<? extends ConfiguredObject> clazz,

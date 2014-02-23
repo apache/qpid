@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
@@ -39,7 +40,7 @@ import org.apache.qpid.server.configuration.updater.CreateChildTask;
 import org.apache.qpid.server.configuration.updater.SetAttributeTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
-public abstract class AbstractAdapter implements ConfiguredObject
+public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> implements ConfiguredObject<X>
 {
     private static final Object ID = "id";
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
@@ -52,13 +53,16 @@ public abstract class AbstractAdapter implements ConfiguredObject
     private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
     private final TaskExecutor _taskExecutor;
 
-    protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    protected AbstractConfiguredObject(UUID id,
+                                       Map<String, Object> defaults,
+                                       Map<String, Object> attributes,
+                                       TaskExecutor taskExecutor)
     {
         this(id, defaults, attributes, taskExecutor, true);
     }
 
-    protected AbstractAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes,
-                              TaskExecutor taskExecutor, boolean filterAttributes)
+    protected AbstractConfiguredObject(UUID id, Map<String, Object> defaults, Map<String, Object> attributes,
+                                       TaskExecutor taskExecutor, boolean filterAttributes)
 
     {
         _taskExecutor = taskExecutor;
@@ -97,7 +101,7 @@ public abstract class AbstractAdapter implements ConfiguredObject
         }
     }
 
-    protected AbstractAdapter(UUID id, TaskExecutor taskExecutor)
+    protected AbstractConfiguredObject(UUID id, TaskExecutor taskExecutor)
     {
         this(id, null, null, taskExecutor);
     }
@@ -126,7 +130,7 @@ public abstract class AbstractAdapter implements ConfiguredObject
             }
             else
             {
-                return getActualState();
+                return getState();
             }
         }
         else
@@ -229,6 +233,18 @@ public abstract class AbstractAdapter implements ConfiguredObject
             value = getDefaultAttribute(name);
         }
         return value;
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return (String) getAttribute(DESCRIPTION);
+    }
+
+    @Override
+    public <T> T getAttribute(final Attribute<? super X, T> attr)
+    {
+        return (T) getAttribute(attr.getName());
     }
 
     @Override
@@ -473,5 +489,35 @@ public abstract class AbstractAdapter implements ConfiguredObject
         }
 
         return merged;
+    }
+
+    @Override
+    public String getLastUpdatedBy()
+    {
+        return null;
+    }
+
+    @Override
+    public long getLastUpdatedTime()
+    {
+        return 0;
+    }
+
+    @Override
+    public String getCreatedBy()
+    {
+        return null;
+    }
+
+    @Override
+    public long getCreatedTime()
+    {
+        return 0;
+    }
+
+    @Override
+    public String getType()
+    {
+        return (String)getAttribute(TYPE);
     }
 }

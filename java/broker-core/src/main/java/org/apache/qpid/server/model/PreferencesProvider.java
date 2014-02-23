@@ -27,9 +27,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-public interface PreferencesProvider extends ConfiguredObject
+public interface PreferencesProvider<X extends PreferencesProvider<X>> extends ConfiguredObject<X>
 {
-    String TYPE            = "type";
     String CREATED         = "created";
     String UPDATED         = "updated";
     String DURABLE         = "durable";

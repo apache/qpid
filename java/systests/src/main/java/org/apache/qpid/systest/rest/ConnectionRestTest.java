@@ -33,6 +33,8 @@ import javax.jms.MessageProducer;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.server.model.Attribute;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
 
@@ -172,7 +174,15 @@ public class ConnectionRestTest extends QpidRestTestCase
     private void assertSession(Map<String, Object> sessionData, AMQSession<?, ?> session)
     {
         assertNotNull("Session map cannot be null", sessionData);
-        Asserts.assertAttributesPresent(sessionData, Session.AVAILABLE_ATTRIBUTES, Session.STATE, Session.DURABLE,
+        Asserts.assertAttributesPresent(sessionData, Attribute.getAttributeNames(Session.class),
+                                        ConfiguredObject.TYPE,
+                                        ConfiguredObject.CREATED_BY,
+                                        ConfiguredObject.CREATED_TIME,
+                                        ConfiguredObject.LAST_UPDATED_BY,
+                                        ConfiguredObject.LAST_UPDATED_TIME,
+                                        ConfiguredObject.DESCRIPTION,
+                                        Session.STATE,
+                                        Session.DURABLE,
                 Session.LIFETIME_POLICY, Session.TIME_TO_LIVE, Session.CREATED, Session.UPDATED);
         assertEquals("Unexpecte value of attribute " + Session.NAME, session.getChannelId() + "",
                 sessionData.get(Session.NAME));

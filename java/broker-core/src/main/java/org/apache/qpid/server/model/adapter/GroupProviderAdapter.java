@@ -31,24 +31,14 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Group;
-import org.apache.qpid.server.model.GroupMember;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
-import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.group.GroupManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.MapValueConverter;
 
-public class GroupProviderAdapter extends AbstractAdapter implements
-        GroupProvider
+public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProviderAdapter> implements GroupProvider<GroupProviderAdapter>
 {
     private static Logger LOGGER = Logger.getLogger(GroupProviderAdapter.class);
 
@@ -87,7 +77,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
 
     protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
     {
-        List<String> attributesNames = new ArrayList<String>(AVAILABLE_ATTRIBUTES);
+        List<String> attributesNames = new ArrayList<String>(Attribute.getAttributeNames(GroupProvider.class));
         if (factoryAttributes != null)
         {
             attributesNames.addAll(factoryAttributes);
@@ -110,7 +100,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
     }
 
     @Override
-    public State getActualState()
+    public State getState()
     {
         return _state.get();
     }
@@ -188,7 +178,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
         else if (STATE.equals(name))
         {
-            return getActualState();
+            return getState();
         }
         else if (TIME_TO_LIVE.equals(name))
         {
@@ -372,7 +362,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         throw new UnsupportedOperationException("Changing attributes on group providers is not supported.");
     }
 
-    private class GroupAdapter extends AbstractAdapter implements Group
+    private class GroupAdapter extends AbstractConfiguredObject<GroupAdapter> implements Group<GroupAdapter>
     {
         private final String _group;
 
@@ -397,7 +387,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         }
 
         @Override
-        public State getActualState()
+        public State getState()
         {
             return State.ACTIVE;
         }
@@ -496,7 +486,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
         @Override
         public Collection<String> getAttributeNames()
         {
-            return Group.AVAILABLE_ATTRIBUTES;
+            return Attribute.getAttributeNames(Group.class);
         }
 
         @Override
@@ -541,8 +531,8 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             throw new UnsupportedOperationException("Changing attributes on group is not supported.");
         }
 
-        private class GroupMemberAdapter extends AbstractAdapter implements
-                GroupMember
+        private class GroupMemberAdapter extends AbstractConfiguredObject<GroupMemberAdapter> implements
+                GroupMember<GroupMemberAdapter>
         {
             private String _memberName;
 
@@ -555,7 +545,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             @Override
             public Collection<String> getAttributeNames()
             {
-                return GroupMember.AVAILABLE_ATTRIBUTES;
+                return Attribute.getAttributeNames(GroupMember.class);
             }
 
             @Override
@@ -586,7 +576,7 @@ public class GroupProviderAdapter extends AbstractAdapter implements
             }
 
             @Override
-            public State getActualState()
+            public State getState()
             {
                 return null;
             }

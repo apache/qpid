@@ -108,7 +108,7 @@ public class TrustStoreRecovererTest extends QpidTestCase
         attributes.put(TrustStore.NAME, getName());
         attributes.put(TrustStore.PATH, TestSSLConstants.BROKER_TRUSTSTORE);
         attributes.put(TrustStore.PASSWORD, TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD);
-        attributes.put(TrustStore.TYPE, "jks");
+        attributes.put(TrustStore.TRUST_STORE_TYPE, "jks");
         attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
         attributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
         return attributes;
