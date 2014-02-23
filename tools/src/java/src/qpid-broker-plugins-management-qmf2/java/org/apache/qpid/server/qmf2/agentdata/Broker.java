@@ -53,6 +53,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
 
 /**
@@ -349,11 +350,15 @@ public class Broker extends QmfAgentData
         _defaultVirtualHost = (String)broker.getAttribute("defaultVirtualHost");
         int amqpPort = 5672; // Default AMQP Port.
 
-        // Search through the available Ports on this Broker looking for the AMQP Port. When we find the
-        // AMQP Port we record that in amqpPort;
+        // Search through the available Ports on this Broker looking for the AMQP Port using the TCP Transport
+        // and record that in amqpPort. N.B. The Java Broker supports several Protocol and Transport types so
+        // it might be good to return more detailed info, but for QMF the "port" property description for the
+        // Broker Object says "TCP Port for AMQP Service" so doing anything fancier might break consumers.
+        // TODO The C++ and Java Brokers should really return consistent information.
         for (Port port : _broker.getPorts())
         {
             boolean isAMQP = false;
+            boolean isTCP  = false;
             for (Protocol protocol : port.getProtocols())
             {
                 isAMQP = protocol.isAMQP();
@@ -363,14 +368,21 @@ public class Broker extends QmfAgentData
                 }
             }
 
-            if (isAMQP)
+            for (Transport transport : port.getTransports())
+            {
+                isTCP = (transport == Transport.TCP);
+                if (isTCP)
+                {
+                    break;
+                }
+            }
+
+            if (isAMQP && isTCP)
             {
                 amqpPort = port.getPort();
                 break;
             }
         }
-
-        String port = "" + amqpPort;
 
         // systemRef is ignored in this implementation.
         // stagingThreshold is ignored in this implementation (it's deprecated anyway I believe).
@@ -380,7 +392,7 @@ public class Broker extends QmfAgentData
         // _object_name in the ObjectId that we set below uses actually uses "amqp-broker" vice "amqp-java-broker",
         // this is because qpid-config uses a "hardcoded" ObjectId to invoke methods so we need to use the same name.
         setValue("name", "amqp-java-broker");
-        setValue("port", port);
+        setValue("port", amqpPort);
 
         // workerThreads doesn't *appear* to be configurable in the Java Broker, looks like there's no pool and the
         // Threads just grow with the number of Connections?

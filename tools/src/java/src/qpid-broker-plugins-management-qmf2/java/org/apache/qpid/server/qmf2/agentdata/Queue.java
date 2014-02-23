@@ -41,8 +41,9 @@ import org.apache.qpid.qmf2.common.SchemaEventClass;
 import org.apache.qpid.qmf2.common.SchemaObjectClass;
 //import org.apache.qpid.qmf2.common.SchemaProperty;
 
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Statistics;
 
 /**
@@ -140,15 +141,25 @@ public class Queue extends QmfAgentData
             setCompareKey(name);
         }
 
+        // In the Java Broker LifetimePolicy may be PERMANENT, DELETE_ON_CONNECTION_CLOSE,
+        // DELETE_ON_SESSION_END, DELETE_ON_NO_OUTBOUND_LINKS, DELETE_ON_NO_LINKS, IN_USE
+        // We map these to a boolean value to be consistent with the C++ Broker QMF value.
+        // TODO The C++ and Java Brokers should really return consistent information.
         LifetimePolicy lifetimePolicy = (LifetimePolicy)_queue.getAttribute("lifetimePolicy");
         boolean autoDelete = (lifetimePolicy != LifetimePolicy.PERMANENT) ? true : false;
+
+        // In the Java Broker exclusivity may be NONE, SESSION, CONNECTION, CONTAINER, PRINCIPAL, LINK
+        // We map these to a boolean value to be consistent with the C++ Broker QMF value.
+        // TODO The C++ and Java Brokers should really return consistent information.
+        ExclusivityPolicy exclusivityPolicy = (ExclusivityPolicy)_queue.getAttribute("exclusive");
+        boolean exclusive = (exclusivityPolicy != ExclusivityPolicy.NONE) ? true : false;
 
         // TODO vhostRef - currently just use its name to try and get things working with standard command line tools.
 
         setValue("name", name);
         setValue("durable", _queue.getAttribute("durable"));
         setValue("autoDelete", autoDelete);
-        setValue("exclusive", _queue.getAttribute("exclusive"));
+        setValue("exclusive", exclusive);
 
         // altExchange needs to be set later, done in mapEncode() for convenience, because it isn't set during
         // Queue construction in the Java Broker.
@@ -199,7 +210,7 @@ public class Queue extends QmfAgentData
         queueDeclare.setValue("autoDel", getBooleanValue("autoDelete"));
         queueDeclare.setValue("disp", "created");
         queueDeclare.setValue("durable", getBooleanValue("durable"));
-        queueDeclare.setValue("excl", getBooleanValue("durable"));
+        queueDeclare.setValue("excl", getBooleanValue("exclusive"));
         queueDeclare.setValue("qName", getStringValue("name"));
         // TODO Not sure of a way to get these for Java Broker Exchange.
         //queueDeclare.setValue("rhost", _connection.getName());

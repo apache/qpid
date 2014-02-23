@@ -39,6 +39,7 @@ import org.apache.qpid.qmf2.common.SchemaEventClass;
 import org.apache.qpid.qmf2.common.SchemaObjectClass;
 //import org.apache.qpid.qmf2.common.SchemaProperty;
 
+import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Statistics;
 
@@ -149,7 +150,12 @@ public class Subscription extends QmfAgentData
         // so we pass a reference ourselves when we do setQueueRef. This is because some Subscription properties
         // are *actually" related to the associated Queue.
         _qName = queue.getName();
-        _exclusive = ((Boolean)queue.getAttribute("exclusive")).booleanValue();
+
+        // In the Java Broker exclusivity may be NONE, SESSION, CONNECTION, CONTAINER, PRINCIPAL, LINK
+        // We map these to a boolean value to be consistent with the C++ Broker QMF values.
+        // TODO The C++ and Java Brokers should really return consistent information.
+        ExclusivityPolicy exclusivityPolicy = (ExclusivityPolicy)queue.getAttribute("exclusive");
+        _exclusive = (exclusivityPolicy != ExclusivityPolicy.NONE) ? true : false;
     }
 
     /**
