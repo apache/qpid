@@ -26,7 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> implements SimpleQueueEntryList<E,Q,L>
+public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> implements
+                                                                                                                                                        QueueEntryListBase<E,Q,L>
 {
 
     private final E _head;
@@ -111,12 +112,12 @@ public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, 
         return node.getNextValidEntry();
     }
 
-    public static interface HeadCreator<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>>
+    public static interface HeadCreator<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>>
     {
         E createHead(L list);
     }
 
-    public static class QueueEntryIteratorImpl<E extends OrderedQueueEntry<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> implements QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>>
+    public static class QueueEntryIteratorImpl<E extends OrderedQueueEntry<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> implements QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>>
     {
         private E _lastNode;
 

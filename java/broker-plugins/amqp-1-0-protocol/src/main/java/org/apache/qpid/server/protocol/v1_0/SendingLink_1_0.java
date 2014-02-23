@@ -249,7 +249,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     {
                         if(!hasBindingFilter
                            && entry.getValue() instanceof ExactSubjectFilter
-                           && exchange.getType() == DirectExchange.TYPE)
+                           && exchange.getExchangeType() == DirectExchange.TYPE)
                         {
                             ExactSubjectFilter filter = (ExactSubjectFilter) filters.values().iterator().next();
                             source.setFilter(filters);
@@ -259,7 +259,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                         }
                         else if(!hasBindingFilter
                                 && entry.getValue() instanceof MatchingSubjectFilter
-                                && exchange.getType() == TopicExchange.TYPE)
+                                && exchange.getExchangeType() == TopicExchange.TYPE)
                         {
                             MatchingSubjectFilter filter = (MatchingSubjectFilter) filters.values().iterator().next();
                             source.setFilter(filters);

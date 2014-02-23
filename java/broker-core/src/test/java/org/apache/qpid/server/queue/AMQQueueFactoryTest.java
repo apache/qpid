@@ -43,7 +43,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -155,7 +154,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
                         when(exchange.getName()).thenReturn(name);
                         when(exchange.getId()).thenReturn(id);
-                        when(exchange.getType()).thenReturn(exType);
+                        when(exchange.getExchangeType()).thenReturn(exType);
 
                         final String typeName = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.TYPE, attributeValues);
                         when(exType.getType()).thenReturn(typeName);

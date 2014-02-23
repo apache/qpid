@@ -46,7 +46,7 @@ class SubFlushRunner implements Runnable
     private final AtomicInteger _scheduled = new AtomicInteger(IDLE);
 
 
-    private static final long ITERATIONS = SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
+    private static final long ITERATIONS = AbstractQueue.MAX_ASYNC_DELIVERIES;
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
     public SubFlushRunner(QueueConsumerImpl sub)
@@ -92,9 +92,9 @@ class SubFlushRunner implements Runnable
         }
     }
 
-    private SimpleAMQQueue getQueue()
+    private AbstractQueue getQueue()
     {
-        return (SimpleAMQQueue) _sub.getQueue();
+        return (AbstractQueue) _sub.getQueue();
     }
 
     public String toString()

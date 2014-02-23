@@ -79,7 +79,7 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
     @Override
     public String getType()
     {
-        return _exchange.getType().getType();
+        return _exchange.getExchangeType().getType();
     }
 
     public Collection<org.apache.qpid.server.model.Binding> getBindings()

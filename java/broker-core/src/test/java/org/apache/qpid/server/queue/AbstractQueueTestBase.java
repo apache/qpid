@@ -42,7 +42,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
+import org.apache.qpid.server.queue.AbstractQueue.QueueEntryFilter;
 import org.apache.qpid.server.consumer.MockConsumer;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.Action;
@@ -50,9 +50,9 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
-abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> extends QpidTestCase
+abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> extends QpidTestCase
 {
-    private static final Logger _logger = Logger.getLogger(SimpleAMQQueueTestBase.class);
+    private static final Logger _logger = Logger.getLogger(AbstractQueueTestBase.class);
 
 
     private Q _queue;
@@ -319,7 +319,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
     /**
      * Tests that if a client releases entries 'out of order' (the order
      * used by QueueEntryImpl.compareTo) that messages are still resent
-     * successfully.  Specifically this test ensures the {@see SimpleAMQQueue#requeue()}
+     * successfully.  Specifically this test ensures the {@see AbstractQueue#requeue()}
      * can correctly move the _releasedEntry to an earlier position in the QueueEntry list.
      */
     public void testReleasedOutOfComparableOrderAreRedelivered() throws Exception
@@ -646,7 +646,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
      */
     public void testProcessQueueWithUniqueSelectors() throws Exception
     {
-        SimpleAMQQueue testQueue = createNonAsyncDeliverQueue();
+        AbstractQueue testQueue = createNonAsyncDeliverQueue();
 
         // retrieve the QueueEntryList the queue creates and insert the test
         // messages, thus avoiding straight-through delivery attempts during
@@ -703,7 +703,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
         verifyReceivedMessages(Collections.singletonList((MessageInstance)msg5), sub3.getMessages());
     }
 
-    private SimpleAMQQueue createNonAsyncDeliverQueue()
+    private AbstractQueue createNonAsyncDeliverQueue()
     {
         TestSimpleQueueEntryListFactory factory = new TestSimpleQueueEntryListFactory();
         return new NonAsyncDeliverQueue(factory, getVirtualHost());
@@ -711,7 +711,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
 
     /**
      * Tests that dequeued message is not present in the list returned form
-     * {@link SimpleAMQQueue#getMessagesOnTheQueue()}
+     * {@link AbstractQueue#getMessagesOnTheQueue()}
      */
     public void testGetMessagesOnTheQueueWithDequeuedEntry()
     {
@@ -748,7 +748,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
 
     /**
      * Tests that dequeued message is not present in the list returned form
-     * {@link SimpleAMQQueue#getMessagesOnTheQueue(QueueEntryFilter)}
+     * {@link AbstractQueue#getMessagesOnTheQueue(QueueEntryFilter)}
      */
     public void testGetMessagesOnTheQueueByQueueEntryFilterWithDequeuedEntry()
     {
@@ -796,7 +796,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
 
     /**
      * Tests that all messages including dequeued one are deleted from the queue
-     * on invocation of {@link SimpleAMQQueue#clearQueue()}
+     * on invocation of {@link AbstractQueue#clearQueue()}
      */
     public void testClearQueueWithDequeuedEntry() throws Exception
     {
@@ -890,7 +890,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
      * @param queue
      * @param messageNumber
      */
-    protected <T extends SimpleAMQQueue> void putGivenNumberOfMessages(T queue, int messageNumber)
+    protected <T extends AbstractQueue> void putGivenNumberOfMessages(T queue, int messageNumber)
     {
         for (int i = 0; i < messageNumber; i++)
         {
@@ -1101,7 +1101,7 @@ abstract class SimpleAMQQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends
     }
 
 
-    private static class NonAsyncDeliverQueue extends SimpleAMQQueue<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    private static class NonAsyncDeliverQueue extends AbstractQueue<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
     {
         public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHost vhost)
         {

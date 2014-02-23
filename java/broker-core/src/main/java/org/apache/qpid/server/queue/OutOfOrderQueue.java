@@ -24,7 +24,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
 
-public abstract class OutOfOrderQueue<E extends QueueEntryImpl<E,Q,L>, Q extends OutOfOrderQueue<E,Q,L>, L extends SimpleQueueEntryList<E,Q,L>> extends SimpleAMQQueue<E,Q,L>
+public abstract class OutOfOrderQueue<E extends QueueEntryImpl<E,Q,L>, Q extends OutOfOrderQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> extends AbstractQueue<E,Q,L>
 {
 
     protected OutOfOrderQueue(VirtualHost virtualHost,

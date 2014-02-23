@@ -67,12 +67,15 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.security.auth.Subject;
 
-abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E, Q,L>, L extends SimpleQueueEntryList<E,Q,L>> implements AMQQueue<E, Q, QueueConsumer<?,E,Q,L>>,
-                                       StateChangeListener<QueueConsumer<?,E,Q,L>, QueueConsumer.State>,
-                                       MessageGroupManager.ConsumerResetHelper<E,Q,L>
+abstract class AbstractQueue<E extends QueueEntryImpl<E,Q,L>,
+                              Q extends AbstractQueue<E, Q,L>,
+                              L extends QueueEntryListBase<E,Q,L>>
+        implements AMQQueue<E, Q, QueueConsumer<?,E,Q,L>>,
+                   StateChangeListener<QueueConsumer<?,E,Q,L>, QueueConsumer.State>,
+                   MessageGroupManager.ConsumerResetHelper<E,Q,L>
 {
 
-    private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
+    private static final Logger _logger = Logger.getLogger(AbstractQueue.class);
 
     public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
     private static final String QPID_NO_GROUP = "qpid.no-group";
@@ -187,9 +190,9 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     private AMQQueue.NotificationListener _notificationListener;
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
-    protected SimpleAMQQueue(VirtualHost virtualHost,
-                             Map<String, Object> attributes,
-                             QueueEntryListFactory<E, Q, L> entryListFactory)
+    protected AbstractQueue(VirtualHost virtualHost,
+                            Map<String, Object> attributes,
+                            QueueEntryListFactory<E, Q, L> entryListFactory)
     {
         if (virtualHost == null)
         {
@@ -456,7 +459,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
             @Override
             public void performAction(final Deletable object)
             {
-                getVirtualHost().removeQueue(SimpleAMQQueue.this);
+                getVirtualHost().removeQueue(AbstractQueue.this);
             }
         };
 
@@ -1692,7 +1695,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
     boolean flushConsumer(QueueConsumer<?,E,Q,L> sub, long iterations)
     {
         boolean atTail = false;
-        final boolean keepSendLockHeld = iterations <=  SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
+        final boolean keepSendLockHeld = iterations <=  AbstractQueue.MAX_ASYNC_DELIVERIES;
         boolean queueEmpty = false;
 
         try
@@ -2212,7 +2215,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
 
         public boolean equals(Object o)
         {
-            return o instanceof SimpleAMQQueue.QueueEntryListener
+            return o instanceof AbstractQueue.QueueEntryListener
                     && _sub == ((QueueEntryListener) o)._sub;
         }
 
@@ -2380,7 +2383,7 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
                 {
                     try
                     {
-                        SimpleAMQQueue.this.enqueue(message, postEnqueueAction);
+                        AbstractQueue.this.enqueue(message, postEnqueueAction);
                     }
                     finally
                     {
@@ -2606,9 +2609,9 @@ abstract class SimpleAMQQueue<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleA
         @Override
         public void performAction(final Deletable object)
         {
-            if(SimpleAMQQueue.this._exclusiveOwner == _lifetimeObject)
+            if(AbstractQueue.this._exclusiveOwner == _lifetimeObject)
             {
-                SimpleAMQQueue.this._exclusiveOwner = null;
+                AbstractQueue.this._exclusiveOwner = null;
             }
             if(_deleteTask != null)
             {

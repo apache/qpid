@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.mock;
 
-public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry, StandardQueue, StandardQueueEntryList>
+public class StandardQueueTest extends AbstractQueueTestBase<StandardQueueEntry, StandardQueue, StandardQueueEntryList>
 {
 
     public void testCreationFailsWithNoVhost()
@@ -162,7 +162,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
     public void testEnqueueDequeuedEntry() throws Exception
     {
         // create a queue where each even entry is considered a dequeued
-        SimpleAMQQueue queue = new DequeuedQueue(getVirtualHost());
+        AbstractQueue queue = new DequeuedQueue(getVirtualHost());
         // create a consumer
         MockConsumer consumer = new MockConsumer();
 
@@ -188,7 +188,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
 
     /**
      * Tests whether dequeued entry is sent to subscriber in result of
-     * invocation of {@link SimpleAMQQueue#processQueue(QueueRunner)}
+     * invocation of {@link AbstractQueue#processQueue(QueueRunner)}
      */
     public void testProcessQueueWithDequeuedEntry() throws Exception
     {
@@ -264,7 +264,7 @@ public class StandardQueueTest extends SimpleAMQQueueTestBase<StandardQueueEntry
     }
 
 
-    private static class DequeuedQueue extends SimpleAMQQueue<DequeuedQueueEntry, DequeuedQueue, DequeuedQueueEntryList>
+    private static class DequeuedQueue extends AbstractQueue<DequeuedQueueEntry, DequeuedQueue, DequeuedQueueEntryList>
     {
 
         public DequeuedQueue(VirtualHost virtualHost)

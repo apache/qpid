@@ -28,7 +28,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class ConflationQueue extends SimpleAMQQueue<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>
+public class ConflationQueue extends AbstractQueue<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>
 {
     public static final String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
 

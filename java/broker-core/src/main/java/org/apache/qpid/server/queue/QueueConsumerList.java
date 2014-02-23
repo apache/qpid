@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E, Q,L>, L extends SimpleQueueEntryList<E,Q,L>>
+class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E, Q,L>, L extends QueueEntryListBase<E,Q,L>>
 {
     private final ConsumerNode<E,Q,L> _head = new ConsumerNode<E,Q,L>();
 
@@ -32,7 +32,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueu
     private final AtomicReference<ConsumerNode<E,Q,L>> _subNodeMarker = new AtomicReference<ConsumerNode<E,Q,L>>(_head);
     private final AtomicInteger _size = new AtomicInteger();
 
-    public static final class ConsumerNode<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E, Q,L>, L extends SimpleQueueEntryList<E,Q,L>>
+    public static final class ConsumerNode<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E, Q,L>, L extends QueueEntryListBase<E,Q,L>>
     {
         private final AtomicBoolean _deleted = new AtomicBoolean();
         private final AtomicReference<ConsumerNode<E,Q,L>> _next = new AtomicReference<ConsumerNode<E,Q,L>>();
@@ -237,7 +237,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueu
     }
 
 
-    public static class ConsumerNodeIterator<E extends QueueEntryImpl<E,Q,L>, Q extends SimpleAMQQueue<E, Q,L>, L extends SimpleQueueEntryList<E,Q,L>>
+    public static class ConsumerNodeIterator<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E, Q,L>, L extends QueueEntryListBase<E,Q,L>>
     {
         private ConsumerNode<E,Q,L> _lastNode;
 

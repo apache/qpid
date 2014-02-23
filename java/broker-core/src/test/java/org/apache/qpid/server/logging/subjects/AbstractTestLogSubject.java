@@ -190,7 +190,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
                      exchangeParts.length);
 
         assertEquals("Exchange type not correct",
-                     exchange.getType().getType(), exchangeParts[0]);
+                     exchange.getExchangeType().getType(), exchangeParts[0]);
 
         assertEquals("Exchange name not correct",
                      exchange.getName(), exchangeParts[1]);

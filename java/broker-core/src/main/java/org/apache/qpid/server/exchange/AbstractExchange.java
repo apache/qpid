@@ -144,15 +144,15 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         }
 
         // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.CREATED(getType().getType(), _name, _durable));
+        CurrentActor.get().message(ExchangeMessages.CREATED(getExchangeType().getType(), _name, _durable));
     }
 
-    public abstract ExchangeType<T> getType();
+    public abstract ExchangeType<T> getExchangeType();
 
     @Override
     public String getTypeName()
     {
-        return getType().getType();
+        return getExchangeType().getType();
     }
 
     public boolean isDurable()

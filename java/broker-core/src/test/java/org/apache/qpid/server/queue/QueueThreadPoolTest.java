@@ -30,7 +30,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimpleAMQQueueThreadPoolTest extends QpidTestCase
+public class QueueThreadPoolTest extends QpidTestCase
 {
 
     @Override

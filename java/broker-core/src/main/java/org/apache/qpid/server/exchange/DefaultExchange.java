@@ -31,9 +31,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
@@ -72,7 +69,7 @@ public class DefaultExchange implements Exchange<DirectExchange>
     }
 
     @Override
-    public ExchangeType<DirectExchange> getType()
+    public ExchangeType<DirectExchange> getExchangeType()
     {
         return DirectExchange.TYPE;
     }
@@ -166,7 +163,7 @@ public class DefaultExchange implements Exchange<DirectExchange>
     @Override
     public String getTypeName()
     {
-        return getType().getType();
+        return getExchangeType().getType();
     }
 
     @Override

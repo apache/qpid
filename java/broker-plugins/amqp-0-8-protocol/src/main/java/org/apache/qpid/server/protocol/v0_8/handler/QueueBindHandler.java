@@ -119,7 +119,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             if (!exch.isBound(bindingKey, arguments, queue))
             {
 
-                if(!exch.addBinding(bindingKey, queue, arguments) && TopicExchange.TYPE.equals(exch.getType()))
+                if(!exch.addBinding(bindingKey, queue, arguments) && TopicExchange.TYPE.equals(exch.getExchangeType()))
                 {
                     Binding oldBinding = exch.getBinding(bindingKey, queue, arguments);
 

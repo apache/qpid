@@ -30,7 +30,7 @@ import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
  * ISBN-13: 978-0262033848
  * see http://en.wikipedia.org/wiki/Red-black_tree
  */
-public class SortedQueueEntryList implements SimpleQueueEntryList<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
+public class SortedQueueEntryList implements QueueEntryListBase<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
 {
     private final SortedQueueEntry _head;
     private SortedQueueEntry _root;

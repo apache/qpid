@@ -40,7 +40,7 @@ public class QueueRunner implements Runnable
 {
     private static final Logger _logger = Logger.getLogger(QueueRunner.class);
 
-    private final SimpleAMQQueue _queue;
+    private final AbstractQueue _queue;
 
     private static int IDLE = 0;
     private static int SCHEDULED = 1;
@@ -53,7 +53,7 @@ public class QueueRunner implements Runnable
     private final AtomicLong _lastRunAgain = new AtomicLong();
     private final AtomicLong _lastRunTime = new AtomicLong();
 
-    public QueueRunner(SimpleAMQQueue queue)
+    public QueueRunner(AbstractQueue queue)
     {
         _queue = queue;
     }
