@@ -817,14 +817,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         {
             // TODO
         }
-        else if(CREATED.equals(name))
-        {
-            // TODO
-        }
-        else if(UPDATED.equals(name))
-        {
-            // TODO
-        }
         else if (_virtualHost != null)
         {
             return getAttributeFromVirtualHostImplementation(name);

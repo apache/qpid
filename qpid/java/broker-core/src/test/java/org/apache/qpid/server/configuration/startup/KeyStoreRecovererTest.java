@@ -23,11 +23,13 @@ package org.apache.qpid.server.configuration.startup;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
@@ -35,6 +37,8 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.adapter.AbstractKeyStoreAdapter;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.test.utils.TestSSLConstants;
 
 public class KeyStoreRecovererTest extends TestCase
@@ -52,17 +56,25 @@ public class KeyStoreRecovererTest extends TestCase
         when(entry.getId()).thenReturn(id);
 
         KeyStoreRecoverer recoverer = new KeyStoreRecoverer();
+        final KeyStore keyStore = recoverer.create(null, entry, broker);
 
-        KeyStore keyStore = recoverer.create(null, entry, broker);
         assertNotNull("Key store configured object is not created", keyStore);
         assertEquals(id, keyStore.getId());
 
         //verify we can retrieve the actual password using the method
-        assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, keyStore.getPassword());
-        assertNotNull(keyStore.getPassword());
+        Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                assertNotNull(keyStore.getPassword());
+                assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, keyStore.getPassword());
+                //verify that we haven't configured the key store with the actual dummy password value
+                assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(keyStore.getPassword()));
+                return null;
+            }
+        });
 
-        //verify that we haven't configured the key store with the actual dummy password value
-        assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(keyStore.getPassword()));
 
         // Verify the remaining attributes, including that the password value returned
         // via getAttribute is actually the dummy value and not the real password

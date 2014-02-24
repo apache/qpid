@@ -273,14 +273,6 @@ abstract public class PortAdapter<X extends PortAdapter<X>> extends AbstractConf
         {
             return getTimeToLive();
         }
-        else if(CREATED.equals(name))
-        {
-
-        }
-        else if(UPDATED.equals(name))
-        {
-
-        }
         return super.getAttribute(name);
     }
 

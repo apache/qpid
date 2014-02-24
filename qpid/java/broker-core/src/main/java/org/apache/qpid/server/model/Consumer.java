@@ -31,12 +31,10 @@ public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
     public String NO_LOCAL = "noLocal";
     public String SELECTOR = "selector";
     public String SETTLEMENT_MODE = "settlementMode";
-    public String CREATED = "created";
     public String DURABLE = "durable";
     public String LIFETIME_POLICY = "lifetimePolicy";
     public String STATE = "state";
     public String TIME_TO_LIVE = "timeToLive";
-    public String UPDATED = "updated";
 
     @ManagedAttribute
     String getDistributionMode();

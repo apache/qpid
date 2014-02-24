@@ -32,8 +32,6 @@ public interface KeyStore<X extends KeyStore<X>> extends ConfiguredObject<X>
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE = "state";
     String TIME_TO_LIVE = "timeToLive";
-    String CREATED = "created";
-    String UPDATED = "updated";
     String DESCRIPTION = "description";
 
     String PATH = "path";
@@ -41,25 +39,6 @@ public interface KeyStore<X extends KeyStore<X>> extends ConfiguredObject<X>
     String KEY_STORE_TYPE = "keyStoreType";
     String CERTIFICATE_ALIAS = "certificateAlias";
     String KEY_MANAGER_FACTORY_ALGORITHM = "keyManagerFactoryAlgorithm";
-
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(
-                            ID,
-                            NAME,
-                            STATE,
-                            DURABLE,
-                            LIFETIME_POLICY,
-                            TIME_TO_LIVE,
-                            CREATED,
-                            UPDATED,
-                            DESCRIPTION,
-                            PATH,
-                            PASSWORD,
-                            KEY_STORE_TYPE,
-                            CERTIFICATE_ALIAS,
-                            KEY_MANAGER_FACTORY_ALGORITHM
-                                 ));
 
     @ManagedAttribute( secure = true )
     public String getPassword();

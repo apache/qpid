@@ -36,7 +36,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
 {
 
     String BUILD_VERSION = "buildVersion";
-    String BYTES_RETAINED = "bytesRetained";
     String OPERATING_SYSTEM = "operatingSystem";
     String PLATFORM = "platform";
     String PROCESS_PID = "processPid";
@@ -46,12 +45,10 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
     String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
     String SUPPORTED_PREFERENCES_PROVIDER_TYPES = "supportedPreferencesProviderTypes";
-    String CREATED = "created";
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE = "state";
     String TIME_TO_LIVE = "timeToLive";
-    String UPDATED = "updated";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";

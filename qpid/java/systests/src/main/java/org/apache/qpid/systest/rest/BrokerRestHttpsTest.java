@@ -64,8 +64,8 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
     {
         Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
 
-        Asserts.assertAttributesPresent(brokerDetails, Attribute.getAttributeNames(Broker.class), Broker.BYTES_RETAINED,
-                Broker.PROCESS_PID, Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, Broker.CREATED, Broker.TIME_TO_LIVE,
+        Asserts.assertAttributesPresent(brokerDetails, Attribute.getAttributeNames(Broker.class),
+                Broker.PROCESS_PID, Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, Broker.TIME_TO_LIVE,
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME,

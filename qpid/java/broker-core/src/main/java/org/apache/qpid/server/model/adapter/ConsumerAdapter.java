@@ -138,14 +138,6 @@ public class ConsumerAdapter extends AbstractConfiguredObject<ConsumerAdapter> i
         {
 
         }
-        else if(CREATED.equals(name))
-        {
-
-        }
-        else if(UPDATED.equals(name))
-        {
-
-        }
         else if(DISTRIBUTION_MODE.equals(name))
         {
             return _consumer.acquires() ? "MOVE" : "COPY";

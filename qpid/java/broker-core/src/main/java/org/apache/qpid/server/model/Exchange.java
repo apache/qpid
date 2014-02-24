@@ -47,12 +47,10 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
                                   PRODUCER_COUNT,
                                   STATE_CHANGED));
 
-    String CREATED                              = "created";
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
-    String UPDATED                              = "updated";
     String ALTERNATE_EXCHANGE                   = "alternateExchange";
 
     // Attributes

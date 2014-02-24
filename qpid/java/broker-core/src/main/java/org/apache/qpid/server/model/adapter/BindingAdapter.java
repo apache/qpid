@@ -161,14 +161,6 @@ final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> impl
         {
 
         }
-        else if(CREATED.equals(name))
-        {
-
-        }
-        else if(UPDATED.equals(name))
-        {
-
-        }
         else if(EXCHANGE.equals(name))
         {
             return _exchange.getName();

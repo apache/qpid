@@ -80,12 +80,10 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     String CONFIG_STORE_PATH                    = "configStorePath";
     String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
-    String CREATED                              = "created";
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
-    String UPDATED                              = "updated";
     String CONFIG_PATH                          = "configPath";
 
     // Attributes

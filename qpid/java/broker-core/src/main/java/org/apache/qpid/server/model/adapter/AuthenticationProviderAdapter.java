@@ -171,11 +171,7 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
     @Override
     public Object getAttribute(String name)
     {
-        if(CREATED.equals(name))
-        {
-            // TODO
-        }
-        else if(DURABLE.equals(name))
+        if(DURABLE.equals(name))
         {
             return true;
         }
@@ -192,10 +188,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
             return getState();
         }
         else if(TIME_TO_LIVE.equals(name))
-        {
-            // TODO
-        }
-        else if(UPDATED.equals(name))
         {
             // TODO
         }
@@ -693,7 +685,7 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
             @Override
             public Collection<String> getAttributeNames()
             {
-                return User.AVAILABLE_ATTRIBUTES;
+                return Attribute.getAttributeNames(User.class);
             }
 
             @Override

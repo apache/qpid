@@ -318,14 +318,6 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
         {
 
         }
-        else if(CREATED.equals(name))
-        {
-
-        }
-        else if(UPDATED.equals(name))
-        {
-
-        }
         else if(ALTERNATE_EXCHANGE.equals(name))
         {
             org.apache.qpid.server.exchange.Exchange alternateExchange = _exchange.getAlternateExchange();

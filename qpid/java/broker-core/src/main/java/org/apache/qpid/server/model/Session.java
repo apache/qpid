@@ -55,8 +55,6 @@ public interface Session<X extends Session<X>> extends ConfiguredObject<X>
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
     public static final String TIME_TO_LIVE = "timeToLive";
-    public static final String CREATED = "created";
-    public static final String UPDATED = "updated";
 
     public static final String CHANNEL_ID = "channelId";
     // PRODUCER_FLOW_BLOCKED is exposed as an interim step.  We will expose attribute(s) that exposing

@@ -28,13 +28,10 @@ import org.apache.qpid.server.security.AccessControl;
 
 public interface AccessControlProvider<X extends AccessControlProvider<X>> extends ConfiguredObject<X>
 {
-    public static final String DESCRIPTION = "description";
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
     public static final String TIME_TO_LIVE = "timeToLive";
-    public static final String CREATED = "created";
-    public static final String UPDATED = "updated";
     public static final String TYPE = "type";
 
     //retrieve the underlying AccessControl object

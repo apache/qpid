@@ -29,26 +29,10 @@ import java.util.Set;
 
 public interface PreferencesProvider<X extends PreferencesProvider<X>> extends ConfiguredObject<X>
 {
-    String CREATED         = "created";
-    String UPDATED         = "updated";
     String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
     String TIME_TO_LIVE    = "timeToLive";
-
-    Collection<String> AVAILABLE_ATTRIBUTES =
-           Collections.unmodifiableList(
-                   Arrays.asList(
-                           ID,
-                           NAME,
-                           STATE,
-                           TYPE,
-                           CREATED,
-                           UPDATED,
-                           DURABLE,
-                           LIFETIME_POLICY,
-                           TIME_TO_LIVE
-                   ));
 
     /**
      * Returns preferences {@link Map} for a given user ID

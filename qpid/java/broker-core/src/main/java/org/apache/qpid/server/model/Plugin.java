@@ -27,12 +27,10 @@ import java.util.Collections;
 public interface Plugin<X extends Plugin<X>> extends ConfiguredObject<X>
 {
     //Hack, using it for the class name only for consistency with the other things.
-    String CREATED                              = "created";
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
     String TIME_TO_LIVE                         = "timeToLive";
-    String UPDATED                              = "updated";
 
     // Attributes
 
