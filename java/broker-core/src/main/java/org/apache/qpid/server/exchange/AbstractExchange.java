@@ -119,21 +119,21 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         {
             if(alternateExchangeAttr instanceof Exchange)
             {
-                _alternateExchange = (Exchange) alternateExchangeAttr;
+                setAlternateExchange((Exchange) alternateExchangeAttr);
             }
             else if(alternateExchangeAttr instanceof UUID)
             {
-                _alternateExchange = vhost.getExchange((UUID)alternateExchangeAttr);
+                setAlternateExchange(vhost.getExchange((UUID)alternateExchangeAttr));
             }
             else if(alternateExchangeAttr instanceof String)
             {
-                _alternateExchange = vhost.getExchange((String)alternateExchangeAttr);
+                setAlternateExchange(vhost.getExchange((String)alternateExchangeAttr));
                 if(_alternateExchange == null)
                 {
                     try
                     {
                         UUID altExcAsUUID = UUID.fromString((String)alternateExchangeAttr);
-                        _alternateExchange = vhost.getExchange(altExcAsUUID);
+                        setAlternateExchange(vhost.getExchange(altExcAsUUID));
                     }
                     catch (IllegalArgumentException e)
                     {
