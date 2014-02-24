@@ -159,11 +159,7 @@ public class AccessControlProviderAdapter extends AbstractConfiguredObject<Acces
     @Override
     public Object getAttribute(String name)
     {
-        if(CREATED.equals(name))
-        {
-            // TODO
-        }
-        else if(DURABLE.equals(name))
+        if(DURABLE.equals(name))
         {
             return true;
         }
@@ -180,10 +176,6 @@ public class AccessControlProviderAdapter extends AbstractConfiguredObject<Acces
             return getState();
         }
         else if(TIME_TO_LIVE.equals(name))
-        {
-            // TODO
-        }
-        else if(UPDATED.equals(name))
         {
             // TODO
         }

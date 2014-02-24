@@ -25,11 +25,9 @@ import java.util.Collections;
 
 public interface GroupMember<X extends GroupMember<X>> extends ConfiguredObject<X>
 {
-    String CREATED         = "created";
     String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
     String TIME_TO_LIVE    = "timeToLive";
-    String UPDATED         = "updated";
 
 }

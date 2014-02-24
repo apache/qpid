@@ -160,11 +160,7 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
     @Override
     public Object getAttribute(String name)
     {
-        if (CREATED.equals(name))
-        {
-            // TODO
-        }
-        else if (DURABLE.equals(name))
+        if (DURABLE.equals(name))
         {
             return true;
         }
@@ -184,10 +180,7 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         {
             // TODO
         }
-        else if (UPDATED.equals(name))
-        {
-            // TODO
-        }
+
         return super.getAttribute(name);
     }
 

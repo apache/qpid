@@ -28,31 +28,15 @@ import java.util.Map;
 
 public interface User<X extends User<X>> extends ConfiguredObject<X>
 {
-    String CREATED         = "created";
     String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
     String TIME_TO_LIVE    = "timeToLive";
-    String UPDATED         = "updated";
     String PASSWORD        = "password";
 
     // Attributes
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-           Collections.unmodifiableList(
-                   Arrays.asList(
-                           ID,
-                           NAME,
-                           STATE,
-                           DURABLE,
-                           LIFETIME_POLICY,
-                           TIME_TO_LIVE,
-                           CREATED,
-                           UPDATED,
-                           PASSWORD
-                   ));
 
-
-    @ManagedAttribute
+    @ManagedAttribute( secure = true )
     String getPassword();
 
     public void setPassword(String password);

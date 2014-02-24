@@ -26,6 +26,7 @@ import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +37,7 @@ import java.util.UUID;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
+import javax.security.auth.Subject;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Attribute;
@@ -44,6 +46,8 @@ import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -76,7 +80,14 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
         _broker = broker;
 
         String keyStorePath = (String)getAttribute(KeyStore.PATH);
-        String keyStorePassword = getPassword();
+        String keyStorePassword = Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<String>()
+        {
+            @Override
+            public String run()
+            {
+                return getPassword();
+            }
+        });
         String keyStoreType = (String)getAttribute(KeyStore.KEY_STORE_TYPE);
         String keyManagerFactoryAlgorithm = (String)getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
         String certAlias = (String)getAttribute(KeyStore.CERTIFICATE_ALIAS);
@@ -250,7 +261,14 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
     public KeyManager[] getKeyManagers() throws GeneralSecurityException
     {
         String keyStorePath = (String)getAttribute(KeyStore.PATH);
-        String keyStorePassword = getPassword();
+        String keyStorePassword = Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<String>()
+                                    {
+                                        @Override
+                                        public String run()
+                                        {
+                                            return getPassword();
+                                        }
+                                    });
         String keyStoreType = (String)getAttribute(KeyStore.KEY_STORE_TYPE);
         String keyManagerFactoryAlgorithm = (String)getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
         String certAlias = (String)getAttribute(KeyStore.CERTIFICATE_ALIAS);

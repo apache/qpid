@@ -26,6 +26,7 @@ import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +38,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import javax.net.ssl.X509TrustManager;
+import javax.security.auth.Subject;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -45,6 +48,8 @@ import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManagerFactory;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -79,7 +84,14 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter<TrustStoreAdapter
         _broker = broker;
 
         String trustStorePath = (String) getAttribute(TrustStore.PATH);
-        String trustStorePassword = getPassword();
+        String trustStorePassword = Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<String>()
+        {
+            @Override
+            public String run()
+            {
+                return getPassword();
+            }
+        });
         String trustStoreType = (String) getAttribute(TrustStore.TRUST_STORE_TYPE);
         String trustManagerFactoryAlgorithm = (String) getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
 
@@ -238,7 +250,15 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter<TrustStoreAdapter
     public TrustManager[] getTrustManagers() throws GeneralSecurityException
     {
         String trustStorePath = (String)getAttribute(TrustStore.PATH);
-        String trustStorePassword = getPassword();
+        String trustStorePassword = Subject.doAs(org.apache.qpid.server.security.SecurityManager.SYSTEM,
+                                                 new PrivilegedAction<String>()
+                                                 {
+                                                     @Override
+                                                     public String run()
+                                                     {
+                                                         return getPassword();
+                                                     }
+                                                 });
         String trustStoreType = (String)getAttribute(TrustStore.TRUST_STORE_TYPE);
         String trustManagerFactoryAlgorithm = (String)getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
 

@@ -137,14 +137,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
         {
             return getTimeToLive();
         }
-        else if (CREATED.equals(name))
-        {
-
-        }
-        else if (UPDATED.equals(name))
-        {
-
-        }
         return super.getAttribute(name);
     }
 

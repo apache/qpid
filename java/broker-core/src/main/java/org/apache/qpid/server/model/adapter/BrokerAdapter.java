@@ -915,21 +915,9 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         {
             // TODO
         }
-        else if(CREATED.equals(name))
-        {
-            // TODO
-        }
-        else if(UPDATED.equals(name))
-        {
-            // TODO
-        }
         else if(BUILD_VERSION.equals(name))
         {
             return QpidProperties.getBuildVersion();
-        }
-        else if(BYTES_RETAINED.equals(name))
-        {
-            // TODO
         }
         else if(OPERATING_SYSTEM.equals(name))
         {

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
+import java.security.AccessController;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -33,7 +34,11 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.MapValueConverter;
+
+import javax.security.auth.Subject;
 
 public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> extends AbstractConfiguredObject<X>
 {
@@ -154,23 +159,9 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
         {
             return getTimeToLive();
         }
-        else if(KeyStore.CREATED.equals(name))
-        {
-
-        }
-        else if(KeyStore.UPDATED.equals(name))
-        {
-
-        }
         else if(KeyStore.PASSWORD.equals(name))
         {
-            // For security reasons we don't expose the password
-            if (getPassword() != null)
-            {
-                return DUMMY_PASSWORD_MASK;
-            }
-
-            return null;
+            return getPassword();
         }
 
         return super.getAttribute(name);
@@ -178,7 +169,15 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
 
     public String getPassword()
     {
-        return _password;
+        // For security reasons we don't expose the password unless running as the system user
+        if(SecurityManager.SYSTEM.equals(Subject.getSubject(AccessController.getContext())))
+        {
+            return _password;
+        }
+        else
+        {
+            return DUMMY_PASSWORD_MASK;
+        }
     }
 
     public void setPassword(String password)

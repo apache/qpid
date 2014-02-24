@@ -32,22 +32,6 @@ public interface GroupProvider<X extends GroupProvider<X>> extends ConfiguredObj
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
     public static final String TIME_TO_LIVE = "timeToLive";
-    public static final String CREATED = "created";
-    public static final String UPDATED = "updated";
-    public static final String TYPE = "type";
-
-    public static final Collection<String> AVAILABLE_ATTRIBUTES =
-            Collections.unmodifiableList(
-                    Arrays.asList(ID,
-                                  NAME,
-                                  DESCRIPTION,
-                                  STATE,
-                                  DURABLE,
-                                  LIFETIME_POLICY,
-                                  TIME_TO_LIVE,
-                                  CREATED,
-                                  UPDATED,
-                                  TYPE));
 
     Set<Principal> getGroupPrincipalsForUser(String username);
 }
