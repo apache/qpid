@@ -572,9 +572,9 @@ if ($defined64) {
 #
 if ($make32) {
     cd "$build32"
-	$global:cmakeCommandLine32 = "CMake -G ""$global:cmakeGenerator"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=install_$build32"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost32"" $proton32cmake $cppDir"
+	$global:cmakeCommandLine32 = "CMake -G ""$global:cmakeGenerator"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=$build32/install"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost32"" $proton32cmake $cppDir"
     Write-Host "Running 32-bit CMake in $build32 : $global:cmakeCommandLine32"
-    CMake -G "$global:cmakeGenerator" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=install_$build32" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost32" $proton32cmake $cppDir
+    CMake -G "$global:cmakeGenerator" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=$build32/install" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost32" $proton32cmake $cppDir
 } else {
     Write-Host "Skipped 32-bit CMake."
 }
@@ -585,10 +585,10 @@ if ($make32) {
 if ($make64) {
     cd "$build64"
     Write-Host "Running 64-bit CMake in $build64"
-	$global:cmakeCommandLine64 = "CMake -G ""$global:cmakeGenerator Win64"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=install_$build64"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost64"" $proton64cmake $cppDir"
+	$global:cmakeCommandLine64 = "CMake -G ""$global:cmakeGenerator Win64"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=$build64/install"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost64"" $proton64cmake $cppDir"
 	Write-Host $global:cmakeCommandLine64
     Write-Host ""
-    CMake -G "$global:cmakeGenerator Win64" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=install_$build64" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost64" $proton64cmake $cppDir
+    CMake -G "$global:cmakeGenerator Win64" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=$build64/install" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost64" $proton64cmake $cppDir
 } else {
     Write-Host "Skipped 64-bit CMake."
 }
