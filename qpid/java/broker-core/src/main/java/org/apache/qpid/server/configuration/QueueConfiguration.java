@@ -102,7 +102,7 @@ public class QueueConfiguration extends AbstractConfiguration
 
     public boolean getDurable()
     {
-        return getDefaultedBoolean("boolean");
+        return getDefaultedBoolean("durable");
     }
 
     public boolean getExclusive()
