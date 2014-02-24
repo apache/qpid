@@ -401,19 +401,7 @@ abstract class AbstractQueue<E extends QueueEntryImpl<E,Q,L>,
             setMaximumDeliveryCount(virtualHost.getDefaultMaximumDeliveryAttempts());
         }
 
-        final String ownerString;
-        switch(_exclusivityPolicy)
-        {
-            case PRINCIPAL:
-                ownerString = ((Principal) _exclusiveOwner).getName();
-                break;
-            case CONTAINER:
-                ownerString = (String) _exclusiveOwner;
-                break;
-            default:
-                ownerString = null;
-
-        }
+        final String ownerString = getOwner();
 
         // Log the creation of this Queue.
         // The priorities display is toggled on if we set priorities > 0
