@@ -550,13 +550,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         attributes = new LinkedHashMap<String, Object>(attributes);
 
         String queueName = MapValueConverter.getStringAttribute(Queue.NAME, attributes);
-        boolean autoDelete = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
-                                                                Queue.LIFETIME_POLICY,
-                                                                attributes,
-                                                                LifetimePolicy.PERMANENT) != LifetimePolicy.PERMANENT;
-        boolean durable = MapValueConverter.getBooleanAttribute(Queue.DURABLE, attributes, false);
-        ExclusivityPolicy exclusive = MapValueConverter.getEnumAttribute(ExclusivityPolicy.class,Queue.EXCLUSIVE, attributes, ExclusivityPolicy.NONE);
-        String owner = MapValueConverter.getStringAttribute(Queue.OWNER, attributes, null);
 
         synchronized (_queueRegistry)
         {
@@ -567,7 +560,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             if(!attributes.containsKey(Queue.ID))
             {
 
-                UUID id = UUIDGenerator.generateExchangeUUID(queueName, getName());
+                UUID id = UUIDGenerator.generateQueueUUID(queueName, getName());
                 while(_queueRegistry.getQueue(id) != null)
                 {
                     id = UUID.randomUUID();

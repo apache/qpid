@@ -98,7 +98,11 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         String clientID = _connection.getClientID();
         assertNotNull("clientID should not be null", clientID);
 
-        validateQueueProperties(results, false, false, clientID);
+        // in 0-8/9/9-1 an exclusive queue will be deleted when the connection is closed, so auto-delete is true.
+        // in 0-10 an exclusive queue outlasts the creating connection and so is not auto-delete
+        // the queue only has owner as the client-id in 0-8/9/91 where exclusivity is taken to mean exclusive to the
+        // client-id in perpetuity. For 0-10 exclusive means exclusive to a session.
+        validateQueueProperties(results, false, !(isBroker010() || _durable), (_durable && !isBroker010()) ? clientID : null);
     }
 
     /**
