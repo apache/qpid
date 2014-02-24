@@ -1535,7 +1535,7 @@ abstract class AbstractQueue<E extends QueueEntryImpl<E,Q,L>,
 
             for (Binding b : bindingCopy)
             {
-                b.getExchange().removeBinding(b);
+                b.delete();
             }
 
             QueueConsumerList.ConsumerNodeIterator consumerNodeIterator = _consumerList.iterator();

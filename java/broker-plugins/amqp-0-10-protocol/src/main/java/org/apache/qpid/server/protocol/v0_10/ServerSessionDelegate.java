@@ -27,6 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.binding.*;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.store.StoreException;
@@ -989,7 +991,11 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 try
                 {
-                    exchange.removeBinding(method.getBindingKey(), queue, null);
+                    Binding binding = exchange.getBinding(method.getBindingKey(), queue);
+                    if(binding != null)
+                    {
+                        binding.delete();
+                    }
                 }
                 catch (AccessControlException e)
                 {

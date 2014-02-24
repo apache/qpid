@@ -56,7 +56,6 @@ import org.apache.qpid.server.queue.StandardQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -795,7 +794,8 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            exchange.removeBinding(routingKey, queue, bindArguments);
+            Binding b = exchange.getBinding(routingKey, queue);
+            b.delete();
         }
         catch (Exception e)
         {

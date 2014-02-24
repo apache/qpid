@@ -35,7 +35,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -179,7 +178,7 @@ public class HeadersExchangeTest extends TestCase
         routeAndTest(mockMessage(getArgsMapFromStrings("F0000=Aardvark")), q1, q2);
         routeAndTest(mockMessage(getArgsMapFromStrings("F0001")), q3);
 
-        _exchange.removeBinding("Q1",q1,getArgsMapFromStrings("F0000"));
+        _exchange.getBinding("Q1",q1).delete();
 
         routeAndTest(mockMessage(getArgsMapFromStrings("F0000")));
         routeAndTest(mockMessage(getArgsMapFromStrings("F0000=Aardvark")), q2);

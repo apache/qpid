@@ -72,11 +72,7 @@ public interface Exchange<T extends Exchange> extends ExchangeReferrer, MessageD
     void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
                         Map<String, Object> argumentMap);
 
-    void removeBinding(Binding b);
-
-    Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
-
-    Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
+    Binding getBinding(String bindingKey, AMQQueue queue);
 
     void close();
 

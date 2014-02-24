@@ -35,6 +35,7 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -42,6 +43,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class DefaultExchange implements Exchange<DirectExchange>
@@ -123,21 +125,9 @@ public class DefaultExchange implements Exchange<DirectExchange>
     }
 
     @Override
-    public void removeBinding(Binding b)
+    public Binding getBinding(String bindingKey, AMQQueue queue)
     {
-        throw new AccessControlException("Cannot remove bindings to the default exchange");
-    }
-
-    @Override
-    public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-    {
-        throw new AccessControlException("Cannot remove bindings to the default exchange");
-    }
-
-    @Override
-    public Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-    {
-        if(_virtualHost.getQueue(bindingKey) == queue && (arguments == null || arguments.isEmpty()))
+        if(_virtualHost.getQueue(bindingKey) == queue)
         {
             return convertToBinding(queue);
         }
@@ -157,7 +147,9 @@ public class DefaultExchange implements Exchange<DirectExchange>
                                                             queueName,
                                                             _virtualHost.getName());
 
-        return new Binding(exchangeId, queueName, queue, this, Collections.EMPTY_MAP);
+        final Binding binding = new Binding(exchangeId, queueName, queue, this, Collections.EMPTY_MAP);
+        binding.addStateChangeListener(STATE_CHANGE_LISTENER);
+        return binding;
     }
 
     @Override
@@ -346,4 +338,16 @@ public class DefaultExchange implements Exchange<DirectExchange>
         }
     }
 
+    private static final StateChangeListener<Binding, State> STATE_CHANGE_LISTENER =
+            new StateChangeListener<Binding, State>()
+            {
+                @Override
+                public void stateChanged(final Binding object, final State oldState, final State newState)
+                {
+                    if(newState == State.DELETED)
+                    {
+                        throw new AccessControlException("Cannot remove bindings to the default exchange");
+                    }
+                }
+            };
 }

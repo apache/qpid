@@ -143,7 +143,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         assertEquals("Wrong exchange bound", _exchange,
                      _queue.getBindings().get(0).getExchange());
 
-        _exchange.removeBinding(_routingKey, _queue, Collections.EMPTY_MAP);
+        _exchange.getBinding(_routingKey, _queue).delete();
         assertFalse("Routing key was still bound",
                 _exchange.isBound(_routingKey));
 

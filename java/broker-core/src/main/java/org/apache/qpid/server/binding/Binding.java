@@ -21,11 +21,18 @@
 package org.apache.qpid.server.binding;
 
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.BindingMessages;
+import org.apache.qpid.server.logging.subjects.BindingLogSubject;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.util.StateChangeListener;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Binding
@@ -36,6 +43,13 @@ public class Binding
     private final Map<String, Object> _arguments;
     private final UUID _id;
     private final AtomicLong _matches = new AtomicLong();
+    private final BindingLogSubject _logSubject;
+    //TODO : persist creation time
+    private long _createTime = System.currentTimeMillis();
+    final AtomicBoolean _deleted = new AtomicBoolean();
+    final CopyOnWriteArrayList<StateChangeListener<Binding,State>> _stateChangeListeners =
+            new CopyOnWriteArrayList<StateChangeListener<Binding, State>>();
+
 
     public Binding(UUID id,
                    final String bindingKey,
@@ -51,6 +65,11 @@ public class Binding
 
         //Perform ACLs
         queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
+        _logSubject = new BindingLogSubject(bindingKey,exchange,queue);
+        CurrentActor.get().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
+                                                                        getArguments() != null
+                                                                        && !getArguments().isEmpty()));
+
 
     }
 
@@ -89,9 +108,14 @@ public class Binding
         return _matches.get();
     }
 
-    boolean isDurable()
+    public boolean isDurable()
     {
         return _queue.isDurable() && _exchange.isDurable();
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 
     @Override
@@ -128,4 +152,30 @@ public class Binding
         return "Binding{bindingKey="+_bindingKey+", exchange="+_exchange+", queue="+_queue+", id= " + _id + " }";
     }
 
+    public void delete()
+    {
+        if(_deleted.compareAndSet(false,true))
+        {
+            for(StateChangeListener<Binding,State> listener : _stateChangeListeners)
+            {
+                listener.stateChanged(this, State.ACTIVE, State.DELETED);
+            }
+            CurrentActor.get().message(_logSubject, BindingMessages.DELETED());
+        }
+    }
+
+    public State getState()
+    {
+        return _deleted.get() ? State.DELETED : State.ACTIVE;
+    }
+
+    public void addStateChangeListener(StateChangeListener<Binding,State> listener)
+    {
+        _stateChangeListeners.add(listener);
+    }
+
+    public void removeStateChangeListener(StateChangeListener<Binding,State> listener)
+    {
+        _stateChangeListeners.remove(listener);
+    }
 }
