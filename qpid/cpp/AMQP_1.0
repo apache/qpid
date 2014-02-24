@@ -161,6 +161,16 @@ whether it matches the name of a queue or an exchange. If there exists
 a queue and an exchange of the same name, the queue is used but a
 warning is logged.
 
+The incoming and outgoing links attached to the broker can be viewed
+via the qpid management framework (aka QMF), e.g. with the qpid-config
+tool:
+
+    qpid-config list incoming
+
+or
+
+    qpid-config list outgoing
+
 If the node is an exchange, then an outgoing link (i.e. messages to
 travel out from broker) will cause a temporary, link-scoped queue to
 be created on the broker and bound to the exchange. [See section on
