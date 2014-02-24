@@ -35,3 +35,6 @@ qpid_tests.broker_0_9.queue.QueueTests.test_unbind_headers
 
 #QPID-4832 Java Broker does not support an explicit bind to a default exchange
 qpid_tests.broker_0_8.exchange.DefaultExchangeRuleTests.testDefaultExchangeExplicitBind
+
+#QPID-5551 : We now throw a connection exception rather than a channel exception
+qpid_tests.broker_0_8.basic.BasicTests.test_consume_exclusive
