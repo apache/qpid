@@ -71,12 +71,12 @@ final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> impl
 
     public State getState()
     {
-        return null;  //TODO
+        return _binding.getState();
     }
 
     public boolean isDurable()
     {
-        return _binding.getQueue().isDurable() && _binding.getExchange().isDurable();
+        return _binding.isDurable();
     }
 
     public void setDurable(final boolean durable)
@@ -131,7 +131,7 @@ final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> impl
 
     public void delete()
     {
-        _exchange.getExchange().removeBinding(_binding);
+        _binding.delete();
     }
 
     @Override
@@ -147,11 +147,11 @@ final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> impl
         }
         else if(STATE.equals(name))
         {
-
+            return getState();
         }
         else if(DURABLE.equals(name))
         {
-            return _queue.isDurable() && _exchange.isDurable();
+            return isDurable();
         }
         else if(LIFETIME_POLICY.equals(name))
         {

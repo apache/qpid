@@ -122,7 +122,7 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
 
         if(!_exchange.addBinding(bindingKey, amqQueue, bindingArguments))
         {
-            Binding oldBinding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
+            Binding oldBinding = _exchange.getBinding(bindingKey, amqQueue);
 
             Map<String, Object> oldArgs = oldBinding.getArguments();
             if((oldArgs == null && !bindingArguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(bindingArguments)))
@@ -130,7 +130,7 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
                 _exchange.replaceBinding(oldBinding.getId(), bindingKey, amqQueue, bindingArguments);
             }
         }
-        Binding binding = _exchange.getBinding(bindingKey, amqQueue, bindingArguments);
+        Binding binding = _exchange.getBinding(bindingKey, amqQueue);
 
         synchronized (_bindingAdapters)
         {

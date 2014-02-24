@@ -106,14 +106,14 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
         @Override
         public Binding resolve()
         {
-            if(_exchange.getBinding(_bindingName, _queue, _bindingArgumentsMap) == null)
+            if(_exchange.getBinding(_bindingName, _queue) == null)
             {
                 _logger.info("Restoring binding: (Exchange: " + _exchange.getName() + ", Queue: " + _queue.getName()
                              + ", Routing Key: " + _bindingName + ", Arguments: " + _bindingArgumentsMap + ")");
 
                 _exchange.restoreBinding(_bindingId, _bindingName, _queue, _bindingArgumentsMap);
             }
-            return _exchange.getBinding(_bindingName, _queue, _bindingArgumentsMap);
+            return _exchange.getBinding(_bindingName, _queue);
         }
 
         private class QueueDependency implements UnresolvedDependency<AMQQueue>

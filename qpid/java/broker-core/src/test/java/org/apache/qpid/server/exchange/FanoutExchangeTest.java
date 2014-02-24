@@ -38,7 +38,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -143,7 +142,7 @@ public class FanoutExchangeTest extends TestCase
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
         assertTrue("Expected queue2 to be routed to", result.contains(queue2));
 
-        _exchange.removeBinding("key",queue2,null);
+        _exchange.getBinding("key",queue2).delete();
 
         result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
 

@@ -232,7 +232,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     }
                     for(Binding existingBinding : bindingsToRemove)
                     {
-                        existingBinding.getExchange().removeBinding(existingBinding);
+                        existingBinding.delete();
                     }
                 }
 

@@ -26,15 +26,15 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
-import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -44,6 +44,7 @@ import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -82,7 +83,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
 
     private final CopyOnWriteArrayList<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
-    private UUID _id;
+    private final UUID _id;
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
     private final AtomicLong _receivedMessageCount = new AtomicLong();
     private final AtomicLong _receivedMessageSize = new AtomicLong();
@@ -93,8 +94,12 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
     private final CopyOnWriteArrayList<Exchange.BindingListener> _listeners = new CopyOnWriteArrayList<Exchange.BindingListener>();
 
+    private final ConcurrentHashMap<BindingIdentifier, Binding> _bindingsMap = new ConcurrentHashMap<BindingIdentifier, Binding>();
+
+
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
+    private StateChangeListener<Binding, State> _bindingListener;
 
     public AbstractExchange(VirtualHost vhost, Map<String, Object> attributes) throws UnknownExchangeException
     {
@@ -142,7 +147,17 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
             }
 
         }
-
+        _bindingListener = new StateChangeListener<Binding, State>()
+        {
+            @Override
+            public void stateChanged(final Binding binding, final State oldState, final State newState)
+            {
+                if(newState == State.DELETED)
+                {
+                    removeBinding(binding);
+                }
+            }
+        };
         // Log Exchange creation
         CurrentActor.get().message(ExchangeMessages.CREATED(getExchangeType().getType(), _name, _durable));
     }
@@ -173,7 +188,8 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
             List<Binding> bindings = new ArrayList<Binding>(_bindings);
             for(Binding binding : bindings)
             {
-                removeBinding(binding);
+                binding.removeStateChangeListener(_bindingListener);
+                binding.delete();
             }
 
             if(_alternateExchange != null)
@@ -571,30 +587,22 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         makeBinding(id, bindingKey,queue, argumentMap,true, false);
     }
 
-    @Override
-    public void removeBinding(final Binding b)
+    private void removeBinding(final Binding binding)
     {
-        removeBinding(b.getBindingKey(), b.getQueue(), b.getArguments());
-    }
+        String bindingKey = binding.getBindingKey();
+        AMQQueue queue = binding.getQueue();
 
-    @Override
-    public Binding removeBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
-    {
         assert queue != null;
 
         if (bindingKey == null)
         {
             bindingKey = "";
         }
-        if (arguments == null)
-        {
-            arguments = Collections.emptyMap();
-        }
 
         // Check access
         _virtualHost.getSecurityManager().authoriseUnbind(this, bindingKey, queue);
 
-        BindingImpl b = _bindingsMap.remove(new BindingImpl(null, bindingKey,queue,arguments));
+        Binding b = _bindingsMap.remove(new BindingIdentifier(bindingKey,queue));
 
         if (b != null)
         {
@@ -605,15 +613,14 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
             {
                 DurableConfigurationStoreHelper.removeBinding(_virtualHost.getDurableConfigurationStore(), b);
             }
-            b.logDestruction();
+            b.delete();
         }
 
-        return b;
     }
 
 
     @Override
-    public Binding getBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+    public Binding getBinding(String bindingKey, AMQQueue queue)
     {
         assert queue != null;
 
@@ -622,16 +629,8 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
             bindingKey = "";
         }
 
-        if(arguments == null)
-        {
-            arguments = Collections.emptyMap();
-        }
-
-        BindingImpl b = new BindingImpl(null, bindingKey,queue,arguments);
-        return _bindingsMap.get(b);
+        return _bindingsMap.get(new BindingIdentifier(bindingKey,queue));
     }
-
-    private final ConcurrentHashMap<BindingImpl, BindingImpl> _bindingsMap = new ConcurrentHashMap<BindingImpl, BindingImpl>();
 
     private boolean makeBinding(UUID id,
                                 String bindingKey,
@@ -658,13 +657,14 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
                                                    bindingKey,
                                                    _virtualHost.getName());
         }
-        BindingImpl b = new BindingImpl(id, bindingKey, queue, arguments);
-        BindingImpl existingMapping = _bindingsMap.putIfAbsent(b, b);
+        Binding b = new Binding(id, bindingKey, queue, this, arguments);
+        Binding existingMapping = _bindingsMap.putIfAbsent(new BindingIdentifier(bindingKey,queue), b);
         if (existingMapping == null || force)
         {
+            b.addStateChangeListener(_bindingListener);
             if (existingMapping != null)
             {
-                removeBinding(existingMapping);
+                existingMapping.delete();
             }
 
             if (b.isDurable() && !restore)
@@ -674,7 +674,6 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
             queue.addBinding(b);
             doAddBinding(b);
-            b.logCreation();
 
             return true;
         }
@@ -684,56 +683,61 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         }
     }
 
-    private final class BindingImpl extends Binding
+
+    private static final class BindingIdentifier
     {
-        private final BindingLogSubject _logSubject;
-        //TODO : persist creation time
-        private long _createTime = System.currentTimeMillis();
+        private final String _bindingKey;
+        private final AMQQueue _destination;
 
-        private BindingImpl(UUID id,
-                            String bindingKey,
-                            final AMQQueue queue,
-                            final Map<String, Object> arguments)
+        private BindingIdentifier(final String bindingKey, final AMQQueue destination)
         {
-            super(id, bindingKey, queue, AbstractExchange.this, arguments);
-            _logSubject = new BindingLogSubject(bindingKey,AbstractExchange.this,queue);
-
+            _bindingKey = bindingKey;
+            _destination = destination;
         }
 
-        public void onClose(final Exchange exchange)
+        public String getBindingKey()
         {
-            removeBinding(this);
+            return _bindingKey;
         }
 
-        void logCreation()
+        public AMQQueue getDestination()
         {
-            CurrentActor.get().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
-                                                                            getArguments() != null
-                                                                            && !getArguments().isEmpty()));
+            return _destination;
         }
 
-        void logDestruction()
+        @Override
+        public boolean equals(final Object o)
         {
-            CurrentActor.get().message(_logSubject, BindingMessages.DELETED());
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final BindingIdentifier that = (BindingIdentifier) o;
+
+            if (!_bindingKey.equals(that._bindingKey))
+            {
+                return false;
+            }
+            if (!_destination.equals(that._destination))
+            {
+                return false;
+            }
+
+            return true;
         }
 
-        public String getOrigin()
+        @Override
+        public int hashCode()
         {
-            return (String) getArguments().get("qpid.fed.origin");
+            int result = _bindingKey.hashCode();
+            result = 31 * result + _destination.hashCode();
+            return result;
         }
-
-        public long getCreateTime()
-        {
-            return _createTime;
-        }
-
-        public boolean isDurable()
-        {
-            return getQueue().isDurable() && getExchange().isDurable();
-        }
-
     }
-
-
 
 }

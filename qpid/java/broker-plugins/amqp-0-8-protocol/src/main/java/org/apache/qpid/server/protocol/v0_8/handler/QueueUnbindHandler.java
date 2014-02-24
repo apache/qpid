@@ -25,12 +25,12 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueUnbindBody;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
@@ -100,7 +100,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
         }
 
-        if(exch.getBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(body.getArguments())) == null)
+        if(exch.getBinding(String.valueOf(routingKey), queue) == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND,"No such binding");
         }
@@ -108,7 +108,11 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         {
             try
             {
-                exch.removeBinding(String.valueOf(routingKey), queue, FieldTable.convertToMap(body.getArguments()));
+                Binding binding = exch.getBinding(String.valueOf(routingKey), queue);
+                if(binding != null)
+                {
+                    binding.delete();
+                }
             }
             catch (AccessControlException e)
             {

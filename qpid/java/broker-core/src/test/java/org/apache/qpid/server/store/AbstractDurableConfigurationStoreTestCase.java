@@ -40,12 +40,15 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
@@ -92,6 +95,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _queueId = UUIDGenerator.generateRandomUUID();
         _exchangeId = UUIDGenerator.generateRandomUUID();
 
+        CurrentActor.set(mock(LogActor.class));
         _storeName = getName();
         _storePath = TMP_FOLDER + File.separator + _storeName;
         FileUtils.delete(new File(_storePath), true);
@@ -112,6 +116,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(_exchange.getName()).thenReturn(EXCHANGE_NAME);
 
         when(_exchange.getId()).thenReturn(_exchangeId);
+        when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
                 _storePath);
         when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
