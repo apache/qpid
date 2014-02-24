@@ -954,18 +954,22 @@ class Engine:
   def resolve_declare(self, sst, lnk, dir, action):
     declare = lnk.options.get("create") in ("always", dir)
     assrt = lnk.options.get("assert") in ("always", dir)
+    requested_type = lnk.options.get("node", {}).get("type")
     def do_resolved(type, subtype):
       err = None
       if type is None:
         if declare:
           err = self.declare(sst, lnk, action)
         else:
-          err = NotFound(text="no such queue: %s" % lnk.name)
+          err = NotFound(text="no such %s: %s" % (requested_type or "queue", lnk.name))
       else:
         if assrt:
           expected = lnk.options.get("node", {}).get("type")
           if expected and type != expected:
-            err = AssertionFailed(text="expected %s, got %s" % (expected, type))
+            if declare:
+              err = self.declare(sst, lnk, action)
+            else:
+              err = AssertionFailed(text="expected %s, got %s" % (expected, type))
         if err is None:
           action(type, subtype)
 
@@ -975,10 +979,10 @@ class Engine:
         del self._attachments[tgt]
         tgt.closed = True
         return
-    self.resolve(sst, lnk.name, do_resolved, force=declare)
+    self.resolve(sst, lnk.name, do_resolved, node_type=requested_type, force=declare)
 
-  def resolve(self, sst, name, action, force=False):
-    if not force:
+  def resolve(self, sst, name, action, force=False, node_type=None):
+    if not force and not node_type:
       try:
         type, subtype = self.address_cache[name]
         action(type, subtype)
@@ -992,10 +996,17 @@ class Engine:
     def do_action(r):
       do_result(r)
       er, qr = args
-      if er.not_found and not qr.queue:
+      if node_type == "topic" and not er.not_found:
+        type, subtype = "topic", er.type
+      elif node_type == "queue" and qr.queue:
+        type, subtype = "queue", None
+      elif er.not_found and not qr.queue:
         type, subtype = None, None
       elif qr.queue:
-        type, subtype = "queue", None
+        if node_type == "topic" and force:
+          type, subtype = None, None
+        else:
+          type, subtype = "queue", None
       else:
         type, subtype = "topic", er.type
       if type is not None:
