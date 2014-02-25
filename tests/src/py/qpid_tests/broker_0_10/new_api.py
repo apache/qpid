@@ -48,6 +48,13 @@ class GeneralTests(Base):
     def setup_session(self):
         return self.conn.session()
 
+    def test_not_found(self):
+        ssn = self.setup_session()
+        try:
+            ssn.receiver("does-not-exist")
+            self.fail("Expected non-existent node to cause NotFound exception")
+        except NotFound, e: None
+
     def test_qpid_3481_acquired_to_alt_exchange(self):
         """
         Verify that acquired messages are routed to the alternate when the queue is deleted.
