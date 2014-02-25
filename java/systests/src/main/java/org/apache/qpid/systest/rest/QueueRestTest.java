@@ -34,12 +34,12 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 
 public class QueueRestTest extends QpidRestTestCase
 {
@@ -212,7 +212,7 @@ public class QueueRestTest extends QpidRestTestCase
     {
         assertNotNull("Consumer map should not be null", consumer);
         Asserts.assertAttributesPresent(consumer,
-                                        Attribute.getAttributeNames(Consumer.class), Consumer.STATE, Consumer.TIME_TO_LIVE,
+                                        AbstractConfiguredObject.getAttributeNames(Consumer.class), Consumer.STATE, Consumer.TIME_TO_LIVE,
                 Consumer.SETTLEMENT_MODE, Consumer.EXCLUSIVE, Consumer.SELECTOR,
                 Consumer.NO_LOCAL,
                 ConfiguredObject.TYPE,
@@ -232,35 +232,35 @@ public class QueueRestTest extends QpidRestTestCase
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) consumer.get(Asserts.STATISTICS_ATTRIBUTE);
         assertNotNull("Consumer statistics is not present", statistics);
-        Asserts.assertAttributesPresent(statistics, Consumer.AVAILABLE_STATISTICS, Consumer.STATE_CHANGED);
+        Asserts.assertAttributesPresent(statistics, "bytesOut", "messagesOut", "unacknowledgedBytes", "unacknowledgedMessages");
     }
 
     private void assertStatistics(Map<String, Object> queueDetails)
     {
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) queueDetails.get(Asserts.STATISTICS_ATTRIBUTE);
-        assertEquals("Unexpected queue statistics attribute " + Queue.PERSISTENT_DEQUEUED_MESSAGES, DEQUEUED_MESSAGES,
-                statistics.get(Queue.PERSISTENT_DEQUEUED_MESSAGES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.QUEUE_DEPTH_MESSAGES, ENQUEUED_MESSAGES,
-                statistics.get(Queue.QUEUE_DEPTH_MESSAGES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.CONSUMER_COUNT, 1,
-                statistics.get(Queue.CONSUMER_COUNT));
-        assertEquals("Unexpected queue statistics attribute " + Queue.CONSUMER_COUNT_WITH_CREDIT, 1,
-                statistics.get(Queue.CONSUMER_COUNT_WITH_CREDIT));
-        assertEquals("Unexpected queue statistics attribute " + Queue.BINDING_COUNT, 1, statistics.get(Queue.BINDING_COUNT));
-        assertEquals("Unexpected queue statistics attribute " + Queue.PERSISTENT_DEQUEUED_MESSAGES, DEQUEUED_MESSAGES,
-                statistics.get(Queue.PERSISTENT_DEQUEUED_MESSAGES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.TOTAL_DEQUEUED_MESSAGES, DEQUEUED_MESSAGES,
-                statistics.get(Queue.TOTAL_DEQUEUED_MESSAGES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.TOTAL_DEQUEUED_BYTES, DEQUEUED_BYTES,
-                statistics.get(Queue.TOTAL_DEQUEUED_BYTES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.PERSISTENT_DEQUEUED_BYTES, DEQUEUED_BYTES,
-                statistics.get(Queue.TOTAL_DEQUEUED_BYTES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.PERSISTENT_ENQUEUED_BYTES, ENQUEUED_BYTES
-                + DEQUEUED_BYTES, statistics.get(Queue.PERSISTENT_ENQUEUED_BYTES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.TOTAL_ENQUEUED_BYTES, ENQUEUED_BYTES + DEQUEUED_BYTES,
-                statistics.get(Queue.TOTAL_ENQUEUED_BYTES));
-        assertEquals("Unexpected queue statistics attribute " + Queue.QUEUE_DEPTH_BYTES, ENQUEUED_BYTES,
-                statistics.get(Queue.QUEUE_DEPTH_BYTES));
+        assertEquals("Unexpected queue statistics attribute " + "persistentDequeuedMessages", DEQUEUED_MESSAGES,
+                statistics.get("persistentDequeuedMessages"));
+        assertEquals("Unexpected queue statistics attribute " + "queueDepthMessages", ENQUEUED_MESSAGES,
+                statistics.get("queueDepthMessages"));
+        assertEquals("Unexpected queue statistics attribute " + "consumerCount", 1,
+                statistics.get("consumerCount"));
+        assertEquals("Unexpected queue statistics attribute " + "consumerCountWithCredit", 1,
+                statistics.get("consumerCountWithCredit"));
+        assertEquals("Unexpected queue statistics attribute " + "bindingCount", 1, statistics.get("bindingCount"));
+        assertEquals("Unexpected queue statistics attribute " + "persistentDequeuedMessages", DEQUEUED_MESSAGES,
+                statistics.get("persistentDequeuedMessages"));
+        assertEquals("Unexpected queue statistics attribute " + "totalDequeuedMessages", DEQUEUED_MESSAGES,
+                statistics.get("totalDequeuedMessages"));
+        assertEquals("Unexpected queue statistics attribute " + "totalDequeuedBytes", DEQUEUED_BYTES,
+                statistics.get("totalDequeuedBytes"));
+        assertEquals("Unexpected queue statistics attribute " + "persistentDequeuedBytes", DEQUEUED_BYTES,
+                statistics.get("totalDequeuedBytes"));
+        assertEquals("Unexpected queue statistics attribute " + "persistentEnqueuedBytes", ENQUEUED_BYTES
+                + DEQUEUED_BYTES, statistics.get("persistentEnqueuedBytes"));
+        assertEquals("Unexpected queue statistics attribute " + "totalEnqueuedBytes", ENQUEUED_BYTES + DEQUEUED_BYTES,
+                statistics.get("totalEnqueuedBytes"));
+        assertEquals("Unexpected queue statistics attribute " + "queueDepthBytes", ENQUEUED_BYTES,
+                statistics.get("queueDepthBytes"));
     }
 }

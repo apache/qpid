@@ -45,6 +45,30 @@ public class ServerInformationMBean extends AbstractStatisticsGatheringMBean<Bro
     }
 
     @Override
+    protected long getBytesOut()
+    {
+        return getConfiguredObject().getBytesOut();
+    }
+
+    @Override
+    protected long getBytesIn()
+    {
+        return getConfiguredObject().getBytesIn();
+    }
+
+    @Override
+    protected long getMessagesOut()
+    {
+        return getConfiguredObject().getMessagesOut();
+    }
+
+    @Override
+    protected long getMessagesIn()
+    {
+        return getConfiguredObject().getMessagesIn();
+    }
+
+    @Override
     public String getObjectInstanceName()
     {
         return ServerInformation.TYPE;

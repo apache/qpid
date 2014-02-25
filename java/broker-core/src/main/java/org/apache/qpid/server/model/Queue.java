@@ -20,56 +20,13 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 @ManagedObject
 
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {
-    public static final String BINDING_COUNT = "bindingCount";
-    public static final String CONSUMER_COUNT = "consumerCount";
-    public static final String CONSUMER_COUNT_WITH_CREDIT = "consumerCountWithCredit";
-    public static final String DISCARDS_TTL_BYTES = "discardsTtlBytes";
-    public static final String DISCARDS_TTL_MESSAGES = "discardsTtlMessages";
-    public static final String PERSISTENT_DEQUEUED_BYTES = "persistentDequeuedBytes";
-    public static final String PERSISTENT_DEQUEUED_MESSAGES = "persistentDequeuedMessages";
-    public static final String PERSISTENT_ENQUEUED_BYTES = "persistentEnqueuedBytes";
-    public static final String PERSISTENT_ENQUEUED_MESSAGES = "persistentEnqueuedMessages";
-    public static final String QUEUE_DEPTH_BYTES = "queueDepthBytes";
-    public static final String QUEUE_DEPTH_MESSAGES = "queueDepthMessages";
-    public static final String STATE_CHANGED = "stateChanged";
-    public static final String TOTAL_DEQUEUED_BYTES = "totalDequeuedBytes";
-    public static final String TOTAL_DEQUEUED_MESSAGES = "totalDequeuedMessages";
-    public static final String TOTAL_ENQUEUED_BYTES = "totalEnqueuedBytes";
-    public static final String TOTAL_ENQUEUED_MESSAGES = "totalEnqueuedMessages";
-    public static final String UNACKNOWLEDGED_BYTES = "unacknowledgedBytes";
-    public static final String UNACKNOWLEDGED_MESSAGES = "unacknowledgedMessages";
-
-    public static final Collection<String> AVAILABLE_STATISTICS =
-            Collections.unmodifiableList(
-                    Arrays.asList(BINDING_COUNT,
-                                  CONSUMER_COUNT,
-                                  CONSUMER_COUNT_WITH_CREDIT,
-                                  DISCARDS_TTL_BYTES,
-                                  DISCARDS_TTL_MESSAGES,
-                                  PERSISTENT_DEQUEUED_BYTES,
-                                  PERSISTENT_DEQUEUED_MESSAGES,
-                                  PERSISTENT_ENQUEUED_BYTES,
-                                  PERSISTENT_ENQUEUED_MESSAGES,
-                                  QUEUE_DEPTH_BYTES,
-                                  QUEUE_DEPTH_MESSAGES,
-                                  STATE_CHANGED,
-                                  TOTAL_DEQUEUED_BYTES,
-                                  TOTAL_DEQUEUED_MESSAGES,
-                                  TOTAL_ENQUEUED_BYTES,
-                                  TOTAL_ENQUEUED_MESSAGES,
-                                  UNACKNOWLEDGED_BYTES,
-                                  UNACKNOWLEDGED_MESSAGES));
-
-
 
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
@@ -176,4 +133,62 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     void delete();
 
     void setNotificationListener(QueueNotificationListener listener);
+
+    @ManagedStatistic
+    long getBytesIn();
+
+    @ManagedStatistic
+    long getBytesOut();
+
+    @ManagedStatistic
+    long getMessagesIn();
+
+    @ManagedStatistic
+    long getMessagesOut();
+
+    @ManagedStatistic
+    long getBindingCount();
+
+    @ManagedStatistic
+    long getConsumerCount();
+
+    @ManagedStatistic
+    long getConsumerCountWithCredit();
+
+    @ManagedStatistic
+    long getPersistentDequeuedBytes();
+
+    @ManagedStatistic
+    long getPersistentDequeuedMessages();
+
+    @ManagedStatistic
+    long getPersistentEnqueuedBytes();
+
+    @ManagedStatistic
+    long getPersistentEnqueuedMessages();
+
+    @ManagedStatistic
+    long getQueueDepthBytes();
+
+    @ManagedStatistic
+    long getQueueDepthMessages();
+
+    @ManagedStatistic
+    long getTotalDequeuedBytes();
+
+    @ManagedStatistic
+    long getTotalDequeuedMessages();
+
+    @ManagedStatistic
+    long getTotalEnqueuedBytes();
+
+    @ManagedStatistic
+    long getTotalEnqueuedMessages();
+
+    @ManagedStatistic
+    long getUnacknowledgedBytes();
+
+    @ManagedStatistic
+    long getUnacknowledgedMessages();
+
 }

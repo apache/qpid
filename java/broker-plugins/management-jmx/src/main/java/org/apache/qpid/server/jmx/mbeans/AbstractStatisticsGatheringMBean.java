@@ -66,10 +66,10 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
         final long period = time - _lastStatUpdateTime;
         if(period > _statUpdatePeriod)
         {
-            long messagesReceived = getStatistic(VirtualHost.MESSAGES_IN);
-            long messagesSent = getStatistic(VirtualHost.MESSAGES_OUT);
-            long bytesReceived = getStatistic(VirtualHost.BYTES_IN);
-            long bytesSent = getStatistic(VirtualHost.BYTES_OUT);
+            long messagesReceived = getMessagesIn();
+            long messagesSent = getMessagesOut();
+            long bytesReceived = getBytesIn();
+            long bytesSent = getBytesOut();
 
             double messageReceivedRate = (double)(messagesReceived - _lastMessagesReceived) / (double)period;
             double messageSentRate = (double)(messagesSent - _lastMessagesSent) / (double)period;
@@ -109,10 +109,13 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
         }
     }
 
-    private long getStatistic(String name)
-    {
-        return (Long) getConfiguredObject().getStatistics().getStatistic(name);
-    }
+    protected abstract long getBytesOut();
+
+    protected abstract long getBytesIn();
+
+    protected abstract long getMessagesOut();
+
+    protected abstract long getMessagesIn();
 
     public synchronized void resetStatistics() throws Exception
     {
@@ -147,13 +150,13 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
     public synchronized long getTotalMessagesDelivered()
     {
         updateStats();
-        return getStatistic(Connection.MESSAGES_OUT);
+        return getMessagesOut();
     }
 
     public synchronized long getTotalDataDelivered()
     {
         updateStats();
-        return getStatistic(Connection.BYTES_OUT);
+        return getBytesOut();
     }
 
     protected final T getConfiguredObject()
@@ -188,13 +191,13 @@ abstract class AbstractStatisticsGatheringMBean<T extends ConfiguredObject> exte
     public synchronized long getTotalMessagesReceived()
     {
         updateStats();
-        return getStatistic(Connection.MESSAGES_IN);
+        return getMessagesIn();
     }
 
     public synchronized long getTotalDataReceived()
     {
         updateStats();
-        return getStatistic(Connection.BYTES_IN);
+        return getBytesIn();
     }
 
 }

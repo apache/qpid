@@ -43,7 +43,6 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.NotificationCheck;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -61,7 +60,6 @@ public class QueueMBeanTest extends QpidTestCase
     private static final String QUEUE_ALTERNATE_EXCHANGE = "QUEUE_ALTERNATE_EXCHANGE";
 
     private Queue _mockQueue;
-    private Statistics _mockQueueStatistics;
     private VirtualHostMBean _mockVirtualHostMBean;
     private ManagedObjectRegistry _mockManagedObjectRegistry;
     private QueueMBean _queueMBean;
@@ -71,9 +69,7 @@ public class QueueMBeanTest extends QpidTestCase
     {
         super.setUp();
         _mockQueue = mock(Queue.class);
-        _mockQueueStatistics = mock(Statistics.class);
         when(_mockQueue.getName()).thenReturn(QUEUE_NAME);
-        when(_mockQueue.getStatistics()).thenReturn(_mockQueueStatistics);
         _mockVirtualHostMBean = mock(VirtualHostMBean.class);
 
         _mockManagedObjectRegistry = mock(ManagedObjectRegistry.class);
@@ -91,27 +87,32 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testGetMessageCount() throws Exception
     {
-        assertStatistic("messageCount", 1000, Queue.QUEUE_DEPTH_MESSAGES);
+        when(_mockQueue.getQueueDepthMessages()).thenReturn(1000l);
+        assertStatistic("messageCount", 1000);
     }
 
     public void testGetReceivedMessageCount() throws Exception
     {
-        assertStatistic("receivedMessageCount", 1000l, Queue.TOTAL_ENQUEUED_MESSAGES);
+        when(_mockQueue.getTotalEnqueuedMessages()).thenReturn(1000l);
+        assertStatistic("receivedMessageCount", 1000l);
     }
 
     public void testQueueDepth() throws Exception
     {
-        assertStatistic("queueDepth", 4096l, Queue.QUEUE_DEPTH_BYTES);
+        when(_mockQueue.getQueueDepthBytes()).thenReturn(4096l);
+        assertStatistic("queueDepth", 4096l);
     }
 
     public void testActiveConsumerCount() throws Exception
     {
-        assertStatistic("activeConsumerCount", 3, Queue.CONSUMER_COUNT_WITH_CREDIT);
+        when(_mockQueue.getConsumerCountWithCredit()).thenReturn(3l);
+        assertStatistic("activeConsumerCount", 3);
     }
 
     public void testConsumerCount() throws Exception
     {
-        assertStatistic("consumerCount", 3, Queue.CONSUMER_COUNT);
+        when(_mockQueue.getConsumerCount()).thenReturn(3l);
+        assertStatistic("consumerCount", 3);
     }
 
     /**********  Simple Attributes **********/
@@ -364,9 +365,8 @@ public class QueueMBeanTest extends QpidTestCase
         });
     }
 
-    private void assertStatistic(String jmxAttributeName, Object expectedValue, String underlyingAttributeName) throws Exception
+    private void assertStatistic(String jmxAttributeName, Object expectedValue) throws Exception
     {
-        when(_mockQueueStatistics.getStatistic(underlyingAttributeName)).thenReturn(expectedValue);
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, jmxAttributeName, expectedValue);
     }
 

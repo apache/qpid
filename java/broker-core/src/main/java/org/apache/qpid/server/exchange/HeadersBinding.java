@@ -76,12 +76,12 @@ class HeadersBinding
         {
             try
             {
-                _filter = FilterSupport.createMessageFilter(_mappings,_binding.getQueue());
+                _filter = FilterSupport.createMessageFilter(_mappings,_binding.getAMQQueue());
             }
             catch (AMQInvalidArgumentException e)
             {
-                _logger.warn("Invalid filter in binding queue '"+_binding.getQueue().getName()
-                             +"' to exchange '"+_binding.getExchange().getName()
+                _logger.warn("Invalid filter in binding queue '"+_binding.getAMQQueue().getName()
+                             +"' to exchange '"+_binding.getExchangeImpl().getName()
                              +"' with arguments: " + _binding.getArguments());
                 _filter = new MessageFilter()
                     {

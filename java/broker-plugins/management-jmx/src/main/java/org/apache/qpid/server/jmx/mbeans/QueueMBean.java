@@ -149,7 +149,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Integer getMessageCount()
     {
-        return getStatisticValue(Queue.QUEUE_DEPTH_MESSAGES).intValue();
+        return (int) _queue.getQueueDepthMessages();
     }
 
     public Integer getMaximumDeliveryCount()
@@ -159,22 +159,22 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getReceivedMessageCount()
     {
-        return getStatisticValue(Queue.TOTAL_ENQUEUED_MESSAGES).longValue();
+        return _queue.getTotalEnqueuedMessages();
     }
 
     public Long getQueueDepth()
     {
-        return getStatisticValue(Queue.QUEUE_DEPTH_BYTES).longValue();
+        return _queue.getQueueDepthBytes();
     }
 
     public Integer getActiveConsumerCount()
     {
-        return getStatisticValue(Queue.CONSUMER_COUNT_WITH_CREDIT).intValue();
+        return (int) _queue.getConsumerCountWithCredit();
     }
 
     public Integer getConsumerCount()
     {
-        return getStatisticValue(Queue.CONSUMER_COUNT).intValue();
+        return (int) _queue.getConsumerCount();
     }
 
     public String getOwner()
@@ -674,12 +674,6 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     public void setDescription(String description)
     {
         _queue.setAttribute(Queue.DESCRIPTION, getDescription(), description);
-    }
-
-    private Number getStatisticValue(String name)
-    {
-        final Number statistic = (Number) _queue.getStatistics().getStatistic(name);
-        return statistic == null ? Integer.valueOf(0) : statistic;
     }
 
     @Override

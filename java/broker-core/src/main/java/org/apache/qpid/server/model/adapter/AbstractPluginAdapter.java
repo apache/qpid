@@ -26,13 +26,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.security.access.Operation;
 
 public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends AbstractConfiguredObject<X> implements Plugin<X>
@@ -96,11 +94,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Statistics getStatistics()
-    {
-        return null;
-    }
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
@@ -111,7 +104,7 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(Plugin.class);
+        return getAttributeNames(Plugin.class);
     }
 
     @Override

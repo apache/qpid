@@ -25,6 +25,7 @@ import static org.apache.qpid.server.management.plugin.servlet.rest.ConfiguredOb
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,6 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.Statistics;
 
 public class ConfiguredObjectToMapConverterTest extends TestCase
 {
@@ -50,8 +50,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         final String statisticName = "statisticName";
         final int statisticValue = 10;
 
-        Statistics mockStatistics = createMockStatistics(statisticName, statisticValue);
-        when(_configuredObject.getStatistics()).thenReturn(mockStatistics);
+        when(_configuredObject.getStatistics()).thenReturn(Collections.singletonMap(statisticName, (Number) statisticValue));
 
         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 0);
         Map<String, Object> statsAsMap = (Map<String, Object>) resultMap.get(STATISTICS_MAP_KEY);
@@ -125,14 +124,6 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
     {
         when(mockConfiguredObject.getAttributeNames()).thenReturn(Arrays.asList(attributeName));
         when(mockConfiguredObject.getAttribute(attributeName)).thenReturn(attributeValue);
-    }
-
-    private Statistics createMockStatistics(String statName, int statValue)
-    {
-        Statistics mockStatistics = mock(Statistics.class);
-        when(mockStatistics.getStatisticNames()).thenReturn(Arrays.asList(statName));
-        when(mockStatistics.getStatistic(statName)).thenReturn(statValue);
-        return mockStatistics;
     }
 
     private static interface TestChild extends ConfiguredObject

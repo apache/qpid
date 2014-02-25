@@ -91,7 +91,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     private final Map<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter> _exchangeAdapters =
             new HashMap<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter>();
-    private StatisticsAdapter _statistics;
     private final Broker<?> _broker;
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private StatisticsGatherer _brokerStatisticsGatherer;
@@ -511,11 +510,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         throw new IllegalStateException();
     }
 
-    public Statistics getStatistics()
-    {
-        return _statistics;
-    }
-
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
@@ -909,7 +903,7 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(VirtualHost.class);
+        return getAttributeNames(VirtualHost.class);
     }
 
     private void checkVHostStateIsActive()
@@ -1053,49 +1047,46 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         return (String) getAttribute(CONFIG_PATH);
     }
 
-    private static class VirtualHostStatisticsAdapter extends StatisticsAdapter
+    @Override
+    public long getQueueCount()
     {
-        private final org.apache.qpid.server.virtualhost.VirtualHost _vhost;
+        return _virtualHost.getQueues().size();
+    }
 
-        private static final Collection<String> VHOST_STATS = Arrays.asList(
-                VirtualHost.QUEUE_COUNT,
-                VirtualHost.EXCHANGE_COUNT,
-                VirtualHost.CONNECTION_COUNT);
+    @Override
+    public long getExchangeCount()
+    {
+        return _virtualHost.getExchanges().size();
+    }
 
-        public VirtualHostStatisticsAdapter(org.apache.qpid.server.virtualhost.VirtualHost virtualHost)
-        {
-            super(virtualHost);
-            _vhost = virtualHost;
-        }
+    @Override
+    public long getConnectionCount()
+    {
+        return _virtualHost.getConnectionRegistry().getConnections().size();
+    }
 
-        @Override
-        public Collection<String> getStatisticNames()
-        {
-            Set<String> stats = new HashSet<String>(super.getStatisticNames());
-            stats.addAll(VHOST_STATS);
-            return stats;
-        }
+    @Override
+    public long getBytesIn()
+    {
+        return _virtualHost.getDataReceiptStatistics().getTotal();
+    }
 
-        @Override
-        public Object getStatistic(String name)
-        {
-            if(VirtualHost.QUEUE_COUNT.equals(name))
-            {
-                return _vhost.getQueues().size();
-            }
-            else if(VirtualHost.EXCHANGE_COUNT.equals(name))
-            {
-                return _vhost.getExchanges().size();
-            }
-            else if(VirtualHost.CONNECTION_COUNT.equals(name))
-            {
-                return _vhost.getConnectionRegistry().getConnections().size();
-            }
-            else
-            {
-                return super.getStatistic(name);
-            }
-        }
+    @Override
+    public long getBytesOut()
+    {
+        return _virtualHost.getDataDeliveryStatistics().getTotal();
+    }
+
+    @Override
+    public long getMessagesIn()
+    {
+        return _virtualHost.getMessageReceiptStatistics().getTotal();
+    }
+
+    @Override
+    public long getMessagesOut()
+    {
+        return _virtualHost.getMessageDeliveryStatistics().getTotal();
     }
 
 
@@ -1202,7 +1193,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
         virtualHostRegistry.registerVirtualHost(_virtualHost);
 
-        _statistics = new VirtualHostStatisticsAdapter(_virtualHost);
         _virtualHost.addVirtualHostListener(this);
         populateQueues();
         populateExchanges();

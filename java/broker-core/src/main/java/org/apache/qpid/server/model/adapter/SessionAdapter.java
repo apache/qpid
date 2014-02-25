@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import java.util.Map;
 
@@ -40,14 +39,12 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
 
     private AMQSessionModel _session;
-    private SessionStatistics _statistics;
     private Map<Consumer, ConsumerAdapter> _consumerAdapters = new HashMap<Consumer, ConsumerAdapter>();
 
     public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
     {
         super(UUIDGenerator.generateRandomUUID(), taskExecutor);
         _session = session;
-        _statistics = new SessionStatistics();
     }
 
     @Override
@@ -158,7 +155,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(Session.class);
+        return getAttributeNames(Session.class);
     }
 
     @Override
@@ -181,11 +178,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
             return _session.getBlocking();
         }
         return super.getAttribute(name);    //TODO - Implement
-    }
-
-    public Statistics getStatistics()
-    {
-        return _statistics;
     }
 
     @Override
@@ -211,67 +203,37 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         throw new  UnsupportedOperationException();
     }
 
-    private class SessionStatistics implements Statistics
+    @Override
+    public long getConsumerCount()
     {
-
-        public SessionStatistics()
-        {
-        }
-
-        public Collection<String> getStatisticNames()
-        {
-            return AVAILABLE_STATISTICS;
-        }
-
-        public Object getStatistic(String name)
-        {
-            if(name.equals(BYTES_IN))
-            {
-            }
-            else if(name.equals(BYTES_OUT))
-            {
-            }
-            else if(name.equals(CONSUMER_COUNT))
-            {
-                return _session.getConsumerCount();
-            }
-            else if(name.equals(LOCAL_TRANSACTION_BEGINS))
-            {
-                return _session.getTxnStart();
-            }
-            else if(name.equals(LOCAL_TRANSACTION_OPEN))
-            {
-                long open = _session.getTxnStart() - (_session.getTxnCommits() + _session.getTxnRejects());
-                return (Boolean) (open > 0l);
-            }
-            else if(name.equals(LOCAL_TRANSACTION_ROLLBACKS))
-            {
-                return _session.getTxnRejects();
-            }
-            else if(name.equals(STATE_CHANGED))
-            {
-            }
-            else if(name.equals(UNACKNOWLEDGED_BYTES))
-            {
-            }
-            else if(name.equals(UNACKNOWLEDGED_MESSAGES))
-            {
-                return _session.getUnacknowledgedMessageCount();
-            }
-            else if(name.equals(XA_TRANSACTION_BRANCH_ENDS))
-            {
-            }
-            else if(name.equals(XA_TRANSACTION_BRANCH_STARTS))
-            {
-            }
-            else if(name.equals(XA_TRANSACTION_BRANCH_SUSPENDS))
-            {
-
-            }
-
-            return null;  // TODO - Implement
-        }
+        return _session.getConsumerCount();
     }
+
+    @Override
+    public long getLocalTransactionBegins()
+    {
+        return _session.getTxnStart();
+    }
+
+    @Override
+    public int getLocalTransactionOpen()
+    {
+        long open = _session.getTxnStart() - (_session.getTxnCommits() + _session.getTxnRejects());
+        return (open > 0l) ? 1 : 0;
+    }
+
+    @Override
+    public long getLocalTransactionRollbacks()
+    {
+        return _session.getTxnRejects();
+    }
+
+    @Override
+    public long getUnacknowledgedMessages()
+    {
+        return _session.getUnacknowledgedMessageCount();
+    }
+
 
     @Override
     protected boolean setState(State currentState, State desiredState)

@@ -20,45 +20,13 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 @ManagedObject( creatable = false )
 public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
 {
 
-    // Statistics
-
-    String BYTES_IN = "bytesIn";
-    String BYTES_OUT = "bytesOut";
-    String LAST_IO_TIME = "lastIoTime";
-    String LOCAL_TRANSACTION_BEGINS = "localTransactionBegins";
-    String LOCAL_TRANSACTION_ROLLBACKS = "localTransactionRollbacks";
-    String MESSAGES_IN                 = "messagesIn";
-    String MESSAGES_OUT                = "messagesOut";
-    String SESSION_COUNT               = "sessionCount";
-    String STATE_CHANGED               = "stateChanged";
-    String XA_TRANSACTION_BRANCH_ENDS  = "xaTransactionBranchEnds";
-    String XA_TRANSACTION_BRANCH_STARTS = "xaTransactionBranchStarts";
-    String XA_TRANSACTION_BRANCH_SUSPENDS = "xaTransactionBranchSuspends";
-
-    public static final Collection<String> AVAILABLE_STATISTICS =
-            Collections.unmodifiableCollection(
-                    Arrays.asList(BYTES_IN,
-                                  BYTES_OUT,
-                                  LAST_IO_TIME,
-                                  LOCAL_TRANSACTION_BEGINS,
-                                  LOCAL_TRANSACTION_ROLLBACKS,
-                                  MESSAGES_IN,
-                                  MESSAGES_OUT,
-                                  SESSION_COUNT,
-                                  STATE_CHANGED,
-                                  XA_TRANSACTION_BRANCH_ENDS,
-                                  XA_TRANSACTION_BRANCH_STARTS,
-                                  XA_TRANSACTION_BRANCH_SUSPENDS));
-
-                            // Attributes
+    // Attributes
 
     public static final String STATE = "state";
     public static final String DURABLE = "durable";
@@ -112,8 +80,28 @@ public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
     @ManagedAttribute
     Port getPort();
 
+    @ManagedStatistic
+    long getBytesIn();
+
+    @ManagedStatistic
+    long getBytesOut();
+
+    @ManagedStatistic
+    long getMessagesIn();
+
+    @ManagedStatistic
+    long getMessagesOut();
+
+    @ManagedStatistic
+    long getLastIoTime();
+
+    @ManagedStatistic
+    int getSessionCount();
+
     //children
     Collection<Session> getSessions();
 
     void delete();
+
+
 }

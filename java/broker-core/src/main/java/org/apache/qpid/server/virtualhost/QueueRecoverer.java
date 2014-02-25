@@ -113,6 +113,7 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
             {
                 Map<String, Object> attributes = new LinkedHashMap<String, Object>(_attributes);
                 attributes.put(Queue.ID, _id);
+                attributes.put(Queue.DURABLE, true);
                 _queue = _queueFactory.restoreQueue(attributes);
             }
             return _queue;

@@ -34,13 +34,13 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.test.client.UnroutableMessageTestExceptionListener;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -234,7 +234,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
     protected void assertBrokerAttributes(Map<String, Object> brokerDetails)
     {
-        Asserts.assertAttributesPresent(brokerDetails, Attribute.getAttributeNames(Broker.class),
+        Asserts.assertAttributesPresent(brokerDetails, AbstractConfiguredObject.getAttributeNames(Broker.class),
                 Broker.PROCESS_PID,
                 Broker.TIME_TO_LIVE,
                 ConfiguredObject.TYPE,

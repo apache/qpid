@@ -32,6 +32,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class Asserts
@@ -42,7 +43,7 @@ public class Asserts
     {
         assertNotNull("Virtualhost " + virtualHostName + " data are not found", virtualHost);
         assertAttributesPresent(virtualHost,
-                                Attribute.getAttributeNames(VirtualHost.class),
+                                AbstractConfiguredObject.getAttributeNames(VirtualHost.class),
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
                                 ConfiguredObject.LAST_UPDATED_BY,
@@ -78,15 +79,7 @@ public class Asserts
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) virtualHost.get(STATISTICS_ATTRIBUTE);
         Asserts.assertAttributesPresent(statistics,
-                                        VirtualHost.AVAILABLE_STATISTICS,
-                                        VirtualHost.BYTES_RETAINED,
-                                        VirtualHost.LOCAL_TRANSACTION_BEGINS,
-                                        VirtualHost.LOCAL_TRANSACTION_ROLLBACKS,
-                                        VirtualHost.MESSAGES_RETAINED,
-                                        VirtualHost.STATE_CHANGED,
-                                        VirtualHost.XA_TRANSACTION_BRANCH_ENDS,
-                                        VirtualHost.XA_TRANSACTION_BRANCH_STARTS,
-                                        VirtualHost.XA_TRANSACTION_BRANCH_SUSPENDS);
+                                        "queueCount","exchangeCount","bytesIn","bytesOut","messagesIn", "messagesOut");
 
     }
 
@@ -102,7 +95,7 @@ public class Asserts
     {
         assertNotNull("Queue " + queueName + " is not found!", queueData);
         Asserts.assertAttributesPresent(queueData,
-                                        Attribute.getAttributeNames(Queue.class),
+                                        AbstractConfiguredObject.getAttributeNames(Queue.class),
                                         Queue.CREATED_BY,
                                         Queue.CREATED_TIME,
                                         Queue.LAST_UPDATED_BY,
@@ -154,8 +147,23 @@ public class Asserts
         assertNotNull("Unexpected value of queue attribute statistics", queueData.get(Asserts.STATISTICS_ATTRIBUTE));
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) queueData.get(Asserts.STATISTICS_ATTRIBUTE);
-        Asserts.assertAttributesPresent(statistics, Queue.AVAILABLE_STATISTICS, Queue.DISCARDS_TTL_BYTES,
-                                        Queue.DISCARDS_TTL_MESSAGES, Queue.STATE_CHANGED);
+
+        Asserts.assertAttributesPresent(statistics, 
+                                        "bindingCount",
+                                        "consumerCount",
+                                        "consumerCountWithCredit",
+                                        "persistentDequeuedBytes",
+                                        "persistentDequeuedMessages",
+                                        "persistentEnqueuedBytes",
+                                        "persistentEnqueuedMessages",
+                                        "queueDepthBytes",
+                                        "queueDepthMessages",
+                                        "totalDequeuedBytes",
+                                        "totalDequeuedMessages",
+                                        "totalEnqueuedBytes",
+                                        "totalEnqueuedMessages",
+                                        "unacknowledgedBytes",
+                                        "unacknowledgedMessages");
     }
 
     public static void assertAttributesPresent(Map<String, Object> data, String... attributes)
@@ -193,7 +201,7 @@ public class Asserts
     {
         assertNotNull("Unexpected connection data", connectionData);
         assertAttributesPresent(connectionData,
-                                Attribute.getAttributeNames(Connection.class),
+                                AbstractConfiguredObject.getAttributeNames(Connection.class),
                                 Connection.STATE,
                                 Connection.DURABLE,
                                 Connection.LIFETIME_POLICY,
@@ -221,16 +229,17 @@ public class Asserts
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) connectionData.get(STATISTICS_ATTRIBUTE);
+ 
+
         assertAttributesPresent(statistics,
-                                Connection.AVAILABLE_STATISTICS,
-                                Connection.LOCAL_TRANSACTION_BEGINS,
-                                Connection.LOCAL_TRANSACTION_ROLLBACKS,
-                                Connection.STATE_CHANGED,
-                                Connection.XA_TRANSACTION_BRANCH_ENDS,
-                                Connection.XA_TRANSACTION_BRANCH_STARTS,
-                                Connection.XA_TRANSACTION_BRANCH_SUSPENDS);
-        assertEquals("Unexpected value of connection statistics attribute " + Connection.SESSION_COUNT, 1,
-                     statistics.get(Connection.SESSION_COUNT));
+                                "bytesIn",
+                                "bytesOut",
+                                "lastIoTime",
+                                "messagesIn",
+                                "messagesOut",
+                                "sessionCount");
+        assertEquals("Unexpected value of connection statistics attribute sessionCount ", 1,
+                     statistics.get("sessionCount"));
     }
 
     public static void assertPortAttributes(Map<String, Object> port)
@@ -262,7 +271,7 @@ public class Asserts
         if (isAMQPPort)
         {
             assertAttributesPresent(port,
-                                    Attribute.getAttributeNames(Port.class),
+                                    AbstractConfiguredObject.getAttributeNames(Port.class),
                                     ConfiguredObject.TYPE,
                                     ConfiguredObject.CREATED_BY,
                                     ConfiguredObject.CREATED_TIME,
@@ -277,7 +286,7 @@ public class Asserts
         else
         {
             assertAttributesPresent(port,
-                                    Attribute.getAttributeNames(Port.class),
+                                    AbstractConfiguredObject.getAttributeNames(Port.class),
                                     ConfiguredObject.TYPE,
                                     ConfiguredObject.CREATED_BY,
                                     ConfiguredObject.CREATED_TIME,
@@ -312,7 +321,7 @@ public class Asserts
     public static void assertExchange(String exchangeName, String type, Map<String, Object> exchangeData)
     {
         assertNotNull("Exchange " + exchangeName + " is not found!", exchangeData);
-        assertAttributesPresent(exchangeData, Attribute.getAttributeNames(Exchange.class),
+        assertAttributesPresent(exchangeData, AbstractConfiguredObject.getAttributeNames(Exchange.class),
                                 Exchange.ALTERNATE_EXCHANGE, Exchange.TIME_TO_LIVE,
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
@@ -334,17 +343,19 @@ public class Asserts
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) exchangeData.get(STATISTICS_ATTRIBUTE);
-        assertAttributesPresent(statistics,
-                                Exchange.AVAILABLE_STATISTICS,
-                                Exchange.STATE_CHANGED,
-                                Exchange.PRODUCER_COUNT);
+
+        assertAttributesPresent(statistics,"bindingCount",
+                                "bytesDropped",
+                                "bytesIn",
+                                "messagesDropped",
+                                "messagesIn");
     }
 
     public static void assertBinding(String bindingName, String queueName, String exchange, Map<String, Object> binding)
     {
         assertNotNull("Binding map should not be null", binding);
         assertAttributesPresent(binding,
-                                Attribute.getAttributeNames(Binding.class),
+                                AbstractConfiguredObject.getAttributeNames(Binding.class),
                                 Binding.STATE,
                                 Binding.TIME_TO_LIVE,
                                 ConfiguredObject.TYPE,

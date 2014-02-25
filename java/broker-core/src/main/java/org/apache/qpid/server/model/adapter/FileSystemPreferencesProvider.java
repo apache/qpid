@@ -31,7 +31,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,7 +92,7 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(FileSystemPreferencesProvider.class);
+        return getAttributeNames(FileSystemPreferencesProvider.class);
     }
 
     @Override
@@ -156,12 +155,6 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
             IllegalArgumentException
     {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Statistics getStatistics()
-    {
-        return NoStatistics.getInstance();
     }
 
     @Override

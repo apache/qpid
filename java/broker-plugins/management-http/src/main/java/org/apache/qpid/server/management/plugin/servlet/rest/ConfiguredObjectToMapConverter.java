@@ -21,14 +21,12 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.Statistics;
 
 public class ConfiguredObjectToMapConverter
 {
@@ -81,25 +79,14 @@ public class ConfiguredObjectToMapConverter
     private void incorporateStatisticsIntoMap(
             final ConfiguredObject confObject, Map<String, Object> object)
     {
-        Statistics statistics = confObject.getStatistics();
-        Map<String, Object> statMap = new HashMap<String, Object>();
 
-        if (statistics != null)
+        Map<String, Object> statMap = confObject.getStatistics();
+
+        if(!statMap.isEmpty())
         {
-            for(String name : statistics.getStatisticNames())
-            {
-                Object value = statistics.getStatistic(name);
-                if(value != null)
-                {
-                    statMap.put(name, value);
-                }
-            }
-
-            if(!statMap.isEmpty())
-            {
-                object.put(STATISTICS_MAP_KEY, statMap);
-            }
+            object.put(STATISTICS_MAP_KEY, statMap);
         }
+
     }
 
     private void incorporateChildrenIntoMap(

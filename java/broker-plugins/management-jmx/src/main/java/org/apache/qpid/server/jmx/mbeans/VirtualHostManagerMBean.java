@@ -67,6 +67,29 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         register();
     }
 
+    @Override
+    protected long getBytesOut()
+    {
+        return getConfiguredObject().getBytesOut();
+    }
+
+    @Override
+    protected long getBytesIn()
+    {
+        return getConfiguredObject().getBytesIn();
+    }
+
+    @Override
+    protected long getMessagesOut()
+    {
+        return getConfiguredObject().getMessagesOut();
+    }
+
+    @Override
+    protected long getMessagesIn()
+    {
+        return getConfiguredObject().getMessagesIn();
+    }
 
     @Override
     public String getObjectInstanceName()

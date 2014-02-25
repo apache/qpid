@@ -40,13 +40,11 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -105,7 +103,7 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(KeyStore.class);
+        return getAttributeNames(KeyStore.class);
     }
 
     @Override

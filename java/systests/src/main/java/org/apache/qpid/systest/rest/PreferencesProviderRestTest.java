@@ -28,12 +28,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
@@ -164,7 +164,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     public void assertProviderCommonAttributes(Map<String, Object> provider)
     {
         Asserts.assertAttributesPresent(provider,
-                                        Attribute.getAttributeNames(PreferencesProvider.class),
+                                        AbstractConfiguredObject.getAttributeNames(PreferencesProvider.class),
                                         ConfiguredObject.CREATED_BY,
                                         ConfiguredObject.CREATED_TIME,
                                         ConfiguredObject.LAST_UPDATED_BY,

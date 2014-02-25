@@ -41,13 +41,11 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
     private final Map<Binding, BindingAdapter> _bindingAdapters =
             new HashMap<Binding, BindingAdapter>();
     private VirtualHostAdapter _vhost;
-    private final ExchangeStatistics _statistics;
 
     public ExchangeAdapter(final VirtualHostAdapter virtualHostAdapter,
                            final org.apache.qpid.server.exchange.Exchange exchange)
     {
         super(exchange.getId(), virtualHostAdapter.getTaskExecutor());
-        _statistics = new ExchangeStatistics();
         _vhost = virtualHostAdapter;
         _exchange = exchange;
         addParent(org.apache.qpid.server.model.VirtualHost.class, virtualHostAdapter);
@@ -65,7 +63,7 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
             {
                 if(!_bindingAdapters.containsKey(binding))
                 {
-                    QueueAdapter queueAdapter = _vhost.getQueueAdapter(binding.getQueue());
+                    QueueAdapter queueAdapter = _vhost.getQueueAdapter(binding.getAMQQueue());
                     BindingAdapter adapter = new BindingAdapter(binding, this, queueAdapter);
                     _bindingAdapters.put(binding, adapter);
 
@@ -203,11 +201,6 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
         return 0;  //TODO
     }
 
-    public Statistics getStatistics()
-    {
-        return _statistics;
-    }
-
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
@@ -256,7 +249,7 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
         {
             if(!_bindingAdapters.containsKey(binding))
             {
-                QueueAdapter queueAdapter = _vhost.getQueueAdapter(binding.getQueue());
+                QueueAdapter queueAdapter = _vhost.getQueueAdapter(binding.getAMQQueue());
                 adapter = new BindingAdapter(binding, this, queueAdapter);
                 _bindingAdapters.put(binding,adapter);
                 queueAdapter.bindingRegistered(binding,adapter);
@@ -277,7 +270,7 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
         }
         if(adapter != null)
         {
-            QueueAdapter queueAdapter = _vhost.getQueueAdapter(binding.getQueue());
+            QueueAdapter queueAdapter = _vhost.getQueueAdapter(binding.getAMQQueue());
             if(queueAdapter != null)
             {
                 queueAdapter.bindingUnregistered(binding);
@@ -335,7 +328,7 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(Exchange.class);
+        return getAttributeNames(Exchange.class);
     }
 
     @Override
@@ -367,46 +360,34 @@ final class ExchangeAdapter extends AbstractConfiguredObject<ExchangeAdapter> im
         _vhost.getSecurityManager().authoriseUpdate(_exchange);
     }
 
-    private class ExchangeStatistics implements Statistics
+    @Override
+    public long getBindingCount()
     {
+        return _exchange.getBindingCount();
+    }
 
-        public Collection<String> getStatisticNames()
-        {
-            return AVAILABLE_STATISTICS;
-        }
+    @Override
+    public long getBytesDropped()
+    {
+        return _exchange.getByteDrops();
+    }
 
-        public Object getStatistic(String name)
-        {
-            if(BINDING_COUNT.equals(name))
-            {
-                return _exchange.getBindingCount();
-            }
-            else if(BYTES_DROPPED.equals(name))
-            {
-                return _exchange.getByteDrops();
-            }
-            else if(BYTES_IN.equals(name))
-            {
-                return _exchange.getByteReceives();
-            }
-            else if(MESSAGES_DROPPED.equals(name))
-            {
-                return _exchange.getMsgDrops();
-            }
-            else if(MESSAGES_IN.equals(name))
-            {
-                return _exchange.getMsgReceives();
-            }
-            else if(PRODUCER_COUNT.equals(name))
-            {
+    @Override
+    public long getBytesIn()
+    {
+        return _exchange.getByteReceives();
+    }
 
-            }
-            else if(STATE_CHANGED.equals(name))
-            {
+    @Override
+    public long getMessagesDropped()
+    {
+        return _exchange.getMsgDrops();
+    }
 
-            }
-            return null;  // TODO - Implement
-        }
+    @Override
+    public long getMessagesIn()
+    {
+        return _exchange.getMsgReceives();
     }
 
     @Override

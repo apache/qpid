@@ -32,9 +32,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -112,12 +110,6 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
     public long setTimeToLive(long expected, long desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         throw new IllegalStateException();
-    }
-
-    @Override
-    public Statistics getStatistics()
-    {
-        return NoStatistics.getInstance();
     }
 
     @Override

@@ -51,20 +51,16 @@ public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
     @ManagedAttribute
     String getSelector();
 
+    @ManagedStatistic
+    long getBytesOut();
 
+    @ManagedStatistic
+    long getMessagesOut();
 
-    public String BYTES_OUT = "bytesOut";
-    public String MESSAGES_OUT = "messagesOut";
-    public String STATE_CHANGED = "stateChanged";
-    public String UNACKNOWLEDGED_BYTES = "unacknowledgedBytes";
-    public String UNACKNOWLEDGED_MESSAGES = "unacknowledgedMessages";
+    @ManagedStatistic
+    long getUnacknowledgedBytes();
 
-    public Collection<String> AVAILABLE_STATISTICS =
-            Collections.unmodifiableCollection(
-                    Arrays.asList(BYTES_OUT,
-                                  MESSAGES_OUT,
-                                  STATE_CHANGED,
-                                  UNACKNOWLEDGED_BYTES,
-                                  UNACKNOWLEDGED_MESSAGES)
-            );
+    @ManagedStatistic
+    long getUnacknowledgedMessages();
+
 }

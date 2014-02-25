@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Map;
@@ -246,7 +248,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      */
     Object getAttribute(String name);
 
-    <T> T getAttribute(Attribute<? super X, T> attr);
+    <T> T getAttribute(AbstractConfiguredObject.Attribute<? super X, T> attr);
 
     /**
      * Return the map containing only explicitly set attributes
@@ -272,11 +274,11 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
 
     /**
-     * Return the Statistics holder for the ConfiguredObject
+     * Return the statistics for the ConfiguredObject
      *
-     * @return the Statistics holder for the ConfiguredObject (or null if none exists)
+     * @return the current statistics for the ConfiguredObject
      */
-    Statistics getStatistics();
+    Map<String,Number> getStatistics();
 
     /**
      * Return children of the ConfiguredObject of the given class

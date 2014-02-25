@@ -22,11 +22,9 @@ package org.apache.qpid.server.model.adapter;
 
 import java.util.Map;
 
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.consumer.Consumer;
 
@@ -39,7 +37,6 @@ public class ConsumerAdapter extends AbstractConfiguredObject<ConsumerAdapter> i
     private final Consumer _consumer;
     private final QueueAdapter _queue;
     private final SessionAdapter _session;
-    private final ConsumerStatistics _statistics;
 
     public ConsumerAdapter(final QueueAdapter queueAdapter, final SessionAdapter sessionAdapter,
                            final Consumer consumer)
@@ -52,7 +49,6 @@ public class ConsumerAdapter extends AbstractConfiguredObject<ConsumerAdapter> i
         _consumer = consumer;
         _queue = queueAdapter;
         _session = sessionAdapter;
-        _statistics = new ConsumerStatistics();
         //TODO
     }
 
@@ -108,7 +104,7 @@ public class ConsumerAdapter extends AbstractConfiguredObject<ConsumerAdapter> i
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(org.apache.qpid.server.model.Consumer.class);
+        return getAttributeNames(org.apache.qpid.server.model.Consumer.class);
     }
 
     @Override
@@ -161,11 +157,6 @@ public class ConsumerAdapter extends AbstractConfiguredObject<ConsumerAdapter> i
         return super.getAttribute(name);    //TODO
     }
 
-    public Statistics getStatistics()
-    {
-        return _statistics;
-    }
-
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
@@ -208,38 +199,28 @@ public class ConsumerAdapter extends AbstractConfiguredObject<ConsumerAdapter> i
         return null;
     }
 
-    private class ConsumerStatistics implements Statistics
+    @Override
+    public long getBytesOut()
     {
+        return _consumer.getBytesOut();
+    }
 
-        public Collection<String> getStatisticNames()
-        {
-            return AVAILABLE_STATISTICS;
-        }
+    @Override
+    public long getMessagesOut()
+    {
+        return _consumer.getMessagesOut();
+    }
 
-        public Object getStatistic(String name)
-        {
-            if(name.equals(BYTES_OUT))
-            {
-                return _consumer.getBytesOut();
-            }
-            else if(name.equals(MESSAGES_OUT))
-            {
-                return _consumer.getMessagesOut();
-            }
-            else if(name.equals(STATE_CHANGED))
-            {
+    @Override
+    public long getUnacknowledgedBytes()
+    {
+        return _consumer.getUnacknowledgedBytes();
+    }
 
-            }
-            else if(name.equals(UNACKNOWLEDGED_BYTES))
-            {
-                return _consumer.getUnacknowledgedBytes();
-            }
-            else if(name.equals(UNACKNOWLEDGED_MESSAGES))
-            {
-                return _consumer.getUnacknowledgedMessages();
-            }
-            return null;  // TODO - Implement
-        }
+    @Override
+    public long getUnacknowledgedMessages()
+    {
+        return _consumer.getUnacknowledgedMessages();
     }
 
     @Override
