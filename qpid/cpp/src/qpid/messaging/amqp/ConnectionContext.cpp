@@ -25,6 +25,7 @@
 #include "SenderContext.h"
 #include "SessionContext.h"
 #include "Transport.h"
+#include "qpid/amqp/descriptors.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/Duration.h"
@@ -597,14 +598,22 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn, pn_li
     checkClosed(ssn);
     if ((pn_link_state(lnk) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
         pn_condition_t* error = pn_link_remote_condition(lnk);
+        std::string name;
         std::stringstream text;
         if (pn_condition_is_set(error)) {
-            text << "Link detached by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
+            name = pn_condition_get_name(error);
+            text << "Link detached by peer with " << name << ": " << pn_condition_get_description(error);
         } else {
             text << "Link detached by peer";
         }
         pn_link_close(lnk);
-        throw qpid::messaging::LinkError(text.str());
+        if (name == qpid::amqp::error_conditions::NOT_FOUND) {
+            throw qpid::messaging::NotFound(text.str());
+        } else if (name == qpid::amqp::error_conditions::UNAUTHORIZED_ACCESS) {
+            throw qpid::messaging::UnauthorizedAccess(text.str());
+        } else {
+            throw qpid::messaging::LinkError(text.str());
+        }
     } else if ((pn_link_state(lnk) & IS_CLOSED) == IS_CLOSED) {
         throw qpid::messaging::LinkError("Link is not attached");
     }
