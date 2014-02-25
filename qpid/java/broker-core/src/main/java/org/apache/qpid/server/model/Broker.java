@@ -177,6 +177,20 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
     long getVirtualhost_storeTransactionOpenTimeoutWarn();
 
 
+
+    @ManagedStatistic
+    long getBytesIn();
+
+    @ManagedStatistic
+    long getBytesOut();
+
+    @ManagedStatistic
+    long getMessagesIn();
+
+    @ManagedStatistic
+    long getMessagesOut();
+
+
     //children
     Collection < VirtualHost<?> > getVirtualHosts();
 

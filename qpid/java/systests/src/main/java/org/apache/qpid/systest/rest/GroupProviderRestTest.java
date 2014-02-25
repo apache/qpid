@@ -29,13 +29,13 @@ import java.util.Properties;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -322,7 +322,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
 
     private void assertProvider(String name, String type, Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, Attribute.getAttributeNames(GroupProvider.class),
+        Asserts.assertAttributesPresent(provider, AbstractConfiguredObject.getAttributeNames(GroupProvider.class),
                 GroupProvider.TIME_TO_LIVE,
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,

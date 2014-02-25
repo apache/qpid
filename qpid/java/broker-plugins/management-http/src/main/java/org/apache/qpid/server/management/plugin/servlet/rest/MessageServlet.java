@@ -106,7 +106,7 @@ public class MessageServlet extends AbstractServlet
 
         response.setContentType("application/json");
         final List<Map<String, Object>> messages = messageCollector.getMessages();
-        int queueSize = ((Number) queue.getStatistics().getStatistic(Queue.QUEUE_DEPTH_MESSAGES)).intValue();
+        int queueSize = (int) queue.getQueueDepthMessages();
         String min = messages.isEmpty() ? "0" : messages.get(0).get("position").toString();
         String max = messages.isEmpty() ? "0" : messages.get(messages.size()-1).get("position").toString();
         response.setHeader("Content-Range", (min + "-" + max + "/" + queueSize));

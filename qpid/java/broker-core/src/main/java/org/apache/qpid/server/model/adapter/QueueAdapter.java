@@ -65,7 +65,6 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractConfiguredOb
 
 
     private final VirtualHostAdapter _vhost;
-    private QueueStatisticsAdapter _statistics;
     private QueueNotificationListener _queueNotificationListener;
 
     public QueueAdapter(final VirtualHostAdapter virtualHostAdapter, final AMQQueue<?,Q,?> queue)
@@ -77,7 +76,6 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractConfiguredOb
         _queue = queue;
         _queue.addConsumerRegistrationListener(this);
         populateConsumers();
-        _statistics = new QueueStatisticsAdapter(queue);
         _queue.setNotificationListener(this);
     }
 
@@ -333,7 +331,7 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractConfiguredOb
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(Queue.class);
+        return getAttributeNames(Queue.class);
     }
 
     @Override
@@ -608,10 +606,6 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractConfiguredOb
         return super.getAttribute(name);
     }
 
-    public Statistics getStatistics()
-    {
-        return _statistics;
-    }
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
@@ -748,99 +742,119 @@ final class QueueAdapter<Q extends AMQQueue<?,Q,?>> extends AbstractConfiguredOb
     }
 
 
-    private static class QueueStatisticsAdapter implements Statistics
+    @Override
+    public long getBytesIn()
     {
-
-        private final AMQQueue _queue;
-
-        public QueueStatisticsAdapter(AMQQueue queue)
-        {
-            _queue = queue;
-        }
-
-        public Collection<String> getStatisticNames()
-        {
-            return Queue.AVAILABLE_STATISTICS;
-        }
-
-        public Object getStatistic(String name)
-        {
-            if(BINDING_COUNT.equals(name))
-            {
-                return _queue.getBindingCount();
-            }
-            else if(CONSUMER_COUNT.equals(name))
-            {
-                return _queue.getConsumerCount();
-            }
-            else if(CONSUMER_COUNT_WITH_CREDIT.equals(name))
-            {
-                return _queue.getActiveConsumerCount();
-            }
-            else if(DISCARDS_TTL_BYTES.equals(name))
-            {
-                return null; // TODO
-            }
-            else if(DISCARDS_TTL_MESSAGES.equals(name))
-            {
-                return null; // TODO
-            }
-            else if(PERSISTENT_DEQUEUED_BYTES.equals(name))
-            {
-                return _queue.getPersistentByteDequeues();
-            }
-            else if(PERSISTENT_DEQUEUED_MESSAGES.equals(name))
-            {
-                return _queue.getPersistentMsgDequeues();
-            }
-            else if(PERSISTENT_ENQUEUED_BYTES.equals(name))
-            {
-                return _queue.getPersistentByteEnqueues();
-            }
-            else if(PERSISTENT_ENQUEUED_MESSAGES.equals(name))
-            {
-                return _queue.getPersistentMsgEnqueues();
-            }
-            else if(QUEUE_DEPTH_BYTES.equals(name))
-            {
-                return _queue.getQueueDepth();
-            }
-            else if(QUEUE_DEPTH_MESSAGES.equals(name))
-            {
-                return _queue.getMessageCount();
-            }
-            else if(STATE_CHANGED.equals(name))
-            {
-                return null; // TODO
-            }
-            else if(TOTAL_DEQUEUED_BYTES.equals(name))
-            {
-                return _queue.getTotalDequeueSize();
-            }
-            else if(TOTAL_DEQUEUED_MESSAGES.equals(name))
-            {
-                return _queue.getTotalDequeueCount();
-            }
-            else if(TOTAL_ENQUEUED_BYTES.equals(name))
-            {
-                return _queue.getTotalEnqueueSize();
-            }
-            else if(TOTAL_ENQUEUED_MESSAGES.equals(name))
-            {
-                return _queue.getTotalEnqueueCount();
-            }
-            else if(UNACKNOWLEDGED_BYTES.equals(name))
-            {
-                return _queue.getUnackedMessageBytes();
-            }
-            else if(UNACKNOWLEDGED_MESSAGES.equals(name))
-            {
-                return _queue.getUnackedMessageCount();
-            }
-
-            return null;
-        }
+        return _queue.getTotalEnqueueSize();
     }
+
+    @Override
+    public long getBytesOut()
+    {
+        return _queue.getTotalDequeueSize();
+    }
+
+    @Override
+    public long getMessagesIn()
+    {
+        return _queue.getTotalEnqueueCount();
+    }
+
+    @Override
+    public long getMessagesOut()
+    {
+        return _queue.getTotalDequeueCount();
+    }
+    @Override
+    public long getBindingCount()
+    {
+        return _queue.getBindingCount();
+    }
+
+    @Override
+    public long getConsumerCount()
+    {
+        return _queue.getConsumerCount();
+    }
+
+    @Override
+    public long getConsumerCountWithCredit()
+    {
+        return _queue.getActiveConsumerCount();
+    }
+
+    @Override
+    public long getPersistentDequeuedBytes()
+    {
+        return _queue.getPersistentByteDequeues();
+    }
+
+    @Override
+    public long getPersistentDequeuedMessages()
+    {
+        return _queue.getPersistentMsgDequeues();
+    }
+
+    @Override
+    public long getPersistentEnqueuedBytes()
+    {
+        return _queue.getPersistentByteEnqueues();
+    }
+
+    @Override
+    public long getPersistentEnqueuedMessages()
+    {
+        return _queue.getPersistentMsgEnqueues();
+    }
+
+    @Override
+    public long getQueueDepthBytes()
+    {
+        return _queue.getQueueDepth();
+    }
+
+    @Override
+    public long getQueueDepthMessages()
+    {
+        return _queue.getMessageCount();
+    }
+
+    @Override
+    public long getTotalDequeuedBytes()
+    {
+        return _queue.getTotalDequeueSize();
+    }
+
+    @Override
+    public long getTotalDequeuedMessages()
+    {
+        return _queue.getTotalDequeueCount();
+    }
+
+    @Override
+    public long getTotalEnqueuedBytes()
+    {
+        return _queue.getTotalEnqueueSize();
+    }
+
+    @Override
+    public long getTotalEnqueuedMessages()
+    {
+        return _queue.getTotalEnqueueCount();
+    }
+
+    @Override
+    public long getUnacknowledgedBytes()
+    {
+        return _queue.getUnackedMessageBytes();
+    }
+
+    @Override
+    public long getUnacknowledgedMessages()
+    {
+        return _queue.getUnackedMessageCount();
+    }
+
 
     @Override
     public void setNotificationListener(QueueNotificationListener listener)

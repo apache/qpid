@@ -254,8 +254,8 @@ public class SecurityManager implements ConfigurationChangeListener
 
     public void authoriseCreateBinding(Binding binding)
     {
-        final Exchange exch = binding.getExchange();
-        final AMQQueue queue = binding.getQueue();
+        final Exchange exch = binding.getExchangeImpl();
+        final AMQQueue queue = binding.getAMQQueue();
         final String bindingKey = binding.getBindingKey();
 
         boolean allowed =

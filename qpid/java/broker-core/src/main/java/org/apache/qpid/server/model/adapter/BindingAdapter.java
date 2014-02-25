@@ -31,7 +31,6 @@ import org.apache.qpid.server.model.*;
 final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> implements Binding<BindingAdapter>
 {
     private final org.apache.qpid.server.binding.Binding _binding;
-    private Statistics _statistics = NoStatistics.getInstance();
     private final ExchangeAdapter _exchange;
     private QueueAdapter _queue;
 
@@ -107,11 +106,6 @@ final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> impl
         return 0;  //TODO
     }
 
-    public Statistics getStatistics()
-    {
-        return _statistics;
-    }
-
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
@@ -127,6 +121,12 @@ final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> impl
     public Map<String, Object> getArguments()
     {
         return new HashMap<String, Object> (_binding.getArguments());
+    }
+
+    @Override
+    public long getMatches()
+    {
+        return _binding.getMatches();
     }
 
     public void delete()
@@ -180,7 +180,7 @@ final class BindingAdapter extends AbstractConfiguredObject<BindingAdapter> impl
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(Binding.class);
+        return getAttributeNames(Binding.class);
     }
 
     @Override

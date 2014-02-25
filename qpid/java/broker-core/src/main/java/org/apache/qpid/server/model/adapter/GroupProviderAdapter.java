@@ -49,7 +49,7 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
 
     public GroupProviderAdapter(UUID id, Broker broker, GroupManager groupManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, null, null, broker.getTaskExecutor());
+        super(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
 
         if (groupManager == null)
         {
@@ -77,7 +77,7 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
 
     protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
     {
-        List<String> attributesNames = new ArrayList<String>(Attribute.getAttributeNames(GroupProvider.class));
+        List<String> attributesNames = new ArrayList<String>(getAttributeNames(GroupProvider.class));
         if (factoryAttributes != null)
         {
             attributesNames.addAll(factoryAttributes);
@@ -143,12 +143,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
             IllegalArgumentException
     {
         return 0;
-    }
-
-    @Override
-    public Statistics getStatistics()
-    {
-        return NoStatistics.getInstance();
     }
 
     @Override
@@ -427,12 +421,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         }
 
         @Override
-        public Statistics getStatistics()
-        {
-            return NoStatistics.getInstance();
-        }
-
-        @Override
         public <C extends ConfiguredObject> Collection<C> getChildren(
                 Class<C> clazz)
         {
@@ -479,7 +467,7 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         @Override
         public Collection<String> getAttributeNames()
         {
-            return Attribute.getAttributeNames(Group.class);
+            return getAttributeNames(Group.class);
         }
 
         @Override
@@ -538,7 +526,7 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
             @Override
             public Collection<String> getAttributeNames()
             {
-                return Attribute.getAttributeNames(GroupMember.class);
+                return getAttributeNames(GroupMember.class);
             }
 
             @Override
@@ -613,12 +601,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
                     IllegalArgumentException
             {
                 return 0;
-            }
-
-            @Override
-            public Statistics getStatistics()
-            {
-                return NoStatistics.getInstance();
             }
 
             @Override

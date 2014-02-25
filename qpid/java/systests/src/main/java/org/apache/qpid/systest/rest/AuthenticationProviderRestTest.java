@@ -27,13 +27,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -304,7 +304,8 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
     private void assertProvider(boolean managesPrincipals, String type, Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, Attribute.getAttributeNames(AuthenticationProvider.class),
+        Asserts.assertAttributesPresent(provider, AbstractConfiguredObject.getAttributeNames(
+                AuthenticationProvider.class),
                 AuthenticationProvider.DESCRIPTION, AuthenticationProvider.TIME_TO_LIVE, ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME, ConfiguredObject.LAST_UPDATED_BY, ConfiguredObject.LAST_UPDATED_TIME);
         assertEquals("Unexpected value of provider attribute " + AuthenticationProvider.STATE, State.ACTIVE.name(),

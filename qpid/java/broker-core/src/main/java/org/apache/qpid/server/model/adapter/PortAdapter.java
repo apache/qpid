@@ -226,12 +226,6 @@ abstract public class PortAdapter<X extends PortAdapter<X>> extends AbstractConf
     }
 
     @Override
-    public Statistics getStatistics()
-    {
-        return NoStatistics.getInstance();
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         if(clazz == Connection.class)
@@ -279,7 +273,7 @@ abstract public class PortAdapter<X extends PortAdapter<X>> extends AbstractConf
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(Port.class);
+        return getAttributeNames(Port.class);
     }
 
     @Override

@@ -113,9 +113,9 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
-                                  payload.getMessageHeader() + " to " + b.getQueue().getName());
+                                  payload.getMessageHeader() + " to " + b.getAMQQueue().getName());
                 }
-                queues.add(b.getQueue());
+                queues.add(b.getAMQQueue());
             }
         }
 
@@ -125,7 +125,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
     protected void onBind(final Binding binding)
     {
         String bindingKey = binding.getBindingKey();
-        AMQQueue queue = binding.getQueue();
+        AMQQueue queue = binding.getAMQQueue();
         Map<String,Object> args = binding.getArguments();
 
         assert queue != null;

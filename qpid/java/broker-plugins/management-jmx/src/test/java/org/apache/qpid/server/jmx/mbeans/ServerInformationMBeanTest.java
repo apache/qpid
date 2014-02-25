@@ -25,8 +25,6 @@ import static org.mockito.Mockito.when;
 
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.Statistics;
 
 import junit.framework.TestCase;
 
@@ -34,7 +32,6 @@ public class ServerInformationMBeanTest extends TestCase
 {
     private ManagedObjectRegistry _mockManagedObjectRegistry;
     private Broker _mockBroker;
-    private Statistics _mockBrokerStatistics;
     private ServerInformationMBean _mbean;
 
     @Override
@@ -42,8 +39,6 @@ public class ServerInformationMBeanTest extends TestCase
     {
         _mockManagedObjectRegistry = mock(ManagedObjectRegistry.class);
         _mockBroker = mock(Broker.class);
-        _mockBrokerStatistics = mock(Statistics.class);
-        when(_mockBroker.getStatistics()).thenReturn(_mockBrokerStatistics);
 
         _mbean = new ServerInformationMBean(_mockManagedObjectRegistry, _mockBroker);
     }
@@ -58,7 +53,8 @@ public class ServerInformationMBeanTest extends TestCase
 
     public void testGetMessageCount() throws Exception
     {
-        assertStatistic("totalDataDelivered", 16384l, Connection.BYTES_OUT);
+        when(_mockBroker.getBytesOut()).thenReturn(16384l);
+        assertStatistic("totalDataDelivered", 16384l);
     }
 
     /**********  Attributes **********/
@@ -80,9 +76,8 @@ public class ServerInformationMBeanTest extends TestCase
         assertTrue("isStatisticsEnabled", _mbean.isStatisticsEnabled());
     }
 
-    private void assertStatistic(String jmxAttributeName, Object expectedValue, String underlyingAttributeName) throws Exception
+    private void assertStatistic(String jmxAttributeName, Object expectedValue) throws Exception
     {
-        when(_mockBrokerStatistics.getStatistic(underlyingAttributeName)).thenReturn(expectedValue);
         MBeanTestUtils.assertMBeanAttribute(_mbean, jmxAttributeName, expectedValue);
     }
 

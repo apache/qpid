@@ -79,13 +79,13 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
                 {
                     try
                     {
-                        MessageFilter filter = FilterSupport.createMessageFilter(b.getArguments(), b.getQueue());
-                        filteredQueues.put(b.getQueue(),filter);
+                        MessageFilter filter = FilterSupport.createMessageFilter(b.getArguments(), b.getAMQQueue());
+                        filteredQueues.put(b.getAMQQueue(),filter);
                     }
                     catch (AMQInvalidArgumentException e)
                     {
-                        _logger.warn("Binding ignored: cannot parse filter on binding of queue '"+b.getQueue().getName()
-                                     + "' to exchange '" + b.getExchange().getName()
+                        _logger.warn("Binding ignored: cannot parse filter on binding of queue '"+b.getAMQQueue().getName()
+                                     + "' to exchange '" + b.getExchangeImpl().getName()
                                      + "' with arguments: " + b.getArguments(), e);
                     }
 
@@ -93,9 +93,9 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
                 else
                 {
 
-                    if(!queues.contains(b.getQueue()))
+                    if(!queues.contains(b.getAMQQueue()))
                     {
-                        queues.add(b.getQueue());
+                        queues.add(b.getAMQQueue());
                     }
                 }
             }
@@ -188,7 +188,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
     protected void onBind(final Binding binding)
     {
         String bindingKey = binding.getBindingKey();
-        AMQQueue queue = binding.getQueue();
+        AMQQueue queue = binding.getAMQQueue();
 
         assert queue != null;
         assert bindingKey != null;

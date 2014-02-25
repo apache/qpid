@@ -36,7 +36,6 @@ import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.Statistics;
 
 public class ConnectionMBeanTest extends TestCase
 {
@@ -189,9 +188,8 @@ public class ConnectionMBeanTest extends TestCase
 
     public void testGetLastIoTime()
     {
-        Statistics mockStatistics = mock(Statistics.class);
-        when(_mockConnection.getStatistics()).thenReturn(mockStatistics);
-        when(mockStatistics.getStatistic(Connection.LAST_IO_TIME)).thenReturn(1L);
+        when(_mockConnection.getLastIoTime()).thenReturn(1l);
+
 
         Object actualValue = _connectionMBean.getLastIoTime();
         assertEquals("Unexpected lastIoTime", new Date(1L), actualValue);
@@ -225,11 +223,10 @@ public class ConnectionMBeanTest extends TestCase
     private Session createMockedSession(int channelId, int unacknowledgedMessages, long localTransactionBegins, boolean blocked)
     {
         Session mockSession = mock(Session.class);
-        Statistics mockSessionStatistics = mock(Statistics.class);
-        when(mockSessionStatistics.getStatistic(Session.LOCAL_TRANSACTION_BEGINS)).thenReturn(localTransactionBegins);
-        when(mockSessionStatistics.getStatistic(Session.UNACKNOWLEDGED_MESSAGES)).thenReturn(unacknowledgedMessages);
+        when(mockSession.getLocalTransactionBegins()).thenReturn(localTransactionBegins);
+        when(mockSession.getUnacknowledgedMessages()).thenReturn((long)unacknowledgedMessages);
 
-        when(mockSession.getStatistics()).thenReturn(mockSessionStatistics);
+        when(mockSession.getStatistics()).thenReturn(Collections.emptyMap());
         when(mockSession.getAttribute(Session.CHANNEL_ID)).thenReturn(channelId);
         when(mockSession.getAttribute(Session.PRODUCER_FLOW_BLOCKED)).thenReturn(blocked);
         return mockSession;

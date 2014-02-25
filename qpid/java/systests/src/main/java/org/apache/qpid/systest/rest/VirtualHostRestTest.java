@@ -74,9 +74,10 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) hostDetails.get(Asserts.STATISTICS_ATTRIBUTE);
-        assertEquals("Unexpected number of exchanges in statistics", EXPECTED_EXCHANGES.length, statistics.get(VirtualHost.EXCHANGE_COUNT));
-        assertEquals("Unexpected number of queues in statistics", EXPECTED_QUEUES.length, statistics.get(VirtualHost.QUEUE_COUNT));
-        assertEquals("Unexpected number of connections in statistics", 1, statistics.get(VirtualHost.CONNECTION_COUNT));
+        assertEquals("Unexpected number of exchanges in statistics", EXPECTED_EXCHANGES.length, statistics.get(
+                "exchangeCount"));
+        assertEquals("Unexpected number of queues in statistics", EXPECTED_QUEUES.length, statistics.get("queueCount"));
+        assertEquals("Unexpected number of connections in statistics", 1, statistics.get("connectionCount"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_EXCHANGES_ATTRIBUTE);
@@ -589,9 +590,9 @@ public class VirtualHostRestTest extends QpidRestTestCase
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) hostDetails.get(Asserts.STATISTICS_ATTRIBUTE);
         assertEquals("Unexpected number of exchanges in statistics", EXPECTED_EXCHANGES.length,
-                statistics.get(VirtualHost.EXCHANGE_COUNT));
-        assertEquals("Unexpected number of queues in statistics", 0, statistics.get(VirtualHost.QUEUE_COUNT));
-        assertEquals("Unexpected number of connections in statistics", 0, statistics.get(VirtualHost.CONNECTION_COUNT));
+                statistics.get("exchangeCount"));
+        assertEquals("Unexpected number of queues in statistics", 0, statistics.get("queueCount"));
+        assertEquals("Unexpected number of connections in statistics", 0, statistics.get("connectionCount"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VIRTUALHOST_EXCHANGES_ATTRIBUTE);

@@ -24,9 +24,7 @@ package org.apache.qpid.server.jmx;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
@@ -320,7 +318,7 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(JMXManagement.class);
+        return getAttributeNames(JMXManagement.class);
     }
 
     @Override

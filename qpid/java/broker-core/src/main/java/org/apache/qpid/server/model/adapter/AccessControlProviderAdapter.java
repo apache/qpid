@@ -49,7 +49,7 @@ public class AccessControlProviderAdapter extends AbstractConfiguredObject<Acces
 
     public AccessControlProviderAdapter(UUID id, Broker broker, AccessControl accessControl, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, null, null, broker.getTaskExecutor());
+        super(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
 
         if (accessControl == null)
         {
@@ -79,7 +79,7 @@ public class AccessControlProviderAdapter extends AbstractConfiguredObject<Acces
 
     protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
     {
-        List<String> attributesNames = new ArrayList<String>(Attribute.getAttributeNames(AccessControlProvider.class));
+        List<String> attributesNames = new ArrayList<String>(getAttributeNames(AccessControlProvider.class));
         if (factoryAttributes != null)
         {
             attributesNames.addAll(factoryAttributes);
@@ -142,12 +142,6 @@ public class AccessControlProviderAdapter extends AbstractConfiguredObject<Acces
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return 0;
-    }
-
-    @Override
-    public Statistics getStatistics()
-    {
-        return NoStatistics.getInstance();
     }
 
     @Override

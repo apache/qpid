@@ -430,7 +430,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(HttpManagement.class);
+        return getAttributeNames(HttpManagement.class);
     }
 
     @Override

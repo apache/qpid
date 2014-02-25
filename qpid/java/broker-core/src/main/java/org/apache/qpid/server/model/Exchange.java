@@ -29,24 +29,6 @@ import java.util.Map;
 
 public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
 {
-    String BINDING_COUNT = "bindingCount";
-    String BYTES_DROPPED = "bytesDropped";
-    String BYTES_IN      = "bytesIn";
-    String MESSAGES_DROPPED = "messagesDropped";
-    String MESSAGES_IN      = "messagesIn";
-    String PRODUCER_COUNT   = "producerCount";
-    String STATE_CHANGED    = "stateChanged";
-
-    public static final Collection<String> AVAILABLE_STATISTICS =
-            Collections.unmodifiableList(
-                    Arrays.asList(BINDING_COUNT,
-                                  BYTES_DROPPED,
-                                  BYTES_IN,
-                                  MESSAGES_DROPPED,
-                                  MESSAGES_IN,
-                                  PRODUCER_COUNT,
-                                  STATE_CHANGED));
-
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
@@ -61,7 +43,23 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
     //children
     Collection<Binding> getBindings();
     Collection<Publisher> getPublishers();
-    
+
+    @ManagedStatistic
+    long getBindingCount();
+
+    @ManagedStatistic
+    long getBytesDropped();
+
+    @ManagedStatistic
+    long getBytesIn();
+
+    @ManagedStatistic
+    long getMessagesDropped();
+
+    @ManagedStatistic
+    long getMessagesIn();
+
+
     //operations
     Binding createBinding(String bindingKey,
                           Queue queue,

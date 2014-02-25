@@ -25,39 +25,13 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 
 import java.security.AccessControlException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 @ManagedObject( managesChildren = true )
 
 public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
 {
-    // Statistics
-
-    public static final String BYTES_IN = "bytesIn";
-    public static final String BYTES_OUT = "bytesOut";
-    public static final String BYTES_RETAINED = "bytesRetained";
-    public static final String LOCAL_TRANSACTION_BEGINS = "localTransactionBegins";
-    public static final String LOCAL_TRANSACTION_ROLLBACKS = "localTransactionRollbacks";
-    public static final String MESSAGES_IN = "messagesIn";
-    public static final String MESSAGES_OUT = "messagesOut";
-    public static final String MESSAGES_RETAINED = "messagesRetained";
-    public static final String STATE_CHANGED = "stateChanged";
-    public static final String XA_TRANSACTION_BRANCH_ENDS = "xaTransactionBranchEnds";
-    public static final String XA_TRANSACTION_BRANCH_STARTS = "xaTransactionBranchStarts";
-    public static final String XA_TRANSACTION_BRANCH_SUSPENDS = "xaTransactionBranchSuspends";
-    public static final String QUEUE_COUNT = "queueCount";
-    public static final String EXCHANGE_COUNT = "exchangeCount";
-    public static final String CONNECTION_COUNT = "connectionCount";
-
-    public static final Collection<String> AVAILABLE_STATISTICS =
-            Collections.unmodifiableList(
-                    Arrays.asList(BYTES_IN, BYTES_OUT, BYTES_RETAINED, LOCAL_TRANSACTION_BEGINS,
-                            LOCAL_TRANSACTION_ROLLBACKS, MESSAGES_IN, MESSAGES_OUT, MESSAGES_RETAINED, STATE_CHANGED,
-                            XA_TRANSACTION_BRANCH_ENDS, XA_TRANSACTION_BRANCH_STARTS, XA_TRANSACTION_BRANCH_SUSPENDS,
-                            QUEUE_COUNT, EXCHANGE_COUNT, CONNECTION_COUNT));
 
     String QUEUE_ALERT_REPEAT_GAP                     = "queue.alertRepeatGap";
     String QUEUE_ALERT_THRESHOLD_MESSAGE_AGE          = "queue.alertThresholdMessageAge";
@@ -152,6 +126,27 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
 
     @ManagedAttribute
     String getConfigPath();
+
+    @ManagedStatistic
+    long getQueueCount();
+
+    @ManagedStatistic
+    long getExchangeCount();
+
+    @ManagedStatistic
+    long getConnectionCount();
+
+    @ManagedStatistic
+    long getBytesIn();
+
+    @ManagedStatistic
+    long getBytesOut();
+
+    @ManagedStatistic
+    long getMessagesIn();
+
+    @ManagedStatistic
+    long getMessagesOut();
 
 
     //children

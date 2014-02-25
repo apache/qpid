@@ -33,11 +33,11 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.message.internal.InternalMessageHeader;
 import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -215,7 +215,8 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
                 }
             }
             managedEntityType = new ManagedEntityType(clazz.getName(), parentSet.toArray(new ManagedEntityType[parentSet.size()]),
-                                                      (String[])(Attribute.getAttributeNames(clazz).toArray(new String[0])),
+                                                      (String[])(AbstractConfiguredObject.getAttributeNames(
+                                                              clazz).toArray(new String[0])),
                                                       opsList.toArray(new String[opsList.size()]));
             _entityTypes.put(clazz.getName(),managedEntityType);
             _entities.put(managedEntityType, Collections.synchronizedMap(new LinkedHashMap<String, ConfiguredObject>()));

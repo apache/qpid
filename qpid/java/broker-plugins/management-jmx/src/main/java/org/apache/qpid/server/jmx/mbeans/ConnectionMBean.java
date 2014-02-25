@@ -39,7 +39,6 @@ import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.Statistics;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection> implements ManagedConnection
@@ -75,6 +74,30 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
         register();
     }
 
+    @Override
+    protected long getBytesOut()
+    {
+        return getConfiguredObject().getBytesOut();
+    }
+
+    @Override
+    protected long getBytesIn()
+    {
+        return getConfiguredObject().getBytesIn();
+    }
+
+    @Override
+    protected long getMessagesOut()
+    {
+        return getConfiguredObject().getMessagesOut();
+    }
+
+    @Override
+    protected long getMessagesIn()
+    {
+        return getConfiguredObject().getMessagesIn();
+    }
+
     public String getObjectInstanceName()
     {
         return ObjectName.quote(getRemoteAddress());
@@ -108,8 +131,7 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public Date getLastIoTime()
     {
-        Long lastIo = (Long) getConfiguredObject().getStatistics().getStatistic(Connection.LAST_IO_TIME);
-        return new Date(lastIo);
+        return new Date(getConfiguredObject().getLastIoTime());
     }
 
     public Long getMaximumNumberOfChannels()
@@ -124,10 +146,10 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
         for (Session session : list)
         {
-            Statistics statistics = session.getStatistics();
-            Long txnBegins = (Long) statistics.getStatistic(Session.LOCAL_TRANSACTION_BEGINS);
+
+            Long txnBegins = session.getLocalTransactionBegins();
             Integer channelId = (Integer) session.getAttribute(Session.CHANNEL_ID);
-            int unacknowledgedSize = ((Number) statistics.getStatistic(Session.UNACKNOWLEDGED_MESSAGES)).intValue();
+            int unacknowledgedSize = (int) session.getUnacknowledgedMessages();
             boolean blocked = (Boolean) session.getAttribute(Session.PRODUCER_FLOW_BLOCKED);
             boolean isTransactional = (txnBegins>0l);
 

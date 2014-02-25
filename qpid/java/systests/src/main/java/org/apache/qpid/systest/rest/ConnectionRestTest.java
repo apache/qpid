@@ -33,10 +33,10 @@ import javax.jms.MessageProducer;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.server.model.Attribute;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 
 public class ConnectionRestTest extends QpidRestTestCase
 {
@@ -155,14 +155,14 @@ public class ConnectionRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) connectionDetails.get(Asserts.STATISTICS_ATTRIBUTE);
-        assertEquals("Unexpected value of connection statistics attribute " + Connection.BYTES_IN, MESSAGE_NUMBER
-                * MESSAGE_SIZE, statistics.get(Connection.BYTES_IN));
-        assertEquals("Unexpected value of connection statistics attribute " + Connection.BYTES_OUT, MESSAGE_SIZE
-                + ((MESSAGE_NUMBER - 1) * MESSAGE_SIZE) * 2, statistics.get(Connection.BYTES_OUT));
-        assertEquals("Unexpected value of connection statistics attribute " + Connection.MESSAGES_IN, MESSAGE_NUMBER,
-                statistics.get(Connection.MESSAGES_IN));
-        assertEquals("Unexpected value of connection statistics attribute " + Connection.MESSAGES_OUT,
-                MESSAGE_NUMBER * 2 - 1, statistics.get(Connection.MESSAGES_OUT));
+        assertEquals("Unexpected value of connection statistics attribute " + "bytesIn", MESSAGE_NUMBER
+                * MESSAGE_SIZE, statistics.get("bytesIn"));
+        assertEquals("Unexpected value of connection statistics attribute " + "bytesOut", MESSAGE_SIZE
+                + ((MESSAGE_NUMBER - 1) * MESSAGE_SIZE) * 2, statistics.get("bytesOut"));
+        assertEquals("Unexpected value of connection statistics attribute " + "messagesIn", MESSAGE_NUMBER,
+                statistics.get("messagesIn"));
+        assertEquals("Unexpected value of connection statistics attribute " + "messagesOut",
+                MESSAGE_NUMBER * 2 - 1, statistics.get("messagesOut"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> sessions = (List<Map<String, Object>>) connectionDetails.get(SESSIONS_ATTRIBUTE);
@@ -174,7 +174,7 @@ public class ConnectionRestTest extends QpidRestTestCase
     private void assertSession(Map<String, Object> sessionData, AMQSession<?, ?> session)
     {
         assertNotNull("Session map cannot be null", sessionData);
-        Asserts.assertAttributesPresent(sessionData, Attribute.getAttributeNames(Session.class),
+        Asserts.assertAttributesPresent(sessionData, AbstractConfiguredObject.getAttributeNames(Session.class),
                                         ConfiguredObject.TYPE,
                                         ConfiguredObject.CREATED_BY,
                                         ConfiguredObject.CREATED_TIME,
@@ -193,19 +193,18 @@ public class ConnectionRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) sessionData.get(Asserts.STATISTICS_ATTRIBUTE);
-        Asserts.assertAttributesPresent(statistics, Session.AVAILABLE_STATISTICS, Session.BYTES_IN, Session.BYTES_OUT,
-                Session.STATE_CHANGED, Session.UNACKNOWLEDGED_BYTES, Session.LOCAL_TRANSACTION_OPEN,
-                Session.XA_TRANSACTION_BRANCH_ENDS, Session.XA_TRANSACTION_BRANCH_STARTS,
-                Session.XA_TRANSACTION_BRANCH_SUSPENDS);
+        Asserts.assertAttributesPresent(statistics, "consumerCount",
+                                        "localTransactionBegins", "localTransactionOpen",
+                                        "localTransactionRollbacks", "unacknowledgedMessages");
 
-        assertEquals("Unexpecte value of statistic attribute " + Session.UNACKNOWLEDGED_MESSAGES, MESSAGE_NUMBER - 1,
-                statistics.get(Session.UNACKNOWLEDGED_MESSAGES));
-        assertEquals("Unexpecte value of statistic attribute " + Session.LOCAL_TRANSACTION_BEGINS, 4,
-                statistics.get(Session.LOCAL_TRANSACTION_BEGINS));
-        assertEquals("Unexpecte value of statistic attribute " + Session.LOCAL_TRANSACTION_ROLLBACKS, 1,
-                statistics.get(Session.LOCAL_TRANSACTION_ROLLBACKS));
-        assertEquals("Unexpecte value of statistic attribute " + Session.CONSUMER_COUNT, 1,
-                statistics.get(Session.CONSUMER_COUNT));
+        assertEquals("Unexpecte value of statistic attribute " + "unacknowledgedMessages", MESSAGE_NUMBER - 1,
+                statistics.get("unacknowledgedMessages"));
+        assertEquals("Unexpecte value of statistic attribute " + "localTransactionBegins", 4,
+                statistics.get("localTransactionBegins"));
+        assertEquals("Unexpecte value of statistic attribute " + "localTransactionRollbacks", 1,
+                statistics.get("localTransactionRollbacks"));
+        assertEquals("Unexpecte value of statistic attribute " + "consumerCount", 1,
+                statistics.get("consumerCount"));
     }
 
     private String getConnectionName() throws IOException

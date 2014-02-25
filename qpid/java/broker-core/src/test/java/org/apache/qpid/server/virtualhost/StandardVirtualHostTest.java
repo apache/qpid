@@ -216,7 +216,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         boolean foundPing = false;
         for (Binding binding : bindings)
         {
-            String qn = binding.getQueue().getName();
+            String qn = binding.getAMQQueue().getName();
             assertEquals("Unexpected queue name", getName(), qn);
             Map<String, Object> arguments = binding.getArguments();
 

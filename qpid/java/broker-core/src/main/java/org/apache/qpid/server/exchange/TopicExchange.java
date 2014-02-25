@@ -73,7 +73,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
     protected synchronized void registerQueue(final Binding binding) throws AMQInvalidArgumentException
     {
         final String bindingKey = binding.getBindingKey();
-        AMQQueue queue = binding.getQueue();
+        AMQQueue queue = binding.getAMQQueue();
         Map<String,Object> args = binding.getArguments();
 
         assert queue != null;
@@ -202,8 +202,8 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
             {
                 try
                 {
-                    result.removeFilteredQueue(binding.getQueue(), FilterSupport.createMessageFilter(bindingArgs,
-                            binding.getQueue()));
+                    result.removeFilteredQueue(binding.getAMQQueue(), FilterSupport.createMessageFilter(bindingArgs,
+                            binding.getAMQQueue()));
                 }
                 catch (AMQInvalidArgumentException e)
                 {
@@ -212,7 +212,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
             }
             else
             {
-                result.removeUnfilteredQueue(binding.getQueue());
+                result.removeUnfilteredQueue(binding.getAMQQueue());
             }
             return true;
         }

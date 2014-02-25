@@ -34,7 +34,6 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class DurableConfigurationStoreHelper
 {
@@ -111,8 +110,8 @@ public class DurableConfigurationStoreHelper
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Binding.NAME, binding.getBindingKey());
-        attributesMap.put(Binding.EXCHANGE, binding.getExchange().getId());
-        attributesMap.put(Binding.QUEUE, binding.getQueue().getId());
+        attributesMap.put(Binding.EXCHANGE, binding.getExchangeImpl().getId());
+        attributesMap.put(Binding.QUEUE, binding.getAMQQueue().getId());
         Map<String, Object> arguments = binding.getArguments();
         if (arguments != null)
         {

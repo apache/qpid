@@ -153,7 +153,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
     private final RootMessageLogger _rootMessageLogger;
-    private StatisticsAdapter _statistics;
 
     private final Map<String, VirtualHost<?>> _vhostAdapters = new HashMap<String, VirtualHost<?>>();
     private final Map<UUID, Port<?>> _portAdapters = new HashMap<UUID, Port<?>>();
@@ -188,7 +187,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
         _rootMessageLogger = rootMessageLogger;
-        _statistics = new StatisticsAdapter(statisticsGatherer);
         _authenticationProviderFactory = authenticationProviderFactory;
         _groupProviderFactory = groupProviderFactory;
         _accessControlProviderFactory = accessControlProviderFactory;
@@ -552,11 +550,30 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         throw new IllegalStateException();
     }
 
-    public Statistics getStatistics()
+
+    @Override
+    public long getBytesIn()
     {
-        return _statistics;
+        return _statisticsGatherer.getDataReceiptStatistics().getTotal();
     }
 
+    @Override
+    public long getBytesOut()
+    {
+        return _statisticsGatherer.getDataDeliveryStatistics().getTotal();
+    }
+
+    @Override
+    public long getMessagesIn()
+    {
+        return _statisticsGatherer.getMessageReceiptStatistics().getTotal();
+    }
+
+    @Override
+    public long getMessagesOut()
+    {
+        return _statisticsGatherer.getMessageDeliveryStatistics().getTotal();
+    }
     @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
@@ -889,7 +906,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Attribute.getAttributeNames(Broker.class);
+        return getAttributeNames(Broker.class);
     }
 
     @Override

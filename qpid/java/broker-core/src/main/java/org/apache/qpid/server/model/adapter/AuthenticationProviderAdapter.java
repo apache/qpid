@@ -66,7 +66,7 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, null, null, broker.getTaskExecutor());
+        super(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
         _authManager = authManager;
         _broker = broker;
         _supportedAttributes = createSupportedAttributes(attributeNames);
@@ -154,12 +154,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return 0;
-    }
-
-    @Override
-    public Statistics getStatistics()
-    {
-        return NoStatistics.getInstance();
     }
 
     @Override
@@ -331,7 +325,7 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
 
     protected Collection<String> createSupportedAttributes(Collection<String> factoryAttributes)
     {
-        List<String> attributesNames = new ArrayList<String>(Attribute.getAttributeNames(AuthenticationProvider.class));
+        List<String> attributesNames = new ArrayList<String>(getAttributeNames(AuthenticationProvider.class));
         if (factoryAttributes != null)
         {
             attributesNames.addAll(factoryAttributes);
@@ -663,12 +657,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
             }
 
             @Override
-            public Statistics getStatistics()
-            {
-                return NoStatistics.getInstance();
-            }
-
-            @Override
             public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
             {
                 return null;
@@ -685,7 +673,7 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
             @Override
             public Collection<String> getAttributeNames()
             {
-                return Attribute.getAttributeNames(User.class);
+                return getAttributeNames(User.class);
             }
 
             @Override

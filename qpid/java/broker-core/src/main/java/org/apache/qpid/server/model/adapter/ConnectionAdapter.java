@@ -44,13 +44,11 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
 
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
             new HashMap<AMQSessionModel, SessionAdapter>();
-    private final Statistics _statistics;
 
     public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)
     {
         super(UUIDGenerator.generateRandomUUID(), taskExecutor);
         _connection = conn;
-        _statistics = new ConnectionStatisticsAdapter(conn);
     }
 
     @Override
@@ -290,15 +288,11 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     @Override
     public Collection<String> getAttributeNames()
     {
-        final HashSet<String> attrNames = new HashSet<String>(Attribute.getAttributeNames(Connection.class));
+        final HashSet<String> attrNames = new HashSet<String>(getAttributeNames(Connection.class));
 
         return Collections.unmodifiableCollection(attrNames);
     }
 
-    public Statistics getStatistics()
-    {
-        return _statistics;
-    }
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
@@ -327,34 +321,6 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
 
     }
 
-    private class ConnectionStatisticsAdapter extends StatisticsAdapter
-    {
-        public ConnectionStatisticsAdapter(StatisticsGatherer applicationRegistry)
-        {
-            super(applicationRegistry);
-        }
-
-        @Override
-        public Collection<String> getStatisticNames()
-        {
-            return Connection.AVAILABLE_STATISTICS;
-        }
-
-        @Override
-        public Object getStatistic(String name)
-        {
-            if(LAST_IO_TIME.equals(name))
-            {
-                return _connection.getLastIoTime();
-            }
-            else if(SESSION_COUNT.equals(name))
-            {
-                return _connection.getSessionModels().size();
-            }
-            return super.getStatistic(name);
-        }
-    }
-
     @Override
     protected boolean setState(State currentState, State desiredState)
     {
@@ -374,5 +340,41 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
             IllegalArgumentException
     {
         throw new UnsupportedOperationException("Changing attributes on connection is not supported.");
+    }
+
+    @Override
+    public long getBytesIn()
+    {
+        return _connection.getDataReceiptStatistics().getTotal();
+    }
+
+    @Override
+    public long getBytesOut()
+    {
+        return _connection.getDataDeliveryStatistics().getTotal();
+    }
+
+    @Override
+    public long getMessagesIn()
+    {
+        return _connection.getMessageReceiptStatistics().getTotal();
+    }
+
+    @Override
+    public long getMessagesOut()
+    {
+        return _connection.getMessageDeliveryStatistics().getTotal();
+    }
+
+    @Override
+    public long getLastIoTime()
+    {
+        return _connection.getLastIoTime();
+    }
+
+    @Override
+    public int getSessionCount()
+    {
+        return _connection.getSessionModels().size();
     }
 }

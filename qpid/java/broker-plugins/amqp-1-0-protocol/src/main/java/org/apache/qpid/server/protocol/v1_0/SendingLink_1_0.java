@@ -224,8 +224,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     List<Binding> bindingsToRemove = new ArrayList<Binding>();
                     for(Binding existingBinding : bindings)
                     {
-                        if(existingBinding.getExchange() != _vhost.getDefaultExchange()
-                            && existingBinding.getExchange() != exchange)
+                        if(existingBinding.getExchangeImpl() != _vhost.getDefaultExchange()
+                            && existingBinding.getExchangeImpl() != exchange)
                         {
                             bindingsToRemove.add(existingBinding);
                         }

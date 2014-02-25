@@ -29,7 +29,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -123,11 +122,11 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
             }
             else if(alternateExchangeAttr instanceof UUID)
             {
-                setAlternateExchange(vhost.getExchange((UUID)alternateExchangeAttr));
+                setAlternateExchange(vhost.getExchange((UUID) alternateExchangeAttr));
             }
             else if(alternateExchangeAttr instanceof String)
             {
-                setAlternateExchange(vhost.getExchange((String)alternateExchangeAttr));
+                setAlternateExchange(vhost.getExchange((String) alternateExchangeAttr));
                 if(_alternateExchange == null)
                 {
                     try
@@ -221,7 +220,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     {
         for(Binding b : _bindings)
         {
-            if(bindingKey.equals(b.getBindingKey()) && queue == b.getQueue())
+            if(bindingKey.equals(b.getBindingKey()) && queue == b.getAMQQueue())
             {
                 return (b.getArguments() == null || b.getArguments().isEmpty())
                        ? (arguments == null || arguments.isEmpty())
@@ -235,7 +234,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     {
         for(Binding b : _bindings)
         {
-            if(bindingKey.equals(b.getBindingKey()) && queue == b.getQueue())
+            if(bindingKey.equals(b.getBindingKey()) && queue == b.getAMQQueue())
             {
                 return true;
             }
@@ -259,7 +258,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     {
         for(Binding b : _bindings)
         {
-            if(queue == b.getQueue())
+            if(queue == b.getAMQQueue())
             {
                 return true;
             }
@@ -272,7 +271,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     {
         for(Binding b : _bindings)
         {
-            if(queue == b.getQueue() &&
+            if(queue == b.getAMQQueue() &&
                ((b.getArguments() == null || b.getArguments().isEmpty())
                        ? (arguments == null || arguments.isEmpty())
                        : b.getArguments().equals(arguments)))
@@ -590,7 +589,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     private void removeBinding(final Binding binding)
     {
         String bindingKey = binding.getBindingKey();
-        AMQQueue queue = binding.getQueue();
+        AMQQueue queue = binding.getAMQQueue();
 
         assert queue != null;
 
