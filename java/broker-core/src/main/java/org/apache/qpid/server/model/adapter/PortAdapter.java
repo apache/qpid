@@ -213,19 +213,6 @@ abstract public class PortAdapter<X extends PortAdapter<X>> extends AbstractConf
     }
 
     @Override
-    public long getTimeToLive()
-    {
-        return 0;
-    }
-
-    @Override
-    public long setTimeToLive(long expected, long desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         if(clazz == Connection.class)
@@ -262,10 +249,6 @@ abstract public class PortAdapter<X extends PortAdapter<X>> extends AbstractConf
         else if(LIFETIME_POLICY.equals(name))
         {
             return getLifetimePolicy();
-        }
-        else if(TIME_TO_LIVE.equals(name))
-        {
-            return getTimeToLive();
         }
         return super.getAttribute(name);
     }

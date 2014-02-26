@@ -36,19 +36,19 @@ import static org.apache.qpid.server.queue.NotificationCheck.QUEUE_DEPTH_ALERT;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.AMQQueue.NotificationListener;
+import org.apache.qpid.server.model.QueueNotificationListener;
 
 public class NotificationCheckTest extends TestCase
 {
 
     private ServerMessage<?> _message = mock(ServerMessage.class);
     private AMQQueue _queue = mock(AMQQueue.class);
-    private NotificationListener _listener = mock(NotificationListener.class);
+    private QueueNotificationListener _listener = mock(QueueNotificationListener .class);
 
     public void testMessageCountAlertFires() throws Exception
     {
-        when(_queue.getMaximumMessageCount()).thenReturn(1000l);
-        when(_queue.getMessageCount()).thenReturn(999, 1000, 1001);
+        when(_queue.getAlertThresholdQueueDepthMessages()).thenReturn(1000l);
+        when(_queue.getQueueDepthMessages()).thenReturn(999, 1000, 1001);
 
         MESSAGE_COUNT_ALERT.notifyIfNecessary(_message, _queue, _listener);
         verifyZeroInteractions(_listener);
@@ -62,7 +62,7 @@ public class NotificationCheckTest extends TestCase
 
     public void testMessageSizeAlertFires() throws Exception
     {
-        when(_queue.getMaximumMessageSize()).thenReturn(1024l);
+        when(_queue.getAlertThresholdMessageSize()).thenReturn(1024l);
         when(_message.getSize()).thenReturn(1023l, 1024l, 1025l);
 
         MESSAGE_SIZE_ALERT.notifyIfNecessary(_message, _queue, _listener);
@@ -78,7 +78,7 @@ public class NotificationCheckTest extends TestCase
     public void testMessageAgeAlertFires() throws Exception
     {
         long now = System.currentTimeMillis();
-        when(_queue.getMaximumMessageAge()).thenReturn(1000l);
+        when(_queue.getAlertThresholdMessageAge()).thenReturn(1000l);
         when(_queue.getOldestMessageArrivalTime()).thenReturn(now, now - 15000);
 
         MESSAGE_AGE_ALERT.notifyIfNecessary(_message, _queue, _listener);
@@ -91,8 +91,8 @@ public class NotificationCheckTest extends TestCase
 
     public void testQueueDepthAlertFires() throws Exception
     {
-        when(_queue.getMaximumQueueDepth()).thenReturn(1024l);
-        when(_queue.getQueueDepth()).thenReturn(1023l, 1024l, 2048l);
+        when(_queue.getAlertThresholdQueueDepthBytes()).thenReturn(1024l);
+        when(_queue.getQueueDepthBytes()).thenReturn(1023l, 1024l, 2048l);
 
         QUEUE_DEPTH_ALERT.notifyIfNecessary(_message, _queue, _listener);
         verifyZeroInteractions(_listener);

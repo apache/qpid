@@ -22,9 +22,7 @@ package org.apache.qpid.server.queue;
 
 
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import static org.mockito.Mockito.mock;

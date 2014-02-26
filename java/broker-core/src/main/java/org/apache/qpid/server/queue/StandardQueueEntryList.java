@@ -22,15 +22,15 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
 
-public class StandardQueueEntryList extends OrderedQueueEntryList<StandardQueueEntry, StandardQueue, StandardQueueEntryList>
+public class StandardQueueEntryList extends OrderedQueueEntryList
 {
 
-    private static final HeadCreator<StandardQueueEntry, StandardQueue, StandardQueueEntryList> HEAD_CREATOR = new HeadCreator<StandardQueueEntry, StandardQueue, StandardQueueEntryList>()
+    private static final HeadCreator HEAD_CREATOR = new HeadCreator()
     {
         @Override
-        public StandardQueueEntry createHead(final StandardQueueEntryList list)
+        public StandardQueueEntry createHead(final QueueEntryList list)
         {
-            return new StandardQueueEntry(list);
+            return new StandardQueueEntry((StandardQueueEntryList) list);
         }
     };
 
@@ -45,12 +45,12 @@ public class StandardQueueEntryList extends OrderedQueueEntryList<StandardQueueE
         return new StandardQueueEntry(this, message);
     }
 
-    static class Factory implements QueueEntryListFactory<StandardQueueEntry, StandardQueue, StandardQueueEntryList>
+    static class Factory implements QueueEntryListFactory
     {
 
-        public StandardQueueEntryList createQueueEntryList(StandardQueue queue)
+        public StandardQueueEntryList createQueueEntryList(AMQQueue<?> queue)
         {
-            return new StandardQueueEntryList(queue);
+            return new StandardQueueEntryList((StandardQueue) queue);
         }
     }
 

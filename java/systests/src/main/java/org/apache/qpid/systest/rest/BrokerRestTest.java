@@ -236,7 +236,6 @@ public class BrokerRestTest extends QpidRestTestCase
     {
         Asserts.assertAttributesPresent(brokerDetails, AbstractConfiguredObject.getAttributeNames(Broker.class),
                 Broker.PROCESS_PID,
-                Broker.TIME_TO_LIVE,
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME,

@@ -32,17 +32,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ConflationQueueList extends OrderedQueueEntryList<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>
+public class ConflationQueueList extends OrderedQueueEntryList
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConflationQueueList.class);
 
-    private static final HeadCreator<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList> HEAD_CREATOR = new HeadCreator<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>()
+    private static final HeadCreator HEAD_CREATOR = new HeadCreator()
     {
 
         @Override
-        public ConflationQueueEntry createHead(final ConflationQueueList list)
+        public ConflationQueueEntry createHead(final QueueEntryList list)
         {
-            return list.createHead();
+            return ((ConflationQueueList)list).createHead();
         }
     };
 
@@ -75,13 +75,15 @@ public class ConflationQueueList extends OrderedQueueEntryList<ConflationQueueLi
         return new ConflationQueueEntry(this, message);
     }
 
+
+
     /**
      * Updates the list using super.add and also updates {@link #_latestValuesMap} and discards entries as necessary.
      */
     @Override
     public ConflationQueueEntry add(final ServerMessage message)
     {
-        final ConflationQueueEntry addedEntry = super.add(message);
+        final ConflationQueueEntry addedEntry = (ConflationQueueEntry) super.add(message);
 
         final Object keyValue = message.getMessageHeader().getHeader(_conflationKey);
         if (keyValue != null)
@@ -192,7 +194,7 @@ public class ConflationQueueList extends OrderedQueueEntryList<ConflationQueueLi
         }
     }
 
-    final class ConflationQueueEntry extends OrderedQueueEntry<ConflationQueueEntry, ConflationQueue, ConflationQueueList>
+    final class ConflationQueueEntry extends OrderedQueueEntry
     {
 
         private AtomicReference<ConflationQueueEntry> _latestValueReference;
@@ -252,7 +254,7 @@ public class ConflationQueueList extends OrderedQueueEntryList<ConflationQueueLi
         return Collections.unmodifiableMap(_latestValuesMap);
     }
 
-    static class Factory implements QueueEntryListFactory<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>
+    static class Factory implements QueueEntryListFactory
     {
         private final String _conflationKey;
 
@@ -262,9 +264,9 @@ public class ConflationQueueList extends OrderedQueueEntryList<ConflationQueueLi
         }
 
         @Override
-        public ConflationQueueList createQueueEntryList(final ConflationQueue queue)
+        public ConflationQueueList createQueueEntryList(final AMQQueue<?> queue)
         {
-            return new ConflationQueueList(queue, _conflationKey);
+            return new ConflationQueueList((ConflationQueue)queue, _conflationKey);
         }
     }
 }

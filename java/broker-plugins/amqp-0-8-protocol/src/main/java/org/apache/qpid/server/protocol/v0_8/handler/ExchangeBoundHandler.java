@@ -25,8 +25,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeBoundBody;
 import org.apache.qpid.framing.ExchangeBoundOkBody;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -82,7 +82,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         AMQShortString exchangeName = body.getExchange() == null ? AMQShortString.EMPTY_STRING : body.getExchange();
         AMQShortString queueName = body.getQueue();
         AMQShortString routingKey = body.getRoutingKey();
-        Exchange exchange = virtualHost.getExchange(exchangeName.toString());
+        ExchangeImpl exchange = virtualHost.getExchange(exchangeName.toString());
         ExchangeBoundOkBody response;
         if (exchange == null)
         {

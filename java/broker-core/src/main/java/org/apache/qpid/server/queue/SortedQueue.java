@@ -28,7 +28,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
 
-public class SortedQueue extends OutOfOrderQueue<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
+public class SortedQueue extends OutOfOrderQueue
 {
     //Lock object to synchronize enqueue. Used instead of the object
     //monitor to prevent lock order issues with consumer sendLocks
@@ -38,7 +38,7 @@ public class SortedQueue extends OutOfOrderQueue<SortedQueueEntry, SortedQueue, 
 
     protected SortedQueue(VirtualHost virtualHost,
                           Map<String, Object> attributes,
-                          QueueEntryListFactory<SortedQueueEntry, SortedQueue, SortedQueueEntryList> factory)
+                          QueueEntryListFactory factory)
     {
         super(virtualHost, attributes, factory);
         _sortedPropertyName = MapValueConverter.getStringAttribute(Queue.SORT_KEY,attributes);
@@ -62,7 +62,7 @@ public class SortedQueue extends OutOfOrderQueue<SortedQueueEntry, SortedQueue, 
 
     @Override
     public void enqueue(final ServerMessage message,
-                        final Action<? super MessageInstance<?, QueueConsumer<?, SortedQueueEntry, SortedQueue, SortedQueueEntryList>>> action)
+                        final Action<? super MessageInstance> action)
     {
         synchronized (_sortedQueueLock)
         {

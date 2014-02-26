@@ -25,15 +25,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -61,24 +62,24 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     AMQQueue createQueue(Map<String, Object> arguments) throws QueueExistsException;
 
-    Exchange createExchange(Map<String,Object> attributes)
+    NonDefaultExchange createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType;
 
-    void removeExchange(Exchange exchange, boolean force) throws ExchangeIsAlternateException,
+    void removeExchange(ExchangeImpl exchange, boolean force) throws ExchangeIsAlternateException,
                                                                  RequiredExchangeException;
 
     MessageDestination getMessageDestination(String name);
 
-    Exchange getExchange(String name);
-    Exchange getExchange(UUID id);
+    ExchangeImpl getExchange(String name);
+    ExchangeImpl getExchange(UUID id);
 
 
-    Exchange getDefaultExchange();
+    ExchangeImpl getDefaultExchange();
 
-    Collection<Exchange> getExchanges();
+    Collection<ExchangeImpl> getExchanges();
 
-    Collection<ExchangeType<? extends Exchange>> getExchangeTypes();
+    Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes();
 
     DurableConfigurationStore getDurableConfigurationStore();
 
@@ -133,4 +134,10 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     long getDefaultQueueFlowResumeSizeBytes();
 
     int getDefaultMaximumDeliveryAttempts();
+
+    TaskExecutor getTaskExecutor();
+
+    Collection<NonDefaultExchange> getExchangesExceptDefault();
+
+    org.apache.qpid.server.model.VirtualHost getModel();
 }

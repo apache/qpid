@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.queue.QueueConsumer;
 
 final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> implements Session<SessionAdapter>
 {
@@ -39,7 +40,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
 
     private AMQSessionModel _session;
-    private Map<Consumer, ConsumerAdapter> _consumerAdapters = new HashMap<Consumer, ConsumerAdapter>();
+    private Map<Consumer, QueueConsumer> _consumerAdapters = new HashMap<Consumer, QueueConsumer>();
 
     public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
     {
@@ -110,47 +111,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         return null;  //TODO
     }
 
-    public long getTimeToLive()
-    {
-        return 0;  //TODO
-    }
-
-    public long setTimeToLive(final long expected, final long desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return 0;  //TODO
-    }
-
-    /**
-     * Register a ConsumerAdapter with this Session keyed by the Consumer.
-     * @param consumer the org.apache.qpid.server.consumer.Consumer used to key the ConsumerAdapter.
-     * @param adapter the registered ConsumerAdapter.
-     */
-    void consumerRegistered(Consumer consumer, ConsumerAdapter adapter)
-    {
-        synchronized (_consumerAdapters)
-        {
-            _consumerAdapters.put(consumer, adapter);
-        }
-        childAdded(adapter);
-    }
-
-    /**
-     * Unregister a ConsumerAdapter  with this Session keyed by the Consumer.
-     * @param consumer the org.apache.qpid.server.consumer.Consumer used to key the ConsumerAdapter.
-     */
-    void consumerUnregistered(Consumer consumer)
-    {
-        ConsumerAdapter adapter = null;
-        synchronized (_consumerAdapters)
-        {
-            adapter = _consumerAdapters.remove(consumer);
-        }
-        if (adapter != null)
-        {
-            childRemoved(adapter);
-        }
-    }
 
     @Override
     public Collection<String> getAttributeNames()

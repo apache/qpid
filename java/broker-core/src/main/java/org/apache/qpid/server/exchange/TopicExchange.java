@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.exchange.topic.TopicNormalizer;
@@ -57,7 +57,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
     private final Map<String, TopicExchangeResult> _topicExchangeResults =
             new ConcurrentHashMap<String, TopicExchangeResult>();
 
-    private final Map<Binding, Map<String,Object>> _bindings = new HashMap<Binding, Map<String,Object>>();
+    private final Map<BindingImpl, Map<String,Object>> _bindings = new HashMap<BindingImpl, Map<String,Object>>();
 
     public TopicExchange(final VirtualHost vhost, final Map attributes) throws UnknownExchangeException
     {
@@ -70,7 +70,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
         return TYPE;
     }
 
-    protected synchronized void registerQueue(final Binding binding) throws AMQInvalidArgumentException
+    protected synchronized void registerQueue(final BindingImpl binding) throws AMQInvalidArgumentException
     {
         final String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getAMQQueue();
@@ -188,7 +188,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
     }
 
-    private boolean deregisterQueue(final Binding binding)
+    private boolean deregisterQueue(final BindingImpl binding)
     {
         if(_bindings.containsKey(binding))
         {
@@ -240,7 +240,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
                 {
                     TopicExchangeResult res = (TopicExchangeResult)result;
 
-                    for(Binding b : res.getBindings())
+                    for(BindingImpl b : res.getBindings())
                     {
                         b.incrementMatches();
                     }
@@ -253,7 +253,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
     }
 
-    protected void onBind(final Binding binding)
+    protected void onBind(final BindingImpl binding)
     {
         try
         {
@@ -266,7 +266,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
         }
     }
 
-    protected void onUnbind(final Binding binding)
+    protected void onUnbind(final BindingImpl binding)
     {
         deregisterQueue(binding);
     }

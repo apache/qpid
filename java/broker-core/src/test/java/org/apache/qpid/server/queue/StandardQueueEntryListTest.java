@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQueueEntry, StandardQueue, StandardQueueEntryList, QueueConsumer<?,StandardQueueEntry, StandardQueue, StandardQueueEntryList>>
+public class StandardQueueEntryListTest extends QueueEntryListTestBase
 {
 
     private StandardQueue _testQueue;
@@ -62,7 +62,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
         CurrentActor.set(logActor);
         _testQueue = new StandardQueue(virtualHost, queueAttributes);
 
-        _sqel = _testQueue.getEntries();
+        _sqel = (StandardQueueEntryList) _testQueue.getEntries();
         for(int i = 1; i <= 100; i++)
         {
             final ServerMessage message = mock(ServerMessage.class);
@@ -107,7 +107,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
             when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
             StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
 
-            return queue.getEntries();
+            return (StandardQueueEntryList) queue.getEntries();
         }
         else
         {
@@ -160,7 +160,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
             entriesMap.put(i,bleh);
         }
 
-        OrderedQueueEntry head = sqel.getHead();
+        OrderedQueueEntry head = (OrderedQueueEntry) sqel.getHead();
 
         //We shall now delete some specific messages mid-queue that will lead to
         //requiring a scavenge once the requested threshold of 9 deletes is passed
@@ -256,7 +256,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase<StandardQ
             final MessageReference reference = mock(MessageReference.class);
             when(reference.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(reference);
-            entries[i] = queueEntryList.add(message);
+            entries[i] = (OrderedQueueEntry) queueEntryList.add(message);
         }
 
         // test getNext for not acquired entries

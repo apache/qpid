@@ -29,6 +29,8 @@ import java.util.Map;
 
 import java.util.Set;
 
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -43,7 +45,7 @@ public class DurableConfigurationStoreHelper
     private static final String QUEUE = Queue.class.getSimpleName();
     private static final Set<String> QUEUE_ARGUMENTS_EXCLUDES = new HashSet<String>(Arrays.asList(Queue.ALTERNATE_EXCHANGE));
 
-    public static void updateQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue)
+    public static void updateQueue(DurableConfigurationStore store, AMQQueue queue)
     {
         Map<String, Object> attributesMap = new LinkedHashMap<String, Object>();
 
@@ -65,7 +67,7 @@ public class DurableConfigurationStoreHelper
         store.update(queue.getId(), QUEUE, attributesMap);
     }
 
-    public static void createQueue(DurableConfigurationStore store, AMQQueue<?,?,?> queue)
+    public static void createQueue(DurableConfigurationStore store, AMQQueue<?> queue)
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         if (queue.getAlternateExchange() != null)
@@ -88,7 +90,7 @@ public class DurableConfigurationStoreHelper
         store.remove(queue.getId(), QUEUE);
     }
 
-    public static void createExchange(DurableConfigurationStore store, org.apache.qpid.server.exchange.Exchange exchange)
+    public static void createExchange(DurableConfigurationStore store, ExchangeImpl exchange)
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Exchange.NAME, exchange.getName());
@@ -101,16 +103,16 @@ public class DurableConfigurationStoreHelper
     }
 
 
-    public static void removeExchange(DurableConfigurationStore store, org.apache.qpid.server.exchange.Exchange exchange)
+    public static void removeExchange(DurableConfigurationStore store, ExchangeImpl exchange)
     {
         store.remove(exchange.getId(), EXCHANGE);
     }
 
-    public static void createBinding(DurableConfigurationStore store, org.apache.qpid.server.binding.Binding binding)
+    public static void createBinding(DurableConfigurationStore store, BindingImpl binding)
     {
         Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(Binding.NAME, binding.getBindingKey());
-        attributesMap.put(Binding.EXCHANGE, binding.getExchangeImpl().getId());
+        attributesMap.put(Binding.EXCHANGE, binding.getExchange().getId());
         attributesMap.put(Binding.QUEUE, binding.getAMQQueue().getId());
         Map<String, Object> arguments = binding.getArguments();
         if (arguments != null)
@@ -122,7 +124,7 @@ public class DurableConfigurationStoreHelper
     }
 
 
-    public static void removeBinding(DurableConfigurationStore store, org.apache.qpid.server.binding.Binding binding)
+    public static void removeBinding(DurableConfigurationStore store, BindingImpl binding)
     {
         store.remove(binding.getId(), BINDING);
     }

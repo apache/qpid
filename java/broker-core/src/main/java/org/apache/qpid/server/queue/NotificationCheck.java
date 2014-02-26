@@ -22,17 +22,19 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.QueueNotificationListener;
+
 
 public enum NotificationCheck
 {
 
     MESSAGE_COUNT_ALERT
     {
-        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, AMQQueue.NotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, QueueNotificationListener listener)
         {
             int msgCount;
-            final long maximumMessageCount = queue.getMaximumMessageCount();
-            if (maximumMessageCount!= 0 && (msgCount =  queue.getMessageCount()) >= maximumMessageCount)
+            final long maximumMessageCount = queue.getAlertThresholdQueueDepthMessages();
+            if (maximumMessageCount!= 0 && (msgCount =  queue.getQueueDepthMessages()) >= maximumMessageCount)
             {
                 String notificationMsg = msgCount + ": Maximum count on queue threshold ("+ maximumMessageCount +") breached.";
 
@@ -45,9 +47,9 @@ public enum NotificationCheck
     },
     MESSAGE_SIZE_ALERT(true)
     {
-        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, AMQQueue.NotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, QueueNotificationListener  listener)
         {
-            final long maximumMessageSize = queue.getMaximumMessageSize();
+            final long maximumMessageSize = queue.getAlertThresholdMessageSize();
             if(maximumMessageSize != 0)
             {
                 // Check for threshold message size
@@ -69,14 +71,14 @@ public enum NotificationCheck
     },
     QUEUE_DEPTH_ALERT
     {
-        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, AMQQueue.NotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, QueueNotificationListener  listener)
         {
             // Check for threshold queue depth in bytes
-            final long maximumQueueDepth = queue.getMaximumQueueDepth();
+            final long maximumQueueDepth = queue.getAlertThresholdQueueDepthBytes();
 
             if(maximumQueueDepth != 0)
             {
-                final long queueDepth = queue.getQueueDepth();
+                final long queueDepth = queue.getQueueDepthBytes();
 
                 if (queueDepth >= maximumQueueDepth)
                 {
@@ -93,10 +95,10 @@ public enum NotificationCheck
     },
     MESSAGE_AGE_ALERT
     {
-        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, AMQQueue.NotificationListener listener)
+        public boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, QueueNotificationListener  listener)
         {
 
-            final long maxMessageAge = queue.getMaximumMessageAge();
+            final long maxMessageAge = queue.getAlertThresholdMessageAge();
             if(maxMessageAge != 0)
             {
                 final long currentTime = System.currentTimeMillis();
@@ -140,7 +142,7 @@ public enum NotificationCheck
         return _messageSpecific;
     }
 
-    public abstract boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, AMQQueue.NotificationListener listener);
+    public abstract boolean notifyIfNecessary(ServerMessage<?> msg, AMQQueue queue, QueueNotificationListener  listener);
 
     //A bit of a hack, only for use until we do the logging listener
     private static void logNotification(NotificationCheck notification, AMQQueue queue, String notificationMsg)

@@ -178,7 +178,7 @@ public class HeadersExchangeTest extends TestCase
         routeAndTest(mockMessage(getArgsMapFromStrings("F0000=Aardvark")), q1, q2);
         routeAndTest(mockMessage(getArgsMapFromStrings("F0001")), q3);
 
-        _exchange.getBinding("Q1",q1).delete();
+        _exchange.deleteBinding("Q1",q1);
 
         routeAndTest(mockMessage(getArgsMapFromStrings("F0000")));
         routeAndTest(mockMessage(getArgsMapFromStrings("F0000=Aardvark")), q2);

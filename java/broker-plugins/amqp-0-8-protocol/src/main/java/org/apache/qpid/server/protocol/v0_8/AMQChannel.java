@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.connection.SessionPrincipal;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
@@ -48,7 +49,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.filter.SimpleFilterManager;
@@ -1267,14 +1267,14 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     }
 
 
-    private class ImmediateAction<C extends Consumer> implements Action<MessageInstance<?,C>>
+    private class ImmediateAction implements Action<MessageInstance>
     {
 
         public ImmediateAction()
         {
         }
 
-        public void performAction(MessageInstance<?,C> entry)
+        public void performAction(MessageInstance entry)
         {
             TransactionLogResource queue = entry.getOwningResource();
 
@@ -1332,10 +1332,10 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         }
     }
 
-    private final class CapacityCheckAction<C extends Consumer> implements Action<MessageInstance<?,C>>
+    private final class CapacityCheckAction implements Action<MessageInstance>
     {
         @Override
-        public void performAction(final MessageInstance<?,C> entry)
+        public void performAction(final MessageInstance entry)
         {
             TransactionLogResource queue = entry.getOwningResource();
             if(queue instanceof CapacityChecker)
@@ -1569,7 +1569,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 {
                     final AMQQueue queue = (AMQQueue) owningResource;
 
-                    final Exchange altExchange = queue.getAlternateExchange();
+                    final ExchangeImpl altExchange = queue.getAlternateExchange();
 
                     if (altExchange == null)
                     {

@@ -49,7 +49,6 @@ public class Asserts
                                 ConfiguredObject.LAST_UPDATED_BY,
                                 ConfiguredObject.LAST_UPDATED_TIME,
                                 ConfiguredObject.DESCRIPTION,
-                                VirtualHost.TIME_TO_LIVE,
                                 VirtualHost.SUPPORTED_QUEUE_TYPES,
                                 VirtualHost.STORE_PATH,
                                 VirtualHost.CONFIG_PATH,
@@ -102,7 +101,6 @@ public class Asserts
                                         Queue.LAST_UPDATED_TIME,
                                         Queue.TYPE,
                                         Queue.DESCRIPTION,
-                                        Queue.TIME_TO_LIVE,
                                         Queue.ALTERNATE_EXCHANGE,
                                         Queue.OWNER,
                                         Queue.NO_LOCAL,
@@ -205,7 +203,6 @@ public class Asserts
                                 Connection.STATE,
                                 Connection.DURABLE,
                                 Connection.LIFETIME_POLICY,
-                                Connection.TIME_TO_LIVE,
                                 Connection.INCOMING,
                                 Connection.REMOTE_PROCESS_NAME,
                                 Connection.REMOTE_PROCESS_PID,
@@ -254,7 +251,6 @@ public class Asserts
         assertEquals("Unexpected value of attribute " + Port.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                      port.get(Broker.LIFETIME_POLICY));
         assertEquals("Unexpected value of attribute " + Port.STATE, state.name(), port.get(Port.STATE));
-        assertEquals("Unexpected value of attribute " + Port.TIME_TO_LIVE, 0, port.get(Port.TIME_TO_LIVE));
 
         @SuppressWarnings("unchecked")
         Collection<String> protocols = (Collection<String>) port.get(Port.PROTOCOLS);
@@ -322,7 +318,7 @@ public class Asserts
     {
         assertNotNull("Exchange " + exchangeName + " is not found!", exchangeData);
         assertAttributesPresent(exchangeData, AbstractConfiguredObject.getAttributeNames(Exchange.class),
-                                Exchange.ALTERNATE_EXCHANGE, Exchange.TIME_TO_LIVE,
+                                Exchange.ALTERNATE_EXCHANGE,
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
                                 ConfiguredObject.LAST_UPDATED_BY,
@@ -357,7 +353,6 @@ public class Asserts
         assertAttributesPresent(binding,
                                 AbstractConfiguredObject.getAttributeNames(Binding.class),
                                 Binding.STATE,
-                                Binding.TIME_TO_LIVE,
                                 ConfiguredObject.TYPE,
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,

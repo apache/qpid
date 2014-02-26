@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.Filterable;
@@ -51,17 +51,17 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
 
     private static final class BindingSet
     {
-        private CopyOnWriteArraySet<Binding> _bindings = new CopyOnWriteArraySet<Binding>();
+        private CopyOnWriteArraySet<BindingImpl> _bindings = new CopyOnWriteArraySet<BindingImpl>();
         private List<BaseQueue> _unfilteredQueues = new ArrayList<BaseQueue>();
         private Map<BaseQueue, MessageFilter> _filteredQueues = new HashMap<BaseQueue, MessageFilter>();
 
-        public synchronized void addBinding(Binding binding)
+        public synchronized void addBinding(BindingImpl binding)
         {
             _bindings.add(binding);
             recalculateQueues();
         }
 
-        public synchronized void removeBinding(Binding binding)
+        public synchronized void removeBinding(BindingImpl binding)
         {
             _bindings.remove(binding);
             recalculateQueues();
@@ -72,7 +72,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
             List<BaseQueue> queues = new ArrayList<BaseQueue>(_bindings.size());
             Map<BaseQueue, MessageFilter> filteredQueues = new HashMap<BaseQueue,MessageFilter>();
 
-            for(Binding b : _bindings)
+            for(BindingImpl b : _bindings)
             {
 
                 if(FilterSupport.argumentsContainFilter(b.getArguments()))
@@ -85,7 +85,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
                     catch (AMQInvalidArgumentException e)
                     {
                         _logger.warn("Binding ignored: cannot parse filter on binding of queue '"+b.getAMQQueue().getName()
-                                     + "' to exchange '" + b.getExchangeImpl().getName()
+                                     + "' to exchange '" + b.getExchange().getName()
                                      + "' with arguments: " + b.getArguments(), e);
                     }
 
@@ -109,7 +109,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
             return _unfilteredQueues;
         }
 
-        public CopyOnWriteArraySet<Binding> getBindings()
+        public CopyOnWriteArraySet<BindingImpl> getBindings()
         {
             return _bindings;
         }
@@ -185,7 +185,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
 
     }
 
-    protected void onBind(final Binding binding)
+    protected void onBind(final BindingImpl binding)
     {
         String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getAMQQueue();
@@ -209,7 +209,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
 
     }
 
-    protected void onUnbind(final Binding binding)
+    protected void onUnbind(final BindingImpl binding)
     {
         assert binding != null;
 

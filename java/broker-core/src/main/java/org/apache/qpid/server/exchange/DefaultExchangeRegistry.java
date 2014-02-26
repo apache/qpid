@@ -46,9 +46,9 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     /**
      * Maps from exchange name to exchange instance
      */
-    private ConcurrentMap<String, Exchange> _exchangeMap = new ConcurrentHashMap<String, Exchange>();
+    private ConcurrentMap<String, ExchangeImpl> _exchangeMap = new ConcurrentHashMap<String, ExchangeImpl>();
 
-    private Exchange _defaultExchange;
+    private ExchangeImpl _defaultExchange;
 
     private final VirtualHost _host;
     private final QueueRegistry _queueRegistry;
@@ -77,7 +77,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     private void initialiseExchanges(ExchangeFactory factory, DurableConfigurationStore store)
     {
-        for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
+        for (ExchangeType<? extends ExchangeImpl> type : factory.getRegisteredTypes())
         {
             defineExchange(factory, type.getDefaultExchangeName(), type.getType(), store);
         }
@@ -96,7 +96,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
                 attributes.put(org.apache.qpid.server.model.Exchange.NAME, name);
                 attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type);
                 attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
-                Exchange exchange = f.createExchange(attributes);
+                ExchangeImpl exchange = f.createExchange(attributes);
                 registerExchange(exchange);
                 if(exchange.isDurable())
                 {
@@ -122,7 +122,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _host.getDurableConfigurationStore();
     }
 
-    public void registerExchange(Exchange exchange)
+    public void registerExchange(ExchangeImpl exchange)
     {
         _exchangeMap.put(exchange.getName(), exchange);
         synchronized (_listeners)
@@ -135,14 +135,14 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
     }
 
-    public Exchange getDefaultExchange()
+    public ExchangeImpl getDefaultExchange()
     {
         return _defaultExchange;
     }
 
     public boolean unregisterExchange(String name, boolean inUse)
     {
-        final Exchange exchange = _exchangeMap.get(name);
+        final ExchangeImpl exchange = _exchangeMap.get(name);
         if (exchange != null)
         {
 
@@ -150,7 +150,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
             // TODO: check inUse argument
 
-            Exchange e = _exchangeMap.remove(name);
+            ExchangeImpl e = _exchangeMap.remove(name);
             // if it is null then it was removed by another thread at the same time, we can ignore
             if (e != null)
             {
@@ -170,9 +170,17 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     }
 
-    public Collection<Exchange> getExchanges()
+    public Collection<ExchangeImpl> getExchanges()
     {
-        return new ArrayList<Exchange>(_exchangeMap.values());
+        return new ArrayList<ExchangeImpl>(_exchangeMap.values());
+    }
+
+    @Override
+    public Collection<NonDefaultExchange> getExchangesExceptDefault()
+    {
+        Collection allExchanges = getExchanges();
+        allExchanges.remove(_defaultExchange);
+        return allExchanges;
     }
 
     public void addRegistryChangeListener(RegistryChangeListener listener)
@@ -180,7 +188,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _listeners.add(listener);
     }
 
-    public Exchange getExchange(String name)
+    public ExchangeImpl getExchange(String name)
     {
         if ((name == null) || name.length() == 0)
         {
@@ -195,7 +203,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     @Override
     public void clearAndUnregisterMbeans()
     {
-        for (final Exchange exchange : getExchanges())
+        for (final ExchangeImpl exchange : getExchanges())
         {
             //TODO: this is a bit of a hack, what if the listeners aren't aware
             //that we are just unregistering the MBean because of HA, and aren't
@@ -212,7 +220,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     }
 
     @Override
-    public synchronized Exchange getExchange(UUID exchangeId)
+    public synchronized ExchangeImpl getExchange(UUID exchangeId)
     {
         if (exchangeId == null)
         {
@@ -220,8 +228,8 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
         else
         {
-            Collection<Exchange> exchanges = _exchangeMap.values();
-            for (Exchange exchange : exchanges)
+            Collection<ExchangeImpl> exchanges = _exchangeMap.values();
+            for (ExchangeImpl exchange : exchanges)
             {
                 if (exchange.getId().equals(exchangeId))
                 {
@@ -239,8 +247,8 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             return true;
         }
-        Collection<ExchangeType<? extends Exchange>> registeredTypes = _host.getExchangeTypes();
-        for (ExchangeType<? extends Exchange> type : registeredTypes)
+        Collection<ExchangeType<? extends ExchangeImpl>> registeredTypes = _host.getExchangeTypes();
+        for (ExchangeType<? extends ExchangeImpl> type : registeredTypes)
         {
             if (type.getDefaultExchangeName().equals(name))
             {

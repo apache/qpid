@@ -28,18 +28,6 @@ import java.util.Map;
 public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
 {
 
-    public String MATCHED_BYTES = "matchedBytes";
-    public String MATCHED_MESSAGES = "matchedMessages";
-    public String STATE_CHANGED = "stateChanged";
-
-    public static final Collection<String> AVAILABLE_STATISTICS =
-            Collections.unmodifiableCollection(
-                    Arrays.asList(
-            MATCHED_BYTES,
-            MATCHED_MESSAGES,
-            STATE_CHANGED));
-
-
     public String ARGUMENTS = "arguments";
     public String DURABLE = "durable";
     public String LIFETIME_POLICY = "lifetimePolicy";

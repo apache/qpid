@@ -19,19 +19,19 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 
 public class ExchangeExistsException extends Exception
 {
-    private final Exchange _existing;
+    private final ExchangeImpl _existing;
 
-    public ExchangeExistsException(String name, Exchange existing)
+    public ExchangeExistsException(String name, ExchangeImpl existing)
     {
         super(name);
         _existing = existing;
     }
 
-    public Exchange getExistingExchange()
+    public ExchangeImpl getExistingExchange()
     {
         return _existing;
     }

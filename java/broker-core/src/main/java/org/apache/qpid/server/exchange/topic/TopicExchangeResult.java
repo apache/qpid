@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.exchange.topic;
 
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -36,7 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class TopicExchangeResult implements TopicMatcherResult
 {
-    private final List<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
+    private final List<BindingImpl> _bindings = new CopyOnWriteArrayList<BindingImpl>();
     private final Map<AMQQueue, Integer> _unfilteredQueues = new ConcurrentHashMap<AMQQueue, Integer>();
     private final ConcurrentHashMap<AMQQueue, Map<MessageFilter,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter, Integer>>();
     private volatile ArrayList<AMQQueue> _unfilteredQueueList = new ArrayList<AMQQueue>(0);
@@ -80,19 +80,19 @@ public final class TopicExchangeResult implements TopicMatcherResult
         return _unfilteredQueues.keySet();
     }
 
-    public void addBinding(Binding binding)
+    public void addBinding(BindingImpl binding)
     {
         _bindings.add(binding);
     }
     
-    public void removeBinding(Binding binding)
+    public void removeBinding(BindingImpl binding)
     {
         _bindings.remove(binding);
     }
     
-    public List<Binding> getBindings()
+    public List<BindingImpl> getBindings()
     {
-        return new ArrayList<Binding>(_bindings);
+        return new ArrayList<BindingImpl>(_bindings);
     }
 
     public void addFilteredQueue(AMQQueue queue, MessageFilter filter)

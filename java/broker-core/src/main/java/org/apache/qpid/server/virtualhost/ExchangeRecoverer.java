@@ -24,16 +24,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
-public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<Exchange>
+public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<ExchangeImpl>
 {
     private final ExchangeRegistry _exchangeRegistry;
     private final ExchangeFactory _exchangeFactory;
@@ -51,16 +50,16 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
     }
 
     @Override
-    public UnresolvedObject<Exchange> createUnresolvedObject(final UUID id,
+    public UnresolvedObject<ExchangeImpl> createUnresolvedObject(final UUID id,
                                                              final String type,
                                                              final Map<String, Object> attributes)
     {
         return new UnresolvedExchange(id, attributes);
     }
 
-    private class UnresolvedExchange implements UnresolvedObject<Exchange>
+    private class UnresolvedExchange implements UnresolvedObject<ExchangeImpl>
     {
-        private Exchange _exchange;
+        private ExchangeImpl _exchange;
 
         public UnresolvedExchange(final UUID id,
                                   final Map<String, Object> attributeMap)
@@ -101,7 +100,7 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
         }
 
         @Override
-        public Exchange resolve()
+        public ExchangeImpl resolve()
         {
             return _exchange;
         }

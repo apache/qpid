@@ -50,7 +50,7 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
 
         StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
 
-        queueEntryList = queue.getEntries();
+        queueEntryList = (OrderedQueueEntryList) queue.getEntries();
 
         super.setUp();
     }
@@ -63,7 +63,7 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
         final MessageReference reference = mock(MessageReference.class);
         when(reference.getMessage()).thenReturn(message);
         when(message.newReference()).thenReturn(reference);
-        return queueEntryList.add(message);
+        return (QueueEntryImpl) queueEntryList.add(message);
     }
 
     public void testCompareTo()

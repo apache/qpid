@@ -28,6 +28,5 @@ public interface GroupMember<X extends GroupMember<X>> extends ConfiguredObject<
     String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
-    String TIME_TO_LIVE    = "timeToLive";
 
 }

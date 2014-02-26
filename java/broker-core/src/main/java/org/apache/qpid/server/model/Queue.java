@@ -21,6 +21,9 @@
 package org.apache.qpid.server.model;
 
 import java.util.Collection;
+
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 @ManagedObject
@@ -28,10 +31,8 @@ import org.apache.qpid.server.queue.QueueEntryVisitor;
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {
 
-    public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
-    public static final String TIME_TO_LIVE = "timeToLive";
 
     public static final String ALERT_REPEAT_GAP = "alertRepeatGap";
     public static final String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
@@ -122,15 +123,15 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
 
     //children
-    Collection<Binding> getBindings();
-    Collection<Consumer> getConsumers();
+    Collection<? extends Binding> getBindings();
+    Collection<? extends Consumer> getConsumers();
 
 
     //operations
 
     void visit(QueueEntryVisitor visitor);
 
-    void delete();
+    int delete();
 
     void setNotificationListener(QueueNotificationListener listener);
 
@@ -147,13 +148,13 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     long getMessagesOut();
 
     @ManagedStatistic
-    long getBindingCount();
+    int getBindingCount();
 
     @ManagedStatistic
-    long getConsumerCount();
+    int getConsumerCount();
 
     @ManagedStatistic
-    long getConsumerCountWithCredit();
+    int getConsumerCountWithCredit();
 
     @ManagedStatistic
     long getPersistentDequeuedBytes();
@@ -171,7 +172,7 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     long getQueueDepthBytes();
 
     @ManagedStatistic
-    long getQueueDepthMessages();
+    int getQueueDepthMessages();
 
     @ManagedStatistic
     long getTotalDequeuedBytes();

@@ -87,7 +87,7 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testGetMessageCount() throws Exception
     {
-        when(_mockQueue.getQueueDepthMessages()).thenReturn(1000l);
+        when(_mockQueue.getQueueDepthMessages()).thenReturn(1000);
         assertStatistic("messageCount", 1000);
     }
 
@@ -105,13 +105,13 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testActiveConsumerCount() throws Exception
     {
-        when(_mockQueue.getConsumerCountWithCredit()).thenReturn(3l);
+        when(_mockQueue.getConsumerCountWithCredit()).thenReturn(3);
         assertStatistic("activeConsumerCount", 3);
     }
 
     public void testConsumerCount() throws Exception
     {
-        when(_mockQueue.getConsumerCount()).thenReturn(3l);
+        when(_mockQueue.getConsumerCount()).thenReturn(3);
         assertStatistic("consumerCount", 3);
     }
 

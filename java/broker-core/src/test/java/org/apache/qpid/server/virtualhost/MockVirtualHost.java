@@ -24,8 +24,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -158,13 +160,13 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public Exchange createExchange(Map<String,Object> attributes)
+    public NonDefaultExchange createExchange(Map<String,Object> attributes)
     {
         return null;
     }
 
     @Override
-    public void removeExchange(Exchange exchange, boolean force)
+    public void removeExchange(ExchangeImpl exchange, boolean force)
     {
     }
 
@@ -175,31 +177,31 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public Exchange getExchange(String name)
+    public ExchangeImpl getExchange(String name)
     {
         return null;
     }
 
     @Override
-    public Exchange getExchange(UUID id)
+    public ExchangeImpl getExchange(UUID id)
     {
         return null;
     }
 
     @Override
-    public Exchange getDefaultExchange()
+    public ExchangeImpl getDefaultExchange()
     {
         return null;
     }
 
     @Override
-    public Collection<Exchange> getExchanges()
+    public Collection<ExchangeImpl> getExchanges()
     {
         return null;
     }
 
     @Override
-    public Collection<ExchangeType<? extends Exchange>> getExchangeTypes()
+    public Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes()
     {
         return null;
     }
@@ -349,5 +351,23 @@ public class MockVirtualHost implements VirtualHost
     public int getDefaultMaximumDeliveryAttempts()
     {
         return 0;
+    }
+
+    @Override
+    public TaskExecutor getTaskExecutor()
+    {
+        return null;
+    }
+
+    @Override
+    public Collection<NonDefaultExchange> getExchangesExceptDefault()
+    {
+        return null;
+    }
+
+    @Override
+    public org.apache.qpid.server.model.VirtualHost getModel()
+    {
+        return null;
     }
 }

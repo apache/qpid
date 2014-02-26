@@ -30,10 +30,8 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
 {
 
     public static final String DESCRIPTION = "description";
-    public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
-    public static final String TIME_TO_LIVE = "timeToLive";
 
     //children
     Collection<VirtualHostAlias> getVirtualHostPortBindings();

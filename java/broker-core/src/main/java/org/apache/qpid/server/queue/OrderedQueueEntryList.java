@@ -26,13 +26,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> implements
-                                                                                                                                                        QueueEntryListBase<E,Q,L>
+public abstract class OrderedQueueEntryList implements QueueEntryList
 {
 
-    private final E _head;
+    private final OrderedQueueEntry _head;
 
-    private volatile E _tail;
+    private volatile OrderedQueueEntry _tail;
 
     static final AtomicReferenceFieldUpdater<OrderedQueueEntryList, OrderedQueueEntry>
             _tailUpdater =
@@ -40,27 +39,27 @@ public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, 
         (OrderedQueueEntryList.class, OrderedQueueEntry.class, "_tail");
 
 
-    private final Q _queue;
+    private final AMQQueue _queue;
 
     static final AtomicReferenceFieldUpdater<OrderedQueueEntry, OrderedQueueEntry>
                 _nextUpdater = OrderedQueueEntry._nextUpdater;
 
     private AtomicLong _scavenges = new AtomicLong(0L);
     private final long _scavengeCount = Integer.getInteger("qpid.queue.scavenge_count", 50);
-    private final AtomicReference<E> _unscavengedHWM = new AtomicReference<E>();
+    private final AtomicReference<QueueEntry> _unscavengedHWM = new AtomicReference<QueueEntry>();
 
 
-    public OrderedQueueEntryList(Q queue, HeadCreator<E,Q,L> headCreator)
+    public OrderedQueueEntryList(AMQQueue queue, HeadCreator headCreator)
     {
         _queue = queue;
-        _head = headCreator.createHead((L)this);
+        _head = headCreator.createHead(this);
         _tail = _head;
     }
 
     void scavenge()
     {
-        E hwm = _unscavengedHWM.getAndSet(null);
-        E next = _head.getNextValidEntry();
+        QueueEntry hwm = _unscavengedHWM.getAndSet(null);
+        QueueEntry next = _head.getNextValidEntry();
 
         if(hwm != null)
         {
@@ -72,15 +71,15 @@ public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, 
     }
 
 
-    public Q getQueue()
+    public AMQQueue getQueue()
     {
         return _queue;
     }
 
 
-    public E add(ServerMessage message)
+    public QueueEntry add(ServerMessage message)
     {
-        E node = createQueueEntry(message);
+        OrderedQueueEntry node = createQueueEntry(message);
         for (;;)
         {
             OrderedQueueEntry tail = _tail;
@@ -105,23 +104,24 @@ public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, 
         }
     }
 
-    abstract protected E createQueueEntry(ServerMessage<?> message);
+    abstract protected OrderedQueueEntry createQueueEntry(ServerMessage<?> message);
 
-    public E next(E node)
+    @Override
+    public QueueEntry next(QueueEntry node)
     {
         return node.getNextValidEntry();
     }
 
-    public static interface HeadCreator<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>>
+    public static interface HeadCreator
     {
-        E createHead(L list);
+        OrderedQueueEntry createHead(QueueEntryList list);
     }
 
-    public static class QueueEntryIteratorImpl<E extends OrderedQueueEntry<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> implements QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>>
+    public static class QueueEntryIteratorImpl implements QueueEntryIterator
     {
-        private E _lastNode;
+        private QueueEntry _lastNode;
 
-        QueueEntryIteratorImpl(E startNode)
+        QueueEntryIteratorImpl(QueueEntry startNode)
         {
             _lastNode = startNode;
         }
@@ -131,14 +131,14 @@ public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, 
             return _lastNode.getNextValidEntry() == null;
         }
 
-        public E getNode()
+        public QueueEntry getNode()
         {
             return _lastNode;
         }
 
         public boolean advance()
         {
-            E nextValidNode = _lastNode.getNextValidEntry();
+            QueueEntry nextValidNode = _lastNode.getNextValidEntry();
 
             if(nextValidNode != null)
             {
@@ -149,26 +149,26 @@ public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, 
         }
     }
 
-    public QueueEntryIterator<E,Q,L,QueueConsumer<?,E,Q,L>> iterator()
+    public QueueEntryIterator iterator()
     {
-        return new QueueEntryIteratorImpl<E,Q,L>(_head);
+        return new QueueEntryIteratorImpl(_head);
     }
 
 
-    public E getHead()
+    public QueueEntry getHead()
     {
         return _head;
     }
 
-    public void entryDeleted(E queueEntry)
+    public void entryDeleted(QueueEntry queueEntry)
     {
-        E next = _head.getNextNode();
-        E newNext = _head.getNextValidEntry();
+        QueueEntry next = _head.getNextNode();
+        QueueEntry newNext = _head.getNextValidEntry();
 
         // the head of the queue has not been deleted, hence the deletion must have been mid queue.
         if (next == newNext)
         {
-            E unscavengedHWM = _unscavengedHWM.get();
+            QueueEntry unscavengedHWM = _unscavengedHWM.get();
             while(unscavengedHWM == null || unscavengedHWM.compareTo(queueEntry)<0)
             {
                 _unscavengedHWM.compareAndSet(unscavengedHWM, queueEntry);
@@ -182,7 +182,7 @@ public abstract class OrderedQueueEntryList<E extends OrderedQueueEntry<E,Q,L>, 
         }
         else
         {
-            E unscavengedHWM = _unscavengedHWM.get();
+            QueueEntry unscavengedHWM = _unscavengedHWM.get();
             if(unscavengedHWM != null && (next == null || unscavengedHWM.compareTo(next) < 0))
             {
                 _unscavengedHWM.compareAndSet(unscavengedHWM, null);

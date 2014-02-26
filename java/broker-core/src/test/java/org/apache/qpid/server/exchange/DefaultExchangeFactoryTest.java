@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -60,7 +59,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
 
         DefaultExchangeFactory factory = new TestExchangeFactory();
 
-        Collection<ExchangeType<? extends Exchange>> registeredTypes = factory.getRegisteredTypes();
+        Collection<ExchangeType<? extends ExchangeImpl>> registeredTypes = factory.getRegisteredTypes();
         assertEquals("Unexpected number of exchange types", _stubbedExchangeTypes.size(), registeredTypes.size());
         assertTrue("Direct exchange type is not found", registeredTypes.contains(_directExchangeType));
         assertTrue("Fanout exchange type is not found", registeredTypes.contains(_fanoutExchangeType));
@@ -169,7 +168,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
 
     public void testCreateDefaultExchangeFactoryWithCustomExchangeType()
     {
-        ExchangeType<?> customExchangeType = new ExchangeType<Exchange>()
+        ExchangeType<?> customExchangeType = new ExchangeType<NonDefaultExchange>()
         {
             @Override
             public String getType()
@@ -178,7 +177,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
             }
 
             @Override
-            public Exchange newInstance(VirtualHost host, Map<String,Object> attributes)
+            public NonDefaultExchange newInstance(VirtualHost host, Map<String,Object> attributes)
             {
                 return null;
             }
@@ -198,7 +197,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
 
         DefaultExchangeFactory factory = new TestExchangeFactory();
 
-        Collection<ExchangeType<? extends Exchange>> registeredTypes = factory.getRegisteredTypes();
+        Collection<ExchangeType<? extends ExchangeImpl>> registeredTypes = factory.getRegisteredTypes();
         assertEquals("Unexpected number of exchange types", _stubbedExchangeTypes.size(), registeredTypes.size());
         assertTrue("Direct exchange type is not found", registeredTypes.contains(_directExchangeType));
         assertTrue("Fanout exchange type is not found", registeredTypes.contains(_fanoutExchangeType));

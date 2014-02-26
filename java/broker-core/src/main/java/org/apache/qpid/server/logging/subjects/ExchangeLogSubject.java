@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.EXCHANGE_FORMAT;
@@ -29,7 +29,7 @@ public class ExchangeLogSubject extends AbstractLogSubject
 {
 
     /** Create an ExchangeLogSubject that Logs in the following format. */
-    public ExchangeLogSubject(Exchange exchange, VirtualHost vhost)
+    public ExchangeLogSubject(ExchangeImpl exchange, VirtualHost vhost)
     {
         setLogStringWithFormat(EXCHANGE_FORMAT, vhost.getName(),
                                exchange.getExchangeType().getType(), exchange.getName());

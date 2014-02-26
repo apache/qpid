@@ -31,7 +31,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
-public class MockMessageInstance implements MessageInstance<MockMessageInstance,Consumer>
+public class MockMessageInstance implements MessageInstance
 {
 
     private ServerMessage _message;
@@ -48,7 +48,7 @@ public class MockMessageInstance implements MessageInstance<MockMessageInstance,
     }
 
     @Override
-    public int routeToAlternate(final Action<? super MessageInstance<?, ? extends Consumer>> action,
+    public int routeToAlternate(final Action<? super MessageInstance> action,
                                 final ServerTransaction txn)
     {
         return 0;
@@ -178,13 +178,13 @@ public class MockMessageInstance implements MessageInstance<MockMessageInstance,
     }
 
     @Override
-    public void addStateChangeListener(final StateChangeListener<? super MockMessageInstance, State> listener)
+    public void addStateChangeListener(final StateChangeListener<? super MessageInstance, State> listener)
     {
 
     }
 
     @Override
-    public boolean removeStateChangeListener(final StateChangeListener<? super MockMessageInstance, State> listener)
+    public boolean removeStateChangeListener(final StateChangeListener<? super MessageInstance, State> listener)
     {
         return false;
     }

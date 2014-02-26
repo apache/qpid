@@ -22,7 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
@@ -71,8 +71,8 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
 
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
 
-    private final ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>> _bindingsByKey =
-                            new ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>>();
+    private final ConcurrentHashMap<String, CopyOnWriteArraySet<BindingImpl>> _bindingsByKey =
+                            new ConcurrentHashMap<String, CopyOnWriteArraySet<BindingImpl>>();
 
     private final CopyOnWriteArrayList<HeadersBinding> _bindingHeaderMatchers =
                             new CopyOnWriteArrayList<HeadersBinding>();
@@ -106,7 +106,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
         {
             if (hb.matches(Filterable.Factory.newInstance(payload,instanceProperties)))
             {
-                Binding b = hb.getBinding();
+                BindingImpl b = hb.getBinding();
 
                 b.incrementMatches();
 
@@ -122,7 +122,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
         return new ArrayList<BaseQueue>(queues);
     }
 
-    protected void onBind(final Binding binding)
+    protected void onBind(final BindingImpl binding)
     {
         String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getAMQQueue();
@@ -131,12 +131,12 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
         assert queue != null;
         assert bindingKey != null;
 
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+        CopyOnWriteArraySet<BindingImpl> bindings = _bindingsByKey.get(bindingKey);
 
         if(bindings == null)
         {
-            bindings = new CopyOnWriteArraySet<Binding>();
-            CopyOnWriteArraySet<Binding> newBindings;
+            bindings = new CopyOnWriteArraySet<BindingImpl>();
+            CopyOnWriteArraySet<BindingImpl> newBindings;
             if((newBindings = _bindingsByKey.putIfAbsent(bindingKey, bindings)) != null)
             {
                 bindings = newBindings;
@@ -154,11 +154,11 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
 
     }
 
-    protected void onUnbind(final Binding binding)
+    protected void onUnbind(final BindingImpl binding)
     {
         assert binding != null;
 
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(binding.getBindingKey());
+        CopyOnWriteArraySet<BindingImpl> bindings = _bindingsByKey.get(binding.getBindingKey());
         if(bindings != null)
         {
             bindings.remove(binding);

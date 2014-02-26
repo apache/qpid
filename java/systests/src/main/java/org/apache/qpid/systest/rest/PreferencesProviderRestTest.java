@@ -169,7 +169,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
                                         ConfiguredObject.CREATED_TIME,
                                         ConfiguredObject.LAST_UPDATED_BY,
                                         ConfiguredObject.LAST_UPDATED_TIME,
-                                        ConfiguredObject.DESCRIPTION, PreferencesProvider.TIME_TO_LIVE);
+                                        ConfiguredObject.DESCRIPTION);
         assertEquals("Unexpected value of provider attribute " + PreferencesProvider.STATE, State.ACTIVE.name(),
                 provider.get(PreferencesProvider.STATE));
         assertEquals("Unexpected value of provider attribute " + PreferencesProvider.LIFETIME_POLICY,

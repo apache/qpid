@@ -323,7 +323,6 @@ public class GroupProviderRestTest extends QpidRestTestCase
     private void assertProvider(String name, String type, Map<String, Object> provider)
     {
         Asserts.assertAttributesPresent(provider, AbstractConfiguredObject.getAttributeNames(GroupProvider.class),
-                GroupProvider.TIME_TO_LIVE,
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME,

@@ -41,5 +41,5 @@ public interface MessageDestination extends MessageNode
     <M extends ServerMessage<? extends StorableMessageMetaData>> int send(M message,
              InstanceProperties instanceProperties,
              ServerTransaction txn,
-             Action<? super MessageInstance<?,? extends Consumer>> postEnqueueAction);
+             Action<? super MessageInstance> postEnqueueAction);
 }

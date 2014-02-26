@@ -27,7 +27,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
 
-public class PriorityQueue extends OutOfOrderQueue<PriorityQueueList.PriorityQueueEntry, PriorityQueue, PriorityQueueList>
+public class PriorityQueue extends OutOfOrderQueue
 {
 
     public static final int DEFAULT_PRIORITY_LEVELS = 10;

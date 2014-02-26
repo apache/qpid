@@ -27,7 +27,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 
 public interface Consumer
 {
-    AtomicLong SUB_ID_GENERATOR = new AtomicLong(0);
+    AtomicLong CONSUMER_NUMBER_GENERATOR = new AtomicLong(0);
 
     void externalStateChange();
 
@@ -52,7 +52,7 @@ public interface Consumer
 
     MessageSource getMessageSource();
 
-    long getId();
+    long getConsumerNumber();
 
     boolean isSuspended();
 

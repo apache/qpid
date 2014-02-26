@@ -24,43 +24,45 @@ import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public abstract class OrderedQueueEntry<E extends OrderedQueueEntry<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends OrderedQueueEntryList<E,Q,L>> extends QueueEntryImpl<E,Q,L>
+public abstract class OrderedQueueEntry extends QueueEntryImpl
 {
     static final AtomicReferenceFieldUpdater<OrderedQueueEntry, OrderedQueueEntry>
                 _nextUpdater =
             AtomicReferenceFieldUpdater.newUpdater
             (OrderedQueueEntry.class, OrderedQueueEntry.class, "_next");
 
-    private volatile E _next;
+    private volatile OrderedQueueEntry _next;
 
-    public OrderedQueueEntry(L queueEntryList)
+    public OrderedQueueEntry(OrderedQueueEntryList queueEntryList)
     {
         super(queueEntryList);
     }
 
-    public OrderedQueueEntry(L queueEntryList, ServerMessage message, final long entryId)
+    public OrderedQueueEntry(OrderedQueueEntryList queueEntryList, ServerMessage message, final long entryId)
     {
         super(queueEntryList, message, entryId);
     }
 
-    public OrderedQueueEntry(L queueEntryList, ServerMessage message)
+    public OrderedQueueEntry(OrderedQueueEntryList queueEntryList, ServerMessage message)
     {
         super(queueEntryList, message);
     }
 
-    public E getNextNode()
+    @Override
+    public OrderedQueueEntry getNextNode()
     {
         return _next;
     }
 
-    public E getNextValidEntry()
+    @Override
+    public OrderedQueueEntry getNextValidEntry()
     {
 
-        E next = getNextNode();
+        OrderedQueueEntry next = getNextNode();
         while(next != null && next.isDeleted())
         {
 
-            final E newNext = next.getNextNode();
+            final OrderedQueueEntry newNext = next.getNextNode();
             if(newNext != null)
             {
                 OrderedQueueEntryList._nextUpdater.compareAndSet(this,next, newNext);

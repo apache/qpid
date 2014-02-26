@@ -20,20 +20,13 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.queue.AMQQueue;
 
-import java.util.Collection;
-import java.util.Map;
-
-
-public interface ExchangeFactory
+public interface NonDefaultExchange<T extends NonDefaultExchange<T>> extends Exchange<T>, ExchangeImpl<T>
 {
+    NonDefaultExchange getAlternateExchange();
 
-    Collection<ExchangeType<? extends ExchangeImpl>> getRegisteredTypes();
-
-    NonDefaultExchange createExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
-
-    NonDefaultExchange restoreExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
-
+    BindingImpl getBinding(String bindingName, AMQQueue queue);
 }

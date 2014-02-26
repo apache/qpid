@@ -32,7 +32,6 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
-    String TIME_TO_LIVE                         = "timeToLive";
     String ALTERNATE_EXCHANGE                   = "alternateExchange";
 
     // Attributes
@@ -41,7 +40,7 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
     Exchange<?> getAlternateExchange();
 
     //children
-    Collection<Binding> getBindings();
+    Collection<? extends Binding> getBindings();
     Collection<Publisher> getPublishers();
 
     @ManagedStatistic

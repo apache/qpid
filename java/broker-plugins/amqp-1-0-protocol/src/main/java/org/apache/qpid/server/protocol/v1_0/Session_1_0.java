@@ -43,9 +43,9 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.server.connection.SessionPrincipal;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
@@ -138,7 +138,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                     }
                     else
                     {
-                        Exchange exchg = getVirtualHost().getExchange(addr);
+                        ExchangeImpl exchg = getVirtualHost().getExchange(addr);
                         if(exchg != null)
                         {
                             destination = new ExchangeDestination(exchg, source.getDurable(), source.getExpiryPolicy());

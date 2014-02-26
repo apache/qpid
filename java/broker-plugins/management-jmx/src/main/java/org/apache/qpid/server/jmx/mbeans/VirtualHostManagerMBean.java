@@ -166,7 +166,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         try
         {
             getConfiguredObject().createExchange(name, State.ACTIVE, durable,
-                                            LifetimePolicy.PERMANENT, 0l, type, Collections.EMPTY_MAP);
+                                            LifetimePolicy.PERMANENT, type, Collections.EMPTY_MAP);
         }
         catch (IllegalArgumentException iae)
         {

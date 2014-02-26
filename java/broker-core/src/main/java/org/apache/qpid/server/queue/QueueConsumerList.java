@@ -24,19 +24,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E, Q,L>, L extends QueueEntryListBase<E,Q,L>>
+class QueueConsumerList
 {
-    private final ConsumerNode<E,Q,L> _head = new ConsumerNode<E,Q,L>();
+    private final ConsumerNode _head = new ConsumerNode();
 
-    private final AtomicReference<ConsumerNode<E,Q,L>> _tail = new AtomicReference<ConsumerNode<E,Q,L>>(_head);
-    private final AtomicReference<ConsumerNode<E,Q,L>> _subNodeMarker = new AtomicReference<ConsumerNode<E,Q,L>>(_head);
+    private final AtomicReference<ConsumerNode> _tail = new AtomicReference<ConsumerNode>(_head);
+    private final AtomicReference<ConsumerNode> _subNodeMarker = new AtomicReference<ConsumerNode>(_head);
     private final AtomicInteger _size = new AtomicInteger();
 
-    public static final class ConsumerNode<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E, Q,L>, L extends QueueEntryListBase<E,Q,L>>
+    public static final class ConsumerNode
     {
         private final AtomicBoolean _deleted = new AtomicBoolean();
-        private final AtomicReference<ConsumerNode<E,Q,L>> _next = new AtomicReference<ConsumerNode<E,Q,L>>();
-        private final QueueConsumer<?,E,Q,L> _sub;
+        private final AtomicReference<ConsumerNode> _next = new AtomicReference<ConsumerNode>();
+        private final QueueConsumer<?> _sub;
 
         public ConsumerNode()
         {
@@ -45,7 +45,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
             _deleted.set(true);
         }
 
-        public ConsumerNode(final QueueConsumer<?,E,Q,L> sub)
+        public ConsumerNode(final QueueConsumer<?> sub)
         {
             //used for regular node construction
             _sub = sub;
@@ -57,12 +57,12 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
          *
          * @return the next non-deleted node, or null if none was found.
          */
-        public ConsumerNode<E,Q,L> findNext()
+        public ConsumerNode findNext()
         {
-            ConsumerNode<E,Q,L> next = nextNode();
+            ConsumerNode next = nextNode();
             while(next != null && next.isDeleted())
             {
-                final ConsumerNode<E,Q,L> newNext = next.nextNode();
+                final ConsumerNode newNext = next.nextNode();
                 if(newNext != null)
                 {
                     //try to move our _next reference forward to the 'newNext'
@@ -86,7 +86,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
          *
          * @return the immediately next node in the structure, or null if at the tail.
          */
-        protected ConsumerNode<E,Q,L> nextNode()
+        protected ConsumerNode nextNode()
         {
             return _next.get();
         }
@@ -97,7 +97,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
          * @param node the ConsumerNode to set as 'next'
          * @return whether the operation succeeded
          */
-        private boolean setNext(final ConsumerNode<E,Q,L> node)
+        private boolean setNext(final ConsumerNode node)
         {
             return _next.compareAndSet(null, node);
         }
@@ -112,18 +112,18 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
             return _deleted.compareAndSet(false,true);
         }
 
-        public QueueConsumer<?,E,Q,L> getConsumer()
+        public QueueConsumer<?> getConsumer()
         {
             return _sub;
         }
     }
 
-    private void insert(final ConsumerNode<E,Q,L> node, final boolean count)
+    private void insert(final ConsumerNode node, final boolean count)
     {
         for (;;)
         {
-            ConsumerNode<E,Q,L> tail = _tail.get();
-            ConsumerNode<E,Q,L> next = tail.nextNode();
+            ConsumerNode tail = _tail.get();
+            ConsumerNode next = tail.nextNode();
             if (tail == _tail.get())
             {
                 if (next == null)
@@ -146,16 +146,16 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
         }
     }
 
-    public void add(final QueueConsumer<?,E,Q,L> sub)
+    public void add(final QueueConsumer<?> sub)
     {
-        ConsumerNode<E,Q,L> node = new ConsumerNode<E,Q,L>(sub);
+        ConsumerNode node = new ConsumerNode(sub);
         insert(node, true);
     }
 
-    public boolean remove(final QueueConsumer<?, E,Q,L> sub)
+    public boolean remove(final QueueConsumer<?> sub)
     {
-        ConsumerNode<E,Q,L> prevNode = _head;
-        ConsumerNode<E,Q,L> node = _head.nextNode();
+        ConsumerNode prevNode = _head;
+        ConsumerNode node = _head.nextNode();
 
         while(node != null)
         {
@@ -170,7 +170,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
                     //correctness reasons, however we have just 'deleted'
                     //the tail. Inserting an empty dummy node after it will
                     //let us scavenge the node containing the Consumer.
-                    insert(new ConsumerNode<E,Q,L>(), false);
+                    insert(new ConsumerNode(), false);
                 }
 
                 //advance the next node reference in the 'prevNode' to scavenge
@@ -189,9 +189,9 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
         return false;
     }
 
-    private void nodeMarkerCleanup(final ConsumerNode<E,Q,L> node)
+    private void nodeMarkerCleanup(final ConsumerNode node)
     {
-        ConsumerNode<E,Q,L> markedNode = _subNodeMarker.get();
+        ConsumerNode markedNode = _subNodeMarker.get();
         if(node == markedNode)
         {
             //if the marked node is the one we are removing, then
@@ -200,7 +200,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
             //into the list and find the next node to use.
             //Because we inserted a dummy if node was the
             //tail, markedNode.nextNode() can never be null.
-            ConsumerNode<E,Q,L> dummy = new ConsumerNode<E,Q,L>();
+            ConsumerNode dummy = new ConsumerNode();
             dummy.setNext(markedNode.nextNode());
 
             //if the CAS fails the marked node has changed, thus
@@ -219,7 +219,7 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
         }
     }
 
-    public boolean updateMarkedNode(final ConsumerNode<E,Q,L> expected, final ConsumerNode<E,Q,L> nextNode)
+    public boolean updateMarkedNode(final ConsumerNode expected, final ConsumerNode nextNode)
     {
         return _subNodeMarker.compareAndSet(expected, nextNode);
     }
@@ -231,41 +231,41 @@ class QueueConsumerList<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue
      *
      * @return the previously marked node (or a dummy if it was subsequently deleted)
      */
-    public ConsumerNode<E,Q,L> getMarkedNode()
+    public ConsumerNode getMarkedNode()
     {
         return _subNodeMarker.get();
     }
 
 
-    public static class ConsumerNodeIterator<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E, Q,L>, L extends QueueEntryListBase<E,Q,L>>
+    public static class ConsumerNodeIterator
     {
-        private ConsumerNode<E,Q,L> _lastNode;
+        private ConsumerNode _lastNode;
 
-        ConsumerNodeIterator(ConsumerNode<E,Q,L> startNode)
+        ConsumerNodeIterator(ConsumerNode startNode)
         {
             _lastNode = startNode;
         }
 
-        public ConsumerNode<E,Q,L> getNode()
+        public ConsumerNode getNode()
         {
             return _lastNode;
         }
 
         public boolean advance()
         {
-            ConsumerNode<E,Q,L> nextNode = _lastNode.findNext();
+            ConsumerNode nextNode = _lastNode.findNext();
             _lastNode = nextNode;
 
             return _lastNode != null;
         }
     }
 
-    public ConsumerNodeIterator<E,Q,L> iterator()
+    public ConsumerNodeIterator iterator()
     {
-        return new ConsumerNodeIterator<E,Q,L>(_head);
+        return new ConsumerNodeIterator(_head);
     }
 
-    public ConsumerNode<E,Q,L> getHead()
+    public ConsumerNode getHead()
     {
         return _head;
     }

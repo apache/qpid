@@ -22,7 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.MessageFilter;
@@ -42,7 +42,7 @@ class HeadersBinding
     private static final Logger _logger = Logger.getLogger(HeadersBinding.class);
 
     private final Map<String,Object> _mappings;
-    private final Binding _binding;
+    private final BindingImpl _binding;
     private final Set<String> required = new HashSet<String>();
     private final Map<String,Object> matches = new HashMap<String,Object>();
     private boolean matchAny;
@@ -56,7 +56,7 @@ class HeadersBinding
      *
      * @param binding the binding to create a header binding using
      */
-    public HeadersBinding(Binding binding)
+    public HeadersBinding(BindingImpl binding)
     {
         _binding = binding;
         if(_binding !=null)
@@ -81,7 +81,7 @@ class HeadersBinding
             catch (AMQInvalidArgumentException e)
             {
                 _logger.warn("Invalid filter in binding queue '"+_binding.getAMQQueue().getName()
-                             +"' to exchange '"+_binding.getExchangeImpl().getName()
+                             +"' to exchange '"+_binding.getExchange().getName()
                              +"' with arguments: " + _binding.getArguments());
                 _filter = new MessageFilter()
                     {
@@ -112,7 +112,7 @@ class HeadersBinding
         }
     }
 
-    public Binding getBinding()
+    public BindingImpl getBinding()
     {
         return _binding;
     }

@@ -145,19 +145,6 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
     }
 
     @Override
-    public long getTimeToLive()
-    {
-        return 0;
-    }
-
-    @Override
-    public long setTimeToLive(long expected, long desired) throws IllegalStateException, AccessControlException,
-            IllegalArgumentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();
@@ -181,10 +168,6 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
         else if (STATE.equals(name))
         {
             return getState();
-        }
-        else if (TIME_TO_LIVE.equals(name))
-        {
-            // TODO
         }
         return super.getAttribute(name);
     }

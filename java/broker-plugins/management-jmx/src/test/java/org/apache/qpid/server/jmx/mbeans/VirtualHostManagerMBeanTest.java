@@ -146,7 +146,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
     public void testCreateNewDurableExchange() throws Exception
     {
         _virtualHostManagerMBean.createNewExchange(TEST_EXCHANGE_NAME, TEST_EXCHANGE_TYPE, true);
-        verify(_mockVirtualHost).createExchange(TEST_EXCHANGE_NAME, State.ACTIVE, true, LifetimePolicy.PERMANENT, 0, TEST_EXCHANGE_TYPE, EMPTY_ARGUMENT_MAP);
+        verify(_mockVirtualHost).createExchange(TEST_EXCHANGE_NAME, State.ACTIVE, true, LifetimePolicy.PERMANENT, TEST_EXCHANGE_TYPE, EMPTY_ARGUMENT_MAP);
     }
 
     public void testCreateNewExchangeWithUnknownExchangeType() throws Exception
@@ -161,7 +161,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
         {
             // PASS
         }
-        verify(_mockVirtualHost, never()).createExchange(TEST_EXCHANGE_NAME, State.ACTIVE, true, LifetimePolicy.PERMANENT, 0, exchangeType, EMPTY_ARGUMENT_MAP);
+        verify(_mockVirtualHost, never()).createExchange(TEST_EXCHANGE_NAME, State.ACTIVE, true, LifetimePolicy.PERMANENT, exchangeType, EMPTY_ARGUMENT_MAP);
     }
 
     public void testUnregisterExchange() throws Exception

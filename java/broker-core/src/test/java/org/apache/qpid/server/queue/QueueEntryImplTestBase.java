@@ -20,7 +20,6 @@ package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -29,8 +28,6 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.lang.reflect.Field;
@@ -143,7 +140,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
 
         MessageInstance.ConsumerAcquiredState owningState = new QueueEntryImpl.ConsumerAcquiredState(consumer);
         when(consumer.getOwningState()).thenReturn(owningState);
-        when(consumer.getId()).thenReturn(_consumerId++);
+        when(consumer.getConsumerNumber()).thenReturn(_consumerId++);
         return consumer;
     }
 
@@ -213,7 +210,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
 
         StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
-        OrderedQueueEntryList queueEntryList = queue.getEntries();
+        OrderedQueueEntryList queueEntryList = (OrderedQueueEntryList) queue.getEntries();
 
         // create test entries
         for(int i = 0; i < numberOfEntries ; i++)
@@ -223,7 +220,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
             final MessageReference reference = mock(MessageReference.class);
             when(reference.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(reference);
-            QueueEntryImpl entry = queueEntryList.add(message);
+            QueueEntryImpl entry = (QueueEntryImpl) queueEntryList.add(message);
             entries[i] = entry;
         }
 

@@ -28,13 +28,13 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> implements MessageGroupManager<E,Q,L>
+public class AssignedConsumerMessageGroupManager implements MessageGroupManager
 {
     private static final Logger _logger = LoggerFactory.getLogger(AssignedConsumerMessageGroupManager.class);
 
 
     private final String _groupId;
-    private final ConcurrentHashMap<Integer, QueueConsumer> _groupMap = new ConcurrentHashMap<Integer, QueueConsumer>();
+    private final ConcurrentHashMap<Integer, QueueConsumer<?>> _groupMap = new ConcurrentHashMap<Integer, QueueConsumer<?>>();
     private final int _groupMask;
 
     public AssignedConsumerMessageGroupManager(final String groupId, final int maxGroups)
@@ -53,18 +53,18 @@ public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>
         return val;
     }
 
-    public QueueConsumer getAssignedConsumer(final E entry)
+    public QueueConsumer<?> getAssignedConsumer(final QueueEntry entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         return groupVal == null ? null : _groupMap.get(groupVal.hashCode() & _groupMask);
     }
 
-    public boolean acceptMessage(QueueConsumer<?,E,Q,L> sub, E entry)
+    public boolean acceptMessage(QueueConsumer<?> sub, QueueEntry entry)
     {
         return assignMessage(sub, entry) && entry.acquire(sub);
     }
 
-    private boolean assignMessage(QueueConsumer sub, E entry)
+    private boolean assignMessage(QueueConsumer<?> sub, QueueEntry entry)
     {
         Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
         if(groupVal == null)
@@ -98,24 +98,24 @@ public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>
         }
     }
     
-    public E findEarliestAssignedAvailableEntry(QueueConsumer sub)
+    public QueueEntry findEarliestAssignedAvailableEntry(QueueConsumer<?> sub)
     {
         EntryFinder visitor = new EntryFinder(sub);
         sub.getQueue().visit(visitor);
         return visitor.getEntry();
     }
 
-    private class EntryFinder implements QueueEntryVisitor<E>
+    private class EntryFinder implements QueueEntryVisitor
     {
-        private E _entry;
-        private QueueConsumer _sub;
+        private QueueEntry _entry;
+        private QueueConsumer<?> _sub;
 
-        public EntryFinder(final QueueConsumer sub)
+        public EntryFinder(final QueueConsumer<?> sub)
         {
             _sub = sub;
         }
 
-        public boolean visit(final E entry)
+        public boolean visit(final QueueEntry entry)
         {
             if(!entry.isAvailable())
             {
@@ -129,7 +129,7 @@ public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>
             }
 
             Integer group = groupId.hashCode() & _groupMask;
-            Consumer assignedSub = _groupMap.get(group);
+            QueueConsumer<?> assignedSub = _groupMap.get(group);
             if(assignedSub == _sub)
             {
                 _entry = entry;
@@ -141,15 +141,15 @@ public class AssignedConsumerMessageGroupManager<E extends QueueEntryImpl<E,Q,L>
             }
         }
 
-        public E getEntry()
+        public QueueEntry getEntry()
         {
             return _entry;
         }
     }
 
-    public void clearAssignments(QueueConsumer sub)
+    public void clearAssignments(QueueConsumer<?> sub)
     {
-        Iterator<QueueConsumer> subIter = _groupMap.values().iterator();
+        Iterator<QueueConsumer<?>> subIter = _groupMap.values().iterator();
         while(subIter.hasNext())
         {
             if(subIter.next() == sub)

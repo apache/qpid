@@ -30,7 +30,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
@@ -110,7 +110,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
                     exchangeName = "";
                 }
 
-                Exchange exchange = vhost.getExchange(exchangeName);
+                ExchangeImpl exchange = vhost.getExchange(exchangeName);
                 String exchangeClass = exchange == null
                                             ? ExchangeDefaults.DIRECT_EXCHANGE_CLASS
                                             : exchange.getTypeName();

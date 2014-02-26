@@ -26,13 +26,12 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -100,7 +99,7 @@ public class AMQChannelTest extends QpidTestCase
         channel.setLocalTransactional();
 
         MessagePublishInfo info = mock(MessagePublishInfo.class);
-        Exchange e = mock(Exchange.class);
+        ExchangeImpl e = mock(ExchangeImpl.class);
         ContentHeaderBody contentHeaderBody= mock(ContentHeaderBody.class);
         BasicContentHeaderProperties properties = mock(BasicContentHeaderProperties.class);
 
@@ -123,7 +122,7 @@ public class AMQChannelTest extends QpidTestCase
         channel.setLocalTransactional();
 
         MessagePublishInfo info = mock(MessagePublishInfo.class);
-        Exchange e = mock(Exchange.class);
+        ExchangeImpl e = mock(ExchangeImpl.class);
         ContentHeaderBody contentHeaderBody= mock(ContentHeaderBody.class);
         BasicContentHeaderProperties properties = mock(BasicContentHeaderProperties.class);
 

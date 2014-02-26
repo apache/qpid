@@ -29,10 +29,9 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -103,7 +102,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.");
         }
         final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
-        final Exchange exch = virtualHost.getExchange(exchangeName);
+        final ExchangeImpl exch = virtualHost.getExchange(exchangeName);
         if (exch == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + exchangeName + " does not exist.");
@@ -121,13 +120,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
                 if(!exch.addBinding(bindingKey, queue, arguments) && TopicExchange.TYPE.equals(exch.getExchangeType()))
                 {
-                    Binding oldBinding = exch.getBinding(bindingKey, queue);
-
-                    Map<String, Object> oldArgs = oldBinding.getArguments();
-                    if((oldArgs == null && !arguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(arguments)))
-                    {
-                        exch.replaceBinding(oldBinding.getId(), bindingKey, queue, arguments);
-                    }
+                    exch.replaceBinding(bindingKey, queue, arguments);
                 }
             }
         }

@@ -142,7 +142,7 @@ public class FanoutExchangeTest extends TestCase
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
         assertTrue("Expected queue2 to be routed to", result.contains(queue2));
 
-        _exchange.getBinding("key",queue2).delete();
+        _exchange.deleteBinding("key",queue2);
 
         result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
 

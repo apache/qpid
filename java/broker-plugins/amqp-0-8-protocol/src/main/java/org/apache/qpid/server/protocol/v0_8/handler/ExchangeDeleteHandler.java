@@ -24,8 +24,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
@@ -62,7 +62,7 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         {
             final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
 
-            final Exchange exchange = virtualHost.getExchange(exchangeName);
+            final ExchangeImpl exchange = virtualHost.getExchange(exchangeName);
             if(exchange == null)
             {
                 throw body.getChannelException(AMQConstant.NOT_FOUND, "No such exchange: " + body.getExchange());

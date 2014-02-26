@@ -21,7 +21,7 @@
 package org.apache.qpid.server.logging.subjects;
 
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -178,7 +178,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
      * @param message  The message to check
      * @param exchange the exchange to check against
      */
-    protected void verifyExchange(String message, Exchange exchange)
+    protected void verifyExchange(String message, ExchangeImpl exchange)
     {
         String exchangeSlice = getSlice("ex", message);
 

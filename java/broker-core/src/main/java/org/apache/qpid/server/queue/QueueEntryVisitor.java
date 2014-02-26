@@ -16,9 +16,7 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.consumer.Consumer;
-
-public interface QueueEntryVisitor<E extends QueueEntry>
+public interface QueueEntryVisitor
 {
-    boolean visit(E entry);
+    boolean visit(QueueEntry entry);
 }

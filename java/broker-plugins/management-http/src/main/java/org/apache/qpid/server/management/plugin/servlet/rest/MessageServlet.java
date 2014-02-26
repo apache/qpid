@@ -328,7 +328,7 @@ public class MessageServlet extends AbstractServlet
                                              ? "Acquired"
                                              : "");
         final Consumer deliveredConsumer = entry.getDeliveredConsumer();
-        object.put("deliveredTo", deliveredConsumer == null ? null : deliveredConsumer.getId());
+        object.put("deliveredTo", deliveredConsumer == null ? null : deliveredConsumer.getConsumerNumber());
         ServerMessage message = entry.getMessage();
 
         if(message != null)

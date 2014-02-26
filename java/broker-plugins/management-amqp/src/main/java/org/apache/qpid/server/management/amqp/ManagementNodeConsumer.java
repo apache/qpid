@@ -35,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 class ManagementNodeConsumer implements Consumer
 {
-    private final long _id = Consumer.SUB_ID_GENERATOR.getAndIncrement();
+    private final long _id = Consumer.CONSUMER_NUMBER_GENERATOR.getAndIncrement();
     private final ManagementNode _managementNode;
     private final List<ManagementResponse> _queue = Collections.synchronizedList(new ArrayList<ManagementResponse>());
     private final ConsumerTarget _target;
@@ -95,7 +95,7 @@ class ManagementNodeConsumer implements Consumer
     }
 
     @Override
-    public long getId()
+    public long getConsumerNumber()
     {
         return _id;
     }

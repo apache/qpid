@@ -40,7 +40,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>>
+public class SortedQueueEntryListTest extends QueueEntryListTestBase
 {
     private static SelfValidatingSortedQueueEntryList _sqel;
 
@@ -90,13 +90,13 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
         final VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
 
-        _testQueue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory<SortedQueueEntry,SortedQueue,SortedQueueEntryList>()
+        _testQueue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory()
         {
 
             @Override
-            public SortedQueueEntryList createQueueEntryList(final SortedQueue queue)
+            public SortedQueueEntryList createQueueEntryList(final AMQQueue queue)
             {
-                return new SelfValidatingSortedQueueEntryList(queue, "KEY");
+                return new SelfValidatingSortedQueueEntryList((SortedQueue) queue, "KEY");
             }
         });
         _sqel = (SelfValidatingSortedQueueEntryList) _testQueue.getEntries();
@@ -186,7 +186,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
         super.testIterator();
 
         // Test sorted order of list
-        final QueueEntryIterator<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>> iter = getTestList().iterator();
+        final QueueEntryIterator iter = getTestList().iterator();
         int count = 0;
         while(iter.advance())
         {
@@ -195,12 +195,12 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
         }
     }
 
-    private Object getSortedKeyValue(QueueEntryIterator<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>> iter)
+    private Object getSortedKeyValue(QueueEntryIterator iter)
     {
         return (iter.getNode()).getMessage().getMessageHeader().getHeader("KEY");
     }
 
-    private Long getMessageId(QueueEntryIterator<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>> iter)
+    private Long getMessageId(QueueEntryIterator iter)
     {
         return (iter.getNode()).getMessage().getMessageNumber();
     }
@@ -217,7 +217,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
             _sqel.add(msg);
         }
 
-        final QueueEntryIterator<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>> iter = getTestList().iterator();
+        final QueueEntryIterator iter = getTestList().iterator();
         int count=0;
         while(iter.advance())
         {
@@ -238,7 +238,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
             _sqel.add(msg);
         }
 
-        final QueueEntryIterator<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>> iter = getTestList().iterator();
+        final QueueEntryIterator iter = getTestList().iterator();
         int count=0;
         while(iter.advance())
         {
@@ -260,7 +260,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
             _sqel.add(msg);
         }
 
-        final QueueEntryIterator<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>> iter = getTestList().iterator();
+        final QueueEntryIterator iter = getTestList().iterator();
         int count=0;
         while(iter.advance())
         {
@@ -283,7 +283,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase<SortedQueue
             _sqel.add(msg);
         }
 
-        final QueueEntryIterator<SortedQueueEntry, SortedQueue, SortedQueueEntryList, QueueConsumer<?,SortedQueueEntry, SortedQueue, SortedQueueEntryList>> iter = getTestList().iterator();
+        final QueueEntryIterator iter = getTestList().iterator();
         int count=0;
         while(iter.advance())
         {

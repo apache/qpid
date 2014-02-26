@@ -25,16 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 
-public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<Binding>
+public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<BindingImpl>
 {
     private static final Logger _logger = Logger.getLogger(BindingRecoverer.class);
 
@@ -49,7 +50,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
     }
 
     @Override
-    public UnresolvedObject<Binding> createUnresolvedObject(final UUID id,
+    public UnresolvedObject<BindingImpl> createUnresolvedObject(final UUID id,
                                                             final String type,
                                                             final Map<String, Object> attributes)
     {
@@ -62,7 +63,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
         return org.apache.qpid.server.model.Binding.class.getSimpleName();
     }
 
-    private class UnresolvedBinding implements UnresolvedObject<Binding>
+    private class UnresolvedBinding implements UnresolvedObject<BindingImpl>
     {
         private final Map<String, Object> _bindingArgumentsMap;
         private final String _bindingName;
@@ -73,7 +74,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
         private List<UnresolvedDependency> _unresolvedDependencies =
                 new ArrayList<UnresolvedDependency>();
 
-        private Exchange _exchange;
+        private ExchangeImpl _exchange;
         private AMQQueue _queue;
 
         public UnresolvedBinding(final UUID id,
@@ -104,16 +105,16 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
         }
 
         @Override
-        public Binding resolve()
+        public BindingImpl resolve()
         {
-            if(_exchange.getBinding(_bindingName, _queue) == null)
+            if(!_exchange.hasBinding(_bindingName, _queue))
             {
                 _logger.info("Restoring binding: (Exchange: " + _exchange.getName() + ", Queue: " + _queue.getName()
                              + ", Routing Key: " + _bindingName + ", Arguments: " + _bindingArgumentsMap + ")");
 
                 _exchange.restoreBinding(_bindingId, _bindingName, _queue, _bindingArgumentsMap);
             }
-            return _exchange.getBinding(_bindingName, _queue);
+            return ((NonDefaultExchange)_exchange).getBinding(_bindingName, _queue);
         }
 
         private class QueueDependency implements UnresolvedDependency<AMQQueue>
@@ -140,7 +141,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
 
         }
 
-        private class ExchangeDependency implements UnresolvedDependency<Exchange>
+        private class ExchangeDependency implements UnresolvedDependency<ExchangeImpl>
         {
 
             @Override
@@ -156,7 +157,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             }
 
             @Override
-            public void resolve(final Exchange dependency)
+            public void resolve(final ExchangeImpl dependency)
             {
                 _exchange = dependency;
                 _unresolvedDependencies.remove(this);

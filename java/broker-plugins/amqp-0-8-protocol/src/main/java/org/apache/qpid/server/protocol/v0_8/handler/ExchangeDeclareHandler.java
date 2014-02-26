@@ -30,13 +30,12 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
@@ -77,7 +76,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             _logger.debug("Request to declare exchange of type " + body.getType() + " with name " + exchangeName);
         }
 
-        Exchange exchange;
+        ExchangeImpl exchange;
 
         if (body.getPassive())
         {
