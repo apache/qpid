@@ -69,8 +69,8 @@ struct PingOptions : public qpid::Options {
 
 int main(int argc, char** argv) {
     Connection connection;
-    PingOptions opts;
     try {
+        PingOptions opts;
         opts.parse(argc, argv);
         connection = Connection(opts.url, opts.connectionOptions);
         connection.open();
