@@ -1306,12 +1306,20 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
         params.insert(make_pair(acl::PROP_AUTODELETE, settings.autodelete ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_POLICYTYPE, settings.getLimitPolicy()));
         params.insert(make_pair(acl::PROP_PAGING, settings.paging ? _TRUE : _FALSE));
-        params.insert(make_pair(acl::PROP_MAXPAGES, boost::lexical_cast<string>(settings.maxPages)));
-        params.insert(make_pair(acl::PROP_MAXPAGEFACTOR, boost::lexical_cast<string>(settings.pageFactor)));
-        params.insert(make_pair(acl::PROP_MAXQUEUECOUNT, boost::lexical_cast<string>(settings.maxDepth.getCount())));
-        params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(settings.maxDepth.getSize())));
-        params.insert(make_pair(acl::PROP_MAXFILECOUNT, boost::lexical_cast<string>(settings.maxFileCount)));
-        params.insert(make_pair(acl::PROP_MAXFILESIZE, boost::lexical_cast<string>(settings.maxFileSize)));
+        if (settings.paging) {
+            params.insert(make_pair(acl::PROP_MAXPAGES, boost::lexical_cast<string>(settings.maxPages ? settings.maxPages : DEFAULT_MAX_PAGES)));
+            params.insert(make_pair(acl::PROP_MAXPAGEFACTOR, boost::lexical_cast<string>(settings.pageFactor ? settings.pageFactor : DEFAULT_PAGE_FACTOR)));
+        }
+        if (settings.maxDepth.hasCount())
+            params.insert(make_pair(acl::PROP_MAXQUEUECOUNT, boost::lexical_cast<string>(settings.maxDepth.getCount() ? settings.maxDepth.getCount() : std::numeric_limits<uint64_t>::max())));
+        if (settings.maxDepth.hasSize())
+            params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(settings.maxDepth.getSize() ? settings.maxDepth.getSize() :  std::numeric_limits<uint64_t>::max())));
+        else
+            params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(config.queueLimit)));
+        if (settings.durable) {
+            params.insert(make_pair(acl::PROP_MAXFILECOUNT, boost::lexical_cast<string>(settings.maxFileCount ? settings.maxFileCount : 8)));
+            params.insert(make_pair(acl::PROP_MAXFILESIZE, boost::lexical_cast<string>(settings.maxFileSize ? settings.maxFileSize : 24)));
+        }
 
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));

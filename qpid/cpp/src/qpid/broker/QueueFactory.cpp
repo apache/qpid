@@ -80,8 +80,8 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
             QPID_LOG(warning, "Cannot create paged queue; no paging directory enabled");
         } else {
             queue->messages = std::auto_ptr<Messages>(new PagedQueue(name, broker->getPagingDir().getPath(),
-                                                                     settings.maxPages ? settings.maxPages : 4,
-                                                                     settings.pageFactor ? settings.pageFactor : 1,
+                                                                     settings.maxPages ? settings.maxPages : DEFAULT_MAX_PAGES,
+                                                                     settings.pageFactor ? settings.pageFactor : DEFAULT_PAGE_FACTOR,
                                                                      broker->getProtocolRegistry(), broker->getExpiryPolicy()));
         }
     } else if (settings.lvqKey.empty()) {//LVQ already handled above

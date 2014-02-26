@@ -25,6 +25,9 @@
 #include "qpid/types/Variant.h"
 #include <boost/shared_ptr.hpp>
 
+#define DEFAULT_MAX_PAGES 4
+#define DEFAULT_PAGE_FACTOR 1
+
 namespace qpid {
 namespace management {
 class Manageable;
