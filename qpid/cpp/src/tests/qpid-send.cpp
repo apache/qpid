@@ -349,8 +349,8 @@ using qpid::tests::EOS;
 int main(int argc, char ** argv)
 {
     Connection connection;
-    Options opts;
     try {
+        Options opts;
         if (opts.parse(argc, argv)) {
              connection = Connection(opts.url, opts.connectionOptions);
             connection.open();
