@@ -1234,7 +1234,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 200
             queue_options["qpid.file_size"] = 500
-            session.queue_declare(queue="qf5", exclusive=True, arguments=queue_options)
+            session.queue_declare(queue="qf5", exclusive=True, durable=True, arguments=queue_options)
             self.fail("ACL should deny queue create request with name=qf5, qpid.file_size=500 and qpid.file_count=200");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
@@ -1388,7 +1388,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 200
             queue_options["qpid.file_size"] = 500
-            session.queue_declare(queue="qfd5", arguments=queue_options)
+            session.queue_declare(queue="qfd5", durable=True, arguments=queue_options)
             self.fail("ACL should deny queue create request with name=qfd5 filemaxsizeupperlimit=500 filemaxcountupperlimit=200");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
@@ -1398,7 +1398,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 100
             queue_options["qpid.file_size"] = 500
-            session.queue_declare(queue="qfd5", arguments=queue_options)
+            session.queue_declare(queue="qfd5", durable=True, arguments=queue_options)
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow queue create request with name=qfd5 filemaxsizeupperlimit=500 filemaxcountupperlimit=200");
@@ -1407,7 +1407,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 49
             queue_options["qpid.file_size"] = 100
-            session.queue_declare(queue="qfd6", arguments=queue_options)
+            session.queue_declare(queue="qfd6", durable=True, arguments=queue_options)
             self.fail("ACL should deny queue create request with name=qfd6 filemaxsizeupperlimit=100 filemaxcountupperlimit=49");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
@@ -1417,7 +1417,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 101
             queue_options["qpid.file_size"] = 100
-            session.queue_declare(queue="qfd6", arguments=queue_options)
+            session.queue_declare(queue="qfd6", durable=True, arguments=queue_options)
             self.fail("ACL should allow queue create request with name=qfd6 filemaxsizeupperlimit=100 filemaxcountupperlimit=101");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
@@ -1427,7 +1427,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 100
             queue_options["qpid.file_size"] = 49
-            session.queue_declare(queue="qfd6", arguments=queue_options)
+            session.queue_declare(queue="qfd6", durable=True, arguments=queue_options)
             self.fail("ACL should deny queue create request with name=qfd6 filemaxsizeupperlimit=49 filemaxcountupperlimit=100");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
@@ -1437,7 +1437,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 100
             queue_options["qpid.file_size"] =101
-            session.queue_declare(queue="qfd6", arguments=queue_options)
+            session.queue_declare(queue="qfd6", durable=True, arguments=queue_options)
             self.fail("ACL should deny queue create request with name=qfd6 filemaxsizeupperlimit=101 filemaxcountupperlimit=100");
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)
@@ -1447,7 +1447,7 @@ class ACLTests(TestBase010):
             queue_options = {}
             queue_options["qpid.file_count"] = 50
             queue_options["qpid.file_size"] = 50
-            session.queue_declare(queue="qfd6", arguments=queue_options)
+            session.queue_declare(queue="qfd6", durable=True, arguments=queue_options)
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow queue create request with name=qfd6 filemaxsizeupperlimit=50 filemaxcountupperlimit=50");
